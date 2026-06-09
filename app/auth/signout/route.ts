@@ -1,8 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
+import { NextResponse } from 'next/server'
 
-export default async function Home() {
+export async function POST(request: Request) {
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,11 +21,7 @@ export default async function Home() {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  await supabase.auth.signOut()
 
-  if (user) {
-    redirect('/dashboard')
-  } else {
-    redirect('/auth')
-  }
+  return NextResponse.redirect(new URL('/auth', request.url))
 }
