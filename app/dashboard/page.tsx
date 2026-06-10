@@ -32,41 +32,64 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-lab-bg text-white">
       <div className="max-w-4xl mx-auto px-6 py-12">
         <div className="flex items-center justify-between mb-12">
-          <h1 className="text-2xl font-bold">The Lifting Lab</h1>
+          <div>
+            <span className="font-black uppercase tracking-widest text-xl">
+              THE LIFTING<span className="text-lab-lime">LAB</span>
+            </span>
+            <p className="text-[10px] text-gray-500 tracking-[0.3em] font-bold mt-0.5 uppercase">
+              Evidence-Based Supplement Stacks · UK
+            </p>
+          </div>
           <form action="/auth/signout" method="post">
             <button
               type="submit"
-              className="text-gray-400 text-sm hover:text-white transition-colors"
+              className="text-lab-muted text-sm hover:text-white transition-colors border border-lab-border rounded-lg px-3 py-1.5"
             >
               Sign out
             </button>
           </form>
         </div>
 
-        <div className="mb-8">
-          <p className="text-gray-400 text-sm mb-1">Signed in as</p>
-          <p className="text-white font-medium">{user.email}</p>
+        <div className="mb-10">
+          <h1 className="text-3xl font-black uppercase tracking-wide">
+            Welcome <span className="text-lab-lime">back</span>
+          </h1>
+          <p className="text-lab-muted text-sm mt-2">
+            Signed in as <span className="text-white font-medium">{user.email}</span>
+          </p>
         </div>
 
-        <div className="grid gap-4">
-          <a href="/stack" className="block bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors">
-            <h2 className="text-lg font-semibold mb-2">My Stack</h2>
-            <p className="text-gray-400 text-sm">Build and track your supplement stack with EFSA safety analysis.</p>
-            <div className="mt-4 inline-block bg-green-900/50 text-green-400 text-xs px-3 py-1 rounded-full">
-              Live — build your stack →
+        <div className="grid gap-4 sm:grid-cols-2">
+          <a
+            href="/stack"
+            className="group block bg-lab-panel border border-lab-border rounded-2xl p-6 hover:border-lab-lime transition-colors"
+          >
+            <div className="text-3xl mb-4">🧪</div>
+            <h2 className="text-lg font-black uppercase tracking-wide mb-2">My Stack</h2>
+            <p className="text-lab-muted text-sm">
+              Build and track your supplement stack with live EFSA safety analysis and clinical scoring.
+            </p>
+            <div className="mt-5 inline-block text-lab-lime text-xs font-bold uppercase tracking-widest group-hover:underline">
+              Build your stack →
             </div>
           </a>
 
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold mb-2">Product Database</h2>
-            <p className="text-gray-400 text-sm">Search and compare UK supplement products.</p>
-            <div className="mt-4 inline-block bg-gray-800 text-gray-400 text-xs px-3 py-1 rounded-full">
-              Coming soon
+          <a
+            href="/products"
+            className="group block bg-lab-panel border border-lab-border rounded-2xl p-6 hover:border-lab-lime transition-colors"
+          >
+            <div className="text-3xl mb-4">📊</div>
+            <h2 className="text-lg font-black uppercase tracking-wide mb-2">Browse Products</h2>
+            <p className="text-lab-muted text-sm">
+              Search and compare UK supplements, ranked by effective dosing and true value.
+            </p>
+            <div className="mt-5 inline-block text-lab-lime text-xs font-bold uppercase tracking-widest group-hover:underline">
+              Browse the database →
             </div>
-          </div>
+          </a>
         </div>
       </div>
     </div>

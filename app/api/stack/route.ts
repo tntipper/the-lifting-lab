@@ -88,7 +88,10 @@ export async function POST(request: Request) {
 
   const { error } = await supabase
     .from('stack_products')
-    .upsert({ stack_id: stack.id, product_id: productId, servings_per_day: servingsPerDay })
+    .upsert(
+      { stack_id: stack.id, product_id: productId, servings_per_day: servingsPerDay },
+      { onConflict: 'stack_id,product_id' }
+    )
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })

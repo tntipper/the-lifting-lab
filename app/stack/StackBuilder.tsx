@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { analyseStack, type StackItem, type SafetyFlag } from '@/lib/nutrient-limits'
+import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
+import { scoreFor } from '@/lib/scores'
 
 type Product = {
   id: string
@@ -14,11 +16,23 @@ type Product = {
 
 const CATEGORY_LABELS: Record<string, string> = {
   whey: 'Whey',
+  'whey-isolate': 'Whey Isolate',
+  casein: 'Casein',
   'pre-workout': 'Pre-Workout',
   multivitamin: 'Multi',
+  vitamin: 'Vitamins',
   'vitamin-d': 'Vitamin D',
   zma: 'ZMA',
   creatine: 'Creatine',
+  eaas: 'EAAs',
+  'intra-workout': 'Intra-Workout',
+  'post-workout': 'Post-Workout',
+  hydration: 'Hydration',
+  'cycle-support': 'Cycle Support',
+  'protein-bar': 'Protein Bar',
+  'meal-replacement': 'Meal Replacement',
+  'hormone-support': 'Hormone Support',
+  'gut-digestion': 'Gut & Digestion',
   omega: 'Omega',
 }
 
@@ -44,15 +58,17 @@ export default function StackBuilder() {
   useEffect(() => {
     let cancelled = false
     fetch('/api/stack')
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (cancelled) return
         const items = data.items || []
         setStackItems(items)
         setFlags(analyseStack(items))
         setLoading(false)
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function handleSearchChange(value: string) {
@@ -66,7 +82,7 @@ export default function StackBuilder() {
       setSearching(true)
       const res = await fetch(`/api/products/search?q=${encodeURIComponent(value)}`)
       const data = await res.json()
-      setSearchResults(data || [])
+      setSearchResults(Array.isArray(data) ? data : [])
       setSearching(false)
     }, 300)
   }
@@ -75,7 +91,7 @@ export default function StackBuilder() {
     await fetch('/api/stack', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId })
+      body: JSON.stringify({ productId }),
     })
     setSearchQuery('')
     setSearchResults([])
@@ -86,20 +102,51 @@ export default function StackBuilder() {
     await fetch('/api/stack', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stackProductId })
+      body: JSON.stringify({ stackProductId }),
     })
     loadStack()
   }
 
-  const stackProductIds = new Set(stackItems.map(i => i.products?.id))
+  const stackProductIds = new Set(stackItems.map((i) => i.products?.id))
+
+  // ---- clinical scoring (Path A scores, looked up by brand + name) ----
+  const scoredItems = stackItems
+    .map((i) => (i.products ? scoreFor(i.products.brand, i.products.name) : null))
+    .filter((s): s is number => s != null)
+  const avgScore =
+    scoredItems.length > 0
+      ? Math.round(scoredItems.reduce((a, b) => a + b, 0) / scoredItems.length)
+      : null
 
   return (
     <div className="space-y-6">
+      {/* Stack score summary */}
+      {!loading && stackItems.length > 0 && (
+        <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5">
+          <ScoreBadge score={avgScore} size="lg" />
+          <div>
+            <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Stack Score</p>
+            <p className="text-white text-sm mt-1">
+              {avgScore != null ? (
+                <>
+                  Average clinical score across{' '}
+                  <span className="font-bold" style={{ color: scoreColor(avgScore) }}>
+                    {scoredItems.length}
+                  </span>{' '}
+                  scored product{scoredItems.length === 1 ? '' : 's'}.
+                </>
+              ) : (
+                'No clinical scores available for these products yet.'
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Safety flags */}
       {flags.length > 0 && (
         <div className="space-y-2">
-          {flags.map(flag => (
+          {flags.map((flag) => (
             <div
               key={flag.nutrientName}
               className={`rounded-xl px-4 py-3 text-sm border ${
@@ -112,8 +159,9 @@ export default function StackBuilder() {
                 <div>
                   <span className="font-semibold">
                     {flag.percentage >= 100 ? '🚨' : '⚠️'} {flag.nutrientName}
-                  </span>
-                  {' '}— {flag.totalAmount}{flag.unit} total ({flag.percentage}% of EFSA UL)
+                  </span>{' '}
+                  — {flag.totalAmount}
+                  {flag.unit} total ({flag.percentage}% of EFSA UL)
                   <p className="text-xs mt-0.5 opacity-70">{flag.note}</p>
                 </div>
                 <span className="text-xs shrink-0 mt-0.5">{flag.products.length} products</span>
@@ -128,34 +176,43 @@ export default function StackBuilder() {
         <input
           type="text"
           value={searchQuery}
-          onChange={e => handleSearchChange(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search products to add to your stack…"
-          className="w-full bg-gray-900 text-white border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-white transition-colors"
+          className="w-full bg-lab-panel text-white border border-lab-border rounded-xl px-4 py-3 focus:outline-none focus:border-lab-lime transition-colors"
         />
         {(searchResults.length > 0 || searching) && (
-          <div className="absolute top-full mt-1 left-0 right-0 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden z-10">
-            {searching && (
-              <div className="px-4 py-3 text-gray-400 text-sm">Searching…</div>
-            )}
-            {searchResults.map(product => {
+          <div className="absolute top-full mt-1 left-0 right-0 bg-lab-panel border border-lab-border rounded-xl overflow-hidden z-10">
+            {searching && <div className="px-4 py-3 text-lab-muted text-sm">Searching…</div>}
+            {searchResults.map((product) => {
               const alreadyAdded = stackProductIds.has(product.id)
+              const score = scoreFor(product.brand, product.name)
               return (
                 <button
                   key={product.id}
                   onClick={() => !alreadyAdded && addProduct(product.id)}
                   disabled={alreadyAdded}
-                  className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-b border-gray-800 last:border-0"
+                  className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-lab-panel-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-b border-lab-border last:border-0"
                 >
-                  <div>
-                    <p className="text-white text-sm font-medium">{product.brand}</p>
-                    <p className="text-gray-400 text-xs">{product.name}</p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    {score != null && (
+                      <span
+                        className="text-xs font-black shrink-0 w-7 text-center"
+                        style={{ color: scoreColor(score) }}
+                      >
+                        {score}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-white text-sm font-medium truncate">{product.brand}</p>
+                      <p className="text-lab-muted text-xs truncate">{product.name}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                       {CATEGORY_LABELS[product.category] || product.category}
                     </span>
                     {alreadyAdded ? (
-                      <span className="text-xs text-green-400">In stack</span>
+                      <span className="text-xs text-lab-lime">In stack</span>
                     ) : (
                       <span className="text-xs text-gray-500">+ Add</span>
                     )}
@@ -169,7 +226,7 @@ export default function StackBuilder() {
 
       {/* Stack items */}
       {loading ? (
-        <p className="text-gray-500 text-sm">Loading your stack…</p>
+        <p className="text-lab-muted text-sm">Loading your stack…</p>
       ) : stackItems.length === 0 ? (
         <div className="text-center py-12 text-gray-600">
           <p className="text-4xl mb-3">🧪</p>
@@ -177,41 +234,57 @@ export default function StackBuilder() {
         </div>
       ) : (
         <div className="space-y-3">
-          {stackItems.map(item => {
+          {stackItems.map((item) => {
             const product = item.products
             if (!product) return null
-            const nutrientFlags = flags.filter(f => f.products.includes(product.brand + ' ' + product.name))
+            const score = scoreFor(product.brand, product.name)
+            const nutrientFlags = flags.filter((f) =>
+              f.products.includes(product.brand + ' ' + product.name)
+            )
             return (
-              <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-white font-medium text-sm">{product.brand}</p>
-                    <p className="text-gray-400 text-xs mt-0.5">{product.name}</p>
-                    <p className="text-gray-600 text-xs mt-1">
-                      {product.serving_size}{product.serving_unit} × {item.servings_per_day}/day
-                    </p>
+              <div
+                key={item.id}
+                className="flex gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
+              >
+                <ScoreBadge score={score} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-white font-medium text-sm truncate">{product.brand}</p>
+                      <p className="text-lab-muted text-xs mt-0.5 truncate">{product.name}</p>
+                      <p className="text-gray-600 text-xs mt-1">
+                        {product.serving_size}
+                        {product.serving_unit} × {item.servings_per_day}/day
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {nutrientFlags.length > 0 && (
+                        <span className="text-xs text-yellow-400">⚠️ {nutrientFlags.length}</span>
+                      )}
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="text-gray-600 hover:text-lab-red text-xs transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {nutrientFlags.length > 0 && (
-                      <span className="text-xs text-yellow-400">⚠️ {nutrientFlags.length}</span>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {(product.product_nutrients || []).slice(0, 4).map((n) => (
+                      <span
+                        key={n.nutrient_name}
+                        className="text-xs bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full"
+                      >
+                        {n.nutrient_name} {n.amount}
+                        {n.unit}
+                      </span>
+                    ))}
+                    {(product.product_nutrients || []).length > 4 && (
+                      <span className="text-xs text-gray-600">
+                        +{product.product_nutrients.length - 4} more
+                      </span>
                     )}
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="text-gray-600 hover:text-red-400 text-xs transition-colors"
-                    >
-                      Remove
-                    </button>
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {(product.product_nutrients || []).slice(0, 4).map(n => (
-                    <span key={n.nutrient_name} className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full">
-                      {n.nutrient_name} {n.amount}{n.unit}
-                    </span>
-                  ))}
-                  {(product.product_nutrients || []).length > 4 && (
-                    <span className="text-xs text-gray-600">+{product.product_nutrients.length - 4} more</span>
-                  )}
                 </div>
               </div>
             )

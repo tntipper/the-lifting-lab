@@ -31,16 +31,16 @@ export default function AuthPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center px-6">
+      <div className="min-h-screen bg-lab-bg flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
           <div className="text-4xl mb-6">📬</div>
-          <h1 className="text-white text-2xl font-bold mb-3">Check your email</h1>
-          <p className="text-gray-400 mb-2">We sent a magic link to</p>
-          <p className="text-white font-medium mb-6">{email}</p>
+          <h1 className="text-white text-2xl font-black uppercase tracking-wide mb-3">Check your email</h1>
+          <p className="text-lab-muted mb-2">We sent a magic link to</p>
+          <p className="text-lab-lime font-semibold mb-6">{email}</p>
           <p className="text-gray-500 text-sm">Click the link in the email to sign in. No password needed.</p>
           <button
             onClick={() => setSent(false)}
-            className="mt-8 text-gray-400 text-sm underline"
+            className="mt-8 text-lab-muted text-sm underline hover:text-white transition-colors"
           >
             Use a different email
           </button>
@@ -50,34 +50,39 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-6">
+    <div className="min-h-screen bg-lab-bg flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="mb-10">
-          <h1 className="text-white text-3xl font-bold mb-2">The Lifting Lab</h1>
-          <p className="text-gray-400">Sign in to track your supplement stack</p>
+          <span className="font-black uppercase tracking-widest text-3xl">
+            THE LIFTING<span className="text-lab-lime">LAB</span>
+          </span>
+          <p className="text-[10px] text-gray-500 tracking-[0.3em] font-bold mt-1 uppercase">
+            Evidence-Based Supplement Stacks · UK
+          </p>
+          <p className="text-lab-muted mt-5">Sign in to build and track your supplement stack.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-gray-400 text-sm mb-2 block">Email address</label>
+            <label className="text-lab-muted text-xs uppercase tracking-widest font-bold mb-2 block">Email address</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full bg-gray-900 text-white border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-white transition-colors"
+              className="w-full bg-lab-panel text-white border border-lab-border rounded-xl px-4 py-3 focus:outline-none focus:border-lab-lime transition-colors"
             />
           </div>
 
           {error && (
-            <p className="text-red-400 text-sm">{error}</p>
+            <p className="text-lab-red text-sm">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-white text-black font-semibold rounded-xl px-4 py-3 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+            className="w-full bg-lab-lime text-black font-black uppercase tracking-wide rounded-xl px-4 py-3 hover:brightness-110 disabled:opacity-50 transition-all"
           >
             {loading ? 'Sending...' : 'Send magic link'}
           </button>
