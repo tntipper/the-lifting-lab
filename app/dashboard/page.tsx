@@ -52,21 +52,13 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid gap-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+          <a href="/stack" className="block bg-gray-900 border border-gray-800 rounded-2xl p-6 hover:border-gray-600 transition-colors">
             <h2 className="text-lg font-semibold mb-2">My Stack</h2>
-            <p className="text-gray-400 text-sm">Build and track your supplement stack with safety analysis.</p>
-            <div className="mt-4 inline-block bg-gray-800 text-gray-400 text-xs px-3 py-1 rounded-full">
-              Coming soon
+            <p className="text-gray-400 text-sm">Build and track your supplement stack with EFSA safety analysis.</p>
+            <div className="mt-4 inline-block bg-green-900/50 text-green-400 text-xs px-3 py-1 rounded-full">
+              Live — build your stack →
             </div>
-          </div>
-
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold mb-2">Stack Safety</h2>
-            <p className="text-gray-400 text-sm">Check your combined nutrient intake against EFSA upper limits.</p>
-            <div className="mt-4 inline-block bg-gray-800 text-gray-400 text-xs px-3 py-1 rounded-full">
-              Coming soon
-            </div>
-          </div>
+          </a>
 
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
             <h2 className="text-lg font-semibold mb-2">Product Database</h2>
