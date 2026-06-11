@@ -15,6 +15,9 @@ export default function TopNav() {
           <Link href="/compare" className="text-lab-muted hover:text-white transition-colors">
             Compare
           </Link>
+          <Link href="/guide" className="text-lab-muted hover:text-white transition-colors">
+            Guides
+          </Link>
           <Link
             href="/dashboard"
             className="text-lab-lime border border-lab-border rounded-lg px-3 py-1.5 hover:border-lab-lime transition-colors"

@@ -15,27 +15,29 @@ export default function CompareView() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!idsParam) {
-      setProducts([])
-      setLoading(false)
-      return
-    }
     let cancelled = false
-    setLoading(true)
-    fetch(`/api/products/compare?ids=${encodeURIComponent(idsParam)}`)
-      .then((r) => r.json())
-      .then((data: ComparedProduct[]) => {
+    const load = async () => {
+      if (!idsParam) {
+        setProducts([])
+        setLoading(false)
+        return
+      }
+      setLoading(true)
+      try {
+        const r = await fetch(`/api/products/compare?ids=${encodeURIComponent(idsParam)}`)
+        const data = (await r.json()) as ComparedProduct[]
         if (cancelled) return
         const list = Array.isArray(data) ? data : []
         setProducts(list)
         setLoading(false)
         if (list.length) track('compare_view', { count: list.length })
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return
         setProducts([])
         setLoading(false)
-      })
+      }
+    }
+    load()
     return () => {
       cancelled = true
     }
