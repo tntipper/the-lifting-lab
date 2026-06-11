@@ -56,10 +56,10 @@ export default function Home() {
             Browse products →
           </Link>
           <Link
-            href="/compare"
+            href="/wizard"
             className="text-xs uppercase tracking-widest font-bold border border-lab-border text-white px-6 py-3 rounded-lg hover:border-lab-lime transition-colors"
           >
-            Compare head-to-head
+            Find my stack
           </Link>
         </div>
       </section>
