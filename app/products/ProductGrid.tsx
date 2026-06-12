@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
+import { useLocalStack } from '@/components/LocalStackContext'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, type ScoredProduct, type SortKey } from '@/lib/products'
 import { buyLink } from '@/lib/affiliate'
@@ -27,6 +28,7 @@ function fmt(n: number) {
 }
 
 export default function ProductGrid() {
+  const { inStack, toggle } = useLocalStack()
   const searchParams = useSearchParams()
   const groupParam = searchParams.get('group')
   const groupCategories = useMemo(() => {
@@ -262,6 +264,7 @@ export default function ProductGrid() {
           const isSel = selected.includes(p.id)
           const isTop = i === 0 && (sort === 'score' || sort === 'value' || sort === 'budget')
           const medal = MEDALS[i] ?? null
+          const stacked = inStack(p.id)
           const scoreFlag = p.score != null
             ? p.score >= 70
               ? { color: '#a6e22e', text: p.score >= 90 ? 'Excellent clinical match' : 'Strong clinical match' }
@@ -281,7 +284,7 @@ export default function ProductGrid() {
                   : 'border-lab-border'
               }`}
             >
-              {/* top row: score + info + actions */}
+              {/* top row: score + info + fav */}
               <div className="flex items-start gap-3">
                 <Link href={`/products/${p.id}`} className="shrink-0 mt-0.5">
                   <ScoreBadge score={p.score} />
@@ -299,17 +302,6 @@ export default function ProductGrid() {
                       {p.name} <span className="text-lab-lime text-xs">›</span>
                     </p>
                   </Link>
-
-                  {/* price info */}
-                  {(p.retail_price != null || p.cost_per_serving != null) && (
-                    <p className="text-[11px] text-gray-400 mt-0.5">
-                      {p.retail_price != null && <span>{fmt(p.retail_price)} retail</span>}
-                      {p.retail_price != null && p.cost_per_serving != null && <span className="mx-1">·</span>}
-                      {p.cost_per_serving != null && (
-                        <span className="text-white font-bold">£{p.cost_per_serving.toFixed(2)}/serving</span>
-                      )}
-                    </p>
-                  )}
 
                   {/* badges */}
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
@@ -337,6 +329,28 @@ export default function ProductGrid() {
                 />
               </div>
 
+              {/* 3 metrics mini-grid */}
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className="bg-black/40 rounded-lg p-2 text-center">
+                  <div className="text-[9px] text-lab-muted uppercase tracking-wide">Match</div>
+                  <div className="text-xs font-bold text-white mt-0.5">
+                    {p.score != null ? `${p.score}%` : '—'}
+                  </div>
+                </div>
+                <div className="bg-black/40 rounded-lg p-2 text-center">
+                  <div className="text-[9px] text-lab-muted uppercase tracking-wide">£/serving</div>
+                  <div className="text-xs font-bold text-white mt-0.5">
+                    {p.cost_per_serving != null ? `£${p.cost_per_serving.toFixed(2)}` : '—'}
+                  </div>
+                </div>
+                <div className="bg-black/40 rounded-lg p-2 text-center">
+                  <div className="text-[9px] text-lab-muted uppercase tracking-wide">Retail</div>
+                  <div className="text-xs font-bold text-white mt-0.5">
+                    {p.retail_price != null ? fmt(p.retail_price) : '—'}
+                  </div>
+                </div>
+              </div>
+
               {/* verdict flag */}
               {scoreFlag && (
                 <div className="flex items-start gap-1.5 mt-3">
@@ -345,29 +359,42 @@ export default function ProductGrid() {
                 </div>
               )}
 
-              {/* action row */}
-              <div className="flex items-center gap-2 mt-3">
+              {/* action row: stack + compare + buy */}
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                <button
+                  onClick={() => {
+                    toggle({ id: p.id, name: p.name, brand: p.brand, category: p.category, score: p.score })
+                    track(stacked ? 'remove_from_stack' : 'add_to_stack', { item_brand: p.brand, item_name: p.name })
+                  }}
+                  className={`text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border transition-colors ${
+                    stacked
+                      ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
+                      : 'border-lab-border text-lab-muted hover:text-white'
+                  }`}
+                >
+                  {stacked ? '✓ Stack' : '+ Stack'}
+                </button>
                 <button
                   onClick={() => toggleSelect(p.id)}
                   disabled={!isSel && selected.length >= 3}
-                  className={`flex-1 text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border transition-colors disabled:opacity-30 ${
+                  className={`text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border transition-colors disabled:opacity-30 ${
                     isSel
                       ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
                       : 'border-lab-border text-lab-muted hover:text-white'
                   }`}
                 >
-                  {isSel ? 'Added ✓' : '+ Compare'}
+                  {isSel ? 'Added ✓' : 'Compare'}
                 </button>
                 <a
                   href={buyLink(p.brand, p.name)}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
-                  className={`flex-1 text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl ${
+                  className={`text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl ${
                     isTop ? 'bg-lab-lime text-black' : 'bg-gray-800 text-white'
                   }`}
                 >
-                  {isTop ? topLabel : 'Buy'}
+                  {isTop ? 'Buy 🏆' : 'Buy'}
                 </a>
               </div>
               <p className="text-[9px] text-lab-muted/40 text-right mt-1">affiliate link</p>

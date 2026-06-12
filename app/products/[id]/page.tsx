@@ -9,6 +9,7 @@ import { buyLink } from '@/lib/affiliate'
 import { track } from '@/lib/gtag'
 import type { Nutrient } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
+import { useLocalStack } from '@/components/LocalStackContext'
 
 type ProductDetail = {
   id: string
@@ -28,6 +29,7 @@ type ProductDetail = {
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { inStack, toggle } = useLocalStack()
   const [product, setProduct] = useState<ProductDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -57,6 +59,7 @@ export default function ProductDetailPage() {
 
   const flags = verdictFlags(product.nutrients, product.score, product.informed_sport)
   const color = product.score != null ? scoreColor(product.score) : '#4b5563'
+  const stacked = inStack(product.id)
 
   return (
     <div className="min-h-screen bg-lab-bg text-white pb-32">
@@ -170,19 +173,34 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* sticky buy bar */}
+      {/* sticky action bar: stack + compare + buy */}
       <div className="fixed bottom-0 inset-x-0 z-30 bg-lab-panel-2 border-t border-lab-border">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-lab-muted truncate">{product.brand}</p>
-            <p className="text-sm font-bold text-white truncate">{product.name}</p>
-          </div>
+        <div className="max-w-2xl mx-auto px-4 py-3 grid grid-cols-3 gap-2">
+          <button
+            onClick={() => {
+              toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
+              track(stacked ? 'remove_from_stack' : 'add_to_stack', { item_brand: product.brand, item_name: product.name })
+            }}
+            className={`text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg border transition-colors ${
+              stacked
+                ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
+                : 'border-lab-border text-lab-muted hover:text-white'
+            }`}
+          >
+            {stacked ? '✓ In Stack' : '+ Stack'}
+          </button>
+          <Link
+            href="/compare"
+            className="text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg border border-lab-border text-lab-muted hover:text-white text-center transition-colors"
+          >
+            Compare
+          </Link>
           <a
             href={buyLink(product.brand, product.name)}
             target="_blank"
             rel="noopener noreferrer nofollow"
             onClick={() => track('buy_click', { item_brand: product.brand, item_name: product.name })}
-            className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90 shrink-0"
+            className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
           >
             Buy Now →
           </a>

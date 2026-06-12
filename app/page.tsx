@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import CategoryGrid from '@/components/CategoryGrid'
+import FeaturedSlot from '@/components/FeaturedSlot'
 
 export const metadata: Metadata = {
   title: 'The Lifting Lab — Evidence-Based Supplement Scoring (UK)',
@@ -38,6 +39,9 @@ export default function Home() {
           </div>
           <span className="text-xl font-black">→</span>
         </Link>
+
+        {/* featured brand slot */}
+        <FeaturedSlot />
 
         {/* category tiles */}
         <CategoryGrid />

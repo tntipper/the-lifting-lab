@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { GA_MEASUREMENT_ID } from "@/lib/gtag";
+import { LocalStackProvider } from "@/components/LocalStackContext";
+import StackPill from "@/components/StackPill";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Lifting Lab — Build Your Stack",
+  title: "The Lifting Lab — Evidence-Based Supplement Scoring (UK)",
   description:
-    "Evidence-based supplement stack builder with EFSA safety analysis. UK supplements, ranked by effective dosing and true value.",
+    "UK supplements ranked against clinical reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.",
 };
 
 export default function RootLayout({
@@ -30,7 +32,12 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <LocalStackProvider>
+          {children}
+          <StackPill />
+        </LocalStackProvider>
+      </body>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
         strategy="afterInteractive"
