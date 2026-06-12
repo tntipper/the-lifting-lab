@@ -21,6 +21,13 @@ export const CATEGORIES: Category[] = [
   { slug: 'zma', label: 'ZMA' },
   { slug: 'hormone-support', label: 'Hormone Support' },
   { slug: 'gut-digestion', label: 'Gut & Digestion' },
+  { slug: 'heart-health', label: 'Heart Health' },
+  { slug: 'liver-health', label: 'Liver Health' },
+  { slug: 'omega-3', label: 'Omega-3' },
+  { slug: 'joint-health', label: 'Joint Health' },
+  { slug: 'vitamin-c', label: 'Vitamin C' },
+  { slug: 'magnesium', label: 'Magnesium' },
+  { slug: 'sleep-recovery', label: 'Sleep & Recovery' },
 ]
 
 const LABEL_BY_SLUG: Record<string, string> = Object.fromEntries(
