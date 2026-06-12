@@ -5,7 +5,7 @@
 // Set NEXT_PUBLIC_AMAZON_TAG in the environment (e.g. `theliftinglab-21`).
 // If it is unset, links still work; they just carry no tracking tag.
 
-const AMAZON_TAG = process.env.NEXT_PUBLIC_AMAZON_TAG?.trim()
+const AMAZON_TAG = process.env.NEXT_PUBLIC_AMAZON_TAG?.trim() || 'theliftinglab-21'
 
 export function amazonSearch(brand: string, name: string): string {
   const q = encodeURIComponent(`${brand} ${name}`.trim())
