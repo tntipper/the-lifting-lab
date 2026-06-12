@@ -1,9 +1,66 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { analyseStack, type StackItem, type SafetyFlag } from '@/lib/nutrient-limits'
+import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem, type SafetyFlag } from '@/lib/nutrient-limits'
 import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
 import { scoreFor } from '@/lib/scores'
+
+type DailyTotal = {
+  name: string
+  amount: number
+  unit: string
+  ulPercent: number | null
+  sources: string[]
+}
+
+function getDailyTotals(stackItems: StackItem[]): DailyTotal[] {
+  const totals: Record<string, { amount: number; unit: string; sources: string[] }> = {}
+
+  for (const item of stackItems) {
+    const product = item.products
+    if (!product) continue
+    const multiplier = item.servings_per_day || 1
+    for (const nutrient of product.product_nutrients || []) {
+      const key = normaliseNutrientName(nutrient.nutrient_name)
+      if (!totals[key]) totals[key] = { amount: 0, unit: nutrient.unit, sources: [] }
+      totals[key].amount += nutrient.amount * multiplier
+      const label = `${product.brand} ${product.name}`
+      if (!totals[key].sources.includes(label)) totals[key].sources.push(label)
+    }
+  }
+
+  return Object.entries(totals)
+    .map(([name, d]) => ({
+      name,
+      amount: Math.round(d.amount * 10) / 10,
+      unit: d.unit,
+      ulPercent: NUTRIENT_LIMITS[name]?.ul
+        ? Math.round((d.amount / NUTRIENT_LIMITS[name].ul!) * 100)
+        : null,
+      sources: d.sources,
+    }))
+    .sort((a, b) => {
+      if (b.ulPercent != null && a.ulPercent != null) return b.ulPercent - a.ulPercent
+      if (b.ulPercent != null) return 1
+      if (a.ulPercent != null) return -1
+      return a.name.localeCompare(b.name)
+    })
+}
+
+function buildShareUrl(score: number | null, items: StackItem[]): string {
+  const data = {
+    score,
+    items: items
+      .filter((i) => i.products)
+      .map((i) => ({
+        brand: i.products!.brand,
+        name: i.products!.name,
+        score: scoreFor(i.products!.brand, i.products!.name),
+        category: i.products!.category,
+      })),
+  }
+  return `/api/stack/sharecard?data=${encodeURIComponent(JSON.stringify(data))}`
+}
 
 type Product = {
   id: string
@@ -43,6 +100,7 @@ export default function StackBuilder() {
   const [searching, setSearching] = useState(false)
   const [loading, setLoading] = useState(true)
   const [flags, setFlags] = useState<SafetyFlag[]>([])
+  const [showTotals, setShowTotals] = useState(false)
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -118,6 +176,9 @@ export default function StackBuilder() {
       ? Math.round(scoredItems.reduce((a, b) => a + b, 0) / scoredItems.length)
       : null
 
+  const dailyTotals = getDailyTotals(stackItems)
+  const shareUrl = buildShareUrl(avgScore, stackItems)
+
   return (
     <div className="space-y-6">
       {/* Stack score summary */}
@@ -168,6 +229,70 @@ export default function StackBuilder() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Action row: share + daily totals toggle */}
+      {!loading && stackItems.length > 0 && (
+        <div className="flex gap-2">
+          <a
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-lab-lime text-lab-lime text-xs font-black uppercase tracking-widest hover:bg-lab-lime/10 transition-colors"
+          >
+            <span>📤</span>
+            <span>Share Stack</span>
+          </a>
+          <button
+            onClick={() => setShowTotals((v) => !v)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-black uppercase tracking-widest transition-colors ${
+              showTotals
+                ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
+                : 'border-lab-border text-lab-muted hover:text-white'
+            }`}
+          >
+            <span>📊</span>
+            <span>Daily Totals</span>
+          </button>
+        </div>
+      )}
+
+      {/* Daily totals table */}
+      {showTotals && dailyTotals.length > 0 && (
+        <div className="bg-lab-panel border border-lab-border rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-lab-border">
+            <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Daily Intake Totals</p>
+            <p className="text-[10px] text-gray-600 mt-0.5">Sum across all stack products × servings per day</p>
+          </div>
+          <div className="divide-y divide-lab-border">
+            {dailyTotals.map((row) => {
+              const pct = row.ulPercent
+              const color = pct == null ? '#6b7280' : pct >= 100 ? '#ff5c5c' : pct >= 80 ? '#f5b342' : '#a6e22e'
+              return (
+                <div key={row.name} className="flex items-center gap-3 px-4 py-2.5">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <span className="text-white text-xs font-medium flex-1 min-w-0 truncate">{row.name}</span>
+                  <span className="text-white text-xs font-black shrink-0">
+                    {row.amount}{row.unit}
+                  </span>
+                  {pct != null ? (
+                    <span
+                      className="text-[10px] font-bold shrink-0 w-12 text-right"
+                      style={{ color }}
+                    >
+                      {pct}% UL
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-600 shrink-0 w-12 text-right">No UL</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <div className="px-4 py-2 border-t border-lab-border">
+            <p className="text-[10px] text-gray-600">UL = EFSA Tolerable Upper Intake Level. ≥80% = ⚠️ Caution. ≥100% = 🚨 Critical.</p>
+          </div>
         </div>
       )}
 
