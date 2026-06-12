@@ -90,6 +90,20 @@ export default async function DashboardPage() {
               Browse the database →
             </div>
           </a>
+
+          <a
+            href="/favourites"
+            className="group block bg-lab-panel border border-lab-border rounded-2xl p-6 hover:border-lab-lime transition-colors"
+          >
+            <div className="text-3xl mb-4">💚</div>
+            <h2 className="text-lg font-black uppercase tracking-wide mb-2">My Favourites</h2>
+            <p className="text-lab-muted text-sm">
+              Quick access to the products you&apos;ve saved across the database.
+            </p>
+            <div className="mt-5 inline-block text-lab-lime text-xs font-bold uppercase tracking-widest group-hover:underline">
+              View favourites →
+            </div>
+          </a>
         </div>
       </div>
     </div>

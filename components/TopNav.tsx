@@ -21,6 +21,9 @@ export default function TopNav() {
           <Link href="/wizard" className="text-lab-muted hover:text-white transition-colors">
             Find My Stack
           </Link>
+          <Link href="/favourites" className="text-lab-muted hover:text-white transition-colors">
+            Favourites
+          </Link>
           <Link
             href="/dashboard"
             className="text-lab-lime border border-lab-border rounded-lg px-3 py-1.5 hover:border-lab-lime transition-colors"

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
+import FavouriteButton from '@/components/FavouriteButton'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, type ScoredProduct, type SortKey } from '@/lib/products'
 import { track } from '@/lib/gtag'
@@ -25,7 +26,24 @@ export default function ProductGrid() {
   const [sort, setSort] = useState<SortKey>('score')
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<string[]>([])
+  const [favs, setFavs] = useState<Set<string>>(new Set())
+  const [signedIn, setSignedIn] = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/favourites')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return
+        setSignedIn(true)
+        setFavs(new Set<string>(Array.isArray(data.ids) ? data.ids : []))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -73,6 +91,15 @@ export default function ProductGrid() {
       if (prev.includes(id)) return prev.filter((x) => x !== id)
       if (prev.length >= 3) return prev
       return [...prev, id]
+    })
+  }
+
+  function setFav(id: string, favourited: boolean) {
+    setFavs((prev) => {
+      const next = new Set(prev)
+      if (favourited) next.add(id)
+      else next.delete(id)
+      return next
     })
   }
 
@@ -144,6 +171,12 @@ export default function ProductGrid() {
                   {categoryLabel(p.category)}
                 </span>
               </div>
+              <FavouriteButton
+                productId={p.id}
+                favourited={favs.has(p.id)}
+                signedIn={signedIn}
+                onChange={(fav) => setFav(p.id, fav)}
+              />
               <div className="flex flex-col items-end gap-1.5 shrink-0">
                 <a
                   href={amazonSearch(p.brand, p.name)}
