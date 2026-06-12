@@ -7,6 +7,7 @@ import FavouriteButton from '@/components/FavouriteButton'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, type ScoredProduct, type SortKey } from '@/lib/products'
 import { amazonSearch } from '@/lib/affiliate'
+import { GUIDE_SLUGS } from '@/lib/guides'
 import { track } from '@/lib/gtag'
 
 const SORTS: { key: SortKey; label: string }[] = [
@@ -122,6 +123,21 @@ export default function ProductGrid() {
           />
         ))}
       </div>
+
+      {/* contextual guide link for the selected category */}
+      {category !== 'all' && GUIDE_SLUGS.includes(category) && (
+        <Link
+          href={`/guide/${category}`}
+          className="flex items-center gap-3 bg-lab-panel border border-lab-border rounded-xl px-4 py-3 hover:border-lab-lime transition-colors"
+        >
+          <span className="text-lg shrink-0">📖</span>
+          <span className="text-sm text-white/90 min-w-0 flex-1">
+            New to {categoryLabel(category).toLowerCase()}? Read our{' '}
+            <span className="text-lab-lime font-bold">{categoryLabel(category)} buyer&apos;s guide</span>
+          </span>
+          <span className="text-lab-lime text-lg shrink-0">→</span>
+        </Link>
+      )}
 
       {/* sort + count */}
       <div className="flex items-center justify-between">
