@@ -1,37 +1,78 @@
-// Clinical score badge. Neon lime >=70, amber 50-69, red <50.
 export function scoreColor(score: number): string {
   if (score >= 70) return '#a6e22e'
   if (score >= 50) return '#f5b342'
   return '#ff5c5c'
 }
 
+const SIZES = {
+  sm: { px: 48, r: 18, stroke: 4, text: '10px' },
+  md: { px: 64, r: 24, stroke: 5, text: '13px' },
+  lg: { px: 110, r: 42, stroke: 7, text: '22px' },
+}
+
 export default function ScoreBadge({
   score,
   size = 'md',
-  label,
 }: {
   score: number | null
   size?: 'sm' | 'md' | 'lg'
-  label?: string
 }) {
+  const { px, r, stroke, text } = SIZES[size]
+  const cx = px / 2
+  const circ = 2 * Math.PI * r
+
   if (score == null) {
     return (
-      <span className="text-xs text-gray-600 font-medium">no score</span>
+      <div
+        className="shrink-0 flex items-center justify-center rounded-full border-2 border-lab-border"
+        style={{ width: px, height: px, fontSize: text, color: '#4b5563' }}
+      >
+        –
+      </div>
     )
   }
+
   const color = scoreColor(score)
-  const dim = size === 'lg' ? 'h-14 w-14 text-xl' : size === 'sm' ? 'h-8 w-8 text-[11px]' : 'h-11 w-11 text-sm'
+  const filled = circ * (score / 100)
+
   return (
-    <div className="flex flex-col items-center gap-1 shrink-0">
-      <div
-        className={`${dim} rounded-full flex items-center justify-center font-black border-2`}
-        style={{ color, borderColor: color, boxShadow: `0 0 10px ${color}33` }}
-      >
-        {score}
-      </div>
-      {label && (
-        <span className="text-[9px] uppercase tracking-widest font-bold text-lab-muted">{label}</span>
-      )}
+    <div className="shrink-0" style={{ width: px, height: px }}>
+      <svg width={px} height={px} viewBox={`0 0 ${px} ${px}`}>
+        {/* track */}
+        <circle
+          cx={cx}
+          cy={cx}
+          r={r}
+          fill="none"
+          stroke="#1f2937"
+          strokeWidth={stroke}
+        />
+        {/* fill */}
+        <circle
+          cx={cx}
+          cy={cx}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${circ - filled}`}
+          strokeDashoffset={circ / 4}
+          style={{ filter: `drop-shadow(0 0 4px ${color}66)` }}
+        />
+        <text
+          x={cx}
+          y={cx}
+          dominantBaseline="central"
+          textAnchor="middle"
+          fill={color}
+          fontWeight="900"
+          fontSize={text}
+          fontFamily="system-ui, sans-serif"
+        >
+          {score}
+        </text>
+      </svg>
     </div>
   )
 }

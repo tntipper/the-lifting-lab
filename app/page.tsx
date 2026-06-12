@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
+import CategoryGrid from '@/components/CategoryGrid'
 
 export const metadata: Metadata = {
   title: 'The Lifting Lab — Evidence-Based Supplement Scoring (UK)',
@@ -9,123 +10,90 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://theliftinglab.co.uk' },
 }
 
-const FEATURES = [
-  {
-    title: 'Clinical Scoring',
-    body: 'Every product is scored 0–100 against a perfect clinical reference dose. No marketing, no proprietary-blend hiding. Just the numbers.',
-    href: '/products',
-    cta: 'Browse products',
-  },
-  {
-    title: 'Head-to-Head',
-    body: 'Line up to three products side by side. See the dose breakdown nutrient by nutrient and a clear verdict on which wins.',
-    href: '/compare',
-    cta: 'Compare now',
-  },
-  {
-    title: 'Build Your Stack',
-    body: 'Combine products into a stack and we flag the safety limits — caffeine, zinc, vitamin D and more — against EFSA upper limits.',
-    href: '/dashboard',
-    cta: 'My Stack',
-  },
-]
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
 
-      {/* hero */}
-      <section className="max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
-        <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-5">
-          Evidence-Based Supplements · UK
-        </p>
-        <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight leading-[0.95]">
-          Stop guessing.
-          <br />
-          Start <span className="text-lab-lime">dosing.</span>
-        </h1>
-        <p className="text-lab-muted text-base sm:text-lg mt-6 max-w-xl mx-auto">
-          We score the UK&apos;s biggest supplement brands against clinical reference
-          doses, so you can see what actually works before you spend a penny.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-9">
-          <Link
-            href="/products"
-            className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
-          >
-            Browse products →
-          </Link>
-          <Link
-            href="/wizard"
-            className="text-xs uppercase tracking-widest font-bold border border-lab-border text-white px-6 py-3 rounded-lg hover:border-lab-lime transition-colors"
-          >
-            Find my stack
-          </Link>
-        </div>
-      </section>
-
-      {/* features */}
-      <section className="max-w-5xl mx-auto px-6 pb-20">
-        <div className="grid gap-4 sm:grid-cols-3">
-          {FEATURES.map((f) => (
-            <Link
-              key={f.title}
-              href={f.href}
-              className="group bg-lab-panel border border-lab-border rounded-2xl p-6 hover:border-lab-lime transition-colors"
-            >
-              <h2 className="text-lg font-black uppercase tracking-wide mb-2">{f.title}</h2>
-              <p className="text-lab-muted text-sm leading-relaxed mb-4">{f.body}</p>
-              <span className="text-[11px] uppercase tracking-widest font-bold text-lab-lime group-hover:underline">
-                {f.cta} →
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* how we score */}
-      <section className="max-w-5xl mx-auto px-6 pb-24">
-        <div className="bg-lab-panel border border-lab-border rounded-2xl p-8">
-          <p className="text-[11px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-3">
-            How we score
+      <div className="max-w-lg mx-auto px-4 pt-6 pb-20 space-y-5">
+        {/* wordmark + tagline */}
+        <div className="text-center pt-2 pb-1">
+          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-lab-muted mb-1">
+            Evidence-Based Supplements · UK
           </p>
-          <p className="text-lab-muted text-sm leading-relaxed max-w-3xl">
-            Each product is measured as a percentage match against a mathematically
-            defined clinical reference spec for its category. Pre-workouts are judged
-            on core actives, with caffeine over 400mg heavily penalised. Protein is
-            purity-weighted, and amino-spiking scores an automatic zero. Creatine is
-            ranked on price-to-purity with a bonus for Creapure. Proprietary blends
-            trigger severe deductions across the board.
+          <h1 className="text-3xl font-black uppercase tracking-tight leading-none">
+            The Lifting Lab
+          </h1>
+        </div>
+
+        {/* Find My Stack — hero CTA */}
+        <Link
+          href="/wizard"
+          className="flex items-center gap-4 w-full bg-lab-lime text-black rounded-2xl px-5 py-4 hover:opacity-90 transition-opacity"
+        >
+          <span className="text-2xl">🧪</span>
+          <div className="min-w-0 flex-1">
+            <p className="font-black uppercase tracking-wide text-base leading-none">Find My Stack</p>
+            <p className="text-[11px] font-bold mt-0.5 opacity-70">Answer 5 quick questions</p>
+          </div>
+          <span className="text-xl font-black">→</span>
+        </Link>
+
+        {/* category tiles */}
+        <CategoryGrid />
+
+        {/* action buttons */}
+        <Link
+          href="/guide"
+          className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime transition-colors"
+        >
+          <span className="text-lg">📖</span>
+          <span className="text-sm font-bold text-white">Supplement Guide</span>
+          <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
+        </Link>
+
+        <Link
+          href="/submit"
+          className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime transition-colors"
+        >
+          <span className="text-lg">+</span>
+          <span className="text-sm font-bold text-white">Missing a supplement?</span>
+          <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
+        </Link>
+
+        <Link
+          href="/contact"
+          className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime transition-colors"
+        >
+          <span className="text-lg">✉️</span>
+          <span className="text-sm font-bold text-white">Contact Us</span>
+          <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
+        </Link>
+
+        {/* how we score strip */}
+        <div className="bg-lab-panel border border-lab-border rounded-xl px-4 py-4 space-y-2">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-lab-muted">How we score</p>
+          <p className="text-xs text-white/60 leading-relaxed">
+            Effectiveness Match (0–100) vs evidence-based dosing standards.
+            True Cost = price per full effective serving. Informational only — not medical advice.
           </p>
-          <div className="flex flex-wrap gap-3 mt-6 text-[11px] uppercase tracking-widest font-bold">
-            <span className="px-3 py-1.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">
-              Green ≥ 70
-            </span>
-            <span className="px-3 py-1.5 rounded-full bg-lab-amber/10 text-lab-amber border border-lab-amber/30">
-              Amber 50–69
-            </span>
-            <span className="px-3 py-1.5 rounded-full bg-lab-red/10 text-lab-red border border-lab-red/30">
-              Red &lt; 50
-            </span>
+          <div className="flex gap-3 pt-1 flex-wrap">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">Green ≥ 70</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">Amber 50–69</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">Red &lt; 50</span>
           </div>
         </div>
-      </section>
 
-      <footer className="border-t border-lab-border">
-        <div className="max-w-5xl mx-auto px-6 py-8 text-center text-lab-muted text-xs space-y-3">
+        {/* footer */}
+        <div className="text-center text-[10px] text-lab-muted space-y-1 pt-2">
           <p>The Lifting Lab · Evidence-based supplement scoring · UK</p>
-          <p className="flex flex-wrap justify-center gap-x-5 gap-y-1">
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms of Use</Link>
-            <Link href="/affiliate-disclosure" className="hover:text-white transition-colors">Affiliate Disclosure</Link>
-          </p>
-          <p className="text-[10px]">
-            The Lifting Lab is a participant in the Amazon Associates Programme.
-            Some links may earn us a commission at no cost to you.
+          <p className="flex flex-wrap justify-center gap-x-4">
+            <Link href="/privacy" className="hover:text-white">Privacy</Link>
+            <Link href="/terms" className="hover:text-white">Terms</Link>
+            <Link href="/affiliate-disclosure" className="hover:text-white">Affiliate Disclosure</Link>
           </p>
         </div>
-      </footer>
+      </div>
     </div>
   )
 }

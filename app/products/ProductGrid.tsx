@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
@@ -9,6 +10,7 @@ import { sortScored, type ScoredProduct, type SortKey } from '@/lib/products'
 import { buyLink } from '@/lib/affiliate'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { track } from '@/lib/gtag'
+import { CATEGORY_GROUPS } from '@/lib/category-groups'
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'score', label: 'Best Rating' },
@@ -17,6 +19,14 @@ const SORTS: { key: SortKey; label: string }[] = [
 ]
 
 export default function ProductGrid() {
+  const searchParams = useSearchParams()
+  const groupParam = searchParams.get('group')
+  const groupCategories = useMemo(() => {
+    if (!groupParam) return null
+    const g = CATEGORY_GROUPS.find((g) => g.slug === groupParam)
+    return g ? g.categories : null
+  }, [groupParam])
+
   const [all, setAll] = useState<ScoredProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('all')
@@ -71,11 +81,12 @@ export default function ProductGrid() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     let list = all
+    if (groupCategories) list = list.filter((p) => groupCategories.includes(p.category))
     if (category !== 'all') list = list.filter((p) => p.category === category)
     if (isOnly) list = list.filter((p) => p.informed_sport === true)
     if (q) list = list.filter((p) => `${p.brand} ${p.name}`.toLowerCase().includes(q))
     return sortScored(list, sort)
-  }, [all, category, sort, query, isOnly])
+  }, [all, category, sort, query, isOnly, groupCategories])
 
   function handleSearch(value: string) {
     setQuery(value)
@@ -190,10 +201,14 @@ export default function ProductGrid() {
                 isSel ? 'border-lab-lime' : 'border-lab-border'
               }`}
             >
-              <ScoreBadge score={p.score} />
+              <Link href={`/products/${p.id}`} className="shrink-0">
+                <ScoreBadge score={p.score} />
+              </Link>
               <div className="min-w-0 flex-1">
-                <p className="text-white text-sm font-bold truncate">{p.brand}</p>
-                <p className="text-lab-muted text-xs truncate">{p.name}</p>
+                <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors">
+                  <p className="text-white text-sm font-bold truncate">{p.brand}</p>
+                  <p className="text-lab-muted text-xs truncate">{p.name}</p>
+                </Link>
                 <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                   <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                     {categoryLabel(p.category)}
