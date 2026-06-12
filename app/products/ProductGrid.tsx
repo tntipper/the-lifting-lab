@@ -25,6 +25,7 @@ export default function ProductGrid() {
   const [selected, setSelected] = useState<string[]>([])
   const [favs, setFavs] = useState<Set<string>>(new Set())
   const [signedIn, setSignedIn] = useState(false)
+  const [isOnly, setIsOnly] = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -71,9 +72,10 @@ export default function ProductGrid() {
     const q = query.trim().toLowerCase()
     let list = all
     if (category !== 'all') list = list.filter((p) => p.category === category)
+    if (isOnly) list = list.filter((p) => p.informed_sport === true)
     if (q) list = list.filter((p) => `${p.brand} ${p.name}`.toLowerCase().includes(q))
     return sortScored(list, sort)
-  }, [all, category, sort, query])
+  }, [all, category, sort, query, isOnly])
 
   function handleSearch(value: string) {
     setQuery(value)
@@ -110,6 +112,19 @@ export default function ProductGrid() {
         placeholder="Search by product or brand…"
         className="w-full bg-lab-panel text-white border border-lab-border rounded-xl px-4 py-3 focus:outline-none focus:border-lab-lime transition-colors"
       />
+
+      {/* Informed Sport toggle */}
+      <button
+        onClick={() => setIsOnly((v) => !v)}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-bold transition-colors ${
+          isOnly
+            ? 'bg-lab-lime text-black border-lab-lime'
+            : 'bg-lab-panel text-lab-muted border-lab-border hover:border-lab-lime hover:text-white'
+        }`}
+      >
+        <span>✓</span>
+        <span>Informed Sport only</span>
+      </button>
 
       {/* category chips */}
       <div className="flex gap-2 overflow-x-auto hide-scroll -mx-1 px-1">
@@ -179,9 +194,16 @@ export default function ProductGrid() {
               <div className="min-w-0 flex-1">
                 <p className="text-white text-sm font-bold truncate">{p.brand}</p>
                 <p className="text-lab-muted text-xs truncate">{p.name}</p>
-                <span className="inline-block mt-1.5 text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
-                  {categoryLabel(p.category)}
-                </span>
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
+                    {categoryLabel(p.category)}
+                  </span>
+                  {p.informed_sport && (
+                    <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
+                      IS Certified
+                    </span>
+                  )}
+                </div>
               </div>
               <FavouriteButton
                 productId={p.id}
