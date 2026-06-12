@@ -8,6 +8,7 @@ import { categoryLabel } from '@/lib/categories'
 import { buyLink } from '@/lib/affiliate'
 import { track } from '@/lib/gtag'
 import type { Nutrient } from '@/lib/products'
+import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 
 type ProductDetail = {
   id: string
@@ -18,63 +19,10 @@ type ProductDetail = {
   serving_unit: string | null
   servings_per_container: number | null
   informed_sport: boolean | null
+  retail_price: number | null
+  cost_per_serving: number | null
   score: number | null
   nutrients: Nutrient[]
-}
-
-function verdictFlags(p: ProductDetail): { color: string; text: string }[] {
-  const flags: { color: string; text: string }[] = []
-  const score = p.score
-
-  if (score == null) return flags
-
-  const green = '#a6e22e'
-  const yellow = '#f5b342'
-  const red = '#ff5c5c'
-
-  if (score >= 90) flags.push({ color: green, text: 'Excellent clinical match — top tier dosing' })
-  else if (score >= 70) flags.push({ color: green, text: 'Strong clinical match against reference doses' })
-  else if (score >= 50) flags.push({ color: yellow, text: 'Partial clinical match — some doses below optimal' })
-  else flags.push({ color: red, text: 'Poor clinical match — significantly underdosed vs reference' })
-
-  if (p.informed_sport) flags.push({ color: green, text: 'Informed Sport certified — batch tested for banned substances' })
-
-  for (const n of p.nutrients) {
-    const name = n.nutrient_name.toLowerCase()
-    const amt = n.amount
-
-    if (name.includes('caffeine')) {
-      if (amt >= 200 && amt <= 400) flags.push({ color: green, text: `Caffeine ${amt}mg — in the clinical sweet spot (200–400mg)` })
-      else if (amt > 400) flags.push({ color: red, text: `Caffeine ${amt}mg — above 400mg, potential side effects` })
-      else flags.push({ color: yellow, text: `Caffeine ${amt}mg — below optimal range (200–400mg)` })
-    }
-    if (name.includes('citrulline')) {
-      if (amt >= 6000) flags.push({ color: green, text: `Citrulline ${amt}mg — meets or exceeds 6g clinical dose` })
-      else flags.push({ color: yellow, text: `Citrulline ${amt}mg — below optimal 6–8g clinical dose` })
-    }
-    if (name.includes('beta-alanine') || name === 'beta alanine') {
-      if (amt >= 3200) flags.push({ color: green, text: `Beta-Alanine ${amt}mg — clinical dose met (3.2g)` })
-      else flags.push({ color: yellow, text: `Beta-Alanine ${amt}mg — below optimal 3.2g dose` })
-    }
-    if (name === 'creatine' || name.includes('creatine monohydrate')) {
-      if (amt >= 5000) flags.push({ color: green, text: `Creatine ${amt}mg — full 5g clinical dose` })
-      else flags.push({ color: yellow, text: `Creatine ${amt}mg — below optimal 5g dose` })
-    }
-    if (name === 'protein') {
-      if (amt >= 25) flags.push({ color: green, text: `${amt}g protein per serving — strong yield` })
-      else flags.push({ color: yellow, text: `${amt}g protein per serving — moderate yield` })
-    }
-    if (name.includes('vitamin d')) {
-      if (amt >= 25) flags.push({ color: green, text: `Vitamin D ${amt}mcg — meets 1000IU+ recommendation` })
-      else flags.push({ color: yellow, text: `Vitamin D ${amt}mcg — below optimal dosing` })
-    }
-    if (name === 'magnesium') {
-      if (amt >= 200) flags.push({ color: green, text: `Magnesium ${amt}mg — meaningful dose` })
-      else flags.push({ color: yellow, text: `Magnesium ${amt}mg — low dose` })
-    }
-  }
-
-  return flags
 }
 
 export default function ProductDetailPage() {
@@ -107,7 +55,7 @@ export default function ProductDetailPage() {
     )
   }
 
-  const flags = verdictFlags(product)
+  const flags = verdictFlags(product.nutrients, product.score, product.informed_sport)
   const color = product.score != null ? scoreColor(product.score) : '#4b5563'
 
   return (
@@ -143,6 +91,16 @@ export default function ProductDetailPage() {
                 </span>
               )}
             </div>
+            {/* price info */}
+            {(product.retail_price != null || product.cost_per_serving != null) && (
+              <p className="text-sm text-gray-400 mt-2">
+                {product.retail_price != null && <span>£{product.retail_price.toFixed(2)} retail</span>}
+                {product.retail_price != null && product.cost_per_serving != null && <span className="mx-2">·</span>}
+                {product.cost_per_serving != null && (
+                  <span className="text-white font-bold">£{product.cost_per_serving.toFixed(2)} / serving</span>
+                )}
+              </p>
+            )}
           </div>
         </div>
 
@@ -152,30 +110,46 @@ export default function ProductDetailPage() {
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">The Verdict</p>
             {flags.map((f, i) => (
               <div key={i} className="flex items-start gap-2">
-                <span className="text-lg leading-none mt-0.5" style={{ color: f.color }}>●</span>
+                <span className="text-lg leading-none mt-0.5 shrink-0" style={{ color: f.color }}>●</span>
                 <span className="text-sm text-white/90 leading-snug">{f.text}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* nutrients */}
+        {/* nutrient label — RGB per row */}
         {product.nutrients.length > 0 && (
           <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-4">Full Label</p>
-            <div className="space-y-0">
-              {product.nutrients.map((n, i) => (
-                <div key={i} className={`flex justify-between py-2.5 text-sm ${i < product.nutrients.length - 1 ? 'border-b border-lab-border' : ''}`}>
-                  <span className="text-white/80">{n.nutrient_name}</span>
-                  <span className="font-bold text-white">{n.amount}{n.unit}</span>
-                </div>
-              ))}
+            <div>
+              {product.nutrients.map((n, i) => {
+                const nColor = nutrientColor(n.nutrient_name, n.amount)
+                return (
+                  <div
+                    key={i}
+                    className={`flex justify-between items-center py-2.5 text-sm ${
+                      i < product.nutrients.length - 1 ? 'border-b border-lab-border' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {nColor && (
+                        <span className="text-xs leading-none shrink-0" style={{ color: nColor }}>●</span>
+                      )}
+                      <span className="text-white/80">{n.nutrient_name}</span>
+                    </div>
+                    <span className="font-bold text-white ml-2 shrink-0">{n.amount}{n.unit}</span>
+                  </div>
+                )
+              })}
             </div>
             {product.servings_per_container && (
               <p className="text-xs text-lab-muted mt-3">
                 {product.servings_per_container} servings · {product.serving_size}{product.serving_unit} per serving
               </p>
             )}
+            <p className="text-[10px] text-lab-muted/60 mt-2 italic">
+              Informational only — not medical advice.
+            </p>
           </div>
         )}
 
@@ -183,10 +157,16 @@ export default function ProductDetailPage() {
         <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
           <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-2">Score Explained</p>
           <p className="text-sm text-white/70 leading-relaxed">
-            This product scores <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against
-            our clinical reference spec for {categoryLabel(product.category).toLowerCase()}. Scores
-            are based on dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
+            This product scores{' '}
+            <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our
+            clinical reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
+            dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
           </p>
+          <div className="flex gap-3 mt-3 flex-wrap">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">● Green = meets dose</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">● Amber = below optimal</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
+          </div>
         </div>
       </div>
 

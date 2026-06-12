@@ -14,9 +14,17 @@ import { CATEGORY_GROUPS } from '@/lib/category-groups'
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'score', label: 'Best Rating' },
+  { key: 'value', label: 'Best Value for Score' },
+  { key: 'budget', label: 'Budget Pick' },
   { key: 'name', label: 'Name (A–Z)' },
   { key: 'brand', label: 'Brand (A–Z)' },
 ]
+
+const MEDALS = ['🥇', '🥈', '🥉']
+
+function fmt(n: number) {
+  return n < 10 ? `£${n.toFixed(2)}` : `£${Math.round(n)}`
+}
 
 export default function ProductGrid() {
   const searchParams = useSearchParams()
@@ -36,6 +44,8 @@ export default function ProductGrid() {
   const [favs, setFavs] = useState<Set<string>>(new Set())
   const [signedIn, setSignedIn] = useState(false)
   const [isOnly, setIsOnly] = useState(false)
+  const [brandFilter, setBrandFilter] = useState<Set<string>>(new Set())
+  const [brandPanelOpen, setBrandPanelOpen] = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -48,9 +58,7 @@ export default function ProductGrid() {
         setFavs(new Set<string>(Array.isArray(data.ids) ? data.ids : []))
       })
       .catch(() => {})
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -67,15 +75,17 @@ export default function ProductGrid() {
         setAll([])
         setLoading(false)
       })
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [])
 
-  // categories that actually have products, in canonical order
   const activeCategories = useMemo(() => {
     const present = new Set(all.map((p) => p.category))
     return CATEGORIES.filter((c) => present.has(c.slug))
+  }, [all])
+
+  const availableBrands = useMemo(() => {
+    const brands = new Set(all.map((p) => p.brand))
+    return Array.from(brands).sort()
   }, [all])
 
   const visible = useMemo(() => {
@@ -84,9 +94,10 @@ export default function ProductGrid() {
     if (groupCategories) list = list.filter((p) => groupCategories.includes(p.category))
     if (category !== 'all') list = list.filter((p) => p.category === category)
     if (isOnly) list = list.filter((p) => p.informed_sport === true)
+    if (brandFilter.size) list = list.filter((p) => brandFilter.has(p.brand))
     if (q) list = list.filter((p) => `${p.brand} ${p.name}`.toLowerCase().includes(q))
     return sortScored(list, sort)
-  }, [all, category, sort, query, isOnly, groupCategories])
+  }, [all, category, sort, query, isOnly, groupCategories, brandFilter])
 
   function handleSearch(value: string) {
     setQuery(value)
@@ -113,8 +124,19 @@ export default function ProductGrid() {
     })
   }
 
+  function toggleBrand(brand: string) {
+    setBrandFilter((prev) => {
+      const next = new Set(prev)
+      if (next.has(brand)) next.delete(brand)
+      else next.add(brand)
+      return next
+    })
+  }
+
+  const topLabel = sort === 'value' ? 'Best Value Pick' : sort === 'budget' ? 'Best Budget Pick' : 'Top Pick'
+
   return (
-    <div className="space-y-6 pb-28">
+    <div className="space-y-4 pb-28">
       {/* search */}
       <input
         type="text"
@@ -124,18 +146,64 @@ export default function ProductGrid() {
         className="w-full bg-lab-panel text-white border border-lab-border rounded-xl px-4 py-3 focus:outline-none focus:border-lab-lime transition-colors"
       />
 
-      {/* Informed Sport toggle */}
-      <button
-        onClick={() => setIsOnly((v) => !v)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-bold transition-colors ${
-          isOnly
-            ? 'bg-lab-lime text-black border-lab-lime'
-            : 'bg-lab-panel text-lab-muted border-lab-border hover:border-lab-lime hover:text-white'
-        }`}
-      >
-        <span>✓</span>
-        <span>Informed Sport only</span>
-      </button>
+      {/* filters row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Informed Sport toggle */}
+        <button
+          onClick={() => setIsOnly((v) => !v)}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-colors ${
+            isOnly
+              ? 'bg-lab-lime text-black border-lab-lime'
+              : 'bg-lab-panel text-lab-muted border-lab-border hover:border-lab-lime hover:text-white'
+          }`}
+        >
+          <span>🛡️</span>
+          <span>Informed Sport</span>
+        </button>
+
+        {/* Brand filter */}
+        <div className="relative">
+          <button
+            onClick={() => setBrandPanelOpen((v) => !v)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-colors ${
+              brandFilter.size > 0
+                ? 'bg-lab-lime text-black border-lab-lime'
+                : 'bg-lab-panel text-lab-muted border-lab-border hover:border-lab-lime hover:text-white'
+            }`}
+          >
+            <span>Brands {brandFilter.size > 0 ? `(${brandFilter.size})` : ''}</span>
+            <span>{brandPanelOpen ? '▴' : '▾'}</span>
+          </button>
+          {brandPanelOpen && (
+            <div className="absolute top-full left-0 mt-1 z-20 bg-lab-panel-2 border border-lab-border rounded-xl shadow-xl p-3 min-w-[180px] max-h-64 overflow-y-auto">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-lab-muted">Filter brands</span>
+                {brandFilter.size > 0 && (
+                  <button
+                    onClick={() => setBrandFilter(new Set())}
+                    className="text-[10px] text-lab-lime font-bold uppercase"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {availableBrands.map((brand) => (
+                <button
+                  key={brand}
+                  onClick={() => toggleBrand(brand)}
+                  className={`w-full text-left text-xs px-2 py-1.5 rounded-lg mb-0.5 font-bold transition-colors ${
+                    brandFilter.has(brand)
+                      ? 'bg-lab-lime/20 text-lab-lime'
+                      : 'text-white/70 hover:bg-lab-border/40 hover:text-white'
+                  }`}
+                >
+                  {brandFilter.has(brand) ? '✓ ' : ''}{brand}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* category chips */}
       <div className="flex gap-2 overflow-x-auto hide-scroll -mx-1 px-1">
@@ -150,7 +218,7 @@ export default function ProductGrid() {
         ))}
       </div>
 
-      {/* contextual guide link for the selected category */}
+      {/* contextual guide link */}
       {category !== 'all' && GUIDE_SLUGS.includes(category) && (
         <Link
           href={`/guide/${category}`}
@@ -166,19 +234,17 @@ export default function ProductGrid() {
       )}
 
       {/* sort + count */}
-      <div className="flex items-center justify-between">
-        <span className="text-lab-muted text-xs uppercase tracking-widest font-bold">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-lab-muted text-xs uppercase tracking-widest font-bold shrink-0">
           {loading ? 'Loading…' : `${visible.length} product${visible.length === 1 ? '' : 's'}`}
         </span>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
-          className="bg-lab-panel text-white text-sm border border-lab-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-lab-lime"
+          className="bg-lab-panel text-white text-xs border border-lab-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-lab-lime"
         >
           {SORTS.map((s) => (
-            <option key={s.key} value={s.key}>
-              {s.label}
-            </option>
+            <option key={s.key} value={s.key}>{s.label}</option>
           ))}
         </select>
       </div>
@@ -191,64 +257,120 @@ export default function ProductGrid() {
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {visible.map((p) => {
+      <div className="space-y-3">
+        {visible.map((p, i) => {
           const isSel = selected.includes(p.id)
+          const isTop = i === 0 && (sort === 'score' || sort === 'value' || sort === 'budget')
+          const medal = MEDALS[i] ?? null
+          const scoreFlag = p.score != null
+            ? p.score >= 70
+              ? { color: '#a6e22e', text: p.score >= 90 ? 'Excellent clinical match' : 'Strong clinical match' }
+              : p.score >= 50
+              ? { color: '#f5b342', text: 'Partial clinical match' }
+              : { color: '#ff5c5c', text: 'Poor clinical match — underdosed' }
+            : null
+
           return (
             <div
               key={p.id}
-              className={`flex items-center gap-4 bg-lab-panel border rounded-xl p-4 transition-colors ${
-                isSel ? 'border-lab-lime' : 'border-lab-border'
+              className={`bg-lab-panel border rounded-2xl p-4 transition-colors ${
+                isTop
+                  ? 'border-lab-lime shadow-[0_0_14px_rgba(166,226,46,0.12)]'
+                  : isSel
+                  ? 'border-lab-lime'
+                  : 'border-lab-border'
               }`}
             >
-              <Link href={`/products/${p.id}`} className="shrink-0">
-                <ScoreBadge score={p.score} />
-              </Link>
-              <div className="min-w-0 flex-1">
-                <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors">
-                  <p className="text-white text-sm font-bold truncate">{p.brand}</p>
-                  <p className="text-lab-muted text-xs truncate">{p.name}</p>
+              {/* top row: score + info + actions */}
+              <div className="flex items-start gap-3">
+                <Link href={`/products/${p.id}`} className="shrink-0 mt-0.5">
+                  <ScoreBadge score={p.score} />
                 </Link>
-                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                  <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
-                    {categoryLabel(p.category)}
-                  </span>
-                  {p.informed_sport && (
-                    <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
-                      IS Certified
-                    </span>
+
+                <div className="min-w-0 flex-1">
+                  {/* rank + brand */}
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    {medal && <span className="text-sm leading-none">{medal}</span>}
+                    <span className="text-[11px] text-lab-muted uppercase tracking-widest font-bold truncate">{p.brand}</span>
+                  </div>
+                  {/* product name */}
+                  <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors">
+                    <p className="text-white text-sm font-black leading-tight">
+                      {p.name} <span className="text-lab-lime text-xs">›</span>
+                    </p>
+                  </Link>
+
+                  {/* price info */}
+                  {(p.retail_price != null || p.cost_per_serving != null) && (
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      {p.retail_price != null && <span>{fmt(p.retail_price)} retail</span>}
+                      {p.retail_price != null && p.cost_per_serving != null && <span className="mx-1">·</span>}
+                      {p.cost_per_serving != null && (
+                        <span className="text-white font-bold">£{p.cost_per_serving.toFixed(2)}/serving</span>
+                      )}
+                    </p>
                   )}
+
+                  {/* badges */}
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
+                      {categoryLabel(p.category)}
+                    </span>
+                    {p.informed_sport && (
+                      <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
+                        🛡️ IS
+                      </span>
+                    )}
+                    {isTop && (
+                      <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime/10 text-lab-lime border border-lab-lime/30 px-2 py-0.5 rounded-full">
+                        {topLabel}
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                <FavouriteButton
+                  productId={p.id}
+                  favourited={favs.has(p.id)}
+                  signedIn={signedIn}
+                  onChange={(fav) => setFav(p.id, fav)}
+                />
               </div>
-              <FavouriteButton
-                productId={p.id}
-                favourited={favs.has(p.id)}
-                signedIn={signedIn}
-                onChange={(fav) => setFav(p.id, fav)}
-              />
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
+
+              {/* verdict flag */}
+              {scoreFlag && (
+                <div className="flex items-start gap-1.5 mt-3">
+                  <span className="text-xs leading-none mt-0.5 shrink-0" style={{ color: scoreFlag.color }}>●</span>
+                  <span className="text-[11px] text-gray-300 leading-snug">{scoreFlag.text}</span>
+                </div>
+              )}
+
+              {/* action row */}
+              <div className="flex items-center gap-2 mt-3">
+                <button
+                  onClick={() => toggleSelect(p.id)}
+                  disabled={!isSel && selected.length >= 3}
+                  className={`flex-1 text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border transition-colors disabled:opacity-30 ${
+                    isSel
+                      ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
+                      : 'border-lab-border text-lab-muted hover:text-white'
+                  }`}
+                >
+                  {isSel ? 'Added ✓' : '+ Compare'}
+                </button>
                 <a
                   href={buyLink(p.brand, p.name)}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
-                  className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black px-3 py-1.5 rounded-lg hover:opacity-90"
-                >
-                  Buy
-                </a>
-                <span className="text-[9px] text-lab-muted/40 text-right leading-tight">affiliate link</span>
-                <button
-                  onClick={() => toggleSelect(p.id)}
-                  disabled={!isSel && selected.length >= 3}
-                  className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-30 ${
-                    isSel
-                      ? 'border-lab-lime text-lab-lime'
-                      : 'border-lab-border text-lab-muted hover:text-white'
+                  className={`flex-1 text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl ${
+                    isTop ? 'bg-lab-lime text-black' : 'bg-gray-800 text-white'
                   }`}
                 >
-                  {isSel ? 'Added' : 'Compare'}
-                </button>
+                  {isTop ? topLabel : 'Buy'}
+                </a>
               </div>
+              <p className="text-[9px] text-lab-muted/40 text-right mt-1">affiliate link</p>
             </div>
           )
         })}
