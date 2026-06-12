@@ -6,12 +6,8 @@ import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
 import { categoryLabel } from '@/lib/categories'
 import { track } from '@/lib/gtag'
+import { amazonSearch } from '@/lib/affiliate'
 import type { ScoredProduct } from '@/lib/products'
-
-function amazonSearch(brand: string, name: string) {
-  const q = encodeURIComponent(`${brand} ${name}`)
-  return `https://www.amazon.co.uk/s?k=${q}`
-}
 
 export default function FavouritesList() {
   const [products, setProducts] = useState<ScoredProduct[]>([])

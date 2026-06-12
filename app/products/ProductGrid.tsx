@@ -6,6 +6,7 @@ import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, type ScoredProduct, type SortKey } from '@/lib/products'
+import { amazonSearch } from '@/lib/affiliate'
 import { track } from '@/lib/gtag'
 
 const SORTS: { key: SortKey; label: string }[] = [
@@ -13,11 +14,6 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'name', label: 'Name (A–Z)' },
   { key: 'brand', label: 'Brand (A–Z)' },
 ]
-
-function amazonSearch(brand: string, name: string) {
-  const q = encodeURIComponent(`${brand} ${name}`)
-  return `https://www.amazon.co.uk/s?k=${q}`
-}
 
 export default function ProductGrid() {
   const [all, setAll] = useState<ScoredProduct[]>([])
