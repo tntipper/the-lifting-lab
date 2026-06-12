@@ -4,6 +4,9 @@ export const runtime = 'edge'
 
 type StackEntry = { brand: string; name: string; score: number | null; category: string }
 
+const W = 1080
+const H = 1920
+
 function scoreColor(score: number | null): string {
   if (score == null) return '#6b7280'
   if (score >= 75) return '#a6e22e'
@@ -11,11 +14,18 @@ function scoreColor(score: number | null): string {
   return '#ff5c5c'
 }
 
+function scoreLabel(score: number | null): string {
+  if (score == null) return '—'
+  if (score >= 75) return 'Excellent'
+  if (score >= 50) return 'Good'
+  return 'Weak'
+}
+
 function archetype(items: StackEntry[]): string {
   const cats = new Set(items.map((i) => i.category))
   if (cats.has('cycle-support') || cats.has('hormone-support')) return 'Enhanced Athlete'
   if (cats.has('pre-workout') && (cats.has('creatine') || cats.has('whey'))) return 'Performance Focused'
-  if (cats.has('creatine') && cats.has('whey')) return 'Strength Builder'
+  if (cats.has('creatine') && (cats.has('whey') || cats.has('whey-isolate'))) return 'Strength Builder'
   if (cats.has('multivitamin') && cats.has('omega')) return 'Health-First Lifter'
   if (cats.has('pre-workout')) return 'Stimmed-Up Athlete'
   if (cats.has('creatine')) return 'Creatine Maximiser'
@@ -38,76 +48,88 @@ export async function GET(request: Request) {
   }
 
   const arc = archetype(items)
-  const displayScore = score != null ? score : '—'
-  const col = score != null ? scoreColor(score) : '#6b7280'
+  const displayScore = score != null ? String(score) : '—'
+  const col = scoreColor(score)
+  const maxItems = 10
 
   return new ImageResponse(
     (
       <div
         style={{
-          width: 1080,
-          height: 1080,
-          background: '#111111',
+          width: W,
+          height: H,
+          background: '#0d0d0d',
           display: 'flex',
           flexDirection: 'column',
-          padding: '72px',
+          padding: '80px 72px',
           fontFamily: 'system-ui, -apple-system, sans-serif',
         }}
       >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 48 }}>
+        {/* Brand header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 80 }}>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ color: '#a6e22e', fontSize: 20, fontWeight: 900, letterSpacing: 6, textTransform: 'uppercase' }}>
+            <span style={{ color: '#a6e22e', fontSize: 28, fontWeight: 900, letterSpacing: 8, textTransform: 'uppercase' }}>
               THE LIFTING LAB
             </span>
-            <span style={{ color: '#4b5563', fontSize: 14, marginTop: 4, letterSpacing: 2 }}>
+            <span style={{ color: '#374151', fontSize: 18, marginTop: 6, letterSpacing: 3 }}>
               theliftinglab.co.uk
             </span>
           </div>
-          <span style={{ color: '#1f2937', fontSize: 13, letterSpacing: 2, textTransform: 'uppercase' }}>
+          <span style={{ color: '#1f2937', fontSize: 16, letterSpacing: 3, textTransform: 'uppercase' }}>
             My Stack
           </span>
         </div>
 
-        {/* Score ring area */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 40, marginBottom: 56 }}>
-          {/* Score circle */}
+        {/* Hero score block */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: '#161616',
+            borderRadius: 32,
+            padding: '60px 40px',
+            marginBottom: 48,
+            border: `2px solid ${col}22`,
+          }}
+        >
+          {/* Score ring */}
           <div
             style={{
-              width: 160,
-              height: 160,
+              width: 200,
+              height: 200,
               borderRadius: '50%',
-              border: `6px solid ${col}`,
+              border: `8px solid ${col}`,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              background: '#1a1a1a',
-              flexShrink: 0,
+              background: '#0d0d0d',
+              marginBottom: 32,
+              boxShadow: `0 0 40px ${col}44`,
             }}
           >
-            <span style={{ color: col, fontSize: 52, fontWeight: 900, lineHeight: 1 }}>{displayScore}</span>
-            <span style={{ color: '#6b7280', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginTop: 4 }}>
-              Stack Score
+            <span style={{ color: col, fontSize: 72, fontWeight: 900, lineHeight: 1 }}>{displayScore}</span>
+            <span style={{ color: '#6b7280', fontSize: 16, letterSpacing: 4, textTransform: 'uppercase', marginTop: 6 }}>
+              Score
             </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ color: '#6b7280', fontSize: 14, letterSpacing: 4, textTransform: 'uppercase', marginBottom: 8 }}>
-              Archetype
-            </span>
-            <span style={{ color: '#ffffff', fontSize: 36, fontWeight: 900, lineHeight: 1.1, letterSpacing: -1 }}>
-              {arc}
-            </span>
-            <span style={{ color: '#4b5563', fontSize: 14, marginTop: 12 }}>
-              {items.length} product{items.length === 1 ? '' : 's'} • Clinical scoring
-            </span>
-          </div>
+          {/* Archetype */}
+          <span style={{ color: '#4b5563', fontSize: 16, letterSpacing: 6, textTransform: 'uppercase', marginBottom: 12 }}>
+            Archetype
+          </span>
+          <span style={{ color: '#ffffff', fontSize: 48, fontWeight: 900, lineHeight: 1.1, letterSpacing: -1, textAlign: 'center' }}>
+            {arc}
+          </span>
+          <span style={{ color: '#374151', fontSize: 18, marginTop: 16 }}>
+            {items.length} product{items.length === 1 ? '' : 's'} · Clinical scoring
+          </span>
         </div>
 
         {/* Product list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
-          {items.slice(0, 8).map((item, idx) => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+          {items.slice(0, maxItems).map((item, idx) => {
             const sc = item.score
             const c = scoreColor(sc)
             return (
@@ -116,55 +138,47 @@ export async function GET(request: Request) {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  background: '#1a1a1a',
-                  borderRadius: 16,
-                  padding: '16px 24px',
-                  gap: 20,
-                  border: '1px solid #222222',
+                  background: '#161616',
+                  borderRadius: 20,
+                  padding: '20px 28px',
+                  gap: 24,
+                  border: '1px solid #1f1f1f',
                 }}
               >
                 <div
                   style={{
-                    width: 52,
-                    height: 52,
+                    width: 64,
+                    height: 64,
                     borderRadius: '50%',
                     border: `3px solid ${c}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
+                    background: '#0d0d0d',
                   }}
                 >
-                  <span style={{ color: c, fontSize: 18, fontWeight: 900 }}>
+                  <span style={{ color: c, fontSize: 22, fontWeight: 900 }}>
                     {sc != null ? sc : '?'}
                   </span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-                  <span style={{ color: '#9ca3af', fontSize: 13, textTransform: 'uppercase', letterSpacing: 2 }}>
+                  <span style={{ color: '#6b7280', fontSize: 15, textTransform: 'uppercase', letterSpacing: 3 }}>
                     {item.brand}
                   </span>
-                  <span style={{ color: '#ffffff', fontSize: 17, fontWeight: 700 }}>
+                  <span style={{ color: '#ffffff', fontSize: 20, fontWeight: 700, marginTop: 2 }}>
                     {item.name}
                   </span>
                 </div>
-                <span
-                  style={{
-                    color: c,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: 2,
-                    flexShrink: 0,
-                  }}
-                >
-                  {sc != null && sc >= 75 ? 'Excellent' : sc != null && sc >= 50 ? 'Good' : sc != null ? 'Weak' : '—'}
+                <span style={{ color: c, fontSize: 15, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, flexShrink: 0 }}>
+                  {scoreLabel(sc)}
                 </span>
               </div>
             )
           })}
-          {items.length > 8 && (
-            <div style={{ color: '#4b5563', fontSize: 14, textAlign: 'center', marginTop: 4 }}>
-              +{items.length - 8} more products
+          {items.length > maxItems && (
+            <div style={{ color: '#374151', fontSize: 16, textAlign: 'center', marginTop: 4 }}>
+              +{items.length - maxItems} more products
             </div>
           )}
         </div>
@@ -175,20 +189,20 @@ export async function GET(request: Request) {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginTop: 40,
-            paddingTop: 24,
+            marginTop: 56,
+            paddingTop: 32,
             borderTop: '1px solid #1f2937',
           }}
         >
-          <span style={{ color: '#374151', fontSize: 12, letterSpacing: 2 }}>
-            Scores based on EFSA reference doses • Not medical advice
+          <span style={{ color: '#374151', fontSize: 14, letterSpacing: 2 }}>
+            EFSA reference doses · Not medical advice
           </span>
-          <span style={{ color: '#a6e22e', fontSize: 13, fontWeight: 700, letterSpacing: 1 }}>
-            theliftinglab.co.uk
+          <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
+            @dadthletelab
           </span>
         </div>
       </div>
     ),
-    { width: 1080, height: 1080 }
+    { width: W, height: H }
   )
 }
