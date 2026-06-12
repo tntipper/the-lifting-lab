@@ -6,7 +6,7 @@ import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, type ScoredProduct, type SortKey } from '@/lib/products'
-import { amazonSearch } from '@/lib/affiliate'
+import { buyLink } from '@/lib/affiliate'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { track } from '@/lib/gtag'
 
@@ -191,7 +191,7 @@ export default function ProductGrid() {
               />
               <div className="flex flex-col items-end gap-1.5 shrink-0">
                 <a
-                  href={amazonSearch(p.brand, p.name)}
+                  href={buyLink(p.brand, p.name)}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}

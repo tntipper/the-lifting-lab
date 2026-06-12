@@ -6,7 +6,7 @@ import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
 import { categoryLabel } from '@/lib/categories'
 import { track } from '@/lib/gtag'
-import { amazonSearch } from '@/lib/affiliate'
+import { buyLink } from '@/lib/affiliate'
 import type { ScoredProduct } from '@/lib/products'
 
 export default function FavouritesList() {
@@ -82,7 +82,7 @@ export default function FavouritesList() {
           />
           <div className="flex flex-col items-end gap-0.5 shrink-0">
             <a
-              href={amazonSearch(p.brand, p.name)}
+              href={buyLink(p.brand, p.name)}
               target="_blank"
               rel="noopener noreferrer nofollow"
               onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
