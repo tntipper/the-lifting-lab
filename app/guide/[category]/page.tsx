@@ -22,7 +22,7 @@ export async function generateMetadata({
   const { category } = await params
   const guide = getGuide(category)
   if (!guide) return { title: 'Guide not found — The Lifting Lab' }
-  const url = `https://the-lifting-lab.vercel.app/guide/${guide.slug}`
+  const url = `https://theliftinglab.co.uk/guide/${guide.slug}`
   return {
     title: guide.metaTitle,
     description: guide.metaDescription,

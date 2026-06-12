@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'The Lifting Lab — Evidence-Based Supplement Scoring (UK)',
   description:
     'UK supplements ranked against clinical reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.',
+  alternates: { canonical: 'https://theliftinglab.co.uk' },
 }
 
 const FEATURES = [
@@ -112,8 +113,17 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-lab-border">
-        <div className="max-w-5xl mx-auto px-6 py-8 text-center text-lab-muted text-xs">
-          The Lifting Lab · Evidence-based supplement scoring · UK
+        <div className="max-w-5xl mx-auto px-6 py-8 text-center text-lab-muted text-xs space-y-3">
+          <p>The Lifting Lab · Evidence-based supplement scoring · UK</p>
+          <p className="flex flex-wrap justify-center gap-x-5 gap-y-1">
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms of Use</Link>
+            <Link href="/affiliate-disclosure" className="hover:text-white transition-colors">Affiliate Disclosure</Link>
+          </p>
+          <p className="text-[10px]">
+            The Lifting Lab is a participant in the Amazon Associates Programme.
+            Some links may earn us a commission at no cost to you.
+          </p>
         </div>
       </footer>
     </div>

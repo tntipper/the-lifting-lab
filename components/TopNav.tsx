@@ -5,7 +5,7 @@ export default function TopNav() {
   return (
     <header className="border-b border-lab-border sticky top-0 z-20 bg-lab-bg/90 backdrop-blur">
       <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/products" className="font-black uppercase tracking-widest text-lg">
+        <Link href="/" className="font-black uppercase tracking-widest text-lg">
           THE LIFTING<span className="text-lab-lime">LAB</span>
         </Link>
         <nav className="flex items-center gap-5 text-xs font-bold uppercase tracking-widest">

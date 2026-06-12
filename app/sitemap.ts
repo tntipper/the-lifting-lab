@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { GUIDE_SLUGS } from '@/lib/guides'
 
-const BASE = 'https://the-lifting-lab.vercel.app'
+const BASE = 'https://theliftinglab.co.uk'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
