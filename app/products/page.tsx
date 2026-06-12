@@ -20,6 +20,9 @@ export default function ProductsPage() {
           <p className="text-lab-muted text-sm mt-2">
             UK supplements ranked by effective dosing and clinical quality. Green ≥70, amber 50–69, red below 50.
           </p>
+          <p className="text-lab-muted/50 text-xs mt-1">
+            Scores are for informational purposes only and do not constitute medical advice.
+          </p>
         </div>
         <ProductGrid />
       </div>

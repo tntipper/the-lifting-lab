@@ -21,6 +21,9 @@ export default function ComparePage() {
           <p className="text-lab-muted text-sm mt-2">
             Side-by-side dosing and clinical scores. Pick up to 3 products from the browser.
           </p>
+          <p className="text-lab-muted/50 text-xs mt-1">
+            Scores are for informational purposes only and do not constitute medical advice.
+          </p>
         </div>
         <Suspense fallback={<p className="text-lab-muted text-sm">Loading…</p>}>
           <CompareView />

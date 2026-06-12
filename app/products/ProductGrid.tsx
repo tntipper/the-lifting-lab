@@ -199,6 +199,7 @@ export default function ProductGrid() {
                 >
                   Buy
                 </a>
+                <span className="text-[9px] text-lab-muted/40 text-right leading-tight">affiliate link</span>
                 <button
                   onClick={() => toggleSelect(p.id)}
                   disabled={!isSel && selected.length >= 3}

@@ -80,15 +80,18 @@ export default function FavouritesList() {
               if (!fav) removeFav(p.id)
             }}
           />
-          <a
-            href={amazonSearch(p.brand, p.name)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
-            className="shrink-0 text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black px-3 py-1.5 rounded-lg hover:opacity-90"
-          >
-            Buy
-          </a>
+          <div className="flex flex-col items-end gap-0.5 shrink-0">
+            <a
+              href={amazonSearch(p.brand, p.name)}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
+              className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black px-3 py-1.5 rounded-lg hover:opacity-90"
+            >
+              Buy
+            </a>
+            <span className="text-[9px] text-lab-muted/40 leading-tight">affiliate link</span>
+          </div>
         </div>
       ))}
     </div>

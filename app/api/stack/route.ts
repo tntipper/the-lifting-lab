@@ -66,7 +66,8 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { productId, servingsPerDay = 1 } = await request.json()
+  const { productId, servingsPerDay: rawServings = 1 } = await request.json()
+  const servingsPerDay = Math.min(Math.max(Math.round(Number(rawServings) || 1), 1), 10)
 
   let { data: stack } = await supabase
     .from('user_stacks')

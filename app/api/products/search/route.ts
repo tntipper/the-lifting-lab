@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const q = searchParams.get('q') || ''
+  const q = (searchParams.get('q') || '').replace(/[%_,;'"\\]/g, ' ').trim().slice(0, 100)
 
   const cookieStore = await cookies()
   const supabase = createServerClient(

@@ -40,6 +40,9 @@ export default async function StackPage() {
             <p className="text-lab-muted text-sm mt-2">
               Add your supplements — we&apos;ll score them and flag anything over EFSA safe limits.
             </p>
+            <p className="text-lab-muted/50 text-xs mt-1">
+              For informational purposes only. Not medical advice.
+            </p>
           </div>
         </div>
         <StackBuilder />

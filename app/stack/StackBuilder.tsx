@@ -158,7 +158,7 @@ export default function StackBuilder() {
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <span className="font-semibold">
-                    {flag.percentage >= 100 ? '🚨' : '⚠️'} {flag.nutrientName}
+                    {flag.percentage >= 100 ? '🚨 Critical' : '⚠️ Caution'} — {flag.nutrientName}
                   </span>{' '}
                   — {flag.totalAmount}
                   {flag.unit} total ({flag.percentage}% of EFSA UL)
