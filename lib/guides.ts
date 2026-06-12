@@ -197,6 +197,186 @@ export const GUIDES: Guide[] = [
       { q: 'Should I see a doctor about low testosterone?', a: 'Yes. Suspected low testosterone should be assessed with a blood test by a qualified clinician, not self-treated with supplements.' },
     ],
   },
+  {
+    slug: 'post-workout',
+    h1: 'Post-Workout Recovery Supplements: What You Actually Need',
+    metaTitle: 'Best Post-Workout UK 2026 — Recovery Supplement Guide | The Lifting Lab',
+    metaDescription:
+      'Protein, carbs and creatine are the recovery basics that work. Here is what belongs in a post-workout, what is filler, and the best UK options ranked.',
+    intro:
+      'The post-workout window has been sold harder than almost any other moment in training, but the science is calmer than the marketing. Recovery is driven by your total daily protein and calories far more than by a magic shake in the first thirty minutes. A good post-workout product just makes hitting those basics convenient.',
+    paras: [
+      'The two ingredients that matter most are protein and carbohydrate. Around 20–40g of a fast protein such as whey supplies the amino acids for muscle repair, while carbohydrate (roughly 0.5–1g per kg of bodyweight after hard sessions) refills muscle glycogen. For most lifters eating regular meals, a normal meal within a couple of hours does the same job.',
+      'The so-called anabolic window is wider than once thought. Provided you have eaten protein in the hours around training, the exact timing of your post-workout shake makes little difference to long-term muscle gain. It matters more for athletes training twice a day or fasted, where rapid refuelling has a clearer benefit.',
+      'Creatine is a sensible add-on to a recovery product because daily consistency is what matters, not timing, so bundling 3–5g into your post-workout is a convenient habit. Electrolytes can help after very sweaty sessions. Most other recovery-blend ingredients, from exotic adaptogens to under-dosed amino mixes, add cost rather than results.',
+      'Watch for all-in-one recovery blends that bury small doses of many ingredients behind a proprietary label. A transparent product giving you a proper protein dose, sensible carbs and optional creatine beats a long ingredient list every time. Our scores reward clear, well-dosed recovery formulas over kitchen-sink blends.',
+    ],
+    faqs: [
+      { q: 'What should I take after a workout?', a: 'Protein (around 20 to 40g of a fast source like whey) plus some carbohydrate to refuel. Creatine is a useful daily add-on. A normal meal soon after works just as well for most people.' },
+      { q: 'Is the anabolic window real?', a: 'It is much wider than the old 30-minute claim. As long as you eat protein in the hours around training, exact timing has little effect on muscle growth.' },
+      { q: 'Do I need carbs after lifting?', a: 'They help refill muscle glycogen after hard or long sessions, but if you eat enough carbohydrate across the day it is not essential to have them immediately post-workout.' },
+    ],
+  },
+  {
+    slug: 'intra-workout',
+    h1: 'Intra-Workout Supplements: Sipping Through Your Session',
+    metaTitle: 'Best Intra-Workout UK 2026 — Buyer’s Guide | The Lifting Lab',
+    metaDescription:
+      'Intra-workout drinks combine EAAs, carbs and electrolytes to sip mid-session. Here is when they help, what to look for, and the best-value UK options ranked.',
+    intro:
+      'An intra-workout is what you sip during training, usually a mix of essential amino acids, fast carbohydrate and electrolytes. For a standard hour in the gym it is more of a nice-to-have than a need, but for long, hard or fasted sessions it can genuinely help you keep going.',
+    paras: [
+      'The main use case is endurance: long training sessions, two-a-days, or fasted morning workouts where you have no recent meal to draw on. Sipping carbohydrate and aminos through a long session helps maintain output and reduces the muscle breakdown that comes with training on empty. For a short, fed gym session the benefit is marginal.',
+      'Essential amino acids (with a meaningful leucine content) are the smarter amino choice over plain BCAAs, because muscle repair needs the full set. A useful intra-workout provides the nine essentials rather than just the three branched-chain ones, and we score BCAA-only products down accordingly.',
+      'Fast carbohydrate such as cyclic dextrin or maltodextrin supplies energy without sitting heavily in the stomach, which suits endurance and high-volume work. Electrolytes, chiefly sodium, replace what you lose in sweat and help you keep drinking. Not every product needs all three, so match the formula to the job.',
+      'As ever, the proprietary blend is the red flag. If you cannot see how much of each amino, carb or electrolyte you are getting, you cannot judge the value. Our scores reward transparent intra-workout formulas with proper EAA dosing over blended, under-disclosed mixes.',
+    ],
+    faqs: [
+      { q: 'Do I need an intra-workout drink?', a: 'Not for a normal hour in the gym if you have eaten beforehand. They earn their place during long, hard or fasted sessions where mid-workout fuel helps.' },
+      { q: 'What goes in an intra-workout?', a: 'Usually essential amino acids for muscle support, fast carbohydrate for energy, and electrolytes (mainly sodium) to replace sweat losses.' },
+      { q: 'EAAs or BCAAs for intra-workout?', a: 'EAAs. Muscle protein synthesis needs all nine essential amino acids, so a full EAA blend beats a BCAA-only product for the same money.' },
+    ],
+  },
+  {
+    slug: 'cycle-support',
+    h1: 'Cycle Support and Organ Health Supplements',
+    metaTitle: 'Cycle Support Supplements UK 2026 — Honest Guide | The Lifting Lab',
+    metaDescription:
+      'Cycle support products aim to protect the liver, heart and other organs during demanding regimes. Here is what the ingredients do and where medical advice is essential.',
+    intro:
+      'Cycle support products are marketed at people putting their bodies under heavy demand, with the goal of protecting the liver, heart and other organs. They typically combine antioxidants, liver-support compounds and cardiovascular ingredients. The honest framing is that these are supportive supplements, not a safety net that makes a risky regime safe.',
+    paras: [
+      'Common ingredients include milk thistle (silymarin) and NAC (N-acetylcysteine), both studied for liver support, along with TUDCA in some products. For heart and blood-lipid support you will see things like omega-3, garlic extract and CoQ10. The evidence for these ranges from reasonable to modest, and a properly dosed single ingredient is worth more than a sprinkle of many.',
+      'Dosing transparency matters even more here than usual. Many organ-support blends hide small amounts of expensive ingredients behind a proprietary label, so you cannot tell whether the NAC or milk thistle is at a researched dose or just present for the label. We penalise that hiding heavily, because with organ health you want to know exactly what you are taking.',
+      'These products cannot offset the underlying stressor. If someone is using anabolic steroids, prohormones or other compounds that strain the liver and cardiovascular system, no supplement removes that risk. Bloodwork and medical supervision are what protect you, and a cycle-support tub is at best a minor adjunct to proper monitoring.',
+      'If you are considering or already using anything that demands organ support, the most important step is regular blood testing and a conversation with a qualified clinician who can interpret your liver enzymes, lipids and blood pressure. Supplements may play a small supporting role, but they are not a substitute for medical oversight. Our scores reward transparent, sensibly-dosed support formulas, but no score replaces a doctor.',
+    ],
+    faqs: [
+      { q: 'What is cycle support used for?', a: 'It aims to support the liver, heart and other organs during demanding regimes, typically using ingredients like milk thistle, NAC, omega-3 and CoQ10.' },
+      { q: 'Does cycle support make a steroid cycle safe?', a: 'No. No supplement offsets the underlying risk. Regular bloodwork and supervision from a qualified clinician are what protect your health, not a support product.' },
+      { q: 'Which cycle-support ingredients have evidence?', a: 'Milk thistle and NAC have reasonable evidence for liver support, and omega-3 and CoQ10 for cardiovascular markers, but dosing and quality vary widely between products.' },
+    ],
+  },
+  {
+    slug: 'meal-replacement',
+    h1: 'Meal Replacement Shakes: A Sensible Buyer’s Guide',
+    metaTitle: 'Best Meal Replacement UK 2026 — Buyer’s Guide | The Lifting Lab',
+    metaDescription:
+      'A good meal replacement is balanced nutrition in a hurry, not just protein. Here is how to judge macros, micros and value, with the best UK options ranked.',
+    intro:
+      'A meal replacement is meant to stand in for a proper meal when you do not have time for one, which means it has to do more than a protein shake. The good ones deliver balanced protein, carbohydrate and fat plus a full spread of vitamins and minerals; the weak ones are just flavoured protein with a meal-replacement label.',
+    paras: [
+      'The first thing to check is whether the macros actually resemble a meal. A useful meal replacement provides a meaningful amount of protein (often 20–30g), a sensible balance of carbohydrate and fat, and enough calories to be filling, typically 300–400 per serving. Something delivering 150 calories is a snack, not a meal substitute.',
+      'Micronutrients are what separate a real meal replacement from a protein shake. Look for a broad vitamin and mineral profile, ideally covering a decent fraction of your daily requirements, plus fibre to aid fullness and digestion. Products engineered as complete-food brands tend to do this far better than repurposed protein powders.',
+      'Consider the fat and fibre source as well as the numbers. Whole-food-style ingredients, healthier fats and added fibre make a shake more satisfying and steadier on blood sugar than one built on cheap fillers and lots of sugar. Ready-to-drink formats are convenient but usually cost more per serving than powders.',
+      'Meal replacements are a tool for convenience and consistency, not a reason to skip real food long-term. When you do use them, value comes down to complete nutrition per serving at a fair price. Our scores reward balanced macros, a genuine micronutrient profile and sensible calories over protein-only shakes wearing a meal-replacement badge.',
+    ],
+    faqs: [
+      { q: 'What makes a good meal replacement?', a: 'Balanced protein, carbs and fat, a broad vitamin and mineral profile, some fibre, and enough calories (often 300 to 400 per serving) to actually replace a meal.' },
+      { q: 'Are meal replacements healthy?', a: 'A well-formulated one can be a balanced, convenient meal stand-in. They are best used occasionally for convenience rather than as a permanent replacement for whole food.' },
+      { q: 'Powder or ready-to-drink?', a: 'Nutritionally they can be similar. Powders are usually cheaper per serving; ready-to-drink bottles cost more but win on convenience.' },
+    ],
+  },
+  {
+    slug: 'vitamin',
+    h1: 'Vitamins and Wellbeing Supplements: A No-Nonsense Guide',
+    metaTitle: 'Best Vitamins UK 2026 — Wellbeing Supplement Guide | The Lifting Lab',
+    metaDescription:
+      'Which everyday vitamins and minerals are worth taking, how to dose them, and how to avoid overpaying. An evidence-based UK guide with top products ranked.',
+    intro:
+      'The vitamins and wellbeing aisle is enormous, and most of it is sold on vague promises of energy and immunity. The useful truth is narrower: a few specific vitamins and minerals are genuinely worth supplementing for many people in the UK, while plenty of others only help if you are actually short of them.',
+    paras: [
+      'A handful of supplements have a strong case for most UK adults. Vitamin D is the standout, because limited winter sunlight means many people are low; 1000–4000iu daily is a sensible range. Omega-3 supports heart and brain health if you eat little oily fish, and magnesium helps if your diet is short on it. These correct common gaps rather than promising miracles.',
+      'Beyond those, the principle is simple: a vitamin only helps if you are deficient in it. Topping up a nutrient you already get enough of does little, and a few (such as vitamins A and E, or iron without a tested need) can be harmful in excess. More is not better, and megadoses are usually a waste of money at best.',
+      'Form and dose matter for value. Magnesium glycinate or bisglycinate is better absorbed and gentler than cheap oxide; vitamin D paired with K2 is a common, sensible combination; B vitamins are water-soluble so huge doses are simply excreted. Check that a product gives a meaningful, well-absorbed dose rather than a token amount inflated by marketing.',
+      'For general wellbeing, a balanced diet does most of the work, with targeted supplements filling known gaps. If you have symptoms like persistent fatigue, it is worth a blood test rather than guessing with a cabinet full of pills. Our scores reward well-dosed, well-formulated single nutrients and honest labels over kitchen-sink wellbeing blends.',
+    ],
+    faqs: [
+      { q: 'Which vitamins are actually worth taking?', a: 'Vitamin D is the strongest case for most UK adults, especially in winter. Omega-3 and magnesium help if your diet is short on them. Beyond that, supplement to fix a known gap rather than by default.' },
+      { q: 'Can you take too many vitamins?', a: 'Yes. Fat-soluble vitamins like A and E, and minerals like iron, can be harmful in excess. With most nutrients, more than you need offers no extra benefit.' },
+      { q: 'Do I need a blood test before supplementing?', a: 'For general nutrients like vitamin D it is reasonable to supplement sensibly without one. For persistent symptoms or things like iron, a blood test is the smarter route than guessing.' },
+    ],
+  },
+  {
+    slug: 'multivitamin',
+    h1: 'Multivitamins: Are They Worth It?',
+    metaTitle: 'Best Multivitamin UK 2026 — Buyer’s Guide | The Lifting Lab',
+    metaDescription:
+      'A multivitamin is cheap insurance against dietary gaps, but quality and dosing vary hugely. Here is what to look for and the best-value UK options ranked.',
+    intro:
+      'A multivitamin is the supplement most people reach for first, on the logic that it covers all the bases at once. It can be useful insurance against dietary gaps, but it is no substitute for a varied diet, and the difference between a well-formulated multi and a cheap one is bigger than most buyers realise.',
+    paras: [
+      'A good multivitamin provides meaningful, well-absorbed amounts of the nutrients people commonly fall short on, rather than a long list of tiny doses there for show. Look for sensible levels of vitamin D, magnesium, zinc and the B vitamins, in absorbable forms, instead of an impressive-looking label where everything sits at a fraction of what is useful.',
+      'More is not better. Quality multis avoid megadoses of fat-soluble vitamins (A, D, E, K) that can accumulate, and they keep minerals like iron out unless the product is specifically aimed at people who need it. A balanced formula that respects upper limits is safer and smarter than one chasing big numbers on the front of the tub.',
+      'Form affects how much you actually absorb. Magnesium glycinate beats oxide, methylated or active B vitamins suit some people better, and chelated minerals are generally gentler on the stomach. A multi that uses cheap, poorly-absorbed forms can look complete on paper while delivering far less in practice.',
+      'Think of a multivitamin as a backstop, not a strategy. It will not fix a poor diet, and targeted single supplements (like vitamin D or omega-3) are often the better spend if you know your gaps. Where a multi earns its place, our scores reward absorbable forms and sensible, fully-disclosed dosing over padded ingredient lists.',
+    ],
+    faqs: [
+      { q: 'Are multivitamins worth taking?', a: 'They can be useful insurance against dietary gaps, but they are not a substitute for a varied diet. Targeted supplements for known gaps are often a better spend.' },
+      { q: 'What should I look for in a multivitamin?', a: 'Meaningful, well-absorbed doses of commonly-short nutrients like vitamin D, magnesium, zinc and B vitamins, in good forms, without megadoses of fat-soluble vitamins.' },
+      { q: 'Should a multivitamin contain iron?', a: 'Only if you specifically need it. Iron without a tested deficiency can build up and cause problems, so most general multis are better without it.' },
+    ],
+  },
+  {
+    slug: 'vitamin-d',
+    h1: 'Vitamin D: The One Supplement Most Brits Should Consider',
+    metaTitle: 'Best Vitamin D UK 2026 — Dosing and Buyer’s Guide | The Lifting Lab',
+    metaDescription:
+      'Vitamin D deficiency is common in the UK, especially in winter. Here is how much to take, why D3 and K2 pair well, and the best-value UK options ranked.',
+    intro:
+      'Vitamin D is the one supplement with a genuinely strong case for most people living in the UK. Our latitude means there is not enough sunlight from about October to March for the skin to make adequate vitamin D, and deficiency is common. It supports bone health, immune function and muscle, which is why public health bodies advise considering it over winter.',
+    paras: [
+      'The UK guidance is around 400iu (10 micrograms) a day as a minimum to maintain levels, but many people, particularly those with darker skin, limited sun exposure or who cover up, benefit from more. A common effective range is 1000–4000iu daily. Staying at or below 4000iu keeps you within the recognised safe upper limit for unsupervised use.',
+      'Vitamin D3 (cholecalciferol) is the preferred form, as it raises blood levels more effectively than D2. Because vitamin D is fat-soluble, it is best taken with a meal containing some fat for absorption. A daily dose is more sensible than occasional large boluses for most people.',
+      'Many products pair D3 with vitamin K2 (MK-7), and there is a reasonable rationale: K2 helps direct calcium into bone rather than soft tissue, so the two work well together. It is a sensible combination rather than an essential one, and a plain, well-dosed D3 is still an excellent buy.',
+      'More is not automatically better, and very high doses without monitoring can cause problems by raising calcium too far. If you suspect significant deficiency, or want to go beyond the everyday range, a simple blood test guides the right dose. Our scores reward honest, well-dosed D3 (and sensible D3 plus K2) products over underdosed or overpriced ones.',
+    ],
+    faqs: [
+      { q: 'How much vitamin D should I take?', a: 'At least 400iu daily to maintain levels, with many UK adults benefiting from 1000 to 4000iu, especially in winter. Staying at or below 4000iu keeps within the safe upper limit for unsupervised use.' },
+      { q: 'Is D3 better than D2?', a: 'Yes. Vitamin D3 (cholecalciferol) raises and maintains blood levels more effectively than D2, so it is the preferred form.' },
+      { q: 'Should vitamin D be taken with K2?', a: 'It is a sensible pairing, as K2 helps direct calcium into bone, but it is not essential. A well-dosed plain D3 is still very effective.' },
+    ],
+  },
+  {
+    slug: 'zma',
+    h1: 'ZMA: Zinc, Magnesium and Sleep, Honestly Assessed',
+    metaTitle: 'Best ZMA UK 2026 — Zinc Magnesium B6 Buyer’s Guide | The Lifting Lab',
+    metaDescription:
+      'ZMA combines zinc, magnesium and vitamin B6. Here is what the evidence really says about sleep and testosterone, sensible dosing, and the best UK options.',
+    intro:
+      'ZMA is a simple blend of zinc, magnesium and vitamin B6, marketed for sleep, recovery and testosterone. The honest read on the evidence is that it mainly helps by correcting deficiencies in two minerals that a lot of active people are short of, rather than acting as a hormonal booster in those who already have enough.',
+    paras: [
+      'Zinc and magnesium both play real roles in sleep quality, muscle function and, when you are deficient, testosterone production. Hard training and heavy sweating can deplete both, so an athlete running low may genuinely feel a benefit from topping them up. Someone whose diet already supplies enough is unlikely to notice much.',
+      'The testosterone claims are where ZMA is oversold. Studies in people who are not deficient generally show no meaningful rise in testosterone. The takeaway is that ZMA helps restore normal function if you are short of zinc or magnesium, but it will not push a healthy man above his normal range.',
+      'Where many people do report a benefit is sleep. Magnesium in particular is associated with more restful sleep, and taking ZMA before bed is the conventional approach. Forms matter: magnesium glycinate or citrate are better absorbed and gentler than oxide, and a sensible product avoids overdoing zinc, since too much over time can interfere with copper.',
+      'Treat ZMA as a low-cost way to cover two commonly-short minerals plus B6, not as a hormone supplement. Take it away from calcium-rich foods, which can blunt absorption, and keep zinc within sensible limits. Our scores reward well-absorbed forms and honest, fully-disclosed dosing over proprietary blends and inflated claims.',
+    ],
+    faqs: [
+      { q: 'Does ZMA boost testosterone?', a: 'Mainly only if you are deficient in zinc or magnesium. In people who already have enough, studies generally show no meaningful rise in testosterone.' },
+      { q: 'Does ZMA help you sleep?', a: 'Many people find it does, largely thanks to magnesium. Taking it before bed in a well-absorbed form is the usual approach.' },
+      { q: 'When should I take ZMA?', a: 'Typically before bed, and away from calcium-rich foods or dairy, which can reduce absorption of the zinc and magnesium.' },
+    ],
+  },
+  {
+    slug: 'gut-digestion',
+    h1: 'Gut and Digestion Supplements: Probiotics, Enzymes and Fibre',
+    metaTitle: 'Best Gut Health Supplements UK 2026 — Buyer’s Guide | The Lifting Lab',
+    metaDescription:
+      'Probiotics, digestive enzymes and fibre each do different jobs. Here is what actually helps your gut, how to read the labels, and the best UK options ranked.',
+    intro:
+      'Gut health is having a moment, and the supplement aisle has responded with probiotics, enzymes, prebiotic fibres and greens powders all promising better digestion. They are not interchangeable: each targets a different part of how your gut works, so the useful first step is matching the product to the actual problem.',
+    paras: [
+      'Probiotics provide live bacteria, and the evidence is strain-specific rather than general. A useful product names its strains and states the CFU count (often in the billions), because different strains help with different things, from antibiotic-related upset to IBS symptoms. A vague label that just says probiotic blend with no strains or count is hard to judge and easy to over-pay for.',
+      'Digestive enzymes (such as protease, lipase and lactase) help break down protein, fat and lactose, and can be useful for people who struggle to digest certain foods or large protein intakes. They are a targeted tool rather than a daily essential for everyone. Lactase specifically helps the lactose-intolerant handle dairy.',
+      'Prebiotic fibre, like inulin, feeds the good bacteria you already have and is often the cheapest, most underrated gut investment, provided you increase it gradually to avoid bloating. Most people simply do not eat enough fibre, so a prebiotic or just more plants in the diet often does more than an expensive probiotic.',
+      'Be wary of greens powders and broad gut blends sold as cure-alls; they tend to under-dose the active ingredients and lean on marketing. Persistent gut symptoms deserve a proper look from a clinician rather than self-treatment, since they can signal something that needs diagnosis. Our scores reward strain-specific probiotics, transparent enzyme dosing and honest fibre products over vague blends.',
+    ],
+    faqs: [
+      { q: 'Do probiotics actually work?', a: 'Benefits are strain-specific, so it depends on the strain and the issue. Choose a product that names its strains and states the CFU count rather than a vague probiotic blend.' },
+      { q: 'Probiotics, enzymes or fibre — which do I need?', a: 'Probiotics add bacteria, enzymes help break down foods you struggle with, and prebiotic fibre feeds your existing gut bacteria. Match the product to your actual problem.' },
+      { q: 'Are greens powders good for gut health?', a: 'They are often oversold and under-dosed. Eating more whole plants and fibre usually does more for your gut than an expensive greens blend.' },
+    ],
+  },
 ]
 
 const GUIDE_BY_SLUG: Record<string, Guide> = Object.fromEntries(
