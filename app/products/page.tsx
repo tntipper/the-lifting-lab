@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import TopNav from '@/components/TopNav'
 import ProductGrid from './ProductGrid'
 import MethodologyModal from '@/components/MethodologyModal'
@@ -25,7 +26,9 @@ export default function ProductsPage() {
           </div>
           <MethodologyModal />
         </div>
-        <ProductGrid />
+        <Suspense fallback={<div className="text-lab-muted text-sm py-8 text-center">Loading…</div>}>
+          <ProductGrid />
+        </Suspense>
       </div>
     </div>
   )
