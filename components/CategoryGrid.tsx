@@ -72,22 +72,22 @@ function TileCard({
           style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.4),transparent)` }}
         />
 
-      <div className="flex flex-col gap-0 p-3.5">
-        {/* icon tile */}
+      <div className="flex flex-col gap-0 p-4">
+        {/* icon tile — larger */}
         <div
-          className="relative w-11 h-11 rounded-xl flex items-center justify-center text-2xl mb-3 shrink-0"
+          className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shrink-0"
           style={{
-            background: `linear-gradient(160deg, rgba(${rgb},0.14), rgba(${rgb},0.06))`,
+            background: `linear-gradient(160deg, rgba(${rgb},0.16), rgba(${rgb},0.06))`,
             border: `1px solid rgba(${rgb},0.35)`,
-            boxShadow: `0 6px 16px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)`,
+            boxShadow: `0 8px 20px rgba(0,0,0,0.55), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)`,
           }}
         >
           {/* icon bloom */}
           <span
-            className="pointer-events-none absolute inset-[-4px] rounded-[14px]"
+            className="pointer-events-none absolute inset-[-6px] rounded-[18px]"
             style={{
-              background: `radial-gradient(ellipse at center, rgba(${rgb},0.22) 0%, transparent 70%)`,
-              filter: 'blur(6px)',
+              background: `radial-gradient(ellipse at center, rgba(${rgb},0.25) 0%, transparent 70%)`,
+              filter: 'blur(7px)',
             }}
           />
           <svg
@@ -95,18 +95,18 @@ function TileCard({
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="relative z-10 w-6 h-6"
-            style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.6' }}
+            className="relative z-10 w-8 h-8"
+            style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.5' }}
             dangerouslySetInnerHTML={{ __html: group.iconSvg }}
           />
         </div>
 
         {/* label + tagline */}
-        <p className="text-white font-black text-[15px] leading-none tracking-tight">{group.label}</p>
-        <p className="text-[11px] mt-1 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>{group.tagline}</p>
+        <p className="text-white font-black text-[18px] leading-none tracking-tight">{group.label}</p>
+        <p className="text-[12px] mt-1.5 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>{group.tagline}</p>
 
         {/* bottom row: product count + top score */}
-        <div className="flex items-center justify-between mt-3 pt-2.5" style={{ borderTop: `1px solid rgba(${rgb},0.12)` }}>
+        <div className="flex items-center justify-between mt-4 pt-3" style={{ borderTop: `1px solid rgba(${rgb},0.12)` }}>
           <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">
             {stats ? `${stats.count} ranked` : '…'}
           </span>
@@ -141,29 +141,29 @@ function GuideTile() {
         className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
         style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.3),transparent)` }}
       />
-      <div className="flex flex-col gap-0 p-3.5">
+      <div className="flex flex-col gap-0 p-4">
         <div
-          className="relative w-11 h-11 rounded-xl flex items-center justify-center mb-3 shrink-0"
+          className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shrink-0"
           style={{
-            background: `linear-gradient(160deg, rgba(${rgb},0.12), rgba(${rgb},0.05))`,
+            background: `linear-gradient(160deg, rgba(${rgb},0.14), rgba(${rgb},0.05))`,
             border: `1px solid rgba(${rgb},0.3)`,
-            boxShadow: `0 6px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)`,
+            boxShadow: `0 8px 20px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.1)`,
           }}
         >
           <span
-            className="pointer-events-none absolute inset-[-4px] rounded-[14px]"
+            className="pointer-events-none absolute inset-[-6px] rounded-[18px]"
             style={{
-              background: `radial-gradient(ellipse at center, rgba(${rgb},0.18) 0%, transparent 70%)`,
-              filter: 'blur(6px)',
+              background: `radial-gradient(ellipse at center, rgba(${rgb},0.2) 0%, transparent 70%)`,
+              filter: 'blur(7px)',
             }}
           />
-          <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 w-6 h-6" style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.6' }}>
+          <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 w-8 h-8" style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.5' }}>
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/>
           </svg>
         </div>
-        <p className="text-white font-black text-[15px] leading-none tracking-tight">Guides</p>
-        <p className="text-[11px] mt-1 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>How to supplement smart</p>
-        <div className="flex items-center mt-3 pt-2.5" style={{ borderTop: `1px solid rgba(${rgb},0.1)` }}>
+        <p className="text-white font-black text-[18px] leading-none tracking-tight">Guides</p>
+        <p className="text-[12px] mt-1.5 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>How to supplement smart</p>
+        <div className="flex items-center mt-4 pt-3" style={{ borderTop: `1px solid rgba(${rgb},0.1)` }}>
           <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>Read guides →</span>
         </div>
       </div>
