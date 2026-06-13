@@ -35,16 +35,32 @@ export default function ScoreBadge({
   const color = scoreColor(score)
   const filled = circ * (score / 100)
 
+  const bloomAlpha = score >= 70 ? '0.4' : score >= 50 ? '0.3' : '0.25'
+  const bloomColor = score >= 70
+    ? `rgba(166,226,46,${bloomAlpha})`
+    : score >= 50
+    ? `rgba(232,160,32,${bloomAlpha})`
+    : `rgba(224,90,43,${bloomAlpha})`
+
   return (
-    <div className="shrink-0" style={{ width: px, height: px }}>
-      <svg width={px} height={px} viewBox={`0 0 ${px} ${px}`}>
+    <div className="shrink-0 relative" style={{ width: px, height: px }}>
+      {/* bloom layer */}
+      <span
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          inset: '-6px',
+          background: `radial-gradient(ellipse at center, ${bloomColor} 0%, transparent 68%)`,
+          filter: 'blur(6px)',
+        }}
+      />
+      <svg width={px} height={px} viewBox={`0 0 ${px} ${px}`} className="relative z-10">
         {/* track */}
         <circle
           cx={cx}
           cy={cx}
           r={r}
           fill="none"
-          stroke="#1f2937"
+          stroke="rgba(255,255,255,0.08)"
           strokeWidth={stroke}
         />
         {/* fill */}
@@ -58,7 +74,7 @@ export default function ScoreBadge({
           strokeLinecap="round"
           strokeDasharray={`${filled} ${circ - filled}`}
           strokeDashoffset={circ / 4}
-          style={{ filter: `drop-shadow(0 0 4px ${color}66)` }}
+          style={{ filter: `drop-shadow(0 0 4px ${color}88)` }}
         />
         <text
           x={cx}
@@ -68,7 +84,8 @@ export default function ScoreBadge({
           fill={color}
           fontWeight="900"
           fontSize={text}
-          fontFamily="system-ui, sans-serif"
+          fontFamily="var(--font-anton), Impact, 'Arial Narrow Bold', sans-serif"
+          style={{ WebkitTextStroke: '0.6px rgba(0,0,0,0.55)' } as React.CSSProperties}
         >
           {score}
         </text>

@@ -23,6 +23,35 @@ const SORTS: { key: SortKey; label: string }[] = [
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
+function PointerCard({
+  children,
+  className,
+  style,
+}: {
+  children: React.ReactNode
+  className?: string
+  style?: React.CSSProperties
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  function handleMouseMove(e: React.MouseEvent) {
+    const el = ref.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%')
+    el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%')
+  }
+  return (
+    <div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      className={`lab-card beam ${className ?? ''}`}
+      style={{ '--mx': '50%', '--my': '30%', ...style } as React.CSSProperties}
+    >
+      {children}
+    </div>
+  )
+}
+
 function fmt(n: number) {
   return n < 10 ? `£${n.toFixed(2)}` : `£${Math.round(n)}`
 }
@@ -274,15 +303,15 @@ export default function ProductGrid() {
             : null
 
           return (
-            <div
+            <PointerCard
               key={p.id}
-              className={`bg-lab-panel border rounded-2xl p-4 transition-colors ${
-                isTop
-                  ? 'border-lab-lime shadow-[0_0_14px_rgba(166,226,46,0.12)]'
-                  : isSel
-                  ? 'border-lab-lime'
-                  : 'border-lab-border'
-              }`}
+              className="p-4"
+              style={isTop ? {
+                borderColor: 'rgba(166,226,46,0.45)',
+                boxShadow: '0 6px 30px rgba(0,0,0,0.5), 0 0 22px rgba(166,226,46,0.12), inset 0 1px 0 rgba(255,255,255,0.05)',
+              } : isSel ? {
+                borderColor: 'rgba(166,226,46,0.45)',
+              } : {}}
             >
               {/* top row: score + info + fav */}
               <div className="flex items-start gap-3">
@@ -294,7 +323,10 @@ export default function ProductGrid() {
                   {/* rank + brand */}
                   <div className="flex items-center gap-1.5 mb-0.5">
                     {medal && <span className="text-sm leading-none">{medal}</span>}
-                    <span className="text-[11px] text-lab-muted uppercase tracking-widest font-bold truncate">{p.brand}</span>
+                    <span
+                      className="text-[11px] uppercase tracking-widest font-bold truncate"
+                      style={{ color: '#2E8FE0', textShadow: '0 1px 2px rgba(0,0,0,0.7), 0 0 8px rgba(46,143,224,0.35)' }}
+                    >{p.brand}</span>
                   </div>
                   {/* product name */}
                   <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors">
@@ -309,8 +341,8 @@ export default function ProductGrid() {
                       {categoryLabel(p.category)}
                     </span>
                     {p.informed_sport && (
-                      <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
-                        🛡️ IS
+                      <span className="badge-is text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full border">
+                        IS Certified
                       </span>
                     )}
                     {isTop && (
@@ -390,15 +422,22 @@ export default function ProductGrid() {
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
-                  className={`text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl ${
-                    isTop ? 'bg-lab-lime text-black' : 'bg-gray-800 text-white'
-                  }`}
+                  className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl transition-all"
+                  style={isTop ? {
+                    background: 'linear-gradient(145deg, color-mix(in srgb, #a6e22e 80%, #fff), #a6e22e 45%, color-mix(in srgb, #a6e22e 72%, #000))',
+                    color: '#0d0d0d',
+                    boxShadow: '0 0 12px rgba(166,226,46,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
+                  } : {
+                    background: 'rgba(255,255,255,0.06)',
+                    color: '#a6e22e',
+                    border: '1px solid rgba(166,226,46,0.5)',
+                  }}
                 >
-                  {isTop ? 'Buy 🏆' : 'Buy'}
+                  Buy{isTop ? ' 🏆' : ''}
                 </a>
               </div>
               <p className="text-[9px] text-lab-muted/40 text-right mt-1">affiliate link</p>
-            </div>
+            </PointerCard>
           )
         })}
       </div>

@@ -86,11 +86,19 @@ function TileCard({
           <span
             className="pointer-events-none absolute inset-[-4px] rounded-[14px]"
             style={{
-              background: `radial-gradient(ellipse at center, rgba(${rgb},0.18) 0%, transparent 70%)`,
-              filter: 'blur(5px)',
+              background: `radial-gradient(ellipse at center, rgba(${rgb},0.22) 0%, transparent 70%)`,
+              filter: 'blur(6px)',
             }}
           />
-          <span className="relative z-10">{group.icon}</span>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="relative z-10 w-6 h-6"
+            style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.6' }}
+            dangerouslySetInnerHTML={{ __html: group.iconSvg }}
+          />
         </div>
 
         {/* label + tagline */}
