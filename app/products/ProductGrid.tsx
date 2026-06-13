@@ -23,6 +23,34 @@ const SORTS: { key: SortKey; label: string }[] = [
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
+const CATEGORY_BENEFITS: Record<string, string> = {
+  'whey':             'Fast-absorbing protein · Muscle protein synthesis · Post-workout recovery',
+  'whey-isolate':     'High-purity protein · Low lactose · Lean muscle support',
+  'casein':           'Slow-release protein · Overnight muscle repair · Anti-catabolic',
+  'creatine':         'Strength & power output · ATP resynthesis · Muscle volumisation',
+  'pre-workout':      'Training energy & focus · Blood flow & endurance · Delayed fatigue',
+  'eaas':             'Full essential amino acid profile · Muscle repair · Intra-workout fuel',
+  'intra-workout':    'Hydration & endurance · Amino acid delivery · Electrolyte replenishment',
+  'post-workout':     'Recovery acceleration · Glycogen replenishment · Reduced DOMS',
+  'hydration':        'Electrolyte balance · Performance hydration · Cramp prevention',
+  'protein-bar':      'On-the-go protein · Controlled macros · Convenient muscle support',
+  'meal-replacement': 'Balanced macro profile · Calorie management · Convenient nutrition',
+  'cycle-support':    'Liver & organ protection · Hormone balance · Lipid management',
+  'hormone-support':  'Testosterone support · Hormonal balance · Recovery optimisation',
+  'vitamin':          'Micronutrient support · Immune function · Overall health foundation',
+  'multivitamin':     'Full micronutrient spectrum · Immune & metabolic support · Daily baseline',
+  'vitamin-d':        'Bone density · Immune regulation · Testosterone support',
+  'vitamin-c':        'Immune defence · Collagen synthesis · Antioxidant protection',
+  'gut-digestion':    'Digestive enzyme support · Gut microbiome · Nutrient absorption',
+  'heart-health':     'Cardiovascular support · Cholesterol balance · Blood pressure',
+  'liver-health':     'Liver detoxification · Hepatoprotective support · Antioxidant defence',
+  'omega-3':          'Inflammation reduction · Heart & brain health · Joint lubrication',
+  'joint-health':     'Cartilage support · Joint lubrication · Anti-inflammatory',
+  'magnesium':        'Sleep quality · Muscle relaxation · Hormonal & nerve function',
+  'sleep-recovery':   'Sleep onset · Deep sleep quality · Recovery & cortisol regulation',
+  'zma':              'Testosterone & growth hormone · Sleep depth · Muscle recovery',
+}
+
 function PointerCard({
   children,
   className,
@@ -294,12 +322,24 @@ export default function ProductGrid() {
           const isTop = i === 0 && (sort === 'score' || sort === 'value' || sort === 'budget')
           const medal = MEDALS[i] ?? null
           const stacked = inStack(p.id)
-          const scoreFlag = p.score != null
+          const benefits = CATEGORY_BENEFITS[p.category] ?? null
+          const dosingNote = p.score != null
             ? p.score >= 70
-              ? { color: '#a6e22e', text: p.score >= 90 ? 'Excellent clinical match' : 'Strong clinical match' }
+              ? p.score >= 90 ? '· Excellent dosing' : '· Good dosing'
               : p.score >= 50
-              ? { color: '#f5b342', text: 'Partial clinical match' }
-              : { color: '#ff5c5c', text: 'Poor clinical match — underdosed' }
+              ? '· Partially dosed'
+              : '· Below clinical dose'
+            : ''
+          const scoreFlag = benefits
+            ? {
+                color: p.score != null && p.score >= 70 ? '#a6e22e' : p.score != null && p.score >= 50 ? '#f5b342' : '#ff5c5c',
+                text: benefits + (p.score != null ? ' ' + dosingNote : ''),
+              }
+            : p.score != null
+            ? {
+                color: p.score >= 70 ? '#a6e22e' : p.score >= 50 ? '#f5b342' : '#ff5c5c',
+                text: p.score >= 70 ? (p.score >= 90 ? 'Excellent clinical match' : 'Strong clinical match') : p.score >= 50 ? 'Partial clinical match' : 'Below clinical threshold',
+              }
             : null
 
           return (

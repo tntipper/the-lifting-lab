@@ -8,10 +8,7 @@ const AR = '166,226,46'
 
 const NAV_LINKS = [
   { href: '/products', label: 'Browse' },
-  { href: '/compare', label: 'Compare' },
-  { href: '/guide', label: 'Guides' },
   { href: '/wizard', label: 'Find My Stack' },
-  { href: '/favourites', label: 'Favourites' },
 ]
 
 export default function TopNav() {
@@ -46,14 +43,14 @@ export default function TopNav() {
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
           {/* wordmark — Anton, skewed, LAB in lime */}
           <Link
             href="/"
             className="shrink-0 uppercase select-none"
             style={{
               fontFamily: 'var(--font-anton), Impact, "Arial Narrow Bold", sans-serif',
-              fontSize: '22px',
+              fontSize: '20px',
               letterSpacing: '0.5px',
               transform: 'skewX(-6deg)',
               display: 'inline-block',
@@ -64,52 +61,55 @@ export default function TopNav() {
             <span style={{ color: '#a6e22e', textShadow: `0 0 14px rgba(${AR},0.45)` }}>LAB</span>
           </Link>
 
-          <nav className="flex items-center gap-5">
-            {NAV_LINKS.map(({ href, label }) => {
-              const active = isActive(href)
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className="relative text-[11px] font-bold uppercase tracking-widest py-1.5 transition-colors"
-                  style={active
-                    ? { color: '#a6e22e', textShadow: `0 0 8px rgba(${AR},0.5)` }
-                    : { color: '#a3a3a3' }
-                  }
-                >
-                  {active && (
-                    <>
-                      {/* bloom above */}
-                      <span
-                        className="pointer-events-none absolute"
-                        style={{
-                          top: '-20px', left: '50%', transform: 'translateX(-50%)',
-                          width: '42px', height: '18px',
-                          background: `radial-gradient(ellipse at top, rgba(${AR},0.3) 0%, transparent 80%)`,
-                          filter: 'blur(4px)',
-                        }}
-                      />
-                      {/* glowing indicator line */}
-                      <span
-                        className="pointer-events-none absolute"
-                        style={{
-                          top: '-19px', left: '50%', transform: 'translateX(-50%)',
-                          width: '42px', height: '1px',
-                          background: `linear-gradient(90deg, transparent, #a6e22e, transparent)`,
-                          boxShadow: '0 0 8px #a6e22e',
-                        }}
-                      />
-                    </>
-                  )}
-                  {label}
-                </Link>
-              )
-            })}
+          <nav className="flex items-center gap-4">
+            {/* nav links — hidden on mobile, shown from sm up */}
+            <div className="hidden sm:flex items-center gap-5">
+              {NAV_LINKS.map(({ href, label }) => {
+                const active = isActive(href)
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="relative text-[11px] font-bold uppercase tracking-widest py-1.5 transition-colors"
+                    style={active
+                      ? { color: '#a6e22e', textShadow: `0 0 8px rgba(${AR},0.5)` }
+                      : { color: '#a3a3a3' }
+                    }
+                  >
+                    {active && (
+                      <>
+                        {/* bloom above */}
+                        <span
+                          className="pointer-events-none absolute"
+                          style={{
+                            top: '-20px', left: '50%', transform: 'translateX(-50%)',
+                            width: '42px', height: '18px',
+                            background: `radial-gradient(ellipse at top, rgba(${AR},0.3) 0%, transparent 80%)`,
+                            filter: 'blur(4px)',
+                          }}
+                        />
+                        {/* glowing indicator line */}
+                        <span
+                          className="pointer-events-none absolute"
+                          style={{
+                            top: '-19px', left: '50%', transform: 'translateX(-50%)',
+                            width: '42px', height: '1px',
+                            background: `linear-gradient(90deg, transparent, #a6e22e, transparent)`,
+                            boxShadow: '0 0 8px #a6e22e',
+                          }}
+                        />
+                      </>
+                    )}
+                    {label}
+                  </Link>
+                )
+              })}
+            </div>
 
-            {/* My Stack — ghost outline button */}
+            {/* My Stack — ghost outline button, always visible */}
             <Link
               href="/dashboard"
-              className="text-[11px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 transition-all"
+              className="text-[11px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 transition-all whitespace-nowrap"
               style={{
                 color: '#a6e22e',
                 border: `1px solid rgba(${AR},0.6)`,

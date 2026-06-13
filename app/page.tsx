@@ -81,15 +81,6 @@ export default function Home() {
         {/* action buttons */}
         <div className="space-y-2 pt-1">
           <Link
-            href="/guide"
-            className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
-          >
-            <span className="text-lg">📖</span>
-            <span className="text-sm font-bold text-white">Supplement Guide</span>
-            <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
-          </Link>
-
-          <Link
             href="/submit"
             className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
           >

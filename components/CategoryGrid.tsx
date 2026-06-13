@@ -125,6 +125,52 @@ function TileCard({
   )
 }
 
+function GuideTile() {
+  const rgb = '166,226,46'
+  return (
+    <Link
+      href="/guide"
+      className="beam relative block rounded-2xl transition-all duration-250 active:scale-[0.97]"
+      style={{
+        background: `linear-gradient(160deg, rgba(${rgb},0.07) 0%, #0f0f0f 55%)`,
+        border: `1px solid rgba(${rgb},0.15)`,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
+      }}
+    >
+      <span
+        className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
+        style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.3),transparent)` }}
+      />
+      <div className="flex flex-col gap-0 p-3.5">
+        <div
+          className="relative w-11 h-11 rounded-xl flex items-center justify-center mb-3 shrink-0"
+          style={{
+            background: `linear-gradient(160deg, rgba(${rgb},0.12), rgba(${rgb},0.05))`,
+            border: `1px solid rgba(${rgb},0.3)`,
+            boxShadow: `0 6px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)`,
+          }}
+        >
+          <span
+            className="pointer-events-none absolute inset-[-4px] rounded-[14px]"
+            style={{
+              background: `radial-gradient(ellipse at center, rgba(${rgb},0.18) 0%, transparent 70%)`,
+              filter: 'blur(6px)',
+            }}
+          />
+          <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 w-6 h-6" style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.6' }}>
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/>
+          </svg>
+        </div>
+        <p className="text-white font-black text-[15px] leading-none tracking-tight">Guides</p>
+        <p className="text-[11px] mt-1 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>How to supplement smart</p>
+        <div className="flex items-center mt-3 pt-2.5" style={{ borderTop: `1px solid rgba(${rgb},0.1)` }}>
+          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>Read guides →</span>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 export default function CategoryGrid() {
   const [stats, setStats] = useState<Record<string, GroupStats>>({})
 
@@ -151,6 +197,8 @@ export default function CategoryGrid() {
       {CATEGORY_GROUPS.map((group) => (
         <TileCard key={group.slug} group={group} stats={stats[group.slug]} />
       ))}
+      {/* Guides — static tile, always last */}
+      <GuideTile />
     </div>
   )
 }
