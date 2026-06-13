@@ -62,7 +62,7 @@ export default function TopNav() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            {/* nav links — hidden on mobile, shown from sm up */}
+            {/* nav links — hidden on mobile, shown from sm breakpoint up */}
             <div className="hidden sm:flex items-center gap-5">
               {NAV_LINKS.map(({ href, label }) => {
                 const active = isActive(href)
@@ -78,7 +78,6 @@ export default function TopNav() {
                   >
                     {active && (
                       <>
-                        {/* bloom above */}
                         <span
                           className="pointer-events-none absolute"
                           style={{
@@ -88,7 +87,6 @@ export default function TopNav() {
                             filter: 'blur(4px)',
                           }}
                         />
-                        {/* glowing indicator line */}
                         <span
                           className="pointer-events-none absolute"
                           style={{
@@ -106,6 +104,18 @@ export default function TopNav() {
               })}
             </div>
 
+            {/* My Account — ghost outline button, always visible */}
+            <Link
+              href="/dashboard"
+              className="text-[11px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 transition-all whitespace-nowrap"
+              style={{
+                color: '#a6e22e',
+                border: `1px solid rgba(${AR},0.6)`,
+                boxShadow: `0 0 8px rgba(${AR},0.2), inset 0 0 8px rgba(${AR},0.05)`,
+              }}
+            >
+              My Account
+            </Link>
           </nav>
         </div>
       </header>
