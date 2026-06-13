@@ -15,15 +15,7 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-black uppercase italic">
-              Supplement <span className="text-lab-lime">Showdown</span>
-            </h1>
-            <p className="text-lab-muted text-xs mt-1">
-              Ranked by effective dosing · not brand reputation
-            </p>
-          </div>
+        <div className="flex justify-end mb-1">
           <MethodologyModal />
         </div>
         <Suspense fallback={<div className="text-lab-muted text-sm py-8 text-center">Loading…</div>}>

@@ -194,8 +194,33 @@ export default function ProductGrid() {
 
   const topLabel = sort === 'value' ? 'Best Value Pick' : sort === 'budget' ? 'Best Budget Pick' : 'Top Pick'
 
+  // Dynamic heading word: category chip > group filter > default
+  const headingWord = category !== 'all'
+    ? categoryLabel(category)
+    : groupParam
+    ? (CATEGORY_GROUPS.find((g) => g.slug === groupParam)?.label ?? 'Supplement')
+    : 'Supplement'
+
   return (
     <div className="space-y-4 pb-28">
+      {/* dynamic heading */}
+      <div className="flex items-start justify-between mb-2">
+        <div>
+          <h1
+            className="text-2xl uppercase leading-none tracking-tight"
+            style={{ fontFamily: 'var(--font-anton), Impact, sans-serif', transform: 'skewX(-4deg)' }}
+          >
+            {headingWord}{' '}
+            <span style={{ color: '#a6e22e', textShadow: '0 0 12px rgba(166,226,46,0.4)' }}>
+              Showdown
+            </span>
+          </h1>
+          <p className="text-[11px] text-white/40 mt-1 uppercase tracking-widest">
+            Ranked by effective dosing · not brand reputation
+          </p>
+        </div>
+      </div>
+
       {/* search */}
       <input
         type="text"
