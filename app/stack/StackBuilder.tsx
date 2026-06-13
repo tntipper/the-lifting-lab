@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem, type SafetyFlag } from '@/lib/nutrient-limits'
 import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
 import { scoreFor } from '@/lib/scores'
+import { buyLink } from '@/lib/affiliate'
 
 type DailyTotal = {
   name: string
@@ -45,6 +46,28 @@ function getDailyTotals(stackItems: StackItem[]): DailyTotal[] {
       if (a.ulPercent != null) return -1
       return a.name.localeCompare(b.name)
     })
+}
+
+function buildEmailLink(score: number | null, items: StackItem[]): string {
+  const subject = `My Supplement Stack — Score ${score ?? '?'}/100 | The Lifting Lab`
+  const lines = [
+    `MY SUPPLEMENT STACK`,
+    `Stack Score: ${score ?? '—'}/100`,
+    ``,
+    `Products:`,
+    ...items
+      .filter((i) => i.products)
+      .map((i) => {
+        const p = i.products!
+        const sc = scoreFor(p.brand, p.name)
+        const link = buyLink(p.brand, p.name)
+        return `• ${p.brand} ${p.name}${sc != null ? ` (${sc}/100)` : ''}\n  Buy: ${link}`
+      }),
+    ``,
+    `Analysed at theliftinglab.co.uk`,
+    `Not medical advice.`,
+  ]
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`
 }
 
 function buildShareUrl(score: number | null, items: StackItem[]): string {
@@ -178,6 +201,7 @@ export default function StackBuilder() {
 
   const dailyTotals = getDailyTotals(stackItems)
   const shareUrl = buildShareUrl(avgScore, stackItems)
+  const emailUrl = buildEmailLink(avgScore, stackItems)
 
   return (
     <div className="space-y-6">
@@ -255,6 +279,13 @@ export default function StackBuilder() {
             <span>📊</span>
             <span>Daily Totals</span>
           </button>
+          <a
+            href={emailUrl}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-lab-border text-lab-muted text-xs font-black uppercase tracking-widest hover:text-white transition-colors"
+          >
+            <span>📧</span>
+            <span>Email Stack</span>
+          </a>
         </div>
       )}
 
