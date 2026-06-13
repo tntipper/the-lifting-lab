@@ -1,12 +1,119 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { scoreColor } from '@/components/ScoreBadge'
 import type { ScoredProduct } from '@/lib/products'
 
 type GroupStats = { count: number; topScore: number | null }
+
+function hexToRgb(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `${r},${g},${b}`
+}
+
+function TileCard({
+  group,
+  stats,
+}: {
+  group: (typeof CATEGORY_GROUPS)[0]
+  stats: GroupStats | undefined
+}) {
+  const ref = useRef<HTMLAnchorElement>(null)
+  const topScore = stats?.topScore ?? null
+  const scoreCol = topScore != null ? scoreColor(topScore) : null
+  const rgb = hexToRgb(group.accent)
+
+  function handleMouseMove(e: React.MouseEvent) {
+    const el = ref.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%')
+    el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%')
+  }
+
+  return (
+    <Link
+      ref={ref}
+      href={`/products?group=${group.slug}`}
+      onMouseMove={handleMouseMove}
+      className="group relative block rounded-2xl overflow-hidden transition-all duration-250 active:scale-[0.97]"
+      style={
+        {
+          '--mx': '50%',
+          '--my': '30%',
+          '--glint': '0',
+          background: `
+            radial-gradient(240px circle at var(--mx) var(--my), rgba(255,255,255,var(--glint)) 0%, transparent 60%),
+            linear-gradient(160deg, rgba(${rgb},0.09) 0%, #0f0f0f 55%)
+          `,
+          border: `1px solid rgba(${rgb},0.2)`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
+        } as React.CSSProperties
+      }
+    >
+      {/* shimmer top edge */}
+      <span
+        className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
+        style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.4),transparent)` }}
+      />
+
+      {/* hover: warm the border */}
+      <style>{`
+        .tile-${group.slug}:hover {
+          --glint: 0.06 !important;
+          border-color: rgba(${rgb},0.4) !important;
+          box-shadow: 0 8px 28px rgba(0,0,0,0.55), 0 0 16px rgba(${rgb},0.15), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+          transform: translateY(-3px) !important;
+        }
+      `}</style>
+
+      <div className={`tile-${group.slug} flex flex-col gap-0 p-3.5`}>
+        {/* icon tile */}
+        <div
+          className="relative w-11 h-11 rounded-xl flex items-center justify-center text-2xl mb-3 shrink-0"
+          style={{
+            background: `linear-gradient(160deg, rgba(${rgb},0.14), rgba(${rgb},0.06))`,
+            border: `1px solid rgba(${rgb},0.35)`,
+            boxShadow: `0 6px 16px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)`,
+          }}
+        >
+          {/* icon bloom */}
+          <span
+            className="pointer-events-none absolute inset-[-4px] rounded-[14px]"
+            style={{
+              background: `radial-gradient(ellipse at center, rgba(${rgb},0.18) 0%, transparent 70%)`,
+              filter: 'blur(5px)',
+            }}
+          />
+          <span className="relative z-10">{group.icon}</span>
+        </div>
+
+        {/* label + tagline */}
+        <p className="text-white font-black text-[15px] leading-none tracking-tight">{group.label}</p>
+        <p className="text-[11px] mt-1 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>{group.tagline}</p>
+
+        {/* bottom row: product count + top score */}
+        <div className="flex items-center justify-between mt-3 pt-2.5" style={{ borderTop: `1px solid rgba(${rgb},0.12)` }}>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">
+            {stats ? `${stats.count} ranked` : '…'}
+          </span>
+          {topScore != null && scoreCol && (
+            <span
+              className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border"
+              style={{ color: scoreCol, borderColor: `${scoreCol}44`, background: `${scoreCol}14` }}
+            >
+              top {topScore}
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
+  )
+}
 
 export default function CategoryGrid() {
   const [stats, setStats] = useState<Record<string, GroupStats>>({})
@@ -31,35 +138,9 @@ export default function CategoryGrid() {
 
   return (
     <div className="grid grid-cols-2 gap-3">
-      {CATEGORY_GROUPS.map((group) => {
-        const s = stats[group.slug]
-        const topScore = s?.topScore ?? null
-        const color = topScore != null ? scoreColor(topScore) : '#4b5563'
-
-        return (
-          <Link
-            key={group.slug}
-            href={`/products?group=${group.slug}`}
-            className="bg-lab-panel border border-lab-border rounded-2xl p-4 hover:border-lab-lime transition-colors active:scale-[0.98]"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-2xl leading-none">{group.icon}</span>
-              {topScore != null && (
-                <span
-                  className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border"
-                  style={{ color, borderColor: `${color}44`, background: `${color}11` }}
-                >
-                  top {topScore}
-                </span>
-              )}
-            </div>
-            <p className="text-white font-black text-base mt-3 leading-none">{group.label}</p>
-            <p className="text-lab-muted text-[11px] mt-1">
-              {s ? `${s.count} ranked` : '…'}
-            </p>
-          </Link>
-        )
-      })}
+      {CATEGORY_GROUPS.map((group) => (
+        <TileCard key={group.slug} group={group} stats={stats[group.slug]} />
+      ))}
     </div>
   )
 }

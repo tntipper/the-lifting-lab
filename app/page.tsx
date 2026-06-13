@@ -16,63 +16,97 @@ export default function Home() {
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
 
-      <div className="max-w-lg mx-auto px-4 pt-6 pb-20 space-y-5">
-        {/* wordmark + tagline */}
-        <div className="text-center pt-2 pb-1">
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-lab-muted mb-1">
+      <div className="max-w-[860px] mx-auto px-4 pt-6 pb-20 space-y-5">
+        {/* wordmark */}
+        <div className="text-center pt-2 pb-1 relative">
+          {/* ambient glow */}
+          <div
+            className="pointer-events-none absolute top-[-20px] left-1/2 -translate-x-1/2 w-64 h-24 opacity-60"
+            style={{
+              background: 'radial-gradient(ellipse at center, rgba(166,226,46,0.12) 0%, transparent 70%)',
+              filter: 'blur(18px)',
+            }}
+          />
+          <p className="relative text-[10px] uppercase tracking-[0.3em] font-bold text-lab-muted mb-1.5">
             Evidence-Based Supplements · UK
           </p>
-          <h1 className="text-3xl font-black uppercase tracking-tight leading-none">
-            The Lifting Lab
+          <h1
+            className="relative text-[38px] uppercase leading-none tracking-tight"
+            style={{ fontFamily: 'var(--font-anton), Impact, sans-serif', transform: 'skewX(-4deg)' }}
+          >
+            The Lifting{' '}
+            <span
+              style={{
+                color: '#a6e22e',
+                textShadow: '0 0 14px rgba(166,226,46,0.5)',
+              }}
+            >
+              Lab
+            </span>
           </h1>
         </div>
 
         {/* Find My Stack — hero CTA */}
-        <Link
-          href="/wizard"
-          className="flex items-center gap-4 w-full bg-lab-lime text-black rounded-2xl px-5 py-4 hover:opacity-90 transition-opacity"
-        >
-          <span className="text-2xl">🧪</span>
-          <div className="min-w-0 flex-1">
-            <p className="font-black uppercase tracking-wide text-base leading-none">Find My Stack</p>
-            <p className="text-[11px] font-bold mt-0.5 opacity-70">Answer 5 quick questions</p>
-          </div>
-          <span className="text-xl font-black">→</span>
-        </Link>
+        <div className="relative">
+          <div className="lab-cta-bloom" />
+          <Link
+            href="/wizard"
+            className="lab-cta relative flex items-center gap-4 w-full rounded-2xl px-5 py-4 hover:opacity-90 transition-opacity"
+          >
+            <span className="text-2xl">🧪</span>
+            <div className="min-w-0 flex-1">
+              <p
+                className="uppercase tracking-wide text-[15px] leading-none font-black"
+                style={{ fontFamily: 'var(--font-anton), Impact, sans-serif' }}
+              >
+                Find My Stack
+              </p>
+              <p className="text-[11px] font-bold mt-1 opacity-70">Answer 5 quick questions</p>
+            </div>
+            <span className="text-xl font-black">→</span>
+          </Link>
+        </div>
 
         {/* featured brand slot */}
         <FeaturedSlot />
+
+        {/* section label */}
+        <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-muted pt-1">
+          Browse by Category
+        </p>
 
         {/* category tiles */}
         <CategoryGrid />
 
         {/* action buttons */}
-        <Link
-          href="/guide"
-          className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime transition-colors"
-        >
-          <span className="text-lg">📖</span>
-          <span className="text-sm font-bold text-white">Supplement Guide</span>
-          <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
-        </Link>
+        <div className="space-y-2 pt-1">
+          <Link
+            href="/guide"
+            className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
+          >
+            <span className="text-lg">📖</span>
+            <span className="text-sm font-bold text-white">Supplement Guide</span>
+            <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
+          </Link>
 
-        <Link
-          href="/submit"
-          className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime transition-colors"
-        >
-          <span className="text-lg">+</span>
-          <span className="text-sm font-bold text-white">Missing a supplement?</span>
-          <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
-        </Link>
+          <Link
+            href="/submit"
+            className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
+          >
+            <span className="text-lg font-bold text-white/60">+</span>
+            <span className="text-sm font-bold text-white">Missing a supplement?</span>
+            <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
+          </Link>
 
-        <Link
-          href="/contact"
-          className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime transition-colors"
-        >
-          <span className="text-lg">✉️</span>
-          <span className="text-sm font-bold text-white">Contact Us</span>
-          <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
-        </Link>
+          <Link
+            href="/contact"
+            className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
+          >
+            <span className="text-lg">✉️</span>
+            <span className="text-sm font-bold text-white">Contact Us</span>
+            <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
+          </Link>
+        </div>
 
         {/* how we score strip */}
         <div className="bg-lab-panel border border-lab-border rounded-xl px-4 py-4 space-y-2">

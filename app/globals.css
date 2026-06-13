@@ -2,22 +2,31 @@
 
 @theme {
   --color-lab-bg: #0d0d0d;
+  --color-lab-nav: #0c0c0c;
   --color-lab-panel: #161616;
   --color-lab-panel-2: #1c1c1c;
   --color-lab-border: #262626;
   --color-lab-lime: #a6e22e;
-  --color-lab-amber: #f5b342;
-  --color-lab-red: #ff5c5c;
-  --color-lab-muted: #8a8a8a;
+  --color-lab-amber: #e8a020;
+  --color-lab-red: #e05a2b;
+  --color-lab-muted: #9b9b9b;
+  --color-lab-brand: #2e8fe0;
+  --color-lab-cyan: #3fc9d6;
+  --color-lab-saved: #f0247a;
+  --font-display: var(--font-anton), Impact, 'Arial Narrow Bold', sans-serif;
 }
 
 :root {
   --background: #0d0d0d;
-  --foreground: #ededed;
+  --foreground: #f2f2f2;
+
+  /* accent rgb triplet for glow/translucent fills */
+  --ar: 166, 226, 46;
+  /* card gradient */
+  --card-grad: linear-gradient(160deg, #161616 0%, #0f0f0f 100%);
 }
 
-html,
-body {
+html, body {
   background: var(--background);
   color: var(--foreground);
 }
@@ -28,14 +37,104 @@ body {
 }
 
 /* hide scrollbars on horizontal chip rows */
-.hide-scroll::-webkit-scrollbar {
-  display: none;
+.hide-scroll::-webkit-scrollbar { display: none; }
+.hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Card depth system ─── */
+.lab-card {
+  position: relative;
+  background:
+    radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%),
+      rgba(255,255,255, var(--glint, 0)), transparent 60%),
+    var(--card-grad);
+  border: 1px solid rgba(var(--ar), 0.12);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow: hidden;
+  transition: transform .25s, box-shadow .25s, border-color .25s;
 }
-.hide-scroll {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.lab-card::before {
+  content: "";
+  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--ar),0.35), transparent);
+  pointer-events: none;
+}
+.lab-card:hover {
+  --glint: 0.06;
+  transform: translateY(-3px);
+  border-color: rgba(var(--ar), 0.25);
+  box-shadow: 0 10px 34px rgba(0,0,0,0.55), 0 0 18px rgba(var(--ar),0.1),
+    inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-.lab-glow {
-  box-shadow: 0 0 14px rgba(166, 226, 46, 0.22);
+/* ─── Glow utilities ─── */
+.lab-glow { box-shadow: 0 0 14px rgba(166, 226, 46, 0.22); }
+
+.lab-glow-sm { box-shadow: 0 0 8px rgba(166, 226, 46, 0.3); }
+
+/* ─── Ambient screen glow ─── */
+.lab-ambient {
+  position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  width: 340px; height: 200px; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse at center, rgba(var(--ar),0.1) 0%, transparent 70%);
+  filter: blur(22px);
+}
+
+/* ─── Primary CTA bloom ─── */
+.lab-cta {
+  position: relative;
+  background: linear-gradient(145deg,
+    color-mix(in srgb, #a6e22e 80%, #fff) 0%,
+    #a6e22e 45%,
+    color-mix(in srgb, #a6e22e 72%, #000) 100%);
+  color: #0d0d0d;
+  box-shadow: 0 0 14px rgba(var(--ar),0.4), 0 0 28px rgba(var(--ar),0.14),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.lab-cta-bloom {
+  position: absolute; inset: -8px; border-radius: 24px; pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    rgba(var(--ar),0.3) 0%, rgba(var(--ar),0.1) 50%, transparent 75%);
+  filter: blur(8px);
+  z-index: -1;
+}
+
+/* ─── Beam animation ─── */
+@property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.beam { position: relative; overflow: visible; }
+.beam::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px;
+  pointer-events: none; z-index: 3;
+  background: conic-gradient(from var(--beam-angle),
+    transparent 55%, rgba(var(--ar),0.85) 78%, rgba(255,255,255,0.92) 86%,
+    rgba(var(--ar),0.85) 92%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 5px rgba(var(--ar),0.7));
+  opacity: 0; transition: opacity .35s;
+}
+.beam:hover::after { opacity: 1; animation: beamSpin 2.2s linear infinite; }
+@keyframes beamSpin { to { --beam-angle: 360deg; } }
+
+/* ─── Light-sweep page transition ─── */
+.lab-sweep {
+  position: fixed; top: 0; bottom: 0; width: 130px; pointer-events: none; z-index: 500;
+  opacity: 0; transform: translateX(-160px);
+  background: linear-gradient(90deg, transparent, rgba(var(--ar),0.16), transparent);
+  filter: blur(6px);
+}
+.lab-sweep.run { animation: sweepGo .6s ease-out; }
+@keyframes sweepGo {
+  0%   { opacity: 1; transform: translateX(-160px); }
+  100% { opacity: 0; transform: translateX(100vw); }
+}
+
+/* ─── Informed Sport cyan badge ─── */
+.badge-is {
+  color: #3fc9d6;
+  border-color: rgba(63,201,214,0.4);
+  background: rgba(63,201,214,0.08);
+  text-shadow: 0 0 8px rgba(63,201,214,0.5);
 }
