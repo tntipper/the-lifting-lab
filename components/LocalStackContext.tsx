@@ -14,6 +14,7 @@ type LocalStackCtx = {
   stack: LocalStackProduct[]
   inStack: (id: string) => boolean
   toggle: (product: LocalStackProduct) => void
+  remove: (id: string) => void
   clear: () => void
 }
 
@@ -21,6 +22,7 @@ const Ctx = createContext<LocalStackCtx>({
   stack: [],
   inStack: () => false,
   toggle: () => {},
+  remove: () => {},
   clear: () => {},
 })
 
@@ -39,6 +41,10 @@ export function LocalStackProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const remove = useCallback((id: string) => {
+    setStack(removeFromStack(id))
+  }, [])
+
   const clear = useCallback(() => {
     clearStack()
     setStack([])
@@ -47,7 +53,7 @@ export function LocalStackProvider({ children }: { children: ReactNode }) {
   const isIn = useCallback((id: string) => stack.some((p) => p.id === id), [stack])
 
   return (
-    <Ctx.Provider value={{ stack, inStack: isIn, toggle, clear }}>
+    <Ctx.Provider value={{ stack, inStack: isIn, toggle, remove, clear }}>
       {children}
     </Ctx.Provider>
   )

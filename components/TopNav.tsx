@@ -106,18 +106,6 @@ export default function TopNav() {
               })}
             </div>
 
-            {/* My Stack — ghost outline button, always visible */}
-            <Link
-              href="/dashboard"
-              className="text-[11px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 transition-all whitespace-nowrap"
-              style={{
-                color: '#a6e22e',
-                border: `1px solid rgba(${AR},0.6)`,
-                boxShadow: `0 0 8px rgba(${AR},0.2), inset 0 0 8px rgba(${AR},0.05)`,
-              }}
-            >
-              My Stack
-            </Link>
           </nav>
         </div>
       </header>

@@ -3,7 +3,7 @@ import { Geist, Geist_Mono, Anton } from "next/font/google";
 import Script from "next/script";
 import { GA_MEASUREMENT_ID } from "@/lib/gtag";
 import { LocalStackProvider } from "@/components/LocalStackContext";
-import StackPill from "@/components/StackPill";
+import StackFAB from "@/components/StackFAB";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -41,7 +41,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <LocalStackProvider>
           {children}
-          <StackPill />
+          <StackFAB />
         </LocalStackProvider>
       </body>
       <Script
