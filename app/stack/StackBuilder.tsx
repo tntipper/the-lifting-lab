@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem, type SafetyFlag } from '@/lib/nutrient-limits'
+import { rniFor, type Sex } from '@/lib/nutrient-rda'
 import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
 import { scoreFor } from '@/lib/scores'
 import { buyLink } from '@/lib/affiliate'
@@ -11,10 +12,11 @@ type DailyTotal = {
   amount: number
   unit: string
   ulPercent: number | null
+  rdaPercent: number | null
   sources: string[]
 }
 
-function getDailyTotals(stackItems: StackItem[]): DailyTotal[] {
+function getDailyTotals(stackItems: StackItem[], sex: Sex): DailyTotal[] {
   const totals: Record<string, { amount: number; unit: string; sources: string[] }> = {}
 
   for (const item of stackItems) {
@@ -31,15 +33,19 @@ function getDailyTotals(stackItems: StackItem[]): DailyTotal[] {
   }
 
   return Object.entries(totals)
-    .map(([name, d]) => ({
-      name,
-      amount: Math.round(d.amount * 10) / 10,
-      unit: d.unit,
-      ulPercent: NUTRIENT_LIMITS[name]?.ul
-        ? Math.round((d.amount / NUTRIENT_LIMITS[name].ul!) * 100)
-        : null,
-      sources: d.sources,
-    }))
+    .map(([name, d]) => {
+      const rni = rniFor(name, sex)
+      return {
+        name,
+        amount: Math.round(d.amount * 10) / 10,
+        unit: d.unit,
+        ulPercent: NUTRIENT_LIMITS[name]?.ul
+          ? Math.round((d.amount / NUTRIENT_LIMITS[name].ul!) * 100)
+          : null,
+        rdaPercent: rni ? Math.round((d.amount / rni.value) * 100) : null,
+        sources: d.sources,
+      }
+    })
     .sort((a, b) => {
       if (b.ulPercent != null && a.ulPercent != null) return b.ulPercent - a.ulPercent
       if (b.ulPercent != null) return 1
@@ -124,8 +130,24 @@ export default function StackBuilder() {
   const [loading, setLoading] = useState(true)
   const [flags, setFlags] = useState<SafetyFlag[]>([])
   const [showTotals, setShowTotals] = useState(false)
+  const [sex, setSex] = useState<Sex>('male')
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Persist the RDA baseline (gender toggle) so it survives reloads.
+  useEffect(() => {
+    const stored = typeof window !== 'undefined' ? window.localStorage.getItem('tll-rda-sex') : null
+    if (stored === 'male' || stored === 'female') setSex(stored)
+  }, [])
+
+  function changeSex(next: Sex) {
+    setSex(next)
+    try {
+      window.localStorage.setItem('tll-rda-sex', next)
+    } catch {
+      /* ignore storage failures (private mode etc.) */
+    }
+  }
 
   const loadStack = useCallback(async () => {
     const res = await fetch('/api/stack')
@@ -199,9 +221,13 @@ export default function StackBuilder() {
       ? Math.round(scoredItems.reduce((a, b) => a + b, 0) / scoredItems.length)
       : null
 
-  const dailyTotals = getDailyTotals(stackItems)
+  const dailyTotals = getDailyTotals(stackItems, sex)
   const shareUrl = buildShareUrl(avgScore, stackItems)
   const emailUrl = buildEmailLink(avgScore, stackItems)
+
+  // RDA coverage summary: nutrients hitting 100% RNI without exceeding the UL.
+  const rdaTracked = dailyTotals.filter((t) => t.rdaPercent != null)
+  const rdaMet = rdaTracked.filter((t) => t.rdaPercent! >= 100 && (t.ulPercent == null || t.ulPercent < 100))
 
   return (
     <div className="space-y-6">
@@ -292,37 +318,89 @@ export default function StackBuilder() {
       {/* Daily totals table */}
       {showTotals && dailyTotals.length > 0 && (
         <div className="bg-lab-panel border border-lab-border rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-lab-border">
-            <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Daily Intake Totals</p>
-            <p className="text-[10px] text-gray-600 mt-0.5">Sum across all stack products × servings per day</p>
+          <div className="px-4 py-3 border-b border-lab-border flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Daily Intake Totals</p>
+              <p className="text-[10px] text-gray-600 mt-0.5">Sum across all stack products × servings per day</p>
+            </div>
+            {/* Gender toggle — adjusts the RDA baseline (UK RNI) */}
+            <div className="flex rounded-lg border border-lab-border overflow-hidden shrink-0">
+              {(['male', 'female'] as Sex[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => changeSex(s)}
+                  className={`text-[10px] uppercase tracking-widest font-black px-2.5 py-1.5 transition-colors ${
+                    sex === s ? 'bg-lab-lime text-black' : 'text-lab-muted hover:text-white'
+                  }`}
+                >
+                  {s === 'male' ? 'Male' : 'Female'}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* RDA coverage summary */}
+          {rdaTracked.length > 0 && (
+            <div className="px-4 py-2.5 border-b border-lab-border flex items-center gap-2">
+              <span className="text-sm" aria-hidden>🎯</span>
+              <span className="text-xs text-white/90">
+                Hitting 100% RDA on{' '}
+                <span className="font-black text-lab-lime">{rdaMet.length}</span>
+                <span className="text-lab-muted"> / {rdaTracked.length}</span> tracked nutrient{rdaTracked.length === 1 ? '' : 's'}
+                <span className="text-gray-600"> ({sex === 'male' ? 'adult male' : 'adult female'} baseline)</span>
+              </span>
+            </div>
+          )}
+
           <div className="divide-y divide-lab-border">
             {dailyTotals.map((row) => {
-              const pct = row.ulPercent
-              const color = pct == null ? '#6b7280' : pct >= 100 ? '#ff5c5c' : pct >= 80 ? '#f5b342' : '#a6e22e'
+              const ul = row.ulPercent
+              const rda = row.rdaPercent
+              // Combined RAG: toxicity takes priority, then RDA achievement.
+              const dotColor =
+                ul != null && ul >= 100 ? '#ff5c5c'
+                : ul != null && ul >= 80 ? '#f5b342'
+                : rda != null && rda >= 100 ? '#a6e22e'
+                : rda != null ? '#2E8FE0'
+                : '#6b7280'
               return (
                 <div key={row.name} className="flex items-center gap-3 px-4 py-2.5">
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
                   <span className="text-white text-xs font-medium flex-1 min-w-0 truncate">{row.name}</span>
                   <span className="text-white text-xs font-black shrink-0">
                     {row.amount}{row.unit}
                   </span>
-                  {pct != null ? (
+                  {/* RDA % of UK RNI */}
+                  {rda != null ? (
                     <span
-                      className="text-[10px] font-bold shrink-0 w-12 text-right"
-                      style={{ color }}
+                      className="text-[10px] font-bold shrink-0 w-14 text-right"
+                      style={{ color: rda >= 100 ? '#a6e22e' : '#2E8FE0' }}
                     >
-                      {pct}% UL
+                      {rda}% RDA
                     </span>
                   ) : (
-                    <span className="text-[10px] text-gray-600 shrink-0 w-12 text-right">No UL</span>
+                    <span className="text-[10px] text-gray-700 shrink-0 w-14 text-right">—</span>
+                  )}
+                  {/* UL % of EFSA upper limit */}
+                  {ul != null ? (
+                    <span
+                      className="text-[10px] font-bold shrink-0 w-12 text-right"
+                      style={{ color: ul >= 100 ? '#ff5c5c' : ul >= 80 ? '#f5b342' : '#6b7280' }}
+                    >
+                      {ul}% UL
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-700 shrink-0 w-12 text-right">No UL</span>
                   )}
                 </div>
               )
             })}
           </div>
           <div className="px-4 py-2 border-t border-lab-border">
-            <p className="text-[10px] text-gray-600">UL = EFSA Tolerable Upper Intake Level. ≥80% = ⚠️ Caution. ≥100% = 🚨 Critical.</p>
+            <p className="text-[10px] text-gray-600">
+              RDA = % of UK Reference Nutrient Intake (adult {sex}). <span style={{ color: '#a6e22e' }}>●</span> 100%+ RDA met.
+              UL = EFSA Tolerable Upper Intake Level. <span style={{ color: '#f5b342' }}>●</span> ≥80% caution · <span style={{ color: '#ff5c5c' }}>●</span> ≥100% critical.
+            </p>
           </div>
         </div>
       )}
