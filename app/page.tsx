@@ -27,9 +27,6 @@ export default function Home() {
               filter: 'blur(18px)',
             }}
           />
-          <p className="relative text-[10px] uppercase tracking-[0.3em] font-bold text-lab-muted mb-1.5">
-            Evidence-Based Supplements · UK
-          </p>
           <h1
             className="relative text-[38px] uppercase leading-none tracking-tight"
             style={{ fontFamily: 'var(--font-anton), Impact, sans-serif', transform: 'skewX(-4deg)' }}
@@ -44,6 +41,9 @@ export default function Home() {
               Lab
             </span>
           </h1>
+          <p className="relative text-[13px] uppercase tracking-[0.2em] font-bold text-lab-muted mt-2">
+            Evidence-Based Supplements · UK
+          </p>
         </div>
 
         {/* Find My Stack — hero CTA */}
