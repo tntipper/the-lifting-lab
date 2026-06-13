@@ -150,6 +150,7 @@ export const PRODUCT_SCORES: Record<string, number> = {
   "Bio-Synergy|After Dark Protein": 50,
   "PhD Nutrition|Night Recovery": 82,
   "Warrior|Warrior Protein Night": 95,
+  "Warrior|EAA Powder": 88,
   "Scitec Nutrition|Casein Complex": 77,
   "Grenade|Carb Killa (Chocolate Chip Salted Caramel)": 93,
   "Barebells|Protein Bar (Cookies & Cream)": 91,
