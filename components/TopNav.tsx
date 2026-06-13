@@ -1,37 +1,126 @@
-import Link from 'next/link'
+'use client'
 
-// Public top nav used across browse/compare pages.
+import { useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+
+const AR = '166,226,46'
+
+const NAV_LINKS = [
+  { href: '/products', label: 'Browse' },
+  { href: '/compare', label: 'Compare' },
+  { href: '/guide', label: 'Guides' },
+  { href: '/wizard', label: 'Find My Stack' },
+  { href: '/favourites', label: 'Favourites' },
+]
+
 export default function TopNav() {
+  const pathname = usePathname()
+  const sweepRef = useRef<HTMLDivElement>(null)
+  const prevPath = useRef(pathname)
+
+  useEffect(() => {
+    if (prevPath.current === pathname) return
+    prevPath.current = pathname
+    const el = sweepRef.current
+    if (!el) return
+    el.classList.remove('run')
+    void el.offsetWidth
+    el.classList.add('run')
+  }, [pathname])
+
+  function isActive(href: string) {
+    if (href === '/') return pathname === '/'
+    return pathname.startsWith(href)
+  }
+
   return (
-    <header className="border-b border-lab-border sticky top-0 z-20 bg-lab-bg/90 backdrop-blur">
-      <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="font-black uppercase tracking-widest text-lg">
-          THE LIFTING<span className="text-lab-lime">LAB</span>
-        </Link>
-        <nav className="flex items-center gap-5 text-xs font-bold uppercase tracking-widest">
-          <Link href="/products" className="text-lab-muted hover:text-white transition-colors">
-            Browse
-          </Link>
-          <Link href="/compare" className="text-lab-muted hover:text-white transition-colors">
-            Compare
-          </Link>
-          <Link href="/guide" className="text-lab-muted hover:text-white transition-colors">
-            Guides
-          </Link>
-          <Link href="/wizard" className="text-lab-muted hover:text-white transition-colors">
-            Find My Stack
-          </Link>
-          <Link href="/favourites" className="text-lab-muted hover:text-white transition-colors">
-            Favourites
-          </Link>
+    <>
+      {/* light sweep — fixed, full height, triggers on nav change */}
+      <div ref={sweepRef} className="lab-sweep" />
+
+      <header
+        className="sticky top-0 z-20 backdrop-blur"
+        style={{
+          background: 'rgba(12,12,12,0.92)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          {/* wordmark — Anton, skewed, LAB in lime */}
           <Link
-            href="/dashboard"
-            className="text-lab-lime border border-lab-border rounded-lg px-3 py-1.5 hover:border-lab-lime transition-colors"
+            href="/"
+            className="shrink-0 uppercase select-none"
+            style={{
+              fontFamily: 'var(--font-anton), Impact, "Arial Narrow Bold", sans-serif',
+              fontSize: '22px',
+              letterSpacing: '0.5px',
+              transform: 'skewX(-6deg)',
+              display: 'inline-block',
+              lineHeight: 1,
+            }}
           >
-            My Stack
+            THE LIFTING
+            <span style={{ color: '#a6e22e', textShadow: `0 0 14px rgba(${AR},0.45)` }}>LAB</span>
           </Link>
-        </nav>
-      </div>
-    </header>
+
+          <nav className="flex items-center gap-5">
+            {NAV_LINKS.map(({ href, label }) => {
+              const active = isActive(href)
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className="relative text-[11px] font-bold uppercase tracking-widest py-1.5 transition-colors"
+                  style={active
+                    ? { color: '#a6e22e', textShadow: `0 0 8px rgba(${AR},0.5)` }
+                    : { color: '#a3a3a3' }
+                  }
+                >
+                  {active && (
+                    <>
+                      {/* bloom above */}
+                      <span
+                        className="pointer-events-none absolute"
+                        style={{
+                          top: '-20px', left: '50%', transform: 'translateX(-50%)',
+                          width: '42px', height: '18px',
+                          background: `radial-gradient(ellipse at top, rgba(${AR},0.3) 0%, transparent 80%)`,
+                          filter: 'blur(4px)',
+                        }}
+                      />
+                      {/* glowing indicator line */}
+                      <span
+                        className="pointer-events-none absolute"
+                        style={{
+                          top: '-19px', left: '50%', transform: 'translateX(-50%)',
+                          width: '42px', height: '1px',
+                          background: `linear-gradient(90deg, transparent, #a6e22e, transparent)`,
+                          boxShadow: '0 0 8px #a6e22e',
+                        }}
+                      />
+                    </>
+                  )}
+                  {label}
+                </Link>
+              )
+            })}
+
+            {/* My Stack — ghost outline button */}
+            <Link
+              href="/dashboard"
+              className="text-[11px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 transition-all"
+              style={{
+                color: '#a6e22e',
+                border: `1px solid rgba(${AR},0.6)`,
+                boxShadow: `0 0 8px rgba(${AR},0.2), inset 0 0 8px rgba(${AR},0.05)`,
+              }}
+            >
+              My Stack
+            </Link>
+          </nav>
+        </div>
+      </header>
+    </>
   )
 }

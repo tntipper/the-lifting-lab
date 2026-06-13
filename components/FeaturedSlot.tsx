@@ -10,6 +10,57 @@ type FeaturedBrand = {
   cta_url: string
 }
 
+const AR = '166,226,46'
+
+function SlotCard({ href, external, children }: { href: string; external?: boolean; children: React.ReactNode }) {
+  const cls = 'lab-card beam block p-6 text-center hover:opacity-95 transition-opacity'
+  if (external) {
+    return <a href={href} target="_blank" rel="noopener noreferrer nofollow" className={cls}>{children}</a>
+  }
+  return <Link href={href} className={cls}>{children}</Link>
+}
+
+function SlotInner({ name, tagline, cta }: { name: string; tagline?: string; cta: string }) {
+  return (
+    <>
+      {/* eyebrow with glowing lime dot */}
+      <div className="flex items-center justify-center gap-2 mb-3">
+        <span
+          className="inline-block w-[5px] h-[5px] rounded-full"
+          style={{ background: `rgba(${AR},1)`, boxShadow: `0 0 6px rgba(${AR},0.9)` }}
+        />
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-lab-muted">
+          Featured placement
+        </span>
+      </div>
+
+      {/* brand name */}
+      <h4
+        className="uppercase text-white text-xl mb-2"
+        style={{ fontFamily: 'var(--font-anton), Impact, sans-serif', transform: 'skewX(-5deg)', letterSpacing: '0.5px' }}
+      >
+        {name}
+      </h4>
+
+      {tagline && (
+        <p className="text-[13px] text-lab-muted max-w-xs mx-auto mb-4 leading-relaxed">{tagline}</p>
+      )}
+
+      {/* ghost CTA */}
+      <span
+        className="inline-block text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-xl transition-all"
+        style={{
+          color: `rgba(${AR},1)`,
+          border: `1px solid rgba(${AR},0.6)`,
+          boxShadow: `0 0 8px rgba(${AR},0.2), inset 0 0 8px rgba(${AR},0.05)`,
+        }}
+      >
+        {cta}
+      </span>
+    </>
+  )
+}
+
 export default function FeaturedSlot() {
   const [brand, setBrand] = useState<FeaturedBrand | null | 'loading'>('loading')
 
@@ -20,50 +71,27 @@ export default function FeaturedSlot() {
       .catch(() => setBrand(null))
   }, [])
 
-  // show nothing while loading to avoid layout shift
   if (brand === 'loading') return null
 
-  // no active featured brand — show placeholder
   if (!brand) {
     return (
-      <Link
-        href="/contact"
-        className="block w-full rounded-2xl border border-dashed border-yellow-500/50 bg-yellow-500/5 p-4 text-center hover:bg-yellow-500/10 transition-colors"
-      >
-        <div className="text-[10px] font-black uppercase tracking-widest text-yellow-400 mb-1">
-          ⭐ Featured Placement
-        </div>
-        <div className="text-sm font-black uppercase text-white leading-tight">Your Brand Here</div>
-        <div className="text-[11px] text-gray-400 mt-1">
-          Reading this? So are your customers.
-          <br />
-          Get in touch to feature your brand.
-        </div>
-        <div className="mt-3 inline-block bg-yellow-500 text-black text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">
-          Contact Us ›
-        </div>
-      </Link>
+      <SlotCard href="/contact">
+        <SlotInner
+          name="Your Brand Here"
+          tagline="Readers comparing supplements right now are your customers. Feature your brand in the Showdown."
+          cta="Get in touch ›"
+        />
+      </SlotCard>
     )
   }
 
-  // live featured brand
   return (
-    <a
-      href={brand.cta_url}
-      target="_blank"
-      rel="noopener noreferrer nofollow"
-      className="block w-full rounded-2xl border border-yellow-500/60 bg-yellow-500/8 p-4 text-center hover:bg-yellow-500/15 transition-colors"
-    >
-      <div className="text-[10px] font-black uppercase tracking-widest text-yellow-400 mb-1">
-        ⭐ Featured Brand
-      </div>
-      <div className="text-sm font-black uppercase text-white leading-tight">{brand.brand_name}</div>
-      {brand.tagline && (
-        <div className="text-[11px] text-gray-400 mt-1">{brand.tagline}</div>
-      )}
-      <div className="mt-3 inline-block bg-yellow-500 text-black text-[11px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full">
-        {brand.cta_text || 'Shop Now'} ›
-      </div>
-    </a>
+    <SlotCard href={brand.cta_url} external>
+      <SlotInner
+        name={brand.brand_name}
+        tagline={brand.tagline ?? undefined}
+        cta={`${brand.cta_text || 'Shop Now'} ›`}
+      />
+    </SlotCard>
   )
 }

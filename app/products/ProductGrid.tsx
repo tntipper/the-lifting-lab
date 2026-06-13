@@ -346,7 +346,7 @@ export default function ProductGrid() {
                       </span>
                     )}
                     {isTop && (
-                      <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime/10 text-lab-lime border border-lab-lime/30 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-white/60 border border-white/15 px-2 py-0.5 rounded-full">
                         {topLabel}
                       </span>
                     )}
@@ -371,14 +371,14 @@ export default function ProductGrid() {
                 </div>
                 <div className="bg-black/40 rounded-lg p-2 text-center">
                   <div className="text-[9px] text-lab-muted uppercase tracking-wide">£/serving</div>
-                  <div className="text-xs font-bold text-white mt-0.5">
-                    {p.cost_per_serving != null ? `£${p.cost_per_serving.toFixed(2)}` : '—'}
+                  <div className="mt-0.5" style={p.cost_per_serving != null ? { fontSize: '12px', fontWeight: 800, color: '#f2f2f2' } : { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>
+                    {p.cost_per_serving != null ? `£${p.cost_per_serving.toFixed(2)}` : 'Pending'}
                   </div>
                 </div>
                 <div className="bg-black/40 rounded-lg p-2 text-center">
                   <div className="text-[9px] text-lab-muted uppercase tracking-wide">Retail</div>
-                  <div className="text-xs font-bold text-white mt-0.5">
-                    {p.retail_price != null ? fmt(p.retail_price) : '—'}
+                  <div className="mt-0.5" style={p.retail_price != null ? { fontSize: '12px', fontWeight: 800, color: '#f2f2f2' } : { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>
+                    {p.retail_price != null ? fmt(p.retail_price) : 'Pending'}
                   </div>
                 </div>
               </div>

@@ -1,7 +1,11 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+
 export function scoreColor(score: number): string {
   if (score >= 70) return '#a6e22e'
-  if (score >= 50) return '#f5b342'
-  return '#ff5c5c'
+  if (score >= 50) return '#e8a020'
+  return '#e05a2b'
 }
 
 const SIZES = {
@@ -21,6 +25,46 @@ export default function ScoreBadge({
   const cx = px / 2
   const circ = 2 * Math.PI * r
 
+  const [dashFilled, setDashFilled] = useState(0)
+  const [displayNum, setDisplayNum] = useState(0)
+  const rafRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (score == null) return
+
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (reduced) {
+      setDashFilled(circ * (score / 100))
+      setDisplayNum(score)
+      return
+    }
+
+    const target = circ * (score / 100)
+    const start = performance.now()
+    const dur = 1100
+
+    function tick(now: number) {
+      const p = Math.min((now - start) / dur, 1)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setDashFilled(target * eased)
+      setDisplayNum(Math.round(score! * eased))
+      if (p < 1) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        setDashFilled(target)
+        setDisplayNum(score!)
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [score, circ])
+
   if (score == null) {
     return (
       <div
@@ -33,18 +77,17 @@ export default function ScoreBadge({
   }
 
   const color = scoreColor(score)
-  const filled = circ * (score / 100)
-
-  const bloomAlpha = score >= 70 ? '0.4' : score >= 50 ? '0.3' : '0.25'
-  const bloomColor = score >= 70
-    ? `rgba(166,226,46,${bloomAlpha})`
-    : score >= 50
-    ? `rgba(232,160,32,${bloomAlpha})`
-    : `rgba(224,90,43,${bloomAlpha})`
+  const bloomAlpha = score >= 70 ? '0.4' : score >= 50 ? '0.28' : '0.22'
+  const bloomColor =
+    score >= 70
+      ? `rgba(166,226,46,${bloomAlpha})`
+      : score >= 50
+      ? `rgba(232,160,32,${bloomAlpha})`
+      : `rgba(224,90,43,${bloomAlpha})`
 
   return (
     <div className="shrink-0 relative" style={{ width: px, height: px }}>
-      {/* bloom layer */}
+      {/* bloom behind ring */}
       <span
         className="pointer-events-none absolute rounded-full"
         style={{
@@ -53,7 +96,13 @@ export default function ScoreBadge({
           filter: 'blur(6px)',
         }}
       />
-      <svg width={px} height={px} viewBox={`0 0 ${px} ${px}`} className="relative z-10">
+      <svg
+        width={px}
+        height={px}
+        viewBox={`0 0 ${px} ${px}`}
+        className="relative z-10"
+        style={{ transform: 'rotate(-90deg)' }}
+      >
         {/* track */}
         <circle
           cx={cx}
@@ -63,7 +112,7 @@ export default function ScoreBadge({
           stroke="rgba(255,255,255,0.08)"
           strokeWidth={stroke}
         />
-        {/* fill */}
+        {/* animated fill */}
         <circle
           cx={cx}
           cy={cx}
@@ -72,24 +121,24 @@ export default function ScoreBadge({
           stroke={color}
           strokeWidth={stroke}
           strokeLinecap="round"
-          strokeDasharray={`${filled} ${circ - filled}`}
-          strokeDashoffset={circ / 4}
+          strokeDasharray={`${dashFilled} ${circ - dashFilled}`}
+          strokeDashoffset={0}
           style={{ filter: `drop-shadow(0 0 4px ${color}88)` }}
         />
-        <text
-          x={cx}
-          y={cx}
-          dominantBaseline="central"
-          textAnchor="middle"
-          fill={color}
-          fontWeight="900"
-          fontSize={text}
-          fontFamily="var(--font-anton), Impact, 'Arial Narrow Bold', sans-serif"
-          style={{ WebkitTextStroke: '0.6px rgba(0,0,0,0.55)' } as React.CSSProperties}
-        >
-          {score}
-        </text>
       </svg>
+      {/* number overlay — not rotated */}
+      <div
+        className="absolute inset-0 flex items-center justify-center z-20"
+        style={{
+          fontFamily: 'var(--font-anton), Impact, "Arial Narrow Bold", sans-serif',
+          fontSize: text,
+          color,
+          WebkitTextStroke: '0.6px rgba(0,0,0,0.55)',
+          textShadow: `0 0 2px #0D0D0D, 0 1px 2px rgba(0,0,0,0.9), 0 0 9px ${color}66`,
+        } as React.CSSProperties}
+      >
+        {displayNum}
+      </div>
     </div>
   )
 }

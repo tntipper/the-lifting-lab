@@ -83,6 +83,7 @@ body {
 /* ─── Primary CTA bloom ─── */
 .lab-cta {
   position: relative;
+  background: #a6e22e; /* color-mix() fallback */
   background: linear-gradient(145deg,
     color-mix(in srgb, #a6e22e 80%, #fff) 0%,
     #a6e22e 45%,
@@ -129,6 +130,14 @@ body {
 @keyframes sweepGo {
   0%   { opacity: 1; transform: translateX(-160px); }
   100% { opacity: 0; transform: translateX(100vw); }
+}
+
+/* ─── Reduced motion overrides ─── */
+@media (prefers-reduced-motion: reduce) {
+  .lab-card { transition: none; }
+  .lab-card:hover { transform: none; }
+  .beam:hover::after, .beam:focus-within::after { animation: none !important; opacity: 0 !important; }
+  .lab-sweep.run { animation: none !important; }
 }
 
 /* ─── Informed Sport cyan badge ─── */
