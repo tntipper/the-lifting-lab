@@ -5,6 +5,7 @@ import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
 import { track } from '@/lib/gtag'
+import { useLocalStack } from '@/components/LocalStackContext'
 import type { ScoredProduct } from '@/lib/products'
 
 type GoalKey = 'muscle' | 'performance' | 'health' | 'weightloss'
@@ -36,6 +37,7 @@ const GOAL_CATEGORIES: Record<GoalKey, string[]> = {
 const OWN_OPTIONS = ['whey', 'creatine', 'pre-workout', 'eaas', 'vitamin', 'hydration']
 
 export default function Wizard() {
+  const { inStack, toggle } = useLocalStack()
   const [step, setStep] = useState(0)
   const [goal, setGoal] = useState<GoalKey | null>(null)
   const [budget, setBudget] = useState<BudgetKey | null>(null)
@@ -80,6 +82,22 @@ export default function Wizard() {
 
   function toggleOwned(c: string) {
     setOwned((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
+  }
+
+  // How many of the recommended picks are already in My Stack.
+  const inStackCount = stack.filter((p) => inStack(p.id)).length
+  const allInStack = stack.length > 0 && inStackCount === stack.length
+
+  function addAllToStack() {
+    const toAdd = stack.filter((p) => !inStack(p.id))
+    toAdd.forEach((p) =>
+      toggle({ id: p.id, name: p.name, brand: p.brand, category: p.category, score: p.score }),
+    )
+    track('wizard_add_stack', {
+      goal: goal || '',
+      budget: budget || '',
+      added: toAdd.length,
+    })
   }
 
   function next() {
@@ -221,23 +239,54 @@ export default function Wizard() {
                       {categoryLabel(p.category)}
                     </span>
                   </div>
-                  <Link
-                    href={`/products?category=${p.category}`}
-                    className="text-[10px] uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-3 py-1.5 rounded-lg shrink-0"
-                  >
-                    Swap
-                  </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => toggle({ id: p.id, name: p.name, brand: p.brand, category: p.category, score: p.score })}
+                      className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg border transition-colors ${
+                        inStack(p.id)
+                          ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
+                          : 'border-lab-border text-lab-muted hover:text-white'
+                      }`}
+                    >
+                      {inStack(p.id) ? '✓ Stack' : '+ Stack'}
+                    </button>
+                    <Link
+                      href={`/products?category=${p.category}`}
+                      className="text-[10px] uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-3 py-1.5 rounded-lg"
+                    >
+                      Swap
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
           )}
 
           <div className="flex flex-wrap gap-3 mt-8">
+            {stack.length > 0 && (
+              allInStack ? (
+                <Link
+                  href="/stack"
+                  className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
+                >
+                  View My Stack →
+                </Link>
+              ) : (
+                <button
+                  onClick={addAllToStack}
+                  className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
+                >
+                  {inStackCount > 0
+                    ? `Add ${stack.length - inStackCount} more to My Stack`
+                    : `Add ${stack.length} to My Stack`}
+                </button>
+              )
+            )}
             <Link
               href="/products"
-              className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
+              className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg"
             >
-              Browse all products →
+              Browse all →
             </Link>
             <button
               onClick={restart}
