@@ -36,42 +36,43 @@ function TileCard({
   }
 
   return (
-    <Link
-      ref={ref}
-      href={`/products?group=${group.slug}`}
-      onMouseMove={handleMouseMove}
-      className="group relative block rounded-2xl overflow-hidden transition-all duration-250 active:scale-[0.97]"
-      style={
-        {
-          '--mx': '50%',
-          '--my': '30%',
-          '--glint': '0',
-          background: `
-            radial-gradient(240px circle at var(--mx) var(--my), rgba(255,255,255,var(--glint)) 0%, transparent 60%),
-            linear-gradient(160deg, rgba(${rgb},0.09) 0%, #0f0f0f 55%)
-          `,
-          border: `1px solid rgba(${rgb},0.2)`,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-        } as React.CSSProperties
-      }
-    >
-      {/* shimmer top edge */}
-      <span
-        className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
-        style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.4),transparent)` }}
-      />
-
-      {/* hover: warm the border */}
+    <>
       <style>{`
+        .tile-${group.slug} {
+          --glint: 0;
+        }
         .tile-${group.slug}:hover {
-          --glint: 0.06 !important;
+          --glint: 0.06;
           border-color: rgba(${rgb},0.4) !important;
           box-shadow: 0 8px 28px rgba(0,0,0,0.55), 0 0 16px rgba(${rgb},0.15), inset 0 1px 0 rgba(255,255,255,0.06) !important;
-          transform: translateY(-3px) !important;
+          transform: translateY(-3px);
         }
       `}</style>
+      <Link
+        ref={ref}
+        href={`/products?group=${group.slug}`}
+        onMouseMove={handleMouseMove}
+        className={`tile-${group.slug} beam group relative block rounded-2xl transition-all duration-250 active:scale-[0.97]`}
+        style={
+          {
+            '--mx': '50%',
+            '--my': '30%',
+            background: `
+              radial-gradient(240px circle at var(--mx) var(--my), rgba(255,255,255,var(--glint,0)) 0%, transparent 60%),
+              linear-gradient(160deg, rgba(${rgb},0.09) 0%, #0f0f0f 55%)
+            `,
+            border: `1px solid rgba(${rgb},0.2)`,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
+          } as React.CSSProperties
+        }
+      >
+        {/* shimmer top edge */}
+        <span
+          className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
+          style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.4),transparent)` }}
+        />
 
-      <div className={`tile-${group.slug} flex flex-col gap-0 p-3.5`}>
+      <div className="flex flex-col gap-0 p-3.5">
         {/* icon tile */}
         <div
           className="relative w-11 h-11 rounded-xl flex items-center justify-center text-2xl mb-3 shrink-0"
@@ -112,6 +113,7 @@ function TileCard({
         </div>
       </div>
     </Link>
+    </>
   )
 }
 
