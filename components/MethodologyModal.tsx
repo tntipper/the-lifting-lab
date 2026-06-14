@@ -74,6 +74,16 @@ export default function MethodologyModal() {
                 </div>
               </div>
 
+              <div className="rounded-xl border border-lab-border bg-white/5 p-3">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-lab-muted mb-1.5">What the score is — and isn&apos;t</p>
+                <p className="text-[11px] text-white/80 leading-relaxed">
+                  Scores rate a product&apos;s <span className="text-white font-bold">ingredients and doses</span> against
+                  a category ideal — nothing else. A score is <span className="text-white font-bold">not</span> a
+                  judgement of the brand, its quality, safety, manufacturing, or reputation. A lower score reflects
+                  the <span className="italic">formulation</span> we measured, not the company behind it.
+                </p>
+              </div>
+
               <p className="text-[10px] text-lab-muted border-t border-lab-border pt-3">
                 Every product is scored as a % match against a defined ideal for its category — dose-for-dose,
                 no commission bias. The perfect 100 belongs to an ideal that doesn&apos;t exist, so real products
