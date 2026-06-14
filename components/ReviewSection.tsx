@@ -137,7 +137,8 @@ export default function ReviewSection({ productId, productName }: { productId: s
   const [reviews, setReviews] = useState<Review[]>([])
   const [average, setAverage] = useState<number | null>(null)
   const [count, setCount] = useState(0)
-  const [signedIn, setSignedIn] = useState(false)
+  // null = auth not resolved yet; only treat as signed-out once we actually know.
+  const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
 
   const [rating, setRating] = useState(0)
@@ -151,7 +152,9 @@ export default function ReviewSection({ productId, productName }: { productId: s
   const hasReviewed = reviews.some((r) => r.is_mine)
 
   useEffect(() => {
-    createClient().auth.getUser().then(({ data }) => setSignedIn(!!data.user))
+    createClient().auth.getUser()
+      .then(({ data }) => setSignedIn(!!data.user))
+      .catch(() => setSignedIn(false))
     fetch(`/api/reviews?productId=${encodeURIComponent(productId)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -253,7 +256,7 @@ export default function ReviewSection({ productId, productName }: { productId: s
         </div>
       )}
 
-      {!loading && !signedIn && (
+      {!loading && signedIn === false && (
         <a href="/auth" className="block mb-5 text-center bg-lab-bg/40 border border-lab-border rounded-xl p-4 text-sm text-lab-muted hover:border-lab-lime/50 transition-colors">
           <span className="text-lab-lime font-bold">Sign in</span> to review this product and earn 75 points.
         </a>

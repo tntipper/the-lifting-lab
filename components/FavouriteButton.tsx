@@ -6,6 +6,10 @@ import { track } from '@/lib/gtag'
 
 // Heart toggle for favouriting a product. Favourites are auth-gated (hard gate):
 // a signed-out click redirects to /auth rather than saving.
+//
+// `signedIn` is tri-state: null = auth not resolved yet. We must NOT bounce to
+// /auth while it's unknown (that was F10 — a race where clicking before auth
+// resolved, or any non-ok favourites GET, sent a logged-in user to sign-in).
 export default function FavouriteButton({
   productId,
   favourited,
@@ -15,7 +19,7 @@ export default function FavouriteButton({
 }: {
   productId: string
   favourited: boolean
-  signedIn: boolean
+  signedIn: boolean | null
   onChange?: (favourited: boolean) => void
   size?: 'sm' | 'md'
 }) {
@@ -24,6 +28,8 @@ export default function FavouriteButton({
   const dim = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'
 
   async function toggle() {
+    // Auth state not known yet — do nothing rather than guess (no false bounce).
+    if (signedIn === null) return
     if (!signedIn) {
       router.push('/auth')
       return
@@ -54,7 +60,7 @@ export default function FavouriteButton({
     <button
       type="button"
       onClick={toggle}
-      disabled={busy}
+      disabled={busy || signedIn === null}
       aria-pressed={favourited}
       aria-label={favourited ? 'Remove from favourites' : 'Add to favourites'}
       title={favourited ? 'Remove from favourites' : 'Add to favourites'}

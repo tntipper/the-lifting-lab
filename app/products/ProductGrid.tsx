@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
+import { createClient } from '@/lib/supabase'
 import MethodologyModal from '@/components/MethodologyModal'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
@@ -102,19 +103,33 @@ export default function ProductGrid() {
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<string[]>([])
   const [favs, setFavs] = useState<Set<string>>(new Set())
-  const [signedIn, setSignedIn] = useState(false)
+  // null = auth not resolved yet. Tri-state so FavouriteButton can wait rather
+  // than default-to-signed-out and bounce a logged-in user to /auth (F10).
+  const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const [isOnly, setIsOnly] = useState(false)
   const [brandFilter, setBrandFilter] = useState<Set<string>>(new Set())
   const [brandPanelOpen, setBrandPanelOpen] = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Authoritative auth check — independent of the favourites endpoint. Uses the
+  // same session the rest of the app relies on (see TopNav), so a 401/500 from
+  // /api/favourites can never make a signed-in user look logged out.
+  useEffect(() => {
+    let cancelled = false
+    createClient().auth.getUser()
+      .then(({ data }) => { if (!cancelled) setSignedIn(!!data.user) })
+      .catch(() => { if (!cancelled) setSignedIn(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  // Load the user's favourite ids for the heart fill state. A non-ok response
+  // here only leaves favs empty — it no longer affects signed-in state.
   useEffect(() => {
     let cancelled = false
     fetch('/api/favourites')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data) return
-        setSignedIn(true)
         setFavs(new Set<string>(Array.isArray(data.ids) ? data.ids : []))
       })
       .catch(() => {})
