@@ -44,6 +44,11 @@ function timeAgo(iso: string) {
 
 function ShareReview({ productName, rating }: { productName?: string; rating?: number }) {
   const [copied, setCopied] = useState(false)
+  const [canNativeShare, setCanNativeShare] = useState(false)
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function')
+  }, [])
 
   function shareText() {
     const stars = rating ? ` ${rating}★` : ''
@@ -54,6 +59,15 @@ function ShareReview({ productName, rating }: { productName?: string; rating?: n
   function open(url: string, network: string) {
     track('review_share', { method: network })
     window.open(url, '_blank', 'noopener,noreferrer,width=600,height=540')
+  }
+
+  async function nativeShare() {
+    try {
+      await navigator.share({ text: shareText(), url: window.location.href })
+      track('review_share', { method: 'native' })
+    } catch {
+      /* user cancelled or share unsupported — ignore */
+    }
   }
 
   async function copyLink() {
@@ -72,6 +86,15 @@ function ShareReview({ productName, rating }: { productName?: string; rating?: n
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
+      {canNativeShare && (
+        <button
+          type="button"
+          onClick={nativeShare}
+          className="text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-lab-lime/60 text-lab-lime hover:bg-lab-lime/10 transition-colors"
+        >
+          Share…
+        </button>
+      )}
       <button
         type="button"
         onClick={() => {
