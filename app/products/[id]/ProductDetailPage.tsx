@@ -11,6 +11,7 @@ import type { Nutrient } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
 import ReviewSection from '@/components/ReviewSection'
+import ShareModal from '@/components/ShareModal'
 
 type ProductDetail = {
   id: string
@@ -52,6 +53,7 @@ export default function ProductDetailPage({ id }: { id: string }) {
   const { inStack, toggle } = useLocalStack()
   const [product, setProduct] = useState<ProductDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [shareOpen, setShareOpen] = useState(false)
 
   useEffect(() => {
     fetch(`/api/products/${id}`)
@@ -125,6 +127,12 @@ export default function ProductDetailPage({ id }: { id: string }) {
               </p>
             )}
           </div>
+          <button
+            onClick={() => setShareOpen(true)}
+            className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg border border-lab-border text-lab-muted hover:text-lab-lime hover:border-lab-lime/50 transition-colors"
+          >
+            ↗ Share & earn 25 pts
+          </button>
         </div>
 
         {/* verdict flags */}
@@ -255,6 +263,15 @@ export default function ProductDetailPage({ id }: { id: string }) {
           </a>
         </div>
       </div>
+
+      <ShareModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        productId={product.id}
+        productName={product.name}
+        brand={product.brand}
+        score={product.score}
+      />
     </div>
   )
 }
