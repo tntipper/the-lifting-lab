@@ -9,6 +9,7 @@ const AR = '166,226,46'
 const NAV_LINKS = [
   { href: '/products', label: 'Browse' },
   { href: '/wizard', label: 'Find My Stack' },
+  { href: '/leaderboard', label: 'Leaderboard' },
 ]
 
 export default function TopNav() {
