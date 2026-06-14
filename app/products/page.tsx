@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import TopNav from '@/components/TopNav'
 import ProductGrid from './ProductGrid'
-import MethodologyModal from '@/components/MethodologyModal'
 
 export const metadata: Metadata = {
   title: 'Browse Supplements — The Lifting Lab',
@@ -15,9 +14,6 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex justify-end mb-1">
-          <MethodologyModal />
-        </div>
         <Suspense fallback={<div className="text-lab-muted text-sm py-8 text-center">Loading…</div>}>
           <ProductGrid />
         </Suspense>

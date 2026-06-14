@@ -10,6 +10,7 @@ import { track } from '@/lib/gtag'
 import type { Nutrient } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
+import MethodologyModal from '@/components/MethodologyModal'
 import ReviewSection from '@/components/ReviewSection'
 import ShareModal from '@/components/ShareModal'
 import TopNav from '@/components/TopNav'
@@ -193,7 +194,10 @@ export default function ProductDetailPage({ id }: { id: string }) {
 
         {/* score explanation */}
         <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
-          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-2">Score Explained</p>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Score Explained</p>
+            <MethodologyModal category={product.category} />
+          </div>
           <p className="text-sm text-white/70 leading-relaxed">
             This product scores{' '}
             <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our

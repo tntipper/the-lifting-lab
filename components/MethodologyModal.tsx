@@ -1,9 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { methodologyFor } from '@/lib/methodology'
+import { categoryLabel } from '@/lib/categories'
 
-export default function MethodologyModal() {
+export default function MethodologyModal({ category }: { category?: string }) {
   const [open, setOpen] = useState(false)
+  const method = methodologyFor(category)
+  const catLabel = category ? categoryLabel(category) : null
 
   return (
     <>
@@ -38,6 +42,37 @@ export default function MethodologyModal() {
                 a dose-for-dose comparison against a category-specific &quot;ideal&quot; reference spec built from
                 peer-reviewed evidence.
               </p>
+
+              {method && (
+                <div className="rounded-xl border border-lab-lime/30 bg-lab-lime/5 p-3">
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-lab-lime mb-1.5">
+                    The perfect {catLabel?.toLowerCase()} · weighting
+                  </p>
+                  <p className="text-[11px] text-white/80 leading-relaxed mb-3">{method.blurb}</p>
+                  <div className="space-y-1.5">
+                    {method.rows.map((row) => (
+                      <div
+                        key={row.ingredient}
+                        className="flex items-center gap-2 bg-black/40 border border-lab-border rounded-lg px-3 py-2"
+                      >
+                        <span className="text-[11px] font-bold flex-1 min-w-0">{row.ingredient}</span>
+                        <span className="text-[11px] text-lab-muted shrink-0">{row.target}</span>
+                        <span className="text-[11px] font-black text-lab-lime w-14 text-right shrink-0">{row.weight}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {method.notes.length > 0 && (
+                    <ul className="mt-3 space-y-1.5">
+                      {method.notes.map((note, i) => (
+                        <li key={i} className="text-[11px] text-white/70 flex gap-1.5">
+                          <span className="text-lab-lime shrink-0">•</span>
+                          <span>{note}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-lab-muted mb-2">The score breakdown</p>

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
+import MethodologyModal from '@/components/MethodologyModal'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, type ScoredProduct, type SortKey } from '@/lib/products'
@@ -218,6 +219,9 @@ export default function ProductGrid() {
           <p className="text-[11px] text-white/40 mt-1 uppercase tracking-widest">
             Ranked by effective dosing · not brand reputation
           </p>
+        </div>
+        <div className="shrink-0 pt-1">
+          <MethodologyModal category={category === 'all' ? undefined : category} />
         </div>
       </div>
 
