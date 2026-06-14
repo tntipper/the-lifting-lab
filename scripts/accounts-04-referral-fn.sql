@@ -50,6 +50,7 @@ declare
   v_ref    uuid;
   v_cfg    public.points_config%rowtype;
   v_season uuid;
+  v_rows   integer;
 begin
   if v_user is null then
     return 0;
@@ -65,18 +66,18 @@ begin
     return 0;
   end if;
 
-  -- Award once per referred user.
-  if exists (
-    select 1 from public.points_ledger
-    where user_id = v_ref and action_type = 'referral' and ref_id = v_user::text
-  ) then
-    return 0;
-  end if;
-
   v_season := public.current_season();
 
+  -- Atomic award-once-per-referred-user: the points_ledger_once_per_ref_uniq
+  -- index makes a concurrent duplicate a no-op; credit only if a row landed.
   insert into public.points_ledger (user_id, action_type, points, season_id, ref_id)
-  values (v_ref, 'referral', v_cfg.points, v_season, v_user::text);
+  values (v_ref, 'referral', v_cfg.points, v_season, v_user::text)
+  on conflict do nothing;
+
+  get diagnostics v_rows = row_count;
+  if v_rows = 0 then
+    return 0;
+  end if;
 
   update public.profiles
     set total_points = total_points + v_cfg.points

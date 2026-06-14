@@ -78,9 +78,10 @@ export default async function DashboardPage() {
   const { data: reviews } = await supabase.rpc('get_user_reviews')
   const myReviews = ((reviews as Record<string, unknown>[] | null) ?? []).slice(0, 5)
 
-  // Referral
-  const { count: referralCount } = await supabase
-    .from('profiles').select('id', { count: 'exact', head: true }).eq('referred_by', user.id)
+  // Referral — via SECURITY DEFINER RPC (profiles is owner-only readable, so
+  // counting other users' rows directly is no longer permitted).
+  const { data: referralCountData } = await supabase.rpc('get_referral_count')
+  const referralCount = (referralCountData as number | null) ?? 0
 
   const hdrs = await headers()
   const origin =

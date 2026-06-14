@@ -27,10 +27,15 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
--- Anyone may read public profile fields (needed for leaderboard / reviews avatars).
+-- Owner-only direct read. Private columns (email, referral_code, …) must NOT
+-- be readable by anon/other users (RLS is row-level, not column-level, so a
+-- `using (true)` policy would leak every column). Cross-user public display
+-- goes through SECURITY DEFINER RPCs (get_leaderboard, get_product_reviews)
+-- and the public.public_profiles view below — never the base table.
 drop policy if exists "profiles_select_public" on public.profiles;
-create policy "profiles_select_public" on public.profiles
-  for select using (true);
+drop policy if exists "profiles_select_own"    on public.profiles;
+create policy "profiles_select_own" on public.profiles
+  for select using (auth.uid() = id);
 
 -- A user may update only their own profile row.
 drop policy if exists "profiles_update_own" on public.profiles;
@@ -106,6 +111,19 @@ create policy "ledger_select_own" on public.points_ledger
 create index if not exists ledger_user_idx        on public.points_ledger (user_id);
 create index if not exists ledger_season_idx      on public.points_ledger (season_id);
 create index if not exists ledger_user_action_idx on public.points_ledger (user_id, action_type);
+
+-- DB-enforced uniqueness for non-cooldown earn rules so award_points() /
+-- claim_referral() cannot double-award under concurrency.
+--   'once'         -> one row per (user, action)            [signup]
+--   'once_per_ref' -> one row per (user, action, ref_id)    [review, favourite,
+--   + 'referral'                                             build_stack, referral]
+-- Cooldown rules (per_day, per_ref_cooldown) are intentionally excluded.
+create unique index if not exists points_ledger_once_uniq
+  on public.points_ledger (user_id, action_type)
+  where action_type in ('signup');
+create unique index if not exists points_ledger_once_per_ref_uniq
+  on public.points_ledger (user_id, action_type, ref_id)
+  where action_type in ('review', 'favourite', 'build_stack', 'referral');
 
 -- ---------------------------------------------------------------------
 -- 5. season_results  (final standings snapshot per season)
@@ -277,6 +295,28 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- ---------------------------------------------------------------------
+-- 11. public_profiles — safe public view exposing ONLY non-sensitive
+--     profile columns (no email/newsletter_opt_in/referral_code/referred_by).
+--     Definer-rights view (owned by the migration role) so it can serve
+--     public display fields to anon/authenticated without the owner-only
+--     RLS on the base table blocking them.
+-- ---------------------------------------------------------------------
+create or replace view public.public_profiles as
+  select
+    id,
+    username,
+    display_name,
+    avatar_type,
+    avatar_id,
+    avatar_url,
+    total_points,
+    points_spent,
+    created_at
+  from public.profiles;
+
+grant select on public.public_profiles to anon, authenticated;
 
 -- =====================================================================
 -- End PHASE 1. Next: accounts-02-functions.sql
