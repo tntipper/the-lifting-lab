@@ -52,7 +52,7 @@ export async function GET() {
       id,
       servings_per_day,
       products (
-        id, name, brand, category, serving_size, serving_unit,
+        id, name, brand, category, serving_size, serving_unit, buy_url,
         product_nutrients (nutrient_name, amount, unit)
       )
     `)

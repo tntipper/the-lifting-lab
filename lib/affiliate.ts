@@ -21,8 +21,13 @@ export function bulkSearch(name: string): string {
   return `https://www.awin1.com/cread.php?awinmid=${BULK_MID}&awinaffid=${AWIN_AFFID}&ued=${encodeURIComponent(dest)}`
 }
 
-/** Route to the correct affiliate link based on brand. */
-export function buyLink(brand: string, name: string): string {
+/**
+ * Resolve the best buy link for a product.
+ * Prefers a verified direct product-page URL when present; otherwise falls back
+ * to a retailer search (Awin/Bulk for Bulk products, Amazon for everything else).
+ */
+export function buyLink(brand: string, name: string, directUrl?: string | null): string {
+  if (directUrl && directUrl.trim()) return directUrl.trim()
   if (brand.toLowerCase() === 'bulk') return bulkSearch(name)
   return amazonSearch(brand, name)
 }

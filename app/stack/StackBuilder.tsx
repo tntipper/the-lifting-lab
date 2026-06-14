@@ -66,7 +66,7 @@ function buildEmailLink(score: number | null, items: StackItem[]): string {
       .map((i) => {
         const p = i.products!
         const sc = scoreFor(p.brand, p.name)
-        const link = buyLink(p.brand, p.name)
+        const link = buyLink(p.brand, p.name, p.buy_url)
         return `• ${p.brand} ${p.name}${sc != null ? ` (${sc}/100)` : ''}\n  Buy: ${link}`
       }),
     ``,

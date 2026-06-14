@@ -24,6 +24,7 @@ type ProductDetail = {
   servings_per_container: number | null
   informed_sport: boolean | null
   retail_price: number | null
+  buy_url: string | null
   cost_per_serving: number | null
   score: number | null
   nutrients: Nutrient[]
@@ -259,7 +260,7 @@ export default function ProductDetailPage({ id }: { id: string }) {
             Compare
           </Link>
           <a
-            href={buyLink(product.brand, product.name)}
+            href={buyLink(product.brand, product.name, product.buy_url)}
             target="_blank"
             rel="noopener noreferrer nofollow"
             onClick={() => track('buy_click', { item_brand: product.brand, item_name: product.name })}

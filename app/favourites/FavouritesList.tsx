@@ -82,7 +82,7 @@ export default function FavouritesList() {
           />
           <div className="flex flex-col items-end gap-0.5 shrink-0">
             <a
-              href={buyLink(p.brand, p.name)}
+              href={buyLink(p.brand, p.name, p.buy_url)}
               target="_blank"
               rel="noopener noreferrer nofollow"
               onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
