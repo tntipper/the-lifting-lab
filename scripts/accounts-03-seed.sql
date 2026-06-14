@@ -68,6 +68,8 @@ insert into public.avatar_catalog (id, name, type, season_id, points_cost, asset
   ('lab-scientist', 'Lab Scientist',  'premium', null, 350, null, true, 120),
   ('neon-lion',     'Neon Lion',      'premium', null, 400, null, true, 130),
   ('elite-badge',   'Elite Lab Badge','premium', null, 500, null, true, 140),
+  -- Custom photo slot (highest cost; unlock then upload in settings)
+  ('custom-photo',  'Custom Photo',   'premium', null, 1000, null, true, 150),
   -- Seasonal limited edition (1 per season; active only during its window)
   ('season-1-2026-frost-titan',    'Frost Titan (S1 2026)',    'seasonal',
      '00000000-0000-0000-0000-000000000001', 250, null, false, 210),
