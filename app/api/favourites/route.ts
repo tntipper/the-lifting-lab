@@ -69,8 +69,8 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Award favourite points — once per product (dedupe handles re-favourite).
-  const awarded = await awardPoints(user.id, 'favourite', productId, `favourite:${productId}`)
+  // Award favourite points — once per product (the DB enforces the limit).
+  const awarded = await awardPoints(supabase, 'favourite', productId)
   return NextResponse.json({ ok: true, pointsAwarded: awarded })
 }
 

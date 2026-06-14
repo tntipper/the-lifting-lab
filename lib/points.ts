@@ -1,4 +1,4 @@
-import { createAdminClient } from './supabase-admin'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // The seven configurable earning actions (mirrors points_config.action_type).
 export type PointsAction =
@@ -10,24 +10,20 @@ export type PointsAction =
   | 'daily_login'
   | 'referral'
 
-// Award points authoritatively via the SECURITY DEFINER SQL function.
-// Idempotent: the (user_id, dedupe_key) unique index means a repeated call with
-// the same dedupeKey awards nothing. Returns points actually awarded (0 if dup
-// / no active season / no config). Never throws — point awards must not break
-// the underlying user action.
+// Award points via the SECURITY DEFINER award_points() SQL function, called
+// with the user's own (cookie-bound) session — no service key needed. The DB
+// enforces per-action limits/cooldowns and tags the active season, so this is
+// idempotent: a capped/duplicate call awards 0. Never throws — a points
+// failure must never break the underlying user action.
 export async function awardPoints(
-  userId: string,
+  supabase: SupabaseClient,
   action: PointsAction,
-  ref: string | null,
-  dedupeKey: string
+  refId: string | null = null,
 ): Promise<number> {
   try {
-    const admin = createAdminClient()
-    const { data, error } = await admin.rpc('award_points', {
-      p_user: userId,
+    const { data, error } = await supabase.rpc('award_points', {
       p_action: action,
-      p_ref: ref,
-      p_dedupe: dedupeKey,
+      p_ref_id: refId,
     })
     if (error) {
       console.error(`[points] award ${action} failed:`, error.message)
@@ -40,7 +36,18 @@ export async function awardPoints(
   }
 }
 
-// Today's UTC calendar day — used as the daily_login dedupe bucket.
-export function utcDayKey(d: Date = new Date()): string {
-  return d.toISOString().slice(0, 10)
+// Resolve a pending referral: awards the referrer (set on profiles.referred_by
+// at signup) their points exactly once. Returns points awarded to the referrer.
+export async function claimReferral(supabase: SupabaseClient): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc('claim_referral')
+    if (error) {
+      console.error('[points] claim_referral failed:', error.message)
+      return 0
+    }
+    return typeof data === 'number' ? data : 0
+  } catch (e) {
+    console.error('[points] claim_referral threw:', e)
+    return 0
+  }
 }

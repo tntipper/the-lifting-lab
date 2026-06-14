@@ -26,8 +26,8 @@ export default function AuthPage() {
       email,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
-        // Only persisted on first signup; resolved to the referrer server-side.
-        data: refCode ? { ref_code: refCode } : undefined,
+        // Only persisted on first signup; the DB trigger resolves it to the referrer.
+        data: refCode ? { referred_by: refCode } : undefined,
       },
     })
     if (error) {

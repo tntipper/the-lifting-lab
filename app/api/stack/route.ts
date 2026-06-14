@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     .select('id', { count: 'exact', head: true })
     .eq('stack_id', stack.id)
   if ((count ?? 0) >= 3) {
-    awarded = await awardPoints(user.id, 'build_stack', stack.id, `build_stack:${stack.id}`)
+    awarded = await awardPoints(supabase, 'build_stack', stack.id)
   }
   return NextResponse.json({ ok: true, pointsAwarded: awarded })
 }

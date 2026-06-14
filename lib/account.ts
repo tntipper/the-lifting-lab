@@ -1,19 +1,18 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
-import { awardPoints, utcDayKey } from './points'
-import { createAdminClient } from './supabase-admin'
+import { awardPoints, claimReferral } from './points'
 
-export type AvatarType = 'standard' | 'premium' | 'custom_photo'
+export type AvatarType = 'standard' | 'premium' | 'seasonal' | 'custom_photo'
 
 export type Profile = {
   id: string
-  username: string | null
+  username: string
   display_name: string | null
   avatar_type: AvatarType
-  avatar_id: string | null
+  avatar_id: string
   avatar_url: string | null
   total_points: number
   points_spent: number
-  referral_code: string | null
+  referral_code: string
   referred_by: string | null
   created_at: string
 }
@@ -25,58 +24,26 @@ export function availablePoints(p: Pick<Profile, 'total_points' | 'points_spent'
 
 // Ensure the signed-in user has a profile, then apply idempotent engagement
 // awards (signup once, daily login once/day) and resolve a pending referral.
-// Call this from authenticated server entry points (dashboard, settings).
-// Returns the up-to-date profile.
+// All writes go through SECURITY DEFINER SQL functions using the user's own
+// session — no service key. Call from authenticated server entry points
+// (dashboard, settings). Returns the up-to-date profile.
 export async function syncSession(
   supabase: SupabaseClient,
-  user: User
+  user: User,
 ): Promise<Profile | null> {
-  let { data: profile } = await supabase
+  // Guarantee a profile row exists (covers signup-trigger lag).
+  await supabase.rpc('ensure_profile').then(undefined, () => undefined)
+
+  // Idempotent engagement awards + referral resolution.
+  await awardPoints(supabase, 'signup')
+  await awardPoints(supabase, 'daily_login')
+  await claimReferral(supabase)
+
+  const { data } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .maybeSingle()
 
-  // Fallback create if the auth trigger hasn't run for this user.
-  if (!profile) {
-    const admin = createAdminClient()
-    await admin
-      .from('profiles')
-      .insert({
-        id: user.id,
-        username: 'lifter_' + user.id.replace(/-/g, '').slice(0, 8),
-      })
-      .then(() => undefined)
-    const reread = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle()
-    profile = reread.data
-  }
-
-  // Referral: a ref_code captured at signup is resolved to the referrer once.
-  const refCode = (user.user_metadata as Record<string, unknown> | undefined)?.ref_code
-  if (profile && !profile.referred_by && typeof refCode === 'string' && refCode) {
-    const admin = createAdminClient()
-    const { data: referrer } = await admin
-      .from('profiles')
-      .select('id')
-      .eq('referral_code', refCode)
-      .neq('id', user.id)
-      .maybeSingle()
-    if (referrer) {
-      await admin.from('profiles').update({ referred_by: referrer.id }).eq('id', user.id)
-      await awardPoints(referrer.id, 'referral', user.id, 'referral:' + user.id)
-      profile.referred_by = referrer.id
-    }
-  }
-
-  // Idempotent engagement awards.
-  await awardPoints(user.id, 'signup', null, 'signup')
-  await awardPoints(user.id, 'daily_login', null, 'daily_login:' + utcDayKey())
-
-  const { data: fresh } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  return (fresh ?? profile) as Profile | null
+  return (data as Profile | null) ?? null
 }
