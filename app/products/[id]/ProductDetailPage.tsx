@@ -12,6 +12,7 @@ import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
 import ReviewSection from '@/components/ReviewSection'
 import ShareModal from '@/components/ShareModal'
+import TopNav from '@/components/TopNav'
 
 type ProductDetail = {
   id: string
@@ -72,9 +73,12 @@ export default function ProductDetailPage({ id }: { id: string }) {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-lab-bg flex flex-col items-center justify-center gap-4">
-        <p className="text-white text-lg font-bold">Product not found</p>
-        <Link href="/products" className="text-lab-lime text-sm underline">Back to products</Link>
+      <div className="min-h-screen bg-lab-bg flex flex-col">
+        <TopNav />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <p className="text-white text-lg font-bold">Product not found</p>
+          <Link href="/products" className="text-lab-lime text-sm underline">Back to products</Link>
+        </div>
       </div>
     )
   }
@@ -86,8 +90,10 @@ export default function ProductDetailPage({ id }: { id: string }) {
 
   return (
     <div className="min-h-screen bg-lab-bg text-white pb-32">
-      {/* header */}
-      <div className="sticky top-0 z-20 bg-lab-bg/95 backdrop-blur border-b border-lab-border px-4 py-3 flex items-center gap-3">
+      <TopNav />
+
+      {/* breadcrumb / back row */}
+      <div className="bg-lab-bg border-b border-lab-border px-4 py-3 flex items-center gap-3">
         <button
           onClick={() => router.back()}
           className="text-lab-muted hover:text-white text-sm font-bold uppercase tracking-widest"
@@ -201,7 +207,7 @@ export default function ProductDetailPage({ id }: { id: string }) {
         </div>
 
         {/* reviews */}
-        <ReviewSection productId={product.id} />
+        <ReviewSection productId={product.id} productName={product.name} />
 
         {/* compare prices across retailers */}
         <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
