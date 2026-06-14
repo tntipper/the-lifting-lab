@@ -10,6 +10,7 @@ import { track } from '@/lib/gtag'
 import type { Nutrient } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
+import ReviewSection from '@/components/ReviewSection'
 
 type ProductDetail = {
   id: string
@@ -190,6 +191,9 @@ export default function ProductDetailPage({ id }: { id: string }) {
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
           </div>
         </div>
+
+        {/* reviews */}
+        <ReviewSection productId={product.id} />
 
         {/* compare prices across retailers */}
         <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
