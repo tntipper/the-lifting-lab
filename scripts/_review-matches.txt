@@ -1,0 +1,2 @@
+zma | DB: Bulk | ZMA Zinc Magnesium  ~?~  data.js: Bulk | ZMA  (conf 0.33)
+eaa | DB: Warrior | EAA Powder  ~?~  data.js: Warrior | DEFENDER EAA  (conf 0.33)

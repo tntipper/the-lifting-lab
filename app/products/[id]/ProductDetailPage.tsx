@@ -26,6 +26,9 @@ type ProductDetail = {
   informed_sport: boolean | null
   retail_price: number | null
   buy_url: string | null
+  proprietary_blend: boolean | null
+  amino_spiked: boolean | null
+  protein_yield: number | null
   cost_per_serving: number | null
   score: number | null
   nutrients: Nutrient[]
@@ -122,6 +125,21 @@ export default function ProductDetailPage({ id }: { id: string }) {
               {product.informed_sport && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
                   🛡️ IS Certified
+                </span>
+              )}
+              {product.protein_yield != null && (
+                <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
+                  {product.protein_yield}% protein yield
+                </span>
+              )}
+              {product.proprietary_blend && (
+                <span className="text-[10px] uppercase tracking-widest font-bold bg-yellow-900/40 text-yellow-400 border border-yellow-700/50 px-2 py-0.5 rounded-full">
+                  ⚠️ Proprietary Blend
+                </span>
+              )}
+              {product.amino_spiked && (
+                <span className="text-[10px] uppercase tracking-widest font-bold bg-red-900/40 text-red-400 border border-red-700/50 px-2 py-0.5 rounded-full">
+                  ⚠️ Amino Spiked
                 </span>
               )}
             </div>

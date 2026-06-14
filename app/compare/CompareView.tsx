@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
+import { buyLink } from '@/lib/affiliate'
 import { track } from '@/lib/gtag'
 import type { ComparedProduct } from '@/lib/products'
 
@@ -80,6 +81,18 @@ export default function CompareView() {
     ? scored.reduce((a, b) => (b.score > a.score ? b : a))
     : null
 
+  // best value: highest score per £/serving among products that have both
+  const valued = products.filter(
+    (p) => p.score != null && p.cost_per_serving != null && p.cost_per_serving > 0,
+  ) as (ComparedProduct & { score: number; cost_per_serving: number })[]
+  const bestValue = valued.length
+    ? valued.reduce((a, b) => (b.score / b.cost_per_serving > a.score / a.cost_per_serving ? b : a))
+    : null
+
+  const priced = products.filter((p) => p.retail_price != null)
+  const anyInformedSport = products.some((p) => p.informed_sport)
+  const anyFlag = products.some((p) => p.proprietary_blend || p.amino_spiked || p.protein_yield != null)
+
   return (
     <div className="space-y-8">
       {/* verdict */}
@@ -90,9 +103,22 @@ export default function CompareView() {
             <span className="font-black">{bestRated.brand} {bestRated.name}</span> wins on clinical
             rating with a score of <span className="text-lab-lime font-black">{bestRated.score}</span>.
           </p>
-          <p className="text-lab-muted text-xs mt-1">
-            Value-per-serving ranking needs price data, which is not yet in the catalogue.
-          </p>
+          {bestValue ? (
+            <p className="text-lab-muted text-xs mt-1">
+              Best value per serving:{' '}
+              <span className="text-white font-bold">{bestValue.brand} {bestValue.name}</span> at{' '}
+              <span className="text-lab-lime font-bold">£{bestValue.cost_per_serving.toFixed(2)}/serving</span>{' '}
+              (score {bestValue.score}).
+            </p>
+          ) : priced.length ? (
+            <p className="text-lab-muted text-xs mt-1">
+              Add servings-per-container data to rank value per serving.
+            </p>
+          ) : (
+            <p className="text-lab-muted text-xs mt-1">
+              No retail price on these products yet — value-per-serving ranking unavailable.
+            </p>
+          )}
         </div>
       )}
 
@@ -126,11 +152,74 @@ export default function CompareView() {
           </Cell>
         ))}
 
+        {/* retail price */}
+        <Cell head>Retail</Cell>
+        {products.map((p) => (
+          <Cell key={p.id}>{p.retail_price != null ? `£${p.retail_price.toFixed(2)}` : '—'}</Cell>
+        ))}
+
+        {/* true cost per serving */}
+        <Cell head>True Cost / serving</Cell>
+        {products.map((p) => (
+          <Cell key={p.id}>
+            {p.cost_per_serving != null ? (
+              <span className={bestValue?.id === p.id ? 'text-lab-lime font-black' : ''}>
+                £{p.cost_per_serving.toFixed(2)}
+              </span>
+            ) : '—'}
+          </Cell>
+        ))}
+
         {/* nutrient rows */}
         {nutrientNames.map((name) => (
           <Row key={name} name={name} products={products} amountFor={amountFor} />
         ))}
+
+        {/* informed sport */}
+        {anyInformedSport && (
+          <>
+            <Cell head>Informed Sport</Cell>
+            {products.map((p) => (
+              <Cell key={p.id}>{p.informed_sport ? '🛡️ Certified' : '—'}</Cell>
+            ))}
+          </>
+        )}
+
+        {/* key flags */}
+        {anyFlag && (
+          <>
+            <Cell head>Protein Yield</Cell>
+            {products.map((p) => (
+              <Cell key={p.id}>{p.protein_yield != null ? `${p.protein_yield}%` : '—'}</Cell>
+            ))}
+            <Cell head>Proprietary Blend</Cell>
+            {products.map((p) => (
+              <Cell key={p.id}>{p.proprietary_blend ? '⚠️ Yes' : 'No'}</Cell>
+            ))}
+            <Cell head>Amino Spiked</Cell>
+            {products.map((p) => (
+              <Cell key={p.id}>{p.amino_spiked ? '⚠️ Yes' : 'No'}</Cell>
+            ))}
+          </>
+        )}
+
+        {/* buy row */}
+        <div />
+        {products.map((p) => (
+          <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
+            <a
+              href={buyLink(p.brand, p.name, p.buy_url)}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name, from: 'compare' })}
+              className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
+            >
+              Buy →
+            </a>
+          </div>
+        ))}
       </div>
+      <p className="text-[9px] text-lab-muted/40 text-right -mt-4">affiliate links · open in a new tab</p>
 
       <div className="text-center pt-2">
         <Link

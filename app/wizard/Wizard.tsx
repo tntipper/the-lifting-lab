@@ -9,7 +9,6 @@ import { useLocalStack } from '@/components/LocalStackContext'
 import type { ScoredProduct } from '@/lib/products'
 
 type GoalKey = 'muscle' | 'performance' | 'health' | 'weightloss'
-type BudgetKey = 'lean' | 'mid' | 'open'
 
 const GOALS: { key: GoalKey; label: string; blurb: string }[] = [
   { key: 'muscle', label: 'Build Muscle', blurb: 'Size and strength' },
@@ -18,11 +17,11 @@ const GOALS: { key: GoalKey; label: string; blurb: string }[] = [
   { key: 'weightloss', label: 'Lean Out', blurb: 'Protein-led, low calorie' },
 ]
 
-const BUDGETS: { key: BudgetKey; label: string; blurb: string; max: number }[] = [
-  { key: 'lean', label: 'Under £80', blurb: 'The essentials only', max: 2 },
-  { key: 'mid', label: '£80 – £150', blurb: 'A complete core stack', max: 4 },
-  { key: 'open', label: 'No limit', blurb: 'The full optimised stack', max: 6 },
-]
+// Budget slider config (monthly £). At/above NO_LIMIT we stop filtering by price.
+const BUDGET_MIN = 20
+const BUDGET_MAX = 300
+const BUDGET_STEP = 10
+const NO_LIMIT = BUDGET_MAX
 
 // Goal -> ordered category priority. We pick the highest-scored product in each,
 // trimmed to the budget tier's max number of products.
@@ -39,8 +38,8 @@ const OWN_OPTIONS = ['whey', 'creatine', 'pre-workout', 'eaas', 'vitamin', 'hydr
 export default function Wizard() {
   const { inStack, toggle } = useLocalStack()
   const [step, setStep] = useState(0)
-  const [goal, setGoal] = useState<GoalKey | null>(null)
-  const [budget, setBudget] = useState<BudgetKey | null>(null)
+  const [goals, setGoals] = useState<GoalKey[]>([])
+  const [budget, setBudget] = useState<number>(120)
   const [hardTrainer, setHardTrainer] = useState<boolean | null>(null)
   const [owned, setOwned] = useState<string[]>([])
   const [all, setAll] = useState<ScoredProduct[]>([])
@@ -63,22 +62,50 @@ export default function Wizard() {
     return map
   }, [all])
 
+  // merged category priority across all selected goals (de-duped, priority order)
+  const mergedCats = useMemo(() => {
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const g of GOALS) {
+      if (!goals.includes(g.key)) continue
+      for (const c of GOAL_CATEGORIES[g.key]) {
+        if (!seen.has(c)) { seen.add(c); out.push(c) }
+      }
+    }
+    return out
+  }, [goals])
+
   const stack = useMemo(() => {
-    if (!goal || !budget) return [] as ScoredProduct[]
-    const tier = BUDGETS.find((b) => b.key === budget)!
-    let cats = GOAL_CATEGORIES[goal].filter((c) => !owned.includes(c))
-    // hard trainers get pre-workout / intra prioritised if available
+    if (!goals.length) return [] as ScoredProduct[]
+    let cats = mergedCats.filter((c) => !owned.includes(c))
+    // hard trainers get pre-workout prioritised if available
     if (hardTrainer) {
       cats = ['pre-workout', ...cats.filter((c) => c !== 'pre-workout')]
     }
+    const noLimit = budget >= NO_LIMIT
     const picks: ScoredProduct[] = []
+    let total = 0
     for (const c of cats) {
       const p = topByCategory.get(c)
-      if (p) picks.push(p)
-      if (picks.length >= tier.max) break
+      if (!p) continue
+      const price = p.retail_price ?? 0
+      // real £ filter: skip a pick that would bust the monthly budget (keep trying
+      // cheaper categories further down the priority list)
+      if (!noLimit && price > 0 && total + price > budget) continue
+      picks.push(p)
+      total += price
     }
     return picks
-  }, [goal, budget, hardTrainer, owned, topByCategory])
+  }, [goals, budget, hardTrainer, owned, topByCategory, mergedCats])
+
+  const stackTotal = useMemo(
+    () => stack.reduce((sum, p) => sum + (p.retail_price ?? 0), 0),
+    [stack],
+  )
+
+  function toggleGoal(k: GoalKey) {
+    setGoals((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]))
+  }
 
   function toggleOwned(c: string) {
     setOwned((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]))
@@ -94,14 +121,14 @@ export default function Wizard() {
       toggle({ id: p.id, name: p.name, brand: p.brand, category: p.category, score: p.score }),
     )
     track('wizard_add_stack', {
-      goal: goal || '',
-      budget: budget || '',
+      goal: goals.join(','),
+      budget: String(budget),
       added: toAdd.length,
     })
   }
 
   function next() {
-    if (step === 3) track('wizard_complete', { goal: goal || '', budget: budget || '' })
+    if (step === 3) track('wizard_complete', { goal: goals.join(','), budget: String(budget) })
     setStep((s) => Math.min(s + 1, 4))
   }
   function back() {
@@ -109,15 +136,15 @@ export default function Wizard() {
   }
   function restart() {
     setStep(0)
-    setGoal(null)
-    setBudget(null)
+    setGoals([])
+    setBudget(120)
     setHardTrainer(null)
     setOwned([])
   }
 
   const canAdvance =
-    (step === 0 && goal) ||
-    (step === 1 && budget) ||
+    (step === 0 && goals.length > 0) ||
+    step === 1 ||
     (step === 2 && hardTrainer !== null) ||
     step === 3
 
@@ -135,36 +162,61 @@ export default function Wizard() {
         </div>
       )}
 
-      {/* step 0 — goal */}
+      {/* step 0 — goals (multi-select) */}
       {step === 0 && (
-        <Step title="What's the goal?" subtitle="Pick the one that fits best.">
+        <Step title="What are your goals?" subtitle="Pick all that apply — we'll merge the priorities.">
           <div className="grid sm:grid-cols-2 gap-3">
             {GOALS.map((g) => (
               <Choice
                 key={g.key}
-                active={goal === g.key}
-                onClick={() => setGoal(g.key)}
+                active={goals.includes(g.key)}
+                onClick={() => toggleGoal(g.key)}
                 label={g.label}
-                blurb={g.blurb}
+                blurb={goals.includes(g.key) ? 'Selected ✓' : g.blurb}
               />
             ))}
           </div>
         </Step>
       )}
 
-      {/* step 1 — budget */}
+      {/* step 1 — budget slider */}
       {step === 1 && (
-        <Step title="What's your budget?" subtitle="Monthly spend on supplements.">
-          <div className="space-y-3">
-            {BUDGETS.map((b) => (
-              <Choice
-                key={b.key}
-                active={budget === b.key}
-                onClick={() => setBudget(b.key)}
-                label={b.label}
-                blurb={b.blurb}
+        <Step title="What's your monthly budget?" subtitle="We'll build the best stack that fits the spend.">
+          <div className="bg-lab-panel border border-lab-border rounded-2xl p-6">
+            <div className="text-center mb-4">
+              <span className="text-4xl font-black text-lab-lime">
+                {budget >= NO_LIMIT ? 'No limit' : `£${budget}`}
+              </span>
+              <span className="text-lab-muted text-sm">{budget >= NO_LIMIT ? '' : ' / month'}</span>
+            </div>
+            <input
+              type="range"
+              min={BUDGET_MIN}
+              max={BUDGET_MAX}
+              step={BUDGET_STEP}
+              value={budget}
+              onChange={(e) => setBudget(Number(e.target.value))}
+              className="w-full accent-lab-lime"
+            />
+            <div className="flex justify-between text-[10px] uppercase tracking-widest text-lab-muted mt-2">
+              <span>£{BUDGET_MIN}</span>
+              <span>No limit</span>
+            </div>
+            <div className="mt-5 flex items-center gap-3">
+              <label className="text-xs text-lab-muted uppercase tracking-widest font-bold shrink-0">Custom £</label>
+              <input
+                type="number"
+                min={BUDGET_MIN}
+                value={budget >= NO_LIMIT ? '' : budget}
+                placeholder="e.g. 95"
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  if (!Number.isFinite(v) || v <= 0) return
+                  setBudget(Math.min(Math.max(v, BUDGET_MIN), NO_LIMIT))
+                }}
+                className="w-28 bg-lab-bg text-white border border-lab-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lab-lime"
               />
-            ))}
+            </div>
           </div>
         </Step>
       )}
@@ -214,10 +266,16 @@ export default function Wizard() {
           </p>
           <h2 className="text-2xl font-black uppercase tracking-tight mb-2">
             {stack.length} product{stack.length === 1 ? '' : 's'} for{' '}
-            <span className="text-lab-lime">{GOALS.find((g) => g.key === goal)?.label}</span>
+            <span className="text-lab-lime">
+              {GOALS.filter((g) => goals.includes(g.key)).map((g) => g.label).join(' + ') || 'your goals'}
+            </span>
           </h2>
           <p className="text-lab-muted text-sm mb-6">
-            Highest-scored pick in each recommended category, trimmed to your budget.
+            Highest-scored pick in each recommended category
+            {budget < NO_LIMIT && (
+              <> — about <span className="text-white font-bold">£{Math.round(stackTotal)}/month</span> of your £{budget} budget</>
+            )}
+            .
           </p>
 
           {stack.length === 0 ? (

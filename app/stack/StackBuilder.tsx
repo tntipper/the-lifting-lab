@@ -1,11 +1,58 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem, type SafetyFlag } from '@/lib/nutrient-limits'
 import { rniFor, type Sex } from '@/lib/nutrient-rda'
 import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
 import { scoreFor } from '@/lib/scores'
 import { buyLink } from '@/lib/affiliate'
+import { createClient } from '@/lib/supabase'
+import { useLocalStack } from '@/components/LocalStackContext'
+import type { LocalStackProduct } from '@/lib/local-stack'
+import { track } from '@/lib/gtag'
+
+// Friendly retailer name from a buy URL hostname (for the Buy All panel).
+function retailerLabel(url: string): string {
+  try {
+    const h = new URL(url).hostname.replace(/^www\./, '')
+    if (h.includes('amazon')) return 'Amazon'
+    if (h.includes('awin') || h.includes('bulk')) return 'Bulk'
+    if (h.includes('myprotein')) return 'MyProtein'
+    const base = h.split('.')[0]
+    return base.charAt(0).toUpperCase() + base.slice(1)
+  } catch {
+    return 'Retailer'
+  }
+}
+
+// Batch product shape returned by /api/products/batch
+type BatchProduct = {
+  id: string
+  name: string
+  brand: string
+  category: string
+  serving_size: number
+  serving_unit: string
+  buy_url: string | null
+  product_nutrients: { nutrient_name: string; amount: number; unit: string }[]
+}
+
+function toStackItem(p: BatchProduct): StackItem {
+  return {
+    id: p.id, // in local mode the product id doubles as the row id
+    servings_per_day: 1,
+    products: {
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      category: p.category,
+      serving_size: p.serving_size,
+      serving_unit: p.serving_unit,
+      buy_url: p.buy_url,
+      product_nutrients: p.product_nutrients || [],
+    },
+  }
+}
 
 type DailyTotal = {
   name: string
@@ -123,6 +170,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 export default function StackBuilder() {
+  const { stack: localStack, toggle: localToggle, remove: localRemove, clear: localClear } = useLocalStack()
   const [stackItems, setStackItems] = useState<StackItem[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Product[]>([])
@@ -130,7 +178,12 @@ export default function StackBuilder() {
   const [loading, setLoading] = useState(true)
   const [flags, setFlags] = useState<SafetyFlag[]>([])
   const [showTotals, setShowTotals] = useState(false)
+  const [showShare, setShowShare] = useState(false)
   const [sex, setSex] = useState<Sex>('male')
+  // null = auth unresolved. Drives single-source-of-truth: logged-out reads local
+  // (localStorage); logged-in reads server and merges any local items on first load.
+  const [signedIn, setSignedIn] = useState<boolean | null>(null)
+  const mergedRef = useRef(false)
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -149,7 +202,7 @@ export default function StackBuilder() {
     }
   }
 
-  const loadStack = useCallback(async () => {
+  const loadServerStack = useCallback(async () => {
     const res = await fetch('/api/stack')
     const data = await res.json()
     const items = data.items || []
@@ -158,21 +211,63 @@ export default function StackBuilder() {
     setLoading(false)
   }, [])
 
+  const loadLocalStack = useCallback(async (items: LocalStackProduct[]) => {
+    if (!items.length) {
+      setStackItems([])
+      setFlags([])
+      setLoading(false)
+      return
+    }
+    const ids = items.map((i) => i.id).join(',')
+    try {
+      const res = await fetch(`/api/products/batch?ids=${encodeURIComponent(ids)}`)
+      const data = await res.json()
+      const mapped = (Array.isArray(data) ? data : []).map(toStackItem)
+      setStackItems(mapped)
+      setFlags(analyseStack(mapped))
+    } catch {
+      setStackItems([])
+      setFlags([])
+    }
+    setLoading(false)
+  }, [])
+
+  // resolve auth once
   useEffect(() => {
     let cancelled = false
-    fetch('/api/stack')
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return
-        const items = data.items || []
-        setStackItems(items)
-        setFlags(analyseStack(items))
-        setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
+    createClient().auth.getUser()
+      .then(({ data }) => { if (!cancelled) setSignedIn(!!data.user) })
+      .catch(() => { if (!cancelled) setSignedIn(false) })
+    return () => { cancelled = true }
   }, [])
+
+  // single source of truth: logged-out → local; logged-in → server (+ merge local once)
+  useEffect(() => {
+    if (signedIn == null) return
+    if (signedIn) {
+      if (!mergedRef.current && localStack.length) {
+        mergedRef.current = true
+        setLoading(true)
+        Promise.all(
+          localStack.map((p) =>
+            fetch('/api/stack', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productId: p.id }),
+            }).catch(() => {}),
+          ),
+        ).then(() => {
+          localClear()
+          loadServerStack()
+        })
+      } else {
+        loadServerStack()
+      }
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadLocalStack(localStack)
+    }
+  }, [signedIn, localStack, loadServerStack, loadLocalStack, localClear])
 
   function handleSearchChange(value: string) {
     setSearchQuery(value)
@@ -190,24 +285,39 @@ export default function StackBuilder() {
     }, 300)
   }
 
-  async function addProduct(productId: string) {
-    await fetch('/api/stack', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productId }),
-    })
+  async function addProduct(product: Product) {
     setSearchQuery('')
     setSearchResults([])
-    loadStack()
+    if (signedIn) {
+      await fetch('/api/stack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id }),
+      })
+      loadServerStack()
+    } else {
+      // local add — context change triggers the load effect to rehydrate detail
+      localToggle({
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        category: product.category,
+        score: scoreFor(product.brand, product.name),
+      })
+    }
   }
 
-  async function removeItem(stackProductId: string) {
-    await fetch('/api/stack', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stackProductId }),
-    })
-    loadStack()
+  async function removeItem(item: StackItem) {
+    if (signedIn) {
+      await fetch('/api/stack', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stackProductId: item.id }),
+      })
+      loadServerStack()
+    } else if (item.products) {
+      localRemove(item.products.id) // context change triggers the load effect
+    }
   }
 
   const stackProductIds = new Set(stackItems.map((i) => i.products?.id))
@@ -224,6 +334,48 @@ export default function StackBuilder() {
   const dailyTotals = getDailyTotals(stackItems, sex)
   const shareUrl = buildShareUrl(avgScore, stackItems)
   const emailUrl = buildEmailLink(avgScore, stackItems)
+
+  // Buy All — group products by retailer so each supplier opens in its own tab.
+  const retailerGroups = useMemo(() => {
+    const groups: Record<string, { label: string; urls: string[]; names: string[] }> = {}
+    for (const it of stackItems) {
+      const p = it.products
+      if (!p) continue
+      const url = buyLink(p.brand, p.name, p.buy_url)
+      const label = retailerLabel(url)
+      if (!groups[label]) groups[label] = { label, urls: [], names: [] }
+      groups[label].urls.push(url)
+      groups[label].names.push(`${p.brand} ${p.name}`)
+    }
+    return Object.values(groups).sort((a, b) => b.urls.length - a.urls.length)
+  }, [stackItems])
+
+  function openRetailer(urls: string[]) {
+    // Fire one tab per product for this supplier. Triggered by a direct click so
+    // the first opens reliably; grouping keeps the count per gesture small.
+    urls.forEach((u) => window.open(u, '_blank', 'noopener,noreferrer'))
+  }
+
+  // Social share text for the whole stack.
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://theliftinglab.co.uk'
+  const shareText =
+    `My supplement stack${avgScore != null ? ` scored ${avgScore}/100` : ''} on The Lifting Lab` +
+    (stackItems.length
+      ? `: ${stackItems.filter((i) => i.products).map((i) => `${i.products!.brand} ${i.products!.name}`).join(', ')}.`
+      : '.')
+  const xShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(siteUrl)}`
+  const fbShare = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(siteUrl)}&quote=${encodeURIComponent(shareText)}`
+  const waShare = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${siteUrl}`)}`
+
+  async function nativeShare() {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title: 'My Lifting Lab Stack', text: shareText, url: siteUrl })
+      } catch {
+        /* user cancelled */
+      }
+    }
+  }
 
   // RDA coverage summary: nutrients hitting 100% RNI without exceeding the UL.
   const rdaTracked = dailyTotals.filter((t) => t.rdaPercent != null)
@@ -284,16 +436,18 @@ export default function StackBuilder() {
 
       {/* Action row: share + daily totals toggle */}
       {!loading && stackItems.length > 0 && (
-        <div className="flex gap-2">
-          <a
-            href={shareUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-lab-lime text-lab-lime text-xs font-black uppercase tracking-widest hover:bg-lab-lime/10 transition-colors"
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setShowShare((v) => !v)}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-black uppercase tracking-widest transition-colors ${
+              showShare
+                ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
+                : 'border-lab-lime text-lab-lime hover:bg-lab-lime/10'
+            }`}
           >
             <span>📤</span>
             <span>Share Stack</span>
-          </a>
+          </button>
           <button
             onClick={() => setShowTotals((v) => !v)}
             className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-black uppercase tracking-widest transition-colors ${
@@ -312,6 +466,65 @@ export default function StackBuilder() {
             <span>📧</span>
             <span>Email Stack</span>
           </a>
+        </div>
+      )}
+
+      {/* Social share panel */}
+      {showShare && !loading && stackItems.length > 0 && (
+        <div className="bg-lab-panel border border-lab-border rounded-2xl p-5 space-y-3">
+          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Share your stack</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <a href={xShare} target="_blank" rel="noopener noreferrer"
+              className="text-center text-[11px] font-bold uppercase tracking-widest rounded-lg px-3 py-2.5 border border-lab-border text-white hover:border-lab-lime/50 transition-colors">
+              X / Twitter
+            </a>
+            <a href={fbShare} target="_blank" rel="noopener noreferrer"
+              className="text-center text-[11px] font-bold uppercase tracking-widest rounded-lg px-3 py-2.5 border border-lab-border text-white hover:border-lab-lime/50 transition-colors">
+              Facebook
+            </a>
+            <a href={waShare} target="_blank" rel="noopener noreferrer"
+              className="text-center text-[11px] font-bold uppercase tracking-widest rounded-lg px-3 py-2.5 border border-lab-border text-white hover:border-lab-lime/50 transition-colors">
+              WhatsApp
+            </a>
+            <button onClick={nativeShare}
+              className="text-center text-[11px] font-bold uppercase tracking-widest rounded-lg px-3 py-2.5 border border-lab-border text-white hover:border-lab-lime/50 transition-colors">
+              More…
+            </button>
+          </div>
+          <a href={shareUrl} target="_blank" rel="noopener noreferrer"
+            className="block text-center text-[11px] font-black uppercase tracking-widest rounded-lg px-3 py-2.5 border border-lab-lime text-lab-lime hover:bg-lab-lime/10 transition-colors">
+            🖼️ Open share card image
+          </a>
+        </div>
+      )}
+
+      {/* Buy All — grouped by retailer */}
+      {!loading && retailerGroups.length > 0 && (
+        <div className="bg-lab-panel border border-lab-border rounded-2xl p-5 space-y-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Buy All</p>
+            <p className="text-[10px] text-gray-600 mt-0.5">
+              Grouped by retailer — each opens that supplier&apos;s products in new tabs.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {retailerGroups.map((g) => (
+              <button
+                key={g.label}
+                onClick={() => {
+                  openRetailer(g.urls)
+                  track('buy_all_click', { retailer: g.label, count: g.urls.length })
+                }}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-lab-border hover:border-lab-lime/50 hover:bg-lab-lime/5 transition-colors"
+              >
+                <span className="text-white text-sm font-bold">{g.label}</span>
+                <span className="text-lab-lime text-xs font-black uppercase tracking-widest">
+                  Buy {g.urls.length} →
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-gray-600">We may earn a commission via affiliate links.</p>
         </div>
       )}
 
@@ -423,7 +636,7 @@ export default function StackBuilder() {
               return (
                 <button
                   key={product.id}
-                  onClick={() => !alreadyAdded && addProduct(product.id)}
+                  onClick={() => !alreadyAdded && addProduct(product)}
                   disabled={alreadyAdded}
                   className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-lab-panel-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-b border-lab-border last:border-0"
                 >
@@ -496,7 +709,7 @@ export default function StackBuilder() {
                         <span className="text-xs text-yellow-400">⚠️ {nutrientFlags.length}</span>
                       )}
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(item)}
                         className="text-gray-600 hover:text-lab-red text-xs transition-colors"
                       >
                         Remove

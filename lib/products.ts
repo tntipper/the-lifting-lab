@@ -13,6 +13,9 @@ export type Product = {
   informed_sport: boolean | null
   retail_price: number | null
   buy_url: string | null
+  proprietary_blend: boolean | null
+  amino_spiked: boolean | null
+  protein_yield: number | null
 }
 
 export type ScoredProduct = Product & {
@@ -29,7 +32,7 @@ export type Nutrient = {
 export type ComparedProduct = ScoredProduct & { nutrients: Nutrient[] }
 
 export const PRODUCT_COLUMNS =
-  'id, name, brand, category, serving_size, serving_unit, servings_per_container, image_url, informed_sport, retail_price, buy_url'
+  'id, name, brand, category, serving_size, serving_unit, servings_per_container, image_url, informed_sport, retail_price, buy_url, proprietary_blend, amino_spiked, protein_yield'
 
 export function withScore<T extends { brand: string; name: string; servings_per_container: number | null; retail_price: number | null }>(
   p: T,
