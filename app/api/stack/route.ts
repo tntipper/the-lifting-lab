@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { awardPoints } from '@/lib/points'
 
 async function getSupabase() {
   const cookieStore = await cookies()
@@ -95,7 +96,17 @@ export async function POST(request: Request) {
     )
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
+
+  // Award build_stack once the stack reaches 3+ products (once per stack).
+  let awarded = 0
+  const { count } = await supabase
+    .from('stack_products')
+    .select('id', { count: 'exact', head: true })
+    .eq('stack_id', stack.id)
+  if ((count ?? 0) >= 3) {
+    awarded = await awardPoints(user.id, 'build_stack', stack.id, `build_stack:${stack.id}`)
+  }
+  return NextResponse.json({ ok: true, pointsAwarded: awarded })
 }
 
 // DELETE — remove product from stack

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 
 export default function AuthPage() {
@@ -8,6 +8,14 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const [refCode, setRefCode] = useState('')
+
+  // Capture a referral code from ?ref= (read client-side to avoid the
+  // useSearchParams Suspense requirement on this otherwise-static page).
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('ref')
+    if (code) setRefCode(code)
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -18,6 +26,8 @@ export default function AuthPage() {
       email,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // Only persisted on first signup; resolved to the referrer server-side.
+        data: refCode ? { ref_code: refCode } : undefined,
       },
     })
     if (error) {

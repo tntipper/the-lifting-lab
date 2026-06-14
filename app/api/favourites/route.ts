@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product } from '@/lib/products'
+import { awardPoints } from '@/lib/points'
 
 async function getSupabase() {
   const cookieStore = await cookies()
@@ -67,7 +68,10 @@ export async function POST(request: Request) {
     .upsert({ user_id: user.id, product_id: productId }, { onConflict: 'user_id,product_id' })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
+
+  // Award favourite points — once per product (dedupe handles re-favourite).
+  const awarded = await awardPoints(user.id, 'favourite', productId, `favourite:${productId}`)
+  return NextResponse.json({ ok: true, pointsAwarded: awarded })
 }
 
 // DELETE — unfavourite a product.
