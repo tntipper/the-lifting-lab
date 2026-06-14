@@ -11,6 +11,14 @@
 --
 -- Idempotent. Run in Supabase SQL Editor.
 
+-- PREREQUISITE: the original products_status_check only allowed
+-- ('active','pending','rejected'), so SET status='inactive' was rejected
+-- (ERROR 23514). Widen the constraint to permit 'inactive' (the app only ever
+-- shows status='active', so inactive rows are hidden automatically).
+ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_status_check;
+ALTER TABLE public.products ADD CONSTRAINT products_status_check
+  CHECK (status IN ('active','pending','rejected','inactive'));
+
 UPDATE public.products SET status = 'inactive' WHERE brand = 'Optimum Nutrition'      AND name = 'Gold Standard Gainer';      -- delisted on ON UK; nearest live = Serious Mass (already in DB, now direct)
 UPDATE public.products SET status = 'inactive' WHERE brand = 'Optimum Nutrition'      AND name = 'Protein Crispy Bar';        -- delisted; nearest live = ON Chocolate Brownie Crunch Protein Bar
 UPDATE public.products SET status = 'inactive' WHERE brand = 'Bulk'                   AND name = 'Complete EAA';               -- no live bulk.com UK page; nearest = Bulk Essential Amino Acids
