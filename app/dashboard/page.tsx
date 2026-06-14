@@ -6,6 +6,8 @@ import { syncSession } from '@/lib/account'
 import Avatar from '@/components/Avatar'
 import CopyButton from '@/components/CopyButton'
 import TopNav from '@/components/TopNav'
+import CategoryGrid from '@/components/CategoryGrid'
+import DashboardFavourites from './DashboardFavourites'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +37,7 @@ export default async function DashboardPage() {
   let seasonPoints = 0
   let rank: number | null = null
   let tenthPts: number | null = null
+  let totalRanked = 0
   let seasonName: string | null = null
 
   if (seasonId) {
@@ -43,9 +46,12 @@ export default async function DashboardPage() {
     const { data: ur } = await supabase.rpc('get_user_rank', { p_season: seasonId, p_user: user.id })
     const rec = (ur as Record<string, unknown>[] | null)?.[0]
     if (rec) { rank = Number(rec.rank); seasonPoints = Number(rec.season_points) }
-    const { data: top } = await supabase.rpc('get_leaderboard', { p_season: seasonId, p_limit: 10 })
+    // Full standings (one call): total ranked lifters for the "of N" anchor +
+    // the 10th-place cutoff for the progress bar.
+    const { data: top } = await supabase.rpc('get_leaderboard', { p_season: seasonId, p_limit: 100000 })
     const arr = (top as Record<string, unknown>[] | null) ?? []
-    if (arr.length >= 10) tenthPts = Number(arr[arr.length - 1].season_points)
+    totalRanked = arr.length
+    if (arr.length >= 10) tenthPts = Number(arr[9].season_points)
   }
 
   // Ledger history
@@ -56,13 +62,7 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
     .limit(10)
 
-  // Favourites (compact)
-  const { data: favs } = await supabase
-    .from('user_favourites')
-    .select('product_id, products (id,name,brand)')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(6)
+  // Favourites are rendered client-side as full product cards (DashboardFavourites, F13c).
 
   // Active stack summary
   const { data: stack } = await supabase
@@ -156,6 +156,12 @@ export default async function DashboardPage() {
             <div className="h-2 rounded-full bg-lab-bg overflow-hidden">
               <div className="h-full rounded-full bg-lab-lime" style={{ width: `${progressPct}%` }} />
             </div>
+            {/* anchor: where this rank sits in the field (F13a) */}
+            <p className="text-[11px] text-lab-muted mt-2">
+              <span className="text-white font-bold">Rank #{rank}</span>
+              {totalRanked > 0 ? ` of ${totalRanked.toLocaleString()} lifter${totalRanked === 1 ? '' : 's'}` : ''}
+              {rank <= 10 ? ' · top 10' : ''}
+            </p>
           </div>
         )}
 
@@ -208,13 +214,11 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* My stuff quick sections */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Link href="/favourites" className="bg-lab-panel border border-lab-border rounded-2xl p-4 hover:border-lab-lime/50 transition-colors">
-            <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-2">My Favourites</p>
-            <p className="text-3xl font-black text-white">{(favs ?? []).length}{(favs ?? []).length === 6 ? '+' : ''}</p>
-            <p className="text-[11px] text-lab-lime mt-1">View all →</p>
-          </Link>
+        {/* My Favourites — real product cards (F13c) */}
+        <DashboardFavourites />
+
+        {/* My Stack + Rewards tiles */}
+        <div className="grid gap-4 sm:grid-cols-2">
           <Link href="/stack" className="bg-lab-panel border border-lab-border rounded-2xl p-4 hover:border-lab-lime/50 transition-colors">
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-2">My Stack</p>
             <p className="text-3xl font-black text-white">{stackCount}</p>
@@ -225,6 +229,17 @@ export default async function DashboardPage() {
             <p className="text-3xl font-black text-white">🎁</p>
             <p className="text-[11px] text-lab-lime mt-1">Coming soon →</p>
           </Link>
+        </div>
+
+        {/* Discover supplements — surface the catalogue (F13b) */}
+        <div className="bg-lab-panel border border-lab-border rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Discover supplements</p>
+            <Link href="/products" className="text-[11px] uppercase tracking-widest font-bold text-lab-lime hover:underline">
+              Browse all →
+            </Link>
+          </div>
+          <CategoryGrid />
         </div>
 
         {/* My reviews */}
