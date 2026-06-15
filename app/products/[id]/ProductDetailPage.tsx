@@ -219,7 +219,7 @@ export default function ProductDetailPage({ id }: { id: string }) {
           <p className="text-sm text-white/70 leading-relaxed">
             This product scores{' '}
             <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our
-            clinical reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
+            evidence-based reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
             dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
           </p>
           <div className="flex gap-3 mt-3 flex-wrap">

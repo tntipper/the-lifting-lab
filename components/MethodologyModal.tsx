@@ -103,7 +103,7 @@ export default function MethodologyModal({ category }: { category?: string }) {
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-lab-muted mb-2">Ingredient colours</p>
                 <div className="flex gap-3 flex-wrap">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">● Green = meets clinical dose</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">● Green = meets effective dose</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">● Amber = below optimal</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
                 </div>

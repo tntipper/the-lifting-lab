@@ -6,7 +6,7 @@ import ProductGrid from './ProductGrid'
 export const metadata: Metadata = {
   title: 'Browse Supplements — The Lifting Lab',
   description:
-    'Browse 200+ UK supplements ranked by clinical scoring. Filter by category, sort by rating, and compare effective dosing and true value.',
+    'Browse 200+ UK supplements ranked by Effectiveness Match scoring. Filter by category, sort by rating, and compare effective dosing and true value.',
 }
 
 export default function ProductsPage() {

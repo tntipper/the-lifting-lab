@@ -28,7 +28,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">What The Lifting Lab provides</h2>
             <p>
-              The Lifting Lab provides supplement scoring, comparison, and stack-building tools for informational and educational purposes. Product scores are based on our published methodology and represent our independent assessment against clinical reference doses.
+              The Lifting Lab provides supplement scoring, comparison, and stack-building tools for informational and educational purposes. Product scores are based on our published methodology and represent our independent assessment against evidence-based reference doses.
             </p>
           </section>
 

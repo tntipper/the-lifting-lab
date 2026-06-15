@@ -59,10 +59,10 @@ export function verdictFlags(
   const flags: VerdictFlag[] = []
   if (score == null) return flags
 
-  if (score >= 90) flags.push({ color: green, text: 'Excellent clinical match — top tier dosing' })
-  else if (score >= 70) flags.push({ color: green, text: 'Strong clinical match against reference doses' })
-  else if (score >= 50) flags.push({ color: amber, text: 'Partial clinical match — some doses below optimal' })
-  else flags.push({ color: red, text: 'Poor clinical match — significantly underdosed vs reference' })
+  if (score >= 90) flags.push({ color: green, text: 'Excellent Effectiveness Match — top-tier dosing' })
+  else if (score >= 70) flags.push({ color: green, text: 'Strong Effectiveness Match against reference doses' })
+  else if (score >= 50) flags.push({ color: amber, text: 'Partial Effectiveness Match — some doses below optimal' })
+  else flags.push({ color: red, text: 'Poor Effectiveness Match — significantly underdosed vs reference' })
 
   if (informed_sport) {
     flags.push({ color: green, text: 'Informed Sport certified — batch tested for banned substances' })
@@ -73,20 +73,20 @@ export function verdictFlags(
     const amt = n.amount
 
     if (name.includes('caffeine')) {
-      if (amt >= 200 && amt <= 400) flags.push({ color: green, text: `Caffeine ${amt}mg — in the clinical sweet spot (200–400mg)` })
+      if (amt >= 200 && amt <= 400) flags.push({ color: green, text: `Caffeine ${amt}mg — in the effective sweet spot (200–400mg)` })
       else if (amt > 400) flags.push({ color: red, text: `Caffeine ${amt}mg — above 400mg, potential side effects` })
       else flags.push({ color: amber, text: `Caffeine ${amt}mg — below optimal range (200–400mg)` })
     }
     if (name.includes('citrulline')) {
-      if (amt >= 6000) flags.push({ color: green, text: `Citrulline ${amt}mg — meets or exceeds 6g clinical dose` })
-      else flags.push({ color: amber, text: `Citrulline ${amt}mg — below optimal 6–8g clinical dose` })
+      if (amt >= 6000) flags.push({ color: green, text: `Citrulline ${amt}mg — meets or exceeds 6g effective dose` })
+      else flags.push({ color: amber, text: `Citrulline ${amt}mg — below optimal 6–8g effective dose` })
     }
     if (name.includes('beta-alanine') || name === 'beta alanine') {
-      if (amt >= 3200) flags.push({ color: green, text: `Beta-Alanine ${amt}mg — clinical dose met (3.2g)` })
+      if (amt >= 3200) flags.push({ color: green, text: `Beta-Alanine ${amt}mg — effective dose met (3.2g)` })
       else flags.push({ color: amber, text: `Beta-Alanine ${amt}mg — below optimal 3.2g dose` })
     }
     if (name === 'creatine' || name.includes('creatine monohydrate')) {
-      if (amt >= 5000) flags.push({ color: green, text: `Creatine ${amt}mg — full 5g clinical dose` })
+      if (amt >= 5000) flags.push({ color: green, text: `Creatine ${amt}mg — full 5g effective dose` })
       else flags.push({ color: amber, text: `Creatine ${amt}mg — below optimal 5g dose` })
     }
     if (name === 'protein') {

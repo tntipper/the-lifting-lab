@@ -14,6 +14,7 @@ import { buyLink } from '@/lib/affiliate'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { track } from '@/lib/gtag'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
+import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'score', label: 'Best Rating' },
@@ -86,6 +87,29 @@ function fmt(n: number) {
   return n < 10 ? `£${n.toFixed(2)}` : `£${Math.round(n)}`
 }
 
+// Strict character cap for the latest-review snippet on a card (F12) so a long
+// review can't blow out the card height. Collapses whitespace, then truncates.
+const SNIPPET_MAX = 90
+function reviewSnippet(text: string) {
+  const t = text.trim().replace(/\s+/g, ' ')
+  return t.length <= SNIPPET_MAX ? t : t.slice(0, SNIPPET_MAX - 1).trimEnd() + '…'
+}
+
+// Compact star row matching the product-detail review styling (same SVG path).
+function MiniStars({ value }: { value: number }) {
+  return (
+    <span className="inline-flex shrink-0" aria-label={`${value} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <svg key={i} width={11} height={11} viewBox="0 0 24 24"
+          fill={i <= value ? '#e8a020' : 'none'} stroke={i <= value ? '#e8a020' : '#3a3a3a'}
+          strokeWidth="2" strokeLinejoin="round">
+          <path d="M12 2 15 9l7 .5-5.3 4.6L18.5 21 12 17.3 5.5 21 7.3 14.1 2 9.5 9 9z" />
+        </svg>
+      ))}
+    </span>
+  )
+}
+
 export default function ProductGrid() {
   const { inStack, toggle } = useLocalStack()
   const searchParams = useSearchParams()
@@ -97,6 +121,7 @@ export default function ProductGrid() {
   }, [groupParam])
 
   const [all, setAll] = useState<ScoredProduct[]>([])
+  const [reviewSummary, setReviewSummary] = useState<Record<string, ReviewSummary>>({})
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('all')
   const [sort, setSort] = useState<SortKey>('score')
@@ -153,6 +178,20 @@ export default function ProductGrid() {
     return () => { cancelled = true }
   }, [])
 
+  // Per-product review aggregates for the cards (F12). Fetched in parallel; a
+  // failure here just leaves cards without a review line — never blocks the grid.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/products/reviews-summary')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data || typeof data !== 'object') return
+        setReviewSummary(data as Record<string, ReviewSummary>)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
   const activeCategories = useMemo(() => {
     const present = new Set(all.map((p) => p.category))
     return CATEGORIES.filter((c) => present.has(c.slug))
@@ -166,8 +205,11 @@ export default function ProductGrid() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     let list = all
-    if (groupCategories) list = list.filter((p) => groupCategories.includes(p.category))
+    // A specific category pick overrides the group scope (the category chips list
+    // every category, so selecting one outside the current group must not intersect
+    // to an empty set). Group scope only applies while category is 'all'.
     if (category !== 'all') list = list.filter((p) => p.category === category)
+    else if (groupCategories) list = list.filter((p) => groupCategories.includes(p.category))
     if (isOnly) list = list.filter((p) => p.informed_sport === true)
     if (brandFilter.size) list = list.filter((p) => brandFilter.has(p.brand))
     if (q) list = list.filter((p) => `${p.brand} ${p.name}`.toLowerCase().includes(q))
@@ -308,8 +350,9 @@ export default function ProductGrid() {
         </div>
       </div>
 
-      {/* category chips */}
-      <div className="flex gap-2 overflow-x-auto hide-scroll -mx-1 px-1">
+      {/* category chips — swipeable single row on mobile, wraps to multiple rows
+          on desktop (no touch-swipe there, so every category stays reachable) */}
+      <div className="flex gap-2 overflow-x-auto hide-scroll -mx-1 px-1 md:flex-wrap md:overflow-x-visible">
         <CategoryChip label="All" active={category === 'all'} onClick={() => setCategory('all')} />
         {activeCategories.map((c) => (
           <CategoryChip
@@ -372,7 +415,7 @@ export default function ProductGrid() {
               ? p.score >= 90 ? '· Excellent dosing' : '· Good dosing'
               : p.score >= 50
               ? '· Partially dosed'
-              : '· Below clinical dose'
+              : '· Below effective dose'
             : ''
           const scoreFlag = benefits
             ? {
@@ -382,7 +425,7 @@ export default function ProductGrid() {
             : p.score != null
             ? {
                 color: p.score >= 70 ? '#a6e22e' : p.score >= 50 ? '#f5b342' : '#ff5c5c',
-                text: p.score >= 70 ? (p.score >= 90 ? 'Excellent clinical match' : 'Strong clinical match') : p.score >= 50 ? 'Partial clinical match' : 'Below clinical threshold',
+                text: p.score >= 70 ? (p.score >= 90 ? 'Excellent Effectiveness Match' : 'Strong Effectiveness Match') : p.score >= 50 ? 'Partial Effectiveness Match' : 'Below effective threshold',
               }
             : null
 
@@ -474,6 +517,34 @@ export default function ProductGrid() {
                   <span className="text-[11px] text-gray-300 leading-snug">{scoreFlag.text}</span>
                 </div>
               )}
+
+              {/* reviews (F12): star rating + latest snippet, graceful empty state */}
+              {(() => {
+                const rs = reviewSummary[p.id]
+                if (!rs || rs.count === 0) {
+                  return (
+                    <p className="text-[10px] text-lab-muted/40 mt-3 uppercase tracking-widest">
+                      No reviews yet
+                    </p>
+                  )
+                }
+                return (
+                  <div className="mt-3 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <MiniStars value={Math.round(rs.average)} />
+                      <span className="text-[11px] font-bold text-white leading-none">{rs.average.toFixed(1)}</span>
+                      <span className="text-[11px] text-lab-muted leading-none">
+                        ({rs.count} review{rs.count === 1 ? '' : 's'})
+                      </span>
+                    </div>
+                    {rs.latest && (
+                      <p className="text-[11px] text-white/55 italic leading-snug truncate">
+                        “{reviewSnippet(rs.latest)}”
+                      </p>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* action row: stack + compare + buy */}
               <div className="grid grid-cols-3 gap-2 mt-3">

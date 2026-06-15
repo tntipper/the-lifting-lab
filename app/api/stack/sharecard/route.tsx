@@ -123,7 +123,7 @@ export async function GET(request: Request) {
             {arc}
           </span>
           <span style={{ color: '#374151', fontSize: 18, marginTop: 16 }}>
-            {items.length} product{items.length === 1 ? '' : 's'} · Clinical scoring
+            {items.length} product{items.length === 1 ? '' : 's'} · Effectiveness Match scoring
           </span>
         </div>
 

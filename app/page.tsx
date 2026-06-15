@@ -7,7 +7,7 @@ import FeaturedSlot from '@/components/FeaturedSlot'
 export const metadata: Metadata = {
   title: 'The Lifting Lab — Evidence-Based Supplement Scoring (UK)',
   description:
-    'UK supplements ranked against clinical reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.',
+    'UK supplements ranked against evidence-based reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.',
   alternates: { canonical: 'https://theliftinglab.co.uk' },
 }
 

@@ -109,7 +109,7 @@ export default async function GuidePage({
               Top {categoryLabel(guide.slug)} <span className="text-lab-lime">picks</span>
             </h2>
             <p className="text-lab-muted text-sm mb-5">
-              Ranked by The Lifting Lab clinical score.
+              Ranked by The Lifting Lab Effectiveness Match score.
             </p>
             <div className="space-y-3">
               {products.map((p) => (

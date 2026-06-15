@@ -100,7 +100,7 @@ export default function CompareView() {
         <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-5 lab-glow">
           <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">Verdict</p>
           <p className="text-white text-sm">
-            <span className="font-black">{bestRated.brand} {bestRated.name}</span> wins on clinical
+            <span className="font-black">{bestRated.brand} {bestRated.name}</span> wins on Effectiveness Match
             rating with a score of <span className="text-lab-lime font-black">{bestRated.score}</span>.
           </p>
           {bestValue ? (

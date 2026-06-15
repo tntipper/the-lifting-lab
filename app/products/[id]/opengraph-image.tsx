@@ -125,7 +125,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         {/* footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#374151', fontSize: 13, letterSpacing: 2 }}>
-            Clinical dose analysis · EFSA reference values · Not medical advice
+            Effective-dose analysis · EFSA reference values · Not medical advice
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab

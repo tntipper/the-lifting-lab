@@ -392,14 +392,14 @@ export default function StackBuilder() {
             <p className="text-white text-sm mt-1">
               {avgScore != null ? (
                 <>
-                  Average clinical score across{' '}
+                  Average Effectiveness Match score across{' '}
                   <span className="font-bold" style={{ color: scoreColor(avgScore) }}>
                     {scoredItems.length}
                   </span>{' '}
                   scored product{scoredItems.length === 1 ? '' : 's'}.
                 </>
               ) : (
-                'No clinical scores available for these products yet.'
+                'No Effectiveness Match scores available for these products yet.'
               )}
             </p>
           </div>
