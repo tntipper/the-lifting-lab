@@ -42,7 +42,7 @@ export default function Home() {
             </span>
           </h1>
           <p className="relative text-[13px] uppercase tracking-[0.2em] font-bold text-lab-muted mt-2">
-            Evidence-Based Supplements · UK
+            Evidence-Based Supplement Comparisons · UK
           </p>
         </div>
 
