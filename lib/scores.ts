@@ -173,6 +173,8 @@ export const PRODUCT_SCORES: Record<string, number> = {
   "Optimum Nutrition|Protein Crispy Bar": 86,
   "Science in Sport|Protein Bar": 92,
   "Warrior|Crunch Protein Bar": 89,
+  "Bulk|High Protein Bar": 93,
+  "Bulk|Protein Cookie": 88,
   "Huel|Ready-to-drink (Vanilla)": 85,
   "Huel|Black Edition Ready-to-drink (Chocolate)": 92,
   "Huel|Lite Ready-to-drink (Chocolate)": 92,
@@ -198,6 +200,12 @@ export const PRODUCT_SCORES: Record<string, number> = {
   "Supplement Needs|Vitamin K2 (MK-4)": 57,
   "Supplement Needs|Sleep Stack": 45,
   "SuperDosed|Magnesium Glycinate": 83,
+  "Bulk|Omega-3 Fish Oil": 80,
+  "Bulk|Vitamin C 1000mg": 86,
+  "Bulk|Magnesium Bisglycinate": 82,
+  "Bulk|Complete Multivitamin Complex": 68,
+  "MyProtein|Complete Daily Multivitamin": 73,
+  "BetterYou|Vitamin D3 4000 IU Spray": 78,
   "Roar Ambition|TestoFuel": 93,
   "Hunter Evolve|Hunter Test": 89,
   "Roar Ambition|Prime Male": 86,
@@ -222,7 +230,9 @@ export const PRODUCT_SCORES: Record<string, number> = {
   "Bulk|Psyllium Husk Powder": 85,
   "PrecisionBiotics|Alflorex": 37,
   "Symprove|Symprove Original": 73,
-  "Applied Nutrition|ABE All Black Everything Pre-Workout": 53
+  "Applied Nutrition|ABE All Black Everything Pre-Workout": 53,
+  "Bulk|ZMA Zinc Magnesium": 93,
+  "Warrior|EAA Powder": 100
 }
 
 export function scoreFor(brand: string | null | undefined, name: string | null | undefined): number | null {
