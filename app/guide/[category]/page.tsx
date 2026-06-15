@@ -4,6 +4,7 @@ import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import ScoreBadge from '@/components/ScoreBadge'
 import { getGuide, GUIDE_SLUGS } from '@/lib/guides'
+import { getCitations, formatCitation } from '@/lib/guide-citations'
 import { categoryLabel } from '@/lib/categories'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type ScoredProduct } from '@/lib/products'
@@ -67,6 +68,8 @@ export default async function GuidePage({
   if (!guide) notFound()
 
   const products = await topProducts(guide.slug)
+  const citations = getCitations(guide.slug)
+  const url = `https://theliftinglab.co.uk/guide/${guide.slug}`
 
   const faqJsonLd = {
     '@context': 'https://schema.org',
@@ -78,12 +81,44 @@ export default async function GuidePage({
     })),
   }
 
+  // MedicalWebPage with verified scientific citations — strengthens E-E-A-T
+  // for this YMYL (health) content in search.
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'MedicalWebPage',
+    name: guide.h1,
+    headline: guide.metaTitle,
+    description: guide.metaDescription,
+    url,
+    inLanguage: 'en-GB',
+    lastReviewed: '2026-06-15',
+    publisher: {
+      '@type': 'Organization',
+      name: 'The Lifting Lab',
+      url: 'https://theliftinglab.co.uk',
+    },
+    ...(citations.length > 0 && {
+      citation: citations.map((c) => ({
+        '@type': 'ScholarlyArticle',
+        name: c.title,
+        author: c.authors,
+        ...(c.year && { datePublished: c.year }),
+        publisher: c.source,
+        url: c.url,
+      })),
+    }),
+  }
+
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
       />
 
       <article className="max-w-3xl mx-auto px-6 py-12">
@@ -156,6 +191,46 @@ export default async function GuidePage({
             ))}
           </div>
         </section>
+
+        {/* References — verified scientific sources (E-E-A-T) */}
+        {citations.length > 0 && (
+          <section className="mt-14">
+            <h2 className="text-xl font-black uppercase tracking-wide mb-1">
+              References
+            </h2>
+            <p className="text-lab-muted text-sm mb-5">
+              Sources behind this guide. Each was checked against the original
+              publication.
+            </p>
+            <ol className="space-y-3 list-none">
+              {citations.map((c, i) => (
+                <li
+                  key={c.url}
+                  className="flex gap-3 text-sm text-lab-muted leading-relaxed"
+                >
+                  <span className="text-lab-lime font-bold shrink-0">{i + 1}.</span>
+                  <span>
+                    {formatCitation(c)}{' '}
+                    <a
+                      href={c.url}
+                      target="_blank"
+                      rel="nofollow noopener noreferrer"
+                      className="text-white/80 hover:text-lab-lime underline underline-offset-2 break-words"
+                    >
+                      View source
+                    </a>
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <p className="text-lab-muted/70 text-xs mt-6 leading-relaxed">
+              This guide is educational and not medical advice. For personal
+              health concerns, or before starting any supplement that could
+              affect a medical condition or medication, speak to a qualified
+              clinician.
+            </p>
+          </section>
+        )}
 
         <div className="mt-12 pt-8 border-t border-lab-border">
           <Link
