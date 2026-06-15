@@ -15,9 +15,11 @@
 -- ('active','pending','rejected'), so SET status='inactive' was rejected
 -- (ERROR 23514). Widen the constraint to permit 'inactive' (the app only ever
 -- shows status='active', so inactive rows are hidden automatically).
+-- NOTE: prod already contains 14 rows with status='archived' (a prior hide pass),
+-- so the allowed list must also keep 'archived' or the constraint rebuild fails 23514.
 ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_status_check;
 ALTER TABLE public.products ADD CONSTRAINT products_status_check
-  CHECK (status IN ('active','pending','rejected','inactive'));
+  CHECK (status IN ('active','pending','rejected','inactive','archived'));
 
 UPDATE public.products SET status = 'inactive' WHERE brand = 'Optimum Nutrition'      AND name = 'Gold Standard Gainer';      -- delisted on ON UK; nearest live = Serious Mass (already in DB, now direct)
 UPDATE public.products SET status = 'inactive' WHERE brand = 'Optimum Nutrition'      AND name = 'Protein Crispy Bar';        -- delisted; nearest live = ON Chocolate Brownie Crunch Protein Bar
