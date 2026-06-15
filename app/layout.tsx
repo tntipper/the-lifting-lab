@@ -22,10 +22,30 @@ const anton = Anton({
   weight: "400",
 });
 
+const SITE_URL = "https://theliftinglab.co.uk";
+const SITE_TITLE = "The Lifting Lab — Evidence-Based Supplement Scoring (UK)";
+const SITE_DESCRIPTION =
+  "UK supplements ranked against evidence-based reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.";
+
 export const metadata: Metadata = {
-  title: "The Lifting Lab — Evidence-Based Supplement Scoring (UK)",
-  description:
-    "UK supplements ranked against evidence-based reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  applicationName: "The Lifting Lab",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "en_GB",
+    url: SITE_URL,
+    siteName: "The Lifting Lab",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
