@@ -109,7 +109,7 @@ export const PRODUCT_SCORES: Record<string, number> = {
   "Conteh Sports|Vitality": 77,
   "Combat Fuel|Cycle Support": 70,
   "Alpha Club|Alpha Shield": 24,
-  "Alpha Club|Alpha Balance": 0,
+  "Alpha Club|Alpha Balance": 93,
   "MyProtein|Impact Whey Protein": 86,
   "Optimum Nutrition|Gold Standard 100% Whey": 71,
   "Per4m|Advanced Whey": 55,
