@@ -308,7 +308,7 @@ export default function ProductGrid() {
             <span>{categoryPanelOpen ? '▴' : '▾'}</span>
           </button>
           {categoryPanelOpen && (
-            <div className="absolute top-full left-0 mt-1 z-20 bg-lab-panel-2 border border-lab-border rounded-xl shadow-xl p-3 min-w-[180px] max-h-64 overflow-y-auto">
+            <div className="absolute top-full left-0 mt-1 z-50 bg-lab-panel-2 border border-lab-border rounded-xl shadow-xl p-3 min-w-[180px] max-h-64 overflow-y-auto">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-[10px] uppercase tracking-widest font-bold text-lab-muted">Filter category</span>
                 {category !== 'all' && (
@@ -374,7 +374,7 @@ export default function ProductGrid() {
             <span>{brandPanelOpen ? '▴' : '▾'}</span>
           </button>
           {brandPanelOpen && (
-            <div className="absolute top-full left-0 mt-1 z-20 bg-lab-panel-2 border border-lab-border rounded-xl shadow-xl p-3 min-w-[180px] max-h-64 overflow-y-auto">
+            <div className="absolute top-full left-0 mt-1 z-50 bg-lab-panel-2 border border-lab-border rounded-xl shadow-xl p-3 min-w-[180px] max-h-64 overflow-y-auto">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-[10px] uppercase tracking-widest font-bold text-lab-muted">Filter brands</span>
                 {brandFilter.size > 0 && (
