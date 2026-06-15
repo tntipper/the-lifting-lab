@@ -21,6 +21,8 @@ Status as of 2026-06-14: all 7 build phases complete, `npm run build` GREEN, com
 5. `scripts/accounts-05-reviews-fn.sql` — reviews read fn
 6. `scripts/accounts-06-storage.sql` — avatar storage bucket + policies
 7. `scripts/accounts-07-account-fn.sql` — self-service account deletion
+8. `scripts/accounts-08-security-patch.sql` — **REQUIRED** profile-privacy / season-snapshot hardening
+9. `scripts/accounts-09-points-hardening.sql` — **REQUIRED** anti-farming `award_points` rebuild (blocks direct-RPC self-award, NULL-ref farming, cooldown races). **Must run — `accounts-02` alone leaves the points engine exploitable.**
 
 ### 2. Supabase dashboard settings
 - Enable **Email** auth provider (Authentication → Providers) if not already on
