@@ -6,7 +6,7 @@ import CompareView from './CompareView'
 export const metadata: Metadata = {
   title: 'Compare Supplements — The Lifting Lab',
   description:
-    'Head-to-head supplement comparison. See dosing side by side and get a clinical verdict on which product wins.',
+    'Head-to-head supplement comparison. See dosing side by side and get an evidence-based verdict on which product wins.',
 }
 
 export default function ComparePage() {
@@ -19,7 +19,7 @@ export default function ComparePage() {
             Head-to-<span className="text-lab-lime">Head</span>
           </h1>
           <p className="text-lab-muted text-sm mt-2">
-            Side-by-side dosing and clinical scores. Pick up to 3 products from the browser.
+            Side-by-side dosing and Effectiveness Match scores. Pick up to 3 products from the browser.
           </p>
           <p className="text-lab-muted/50 text-xs mt-1">
             Scores are for informational purposes only and do not constitute medical advice.

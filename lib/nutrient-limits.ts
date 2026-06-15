@@ -106,6 +106,7 @@ export type StackItem = {
     category: string
     serving_size: number
     serving_unit: string
+    buy_url?: string | null
     product_nutrients: { nutrient_name: string; amount: number; unit: string }[]
   }
 }

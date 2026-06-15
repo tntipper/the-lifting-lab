@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cat = categoryLabel(product.category)
   const title = `${product.brand} ${product.name} Score & Review | The Lifting Lab`
   const description = score != null
-    ? `${product.brand} ${product.name} scores ${score}/100 on our clinical ${cat.toLowerCase()} rating. Dose-for-dose analysis vs EFSA reference values.`
+    ? `${product.brand} ${product.name} scores ${score}/100 on our Effectiveness Match ${cat.toLowerCase()} rating. Dose-for-dose analysis vs EFSA reference values.`
     : `${product.brand} ${product.name} — evidence-based ${cat.toLowerCase()} analysis from The Lifting Lab.`
 
   return {

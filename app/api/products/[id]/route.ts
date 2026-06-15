@@ -8,7 +8,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const { data: product, error: pe } = await sb
     .from('products')
-    .select('id, name, brand, category, serving_size, serving_unit, servings_per_container, image_url, informed_sport, retail_price')
+    .select('id, name, brand, category, serving_size, serving_unit, servings_per_container, image_url, informed_sport, retail_price, buy_url, proprietary_blend, amino_spiked, protein_yield')
     .eq('id', id)
     .single()
 

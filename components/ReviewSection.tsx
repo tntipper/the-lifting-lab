@@ -42,11 +42,103 @@ function timeAgo(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function ReviewSection({ productId }: { productId: string }) {
+function ShareReview({ productName, rating }: { productName?: string; rating?: number }) {
+  const [copied, setCopied] = useState(false)
+  const [canNativeShare, setCanNativeShare] = useState(false)
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function')
+  }, [])
+
+  function shareText() {
+    const stars = rating ? ` ${rating}★` : ''
+    const name = productName || 'this supplement'
+    return `I reviewed ${name}${stars} on The Lifting Lab 💪 — evidence-based supplement scoring.`
+  }
+
+  function open(url: string, network: string) {
+    track('review_share', { method: network })
+    window.open(url, '_blank', 'noopener,noreferrer,width=600,height=540')
+  }
+
+  async function nativeShare() {
+    try {
+      await navigator.share({ text: shareText(), url: window.location.href })
+      track('review_share', { method: 'native' })
+    } catch {
+      /* user cancelled or share unsupported — ignore */
+    }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      track('review_share', { method: 'copy' })
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      /* clipboard blocked — ignore */
+    }
+  }
+
+  const btn =
+    'text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-lab-border text-lab-muted hover:text-lab-lime hover:border-lab-lime/50 transition-colors'
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {canNativeShare && (
+        <button
+          type="button"
+          onClick={nativeShare}
+          className="text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-lab-lime/60 text-lab-lime hover:bg-lab-lime/10 transition-colors"
+        >
+          Share…
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => {
+          const url = encodeURIComponent(window.location.href)
+          const text = encodeURIComponent(shareText())
+          open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, 'x')
+        }}
+        className={btn}
+      >
+        𝕏 / Twitter
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const url = encodeURIComponent(window.location.href)
+          open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, 'facebook')
+        }}
+        className={btn}
+      >
+        Facebook
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const text = encodeURIComponent(`${shareText()} ${window.location.href}`)
+          open(`https://wa.me/?text=${text}`, 'whatsapp')
+        }}
+        className={btn}
+      >
+        WhatsApp
+      </button>
+      <button type="button" onClick={copyLink} className={btn}>
+        {copied ? '✓ Copied' : 'Copy link'}
+      </button>
+    </div>
+  )
+}
+
+export default function ReviewSection({ productId, productName }: { productId: string; productName?: string }) {
   const [reviews, setReviews] = useState<Review[]>([])
   const [average, setAverage] = useState<number | null>(null)
   const [count, setCount] = useState(0)
-  const [signedIn, setSignedIn] = useState(false)
+  // null = auth not resolved yet; only treat as signed-out once we actually know.
+  const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
 
   const [rating, setRating] = useState(0)
@@ -55,11 +147,14 @@ export default function ReviewSection({ productId }: { productId: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [awarded, setAwarded] = useState<number | null>(null)
+  const [awardedRating, setAwardedRating] = useState(0)
 
   const hasReviewed = reviews.some((r) => r.is_mine)
 
   useEffect(() => {
-    createClient().auth.getUser().then(({ data }) => setSignedIn(!!data.user))
+    createClient().auth.getUser()
+      .then(({ data }) => setSignedIn(!!data.user))
+      .catch(() => setSignedIn(false))
     fetch(`/api/reviews?productId=${encodeURIComponent(productId)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -87,6 +182,7 @@ export default function ReviewSection({ productId }: { productId: string }) {
       }
       track('review_submit', { item_id: productId, rating })
       setAwarded(typeof data.pointsAwarded === 'number' ? data.pointsAwarded : 0)
+      setAwardedRating(rating)
       setBody(''); setRating(0)
       await refresh()
     } catch {
@@ -153,10 +249,14 @@ export default function ReviewSection({ productId }: { productId: string }) {
             {awarded > 0 ? `Review posted · +${awarded} points!` : 'Review posted — thanks!'}
           </p>
           <p className="text-lab-muted text-xs mt-1">It’ll be visible to others after a short review window.</p>
+          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mt-4 mb-2">Share your review</p>
+          <div className="flex justify-center">
+            <ShareReview productName={productName} rating={awardedRating} />
+          </div>
         </div>
       )}
 
-      {!loading && !signedIn && (
+      {!loading && signedIn === false && (
         <a href="/auth" className="block mb-5 text-center bg-lab-bg/40 border border-lab-border rounded-xl p-4 text-sm text-lab-muted hover:border-lab-lime/50 transition-colors">
           <span className="text-lab-lime font-bold">Sign in</span> to review this product and earn 75 points.
         </a>
@@ -182,6 +282,11 @@ export default function ReviewSection({ productId }: { productId: string }) {
                   )}
                 </div>
                 {r.body && <p className="text-sm text-white/80 mt-1 leading-snug break-words">{r.body}</p>}
+                {r.is_mine && (
+                  <div className="mt-2">
+                    <ShareReview productName={productName} rating={r.rating} />
+                  </div>
+                )}
               </div>
             </div>
           ))}

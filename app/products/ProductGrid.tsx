@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
+import { createClient } from '@/lib/supabase'
+import MethodologyModal from '@/components/MethodologyModal'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, type ScoredProduct, type SortKey } from '@/lib/products'
@@ -12,6 +14,7 @@ import { buyLink } from '@/lib/affiliate'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { track } from '@/lib/gtag'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
+import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'score', label: 'Best Rating' },
@@ -84,6 +87,29 @@ function fmt(n: number) {
   return n < 10 ? `£${n.toFixed(2)}` : `£${Math.round(n)}`
 }
 
+// Strict character cap for the latest-review snippet on a card (F12) so a long
+// review can't blow out the card height. Collapses whitespace, then truncates.
+const SNIPPET_MAX = 90
+function reviewSnippet(text: string) {
+  const t = text.trim().replace(/\s+/g, ' ')
+  return t.length <= SNIPPET_MAX ? t : t.slice(0, SNIPPET_MAX - 1).trimEnd() + '…'
+}
+
+// Compact star row matching the product-detail review styling (same SVG path).
+function MiniStars({ value }: { value: number }) {
+  return (
+    <span className="inline-flex shrink-0" aria-label={`${value} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <svg key={i} width={11} height={11} viewBox="0 0 24 24"
+          fill={i <= value ? '#e8a020' : 'none'} stroke={i <= value ? '#e8a020' : '#3a3a3a'}
+          strokeWidth="2" strokeLinejoin="round">
+          <path d="M12 2 15 9l7 .5-5.3 4.6L18.5 21 12 17.3 5.5 21 7.3 14.1 2 9.5 9 9z" />
+        </svg>
+      ))}
+    </span>
+  )
+}
+
 export default function ProductGrid() {
   const { inStack, toggle } = useLocalStack()
   const searchParams = useSearchParams()
@@ -95,25 +121,41 @@ export default function ProductGrid() {
   }, [groupParam])
 
   const [all, setAll] = useState<ScoredProduct[]>([])
+  const [reviewSummary, setReviewSummary] = useState<Record<string, ReviewSummary>>({})
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('all')
   const [sort, setSort] = useState<SortKey>('score')
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<string[]>([])
   const [favs, setFavs] = useState<Set<string>>(new Set())
-  const [signedIn, setSignedIn] = useState(false)
+  // null = auth not resolved yet. Tri-state so FavouriteButton can wait rather
+  // than default-to-signed-out and bounce a logged-in user to /auth (F10).
+  const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const [isOnly, setIsOnly] = useState(false)
   const [brandFilter, setBrandFilter] = useState<Set<string>>(new Set())
   const [brandPanelOpen, setBrandPanelOpen] = useState(false)
+  const [categoryPanelOpen, setCategoryPanelOpen] = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Authoritative auth check — independent of the favourites endpoint. Uses the
+  // same session the rest of the app relies on (see TopNav), so a 401/500 from
+  // /api/favourites can never make a signed-in user look logged out.
+  useEffect(() => {
+    let cancelled = false
+    createClient().auth.getUser()
+      .then(({ data }) => { if (!cancelled) setSignedIn(!!data.user) })
+      .catch(() => { if (!cancelled) setSignedIn(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  // Load the user's favourite ids for the heart fill state. A non-ok response
+  // here only leaves favs empty — it no longer affects signed-in state.
   useEffect(() => {
     let cancelled = false
     fetch('/api/favourites')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data) return
-        setSignedIn(true)
         setFavs(new Set<string>(Array.isArray(data.ids) ? data.ids : []))
       })
       .catch(() => {})
@@ -137,6 +179,20 @@ export default function ProductGrid() {
     return () => { cancelled = true }
   }, [])
 
+  // Per-product review aggregates for the cards (F12). Fetched in parallel; a
+  // failure here just leaves cards without a review line — never blocks the grid.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/products/reviews-summary')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data || typeof data !== 'object') return
+        setReviewSummary(data as Record<string, ReviewSummary>)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
   const activeCategories = useMemo(() => {
     const present = new Set(all.map((p) => p.category))
     return CATEGORIES.filter((c) => present.has(c.slug))
@@ -150,8 +206,11 @@ export default function ProductGrid() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     let list = all
-    if (groupCategories) list = list.filter((p) => groupCategories.includes(p.category))
+    // A specific category pick overrides the group scope (the category chips list
+    // every category, so selecting one outside the current group must not intersect
+    // to an empty set). Group scope only applies while category is 'all'.
     if (category !== 'all') list = list.filter((p) => p.category === category)
+    else if (groupCategories) list = list.filter((p) => groupCategories.includes(p.category))
     if (isOnly) list = list.filter((p) => p.informed_sport === true)
     if (brandFilter.size) list = list.filter((p) => brandFilter.has(p.brand))
     if (q) list = list.filter((p) => `${p.brand} ${p.name}`.toLowerCase().includes(q))
@@ -219,6 +278,9 @@ export default function ProductGrid() {
             Ranked by effective dosing · not brand reputation
           </p>
         </div>
+        <div className="shrink-0 pt-1">
+          <MethodologyModal category={category === 'all' ? undefined : category} />
+        </div>
       </div>
 
       {/* search */}
@@ -232,6 +294,59 @@ export default function ProductGrid() {
 
       {/* filters row */}
       <div className="flex items-center gap-2 flex-wrap">
+        {/* Category filter (single-select dropdown — replaces the chip row to save space) */}
+        <div className="relative">
+          <button
+            onClick={() => setCategoryPanelOpen((v) => !v)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-colors ${
+              category !== 'all'
+                ? 'bg-lab-lime text-black border-lab-lime'
+                : 'bg-lab-panel text-lab-muted border-lab-border hover:border-lab-lime hover:text-white'
+            }`}
+          >
+            <span>{category !== 'all' ? categoryLabel(category) : 'Category'}</span>
+            <span>{categoryPanelOpen ? '▴' : '▾'}</span>
+          </button>
+          {categoryPanelOpen && (
+            <div className="absolute top-full left-0 mt-1 z-20 bg-lab-panel-2 border border-lab-border rounded-xl shadow-xl p-3 min-w-[180px] max-h-64 overflow-y-auto">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-lab-muted">Filter category</span>
+                {category !== 'all' && (
+                  <button
+                    onClick={() => { setCategory('all'); setCategoryPanelOpen(false) }}
+                    className="text-[10px] text-lab-lime font-bold uppercase"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => { setCategory('all'); setCategoryPanelOpen(false) }}
+                className={`w-full text-left text-xs px-2 py-1.5 rounded-lg mb-0.5 font-bold transition-colors ${
+                  category === 'all'
+                    ? 'bg-lab-lime/20 text-lab-lime'
+                    : 'text-white/70 hover:bg-lab-border/40 hover:text-white'
+                }`}
+              >
+                {category === 'all' ? '✓ ' : ''}All
+              </button>
+              {activeCategories.map((c) => (
+                <button
+                  key={c.slug}
+                  onClick={() => { setCategory(c.slug); setCategoryPanelOpen(false) }}
+                  className={`w-full text-left text-xs px-2 py-1.5 rounded-lg mb-0.5 font-bold transition-colors ${
+                    category === c.slug
+                      ? 'bg-lab-lime/20 text-lab-lime'
+                      : 'text-white/70 hover:bg-lab-border/40 hover:text-white'
+                  }`}
+                >
+                  {category === c.slug ? '✓ ' : ''}{c.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Informed Sport toggle */}
         <button
           onClick={() => setIsOnly((v) => !v)}
@@ -289,19 +404,6 @@ export default function ProductGrid() {
         </div>
       </div>
 
-      {/* category chips */}
-      <div className="flex gap-2 overflow-x-auto hide-scroll -mx-1 px-1">
-        <CategoryChip label="All" active={category === 'all'} onClick={() => setCategory('all')} />
-        {activeCategories.map((c) => (
-          <CategoryChip
-            key={c.slug}
-            label={c.label}
-            active={category === c.slug}
-            onClick={() => setCategory(c.slug)}
-          />
-        ))}
-      </div>
-
       {/* contextual guide link */}
       {category !== 'all' && GUIDE_SLUGS.includes(category) && (
         <Link
@@ -353,7 +455,7 @@ export default function ProductGrid() {
               ? p.score >= 90 ? '· Excellent dosing' : '· Good dosing'
               : p.score >= 50
               ? '· Partially dosed'
-              : '· Below clinical dose'
+              : '· Below effective dose'
             : ''
           const scoreFlag = benefits
             ? {
@@ -363,7 +465,7 @@ export default function ProductGrid() {
             : p.score != null
             ? {
                 color: p.score >= 70 ? '#a6e22e' : p.score >= 50 ? '#f5b342' : '#ff5c5c',
-                text: p.score >= 70 ? (p.score >= 90 ? 'Excellent clinical match' : 'Strong clinical match') : p.score >= 50 ? 'Partial clinical match' : 'Below clinical threshold',
+                text: p.score >= 70 ? (p.score >= 90 ? 'Excellent Effectiveness Match' : 'Strong Effectiveness Match') : p.score >= 50 ? 'Partial Effectiveness Match' : 'Below effective threshold',
               }
             : null
 
@@ -456,6 +558,34 @@ export default function ProductGrid() {
                 </div>
               )}
 
+              {/* reviews (F12): star rating + latest snippet, graceful empty state */}
+              {(() => {
+                const rs = reviewSummary[p.id]
+                if (!rs || rs.count === 0) {
+                  return (
+                    <p className="text-[10px] text-lab-muted/40 mt-3 uppercase tracking-widest">
+                      No reviews yet
+                    </p>
+                  )
+                }
+                return (
+                  <div className="mt-3 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <MiniStars value={Math.round(rs.average)} />
+                      <span className="text-[11px] font-bold text-white leading-none">{rs.average.toFixed(1)}</span>
+                      <span className="text-[11px] text-lab-muted leading-none">
+                        ({rs.count} review{rs.count === 1 ? '' : 's'})
+                      </span>
+                    </div>
+                    {rs.latest && (
+                      <p className="text-[11px] text-white/55 italic leading-snug truncate">
+                        “{reviewSnippet(rs.latest)}”
+                      </p>
+                    )}
+                  </div>
+                )
+              })()}
+
               {/* action row: stack + compare + buy */}
               <div className="grid grid-cols-3 gap-2 mt-3">
                 <button
@@ -483,7 +613,7 @@ export default function ProductGrid() {
                   {isSel ? 'Added ✓' : 'Compare'}
                 </button>
                 <a
-                  href={buyLink(p.brand, p.name)}
+                  href={buyLink(p.brand, p.name, p.buy_url)}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
@@ -534,28 +664,5 @@ export default function ProductGrid() {
         </div>
       )}
     </div>
-  )
-}
-
-function CategoryChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`whitespace-nowrap text-xs uppercase tracking-widest font-bold px-3.5 py-2 rounded-full border transition-colors ${
-        active
-          ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
-          : 'border-lab-border text-lab-muted hover:text-white'
-      }`}
-    >
-      {label}
-    </button>
   )
 }

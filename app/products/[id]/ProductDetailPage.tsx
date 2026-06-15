@@ -10,8 +10,10 @@ import { track } from '@/lib/gtag'
 import type { Nutrient } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
+import MethodologyModal from '@/components/MethodologyModal'
 import ReviewSection from '@/components/ReviewSection'
 import ShareModal from '@/components/ShareModal'
+import TopNav from '@/components/TopNav'
 
 type ProductDetail = {
   id: string
@@ -23,6 +25,10 @@ type ProductDetail = {
   servings_per_container: number | null
   informed_sport: boolean | null
   retail_price: number | null
+  buy_url: string | null
+  proprietary_blend: boolean | null
+  amino_spiked: boolean | null
+  protein_yield: number | null
   cost_per_serving: number | null
   score: number | null
   nutrients: Nutrient[]
@@ -72,9 +78,12 @@ export default function ProductDetailPage({ id }: { id: string }) {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-lab-bg flex flex-col items-center justify-center gap-4">
-        <p className="text-white text-lg font-bold">Product not found</p>
-        <Link href="/products" className="text-lab-lime text-sm underline">Back to products</Link>
+      <div className="min-h-screen bg-lab-bg flex flex-col">
+        <TopNav />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <p className="text-white text-lg font-bold">Product not found</p>
+          <Link href="/products" className="text-lab-lime text-sm underline">Back to products</Link>
+        </div>
       </div>
     )
   }
@@ -86,8 +95,10 @@ export default function ProductDetailPage({ id }: { id: string }) {
 
   return (
     <div className="min-h-screen bg-lab-bg text-white pb-32">
-      {/* header */}
-      <div className="sticky top-0 z-20 bg-lab-bg/95 backdrop-blur border-b border-lab-border px-4 py-3 flex items-center gap-3">
+      <TopNav />
+
+      {/* breadcrumb / back row */}
+      <div className="bg-lab-bg border-b border-lab-border px-4 py-3 flex items-center gap-3">
         <button
           onClick={() => router.back()}
           className="text-lab-muted hover:text-white text-sm font-bold uppercase tracking-widest"
@@ -114,6 +125,21 @@ export default function ProductDetailPage({ id }: { id: string }) {
               {product.informed_sport && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
                   🛡️ IS Certified
+                </span>
+              )}
+              {product.protein_yield != null && (
+                <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
+                  {product.protein_yield}% protein yield
+                </span>
+              )}
+              {product.proprietary_blend && (
+                <span className="text-[10px] uppercase tracking-widest font-bold bg-yellow-900/40 text-yellow-400 border border-yellow-700/50 px-2 py-0.5 rounded-full">
+                  ⚠️ Proprietary Blend
+                </span>
+              )}
+              {product.amino_spiked && (
+                <span className="text-[10px] uppercase tracking-widest font-bold bg-red-900/40 text-red-400 border border-red-700/50 px-2 py-0.5 rounded-full">
+                  ⚠️ Amino Spiked
                 </span>
               )}
             </div>
@@ -186,11 +212,14 @@ export default function ProductDetailPage({ id }: { id: string }) {
 
         {/* score explanation */}
         <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
-          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-2">Score Explained</p>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Score Explained</p>
+            <MethodologyModal category={product.category} />
+          </div>
           <p className="text-sm text-white/70 leading-relaxed">
             This product scores{' '}
             <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our
-            clinical reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
+            evidence-based reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
             dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
           </p>
           <div className="flex gap-3 mt-3 flex-wrap">
@@ -201,7 +230,7 @@ export default function ProductDetailPage({ id }: { id: string }) {
         </div>
 
         {/* reviews */}
-        <ReviewSection productId={product.id} />
+        <ReviewSection productId={product.id} productName={product.name} />
 
         {/* compare prices across retailers */}
         <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
@@ -253,7 +282,7 @@ export default function ProductDetailPage({ id }: { id: string }) {
             Compare
           </Link>
           <a
-            href={buyLink(product.brand, product.name)}
+            href={buyLink(product.brand, product.name, product.buy_url)}
             target="_blank"
             rel="noopener noreferrer nofollow"
             onClick={() => track('buy_click', { item_brand: product.brand, item_name: product.name })}

@@ -1,9 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { methodologyFor } from '@/lib/methodology'
+import { categoryLabel } from '@/lib/categories'
 
-export default function MethodologyModal() {
+export default function MethodologyModal({ category }: { category?: string }) {
   const [open, setOpen] = useState(false)
+  const method = methodologyFor(category)
+  const catLabel = category ? categoryLabel(category) : null
 
   return (
     <>
@@ -39,6 +43,37 @@ export default function MethodologyModal() {
                 peer-reviewed evidence.
               </p>
 
+              {method && (
+                <div className="rounded-xl border border-lab-lime/30 bg-lab-lime/5 p-3">
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-lab-lime mb-1.5">
+                    The perfect {catLabel?.toLowerCase()} · weighting
+                  </p>
+                  <p className="text-[11px] text-white/80 leading-relaxed mb-3">{method.blurb}</p>
+                  <div className="space-y-1.5">
+                    {method.rows.map((row) => (
+                      <div
+                        key={row.ingredient}
+                        className="flex items-center gap-2 bg-black/40 border border-lab-border rounded-lg px-3 py-2"
+                      >
+                        <span className="text-[11px] font-bold flex-1 min-w-0">{row.ingredient}</span>
+                        <span className="text-[11px] text-lab-muted shrink-0">{row.target}</span>
+                        <span className="text-[11px] font-black text-lab-lime w-14 text-right shrink-0">{row.weight}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {method.notes.length > 0 && (
+                    <ul className="mt-3 space-y-1.5">
+                      {method.notes.map((note, i) => (
+                        <li key={i} className="text-[11px] text-white/70 flex gap-1.5">
+                          <span className="text-lab-lime shrink-0">•</span>
+                          <span>{note}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-lab-muted mb-2">The score breakdown</p>
                 <div className="space-y-2">
@@ -68,10 +103,20 @@ export default function MethodologyModal() {
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-lab-muted mb-2">Ingredient colours</p>
                 <div className="flex gap-3 flex-wrap">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">● Green = meets clinical dose</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">● Green = meets effective dose</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">● Amber = below optimal</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-lab-border bg-white/5 p-3">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-lab-muted mb-1.5">What the score is — and isn&apos;t</p>
+                <p className="text-[11px] text-white/80 leading-relaxed">
+                  Scores rate a product&apos;s <span className="text-white font-bold">ingredients and doses</span> against
+                  a category ideal — nothing else. A score is <span className="text-white font-bold">not</span> a
+                  judgement of the brand, its quality, safety, manufacturing, or reputation. A lower score reflects
+                  the <span className="italic">formulation</span> we measured, not the company behind it.
+                </p>
               </div>
 
               <p className="text-[10px] text-lab-muted border-t border-lab-border pt-3">

@@ -38,7 +38,7 @@ export default function AffiliateDisclosurePage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">How this affects our scores</h2>
             <p>
-              It doesn&apos;t. Our product scores are calculated using a fixed, published methodology based solely on label data and clinical reference doses. <strong className="text-white">Affiliate relationships have zero influence on product rankings, scores, or recommendations.</strong> We do not accept payment for placements or score adjustments.
+              It doesn&apos;t. Our product scores are calculated using a fixed, published methodology based solely on label data and evidence-based reference doses. <strong className="text-white">Affiliate relationships have zero influence on product rankings, scores, or recommendations.</strong> We do not accept payment for placements or score adjustments.
             </p>
             <p className="mt-3">
               The same product receives the same score regardless of whether an affiliate link exists or which retailer is linked.

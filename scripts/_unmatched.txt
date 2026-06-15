@@ -1,0 +1,8 @@
+omega-3 | Bulk | Omega-3 Fish Oil  (closest: Bulk | Creatine Monohydrate 0.00)
+vitamin-c | Bulk | Vitamin C 1000mg  (closest: Bulk | Creatine Monohydrate 0.00)
+magnesium | Bulk | Magnesium Bisglycinate  (closest: Bulk | Creatine Monohydrate 0.00)
+multivitamin | Bulk | Complete Multivitamin Complex  (closest: Bulk | Complete EAA 0.25)
+protein-bar | Bulk | High Protein Bar  (closest: Bulk | Macro Munch (Chocolate Hazelnut) 0.00)
+protein-bar | Bulk | Protein Cookie  (closest: Bulk | Macro Munch (Chocolate Hazelnut) 0.00)
+multivitamin | MyProtein | Complete Daily Multivitamin  (closest: MyProtein | Origin Pre-Workout 0.00)
+vitamin-d | BetterYou | Vitamin D3 4000 IU Spray
