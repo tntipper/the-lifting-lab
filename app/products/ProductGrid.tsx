@@ -134,6 +134,7 @@ export default function ProductGrid() {
   const [isOnly, setIsOnly] = useState(false)
   const [brandFilter, setBrandFilter] = useState<Set<string>>(new Set())
   const [brandPanelOpen, setBrandPanelOpen] = useState(false)
+  const [categoryPanelOpen, setCategoryPanelOpen] = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Authoritative auth check — independent of the favourites endpoint. Uses the
@@ -293,6 +294,59 @@ export default function ProductGrid() {
 
       {/* filters row */}
       <div className="flex items-center gap-2 flex-wrap">
+        {/* Category filter (single-select dropdown — replaces the chip row to save space) */}
+        <div className="relative">
+          <button
+            onClick={() => setCategoryPanelOpen((v) => !v)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-colors ${
+              category !== 'all'
+                ? 'bg-lab-lime text-black border-lab-lime'
+                : 'bg-lab-panel text-lab-muted border-lab-border hover:border-lab-lime hover:text-white'
+            }`}
+          >
+            <span>{category !== 'all' ? categoryLabel(category) : 'Category'}</span>
+            <span>{categoryPanelOpen ? '▴' : '▾'}</span>
+          </button>
+          {categoryPanelOpen && (
+            <div className="absolute top-full left-0 mt-1 z-20 bg-lab-panel-2 border border-lab-border rounded-xl shadow-xl p-3 min-w-[180px] max-h-64 overflow-y-auto">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] uppercase tracking-widest font-bold text-lab-muted">Filter category</span>
+                {category !== 'all' && (
+                  <button
+                    onClick={() => { setCategory('all'); setCategoryPanelOpen(false) }}
+                    className="text-[10px] text-lab-lime font-bold uppercase"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => { setCategory('all'); setCategoryPanelOpen(false) }}
+                className={`w-full text-left text-xs px-2 py-1.5 rounded-lg mb-0.5 font-bold transition-colors ${
+                  category === 'all'
+                    ? 'bg-lab-lime/20 text-lab-lime'
+                    : 'text-white/70 hover:bg-lab-border/40 hover:text-white'
+                }`}
+              >
+                {category === 'all' ? '✓ ' : ''}All
+              </button>
+              {activeCategories.map((c) => (
+                <button
+                  key={c.slug}
+                  onClick={() => { setCategory(c.slug); setCategoryPanelOpen(false) }}
+                  className={`w-full text-left text-xs px-2 py-1.5 rounded-lg mb-0.5 font-bold transition-colors ${
+                    category === c.slug
+                      ? 'bg-lab-lime/20 text-lab-lime'
+                      : 'text-white/70 hover:bg-lab-border/40 hover:text-white'
+                  }`}
+                >
+                  {category === c.slug ? '✓ ' : ''}{c.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Informed Sport toggle */}
         <button
           onClick={() => setIsOnly((v) => !v)}
@@ -348,20 +402,6 @@ export default function ProductGrid() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* category chips — swipeable single row on mobile, wraps to multiple rows
-          on desktop (no touch-swipe there, so every category stays reachable) */}
-      <div className="flex gap-2 overflow-x-auto hide-scroll -mx-1 px-1 md:flex-wrap md:overflow-x-visible">
-        <CategoryChip label="All" active={category === 'all'} onClick={() => setCategory('all')} />
-        {activeCategories.map((c) => (
-          <CategoryChip
-            key={c.slug}
-            label={c.label}
-            active={category === c.slug}
-            onClick={() => setCategory(c.slug)}
-          />
-        ))}
       </div>
 
       {/* contextual guide link */}
@@ -624,28 +664,5 @@ export default function ProductGrid() {
         </div>
       )}
     </div>
-  )
-}
-
-function CategoryChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`whitespace-nowrap text-xs uppercase tracking-widest font-bold px-3.5 py-2 rounded-full border transition-colors ${
-        active
-          ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
-          : 'border-lab-border text-lab-muted hover:text-white'
-      }`}
-    >
-      {label}
-    </button>
   )
 }
