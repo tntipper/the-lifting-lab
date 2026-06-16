@@ -8,7 +8,7 @@ export async function GET() {
     const sb = createPublicClient()
     const { data } = await sb
       .from('featured_brands')
-      .select('brand_name, tagline, cta_text, cta_url')
+      .select('brand_name, tagline, cta_text, cta_url, image_url')
       .eq('active', true)
       .order('display_order')
       .limit(1)

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 
 type FeaturedBrand = {
@@ -8,6 +9,7 @@ type FeaturedBrand = {
   tagline: string | null
   cta_text: string | null
   cta_url: string
+  image_url: string | null
 }
 
 const AR = '166,226,46'
@@ -15,7 +17,7 @@ const AR = '166,226,46'
 function SlotCard({ href, external, children }: { href: string; external?: boolean; children: React.ReactNode }) {
   const cls = 'lab-card beam block p-6 text-center hover:opacity-95 transition-opacity'
   if (external) {
-    return <a href={href} target="_blank" rel="noopener noreferrer nofollow" className={cls}>{children}</a>
+    return <a href={href} target="_blank" rel="noopener noreferrer nofollow sponsored" className={cls}>{children}</a>
   }
   return <Link href={href} className={cls}>{children}</Link>
 }
@@ -87,6 +89,17 @@ export default function FeaturedSlot() {
 
   return (
     <SlotCard href={brand.cta_url} external>
+      {brand.image_url && (
+        <div className="relative w-full rounded-xl mb-4 overflow-hidden" style={{ height: '180px' }}>
+          <Image
+            src={brand.image_url}
+            alt={`${brand.brand_name} featured promotion`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 600px"
+          />
+        </div>
+      )}
       <SlotInner
         name={brand.brand_name}
         tagline={brand.tagline ?? undefined}
