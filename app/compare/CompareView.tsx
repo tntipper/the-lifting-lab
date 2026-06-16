@@ -255,10 +255,10 @@ function Row({
 function Cell({ children, head }: { children: React.ReactNode; head?: boolean }) {
   return (
     <div
-      className={`px-3 py-2.5 text-sm border-b border-lab-border ${
+      className={`px-3 py-2.5 text-sm border-b border-lab-border flex items-center ${
         head
           ? 'text-lab-muted text-xs uppercase tracking-widest font-bold'
-          : 'text-white text-center font-medium'
+          : 'text-white text-center font-medium justify-center'
       }`}
     >
       {children}
