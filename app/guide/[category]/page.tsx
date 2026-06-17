@@ -109,6 +109,18 @@ export default async function GuidePage({
     }),
   }
 
+  // BreadcrumbList — surfaces a Home › Guides › Category trail in search results,
+  // backed by the visible breadcrumb nav below.
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { name: 'Home', item: 'https://theliftinglab.co.uk' },
+      { name: 'Guides', item: 'https://theliftinglab.co.uk/guide' },
+      { name: `${categoryLabel(guide.slug)} Guide`, item: url },
+    ].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
+  }
+
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
@@ -120,8 +132,27 @@ export default async function GuidePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
 
       <article className="max-w-3xl mx-auto px-6 py-12">
+        <nav aria-label="Breadcrumb" className="mb-4 text-xs text-lab-muted">
+          <ol className="flex flex-wrap items-center gap-1.5">
+            <li>
+              <Link href="/" className="hover:text-white">Home</Link>
+            </li>
+            <li aria-hidden className="text-lab-border">/</li>
+            <li>
+              <Link href="/guide" className="hover:text-white">Guides</Link>
+            </li>
+            <li aria-hidden className="text-lab-border">/</li>
+            <li aria-current="page" className="text-white/80">
+              {categoryLabel(guide.slug)}
+            </li>
+          </ol>
+        </nav>
         <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-4">
           Supplement Guide · {categoryLabel(guide.slug)}
         </p>
