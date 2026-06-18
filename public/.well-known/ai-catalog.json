@@ -1,0 +1,45 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "The Lifting Lab",
+    "identifier": "did:web:theliftinglab.co.uk",
+    "documentationUrl": "https://theliftinglab.co.uk",
+    "logoUrl": "https://theliftinglab.co.uk/icon.png"
+  },
+  "entries": [
+    {
+      "identifier": "urn:ai:theliftinglab.co.uk:tool:supplement-comparison",
+      "displayName": "The Lifting Lab — Supplement Value Comparison",
+      "type": "application/openapi+json",
+      "url": "https://theliftinglab.co.uk/api/ard/openapi.json",
+      "description": "Independent comparison and ranking of sports-nutrition and supplement products by ingredient dosing, serving size and price-per-serving value. Scores products on what's actually in them and what they cost — not brand marketing. Covers protein, creatine, pre-workout, electrolytes and more.",
+      "tags": [
+        "supplements",
+        "sports-nutrition",
+        "fitness",
+        "bodybuilding",
+        "price-comparison",
+        "protein",
+        "creatine",
+        "pre-workout",
+        "electrolytes"
+      ],
+      "capabilities": [
+        "SupplementComparison",
+        "ValueScoring",
+        "PricePerServing",
+        "IngredientDosing",
+        "ProductRanking"
+      ],
+      "representativeQueries": [
+        "what is the best value creatine monohydrate",
+        "compare whey protein powders by price per serving",
+        "which pre-workout has the best dosed ingredients for the price",
+        "cheapest properly dosed electrolyte supplement",
+        "is this protein powder good value for the dose"
+      ],
+      "version": "0.1.0",
+      "updatedAt": "2026-06-18T00:00:00Z"
+    }
+  ]
+}
