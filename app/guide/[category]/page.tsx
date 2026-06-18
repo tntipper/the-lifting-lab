@@ -6,6 +6,7 @@ import ScoreBadge from '@/components/ScoreBadge'
 import { getGuide, GUIDE_SLUGS } from '@/lib/guides'
 import { getCitations, formatCitation } from '@/lib/guide-citations'
 import { categoryLabel } from '@/lib/categories'
+import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type ScoredProduct } from '@/lib/products'
 
@@ -70,6 +71,13 @@ export default async function GuidePage({
   const products = await topProducts(guide.slug)
   const citations = getCitations(guide.slug)
   const url = `https://theliftinglab.co.uk/guide/${guide.slug}`
+
+  // Sibling guides from the same browse group — gives each guide topical
+  // internal links instead of being an SEO island linking only back to /guide.
+  const group = CATEGORY_GROUPS.find((g) => g.categories.includes(guide.slug))
+  const relatedSlugs = group
+    ? group.categories.filter((c) => c !== guide.slug && GUIDE_SLUGS.includes(c)).slice(0, 4)
+    : []
 
   const faqJsonLd = {
     '@context': 'https://schema.org',
@@ -189,7 +197,7 @@ export default async function GuidePage({
                     <p className="text-lab-muted text-xs truncate">{p.name}</p>
                   </div>
                   <Link
-                    href={`/products?category=${guide.slug}`}
+                    href={`/products/${p.id}`}
                     className="text-[10px] uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-3 py-1.5 rounded-lg shrink-0"
                   >
                     View
@@ -260,6 +268,26 @@ export default async function GuidePage({
               affect a medical condition or medication, speak to a qualified
               clinician.
             </p>
+          </section>
+        )}
+
+        {/* related guides — topical internal links to sibling categories */}
+        {relatedSlugs.length > 0 && (
+          <section className="mt-14">
+            <h2 className="text-xl font-black uppercase tracking-wide mb-5">
+              Related guides
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {relatedSlugs.map((slug) => (
+                <Link
+                  key={slug}
+                  href={`/guide/${slug}`}
+                  className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-lab-lime hover:border-lab-lime/50 px-4 py-2 rounded-lg transition-colors"
+                >
+                  {categoryLabel(slug)}
+                </Link>
+              ))}
+            </div>
           </section>
         )}
 
