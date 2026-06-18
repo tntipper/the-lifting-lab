@@ -14,6 +14,7 @@ import MethodologyModal from '@/components/MethodologyModal'
 import ReviewSection from '@/components/ReviewSection'
 import ShareModal from '@/components/ShareModal'
 import TopNav from '@/components/TopNav'
+import RelatedProducts from './RelatedProducts'
 
 type ProductDetail = {
   id: string
@@ -228,6 +229,9 @@ export default function ProductDetailPage({ id }: { id: string }) {
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
           </div>
         </div>
+
+        {/* better-rated alternatives in the same category */}
+        <RelatedProducts productId={product.id} category={product.category} score={product.score} />
 
         {/* reviews */}
         <ReviewSection productId={product.id} productName={product.name} />
