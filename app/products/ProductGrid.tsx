@@ -125,7 +125,10 @@ export default function ProductGrid() {
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('all')
   const [sort, setSort] = useState<SortKey>('score')
-  const [query, setQuery] = useState('')
+  // Seed the search box from a ?q= URL param so /products?q=creatine is a real
+  // deep-linkable/shareable search (and backs the WebSite SearchAction schema on
+  // the homepage). Lazy initialiser reads the param once on mount.
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [selected, setSelected] = useState<string[]>([])
   const [favs, setFavs] = useState<Set<string>>(new Set())
   // null = auth not resolved yet. Tri-state so FavouriteButton can wait rather

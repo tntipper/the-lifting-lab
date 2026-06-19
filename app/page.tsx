@@ -11,9 +11,56 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://theliftinglab.co.uk' },
 }
 
+const SITE = 'https://theliftinglab.co.uk'
+
+// Root brand-entity structured data. Product/guide pages already emit per-page
+// schema, but the site had no Organization (brand entity + social profiles) or
+// WebSite node — the foundation Google uses to understand the whole domain and
+// to surface a sitelinks search box. The SearchAction target is a real, working
+// URL now that /products reads ?q= (see ProductGrid).
+const orgLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  '@id': `${SITE}/#organization`,
+  name: 'The Lifting Lab',
+  url: SITE,
+  logo: `${SITE}/opengraph-image`,
+  description:
+    'Evidence-based UK supplement scoring. Products ranked against clinical reference doses for effectiveness and true cost per serving.',
+  sameAs: [
+    'https://www.tiktok.com/@dadthletelab',
+    'https://www.instagram.com/dadthletelab',
+  ],
+}
+
+const websiteLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${SITE}/#website`,
+  name: 'The Lifting Lab',
+  url: SITE,
+  publisher: { '@id': `${SITE}/#organization` },
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${SITE}/products?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
+}
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }}
+      />
       <TopNav />
 
       <div className="max-w-[860px] mx-auto px-4 pt-6 pb-20 space-y-5">
