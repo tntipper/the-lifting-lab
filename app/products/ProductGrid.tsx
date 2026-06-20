@@ -123,7 +123,15 @@ export default function ProductGrid() {
   const [all, setAll] = useState<ScoredProduct[]>([])
   const [reviewSummary, setReviewSummary] = useState<Record<string, ReviewSummary>>({})
   const [loading, setLoading] = useState(true)
-  const [category, setCategory] = useState('all')
+  // Seed the category filter from a ?category= URL param so /products?category=creatine
+  // is a real deep-linkable filter. The guide "See all" CTAs and the wizard's per-product
+  // category links both point here, but ProductGrid previously only read ?group=/?q=, so
+  // those links silently landed on the full unfiltered grid. Validated against the known
+  // category slug list so a junk param can't wedge the filter on an empty set.
+  const [category, setCategory] = useState(() => {
+    const c = searchParams.get('category')
+    return c && CATEGORIES.some((cat) => cat.slug === c) ? c : 'all'
+  })
   const [sort, setSort] = useState<SortKey>('score')
   // Seed the search box from a ?q= URL param so /products?q=creatine is a real
   // deep-linkable/shareable search (and backs the WebSite SearchAction schema on
