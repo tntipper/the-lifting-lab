@@ -117,6 +117,31 @@ export default async function GuidePage({
     }),
   }
 
+  // ItemList — the canonical structured-data signal for a ranked "best X" list,
+  // which is exactly the query class these guides target ("best creatine UK 2026").
+  // Backed 1:1 by the visible "Top picks" list below; each entry resolves to the
+  // schema-rich product detail page so Google can build a ranked product carousel.
+  // Guarded on products so a DB hiccup never emits an empty/invalid ItemList.
+  const itemListJsonLd = products.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Top ${categoryLabel(guide.slug)} picks`,
+    description: `${categoryLabel(guide.slug)} supplements ranked by The Lifting Lab Effectiveness Match score.`,
+    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    numberOfItems: products.length,
+    itemListElement: products.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Product',
+        name: p.name,
+        brand: { '@type': 'Brand', name: p.brand },
+        category: categoryLabel(p.category),
+        url: `https://theliftinglab.co.uk/products/${p.id}`,
+      },
+    })),
+  } : null
+
   // BreadcrumbList — surfaces a Home › Guides › Category trail in search results,
   // backed by the visible breadcrumb nav below.
   const breadcrumbJsonLd = {
@@ -144,6 +169,12 @@ export default async function GuidePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
+      {itemListJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        />
+      )}
 
       <article className="max-w-3xl mx-auto px-6 py-12">
         <nav aria-label="Breadcrumb" className="mb-4 text-xs text-lab-muted">
