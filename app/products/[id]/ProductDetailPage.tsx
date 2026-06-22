@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
+import { brandSlug } from '@/lib/brands'
 import { buyLink } from '@/lib/affiliate'
 import { track } from '@/lib/gtag'
 import type { Nutrient } from '@/lib/products'
@@ -117,7 +118,12 @@ export default function ProductDetailPage({ id }: { id: string }) {
         <div className="flex flex-col items-center text-center gap-4">
           <ScoreBadge score={product.score} size="lg" />
           <div>
-            <p className="text-lab-muted text-xs uppercase tracking-widest">{product.brand}</p>
+            <Link
+              href={`/brand/${brandSlug(product.brand)}`}
+              className="text-lab-muted text-xs uppercase tracking-widest hover:text-lab-lime transition-colors"
+            >
+              {product.brand}
+            </Link>
             <h1 className="text-2xl font-black italic mt-1">{product.name}</h1>
             <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
               <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
