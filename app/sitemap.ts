@@ -2,6 +2,8 @@ import type { MetadataRoute } from 'next'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { createPublicClient } from '@/lib/supabase-public'
 import { brandSlug } from '@/lib/brands'
+import { PRODUCT_COLUMNS, withScore, type Product } from '@/lib/products'
+import { curatedMatchups } from '@/lib/matchups'
 
 const BASE = 'https://theliftinglab.co.uk'
 
@@ -44,6 +46,26 @@ async function brandEntries(now: Date): Promise<MetadataRoute.Sitemap> {
   }
 }
 
+async function matchupEntries(now: Date): Promise<MetadataRoute.Sitemap> {
+  try {
+    const sb = createPublicClient()
+    const { data, error } = await sb.from('products').select(PRODUCT_COLUMNS).eq('status', 'active')
+    if (error || !data) return []
+    const scored = (data as Product[]).map((p) => {
+      const s = withScore(p)
+      return { id: p.id, name: p.name, brand: p.brand, category: p.category, score: s.score }
+    })
+    return curatedMatchups(scored).map((m) => ({
+      url: `${BASE}/vs/${m.slug}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+  } catch {
+    return []
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
 
@@ -52,6 +74,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/products`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE}/best`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE}/brand`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/vs`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/wizard`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/compare`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/guide`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
@@ -66,6 +89,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const productPages = await productEntries(now)
   const brandPages = await brandEntries(now)
+  const matchupPages = await matchupEntries(now)
 
-  return [...staticPages, ...guidePages, ...brandPages, ...productPages]
+  return [...staticPages, ...guidePages, ...brandPages, ...matchupPages, ...productPages]
 }
