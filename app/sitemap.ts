@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { GUIDE_SLUGS } from '@/lib/guides'
+import { INGREDIENT_SLUGS } from '@/lib/ingredients'
 import { createPublicClient } from '@/lib/supabase-public'
 import { brandSlug } from '@/lib/brands'
 import { PRODUCT_COLUMNS, withScore, type Product } from '@/lib/products'
@@ -78,6 +79,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/wizard`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/compare`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/guide`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/ingredients`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
   ]
 
   const guidePages: MetadataRoute.Sitemap = GUIDE_SLUGS.map((slug) => ({
@@ -87,9 +89,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
+  const ingredientPages: MetadataRoute.Sitemap = INGREDIENT_SLUGS.map((slug) => ({
+    url: `${BASE}/ingredients/${slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  }))
+
   const productPages = await productEntries(now)
   const brandPages = await brandEntries(now)
   const matchupPages = await matchupEntries(now)
 
-  return [...staticPages, ...guidePages, ...brandPages, ...matchupPages, ...productPages]
+  return [...staticPages, ...guidePages, ...ingredientPages, ...brandPages, ...matchupPages, ...productPages]
 }

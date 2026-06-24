@@ -21,9 +21,15 @@ export default function GuideIndex() {
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight mb-3">
           Know what you&apos;re <span className="text-lab-lime">buying</span>
         </h1>
-        <p className="text-lab-muted max-w-2xl mb-10">
+        <p className="text-lab-muted max-w-2xl mb-6">
           Short, honest, evidence-based guides to the supplements that matter. How to
           dose them, what the marketing hides, and which UK products actually deliver.
+        </p>
+        <p className="text-sm text-lab-muted mb-10">
+          Want to go deeper on a single active?{' '}
+          <Link href="/ingredients" className="text-lab-lime font-bold hover:underline underline-offset-2">
+            Browse the ingredient library →
+          </Link>
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
