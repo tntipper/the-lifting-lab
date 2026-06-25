@@ -3,7 +3,7 @@ import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import Calculators from './Calculators'
 
-const SITE = 'https://theliftinglab.co.uk'
+const SITE = 'https://www.theliftinglab.co.uk'
 const URL = `${SITE}/calculators`
 
 export const metadata: Metadata = {
