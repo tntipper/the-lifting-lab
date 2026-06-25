@@ -6,7 +6,7 @@ import { brandSlug } from '@/lib/brands'
 import { PRODUCT_COLUMNS, withScore, type Product } from '@/lib/products'
 import { curatedMatchups } from '@/lib/matchups'
 
-const BASE = 'https://theliftinglab.co.uk'
+const BASE = 'https://www.theliftinglab.co.uk'
 
 // Refresh daily so newly added/removed products flow into the sitemap.
 export const revalidate = 86400

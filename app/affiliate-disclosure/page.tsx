@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 export const metadata: Metadata = {
   title: 'Affiliate Disclosure — The Lifting Lab',
   description: 'Our affiliate relationship disclosure for Amazon Associates and other programmes.',
-  alternates: { canonical: 'https://theliftinglab.co.uk/affiliate-disclosure' },
+  alternates: { canonical: 'https://www.theliftinglab.co.uk/affiliate-disclosure' },
 }
 
 export default function AffiliateDisclosurePage() {

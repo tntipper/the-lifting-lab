@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 export const metadata: Metadata = {
   title: 'Terms of Use — The Lifting Lab',
   description: 'Terms governing your use of theliftinglab.co.uk.',
-  alternates: { canonical: 'https://theliftinglab.co.uk/terms' },
+  alternates: { canonical: 'https://www.theliftinglab.co.uk/terms' },
 }
 
 export default function TermsPage() {

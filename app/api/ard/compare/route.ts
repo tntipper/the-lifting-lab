@@ -9,7 +9,7 @@ import { buyLink } from '@/lib/affiliate'
 // Returns a ranked list of supplements scored on dosing/value, with buy links.
 // Backed by the same scoring + sorting the site uses, so agents and humans agree.
 
-const SITE_URL = 'https://theliftinglab.co.uk'
+const SITE_URL = 'https://www.theliftinglab.co.uk'
 const VALID_SLUGS = new Set(CATEGORIES.map((c) => c.slug))
 const ARD_SORTS: SortKey[] = ['value', 'budget', 'score']
 

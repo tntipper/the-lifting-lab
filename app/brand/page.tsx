@@ -10,7 +10,7 @@ import { brandSlug, type BrandSummary } from '@/lib/brands'
 // result renders the graceful empty state, never a 500).
 export const revalidate = 86400
 
-const SITE = 'https://theliftinglab.co.uk'
+const SITE = 'https://www.theliftinglab.co.uk'
 const URL = `${SITE}/brand`
 
 export const metadata: Metadata = {

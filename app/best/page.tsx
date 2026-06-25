@@ -13,7 +13,7 @@ import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/
 // category winners without a redeploy.
 export const revalidate = 86400
 
-const SITE = 'https://theliftinglab.co.uk'
+const SITE = 'https://www.theliftinglab.co.uk'
 const URL = `${SITE}/best`
 const YEAR = 2026
 

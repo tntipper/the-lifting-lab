@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Supplement Guides — Evidence-Based UK Buyer’s Guides | The Lifting Lab',
   description:
     'Plain-English, evidence-based guides to creatine, whey, pre-workout, EAAs and more. Learn how to dose each supplement and which UK products are worth buying.',
-  alternates: { canonical: 'https://theliftinglab.co.uk/guide' },
+  alternates: { canonical: 'https://www.theliftinglab.co.uk/guide' },
 }
 
 export default function GuideIndex() {

@@ -8,10 +8,10 @@ export const metadata: Metadata = {
   title: 'The Lifting Lab — Evidence-Based Supplement Scoring (UK)',
   description:
     'UK supplements ranked against evidence-based reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.',
-  alternates: { canonical: 'https://theliftinglab.co.uk' },
+  alternates: { canonical: 'https://www.theliftinglab.co.uk' },
 }
 
-const SITE = 'https://theliftinglab.co.uk'
+const SITE = 'https://www.theliftinglab.co.uk'
 
 // Root brand-entity structured data. Product/guide pages already emit per-page
 // schema, but the site had no Organization (brand entity + social profiles) or

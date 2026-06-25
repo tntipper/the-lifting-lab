@@ -22,7 +22,7 @@ const anton = Anton({
   weight: "400",
 });
 
-const SITE_URL = "https://theliftinglab.co.uk";
+const SITE_URL = "https://www.theliftinglab.co.uk";
 const SITE_TITLE = "The Lifting Lab — Evidence-Based Supplement Scoring (UK)";
 const SITE_DESCRIPTION =
   "UK supplements ranked against evidence-based reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.";

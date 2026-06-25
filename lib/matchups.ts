@@ -64,13 +64,27 @@ export function curatedMatchups<T extends MatchupProduct>(products: T[]): Matchu
   const out: Matchup<T>[] = []
   const seen = new Set<string>()
   for (const [category, arr] of byCat) {
-    const top = [...arr]
-      .sort((x, y) => (y.score as number) - (x.score as number) || x.name.localeCompare(y.name))
-      .slice(0, TOP_PER_CATEGORY)
+    // Sort by score (then name), then dedupe by product slug before taking the
+    // top N. Two *different* SKUs that slugify identically (e.g. duplicate
+    // "Warrior Creatine Monohydrate" rows) would otherwise cross-pair into a
+    // `x-vs-x` matchup slug. resolveMatchup keys products by slug, so it maps
+    // both sides back to the same product, fails its `a !== b` guard, and the
+    // page 404s — and the bad URL also leaks into the sitemap. Keeping only the
+    // first (highest-scoring) product per slug removes the collision at source.
+    const sorted = [...arr].sort(
+      (x, y) => (y.score as number) - (x.score as number) || x.name.localeCompare(y.name),
+    )
+    const bySlug = new Map<string, T>()
+    for (const p of sorted) {
+      const s = productSlug(p.brand, p.name)
+      if (!bySlug.has(s)) bySlug.set(s, p)
+    }
+    const top = Array.from(bySlug.values()).slice(0, TOP_PER_CATEGORY)
     for (let i = 0; i < top.length; i++) {
       for (let j = i + 1; j < top.length; j++) {
         const a = top[i]
         const b = top[j]
+        if (a.id === b.id) continue // defensive: never pair a product with itself
         const slug = matchupSlug(a.brand, a.name, b.brand, b.name)
         if (seen.has(slug)) continue
         seen.add(slug)

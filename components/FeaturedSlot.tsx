@@ -75,17 +75,10 @@ export default function FeaturedSlot() {
 
   if (brand === 'loading') return null
 
-  if (!brand) {
-    return (
-      <SlotCard href="/contact">
-        <SlotInner
-          name="Your Brand Here"
-          tagline="Readers comparing supplements right now are your customers. Feature your brand in the Showdown."
-          cta="Get in touch ›"
-        />
-      </SlotCard>
-    )
-  }
+  // No paid featured brand -> hide the slot entirely (P2-6). Previously this
+  // rendered a "Your Brand Here" house ad; per product decision the empty slot is
+  // now suppressed so the homepage doesn't surface an empty/placeholder promo.
+  if (!brand) return null
 
   return (
     <SlotCard href={brand.cta_url} external>

@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 export const metadata: Metadata = {
   title: 'Privacy Policy — The Lifting Lab',
   description: 'How The Lifting Lab collects, uses, and protects your personal data.',
-  alternates: { canonical: 'https://theliftinglab.co.uk/privacy' },
+  alternates: { canonical: 'https://www.theliftinglab.co.uk/privacy' },
 }
 
 export default function PrivacyPage() {

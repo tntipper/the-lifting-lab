@@ -357,7 +357,7 @@ export default function StackBuilder() {
   }
 
   // Social share text for the whole stack.
-  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://theliftinglab.co.uk'
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.theliftinglab.co.uk'
   const shareText =
     `My supplement stack${avgScore != null ? ` scored ${avgScore}/100` : ''} on The Lifting Lab` +
     (stackItems.length

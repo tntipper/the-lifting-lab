@@ -5,7 +5,7 @@ import { categoryLabel } from '@/lib/categories'
 import { getGuide } from '@/lib/guides'
 import ProductDetailPage from './ProductDetailPage'
 
-const SITE = 'https://theliftinglab.co.uk'
+const SITE = 'https://www.theliftinglab.co.uk'
 
 type Props = { params: Promise<{ id: string }> }
 

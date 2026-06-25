@@ -24,7 +24,7 @@ export async function generateMetadata({
   const { category } = await params
   const guide = getGuide(category)
   if (!guide) return { title: 'Guide not found — The Lifting Lab' }
-  const url = `https://theliftinglab.co.uk/guide/${guide.slug}`
+  const url = `https://www.theliftinglab.co.uk/guide/${guide.slug}`
   return {
     title: guide.metaTitle,
     description: guide.metaDescription,
@@ -70,7 +70,7 @@ export default async function GuidePage({
 
   const products = await topProducts(guide.slug)
   const citations = getCitations(guide.slug)
-  const url = `https://theliftinglab.co.uk/guide/${guide.slug}`
+  const url = `https://www.theliftinglab.co.uk/guide/${guide.slug}`
 
   // Sibling guides from the same browse group — gives each guide topical
   // internal links instead of being an SEO island linking only back to /guide.
@@ -103,7 +103,7 @@ export default async function GuidePage({
     publisher: {
       '@type': 'Organization',
       name: 'The Lifting Lab',
-      url: 'https://theliftinglab.co.uk',
+      url: 'https://www.theliftinglab.co.uk',
     },
     ...(citations.length > 0 && {
       citation: citations.map((c) => ({
@@ -137,7 +137,7 @@ export default async function GuidePage({
         name: p.name,
         brand: { '@type': 'Brand', name: p.brand },
         category: categoryLabel(p.category),
-        url: `https://theliftinglab.co.uk/products/${p.id}`,
+        url: `https://www.theliftinglab.co.uk/products/${p.id}`,
       },
     })),
   } : null
@@ -148,8 +148,8 @@ export default async function GuidePage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { name: 'Home', item: 'https://theliftinglab.co.uk' },
-      { name: 'Guides', item: 'https://theliftinglab.co.uk/guide' },
+      { name: 'Home', item: 'https://www.theliftinglab.co.uk' },
+      { name: 'Guides', item: 'https://www.theliftinglab.co.uk/guide' },
       { name: `${categoryLabel(guide.slug)} Guide`, item: url },
     ].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
   }

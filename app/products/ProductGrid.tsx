@@ -276,7 +276,10 @@ export default function ProductGrid() {
       {/* dynamic heading */}
       <div className="flex items-start justify-between mb-2">
         <div>
-          <h1
+          {/* Visual heading only — the crawlable page <h1> is server-rendered in
+              page.tsx (this grid is client-only). Demoted to <h2> so the page has
+              exactly one h1. */}
+          <h2
             className="text-2xl uppercase leading-none tracking-tight"
             style={{ fontFamily: 'var(--font-anton), Impact, sans-serif', transform: 'skewX(-4deg)' }}
           >
@@ -284,7 +287,7 @@ export default function ProductGrid() {
             <span style={{ color: '#a6e22e', textShadow: '0 0 12px rgba(166,226,46,0.4)' }}>
               Showdown
             </span>
-          </h1>
+          </h2>
           <p className="text-[11px] text-white/40 mt-1 uppercase tracking-widest">
             Ranked by effective dosing · not brand reputation
           </p>

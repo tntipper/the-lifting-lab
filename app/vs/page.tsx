@@ -8,7 +8,7 @@ import { curatedMatchups, type Matchup, type MatchupProduct } from '@/lib/matchu
 
 export const revalidate = 86400
 
-const SITE = 'https://theliftinglab.co.uk'
+const SITE = 'https://www.theliftinglab.co.uk'
 const YEAR = 2026
 
 export const metadata: Metadata = {

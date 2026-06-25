@@ -4,7 +4,7 @@ import { CATEGORIES } from '@/lib/categories'
 // Serves the OpenAPI 3.1 descriptor advertised by /.well-known/ai-catalog.json.
 // Lets an ARD client (or any agent) discover how to call /api/ard/compare.
 
-const SITE_URL = 'https://theliftinglab.co.uk'
+const SITE_URL = 'https://www.theliftinglab.co.uk'
 
 function cors<T extends Response>(res: T): T {
   res.headers.set('Access-Control-Allow-Origin', '*')

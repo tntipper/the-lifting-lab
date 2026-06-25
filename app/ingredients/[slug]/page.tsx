@@ -29,7 +29,7 @@ export async function generateMetadata({
   const { slug } = await params
   const ing = getIngredient(slug)
   if (!ing) return { title: 'Ingredient not found — The Lifting Lab' }
-  const url = `https://theliftinglab.co.uk/ingredients/${ing.slug}`
+  const url = `https://www.theliftinglab.co.uk/ingredients/${ing.slug}`
   return {
     title: ing.metaTitle,
     description: ing.metaDescription,
@@ -75,7 +75,7 @@ export default async function IngredientPage({
   if (!ing) notFound()
 
   const products = await topProducts(ing.productCategory)
-  const url = `https://theliftinglab.co.uk/ingredients/${ing.slug}`
+  const url = `https://www.theliftinglab.co.uk/ingredients/${ing.slug}`
 
   // Only link guides that genuinely exist, so we never produce a dead link.
   const relatedGuides = ing.relatedGuides.filter((g) => GUIDE_SLUGS.includes(g))
@@ -104,7 +104,7 @@ export default async function IngredientPage({
     publisher: {
       '@type': 'Organization',
       name: 'The Lifting Lab',
-      url: 'https://theliftinglab.co.uk',
+      url: 'https://www.theliftinglab.co.uk',
     },
     mainEntity: {
       '@type': 'DefinedTerm',
@@ -114,7 +114,7 @@ export default async function IngredientPage({
       inDefinedTermSet: {
         '@type': 'DefinedTermSet',
         name: 'The Lifting Lab Supplement Ingredient Library',
-        url: 'https://theliftinglab.co.uk/ingredients',
+        url: 'https://www.theliftinglab.co.uk/ingredients',
       },
     },
   }
@@ -133,7 +133,7 @@ export default async function IngredientPage({
         name: p.name,
         brand: { '@type': 'Brand', name: p.brand },
         category: categoryLabel(p.category),
-        url: `https://theliftinglab.co.uk/products/${p.id}`,
+        url: `https://www.theliftinglab.co.uk/products/${p.id}`,
       },
     })),
   } : null
@@ -142,8 +142,8 @@ export default async function IngredientPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { name: 'Home', item: 'https://theliftinglab.co.uk' },
-      { name: 'Ingredients', item: 'https://theliftinglab.co.uk/ingredients' },
+      { name: 'Home', item: 'https://www.theliftinglab.co.uk' },
+      { name: 'Ingredients', item: 'https://www.theliftinglab.co.uk/ingredients' },
       { name: ing.name, item: url },
     ].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
   }
