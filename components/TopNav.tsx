@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: '/brand', label: 'Brands' },
   { href: '/vs', label: 'Compare' },
   { href: '/wizard', label: 'Find My Stack' },
+  { href: '/calculators', label: 'Calculators' },
   { href: '/leaderboard', label: 'Leaderboard' },
 ]
 
