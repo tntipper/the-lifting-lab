@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { INGREDIENT_SLUGS } from '@/lib/ingredients'
+import { STACK_SLUGS } from '@/lib/stacks'
 import { createPublicClient } from '@/lib/supabase-public'
 import { brandSlug } from '@/lib/brands'
 import { PRODUCT_COLUMNS, withScore, type Product } from '@/lib/products'
@@ -76,6 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/best`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE}/brand`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/vs`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/stacks`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE}/wizard`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/calculators`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/compare`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
@@ -97,9 +99,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
+  const stackPages: MetadataRoute.Sitemap = STACK_SLUGS.map((slug) => ({
+    url: `${BASE}/stacks/${slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }))
+
   const productPages = await productEntries(now)
   const brandPages = await brandEntries(now)
   const matchupPages = await matchupEntries(now)
 
-  return [...staticPages, ...guidePages, ...ingredientPages, ...brandPages, ...matchupPages, ...productPages]
+  return [...staticPages, ...guidePages, ...ingredientPages, ...stackPages, ...brandPages, ...matchupPages, ...productPages]
 }
