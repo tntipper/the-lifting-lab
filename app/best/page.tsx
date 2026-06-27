@@ -319,6 +319,12 @@ export default async function BestPage() {
                   Build my stack →
                 </Link>
                 <Link
+                  href="/value"
+                  className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
+                >
+                  Best by value
+                </Link>
+                <Link
                   href="/products"
                   className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
                 >
