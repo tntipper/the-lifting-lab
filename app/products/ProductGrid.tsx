@@ -132,7 +132,15 @@ export default function ProductGrid() {
     const c = searchParams.get('category')
     return c && CATEGORIES.some((cat) => cat.slug === c) ? c : 'all'
   })
-  const [sort, setSort] = useState<SortKey>('score')
+  // Seed the sort from a ?sort= URL param so /products?sort=value is a real
+  // deep-linkable view (the value/budget pages and value funnel links point here).
+  // Validated against the known sort keys so a junk param can't wedge an invalid sort.
+  const [sort, setSort] = useState<SortKey>(() => {
+    const s = searchParams.get('sort')
+    return s && (['score', 'name', 'brand', 'value', 'budget'] as SortKey[]).includes(s as SortKey)
+      ? (s as SortKey)
+      : 'score'
+  })
   // Seed the search box from a ?q= URL param so /products?q=creatine is a real
   // deep-linkable/shareable search (and backs the WebSite SearchAction schema on
   // the homepage). Lazy initialiser reads the param once on mount.
