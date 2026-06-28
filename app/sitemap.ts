@@ -6,6 +6,7 @@ import { createPublicClient } from '@/lib/supabase-public'
 import { brandSlug } from '@/lib/brands'
 import { PRODUCT_COLUMNS, withScore, type Product } from '@/lib/products'
 import { curatedMatchups } from '@/lib/matchups'
+import { rankedCategorySlugs } from '@/lib/best-categories'
 
 const BASE = 'https://www.theliftinglab.co.uk'
 
@@ -107,9 +108,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
 
+  const bestCategorySlugs = await rankedCategorySlugs()
+  const bestCategoryPages: MetadataRoute.Sitemap = bestCategorySlugs.map((slug) => ({
+    url: `${BASE}/best/${slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }))
+
   const productPages = await productEntries(now)
   const brandPages = await brandEntries(now)
   const matchupPages = await matchupEntries(now)
 
-  return [...staticPages, ...guidePages, ...ingredientPages, ...stackPages, ...brandPages, ...matchupPages, ...productPages]
+  return [...staticPages, ...guidePages, ...ingredientPages, ...stackPages, ...bestCategoryPages, ...brandPages, ...matchupPages, ...productPages]
 }

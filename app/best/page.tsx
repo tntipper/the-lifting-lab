@@ -8,6 +8,7 @@ import { GUIDE_SLUGS } from '@/lib/guides'
 import { buyLink } from '@/lib/affiliate'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
+import { MIN_RANKED } from '@/lib/best-categories'
 
 // SSG with a daily refresh so newly added/rescored products can change the
 // category winners without a redeploy.
@@ -42,25 +43,35 @@ type Winner = { category: string; product: ScoredProduct }
 
 // Single server-side query, then derive the highest-scoring active product per
 // category. Mirrors the guide page's fetch pattern (DB-failure safe: an empty
-// result just renders the graceful empty state, never a 500).
-async function categoryWinners(): Promise<Winner[]> {
+// result just renders the graceful empty state, never a 500). Also returns the
+// set of categories with enough scored products to carry a full /best/[category]
+// ranking page, so each winner can deep-link to its ranking when one exists.
+async function categoryWinners(): Promise<{ winners: Winner[]; ranked: Set<string> }> {
   try {
     const sb = createPublicClient()
     const { data, error } = await sb
       .from('products')
       .select(PRODUCT_COLUMNS)
       .eq('status', 'active')
-    if (error || !data) return []
+    if (error || !data) return { winners: [], ranked: new Set() }
     const scored = (data as Product[]).map(withScore)
     const best = new Map<string, ScoredProduct>()
+    const counts = new Map<string, number>()
     for (const p of scored) {
       if (p.score == null) continue
+      counts.set(p.category, (counts.get(p.category) ?? 0) + 1)
       const cur = best.get(p.category)
       if (!cur || (cur.score ?? -1) < p.score) best.set(p.category, p)
     }
-    return Array.from(best.entries()).map(([category, product]) => ({ category, product }))
+    const ranked = new Set(
+      Array.from(counts.entries())
+        .filter(([, n]) => n >= MIN_RANKED)
+        .map(([slug]) => slug),
+    )
+    const winners = Array.from(best.entries()).map(([category, product]) => ({ category, product }))
+    return { winners, ranked }
   } catch {
-    return []
+    return { winners: [], ranked: new Set() }
   }
 }
 
@@ -69,7 +80,7 @@ function fmt(n: number) {
 }
 
 export default async function BestPage() {
-  const winners = await categoryWinners()
+  const { winners, ranked } = await categoryWinners()
   const byCategory = new Map(winners.map((w) => [w.category, w.product]))
 
   // Overall ranking — the highest-rated winners across every category. Powers
@@ -234,9 +245,18 @@ export default async function BestPage() {
                         <div className="flex items-center gap-4">
                           <ScoreBadge score={p.score} />
                           <div className="min-w-0 flex-1">
-                            <p className="text-[10px] uppercase tracking-widest text-lab-lime mb-0.5">
-                              Best {categoryLabel(slug)}
-                            </p>
+                            {ranked.has(slug) ? (
+                              <Link
+                                href={`/best/${slug}`}
+                                className="inline-block text-[10px] uppercase tracking-widest text-lab-lime mb-0.5 hover:underline"
+                              >
+                                Best {categoryLabel(slug)} — full ranking →
+                              </Link>
+                            ) : (
+                              <p className="text-[10px] uppercase tracking-widest text-lab-lime mb-0.5">
+                                Best {categoryLabel(slug)}
+                              </p>
+                            )}
                             <Link
                               href={`/products/${p.id}`}
                               className="hover:text-lab-lime transition-colors"
