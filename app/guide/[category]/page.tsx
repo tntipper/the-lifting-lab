@@ -9,6 +9,7 @@ import { categoryLabel } from '@/lib/categories'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type ScoredProduct } from '@/lib/products'
+import { MIN_RANKED } from '@/lib/best-categories'
 
 export const revalidate = 86400 // refresh top products daily
 
@@ -44,7 +45,10 @@ export async function generateMetadata({
   }
 }
 
-async function topProducts(category: string, limit = 3): Promise<ScoredProduct[]> {
+// Full score-sorted list for the category in one query; the page slices it for
+// the Top picks and uses its length to decide whether a /best/[category] ranking
+// page exists to cross-link to (no extra DB call).
+async function categoryScored(category: string): Promise<ScoredProduct[]> {
   try {
     const sb = createPublicClient()
     const { data, error } = await sb
@@ -53,7 +57,7 @@ async function topProducts(category: string, limit = 3): Promise<ScoredProduct[]
       .eq('status', 'active')
       .eq('category', category)
     if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore), 'score').slice(0, limit)
+    return sortScored((data as Product[]).map(withScore), 'score')
   } catch {
     return []
   }
@@ -68,7 +72,11 @@ export default async function GuidePage({
   const guide = getGuide(category)
   if (!guide) notFound()
 
-  const products = await topProducts(guide.slug)
+  const allScored = await categoryScored(guide.slug)
+  const products = allScored.slice(0, 3)
+  // A full /best/[category] ranking page exists only when the category has
+  // enough scored products (same gate as that page + the sitemap).
+  const hasRanking = allScored.length >= MIN_RANKED
   const citations = getCitations(guide.slug)
   const url = `https://www.theliftinglab.co.uk/guide/${guide.slug}`
 
@@ -236,10 +244,22 @@ export default async function GuidePage({
                 </div>
               ))}
             </div>
-            <div className="mt-5">
+            <div className="mt-5 flex flex-wrap gap-2">
+              {hasRanking && (
+                <Link
+                  href={`/best/${guide.slug}`}
+                  className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90 inline-block"
+                >
+                  Full {categoryLabel(guide.slug)} ranking →
+                </Link>
+              )}
               <Link
                 href={`/products?category=${guide.slug}`}
-                className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90 inline-block"
+                className={`text-xs uppercase tracking-widest font-bold px-5 py-2.5 rounded-lg inline-block transition-colors ${
+                  hasRanking
+                    ? 'border border-lab-border text-lab-muted hover:text-white'
+                    : 'bg-lab-lime text-black hover:opacity-90'
+                }`}
               >
                 See all {categoryLabel(guide.slug)} →
               </Link>
