@@ -141,11 +141,17 @@ export default async function BrandIndexPage() {
           marketing spend or reputation.
         </p>
         {brands.length > 0 && (
-          <p className="text-lab-muted leading-relaxed mb-10">
+          <p className="text-lab-muted leading-relaxed mb-4">
             Currently tracking {totalProducts} products across {brands.length} brands. Scores update
             as the catalogue changes.
           </p>
         )}
+        <p className="text-lab-muted text-sm mb-10">
+          Torn between two?{' '}
+          <Link href="/brands-vs" className="text-lab-lime hover:underline underline-offset-2">
+            See our brand showdowns →
+          </Link>
+        </p>
 
         {brands.length === 0 ? (
           <div className="text-center py-16 text-lab-muted">

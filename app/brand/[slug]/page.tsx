@@ -295,6 +295,12 @@ export default async function BrandPage({
               All brands →
             </Link>
             <Link
+              href="/brands-vs"
+              className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
+            >
+              Brand showdowns
+            </Link>
+            <Link
               href="/products"
               className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
             >

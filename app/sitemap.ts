@@ -6,6 +6,7 @@ import { createPublicClient } from '@/lib/supabase-public'
 import { brandSlug } from '@/lib/brands'
 import { PRODUCT_COLUMNS, withScore, type Product } from '@/lib/products'
 import { curatedMatchups } from '@/lib/matchups'
+import { buildBrandStats, curatedBrandMatchups } from '@/lib/brand-matchups'
 import { rankedCategorySlugs } from '@/lib/best-categories'
 
 const BASE = 'https://www.theliftinglab.co.uk'
@@ -69,6 +70,23 @@ async function matchupEntries(now: Date): Promise<MetadataRoute.Sitemap> {
   }
 }
 
+async function brandMatchupEntries(now: Date): Promise<MetadataRoute.Sitemap> {
+  try {
+    const sb = createPublicClient()
+    const { data, error } = await sb.from('products').select(PRODUCT_COLUMNS).eq('status', 'active')
+    if (error || !data) return []
+    const scored = (data as Product[]).map(withScore)
+    return curatedBrandMatchups(buildBrandStats(scored)).map((m) => ({
+      url: `${BASE}/brands-vs/${m.slug}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+  } catch {
+    return []
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
 
@@ -79,6 +97,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/value`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE}/brand`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/vs`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/brands-vs`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/stacks`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE}/wizard`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/calculators`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
@@ -119,6 +138,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const productPages = await productEntries(now)
   const brandPages = await brandEntries(now)
   const matchupPages = await matchupEntries(now)
+  const brandMatchupPages = await brandMatchupEntries(now)
 
-  return [...staticPages, ...guidePages, ...ingredientPages, ...stackPages, ...bestCategoryPages, ...brandPages, ...matchupPages, ...productPages]
+  return [...staticPages, ...guidePages, ...ingredientPages, ...stackPages, ...bestCategoryPages, ...brandPages, ...matchupPages, ...brandMatchupPages, ...productPages]
 }
