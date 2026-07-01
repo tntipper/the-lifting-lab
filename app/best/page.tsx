@@ -325,7 +325,10 @@ export default async function BestPage() {
                 Each product earns an Effectiveness Match score (0–100) measuring how closely its
                 active ingredient doses match the evidence-based clinical reference for its
                 category. The highest scorer in each category takes the award. Cost per serving is
-                shown for context but does not decide the winner.
+                shown for context but does not decide the winner.{' '}
+                <Link href="/methodology" className="text-lab-lime hover:underline">
+                  See the full methodology →
+                </Link>
               </p>
               <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">
                 Informational only — not medical advice. Buy links are affiliate links; we may earn

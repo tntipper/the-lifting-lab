@@ -200,6 +200,7 @@ export default function Home() {
         <div className="text-center text-[10px] text-lab-muted space-y-1 pt-2">
           <p>The Lifting Lab · Evidence-based supplement scoring · UK</p>
           <p className="flex flex-wrap justify-center gap-x-4">
+            <Link href="/methodology" className="hover:text-white">How We Score</Link>
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
             <Link href="/terms" className="hover:text-white">Terms</Link>
             <Link href="/affiliate-disclosure" className="hover:text-white">Affiliate Disclosure</Link>

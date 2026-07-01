@@ -260,3 +260,27 @@ export function methodologyFor(slug: string | null | undefined): Methodology | n
   const key = CATEGORY_TO_METHODOLOGY[slug]
   return key ? METHODOLOGY[key] ?? null : null
 }
+
+// Ordered index of every distinct methodology block, with a display title and a
+// representative category slug (so each block can deep-link to its buyer's guide
+// / browse view). Drives the crawlable /methodology page — one entry per unique
+// reference spec, deduped from CATEGORY_TO_METHODOLOGY's many-to-one mapping.
+export type MethodologyIndexEntry = { key: string; title: string; categorySlug: string }
+
+export const METHODOLOGY_INDEX: MethodologyIndexEntry[] = [
+  { key: 'pre_workouts', title: 'Pre-Workout', categorySlug: 'pre-workout' },
+  { key: 'creatine', title: 'Creatine', categorySlug: 'creatine' },
+  { key: 'whey_normal', title: 'Whey Protein', categorySlug: 'whey' },
+  { key: 'whey_isolate', title: 'Whey Isolate', categorySlug: 'whey-isolate' },
+  { key: 'casein', title: 'Casein', categorySlug: 'casein' },
+  { key: 'eaas', title: 'EAAs', categorySlug: 'eaas' },
+  { key: 'intra_workout', title: 'Intra-Workout', categorySlug: 'intra-workout' },
+  { key: 'post_workout', title: 'Post-Workout', categorySlug: 'post-workout' },
+  { key: 'hydration', title: 'Hydration & Electrolytes', categorySlug: 'hydration' },
+  { key: 'protein_bars', title: 'Protein Bars', categorySlug: 'protein-bar' },
+  { key: 'meal_replacement_rtd', title: 'Meal Replacements & RTDs', categorySlug: 'meal-replacement' },
+  { key: 'cycle_support', title: 'Cycle Support & Organ Health', categorySlug: 'cycle-support' },
+  { key: 'vitamins_wellbeing', title: 'Vitamins & Wellbeing', categorySlug: 'vitamin' },
+  { key: 'hormone_support', title: 'Hormone Support', categorySlug: 'hormone-support' },
+  { key: 'gut_digestion', title: 'Gut & Digestion', categorySlug: 'gut-digestion' },
+]

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { methodologyFor } from '@/lib/methodology'
 import { categoryLabel } from '@/lib/categories'
 
@@ -124,6 +125,14 @@ export default function MethodologyModal({ category }: { category?: string }) {
                 no commission bias. The perfect 100 belongs to an ideal that doesn&apos;t exist, so real products
                 land below it. <span className="font-bold">Informational only — not medical advice.</span>
               </p>
+
+              <Link
+                href="/methodology"
+                onClick={() => setOpen(false)}
+                className="block text-center text-[11px] font-black uppercase tracking-widest text-lab-lime hover:underline pt-1"
+              >
+                Read the full methodology →
+              </Link>
             </div>
           </div>
         </div>
