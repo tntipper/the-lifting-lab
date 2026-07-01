@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
+import { productSlug } from '@/lib/matchups'
 import { track } from '@/lib/gtag'
 import type { ScoredProduct } from '@/lib/products'
 
@@ -15,10 +16,14 @@ export default function RelatedProducts({
   productId,
   category,
   score,
+  brand,
+  name,
 }: {
   productId: string
   category: string
   score: number | null
+  brand: string
+  name: string
 }) {
   const [items, setItems] = useState<ScoredProduct[] | null>(null)
 
@@ -94,6 +99,15 @@ export default function RelatedProducts({
           )
         })}
       </div>
+      {items.length >= 3 && (
+        <Link
+          href={`/alternatives/${productSlug(brand, name)}`}
+          onClick={() => track('alternatives_click', { from_product: productId })}
+          className="mt-4 inline-block text-xs font-bold text-lab-lime hover:underline underline-offset-2"
+        >
+          See all alternatives to {name} →
+        </Link>
+      )}
     </div>
   )
 }

@@ -237,7 +237,7 @@ export default function ProductDetailPage({ id }: { id: string }) {
         </div>
 
         {/* better-rated alternatives in the same category */}
-        <RelatedProducts productId={product.id} category={product.category} score={product.score} />
+        <RelatedProducts productId={product.id} category={product.category} score={product.score} brand={product.brand} name={product.name} />
 
         {/* reviews */}
         <ReviewSection productId={product.id} productName={product.name} />
