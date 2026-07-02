@@ -164,6 +164,16 @@ export default function Home() {
           </Link>
 
           <Link
+            href="/watch-outs"
+            className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 transition-colors"
+            style={{ borderColor: 'rgba(224,90,43,0.3)' }}
+          >
+            <span className="text-lg">🚩</span>
+            <span className="text-sm font-bold text-white">Supplement Watch-Outs</span>
+            <span className="ml-auto text-sm font-bold" style={{ color: '#e05a2b' }}>→</span>
+          </Link>
+
+          <Link
             href="/submit"
             className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
           >
