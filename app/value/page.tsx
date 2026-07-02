@@ -383,6 +383,12 @@ export default async function ValuePage() {
                 >
                   Browse by value
                 </Link>
+                <Link
+                  href="/watch-outs"
+                  className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
+                >
+                  Watch-outs
+                </Link>
               </div>
             </section>
           </>
