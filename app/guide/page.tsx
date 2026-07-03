@@ -29,6 +29,10 @@ export default function GuideIndex() {
           Want to go deeper on a single active?{' '}
           <Link href="/ingredients" className="text-lab-lime font-bold hover:underline underline-offset-2">
             Browse the ingredient library →
+          </Link>{' '}
+          Or skim{' '}
+          <Link href="/faq" className="text-lab-lime font-bold hover:underline underline-offset-2">
+            common questions →
           </Link>
         </p>
 

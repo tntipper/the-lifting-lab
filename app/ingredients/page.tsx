@@ -87,6 +87,10 @@ export default function IngredientIndex() {
           Shopping a whole category instead?{' '}
           <Link href="/guide" className="text-lab-lime font-bold hover:underline underline-offset-2">
             See the buyer&apos;s guides →
+          </Link>{' '}
+          Or jump to{' '}
+          <Link href="/faq" className="text-lab-lime font-bold hover:underline underline-offset-2">
+            common supplement questions →
           </Link>
         </p>
 

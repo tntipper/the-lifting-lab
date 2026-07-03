@@ -164,6 +164,15 @@ export default function Home() {
           </Link>
 
           <Link
+            href="/faq"
+            className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
+          >
+            <span className="text-lg">❓</span>
+            <span className="text-sm font-bold text-white">Supplement Answers</span>
+            <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
+          </Link>
+
+          <Link
             href="/watch-outs"
             className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 transition-colors"
             style={{ borderColor: 'rgba(224,90,43,0.3)' }}
@@ -211,6 +220,7 @@ export default function Home() {
           <p>The Lifting Lab · Evidence-based supplement scoring · UK</p>
           <p className="flex flex-wrap justify-center gap-x-4">
             <Link href="/methodology" className="hover:text-white">How We Score</Link>
+            <Link href="/faq" className="hover:text-white">Answers</Link>
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
             <Link href="/terms" className="hover:text-white">Terms</Link>
             <Link href="/affiliate-disclosure" className="hover:text-white">Affiliate Disclosure</Link>
