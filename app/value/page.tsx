@@ -378,6 +378,12 @@ export default async function ValuePage() {
                   Build my stack
                 </Link>
                 <Link
+                  href="/protein-value"
+                  className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
+                >
+                  Protein £/gram
+                </Link>
+                <Link
                   href="/products?sort=value"
                   className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
                 >
