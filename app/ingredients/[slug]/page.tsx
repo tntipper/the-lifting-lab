@@ -4,6 +4,7 @@ import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import ScoreBadge from '@/components/ScoreBadge'
 import { getIngredient, INGREDIENT_SLUGS, type EvidenceLevel } from '@/lib/ingredients'
+import { matchupsForIngredient } from '@/lib/ingredient-matchups'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { categoryLabel } from '@/lib/categories'
 import { createPublicClient } from '@/lib/supabase-public'
@@ -79,6 +80,16 @@ export default async function IngredientPage({
 
   // Only link guides that genuinely exist, so we never produce a dead link.
   const relatedGuides = ing.relatedGuides.filter((g) => GUIDE_SLUGS.includes(g))
+
+  // Head-to-head comparisons that feature this ingredient (reciprocal linking
+  // into the /ingredients-vs surface). Resolve the "other" ingredient's name.
+  const comparisons = matchupsForIngredient(ing.slug)
+    .map((mu) => {
+      const otherSlug = mu.a === ing.slug ? mu.b : mu.a
+      const other = getIngredient(otherSlug)
+      return other ? { slug: mu.slug, otherName: other.name } : null
+    })
+    .filter((c): c is { slug: string; otherName: string } => c != null)
 
   const faqJsonLd = {
     '@context': 'https://schema.org',
@@ -265,6 +276,26 @@ export default async function IngredientPage({
             ))}
           </div>
         </section>
+
+        {/* head-to-head comparisons featuring this ingredient */}
+        {comparisons.length > 0 && (
+          <section className="mt-14">
+            <h2 className="text-xl font-black uppercase tracking-wide mb-5">
+              {ing.name} <span className="text-lab-lime">vs</span> ...
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {comparisons.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/ingredients-vs/${c.slug}`}
+                  className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-lab-lime hover:border-lab-lime/50 px-4 py-2 rounded-lg transition-colors"
+                >
+                  vs {c.otherName}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* related guides — connect the ingredient axis to the category guides */}
         {relatedGuides.length > 0 && (

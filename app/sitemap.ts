@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { INGREDIENT_SLUGS } from '@/lib/ingredients'
+import { INGREDIENT_MATCHUP_SLUGS } from '@/lib/ingredient-matchups'
 import { STACK_SLUGS } from '@/lib/stacks'
 import { createPublicClient } from '@/lib/supabase-public'
 import { brandSlug } from '@/lib/brands'
@@ -124,6 +125,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/compare`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/guide`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/ingredients`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/ingredients-vs`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/faq`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/methodology`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/watch-outs`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
@@ -150,6 +152,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
 
+  const ingredientMatchupPages: MetadataRoute.Sitemap = INGREDIENT_MATCHUP_SLUGS.map((slug) => ({
+    url: `${BASE}/ingredients-vs/${slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly',
+    priority: 0.6,
+  }))
+
   const bestCategorySlugs = await rankedCategorySlugs()
   const bestCategoryPages: MetadataRoute.Sitemap = bestCategorySlugs.map((slug) => ({
     url: `${BASE}/best/${slug}`,
@@ -164,5 +173,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const brandMatchupPages = await brandMatchupEntries(now)
   const alternativePages = await alternativeEntries(now)
 
-  return [...staticPages, ...guidePages, ...ingredientPages, ...stackPages, ...bestCategoryPages, ...brandPages, ...matchupPages, ...brandMatchupPages, ...alternativePages, ...productPages]
+  return [...staticPages, ...guidePages, ...ingredientPages, ...ingredientMatchupPages, ...stackPages, ...bestCategoryPages, ...brandPages, ...matchupPages, ...brandMatchupPages, ...alternativePages, ...productPages]
 }

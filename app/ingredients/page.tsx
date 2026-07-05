@@ -84,6 +84,10 @@ export default function IngredientIndex() {
           that actually works, the safe limit, and an honest read on the evidence behind it.
         </p>
         <p className="text-sm text-lab-muted mb-10">
+          Torn between two?{' '}
+          <Link href="/ingredients-vs" className="text-lab-lime font-bold hover:underline underline-offset-2">
+            Compare ingredients head-to-head →
+          </Link>{' '}
           Shopping a whole category instead?{' '}
           <Link href="/guide" className="text-lab-lime font-bold hover:underline underline-offset-2">
             See the buyer&apos;s guides →
