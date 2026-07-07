@@ -164,6 +164,15 @@ export default function Home() {
           </Link>
 
           <Link
+            href="/strongest-pre-workout"
+            className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
+          >
+            <span className="text-lg">⚡</span>
+            <span className="text-sm font-bold text-white">Strongest Pre-Workouts</span>
+            <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
+          </Link>
+
+          <Link
             href="/stacks"
             className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
           >
