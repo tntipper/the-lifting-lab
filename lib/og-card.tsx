@@ -31,6 +31,115 @@ export function ogHook(text: string, max = 108): string {
   return `${(lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trim()}…`
 }
 
+// Turn a URL slug fragment back into a readable, title-cased display name.
+// productSlug()/brandSlug() both lowercase + dash-join, so reversing is just:
+// split on dashes, capitalise each token. "gold-standard-100-whey" -> "Gold
+// Standard 100 Whey". Lossy (a "%" is gone, an "&" reads "And") but perfectly
+// legible for a share card — and, critically, needs no DB lookup.
+export function titleizeSlug(slug: string): string {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
+
+// Split a "-vs-" matchup slug into its two readable sides. Splits on the FIRST
+// "-vs-" (the canonical join direction curatedMatchups uses), so the card is
+// derived entirely from the slug with zero I/O and can never fail at runtime —
+// which is exactly why /vs and /brands-vs previously had no per-page OG card.
+export function vsSidesFromSlug(matchup: string): [string, string] {
+  const i = matchup.indexOf('-vs-')
+  if (i === -1) return [titleizeSlug(matchup), '']
+  return [titleizeSlug(matchup.slice(0, i)), titleizeSlug(matchup.slice(i + 4))]
+}
+
+// Each VS side scales down as its name grows so both always fit their block.
+function vsSideSize(name: string): number {
+  const n = name.length
+  if (n > 34) return 40
+  if (n > 26) return 50
+  if (n > 18) return 62
+  if (n > 11) return 74
+  return 84
+}
+
+// Branded head-to-head card for /vs/[matchup] and /brands-vs/[matchup]: two
+// title-cased names stacked around a big lime "VS". DB-free — see vsSidesFromSlug.
+export function renderVsCard({ tag, a, b }: { tag: string; a: string; b: string }) {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: 1200,
+          height: 630,
+          background: '#0d0d0d',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '54px 72px',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+        }}
+      >
+        {/* top bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: '#a6e22e', fontSize: 24, fontWeight: 900, letterSpacing: 7, textTransform: 'uppercase' }}>
+            THE LIFTING LAB
+          </span>
+          <span style={{ color: '#374151', fontSize: 14, letterSpacing: 3, textTransform: 'uppercase' }}>
+            {tag}
+          </span>
+        </div>
+
+        {/* the head-to-head */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'center', minWidth: 0 }}>
+          <span
+            style={{
+              display: 'flex',
+              color: '#ffffff',
+              fontSize: vsSideSize(a),
+              fontWeight: 900,
+              lineHeight: 1.02,
+              letterSpacing: -1,
+              maxWidth: 1056,
+            }}
+          >
+            {a}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, margin: '14px 0' }}>
+            <span style={{ color: '#a6e22e', fontSize: 64, fontWeight: 900, letterSpacing: 2 }}>VS</span>
+            <div style={{ display: 'flex', flex: 1, height: 6, background: '#a6e22e', borderRadius: 3 }} />
+          </div>
+          <span
+            style={{
+              display: 'flex',
+              color: '#ffffff',
+              fontSize: vsSideSize(b),
+              fontWeight: 900,
+              lineHeight: 1.02,
+              letterSpacing: -1,
+              maxWidth: 1056,
+            }}
+          >
+            {b}
+          </span>
+        </div>
+
+        {/* footer */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ color: '#374151', fontSize: 13, letterSpacing: 2 }}>
+            Effective-dose analysis · UK pricing · Not medical advice
+          </span>
+          <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
+            @dadthletelab
+          </span>
+        </div>
+      </div>
+    ),
+    OG_SIZE,
+  )
+}
+
 export type OgCard = {
   /** Small lime eyebrow above the headline, e.g. "The 2026 Awards". */
   eyebrow: string
