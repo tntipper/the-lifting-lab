@@ -1,53 +1,57 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import Calculators from './Calculators'
+import DotsCalculator from './DotsCalculator'
 
 const SITE = 'https://www.theliftinglab.co.uk'
-const URL = `${SITE}/calculators`
+const URL = `${SITE}/calculators/dots`
 
 export const metadata: Metadata = {
-  title: 'Supplement Dosage Calculators — Protein, Creatine & Caffeine | The Lifting Lab',
+  title: 'DOTS Calculator — Relative Strength Score (the modern Wilks) | The Lifting Lab',
   description:
-    'Free UK supplement calculators. Work out your daily protein target, your creatine dose, and a safe, effective caffeine range for your bodyweight — backed by the evidence, not the label.',
+    'Free DOTS calculator. Score your squat, bench and deadlift total against your bodyweight to compare relative strength across any weight or sex. DOTS is the IPF-adopted successor to the Wilks score.',
   alternates: { canonical: URL },
   openGraph: {
-    title: 'Supplement Dosage Calculators — The Lifting Lab',
+    title: 'DOTS Calculator — Relative Strength Score | The Lifting Lab',
     description:
-      'Daily protein target, creatine dose and safe caffeine range for your bodyweight. Evidence-based, instant, free.',
+      'Score your powerlifting total against your bodyweight on the DOTS scale — the modern, sex-fair replacement for Wilks. Instant, free.',
     url: URL,
     type: 'website',
     siteName: 'The Lifting Lab',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Supplement Dosage Calculators — The Lifting Lab',
+    title: 'DOTS Calculator — Relative Strength Score | The Lifting Lab',
     description:
-      'Daily protein target, creatine dose and safe caffeine range for your bodyweight. Evidence-based and free.',
+      'Score your total against your bodyweight on the DOTS scale — the modern replacement for Wilks. Free.',
   },
 }
 
 // Pure client-side maths, no DB — fully static.
 const FAQS = [
   {
-    q: 'How much protein should I eat per day?',
-    a: 'For most lifters, roughly 1.6 to 2.2 grams of protein per kilogram of bodyweight daily supports muscle. On a fat-loss phase it is pushed higher (around 2.0 to 2.4 g/kg) to protect lean mass. Our protein calculator turns that into a gram target for your weight and goal.',
+    q: 'What is a DOTS score?',
+    a: 'DOTS is a coefficient that normalises your powerlifting total (squat + bench + deadlift) against your bodyweight, so lifters of any size can be compared on one scale. It multiplies your total by 500 and divides by a fourth-degree polynomial of your bodyweight. A higher DOTS means more strength relative to how much you weigh.',
   },
   {
-    q: 'How much creatine should I take?',
-    a: '3 to 5 grams of creatine monohydrate every day is the evidence-based maintenance dose, and it does not change with bodyweight. An optional loading phase of 20g a day (4 x 5g) for 5 to 7 days saturates your muscles faster, but is not required.',
+    q: 'Is DOTS better than the Wilks score?',
+    a: 'DOTS is the more modern formula and has been adopted by the IPF as the successor to Wilks. It was refitted on newer competition data and uses a single set of coefficients per sex, which many lifters find fairer across bodyweights. Wilks scores are still widely quoted, but DOTS is what most federations now default to.',
   },
   {
-    q: 'How much caffeine is safe before a workout?',
-    a: 'The studied pre-workout range is about 3 to 6mg of caffeine per kilogram of bodyweight. We treat 400mg in a single serving as the ceiling, and EFSA puts the safe daily limit for healthy adults at 400mg from all sources. If you train in the evening, a stim-free option protects your sleep.',
+    q: 'What is a good DOTS score?',
+    a: 'As a rough guide, beginners sit under 200, intermediates around 200 to 300, and advanced lifters 300 to 400. Past roughly 400 is elite, competitive territory. These bands are general orientation, not official standards — your own trend over time matters far more than any single number.',
   },
   {
-    q: 'Are these calculators medical advice?',
-    a: 'No. They are general, evidence-based starting points for healthy adults, not personalised medical or clinical advice. If you are pregnant, have a health condition, or take medication, speak to a qualified clinician before changing your supplement intake.',
+    q: 'Does the DOTS formula work in pounds?',
+    a: 'The formula is defined in kilograms, so we convert your figures for you. Enter everything in whichever unit you prefer using the kg/lb toggle, and the score stays on the same standard scale either way.',
+  },
+  {
+    q: 'Which supplements actually raise my total?',
+    a: 'For strength and power, creatine monohydrate at 3 to 5 grams a day is the most evidence-backed supplement there is, and a caffeinated pre-workout can lift acute performance. Everything else is a distant second to consistent training, sleep, and enough protein. This tool is a training guide, not medical advice.',
   },
 ]
 
-export default function CalculatorsPage() {
+export default function DotsPage() {
   const faqJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -63,7 +67,8 @@ export default function CalculatorsPage() {
     '@type': 'BreadcrumbList',
     itemListElement: [
       { name: 'Home', item: SITE },
-      { name: 'Calculators', item: URL },
+      { name: 'Calculators', item: `${SITE}/calculators` },
+      { name: 'DOTS Score', item: URL },
     ].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
   }
 
@@ -79,7 +84,9 @@ export default function CalculatorsPage() {
           <ol className="flex flex-wrap items-center gap-1.5">
             <li><Link href="/" className="hover:text-white">Home</Link></li>
             <li aria-hidden className="text-lab-border">/</li>
-            <li aria-current="page" className="text-white/80">Calculators</li>
+            <li><Link href="/calculators" className="hover:text-white">Calculators</Link></li>
+            <li aria-hidden className="text-lab-border">/</li>
+            <li aria-current="page" className="text-white/80">DOTS Score</li>
           </ol>
         </nav>
 
@@ -88,39 +95,21 @@ export default function CalculatorsPage() {
           Free Tools
         </p>
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
-          Supplement <span className="text-lab-lime">Calculators</span>
+          DOTS <span className="text-lab-lime">Calculator</span>
         </h1>
         <p className="text-lg text-white/90 leading-relaxed mb-4">
-          Three quick, evidence-based tools to cut through the label noise: your daily protein
-          target, the right creatine dose, and a safe, effective caffeine range for your bodyweight.
+          Enter your bodyweight and your best squat, bench and deadlift, and we&apos;ll score your total
+          on the DOTS scale — the modern, sex-fair way to compare relative strength across any bodyweight.
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
-          No sign-up, no maths. Enter your weight, pick your goal, and each tool points you to the
-          right products and the buyer&apos;s guide behind the numbers.
+          No sign-up, no maths. DOTS is the coefficient the IPF adopted to replace the old Wilks score,
+          so it&apos;s what most federations now quote.
         </p>
 
-        <Calculators />
+        <DotsCalculator />
 
         {/* sibling tools — dedicated calculator pages */}
         <div className="mt-4 grid gap-3">
-          <Link
-            href="/calculators/tdee"
-            className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
-          >
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">
-                Nutrition tool
-              </p>
-              <p className="text-sm font-black uppercase tracking-wide text-white">
-                TDEE &amp; Macro Calculator
-              </p>
-              <p className="text-xs text-lab-muted leading-snug mt-1">
-                Find your maintenance calories, then your protein, carb and fat targets for any goal.
-              </p>
-            </div>
-            <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
-          </Link>
-
           <Link
             href="/calculators/1rm"
             className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
@@ -140,18 +129,18 @@ export default function CalculatorsPage() {
           </Link>
 
           <Link
-            href="/calculators/dots"
+            href="/calculators/tdee"
             className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
           >
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">
-                Strength tool
+                Nutrition tool
               </p>
               <p className="text-sm font-black uppercase tracking-wide text-white">
-                DOTS Score Calculator
+                TDEE &amp; Macro Calculator
               </p>
               <p className="text-xs text-lab-muted leading-snug mt-1">
-                Score your squat, bench and deadlift total against your bodyweight — the modern Wilks.
+                Find your maintenance calories, then your protein, carb and fat targets for any goal.
               </p>
             </div>
             <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
@@ -161,30 +150,30 @@ export default function CalculatorsPage() {
         {/* educational copy — gives the static page real crawlable content */}
         <section className="mt-12 space-y-6">
           <div>
-            <h2 className="text-lg font-black uppercase tracking-wide mb-2">Protein target</h2>
+            <h2 className="text-lg font-black uppercase tracking-wide mb-2">What DOTS actually measures</h2>
             <p className="text-lab-muted text-sm leading-relaxed">
-              Total daily protein is what drives muscle growth and recovery, far more than the timing
-              of any single shake. Most lifters do well on 1.6 to 2.2g per kg of bodyweight, climbing
-              toward 2.4g/kg on a cut to hold onto lean mass. Whole food should do most of the work;
-              a whey shake is simply the easiest way to close the last 25 to 50g gap.
+              Raw totals reward being heavy. A 200kg squat from a 120kg lifter and the same squat from
+              a 70kg lifter are not the same feat, and DOTS is how you separate them. It takes your full
+              powerlifting total and scales it against your bodyweight, returning a single number that
+              lets you compare yourself to anyone, at any weight, of either sex.
             </p>
           </div>
           <div>
-            <h2 className="text-lg font-black uppercase tracking-wide mb-2">Creatine dose</h2>
+            <h2 className="text-lg font-black uppercase tracking-wide mb-2">Why DOTS replaced Wilks</h2>
             <p className="text-lab-muted text-sm leading-relaxed">
-              Creatine is the rare supplement where the dose is flat: 3 to 5g of monohydrate a day,
-              every day, regardless of how big you are. A loading phase only changes how fast your
-              stores fill, not the end result. Because the dose is small and constant, the only thing
-              that really separates products is purity and price per gram.
+              The Wilks coefficient ruled powerlifting for decades, but critics argued it treated some
+              bodyweight classes unfairly as training standards rose. DOTS was fitted on newer data with
+              one clean formula per sex, and the IPF adopted it as the modern replacement. If you have
+              only ever seen a Wilks score, DOTS is the like-for-like number the sport now defaults to.
             </p>
           </div>
           <div>
-            <h2 className="text-lg font-black uppercase tracking-wide mb-2">Caffeine range</h2>
+            <h2 className="text-lg font-black uppercase tracking-wide mb-2">How to read your number</h2>
             <p className="text-lab-muted text-sm leading-relaxed">
-              Caffeine is the one pre-workout ingredient that reliably works, at roughly 3 to 6mg per
-              kg of bodyweight. More is not better: past 400mg in a serving the downsides start to win,
-              which is exactly why our scoring penalises over-caffeinated pre-workouts. Keep your total
-              from all sources under 400mg a day, and switch to stim-free if you train late.
+              As a rough orientation, under 200 is beginner, 200 to 300 is intermediate, 300 to 400 is
+              advanced, and past 400 is elite. Treat those bands loosely — the real value of DOTS is
+              tracking your own score over months. If it climbs while your bodyweight holds, you are
+              genuinely getting stronger, not just heavier.
             </p>
           </div>
         </section>
@@ -209,28 +198,30 @@ export default function CalculatorsPage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Know your numbers?</h2>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Want to move the number?</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Now find the products that hit them. Every supplement we track is scored 0–100 on how
-            closely its doses match the evidence — or let the wizard build your whole stack.
+            Training drives your total — but creatine and a solid pre-workout are the two supplements
+            with real evidence behind them. Every product we track is scored 0–100 on how closely its
+            doses match that evidence.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
-              href="/wizard"
+              href="/best/creatine"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Build my stack →
+              Best creatine 2026 →
             </Link>
             <Link
-              href="/products"
+              href="/calculators"
               className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
             >
-              Browse all products
+              More calculators
             </Link>
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
-            Informational only — not medical advice. Figures are general starting points for healthy
-            adults. Buy links are affiliate links; we may earn a commission at no extra cost to you.
+            Informational only — not medical or coaching advice. Strength-level bands are a general
+            guide, not official standards. Buy links are affiliate links; we may earn a commission at
+            no extra cost to you.
           </p>
         </section>
       </main>
