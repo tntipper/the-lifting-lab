@@ -104,6 +104,24 @@ export default function CalculatorsPage() {
         {/* sibling tools — dedicated calculator pages */}
         <div className="mt-4 grid gap-3">
           <Link
+            href="/calculators/protein"
+            className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">
+                Nutrition tool
+              </p>
+              <p className="text-sm font-black uppercase tracking-wide text-white">
+                Protein Calculator
+              </p>
+              <p className="text-xs text-lab-muted leading-snug mt-1">
+                Get your daily protein target in grams for building muscle or losing fat, plus a per-meal split.
+              </p>
+            </div>
+            <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+
+          <Link
             href="/calculators/tdee"
             className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
           >
