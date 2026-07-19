@@ -10,6 +10,30 @@ const AMAZON_TAG = process.env.NEXT_PUBLIC_AMAZON_TAG?.trim() || 'theliftinglab-
 const AWIN_AFFID = '2919631'
 const BULK_MID = '4822'
 
+// MyProtein refer-a-friend code. Applied via THG's standard `applyCode` query
+// param so the product deep-link is preserved and the referral still tracks.
+const MYPROTEIN_REF = 'TOBIAS-R1I5'
+
+function isMyProtein(brand: string): boolean {
+  return brand.toLowerCase().replace(/\s+/g, '') === 'myprotein'
+}
+
+function withApplyCode(url: string): string {
+  if (url.includes('applyCode=')) return url
+  return `${url}${url.includes('?') ? '&' : '?'}applyCode=${MYPROTEIN_REF}`
+}
+
+/**
+ * MyProtein buy link: keeps the verified product-page deep link when present and
+ * appends the referral code; otherwise sends to the referral landing page.
+ */
+export function myproteinLink(directUrl?: string | null): string {
+  const base = directUrl && directUrl.trim()
+    ? directUrl.trim()
+    : 'https://www.myprotein.com/referrals.list'
+  return withApplyCode(base)
+}
+
 export function amazonSearch(brand: string, name: string): string {
   const q = encodeURIComponent(`${brand} ${name}`.trim())
   const tag = AMAZON_TAG ? `&tag=${encodeURIComponent(AMAZON_TAG)}` : ''
@@ -27,6 +51,7 @@ export function bulkSearch(name: string): string {
  * to a retailer search (Awin/Bulk for Bulk products, Amazon for everything else).
  */
 export function buyLink(brand: string, name: string, directUrl?: string | null): string {
+  if (isMyProtein(brand)) return myproteinLink(directUrl)
   if (directUrl && directUrl.trim()) return directUrl.trim()
   if (brand.toLowerCase() === 'bulk') return bulkSearch(name)
   return amazonSearch(brand, name)
