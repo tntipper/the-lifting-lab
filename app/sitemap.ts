@@ -125,6 +125,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/wizard`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/calculators`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/calculators/protein`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/calculators/creatine`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/calculators/1rm`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/calculators/plate`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/calculators/tdee`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
