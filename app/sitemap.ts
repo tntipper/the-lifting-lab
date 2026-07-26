@@ -129,6 +129,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/calculators/caffeine`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/calculators/1rm`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/calculators/plate`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/calculators/rpe`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/calculators/tdee`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/calculators/dots`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/calculators/body-fat`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
