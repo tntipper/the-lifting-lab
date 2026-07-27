@@ -112,6 +112,24 @@ export default function CreatinePage() {
         {/* sibling tools — dedicated calculator pages */}
         <div className="mt-4 grid gap-3">
           <Link
+            href="/calculators/beta-alanine"
+            className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">
+                Supplement tool
+              </p>
+              <p className="text-sm font-black uppercase tracking-wide text-white">
+                Beta-Alanine Dosage Calculator
+              </p>
+              <p className="text-xs text-lab-muted leading-snug mt-1">
+                The other big saturation supplement — your daily dose and how to split it to control the tingles.
+              </p>
+            </div>
+            <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+
+          <Link
             href="/calculators/protein"
             className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
           >
