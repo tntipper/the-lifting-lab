@@ -129,6 +129,24 @@ export default function CaffeinePage() {
           </Link>
 
           <Link
+            href="/calculators/citrulline"
+            className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">
+                Supplement tool
+              </p>
+              <p className="text-sm font-black uppercase tracking-wide text-white">
+                Citrulline Dosage Calculator
+              </p>
+              <p className="text-xs text-lab-muted leading-snug mt-1">
+                The other big pre-workout active — how much of your form to take, and if your scoop underdoses it.
+              </p>
+            </div>
+            <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+
+          <Link
             href="/calculators/protein"
             className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
           >

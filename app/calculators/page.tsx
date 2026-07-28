@@ -7,23 +7,23 @@ const SITE = 'https://www.theliftinglab.co.uk'
 const URL = `${SITE}/calculators`
 
 export const metadata: Metadata = {
-  title: 'Supplement Dosage Calculators — Protein, Creatine & Caffeine | The Lifting Lab',
+  title: 'Free Supplement & Training Calculators | The Lifting Lab',
   description:
-    'Free UK supplement calculators. Work out your daily protein target, your creatine dose, and a safe, effective caffeine range for your bodyweight — backed by the evidence, not the label.',
+    'Free UK supplement, nutrition and strength calculators: protein, creatine, beta-alanine, citrulline and caffeine dosing, plus TDEE, 1RM, body fat, FFMI and more — backed by the evidence, not the label.',
   alternates: { canonical: URL },
   openGraph: {
-    title: 'Supplement Dosage Calculators — The Lifting Lab',
+    title: 'Free Supplement & Training Calculators — The Lifting Lab',
     description:
-      'Daily protein target, creatine dose and safe caffeine range for your bodyweight. Evidence-based, instant, free.',
+      'Supplement dosing, nutrition and strength tools in one place — protein, creatine, citrulline, caffeine, TDEE, 1RM and more. Evidence-based, instant, free.',
     url: URL,
     type: 'website',
     siteName: 'The Lifting Lab',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Supplement Dosage Calculators — The Lifting Lab',
+    title: 'Free Supplement & Training Calculators — The Lifting Lab',
     description:
-      'Daily protein target, creatine dose and safe caffeine range for your bodyweight. Evidence-based and free.',
+      'Supplement, nutrition and strength calculators in one place. Evidence-based and free.',
   },
 }
 
@@ -91,8 +91,8 @@ export default function CalculatorsPage() {
           Supplement <span className="text-lab-lime">Calculators</span>
         </h1>
         <p className="text-lg text-white/90 leading-relaxed mb-4">
-          Three quick, evidence-based tools to cut through the label noise: your daily protein
-          target, the right creatine dose, and a safe, effective caffeine range for your bodyweight.
+          Free, evidence-based tools to cut through the label noise — from supplement dosing (protein,
+          creatine, beta-alanine, citrulline, caffeine) to nutrition, strength and body composition.
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
           No sign-up, no maths. Enter your weight, pick your goal, and each tool points you to the
@@ -134,6 +134,24 @@ export default function CalculatorsPage() {
               </p>
               <p className="text-xs text-lab-muted leading-snug mt-1">
                 Your daily dose for your bodyweight, how to split it to control the tingles, and days per tub.
+              </p>
+            </div>
+            <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+
+          <Link
+            href="/calculators/citrulline"
+            className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">
+                Supplement tool
+              </p>
+              <p className="text-sm font-black uppercase tracking-wide text-white">
+                Citrulline Dosage Calculator
+              </p>
+              <p className="text-xs text-lab-muted leading-snug mt-1">
+                How much of your form to take for a real dose, and whether your pre-workout underdoses it.
               </p>
             </div>
             <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
