@@ -14,6 +14,9 @@ const BULK_MID = '4822'
 // param so the product deep-link is preserved and the referral still tracks.
 const MYPROTEIN_REF = 'TOBIAS-R1I5'
 
+// Exposed for the /deals page, which surfaces the real code to copy directly.
+export const MYPROTEIN_REF_CODE = MYPROTEIN_REF
+
 function isMyProtein(brand: string): boolean {
   return brand.toLowerCase().replace(/\s+/g, '') === 'myprotein'
 }
@@ -42,6 +45,16 @@ export function amazonSearch(brand: string, name: string): string {
 
 export function bulkSearch(name: string): string {
   const dest = `https://www.bulk.com/uk/search?q=${encodeURIComponent(name.trim())}`
+  return `https://www.awin1.com/cread.php?awinmid=${BULK_MID}&awinaffid=${AWIN_AFFID}&ued=${encodeURIComponent(dest)}`
+}
+
+/**
+ * Awin-tracked deep link to Bulk's live offers page. Used by the /deals hub so
+ * "shop current Bulk deals" carries the real affiliate credential — no fabricated
+ * code, just the retailer's own current promotions.
+ */
+export function bulkDealsLink(): string {
+  const dest = 'https://www.bulk.com/uk/offers.list'
   return `https://www.awin1.com/cread.php?awinmid=${BULK_MID}&awinaffid=${AWIN_AFFID}&ued=${encodeURIComponent(dest)}`
 }
 

@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: '/products', label: 'Browse' },
   { href: '/best', label: 'Best 2026' },
   { href: '/value', label: 'Best Value' },
+  { href: '/deals', label: 'Deals' },
   { href: '/brand', label: 'Brands' },
   { href: '/vs', label: 'Compare' },
   { href: '/wizard', label: 'Find My Stack' },
