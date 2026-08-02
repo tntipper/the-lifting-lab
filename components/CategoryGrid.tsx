@@ -171,6 +171,60 @@ function GuideTile() {
   )
 }
 
+// LIFT app — external tile, deliberately frosted ice-blue so it stands out
+// from the dark category tiles. Plain <a> (external link), new tab.
+function LiftAppTile() {
+  const rgb = '165,227,245' // #A5E3F5 ice blue — glow/beam accent
+  const ink = '#082A38'     // 10.0:1 on #9FDCF2 (worst-case gradient end)
+  return (
+    <>
+      <style>{`
+        .tile-liftapp:hover {
+          border-color: rgba(${rgb},0.9) !important;
+          box-shadow: 0 8px 28px rgba(0,0,0,0.55), 0 0 20px rgba(${rgb},0.35), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+          transform: translateY(-3px);
+        }
+      `}</style>
+      <a
+        href="https://trylift.app"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="tile-liftapp beam relative block rounded-2xl transition-all duration-250 active:scale-[0.97]"
+        style={{
+          background: 'linear-gradient(160deg, #BFE9F7 0%, #9FDCF2 100%)',
+          border: `1px solid rgba(${rgb},0.6)`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.4)',
+        }}
+      >
+        <span
+          className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
+          style={{ background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.8),transparent)' }}
+        />
+        <div className="flex flex-col gap-0 p-4">
+          <div
+            className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shrink-0"
+            style={{
+              background: 'linear-gradient(160deg, rgba(255,255,255,0.55), rgba(255,255,255,0.2))',
+              border: `1px solid rgba(8,42,56,0.25)`,
+              boxShadow: '0 8px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.6)',
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 w-8 h-8" style={{ stroke: ink, strokeWidth: '1.5' }}>
+              <rect x="7" y="2" width="10" height="20" rx="2.5" />
+              <path d="M11 18.5h2" />
+            </svg>
+          </div>
+          <p className="font-black text-[18px] leading-none tracking-tight" style={{ color: ink }}>LIFT App</p>
+          <p className="text-[12px] mt-1.5 leading-tight" style={{ color: '#0E3A4C' }}>Free iPhone beta — training, nutrition &amp; recovery</p>
+          <div className="flex items-center mt-4 pt-3" style={{ borderTop: '1px solid rgba(8,42,56,0.2)' }}>
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#0E3A4C' }}>Get the app →</span>
+          </div>
+        </div>
+      </a>
+    </>
+  )
+}
+
 export default function CategoryGrid() {
   const [stats, setStats] = useState<Record<string, GroupStats>>({})
 
@@ -199,6 +253,8 @@ export default function CategoryGrid() {
       ))}
       {/* Guides — static tile, always last */}
       <GuideTile />
+      {/* LIFT app — external, ice blue so it stands out */}
+      <LiftAppTile />
     </div>
   )
 }
