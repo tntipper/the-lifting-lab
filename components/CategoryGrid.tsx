@@ -171,17 +171,16 @@ function GuideTile() {
   )
 }
 
-// LIFT app — external tile, deliberately frosted ice-blue so it stands out
-// from the dark category tiles. Plain <a> (external link), new tab.
+// LIFT app — external tile. Same dark treatment as the category tiles,
+// ice blue used only as the accent. Plain <a> (external link), new tab.
 function LiftAppTile() {
-  const rgb = '165,227,245' // #A5E3F5 ice blue — glow/beam accent
-  const ink = '#082A38'     // 10.0:1 on #9FDCF2 (worst-case gradient end)
+  const rgb = '165,227,245' // #A5E3F5 ice blue
   return (
     <>
       <style>{`
         .tile-liftapp:hover {
-          border-color: rgba(${rgb},0.9) !important;
-          box-shadow: 0 8px 28px rgba(0,0,0,0.55), 0 0 20px rgba(${rgb},0.35), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+          border-color: rgba(${rgb},0.4) !important;
+          box-shadow: 0 8px 28px rgba(0,0,0,0.55), 0 0 16px rgba(${rgb},0.15), inset 0 1px 0 rgba(255,255,255,0.06) !important;
           transform: translateY(-3px);
         }
       `}</style>
@@ -191,33 +190,40 @@ function LiftAppTile() {
         rel="noopener noreferrer"
         className="tile-liftapp beam relative block rounded-2xl transition-all duration-250 active:scale-[0.97]"
         style={{
-          background: 'linear-gradient(160deg, #BFE9F7 0%, #9FDCF2 100%)',
-          border: `1px solid rgba(${rgb},0.6)`,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.4)',
+          background: `linear-gradient(160deg, rgba(${rgb},0.07) 0%, #0f0f0f 55%)`,
+          border: `1px solid rgba(${rgb},0.15)`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
         }}
       >
         <span
           className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
-          style={{ background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.8),transparent)' }}
+          style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.3),transparent)` }}
         />
         <div className="flex flex-col gap-0 p-4">
           <div
             className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shrink-0"
             style={{
-              background: 'linear-gradient(160deg, rgba(255,255,255,0.55), rgba(255,255,255,0.2))',
-              border: `1px solid rgba(8,42,56,0.25)`,
-              boxShadow: '0 8px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.6)',
+              background: `linear-gradient(160deg, rgba(${rgb},0.14), rgba(${rgb},0.05))`,
+              border: `1px solid rgba(${rgb},0.3)`,
+              boxShadow: `0 8px 20px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.1)`,
             }}
           >
-            <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 w-8 h-8" style={{ stroke: ink, strokeWidth: '1.5' }}>
+            <span
+              className="pointer-events-none absolute inset-[-6px] rounded-[18px]"
+              style={{
+                background: `radial-gradient(ellipse at center, rgba(${rgb},0.2) 0%, transparent 70%)`,
+                filter: 'blur(7px)',
+              }}
+            />
+            <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 w-8 h-8" style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.5' }}>
               <rect x="7" y="2" width="10" height="20" rx="2.5" />
               <path d="M11 18.5h2" />
             </svg>
           </div>
-          <p className="font-black text-[18px] leading-none tracking-tight" style={{ color: ink }}>LIFT App</p>
-          <p className="text-[12px] mt-1.5 leading-tight" style={{ color: '#0E3A4C' }}>Free iPhone beta — training, nutrition &amp; recovery</p>
-          <div className="flex items-center mt-4 pt-3" style={{ borderTop: '1px solid rgba(8,42,56,0.2)' }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#0E3A4C' }}>Get the app →</span>
+          <p className="text-white font-black text-[18px] leading-none tracking-tight">LIFT App</p>
+          <p className="text-[12px] mt-1.5 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>Free iPhone beta — training, nutrition &amp; recovery</p>
+          <div className="flex items-center mt-4 pt-3" style={{ borderTop: `1px solid rgba(${rgb},0.1)` }}>
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>Get the app →</span>
           </div>
         </div>
       </a>
@@ -253,7 +259,7 @@ export default function CategoryGrid() {
       ))}
       {/* Guides — static tile, always last */}
       <GuideTile />
-      {/* LIFT app — external, ice blue so it stands out */}
+      {/* LIFT app — external, ice-blue accent */}
       <LiftAppTile />
     </div>
   )
