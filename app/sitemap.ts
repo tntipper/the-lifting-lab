@@ -144,6 +144,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/ingredients`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/ingredients-vs`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/faq`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/glossary`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/methodology`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/watch-outs`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 },
   ]

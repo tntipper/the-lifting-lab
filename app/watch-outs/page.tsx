@@ -340,6 +340,9 @@ export default async function WatchOutsPage() {
                 higher-scoring option exists in the same category.{' '}
                 <Link href="/methodology" className="text-lab-lime hover:underline">
                   See the full methodology →
+                </Link>{' '}
+                <Link href="/glossary" className="text-lab-lime hover:underline">
+                  Decode the label jargon →
                 </Link>
               </p>
               <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">
