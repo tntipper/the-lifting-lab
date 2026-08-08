@@ -343,6 +343,9 @@ export default async function WatchOutsPage() {
                 </Link>{' '}
                 <Link href="/glossary" className="text-lab-lime hover:underline">
                   Decode the label jargon →
+                </Link>{' '}
+                <Link href="/myths" className="text-lab-lime hover:underline">
+                  Bust the supplement myths →
                 </Link>
               </p>
               <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">

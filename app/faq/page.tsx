@@ -93,6 +93,10 @@ export default function FaqHub() {
           ·{' '}
           <Link href="/glossary" className="text-lab-lime font-bold hover:underline underline-offset-2">
             Label glossary
+          </Link>{' '}
+          ·{' '}
+          <Link href="/myths" className="text-lab-lime font-bold hover:underline underline-offset-2">
+            Myths vs facts
           </Link>
         </p>
 
