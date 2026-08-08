@@ -1,8 +1,10 @@
 // Centralised affiliate link construction.
 // Bulk products route through Awin deeplinks; everything else goes to Amazon.
 //
-// Set NEXT_PUBLIC_AMAZON_TAG in the environment (e.g. `theliftinglab-21`).
-// If it is unset, links still work; they just carry no tracking tag.
+// NEXT_PUBLIC_AMAZON_TAG is an OPTIONAL override. It is NOT required for
+// commission: the approved store ID `theliftinglab-21` is hardcoded as the
+// fallback below, so Amazon links carry a tracking tag whether or not the env
+// var is set. Only set it if the store ID itself ever changes.
 
 const AMAZON_TAG = process.env.NEXT_PUBLIC_AMAZON_TAG?.trim() || 'theliftinglab-21'
 
