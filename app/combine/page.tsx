@@ -129,6 +129,23 @@ export default function CombinePage() {
             </div>
             <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
           </Link>
+          <Link
+            href="/side-effects"
+            className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">
+                Related
+              </p>
+              <p className="text-sm font-black uppercase tracking-wide text-white">
+                Side Effects &amp; Safety
+              </p>
+              <p className="text-xs text-lab-muted leading-snug mt-1">
+                Combining is what happens when you stack two — this is the honest side-effect profile of each supplement on its own.
+              </p>
+            </div>
+            <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
         </div>
 
         {/* educational copy — gives the static page real crawlable content */}
