@@ -148,6 +148,19 @@ export default function MythsPage() {
             <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
           </Link>
           <Link
+            href="/testosterone"
+            className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">Related</p>
+              <p className="text-sm font-black uppercase tracking-wide text-white">Testosterone Support</p>
+              <p className="text-xs text-lab-muted leading-snug mt-1">
+                The honest, evidence-based verdict on natural testosterone boosters — what works, what is weak, and what to skip.
+              </p>
+            </div>
+            <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+          <Link
             href="/faq"
             className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
           >

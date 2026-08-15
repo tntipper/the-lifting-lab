@@ -151,6 +151,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/myths`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/side-effects`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/forms`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE}/testosterone`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
   ]
 
   const guidePages: MetadataRoute.Sitemap = GUIDE_SLUGS.map((slug) => ({
