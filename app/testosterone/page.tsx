@@ -163,6 +163,19 @@ export default function TestosteronePage() {
         {/* sibling surfaces */}
         <section className="mt-12 grid gap-3">
           <Link
+            href="/peptides"
+            className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">Related</p>
+              <p className="text-sm font-black uppercase tracking-wide text-white">Peptides, Honestly</p>
+              <p className="text-xs text-lab-muted leading-snug mt-1">
+                BPC-157, TB-500, GLP-1s and the rest — what is proven, what is legal, and what to avoid, in the same honest grammar.
+              </p>
+            </div>
+            <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+          <Link
             href="/myths"
             className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
           >
