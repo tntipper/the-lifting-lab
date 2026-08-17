@@ -84,6 +84,7 @@ export const TEST_ITEMS: TestItem[] = [
     detail:
       'Testosterone is released largely during sleep, and cutting sleep to around five hours a night has been shown to drop daytime testosterone by roughly 10-15% in healthy young men within a week. That is a bigger swing than almost any supplement on this page will give you. Fixing broken or short sleep is the highest-value, lowest-cost thing most men can do for their hormones, and it costs nothing.',
     bottomLine: 'Get 7-9 hours consistently before you spend a penny on a "booster". No pill offsets chronic short sleep.',
+    link: { label: 'Best supplements for sleep', href: '/sleep' },
   },
   {
     id: 'body-fat',
