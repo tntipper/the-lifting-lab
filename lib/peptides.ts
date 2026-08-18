@@ -129,7 +129,7 @@ export const PEP_ITEMS: PepItem[] = [
     headline: 'A licensed libido medicine in some countries — prescription territory here, not a supplement.',
     claim: 'Sold online as an OTC "libido peptide".',
     detail:
-      'Bremelanotide (PT-141) is a melanocortin-receptor peptide licensed in the US as an on-demand treatment for low sexual desire in some women, so unlike the "research" peptides it does have a genuine medical identity. It can raise blood pressure and cause nausea and flushing, which is precisely why it belongs under a prescriber, not on a self-injected schedule from an unregulated vial. In the UK it is prescription territory, not an over-the-counter supplement.',
+      'Bremelanotide (PT-141) is a melanocortin-receptor peptide licensed in the US as an on-demand treatment for low sexual desire in some women, so unlike the "research" peptides it does have a genuine medical identity. It can raise blood pressure and cause nausea and flushing, which is precisely why it belongs under a prescriber, not on a self-injected schedule from an unregulated vial. It is not licensed as a medicine in the UK at all, so any use would be a specialist off-label decision — certainly not an over-the-counter supplement.',
     bottomLine: 'Not a supplement. Any use is a medical decision for a clinician who can assess suitability and monitor blood pressure.',
   },
 

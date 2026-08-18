@@ -51,7 +51,7 @@ export const INGREDIENT_MATCHUPS: IngredientMatchup[] = [
     keyDifference:
       'Creatine tops up the ATP-phosphocreatine system that fuels short, maximal efforts, and it works for nearly everyone with strong evidence behind it. Beta-alanine raises muscle carnosine, which buffers the acid build-up that ends higher-rep sets, and its benefit is narrower with more moderate evidence.',
     together:
-      'Yes. They hit different energy systems and are a classic, well-tolerated pairing: creatine 3 to 5g daily plus beta-alanine around 3.2 to 6g daily (split through the day to reduce the harmless tingling) covers both ends.',
+      'Yes. They hit different energy systems and are a classic, well-tolerated pairing: creatine 3 to 5g daily plus beta-alanine around 3.2 to 6.4g daily (split through the day to reduce the harmless tingling) covers both ends.',
     verdict:
       'If you only buy one, buy creatine — it is the higher-evidence, broader-benefit choice and one of the cheapest supplements there is. Add beta-alanine only if endurance in the burn zone is your specific bottleneck.',
     guides: ['creatine', 'pre-workout'],
@@ -62,7 +62,7 @@ export const INGREDIENT_MATCHUPS: IngredientMatchup[] = [
       },
       {
         q: 'Can I take creatine and beta-alanine together?',
-        a: 'Yes. They work on different energy systems and are a common, well-tolerated stack. Take creatine 3 to 5g and beta-alanine 3.2 to 6g daily, splitting the beta-alanine to reduce tingling.',
+        a: 'Yes. They work on different energy systems and are a common, well-tolerated stack. Take creatine 3 to 5g and beta-alanine 3.2 to 6.4g daily, splitting the beta-alanine to reduce tingling.',
       },
       {
         q: 'Do creatine and beta-alanine do the same thing?',
@@ -97,7 +97,7 @@ export const INGREDIENT_MATCHUPS: IngredientMatchup[] = [
       },
       {
         q: 'Can I take citrulline and beta-alanine together?',
-        a: 'Yes. Both are non-stimulant and complementary — citrulline around 6 to 8g and beta-alanine around 3.2 to 6g are commonly stacked in the same formula.',
+        a: 'Yes. Both are non-stimulant and complementary — citrulline around 6 to 8g and beta-alanine around 3.2 to 6.4g are commonly stacked in the same formula.',
       },
     ],
   },

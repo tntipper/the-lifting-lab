@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 const FAQS = [
   {
     q: 'How much beta-alanine should I take per day?',
-    a: 'The evidence-based dose is 4 to 6 grams of beta-alanine every day, roughly 65mg per kilogram of bodyweight. Smaller people sit near 4g, larger athletes near 6g. Like creatine, it works by building up in the muscle over weeks, so the daily habit matters far more than any single dose.',
+    a: 'The ISSN puts the effective dose at 3.2 to 6.4 grams of beta-alanine every day. Smaller people sit near the bottom of that range, larger athletes near the top. Like creatine, it works by building up in the muscle over weeks, so the daily habit matters far more than any single dose.',
   },
   {
     q: 'Why does beta-alanine make me tingle?',
@@ -47,7 +47,7 @@ const FAQS = [
   },
   {
     q: 'Should I take beta-alanine or is it already in my pre-workout?',
-    a: 'Many pre-workouts include beta-alanine, but often at an underdosed 1 to 2g and only on training days, which is not enough to saturate your muscles. Because the benefit comes from taking a full 4 to 6g every single day, a cheap standalone tub is usually the smarter, better-value way to actually reach an effective dose. This tool is not medical advice.',
+    a: 'Many pre-workouts include beta-alanine, but often at an underdosed 1 to 2g and only on training days, which is not enough to saturate your muscles. Because the benefit comes from taking a full 3.2 to 6.4g every single day, a cheap standalone tub is usually the smarter, better-value way to actually reach an effective dose. This tool is not medical advice.',
   },
 ]
 
@@ -102,8 +102,8 @@ export default function BetaAlaninePage() {
           how to split it to control the tingles, and how long a tub will last.
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
-          Based on the ISSN position stand: around 65mg per kg of bodyweight, held inside the proven 4 to
-          6g a day band, taken every day for weeks. Beta-alanine works like creatine — it saturates your
+          Based on the ISSN position stand: the effective dose is 3.2 to 6.4g a day, scaled roughly by
+          bodyweight and taken every day for weeks. Beta-alanine works like creatine — it saturates your
           muscle over time — so this tool tells you exactly how much, and how to take it without the buzz.
         </p>
 

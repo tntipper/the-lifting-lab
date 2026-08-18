@@ -16,7 +16,7 @@ export const NUTRIENT_LIMITS: Record<string, {
   'Zinc': { ul: 25, unit: 'mg', risk: 'high', note: 'Common in multi+ZMA stacks; copper depletion' },
   'Magnesium': { ul: 250, unit: 'mg', risk: 'medium', note: 'UL applies to supplemental Mg only; GI effects' },
   'Iron': { ul: 40, unit: 'mg', risk: 'high', note: 'TRT increases RBC; monitor serum ferritin' },
-  'Selenium': { ul: 300, unit: 'mcg', risk: 'high', note: 'Narrow therapeutic window; selenosis risk' },
+  'Selenium': { ul: 255, unit: 'mcg', risk: 'high', note: 'UL lowered to 255mcg (EFSA 2023); narrow therapeutic window; selenosis risk' },
   'Iodine': { ul: 600, unit: 'mcg', risk: 'medium', note: 'Thyroid disruption at excess' },
   'Calcium': { ul: 2500, unit: 'mg', risk: 'low', note: 'Calcification risk at very high doses' },
   'Caffeine': { ul: 400, unit: 'mg', risk: 'medium', note: 'EFSA safe habitual dose; CV effects above' },

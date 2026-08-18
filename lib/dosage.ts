@@ -105,12 +105,12 @@ export const DOSE_ITEMS: DoseItem[] = [
     topic: 'Ergogenic',
     group: 'performance',
     tier: 'strong',
-    dose: '4–6 g/day (~65 mg/kg)',
+    dose: '3.2–6.4 g/day',
     timing: 'Any time — split to limit the tingle',
     form: 'Plain beta-alanine powder, or sustained-release if the paraesthesia bothers you.',
-    ceiling: 'It saturates like creatine — one big dose does nothing acute, and above 6 g/day adds only tingling.',
+    ceiling: 'It saturates like creatine — one big dose does nothing acute, and above ~6.4 g/day adds only tingling.',
     detail:
-      'Beta-alanine raises muscle carnosine over 2 to 4 weeks, which buffers fatigue in efforts lasting roughly 1 to 4 minutes. The evidence-based dose is 4 to 6 g/day, best split into smaller servings to control the harmless pins-and-needles (paraesthesia). Like creatine it is cumulative, not acute — the time of day is irrelevant, only the daily total over weeks. Most pre-workouts underdose it, so a standalone tub is usually the honest way to hit the number.',
+      'Beta-alanine raises muscle carnosine over 2 to 4 weeks, which buffers fatigue in efforts lasting roughly 1 to 4 minutes. The ISSN puts the effective dose at 3.2 to 6.4 g/day, best split into smaller servings to control the harmless pins-and-needles (paraesthesia). Like creatine it is cumulative, not acute — the time of day is irrelevant, only the daily total over weeks. Most pre-workouts underdose it, so a standalone tub is usually the honest way to hit the number.',
     link: { label: 'Beta-alanine calculator', href: '/calculators/beta-alanine' },
   },
   {
@@ -124,7 +124,7 @@ export const DOSE_ITEMS: DoseItem[] = [
     form: 'Pure L-citrulline, or citrulline malate 2:1 (≈67% citrulline — so 10 g malate ≈ 6.7 g citrulline).',
     ceiling: 'A per-session dose, not cumulative — doubling it just wastes powder rather than doubling the pump.',
     detail:
-      'L-citrulline raises nitric oxide to support blood flow and "pump", with modest evidence for endurance and reduced soreness. The effective dose is 6 to 8 g of pure L-citrulline, or around 8 to 10 g of citrulline malate (which is only about two-thirds citrulline), taken 45 to 60 minutes before training. It is acute like caffeine, not saturating like creatine. Watch pre-workout labels: a 2:1 malate blend at "6 g" only gives you around 4 g of actual citrulline.',
+      'L-citrulline raises nitric oxide to support blood flow and "pump", with modest evidence for endurance and reduced soreness. The effective dose is 6 to 8 g of pure L-citrulline, or around 9 to 12 g of citrulline malate (which is only about two-thirds citrulline, so it takes more to reach the same citrulline dose), taken 45 to 60 minutes before training. It is acute like caffeine, not saturating like creatine. Watch pre-workout labels: a 2:1 malate blend at "6 g" only gives you around 4 g of actual citrulline.',
     link: { label: 'Citrulline calculator', href: '/calculators/citrulline' },
   },
   {

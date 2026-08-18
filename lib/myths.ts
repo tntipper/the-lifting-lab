@@ -45,7 +45,7 @@ export const MYTHS: Myth[] = [
     topic: 'Creatine',
     takeaway: 'No study has ever shown creatine causes hair loss.',
     reality:
-      'This scare traces back to a single 2009 study of rugby players that measured a rise in DHT (a hormone linked to male-pattern baldness) but never measured any actual hair loss — and no study since has replicated even the DHT change. Across decades of creatine research, hair loss has never been shown. If you are genetically prone to balding it will happen with or without creatine.',
+      'This scare traces back to a single 2009 study of rugby players that measured a rise in DHT (a hormone linked to male-pattern baldness) but never measured any actual hair loss — and that DHT rise has not been confirmed by later studies, most of which did not re-measure DHT at all. Across decades of creatine research, hair loss has never been shown. If you are genetically prone to balding it will happen with or without creatine.',
     link: { label: 'Creatine guide', href: '/guide/creatine' },
   },
   {

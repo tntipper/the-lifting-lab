@@ -87,7 +87,7 @@ const RULES: Record<string, Rule> = {
   },
   [pairKey('beta-alanine', 'pre-workout')]: {
     level: 'watch',
-    note: 'Beta-alanine is a standard pre-workout ingredient — it causes the skin tingles. See what your pre-workout already provides before adding more; the target is 4 to 6g a day total.',
+    note: 'Beta-alanine is a standard pre-workout ingredient — it causes the skin tingles. See what your pre-workout already provides before adding more; the target is 3.2 to 6.4g a day total.',
   },
   [pairKey('creatine', 'beta-alanine')]: {
     level: 'good',

@@ -277,7 +277,7 @@ export const TEST_ITEMS: TestItem[] = [
     headline: 'An actual hormone precursor — not an OTC supplement to self-source in the UK.',
     claim: 'Sold freely abroad; a different matter here.',
     detail:
-      'DHEA is a genuine hormone precursor, not a herb or a nutrient, and that is exactly why it should not be treated like an off-the-shelf supplement. In the UK it is not sold as a general over-the-counter supplement, it is banned in sport under WADA, and self-dosing a hormone precursor without monitoring can have real effects on your own hormone balance. Any use belongs under a clinician who can test and monitor, not on a whim from an overseas website.',
+      'DHEA is a genuine hormone precursor, not a herb or a nutrient, and that is exactly why it should not be treated like an off-the-shelf supplement. In the UK it is a prescription-only medicine, not a legal over-the-counter supplement, and it is banned in sport under WADA. Self-dosing a hormone precursor without monitoring can genuinely disrupt your own hormone balance. Any use belongs under a clinician who can test and monitor, not on a whim from an overseas website.',
     bottomLine: 'Do not self-source it. If DHEA is genuinely relevant to you, that is a conversation for a doctor, not a supplement purchase.',
   },
 ]

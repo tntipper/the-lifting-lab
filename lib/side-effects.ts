@@ -133,17 +133,18 @@ export const SAFETY: Safety[] = [
     headline: 'Popular for stress and sleep, but with real caveats worth knowing.',
     common: ['Drowsiness', 'Stomach upset or nausea', 'A calm, sometimes flat mood'],
     serious: [
-      'Rare reports of liver injury',
+      'Rare reports of liver injury — stop and see a doctor if you notice jaundice, dark urine, or upper-right abdominal pain',
       'Can raise thyroid hormone levels and disturb existing thyroid conditions',
     ],
     avoid: [
-      'Pregnancy and breastfeeding',
-      'Thyroid conditions, autoimmune disease and liver conditions',
+      'Pregnancy — a firm no; it can stimulate the uterus and has traditionally been used to end pregnancies',
+      'Breastfeeding',
+      'Thyroid conditions, autoimmune disease, liver conditions and hormone-sensitive cancers',
       'Two weeks before any planned surgery, and alongside sedatives or thyroid medication',
     ],
     safeDose: 'Studies typically use 300 to 600mg a day of a standardised root extract, taken for a defined period rather than indefinitely.',
     detail:
-      'Ashwagandha is generally well tolerated short-term and is studied for stress and sleep, but it is not risk-free. It commonly causes drowsiness and stomach upset, there are rare reports of liver injury, and it can raise thyroid hormone — a problem if you have a thyroid condition. Because it can interact with sedatives, thyroid and blood-sugar medication and is not advised in pregnancy, treat it as something to clear with a clinician rather than a casual add-on.',
+      'Ashwagandha is generally well tolerated short-term and is studied for stress and sleep, but it is not risk-free. It commonly causes drowsiness and stomach upset, and there are rare reports of liver injury — stop and see a doctor if you develop jaundice, dark urine or right-sided abdominal pain. It can raise thyroid hormone, a problem if you have a thyroid condition, and its immune-modulating effect means autoimmune disease is a reason for caution. It should not be used in pregnancy (it can stimulate the uterus) and is best avoided with hormone-sensitive cancers. Because it also interacts with sedatives, thyroid and blood-sugar medication, treat it as something to clear with a clinician rather than a casual add-on.',
     link: { label: 'See what we flag', href: '/watch-outs' },
   },
   {
@@ -201,7 +202,7 @@ export const SAFETY: Safety[] = [
     ],
     serious: ['None documented at standard supplement doses'],
     avoid: ['No specific groups at normal doses, though there is little data in pregnancy'],
-    safeDose: '4 to 6g a day. Splitting it into smaller doses through the day keeps the tingle in check while it saturates over a few weeks.',
+    safeDose: '3.2 to 6.4g a day. Splitting it into smaller doses through the day keeps the tingle in check while it saturates over a few weeks.',
     detail:
       'Beta-alanine is well tolerated and its one notable effect — a tingling or flushing of the skin called paraesthesia — is completely harmless, just startling the first time. It comes on within minutes of a larger dose and can be avoided by splitting the daily amount into smaller servings or using a sustained-release form. There are no documented serious effects at standard supplement doses.',
     link: { label: 'Beta-alanine calculator', href: '/calculators/beta-alanine' },
@@ -240,7 +241,7 @@ export const SAFETY: Safety[] = [
     ],
     safeDose: 'A common target is around 1 to 2g of combined EPA and DHA a day. Taking it with food and choosing a quality oil reduces the fishy burps.',
     detail:
-      'Omega-3 fish oil is very well tolerated, with side effects usually limited to fishy burps and mild stomach upset that improve if you take it with food or use a fresh, quality oil. At very high doses it can have a mild blood-thinning effect, which only matters if you already take blood-thinning medication or are heading for surgery. For almost everyone else it is a low-risk supplement.',
+      'Omega-3 fish oil is very well tolerated, with side effects usually limited to fishy burps and mild stomach upset that improve if you take it with food or use a fresh, quality oil. At very high doses it can have a mild blood-thinning effect, which only matters if you already take blood-thinning medication or are heading for surgery. One thing to note: high doses (around 4g a day and up, the kind used medically) have been linked to a modestly raised risk of atrial fibrillation, so there is no benefit in megadosing. At the typical 1 to 2g target it is a low-risk supplement for almost everyone.',
     link: { label: 'Build my stack', href: '/wizard' },
   },
   {
@@ -257,7 +258,7 @@ export const SAFETY: Safety[] = [
     ],
     safeDose: 'In the UK melatonin is a prescription-only medicine, so the right dose and duration are a matter for your GP rather than an over-the-counter guess.',
     detail:
-      'Melatonin is generally low-risk short-term, with side effects usually limited to morning grogginess and vivid dreams, and it works best for shifting sleep timing (like jet lag) rather than as a nightly sedative. Importantly, in the UK it is a prescription-only medicine, unlike in the US where it is sold freely — so if you want to use it, that is a conversation with your GP, who can also check it against any medication you take.',
+      'Melatonin is generally low-risk short-term, with side effects usually limited to morning grogginess and vivid dreams, and it works best for shifting sleep timing (like jet lag) rather than as a nightly sedative. Importantly, in the UK it is a prescription-only medicine, unlike in the US where it is sold freely — so if you want to use it, that is a conversation with your GP, who can also check it against any medication you take. It can interact with several drug classes — blood thinners like warfarin, anticonvulsants, immunosuppressants and other sedatives (including alcohol and sleeping tablets, which add to its drowsiness).',
     link: { label: 'Supplement timing planner', href: '/calculators/timing' },
   },
   {

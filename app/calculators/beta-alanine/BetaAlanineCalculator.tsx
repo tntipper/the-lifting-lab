@@ -43,10 +43,10 @@ export default function BetaAlanineCalculator() {
   const result = useMemo(() => {
     if (weightKg <= 0) return null
 
-    // ISSN position stand: ~65mg/kg/day, held inside the evidence-backed 4–6g/day band
-    // (smaller people floor at 4g, larger cap at 6g — carnosine saturation, not size, is the ceiling).
+    // ISSN position stand: effective dose 3.2–6.4 g/day, scaled roughly by bodyweight
+    // (smaller people floor at 3.2g, larger cap at 6.4g — carnosine saturation, not size, is the ceiling).
     const raw = weightKg * 0.065
-    const daily = half(Math.min(6, Math.max(4, raw)))
+    const daily = half(Math.min(6.4, Math.max(3.2, raw)))
 
     // Split to keep each dose small: standard powder tingles above ~1.6g, sustained-release
     // formulas blunt that so you can take fewer, larger doses.

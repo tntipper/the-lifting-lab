@@ -158,7 +158,7 @@ export default function ProteinCalculator() {
                   <span className="text-white font-black tabular-nums">{result.perMeal}g</span>
                 </div>
                 <div className="flex items-baseline justify-between gap-4">
-                  <span className="text-sm text-lab-muted">Best per-meal minimum</span>
+                  <span className="text-sm text-lab-muted">Optimal per-meal dose (for muscle)</span>
                   <span className="text-lab-muted font-bold tabular-nums">{result.mpsPerMeal}g</span>
                 </div>
               </div>
