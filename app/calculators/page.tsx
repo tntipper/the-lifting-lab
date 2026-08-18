@@ -104,6 +104,24 @@ export default function CalculatorsPage() {
         {/* sibling tools — dedicated calculator pages */}
         <div className="mt-4 grid gap-3">
           <Link
+            href="/dosage"
+            className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">
+                Start here
+              </p>
+              <p className="text-sm font-black uppercase tracking-wide text-white">
+                Supplement Dosage Guide
+              </p>
+              <p className="text-xs text-lab-muted leading-snug mt-1">
+                The whole aisle on one page — the evidence-based dose, timing and form for every major supplement, and where more stops helping.
+              </p>
+            </div>
+            <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
+
+          <Link
             href="/calculators/timing"
             className="flex items-center justify-between gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5 hover:border-lab-lime/50 transition-colors group"
           >
