@@ -311,7 +311,7 @@ export const DOSE_ITEMS: DoseItem[] = [
     ceiling: 'Beyond ~3 g EPA+DHA there is little added benefit for general health, and blood-thinning rises.',
     detail:
       'The useful part of fish oil is the EPA and DHA, and 1 to 2 g combined per day covers most general-health and anti-inflammatory goals, especially if you rarely eat oily fish. The trap is the label: a "1000 mg fish oil" capsule may contain only 300 mg of actual EPA+DHA, so read those two numbers directly. Very high intakes offer little extra and can thin the blood, so there is no need to megadose.',
-    link: { label: 'Browse omega-3 & health', href: '/products?category=vitamins-wellbeing' },
+    link: { label: 'Browse omega-3 & health', href: '/products?category=omega-3' },
   },
   {
     id: 'zinc',
@@ -397,7 +397,7 @@ export const DOSE_ITEMS: DoseItem[] = [
     ceiling: 'Not a muscle protein — count it toward tendons/joints, not your daily protein target.',
     detail:
       'For tendon, ligament and joint support there is growing evidence that 15 g of hydrolysed collagen with vitamin C, taken 30 to 60 minutes before loading the tissue, can help connective-tissue synthesis. Note it is a low-quality muscle protein (missing key aminos), so it does not count toward your muscle-building protein target — it is a joint tool, not a whey substitute. Reasonable if you have niggles; optional otherwise.',
-    link: { label: 'Browse recovery & health', href: '/products?category=vitamins-wellbeing' },
+    link: { label: 'Browse recovery & health', href: '/products?category=joint-health' },
   },
   {
     id: 'melatonin',

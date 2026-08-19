@@ -149,7 +149,7 @@ export default function CreatineCalculator() {
             {/* headline dose */}
             <div className="bg-lab-bg border border-lab-border rounded-xl p-5">
               <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-muted mb-3">
-                {approach === 'load' ? 'Loading dose — days 1 to 6' : 'Your daily dose'}
+                {approach === 'load' ? 'Loading dose — first week' : 'Your daily dose'}
               </p>
               <p className="text-4xl font-black text-lab-lime tabular-nums leading-none mb-1">
                 {result.dailyDose}<span className="text-xl text-white/70 ml-1">g / day</span>

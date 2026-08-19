@@ -5,6 +5,7 @@ import TopNav from '@/components/TopNav'
 import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
+import { rankedCategorySlugs } from '@/lib/best-categories'
 import { buyLink } from '@/lib/affiliate'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
@@ -138,6 +139,10 @@ export default async function AlternativesPage({
   const url = `${SITE}/alternatives/${product}`
   const label = categoryLabel(target.category)
   const labelLower = label.toLowerCase()
+
+  // Only link to /best/[category] when that ranking actually publishes — a thin
+  // category (below MIN_RANKED scored products) 404s there, so the link would be dead.
+  const hasBestRanking = (await rankedCategorySlugs()).includes(target.category)
 
   // Better-rated: higher Effectiveness Match. alternatives is already score-desc.
   const betterRated =
@@ -324,12 +329,21 @@ export default async function AlternativesPage({
               </Link>
             </p>
           )}
-          <p>
-            See the full ranking:{' '}
-            <Link href={`/best/${target.category}`} className="text-lab-lime hover:underline underline-offset-2">
-              Best {label} UK {YEAR} →
-            </Link>
-          </p>
+          {hasBestRanking ? (
+            <p>
+              See the full ranking:{' '}
+              <Link href={`/best/${target.category}`} className="text-lab-lime hover:underline underline-offset-2">
+                Best {label} UK {YEAR} →
+              </Link>
+            </p>
+          ) : (
+            <p>
+              Browse the category:{' '}
+              <Link href={`/products?category=${target.category}`} className="text-lab-lime hover:underline underline-offset-2">
+                All {labelLower} →
+              </Link>
+            </p>
+          )}
           {GUIDE_SLUGS.includes(target.category) && (
             <p>
               How to choose:{' '}

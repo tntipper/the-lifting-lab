@@ -310,7 +310,7 @@ export default function Calculators() {
                   )}
                 </p>
                 <div className="mt-4 pt-3 border-t border-lab-border">
-                  <ResultRow k="Safe single serving" v="≤ 400 mg" hint="Above this we mark a pre-workout down." />
+                  <ResultRow k="Pre-workout serving cap" v="≤ 400 mg" hint="Our scoring threshold — above this we mark a pre-workout down. For a sensible single acute dose, EFSA suggests ≤ 200 mg (see the caffeine calculator)." />
                   <ResultRow k="Daily ceiling (adults)" v="400 mg" hint="EFSA guidance for healthy adults, from all sources." />
                   <ResultRow k="Evening sessions" v="Go stim-free" hint="Caffeine that late can wreck your sleep." />
                 </div>

@@ -357,7 +357,7 @@ export default async function StrongestPreWorkoutPage() {
                   Pre-workout guide
                 </Link>
                 <Link
-                  href="/calculators"
+                  href="/calculators/caffeine"
                   className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
                 >
                   Caffeine calculator
