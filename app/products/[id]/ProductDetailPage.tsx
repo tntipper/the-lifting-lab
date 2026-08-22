@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
+import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
 import { buyLink } from '@/lib/affiliate'
 import { track } from '@/lib/gtag'
-import type { Nutrient } from '@/lib/products'
+import { trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
 import MethodologyModal from '@/components/MethodologyModal'
@@ -16,25 +17,6 @@ import ReviewSection from '@/components/ReviewSection'
 import ShareModal from '@/components/ShareModal'
 import TopNav from '@/components/TopNav'
 import RelatedProducts from './RelatedProducts'
-
-type ProductDetail = {
-  id: string
-  name: string
-  brand: string
-  category: string
-  serving_size: number | null
-  serving_unit: string | null
-  servings_per_container: number | null
-  informed_sport: boolean | null
-  retail_price: number | null
-  buy_url: string | null
-  proprietary_blend: boolean | null
-  amino_spiked: boolean | null
-  protein_yield: number | null
-  cost_per_serving: number | null
-  score: number | null
-  nutrients: Nutrient[]
-}
 
 function getRetailerLinks(brand: string, name: string): { label: string; url: string }[] {
   const q = encodeURIComponent(`${brand} ${name}`)
@@ -56,40 +38,22 @@ function getRetailerLinks(brand: string, name: string): { label: string; url: st
   return links.slice(0, 4)
 }
 
-export default function ProductDetailPage({ id }: { id: string }) {
+// The product (with nutrients) and the same-category related list arrive as
+// props from the server component in page.tsx, so this renders real content on
+// the server — no client fetch, no "Loading…" shell. Interactivity (stack,
+// share, tracking, reviews) hydrates on top.
+export default function ProductDetailPage({
+  product,
+  related,
+}: {
+  product: ComparedProduct
+  related: ScoredProduct[]
+}) {
   const router = useRouter()
   const { inStack, toggle } = useLocalStack()
-  const [product, setProduct] = useState<ProductDetail | null>(null)
-  const [loading, setLoading] = useState(true)
   const [shareOpen, setShareOpen] = useState(false)
 
-  useEffect(() => {
-    fetch(`/api/products/${id}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { setProduct(d); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [id])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-lab-bg flex items-center justify-center">
-        <p className="text-lab-muted text-sm">Loading…</p>
-      </div>
-    )
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-lab-bg flex flex-col">
-        <TopNav />
-        <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <p className="text-white text-lg font-bold">Product not found</p>
-          <Link href="/products" className="text-lab-lime text-sm underline">Back to products</Link>
-        </div>
-      </div>
-    )
-  }
-
+  const costReason = trueCostReason(product)
   const flags = verdictFlags(product.nutrients, product.score, product.informed_sport)
   const color = product.score != null ? scoreColor(product.score) : '#4b5563'
   const stacked = inStack(product.id)
@@ -116,7 +80,10 @@ export default function ProductDetailPage({ id }: { id: string }) {
       <div className="max-w-2xl mx-auto px-4 pt-8 space-y-6">
         {/* hero */}
         <div className="flex flex-col items-center text-center gap-4">
-          <ScoreBadge score={product.score} size="lg" />
+          <div className="flex items-center gap-5">
+            <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={110} />
+            <ScoreBadge score={product.score} size="lg" />
+          </div>
           <div>
             <Link
               href={`/brand/${brandSlug(product.brand)}`}
@@ -150,15 +117,24 @@ export default function ProductDetailPage({ id }: { id: string }) {
                 </span>
               )}
             </div>
-            {(product.retail_price != null || product.cost_per_serving != null) && (
-              <p className="text-sm text-gray-400 mt-2">
-                {product.retail_price != null && <span>£{product.retail_price.toFixed(2)} retail</span>}
-                {product.retail_price != null && product.cost_per_serving != null && <span className="mx-2">·</span>}
-                {product.cost_per_serving != null && (
-                  <span className="text-white font-bold">£{product.cost_per_serving.toFixed(2)} / serving</span>
-                )}
-              </p>
-            )}
+            <p className="text-sm text-gray-400 mt-2">
+              {product.retail_price != null ? <span>£{product.retail_price.toFixed(2)} retail</span> : <span>Retail price —</span>}
+              <span className="mx-2">·</span>
+              {product.cost_per_serving != null ? (
+                <span className="text-white font-bold">£{product.cost_per_serving.toFixed(2)} True Cost / serving</span>
+              ) : (
+                <span title={costReason ?? undefined}>True Cost — <span className="text-xs">({costReason})</span></span>
+              )}
+            </p>
+            <p className="text-xs text-lab-muted mt-1">
+              {product.serving_size != null
+                ? `${product.serving_size}${product.serving_unit ?? ''} per serving`
+                : 'Serving size not on file'}
+              {' · '}
+              {product.servings_per_container != null
+                ? `${product.servings_per_container} servings per container`
+                : 'servings per container unknown'}
+            </p>
           </div>
           <button
             onClick={() => setShareOpen(true)}
@@ -237,7 +213,7 @@ export default function ProductDetailPage({ id }: { id: string }) {
         </div>
 
         {/* better-rated alternatives in the same category */}
-        <RelatedProducts productId={product.id} category={product.category} score={product.score} brand={product.brand} name={product.name} />
+        <RelatedProducts items={related} productId={product.id} category={product.category} score={product.score} brand={product.brand} name={product.name} />
 
         {/* reviews */}
         <ReviewSection productId={product.id} productName={product.name} />

@@ -1,38 +1,28 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase-public'
-import { scoreFor } from '@/lib/scores'
 import { categoryLabel } from '@/lib/categories'
 import { getGuide } from '@/lib/guides'
+import { fetchProductDetail, fetchCategory } from '@/lib/product-data'
 import ProductDetailPage from './ProductDetailPage'
 
 const SITE = 'https://www.theliftinglab.co.uk'
 
+// Product pages are rendered on the server (name, brand, score, true cost,
+// serving info, full nutrient label, buy CTA, image all in the initial HTML)
+// and cached as ISR for a day, so anonymous GETs are served from the static
+// cache rather than re-hitting Supabase per request.
+export const revalidate = 86400
+
+// Empty list = nothing prerendered at build time (keeps builds DB-light), but
+// declaring it opts the dynamic segment into ISR: each /products/[id] is
+// rendered on first request, then served from the cache for `revalidate`
+// seconds. Without this Next.js renders the segment per request (no-store).
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return []
+}
+
 type Props = { params: Promise<{ id: string }> }
-
-type ProductMeta = {
-  id: string
-  name: string
-  brand: string
-  category: string
-  image_url: string | null
-  retail_price: number | null
-  buy_url: string | null
-}
-
-async function fetchProductMeta(id: string): Promise<ProductMeta | null> {
-  try {
-    const sb = createPublicClient()
-    const { data } = await sb
-      .from('products')
-      .select('id, name, brand, category, image_url, retail_price, buy_url')
-      .eq('id', id)
-      .eq('status', 'active')
-      .maybeSingle()
-    return (data as ProductMeta | null) ?? null
-  } catch {
-    return null
-  }
-}
 
 // Aggregate the publicly-visible user reviews for one product. RLS on `reviews`
 // restricts the anon client to approved (or auto-approved) rows, so this matches
@@ -53,10 +43,10 @@ async function fetchReviewAggregate(id: string): Promise<{ average: number; coun
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
-  const product = await fetchProductMeta(id)
+  const product = await fetchProductDetail(id)
   if (!product) return { title: 'Product Not Found | The Lifting Lab' }
 
-  const score = scoreFor(product.brand, product.name)
+  const score = product.score
   const cat = categoryLabel(product.category)
   const title = `${product.brand} ${product.name} Score & Review | The Lifting Lab`
   const description = score != null
@@ -74,14 +64,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
   const { id } = await params
-  const product = await fetchProductMeta(id)
+  const product = await fetchProductDetail(id)
+  // Real 404 (status + not-found page) instead of a 200 "Product not found" shell.
+  if (!product) notFound()
+
+  // Same-category list for the RelatedProducts module — fetched here so the
+  // cross-links are in the HTML too. Failure just renders no related block.
+  const related = (await fetchCategory(product.category)).filter((p) => p.id !== product.id)
 
   // Structured data — server-rendered so crawlers see it in the initial HTML.
-  // Skipped entirely if the product can't be resolved (client page handles the
-  // not-found state); never blocks rendering.
   let jsonLd: object[] = []
-  if (product) {
-    const score = scoreFor(product.brand, product.name)
+  {
+    const score = product.score
     const reviews = await fetchReviewAggregate(id)
     const url = `${SITE}/products/${id}`
     const fullName = `${product.brand} ${product.name}`
@@ -162,7 +156,7 @@ export default async function Page({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
         />
       ))}
-      <ProductDetailPage id={id} />
+      <ProductDetailPage product={product} related={related} />
     </>
   )
 }

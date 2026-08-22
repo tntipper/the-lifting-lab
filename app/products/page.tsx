@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 import TopNav from '@/components/TopNav'
 import ProductGrid from './ProductGrid'
 import { categoryLabel } from '@/lib/categories'
-import { createPublicClient } from '@/lib/supabase-public'
-import { PRODUCT_COLUMNS, withScore, sortScored, type Product } from '@/lib/products'
+import { fetchCatalogue } from '@/lib/product-data'
 
-// Refresh daily so newly added/rescored products flow into the structured data.
+// Refresh daily so newly added/rescored products flow into the page + schema.
 export const revalidate = 86400
 
 const SITE = 'https://www.theliftinglab.co.uk'
@@ -18,28 +16,14 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE}/products` },
 }
 
-// The interactive catalogue (ProductGrid) is a client component, so the server
-// HTML for this — the core commercial page — previously had no <h1> and no
-// JSON-LD (a crawler with JS disabled saw only the "Loading…" fallback). Fetch
-// the catalogue server-side to emit a real ItemList + a crawlable <h1> in the
-// initial response. Mirrors the /best fetch pattern and is DB-failure safe: an
-// empty result just omits the schema, never a 500.
-async function catalogue() {
-  try {
-    const sb = createPublicClient()
-    const { data, error } = await sb
-      .from('products')
-      .select(PRODUCT_COLUMNS)
-      .eq('status', 'active')
-    if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore), 'score')
-  } catch {
-    return []
-  }
-}
-
+// The catalogue is fetched server-side and passed into ProductGrid as its
+// initial state, so the first HTML response already contains every product
+// card (name, brand, score, true cost, buy link, image) plus the ItemList
+// schema and a crawlable <h1>. ProductGrid layers filtering / sorting /
+// favourites on top after hydration. DB-failure safe: an empty result renders
+// the grid's own empty state, never a 500.
 export default async function ProductsPage() {
-  const products = await catalogue()
+  const products = await fetchCatalogue()
 
   const itemListJsonLd = products.length > 0 ? {
     '@context': 'https://schema.org',
@@ -86,9 +70,7 @@ export default async function ProductsPage() {
       />
       <div className="max-w-2xl mx-auto px-4 py-6">
         <h1 className="sr-only">Browse Supplements — Scored &amp; Compared by Effectiveness Match</h1>
-        <Suspense fallback={<div className="text-lab-muted text-sm py-8 text-center">Loading…</div>}>
-          <ProductGrid />
-        </Suspense>
+        <ProductGrid initialProducts={products} />
       </div>
     </div>
   )

@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
@@ -8,49 +7,32 @@ import { productSlug } from '@/lib/matchups'
 import { track } from '@/lib/gtag'
 import type { ScoredProduct } from '@/lib/products'
 
-// Cross-sell / internal-link module shown on a product detail page. Pulls the
-// same category (score-sorted from the public API), drops the current product,
-// and surfaces better-rated alternatives — driving affiliate clicks and giving
-// crawlers product-to-product internal links (pages were previously islands).
+// Cross-sell / internal-link module shown on a product detail page. Receives
+// the same-category list (score-sorted, current product already removed) from
+// the server component, so the product-to-product internal links are present
+// in the initial HTML for crawlers — no client fetch.
 export default function RelatedProducts({
+  items,
   productId,
   category,
   score,
   brand,
   name,
 }: {
+  items: ScoredProduct[]
   productId: string
   category: string
   score: number | null
   brand: string
   name: string
 }) {
-  const [items, setItems] = useState<ScoredProduct[] | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetch(`/api/products?category=${encodeURIComponent(category)}&sort=score`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data: ScoredProduct[]) => {
-        if (cancelled) return
-        const list = Array.isArray(data) ? data : []
-        setItems(list.filter((p) => p.id !== productId))
-      })
-      .catch(() => {
-        if (!cancelled) setItems([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [productId, category])
-
-  if (!items || items.length === 0) return null
+  if (items.length === 0) return null
 
   // Prefer genuinely higher-scoring options; if this product already tops the
   // category, fall back to the next-best picks so the slot is never empty.
   const better = score != null ? items.filter((p) => p.score != null && p.score > score) : []
   const isUpgrade = better.length > 0
-  // API already returns score-desc, so the slice is the top of the list.
+  // List arrives score-desc, so the slice is the top of the list.
   const picks = (isUpgrade ? better : items).slice(0, 3)
   if (picks.length === 0) return null
 
