@@ -7,7 +7,7 @@ import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { buyLink } from '@/lib/affiliate'
 import { createPublicClient } from '@/lib/supabase-public'
-import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
+import { PRODUCT_COLUMNS, hasVerifiedCost, withScore, type Product, type ScoredProduct } from '@/lib/products'
 
 // SSG with a daily refresh so price/serving + score updates flow into the value
 // rankings without a redeploy.
@@ -61,7 +61,7 @@ async function categoryWinners(): Promise<Winner[]> {
     const eligible: ValueProduct[] = (data as Product[])
       .map(withScore)
       .flatMap((p) =>
-        p.score != null && p.score >= MIN_SCORE && p.cost_per_serving != null && p.cost_per_serving > 0
+        p.score != null && p.score >= MIN_SCORE && hasVerifiedCost(p)
           ? [{ ...p, score: p.score, cost_per_serving: p.cost_per_serving, valueRatio: p.score / p.cost_per_serving }]
           : [],
       )
@@ -275,6 +275,7 @@ export default async function ValuePage() {
                 <div className="space-y-3">
                   {items.map(({ slug, product: p }) => {
                     const hasGuide = GUIDE_SLUGS.includes(slug)
+                    const href = buyLink(p.brand, p.name, p.buy_url)
                     return (
                       <div
                         key={p.id}
@@ -305,7 +306,7 @@ export default async function ValuePage() {
                             </p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 mt-3">
+                        <div className={`grid ${href ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mt-3`}>
                           <Link
                             href={`/products/${p.id}`}
                             className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border border-lab-border text-lab-muted hover:text-white transition-colors"
@@ -327,19 +328,21 @@ export default async function ValuePage() {
                               See all
                             </Link>
                           )}
-                          <a
-                            href={buyLink(p.brand, p.name, p.buy_url)}
-                            target="_blank"
-                            rel="noopener noreferrer nofollow"
-                            className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
-                            style={{
-                              background: 'rgba(166,226,46,0.12)',
-                              color: '#a6e22e',
-                              border: '1px solid rgba(166,226,46,0.5)',
-                            }}
-                          >
-                            Buy
-                          </a>
+                          {href && (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer nofollow"
+                              className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
+                              style={{
+                                background: 'rgba(166,226,46,0.12)',
+                                color: '#a6e22e',
+                                border: '1px solid rgba(166,226,46,0.5)',
+                              }}
+                            >
+                              Buy
+                            </a>
+                          )}
                         </div>
                       </div>
                     )

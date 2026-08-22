@@ -99,10 +99,19 @@ export async function GET() {
             },
             retail_price_gbp: { type: ['number', 'null'] },
             cost_per_serving_gbp: { type: ['number', 'null'] },
+            cost_verified: {
+              type: 'boolean',
+              description:
+                'True when cost_per_serving_gbp is derived from a verified retail price and servings count. Products with cost_verified=false are excluded from sort=value and sort=budget rankings.',
+            },
             servings_per_container: { type: ['integer', 'null'] },
             informed_sport: { type: 'boolean' },
             product_url: { type: 'string', format: 'uri' },
-            buy_url: { type: 'string', format: 'uri', description: 'Affiliate buy link.' },
+            buy_url: {
+              type: ['string', 'null'],
+              format: 'uri',
+              description: 'Affiliate buy link, or null when no verified retailer URL is on file.',
+            },
           },
         },
       },

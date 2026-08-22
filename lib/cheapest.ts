@@ -7,7 +7,7 @@
 // product by absolute cost per serving, cheapest first — while still gating to a
 // passing Effectiveness Match, so a dirt-cheap but under-dosed tub can never top
 // the list. The result is an honest "cheapest that still works" ranking.
-import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
+import { PRODUCT_COLUMNS, hasVerifiedCost, withScore, type Product, type ScoredProduct } from '@/lib/products'
 import { createPublicClient } from '@/lib/supabase-public'
 
 // A product must clear our pass bar before it can rank on price. Cheap means
@@ -29,8 +29,7 @@ export function rankCheapest(products: Product[]): CheapProduct[] {
     .flatMap((p) =>
       p.score != null &&
       p.score >= MIN_SCORE &&
-      p.cost_per_serving != null &&
-      p.cost_per_serving > 0
+      hasVerifiedCost(p)
         ? [{ ...p, score: p.score, cost_per_serving: p.cost_per_serving }]
         : [],
     )

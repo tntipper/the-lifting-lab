@@ -7,7 +7,7 @@ import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { buyLink } from '@/lib/affiliate'
 import { track } from '@/lib/gtag'
-import { trueCostReason, type ComparedProduct } from '@/lib/products'
+import { hasVerifiedCost, trueCostReason, type ComparedProduct } from '@/lib/products'
 
 // Products arrive fully resolved (with nutrients) from the server component in
 // page.tsx, so the comparison table is in the initial HTML — no client fetch,
@@ -54,7 +54,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
 
   // best value: highest score per £/serving among products that have both
   const valued = products.filter(
-    (p) => p.score != null && p.cost_per_serving != null && p.cost_per_serving > 0,
+    (p) => p.score != null && hasVerifiedCost(p), // unverified/£0 cost never competes (TLL-P0-3)
   ) as (ComparedProduct & { score: number; cost_per_serving: number })[]
   const bestValue = valued.length
     ? valued.reduce((a, b) => (b.score / b.cost_per_serving > a.score / a.cost_per_serving ? b : a))
@@ -186,19 +186,24 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
 
         {/* buy row */}
         <div />
-        {products.map((p) => (
-          <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
-            <a
-              href={buyLink(p.brand, p.name, p.buy_url)}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name, from: 'compare' })}
-              className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
-            >
-              Buy →
-            </a>
-          </div>
-        ))}
+        {products.map((p) => {
+          const href = buyLink(p.brand, p.name, p.buy_url)
+          return (
+            <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
+              {href && (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name, from: 'compare' })}
+                  className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
+                >
+                  Buy →
+                </a>
+              )}
+            </div>
+          )
+        })}
       </div>
       <p className="text-[9px] text-lab-muted/40 text-right -mt-4">affiliate links · open in a new tab</p>
 

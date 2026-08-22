@@ -18,6 +18,7 @@ export default function FavouriteCard({
   product: ScoredProduct
   onRemove?: (id: string) => void
 }) {
+  const href = buyLink(p.brand, p.name, p.buy_url)
   return (
     <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4">
       <ScoreBadge score={p.score} />
@@ -36,18 +37,20 @@ export default function FavouriteCard({
           if (!fav) onRemove?.(p.id)
         }}
       />
-      <div className="flex flex-col items-end gap-0.5 shrink-0">
-        <a
-          href={buyLink(p.brand, p.name, p.buy_url)}
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
-          className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black px-3 py-1.5 rounded-lg hover:opacity-90"
-        >
-          Buy
-        </a>
-        <span className="text-[9px] text-lab-muted/40 leading-tight">affiliate link</span>
-      </div>
+      {href && (
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
+            className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black px-3 py-1.5 rounded-lg hover:opacity-90"
+          >
+            Buy
+          </a>
+          <span className="text-[9px] text-lab-muted/40 leading-tight">affiliate link</span>
+        </div>
+      )}
     </div>
   )
 }

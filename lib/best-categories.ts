@@ -4,7 +4,7 @@
 // /best hub (one winner per category), /guide/[category] (how-to-choose
 // education) and the interactive /products grid.
 import { createPublicClient } from '@/lib/supabase-public'
-import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
+import { PRODUCT_COLUMNS, hasVerifiedCost, withScore, type Product, type ScoredProduct } from '@/lib/products'
 import { CATEGORIES } from '@/lib/categories'
 
 // Minimum scored products in a category to publish a credible "Top N" ranking.
@@ -73,7 +73,8 @@ export type CategoryAwards = {
 export function deriveAwards(ranked: ScoredProduct[]): CategoryAwards {
   const bestOverall = ranked[0] ?? null
   const priced = ranked.filter(
-    (p) => (p.score ?? 0) >= 50 && p.cost_per_serving != null,
+    // hasVerifiedCost excludes null AND non-positive costs (TLL-P0-3).
+    (p) => (p.score ?? 0) >= 50 && hasVerifiedCost(p),
   )
   const bestValue = priced.length
     ? priced.reduce((a, b) =>

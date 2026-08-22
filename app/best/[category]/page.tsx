@@ -200,7 +200,9 @@ export default async function BestCategoryPage({
               The <span className="text-lab-lime">Picks</span>
             </h2>
             <div className="grid sm:grid-cols-3 gap-3">
-              {awards.map(({ label: aLabel, tag, p }) => (
+              {awards.map(({ label: aLabel, tag, p }) => {
+                const href = buyLink(p.brand, p.name, p.buy_url)
+                return (
                 <div key={aLabel} className="bg-lab-panel border border-lab-border rounded-xl p-4 flex flex-col">
                   <p className="text-[10px] uppercase tracking-widest text-lab-lime font-bold mb-3">{aLabel}</p>
                   <div className="flex items-center gap-3 mb-3">
@@ -214,17 +216,20 @@ export default async function BestCategoryPage({
                   {p.cost_per_serving != null && (
                     <p className="text-[11px] text-white/60 mb-3">{fmt(p.cost_per_serving)} per serving</p>
                   )}
-                  <a
-                    href={buyLink(p.brand, p.name, p.buy_url)}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    className="mt-auto text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
-                    style={{ background: 'rgba(166,226,46,0.12)', color: '#a6e22e', border: '1px solid rgba(166,226,46,0.5)' }}
-                  >
-                    Buy
-                  </a>
+                  {href && (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="mt-auto text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
+                      style={{ background: 'rgba(166,226,46,0.12)', color: '#a6e22e', border: '1px solid rgba(166,226,46,0.5)' }}
+                    >
+                      Buy
+                    </a>
+                  )}
                 </div>
-              ))}
+                )
+              })}
             </div>
           </section>
         )}
@@ -240,7 +245,9 @@ export default async function BestCategoryPage({
             </span>
           </div>
           <ol className="space-y-3">
-            {top.map((p, i) => (
+            {top.map((p, i) => {
+              const href = buyLink(p.brand, p.name, p.buy_url)
+              return (
               <li key={p.id} className="bg-lab-panel border border-lab-border rounded-xl p-4">
                 <div className="flex items-center gap-4">
                   <span className="text-lg font-black text-lab-muted w-6 text-center shrink-0">
@@ -255,7 +262,7 @@ export default async function BestCategoryPage({
                     <p className="text-[11px] text-white/55 mt-1 leading-snug">{verdict(p)}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 mt-3">
+                <div className={`grid ${href ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mt-3`}>
                   <Link
                     href={`/products/${p.id}`}
                     className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border border-lab-border text-lab-muted hover:text-white transition-colors"
@@ -268,18 +275,21 @@ export default async function BestCategoryPage({
                   >
                     Compare
                   </Link>
-                  <a
-                    href={buyLink(p.brand, p.name, p.buy_url)}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
-                    style={{ background: 'rgba(166,226,46,0.12)', color: '#a6e22e', border: '1px solid rgba(166,226,46,0.5)' }}
-                  >
-                    Buy
-                  </a>
+                  {href && (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
+                      style={{ background: 'rgba(166,226,46,0.12)', color: '#a6e22e', border: '1px solid rgba(166,226,46,0.5)' }}
+                    >
+                      Buy
+                    </a>
+                  )}
                 </div>
               </li>
-            ))}
+              )
+            })}
           </ol>
         </section>
 

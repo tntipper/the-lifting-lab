@@ -100,6 +100,7 @@ function AltCard({
 }) {
   const delta =
     target.score != null && p.score != null ? p.score - target.score : null
+  const href = buyLink(p.brand, p.name, p.buy_url)
   return (
     <div className="flex items-center gap-3 bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5">
       <ScoreBadge score={p.score} size="sm" />
@@ -115,14 +116,16 @@ function AltCard({
           {tag && <span className="text-white/70"> · {tag}</span>}
         </p>
       </div>
-      <a
-        href={buyLink(p.brand, p.name, p.buy_url)}
-        target="_blank"
-        rel="sponsored nofollow noopener"
-        className="shrink-0 text-[11px] uppercase tracking-widest font-black bg-lab-lime text-black px-3 py-2 rounded-lg hover:brightness-110 transition"
-      >
-        Buy
-      </a>
+      {href && (
+        <a
+          href={href}
+          target="_blank"
+          rel="sponsored nofollow noopener"
+          className="shrink-0 text-[11px] uppercase tracking-widest font-black bg-lab-lime text-black px-3 py-2 rounded-lg hover:brightness-110 transition"
+        >
+          Buy
+        </a>
+      )}
     </div>
   )
 }

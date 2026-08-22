@@ -61,13 +61,16 @@ export function bulkDealsLink(): string {
 }
 
 /**
- * Resolve the best buy link for a product.
- * Prefers a verified direct product-page URL when present; otherwise falls back
- * to a retailer search (Awin/Bulk for Bulk products, Amazon for everything else).
+ * Resolve the buy link for a product, or null when the catalogue holds no
+ * verified direct product-page URL (TLL-P0-2). Callers must hide the buy CTA
+ * when this returns null — we no longer fall back to a retailer search, a
+ * referral landing page or any other guessed destination. `brand`/`name` are
+ * retained so call sites and tracking events stay unchanged; MyProtein links
+ * still carry the referral code.
  */
-export function buyLink(brand: string, name: string, directUrl?: string | null): string {
-  if (isMyProtein(brand)) return myproteinLink(directUrl)
-  if (directUrl && directUrl.trim()) return directUrl.trim()
-  if (brand.toLowerCase() === 'bulk') return bulkSearch(name)
-  return amazonSearch(brand, name)
+export function buyLink(brand: string, _name: string, directUrl?: string | null): string | null {
+  const direct = directUrl?.trim()
+  if (!direct) return null
+  if (isMyProtein(brand)) return myproteinLink(direct)
+  return direct
 }

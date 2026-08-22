@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createPublicClient } from '@/lib/supabase-public'
-import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type SortKey } from '@/lib/products'
+import { PRODUCT_COLUMNS, hasVerifiedCost, withScore, sortScored, type Product, type SortKey } from '@/lib/products'
 import { CATEGORIES } from '@/lib/categories'
 import { buyLink } from '@/lib/affiliate'
 
@@ -50,7 +50,11 @@ export async function GET(request: Request) {
   if (error) return cors(NextResponse.json({ error: error.message }, { status: 500 }))
 
   const scored = (data as Product[] | null || []).map(withScore)
-  const ranked = sortScored(scored, sort).slice(0, limit)
+  // Cost-based sorts only rank products with a verified cost-per-serving;
+  // unpriced products are excluded rather than listed as £0 or as trailing
+  // "ranked" entries (TLL-P0-3). Score sort keeps them, flagged via cost_verified.
+  const eligible = sort === 'value' || sort === 'budget' ? scored.filter(hasVerifiedCost) : scored
+  const ranked = sortScored(eligible, sort).slice(0, limit)
 
   const results = ranked.map((p, i) => ({
     rank: i + 1,
@@ -61,6 +65,7 @@ export async function GET(request: Request) {
     score: p.score, // Lifting Lab clinical score 0-100 (higher is better; null = not yet scored)
     retail_price_gbp: p.retail_price,
     cost_per_serving_gbp: p.cost_per_serving,
+    cost_verified: hasVerifiedCost(p), // false = no verified price/servings; never ranked on cost
     servings_per_container: p.servings_per_container,
     informed_sport: p.informed_sport ?? false,
     product_url: `${SITE_URL}/products/${p.id}`,
