@@ -25,8 +25,12 @@ export default function ScoreBadge({
   const cx = px / 2
   const circ = 2 * Math.PI * r
 
-  const [dashFilled, setDashFilled] = useState(0)
-  const [displayNum, setDisplayNum] = useState(0)
+  // Initial state is the FINAL value so the server-rendered HTML (and any
+  // no-JS / crawler view) shows the real score rather than "0". The count-up
+  // animation still runs after hydration: the effect rewinds to 0 and eases
+  // back up to the target.
+  const [dashFilled, setDashFilled] = useState(() => (score == null ? 0 : circ * (score / 100)))
+  const [displayNum, setDisplayNum] = useState(() => score ?? 0)
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -45,6 +49,8 @@ export default function ScoreBadge({
     const target = circ * (score / 100)
     const start = performance.now()
     const dur = 1100
+    setDashFilled(0)
+    setDisplayNum(0)
 
     function tick(now: number) {
       const p = Math.min((now - start) / dur, 1)

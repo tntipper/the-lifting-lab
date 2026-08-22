@@ -69,3 +69,17 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
   })
   return out
 }
+
+// Why True Cost (£/serving) can't be computed for a product. Used to render an
+// honest "—" with a stated reason instead of a fabricated number.
+export function trueCostReason(p: {
+  retail_price: number | null
+  servings_per_container: number | null
+}): string | null {
+  if (p.retail_price != null && p.servings_per_container != null && p.servings_per_container > 0) return null
+  if (p.retail_price == null && (p.servings_per_container == null || p.servings_per_container <= 0)) {
+    return 'no retail price or servings on file'
+  }
+  if (p.retail_price == null) return 'no retail price on file'
+  return 'servings per container unknown'
+}

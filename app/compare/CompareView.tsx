@@ -1,50 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
+import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { buyLink } from '@/lib/affiliate'
 import { track } from '@/lib/gtag'
-import type { ComparedProduct } from '@/lib/products'
+import { trueCostReason, type ComparedProduct } from '@/lib/products'
 
-export default function CompareView() {
-  const params = useSearchParams()
-  const idsParam = params.get('ids') || ''
-  const [products, setProducts] = useState<ComparedProduct[]>([])
-  const [loading, setLoading] = useState(true)
-
+// Products arrive fully resolved (with nutrients) from the server component in
+// page.tsx, so the comparison table is in the initial HTML — no client fetch,
+// no spinner. Only analytics + affiliate click handlers hydrate.
+export default function CompareView({ products }: { products: ComparedProduct[] }) {
   useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      if (!idsParam) {
-        setProducts([])
-        setLoading(false)
-        return
-      }
-      setLoading(true)
-      try {
-        const r = await fetch(`/api/products/compare?ids=${encodeURIComponent(idsParam)}`)
-        const data = (await r.json()) as ComparedProduct[]
-        if (cancelled) return
-        const list = Array.isArray(data) ? data : []
-        setProducts(list)
-        setLoading(false)
-        if (list.length) track('compare_view', { count: list.length })
-      } catch {
-        if (cancelled) return
-        setProducts([])
-        setLoading(false)
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [idsParam])
-
-  if (loading) return <p className="text-lab-muted text-sm">Loading comparison…</p>
+    if (products.length) track('compare_view', { count: products.length })
+  }, [products])
 
   if (!products.length) {
     return (
@@ -130,7 +101,8 @@ export default function CompareView() {
         <div />
         {products.map((p) => (
           <div key={p.id} className="bg-lab-panel border border-lab-border rounded-xl p-4 text-center">
-            <div className="flex justify-center mb-2">
+            <div className="flex justify-center items-center gap-3 mb-2">
+              <ProductImage src={p.image_url} alt={`${p.brand} ${p.name}`} size={56} />
               <ScoreBadge score={p.score} />
             </div>
             <p className="text-white text-xs font-bold leading-tight">{p.brand}</p>
@@ -148,7 +120,12 @@ export default function CompareView() {
         <Cell head>Serving</Cell>
         {products.map((p) => (
           <Cell key={p.id}>
-            {p.serving_size ? `${p.serving_size}${p.serving_unit || ''}` : '—'}
+            <span>
+              {p.serving_size ? `${p.serving_size}${p.serving_unit || ''}` : '—'}
+              {p.servings_per_container != null && (
+                <span className="block text-[10px] text-lab-muted font-normal">{p.servings_per_container} servings</span>
+              )}
+            </span>
           </Cell>
         ))}
 
@@ -166,7 +143,11 @@ export default function CompareView() {
               <span className={bestValue?.id === p.id ? 'text-lab-lime font-black' : ''}>
                 £{p.cost_per_serving.toFixed(2)}
               </span>
-            ) : '—'}
+            ) : (
+              <span title={trueCostReason(p) ?? undefined}>
+                — <span className="block text-[10px] text-lab-muted font-normal">{trueCostReason(p)}</span>
+              </span>
+            )}
           </Cell>
         ))}
 

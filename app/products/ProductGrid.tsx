@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { Suspense, useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
+import ProductImage from '@/components/ProductImage'
 import { createClient } from '@/lib/supabase'
 import MethodologyModal from '@/components/MethodologyModal'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
-import { sortScored, type ScoredProduct, type SortKey } from '@/lib/products'
+import { sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
 import { buyLink } from '@/lib/affiliate'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { track } from '@/lib/gtag'
@@ -110,41 +111,52 @@ function MiniStars({ value }: { value: number }) {
   )
 }
 
-export default function ProductGrid() {
-  const { inStack, toggle } = useLocalStack()
+const SORT_KEYS: SortKey[] = ['score', 'name', 'brand', 'value', 'budget']
+
+type UrlParams = { category: string; sort: SortKey; q: string; group: string | null }
+
+// Reads the deep-link params (?category= ?sort= ?q= ?group=) and hands them to
+// the grid once on mount. This lives in its own Suspense-wrapped child because
+// useSearchParams() in the grid itself would force the whole statically
+// rendered /products page to bail out to client rendering — which is exactly
+// what put a "Loading…" shell in the HTML crawlers and no-JS users received.
+// Validated against the known category/sort lists so a junk param can't wedge
+// the filter on an empty set.
+function UrlParamSync({ onParams }: { onParams: (p: UrlParams) => void }) {
   const searchParams = useSearchParams()
-  const groupParam = searchParams.get('group')
+  useEffect(() => {
+    const c = searchParams.get('category')
+    const so = searchParams.get('sort')
+    onParams({
+      category: c && CATEGORIES.some((cat) => cat.slug === c) ? c : 'all',
+      sort: so && SORT_KEYS.includes(so as SortKey) ? (so as SortKey) : 'score',
+      q: searchParams.get('q') ?? '',
+      group: searchParams.get('group'),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+  return null
+}
+
+export default function ProductGrid({ initialProducts }: { initialProducts: ScoredProduct[] }) {
+  const { inStack, toggle } = useLocalStack()
+  const [groupParam, setGroupParam] = useState<string | null>(null)
   const groupCategories = useMemo(() => {
     if (!groupParam) return null
     const g = CATEGORY_GROUPS.find((g) => g.slug === groupParam)
     return g ? g.categories : null
   }, [groupParam])
 
-  const [all, setAll] = useState<ScoredProduct[]>([])
+  // Seeded from the server-rendered catalogue, so the first paint (and the raw
+  // HTML) already lists every product. The client refetch below only kicks in
+  // as a fallback if the server fetch came back empty (e.g. a transient DB
+  // hiccup at build / revalidate time).
+  const [all, setAll] = useState<ScoredProduct[]>(initialProducts)
   const [reviewSummary, setReviewSummary] = useState<Record<string, ReviewSummary>>({})
-  const [loading, setLoading] = useState(true)
-  // Seed the category filter from a ?category= URL param so /products?category=creatine
-  // is a real deep-linkable filter. The guide "See all" CTAs and the wizard's per-product
-  // category links both point here, but ProductGrid previously only read ?group=/?q=, so
-  // those links silently landed on the full unfiltered grid. Validated against the known
-  // category slug list so a junk param can't wedge the filter on an empty set.
-  const [category, setCategory] = useState(() => {
-    const c = searchParams.get('category')
-    return c && CATEGORIES.some((cat) => cat.slug === c) ? c : 'all'
-  })
-  // Seed the sort from a ?sort= URL param so /products?sort=value is a real
-  // deep-linkable view (the value/budget pages and value funnel links point here).
-  // Validated against the known sort keys so a junk param can't wedge an invalid sort.
-  const [sort, setSort] = useState<SortKey>(() => {
-    const s = searchParams.get('sort')
-    return s && (['score', 'name', 'brand', 'value', 'budget'] as SortKey[]).includes(s as SortKey)
-      ? (s as SortKey)
-      : 'score'
-  })
-  // Seed the search box from a ?q= URL param so /products?q=creatine is a real
-  // deep-linkable/shareable search (and backs the WebSite SearchAction schema on
-  // the homepage). Lazy initialiser reads the param once on mount.
-  const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
+  const [loading, setLoading] = useState(initialProducts.length === 0)
+  const [category, setCategory] = useState('all')
+  const [sort, setSort] = useState<SortKey>('score')
+  const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<string[]>([])
   const [favs, setFavs] = useState<Set<string>>(new Set())
   // null = auth not resolved yet. Tri-state so FavouriteButton can wait rather
@@ -181,7 +193,9 @@ export default function ProductGrid() {
     return () => { cancelled = true }
   }, [])
 
+  // Fallback only: the catalogue normally arrives server-rendered via props.
   useEffect(() => {
+    if (initialProducts.length > 0) return
     let cancelled = false
     fetch('/api/products?sort=score')
       .then((r) => r.json())
@@ -196,7 +210,7 @@ export default function ProductGrid() {
         setLoading(false)
       })
     return () => { cancelled = true }
-  }, [])
+  }, [initialProducts])
 
   // Per-product review aggregates for the cards (F12). Fetched in parallel; a
   // failure here just leaves cards without a review line — never blocks the grid.
@@ -281,6 +295,16 @@ export default function ProductGrid() {
 
   return (
     <div className="space-y-4 pb-28">
+      <Suspense fallback={null}>
+        <UrlParamSync
+          onParams={(p) => {
+            setCategory(p.category)
+            setSort(p.sort)
+            setQuery(p.q)
+            setGroupParam(p.group)
+          }}
+        />
+      </Suspense>
       {/* dynamic heading */}
       <div className="flex items-start justify-between mb-2">
         <div>
@@ -507,6 +531,9 @@ export default function ProductGrid() {
                 <Link href={`/products/${p.id}`} className="shrink-0 mt-0.5">
                   <ScoreBadge score={p.score} />
                 </Link>
+                <Link href={`/products/${p.id}`} className="shrink-0 mt-0.5 hidden sm:block">
+                  <ProductImage src={p.image_url} alt={`${p.brand} ${p.name}`} size={56} />
+                </Link>
 
                 <div className="min-w-0 flex-1">
                   {/* rank + brand */}
@@ -559,9 +586,16 @@ export default function ProductGrid() {
                   </div>
                 </div>
                 <div className="bg-black/40 rounded-lg p-2 text-center">
-                  <div className="text-[9px] text-lab-muted uppercase tracking-wide">£/serving</div>
-                  <div className="mt-0.5" style={p.cost_per_serving != null ? { fontSize: '12px', fontWeight: 800, color: '#f2f2f2' } : { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>
-                    {p.cost_per_serving != null ? `£${p.cost_per_serving.toFixed(2)}` : 'Pending'}
+                  <div className="text-[9px] text-lab-muted uppercase tracking-wide">True Cost / srv</div>
+                  <div
+                    className="mt-0.5"
+                    title={trueCostReason(p) ?? undefined}
+                    style={p.cost_per_serving != null ? { fontSize: '12px', fontWeight: 800, color: '#f2f2f2' } : { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}
+                  >
+                    {p.cost_per_serving != null ? `£${p.cost_per_serving.toFixed(2)}` : '—'}
+                    {p.cost_per_serving == null && (
+                      <span className="block text-[8px] normal-case tracking-normal leading-tight">{trueCostReason(p)}</span>
+                    )}
                   </div>
                 </div>
                 <div className="bg-black/40 rounded-lg p-2 text-center">
