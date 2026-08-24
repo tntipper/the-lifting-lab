@@ -489,7 +489,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {visible.map((p, i) => {
           const isSel = selected.includes(p.id)
           const isTop = i === 0 && (sort === 'score' || sort === 'value' || sort === 'budget')
@@ -526,13 +526,10 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 borderColor: 'rgba(166,226,46,0.45)',
               } : {}}
             >
-              {/* top row: score + info + fav */}
+              {/* top row: pack shot left, score + fav right */}
               <div className="flex items-start gap-3">
                 <Link href={`/products/${p.id}`} className="shrink-0 mt-0.5">
-                  <ScoreBadge score={p.score} />
-                </Link>
-                <Link href={`/products/${p.id}`} className="shrink-0 mt-0.5 hidden sm:block">
-                  <ProductImage src={p.image_url} alt={`${p.brand} ${p.name}`} size={56} />
+                  <ProductImage src={p.image_url} alt={`${p.brand} ${p.name}`} size={88} />
                 </Link>
 
                 <div className="min-w-0 flex-1">
@@ -553,7 +550,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
 
                   {/* badges */}
                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
+                    <span className="text-[8px] uppercase tracking-widest font-semibold bg-lab-panel-2 text-lab-muted px-1.5 py-0.5 rounded-full">
                       {categoryLabel(p.category)}
                     </span>
                     {p.informed_sport && (
@@ -569,24 +566,29 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   </div>
                 </div>
 
-                <FavouriteButton
-                  productId={p.id}
-                  favourited={favs.has(p.id)}
-                  signedIn={signedIn}
-                  onChange={(fav) => setFav(p.id, fav)}
-                />
+                <div className="shrink-0 flex flex-col items-end gap-2">
+                  <Link href={`/products/${p.id}`} className="shrink-0">
+                    <ScoreBadge score={p.score} size="sm" />
+                  </Link>
+                  <FavouriteButton
+                    productId={p.id}
+                    favourited={favs.has(p.id)}
+                    signedIn={signedIn}
+                    onChange={(fav) => setFav(p.id, fav)}
+                  />
+                </div>
               </div>
 
               {/* 3 metrics mini-grid */}
-              <div className="grid grid-cols-3 gap-2 mt-3">
-                <div className="bg-black/40 rounded-lg p-2 text-center">
-                  <div className="text-[9px] text-lab-muted uppercase tracking-wide">Match</div>
+              <div className="grid grid-cols-3 gap-1.5 mt-2">
+                <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
+                  <div className="text-[8px] text-lab-muted uppercase tracking-wide">Match</div>
                   <div className="text-xs font-bold text-white mt-0.5">
                     {p.score != null ? `${p.score}%` : '—'}
                   </div>
                 </div>
-                <div className="bg-black/40 rounded-lg p-2 text-center">
-                  <div className="text-[9px] text-lab-muted uppercase tracking-wide">True Cost / srv</div>
+                <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
+                  <div className="text-[8px] text-lab-muted uppercase tracking-wide">True Cost / srv</div>
                   <div
                     className="mt-0.5"
                     title={trueCostReason(p) ?? undefined}
@@ -598,8 +600,8 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                     )}
                   </div>
                 </div>
-                <div className="bg-black/40 rounded-lg p-2 text-center">
-                  <div className="text-[9px] text-lab-muted uppercase tracking-wide">Retail</div>
+                <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
+                  <div className="text-[8px] text-lab-muted uppercase tracking-wide">Retail</div>
                   <div className="mt-0.5" style={p.retail_price != null ? { fontSize: '12px', fontWeight: 800, color: '#f2f2f2' } : { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>
                     {p.retail_price != null ? fmt(p.retail_price) : 'Pending'}
                   </div>
@@ -643,7 +645,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               })()}
 
               {/* action row: stack + compare + buy */}
-              <div className="grid grid-cols-3 gap-2 mt-3">
+              <div className="grid grid-cols-3 gap-1.5 mt-2">
                 <button
                   onClick={() => {
                     toggle({ id: p.id, name: p.name, brand: p.brand, category: p.category, score: p.score })
