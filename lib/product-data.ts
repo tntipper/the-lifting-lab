@@ -31,7 +31,25 @@ export async function fetchCatalogue(): Promise<ScoredProduct[]> {
       .select(PRODUCT_COLUMNS)
       .eq('status', 'active')
     if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore), 'score')
+    const products = data as Product[]
+    const ids = products.map((p) => p.id)
+    const { data: nutrients } = ids.length
+      ? await sb
+          .from('product_nutrients')
+          .select('product_id, nutrient_name, amount, unit')
+          .in('product_id', ids)
+      : { data: [] as NutrientRow[] }
+    const rows = (nutrients as NutrientRow[] | null) ?? []
+    const byId = new Map<string, Nutrient[]>()
+    for (const n of rows) {
+      const list = byId.get(n.product_id) ?? []
+      list.push({ nutrient_name: n.nutrient_name, amount: n.amount, unit: n.unit })
+      byId.set(n.product_id, list)
+    }
+    return sortScored(
+      products.map((p) => ({ ...withScore(p), nutrients: byId.get(p.id) ?? [] })),
+      'score',
+    )
   } catch {
     return []
   }

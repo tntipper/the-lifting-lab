@@ -11,6 +11,7 @@ import MethodologyModal from '@/components/MethodologyModal'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
+import { cardHighlights } from '@/lib/card-highlights'
 import { buyLink } from '@/lib/affiliate'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { track } from '@/lib/gtag'
@@ -533,16 +534,15 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 </Link>
 
                 <div className="min-w-0 flex-1">
-                  {/* rank + brand */}
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    {medal && <span className="text-sm leading-none">{medal}</span>}
+                  {/* brand + title share the same left edge; medal sits after the brand */}
+                  <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
                     <span
                       className="text-[11px] uppercase tracking-widest font-bold truncate"
                       style={{ color: '#2E8FE0', textShadow: '0 1px 2px rgba(0,0,0,0.7), 0 0 8px rgba(46,143,224,0.35)' }}
                     >{p.brand}</span>
+                    {medal && <span className="text-sm leading-none shrink-0">{medal}</span>}
                   </div>
-                  {/* product name */}
-                  <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors">
+                  <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors block min-w-0">
                     <p className="text-white text-sm font-black leading-tight">
                       {p.name} <span className="text-lab-lime text-xs">›</span>
                     </p>
@@ -559,7 +559,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                       </span>
                     )}
                     {isTop && (
-                      <span className="text-[10px] uppercase tracking-widest font-bold text-white/60 border border-white/15 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] uppercase tracking-widest font-black bg-lab-lime text-black px-2 py-0.5 rounded-full">
                         {topLabel}
                       </span>
                     )}
@@ -578,6 +578,24 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   />
                 </div>
               </div>
+
+              {(() => {
+                const highlights = cardHighlights(p.category, p.nutrients)
+                if (!highlights.length) return null
+                const cols = `repeat(${highlights.length}, minmax(0, 1fr))`
+                return (
+                  <div className="grid gap-1.5 mt-2" style={{ gridTemplateColumns: cols }}>
+                    {highlights.map((h) => (
+                      <div key={h.label} className="bg-black/30 rounded-md px-1.5 py-1 text-center min-w-0">
+                        <div className="text-[8px] text-lab-muted uppercase tracking-wide truncate">{h.label}</div>
+                        <div className="text-xs font-bold mt-0.5" style={{ color: h.value === '\u2014' ? 'rgba(255,255,255,0.35)' : '#f2f2f2' }}>
+                          {h.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
 
               {/* 3 metrics mini-grid */}
               <div className="grid grid-cols-3 gap-1.5 mt-2">
