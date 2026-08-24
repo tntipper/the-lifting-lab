@@ -20,7 +20,7 @@ function findNutrient(nutrients: Nutrient[], aliases: string[], loose = true): N
 function fmt(n: Nutrient | undefined): string {
   if (!n || n.amount == null || Number.isNaN(Number(n.amount))) return '\u2014'
   const unit = (n.unit ?? '').trim()
-  return unit ? ${n.amount} : String(n.amount)
+  return unit ? `${n.amount} ${unit}` : String(n.amount)
 }
 
 type AliasSlot = { kind: 'alias'; label: string; aliases: string[] }
