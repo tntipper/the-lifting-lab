@@ -77,11 +77,11 @@ export default function ProductDetailPage({
         </span>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 space-y-6">
         {/* hero */}
-        <div className="flex flex-col items-center text-center gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:text-left items-center text-center gap-6 lg:gap-10">
           <div className="flex items-center gap-5">
-            <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={110} />
+            <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} />
             <ScoreBadge score={product.score} size="lg" />
           </div>
           <div>
@@ -247,7 +247,7 @@ export default function ProductDetailPage({
 
       {/* sticky action bar */}
       <div className="fixed bottom-0 inset-x-0 z-30 bg-lab-panel-2 border-t border-lab-border">
-        <div className="max-w-2xl mx-auto px-4 py-3 grid grid-cols-3 gap-2">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-3 grid grid-cols-3 gap-2">
           <button
             onClick={() => {
               toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
