@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createPublicClient } from '@/lib/supabase-public'
-import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type SortKey } from '@/lib/products'
+import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type Nutrient, type SortKey } from '@/lib/products'
 
 const VALID_SORTS: SortKey[] = ['score', 'name', 'brand', 'value', 'budget']
 
@@ -19,6 +19,21 @@ export async function GET(request: Request) {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const scored = (data as Product[] | null || []).map(withScore)
+  const products = (data as Product[] | null) || []
+  const ids = products.map((p) => p.id)
+  const { data: nutrients } = ids.length
+    ? await sb
+        .from('product_nutrients')
+        .select('product_id, nutrient_name, amount, unit')
+        .in('product_id', ids)
+    : { data: [] as (Nutrient & { product_id: string })[] }
+  const rows = (nutrients as (Nutrient & { product_id: string })[] | null) ?? []
+  const byId = new Map<string, Nutrient[]>()
+  for (const n of rows) {
+    const list = byId.get(n.product_id) ?? []
+    list.push({ nutrient_name: n.nutrient_name, amount: n.amount, unit: n.unit })
+    byId.set(n.product_id, list)
+  }
+  const scored = products.map((p) => ({ ...withScore(p), nutrients: byId.get(p.id) ?? [] }))
   return NextResponse.json(sortScored(scored, sort))
 }

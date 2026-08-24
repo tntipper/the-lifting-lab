@@ -21,6 +21,7 @@ export type Product = {
 export type ScoredProduct = Product & {
   score: number | null
   cost_per_serving: number | null
+  nutrients?: Nutrient[]
 }
 
 export type Nutrient = {

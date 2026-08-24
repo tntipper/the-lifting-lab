@@ -15,3 +15,29 @@ export function track(event: string, params: GtagParams = {}): void {
   if (typeof window === 'undefined' || typeof window.gtag !== 'function') return
   window.gtag('event', event, params)
 }
+
+function outboundHost(href: string): string | undefined {
+  try {
+    return new URL(href).hostname
+  } catch {
+    return undefined
+  }
+}
+
+// Affiliate Buy click. Mark buy_click as a conversion in GA4 Admin → Events;
+// that cannot be set from code.
+export function trackBuyClick(params: {
+  product_id: string
+  product_name: string
+  brand: string
+  category: string
+  href: string
+}): void {
+  track('buy_click', {
+    product_id: params.product_id,
+    product_name: params.product_name,
+    brand: params.brand,
+    category: params.category,
+    outbound_host: outboundHost(params.href),
+  })
+}
