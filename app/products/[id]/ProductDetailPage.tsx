@@ -8,7 +8,7 @@ import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
 import { buyLink } from '@/lib/affiliate'
-import { track } from '@/lib/gtag'
+import { track, trackBuyClick } from '@/lib/gtag'
 import { trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
@@ -271,7 +271,16 @@ export default function ProductDetailPage({
             href={buyLink(product.brand, product.name, product.buy_url)}
             target="_blank"
             rel="noopener noreferrer nofollow"
-            onClick={() => track('buy_click', { item_brand: product.brand, item_name: product.name })}
+            onClick={() => {
+              const href = buyLink(product.brand, product.name, product.buy_url)
+              trackBuyClick({
+                product_id: product.id,
+                product_name: product.name,
+                brand: product.brand,
+                category: product.category,
+                href,
+              })
+            }}
             className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
           >
             Buy Now →

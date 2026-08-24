@@ -14,7 +14,7 @@ import { sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/
 import { cardHighlights } from '@/lib/card-highlights'
 import { buyLink } from '@/lib/affiliate'
 import { GUIDE_SLUGS } from '@/lib/guides'
-import { track } from '@/lib/gtag'
+import { track, trackBuyClick } from '@/lib/gtag'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
 
@@ -692,7 +692,16 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   href={buyLink(p.brand, p.name, p.buy_url)}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
+                  onClick={() => {
+                    const href = buyLink(p.brand, p.name, p.buy_url)
+                    trackBuyClick({
+                      product_id: p.id,
+                      product_name: p.name,
+                      brand: p.brand,
+                      category: p.category,
+                      href,
+                    })
+                  }}
                   className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl transition-all"
                   style={isTop ? {
                     background: 'linear-gradient(145deg, color-mix(in srgb, #a6e22e 80%, #fff), #a6e22e 45%, color-mix(in srgb, #a6e22e 72%, #000))',
