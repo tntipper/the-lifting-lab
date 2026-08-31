@@ -39,12 +39,35 @@ export function withScore<T extends { brand: string; name: string; servings_per_
   p: T,
 ): T & { score: number | null; cost_per_serving: number | null } {
   const score = scoreFor(p.brand, p.name)
-  const cost_per_serving =
-    p.retail_price != null && p.servings_per_container != null && p.servings_per_container > 0
+  // cost_per_serving is only derived when BOTH inputs are real, positive
+  // figures. A missing or £0 retail price, or a missing/zero servings count,
+  // yields null — never 0 — so an incomplete record can never be ranked as
+  // "cheapest" or "best value" (TLL-P0-3).
+  const raw =
+    p.retail_price != null &&
+    p.retail_price > 0 &&
+    p.servings_per_container != null &&
+    p.servings_per_container > 0
       ? Math.round((p.retail_price / p.servings_per_container) * 100) / 100
       : null
+  const cost_per_serving = raw != null && raw > 0 ? raw : null
   return { ...p, score, cost_per_serving }
 }
+
+/**
+ * True only when a product carries a verified, positive cost-per-serving figure
+ * derived from real price + servings data. Every cost-based ranking, award or
+ * "best value" badge must gate on this (TLL-P0-3): products without it are
+ * excluded from the ranking (or badged unverified), never treated as £0.
+ */
+export function hasVerifiedCost<T extends { cost_per_serving: number | null }>(
+  p: T,
+): p is T & { cost_per_serving: number } {
+  return p.cost_per_serving != null && Number.isFinite(p.cost_per_serving) && p.cost_per_serving > 0
+}
+
+/** Label shown wherever a product's per-serving cost is missing or unverified. */
+export const UNVERIFIED_COST_LABEL = 'Price unverified'
 
 export type SortKey = 'score' | 'name' | 'brand' | 'value' | 'budget'
 
@@ -54,15 +77,15 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
     if (sort === 'name') return a.name.localeCompare(b.name)
     if (sort === 'brand') return a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
     if (sort === 'value') {
-      // Score per £ per serving — highest ratio first; unpriced last
-      const va = a.score != null && a.cost_per_serving != null ? a.score / a.cost_per_serving : -1
-      const vb = b.score != null && b.cost_per_serving != null ? b.score / b.cost_per_serving : -1
+      // Score per £ per serving — highest ratio first; unverified cost last
+      const va = a.score != null && hasVerifiedCost(a) ? a.score / a.cost_per_serving : -1
+      const vb = b.score != null && hasVerifiedCost(b) ? b.score / b.cost_per_serving : -1
       return vb - va
     }
     if (sort === 'budget') {
-      // Cheapest per serving among scored products; unpriced last
-      const ca = a.cost_per_serving ?? Infinity
-      const cb = b.cost_per_serving ?? Infinity
+      // Cheapest per serving among verified-cost products; unverified last
+      const ca = hasVerifiedCost(a) ? a.cost_per_serving : Infinity
+      const cb = hasVerifiedCost(b) ? b.cost_per_serving : Infinity
       return ca - cb
     }
     // default: score highest first, unscored last
@@ -77,10 +100,11 @@ export function trueCostReason(p: {
   retail_price: number | null
   servings_per_container: number | null
 }): string | null {
-  if (p.retail_price != null && p.servings_per_container != null && p.servings_per_container > 0) return null
-  if (p.retail_price == null && (p.servings_per_container == null || p.servings_per_container <= 0)) {
-    return 'no retail price or servings on file'
-  }
-  if (p.retail_price == null) return 'no retail price on file'
+  // Mirrors withScore(): a price must be a real positive figure to count.
+  const priceOk = p.retail_price != null && p.retail_price > 0
+  const servingsOk = p.servings_per_container != null && p.servings_per_container > 0
+  if (priceOk && servingsOk) return null
+  if (!priceOk && !servingsOk) return 'no verified retail price or servings on file'
+  if (!priceOk) return 'no verified retail price on file'
   return 'servings per container unknown'
 }

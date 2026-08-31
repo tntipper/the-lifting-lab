@@ -205,6 +205,7 @@ export default async function StackPage({
             <div className="space-y-3">
               {picks.map((p, i) => {
                 const hasGuide = GUIDE_SLUGS.includes(p.category)
+                const href = buyLink(p.brand, p.name, p.buy_url)
                 return (
                   <div
                     key={p.id}
@@ -235,7 +236,7 @@ export default async function StackPage({
                         )}
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div className={`grid ${href ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mt-3`}>
                       <Link
                         href={`/products/${p.id}`}
                         className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border border-lab-border text-lab-muted hover:text-white transition-colors"
@@ -257,19 +258,21 @@ export default async function StackPage({
                           See all
                         </Link>
                       )}
-                      <a
-                        href={buyLink(p.brand, p.name, p.buy_url)}
-                        target="_blank"
-                        rel="noopener noreferrer nofollow"
-                        className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
-                        style={{
-                          background: 'rgba(166,226,46,0.12)',
-                          color: '#a6e22e',
-                          border: '1px solid rgba(166,226,46,0.5)',
-                        }}
-                      >
-                        Buy
-                      </a>
+                      {href && (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
+                          style={{
+                            background: 'rgba(166,226,46,0.12)',
+                            color: '#a6e22e',
+                            border: '1px solid rgba(166,226,46,0.5)',
+                          }}
+                        >
+                          Buy
+                        </a>
+                      )}
                     </div>
                   </div>
                 )

@@ -409,6 +409,7 @@ function PickCard({
   brand: string
   winner: boolean
 }) {
+  const href = buyLink(product.brand, product.name, product.buy_url)
   return (
     <div className="flex flex-col items-center text-center">
       <ScoreBadge score={product.score} />
@@ -422,19 +423,21 @@ function PickCard({
       {winner && (
         <p className="mt-1 text-[9px] uppercase tracking-widest font-black text-lab-lime">★ Winner</p>
       )}
-      <a
-        href={buyLink(product.brand, product.name, product.buy_url)}
-        target="_blank"
-        rel="noopener noreferrer nofollow"
-        className="mt-2 w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg"
-        style={{
-          background: 'rgba(166,226,46,0.12)',
-          color: '#a6e22e',
-          border: '1px solid rgba(166,226,46,0.5)',
-        }}
-      >
-        Buy →
-      </a>
+      {href && (
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          className="mt-2 w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg"
+          style={{
+            background: 'rgba(166,226,46,0.12)',
+            color: '#a6e22e',
+            border: '1px solid rgba(166,226,46,0.5)',
+          }}
+        >
+          Buy →
+        </a>
+      )}
     </div>
   )
 }

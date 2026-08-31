@@ -6,6 +6,7 @@
 // products in each category, reusing the same product slug + score/value logic
 // as the /vs matchup pages. No new data needed.
 import { productSlug } from '@/lib/matchups'
+import { hasVerifiedCost } from '@/lib/products'
 
 // How many products per category get their own alternatives page (the curated,
 // pre-rendered + sitemap-indexed subset). Keeps the surface to products people
@@ -33,7 +34,8 @@ export function valueRatio(p: {
   score: number | null
   cost_per_serving: number | null
 }): number | null {
-  if (p.score == null || p.cost_per_serving == null || p.cost_per_serving <= 0) return null
+  // Unverified (missing/£0) cost never yields a value ratio (TLL-P0-3).
+  if (p.score == null || !hasVerifiedCost(p)) return null
   return p.score / p.cost_per_serving
 }
 

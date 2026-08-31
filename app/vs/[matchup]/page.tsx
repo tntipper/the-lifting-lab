@@ -9,6 +9,7 @@ import { buyLink } from '@/lib/affiliate'
 import { createPublicClient } from '@/lib/supabase-public'
 import {
   PRODUCT_COLUMNS,
+  hasVerifiedCost,
   withScore,
   type Product,
   type Nutrient,
@@ -127,7 +128,7 @@ export default async function MatchupPage({
   // best value: highest score per £/serving
   const valued = products.filter(
     (p): p is ComparedProduct & { score: number; cost_per_serving: number } =>
-      p.score != null && p.cost_per_serving != null && p.cost_per_serving > 0,
+      p.score != null && hasVerifiedCost(p), // unverified cost never competes (TLL-P0-3)
   )
   const bestValue = valued.length
     ? valued.reduce((x, y) => (y.score / y.cost_per_serving > x.score / x.cost_per_serving ? y : x))
@@ -331,18 +332,23 @@ export default async function MatchupPage({
           )}
 
           <div />
-          {products.map((p) => (
-            <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
-              <a
-                href={buyLink(p.brand, p.name, p.buy_url)}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
-              >
-                Buy →
-              </a>
-            </div>
-          ))}
+          {products.map((p) => {
+            const href = buyLink(p.brand, p.name, p.buy_url)
+            return (
+              <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
+                {href && (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
+                  >
+                    Buy →
+                  </a>
+                )}
+              </div>
+            )
+          })}
         </div>
         <p className="text-[9px] text-lab-muted/40 text-right mt-1">affiliate links · open in a new tab</p>
 

@@ -204,6 +204,7 @@ export default async function WatchOutsPage() {
                   const slug = w.category
                   const hasGuide = GUIDE_SLUGS.includes(slug)
                   const best = w.best
+                  const href = buyLink(best.brand, best.name, best.buy_url)
                   return (
                     <div key={slug} className="mb-8">
                       <h3 className="text-sm font-black uppercase tracking-widest text-white/80 mb-3">
@@ -285,7 +286,7 @@ export default async function WatchOutsPage() {
                             )}
                           </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 mt-3">
+                        <div className={`grid ${href ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mt-3`}>
                           <Link
                             href={`/products/${best.id}`}
                             className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border border-lab-border text-lab-muted hover:text-white transition-colors"
@@ -307,19 +308,21 @@ export default async function WatchOutsPage() {
                               See all
                             </Link>
                           )}
-                          <a
-                            href={buyLink(best.brand, best.name, best.buy_url)}
-                            target="_blank"
-                            rel="noopener noreferrer nofollow"
-                            className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
-                            style={{
-                              background: 'rgba(166,226,46,0.12)',
-                              color: '#a6e22e',
-                              border: '1px solid rgba(166,226,46,0.5)',
-                            }}
-                          >
-                            Buy
-                          </a>
+                          {href && (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer nofollow"
+                              className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
+                              style={{
+                                background: 'rgba(166,226,46,0.12)',
+                                color: '#a6e22e',
+                                border: '1px solid rgba(166,226,46,0.5)',
+                              }}
+                            >
+                              Buy
+                            </a>
+                          )}
                         </div>
                       </div>
                     </div>

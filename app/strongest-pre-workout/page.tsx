@@ -129,6 +129,7 @@ export default async function StrongestPreWorkoutPage() {
     const highStim = r.caffeineMg > HIGH_STIM_MG
     const baHit = r.betaAlanineG != null && r.betaAlanineG >= BETA_ALANINE_TARGET_G
     const citHit = r.citrullineG != null && r.citrullineG >= CITRULLINE_TARGET_G
+    const href = buyLink(r.brand, r.name, r.buy_url)
     return (
       <div
         key={r.id}
@@ -184,7 +185,7 @@ export default async function StrongestPreWorkoutPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mt-3">
+        <div className={`grid ${href ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mt-3`}>
           <Link
             href={`/products/${r.id}`}
             className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border border-lab-border text-lab-muted hover:text-white transition-colors"
@@ -197,19 +198,21 @@ export default async function StrongestPreWorkoutPage() {
           >
             Guide
           </Link>
-          <a
-            href={buyLink(r.brand, r.name, r.buy_url)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
-            style={{
-              background: 'rgba(166,226,46,0.12)',
-              color: '#a6e22e',
-              border: '1px solid rgba(166,226,46,0.5)',
-            }}
-          >
-            Buy
-          </a>
+          {href && (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
+              style={{
+                background: 'rgba(166,226,46,0.12)',
+                color: '#a6e22e',
+                border: '1px solid rgba(166,226,46,0.5)',
+              }}
+            >
+              Buy
+            </a>
+          )}
         </div>
       </div>
     )

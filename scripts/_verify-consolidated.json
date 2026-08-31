@@ -1,0 +1,943 @@
+[
+  {
+    "id": "be251f51-6584-43fe-b9e8-9c7c80bb0d19",
+    "brand": "MyProtein",
+    "name": "Creapure Creatine",
+    "serving_size": 3.4,
+    "serving_unit": "g",
+    "servings_per_container": 147,
+    "final_confidence": "med",
+    "sources": [
+      "https://www.myprotein.com/p/sports-nutrition/the-creatine-creapure/10529740/",
+      "https://www.boots.com/myprotein-the-creatine-powder-creapure-500g-10376371"
+    ],
+    "note": "Official MyProtein page states serving 3.4g (=3g creatine). Page default size is 500g listed at £36.49 (RRP £39.99); Boots lists both 250g and 500g SKUs. The £25 row price is below the current sale price but MyProtein routinely discounts the 500g via codes; cur_spc=147 (=500/3.4) and the buy_url default both point to 500g, so reported as 500g = ~147 servings. Serving size cross-confirmed at 3.4g on two sources. Med because the £25 price does not cleanly map to a current advertised pack price (250g would be ~73 servings)."
+  },
+  {
+    "id": "08cea092-e58a-46fb-80d4-343e7ae50170",
+    "brand": "PhD Nutrition",
+    "name": "Creapure Creatine",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "servings_per_container": 110,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.zavvi.com/nutrition-and-supplements/phd-nutrition-creatine-monohydrate/10665439.html",
+      "https://www.lookfantastic.com/p/nutrition-and-supplements/phd-nutrition-creatine-monohydrate/10665439/"
+    ],
+    "note": "buy_url was null. PhD Creatine Monohydrate sells in 250g (~£14-17, ~50 servings) and 550g. The £30 row price matches the 550g bottle (Zavvi/THG lists 550g at £29.99). Zavvi and LookFantastic (and Amazon/SuperfoodUK) agree: 550g, 5g serving, 110 servings per container. Note PhD's own 250g page quotes a 3g scoop, but the retail 550g listing consistently states 5g/110 servings."
+  },
+  {
+    "id": "a3f45925-cabd-4a7b-bca8-837824a3f891",
+    "brand": "CNP",
+    "name": "Pro Creatine",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "servings_per_container": 50,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.discount-supplements.co.uk/products/cnp-pro-creatine-250g",
+      "https://www.proteinpickandmix.co.uk/cnp-creatine-monohydrate-powder-50-servings/"
+    ],
+    "note": "buy_url was null. £11.99 row matches the 250g pack (Discount Supplements £12.99). Two sources agree: 250g, 5g per scoop, 50 servings per container. CNP also makes a 500g (~100 servings) but the price points to the 250g."
+  },
+  {
+    "id": "e70ad247-7a3e-4871-932e-8509b36a211b",
+    "brand": "Bio-Synergy",
+    "name": "Creatine Plus®",
+    "serving_size": 4,
+    "serving_unit": "capsule",
+    "servings_per_container": 93,
+    "final_confidence": "med",
+    "sources": [
+      "https://bio-synergy.uk/products/bio-synergy-creatine-plus%C2%AE-phase-1-2",
+      "https://www.superdrug.com/health/diet-fitness/pre-work-out-powder-supplements/bio-synergy-creatine-plus-phase-1-and-phase-2-375-capsules/p/mp-00103299"
+    ],
+    "note": "The given buy_url pointed to the 125-capsule 'Strength' SKU (£21.99), but the £49.99 row price matches the larger 'Creatine Plus Phase 1 & 2' 375-capsule pack (official site confirms £49.99, 375 caps; Superdrug confirms 375 caps). Dosing is two-phase: loading 5 caps x5/day for 5 days, then maintenance 4 caps/day. servings_per_container reported on the maintenance dose: (375 - 125 loading caps) / 4 = ~93 maintenance servings; serving_size=4 capsules (maintenance). Med due to the unusual two-phase protocol and the buy_url pointing to a different (smaller) SKU than the price implies."
+  },
+  {
+    "id": "6b79b914-ae67-492f-aaef-ee607fde0074",
+    "brand": "Myprotein",
+    "name": "Crispy Layered Bar (White Chocolate Peanut)",
+    "serving_size": 58,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.myprotein.com/p/sports-nutrition/crispy-layered-protein-bar/12856629/"
+    ],
+    "note": "Official MyProtein page: single bar weighs 58g; sold as a box of 12 at £13.99-£18.99. The £1.60 row price is a SINGLE bar (per-bar price), so servings_per_container=1. Bar weight 58g confirmed and matches cur_ss. (A box listing would be servings_per_container=12.)"
+  },
+  {
+    "id": "3099922b-46a2-4767-87ee-3359e47729b5",
+    "brand": "Optimum Nutrition",
+    "name": "Micronised Creatine Powder",
+    "serving_size": 3.4,
+    "serving_unit": "g",
+    "servings_per_container": 93,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.amazon.co.uk/Optimum-Nutrition-Micronised-Monohydrate-Development/dp/B00T7L20AQ",
+      "https://proteinpackage.co.uk/products/optimum-nutrition-micronised-creatine-monohydrate"
+    ],
+    "note": "Established UK retail SKUs are 317g = 93 servings and 634g = 186 servings, at 3.4g creatine per serving (Amazon, Protein Package, eBay, Tesco all agree). The £20 row price matches the 317g / 93-serving pack (Tesco £22 / Clubcard £16; ~£20 elsewhere). cur values (4.5g / 55 servings) came from the official-page 247.5g flavoured SKU and were corrected: the £20 unflavoured pack is 317g, 3.4g serving, 93 servings."
+  },
+  {
+    "id": "87467312-0a01-4f48-9022-184c8a8e705c",
+    "brand": "Optimum Nutrition",
+    "name": "Platinum Creatine Plus",
+    "serving_size": 7,
+    "serving_unit": "g",
+    "servings_per_container": 50,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.optimumnutrition.com/en-gb/products/platinum-creatine-plus-powder"
+    ],
+    "note": "Official ON UK page states explicitly: 350g tub, serving 7g (~2 level scoops), 50 servings per container, recommended 1 serving/day. Matches the £24.99 row price (RRP £35 on official page). Unambiguous explicit servings statement; matches cur values."
+  },
+  {
+    "id": "cc01d814-fe1a-42a8-afbd-465348aad757",
+    "brand": "HR Labs",
+    "name": "Defend",
+    "serving_size": null,
+    "serving_unit": null,
+    "servings_per_container": null,
+    "final_confidence": "low",
+    "sources": [
+      "https://hr-labs.co.uk/collections/all",
+      "https://www.proteinpickandmix.co.uk/hr-labs-supplements/"
+    ],
+    "note": "Unresolvable. buy_url was null. No product named 'Defend' appears on HR Labs' own site (hr-labs.co.uk home page and /collections/all) nor on UK retailers that stock HR Labs (Protein Pick & Mix, Dolphin Fitness, etc.). HR Labs' current capsule range is Fever40, KSM-66 Ashwagandha, Ride On, Rest Up, MyQ, Vitamin D3 - no cycle-support 'Defend'. Every web search for 'Defend cycle support' returns the unrelated US 'Huge Supplements Defend' (different brand: 120/240/360 caps, 4 caps x3/day). Could not confirm an HR Labs Defend product page, pack size, or serving data after checking 4+ pages. Values left null."
+  },
+  {
+    "id": "23ceaea7-3908-423f-b772-8fa750d3704d",
+    "brand": "CNP Professional",
+    "name": "Organ Pro / Organ Fix",
+    "serving_size": null,
+    "serving_unit": "capsule",
+    "servings_per_container": null,
+    "final_confidence": "low",
+    "sources": [
+      "https://cnpprofessional.co.uk/collections/supplements",
+      "https://www.discount-supplements.co.uk/collections/cnp"
+    ],
+    "note": "Could not verify. CNP Professional's official site is locked for maintenance and no current CNP catalog or UK retailer lists a product named 'Organ Pro' or 'Organ Fix'. CNP only sells Milk Thistle (30 caps) in the liver/organ space, not a combined on-cycle organ product. Likely discontinued, rebranded, or a data-entry error. Unresolvable after multiple searches/sites."
+  },
+  {
+    "id": "f7cc7239-ca28-47e2-93a9-0068c460da2c",
+    "brand": "Conteh Sports",
+    "name": "Vitality",
+    "serving_size": 3,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "med",
+    "sources": [
+      "https://contehsports.com/products/organ-defence-vital-organ-support",
+      "https://nisupplements.com/products/conteh-sports-organ-defence-vital-organ-support"
+    ],
+    "note": "NAME MISMATCH: Conteh Sports has no product named 'Vitality'. The only Conteh cycle-support/organ product is 'Organ Defence - Vital Organ Support' (note 'Vital' in subtitle - likely source of the 'Vitality' label). Two sources confirm Organ Defence = 90 capsules, 3 caps/serving, 30 servings, listed at GBP 39.99 (row price GBP 34.99, plausible retailer variation). Serving data confident; product-identity inference lowers confidence to med."
+  },
+  {
+    "id": "6774996b-6f6f-4e67-bd31-b93213cea022",
+    "brand": "Combat Fuel",
+    "name": "Cycle Support",
+    "serving_size": 4,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://combat-fuel.co.uk/product/supportmax-ocs/",
+      "https://www.stromsports.com/products/strom-presents-supportmax"
+    ],
+    "note": "Combat Fuel's cycle-support product is 'SupportMAX OCS' (same formula as Strom Sports SupportMAX OCS). Official title states '30 SERVINGS'; multiple retailers confirm 120 capsules, 4 caps/serving = 30 servings. Priced ~GBP 32.99."
+  },
+  {
+    "id": "29f1d6fb-5e8f-4c9e-b9a9-9c2a5af1c58b",
+    "brand": "Alpha Club",
+    "name": "Alpha Shield",
+    "serving_size": null,
+    "serving_unit": "capsule",
+    "servings_per_container": null,
+    "final_confidence": "low",
+    "sources": [
+      "https://alphaclubsupps.co.uk/",
+      "https://prohormonedb.com/view-supplement.asp?n=Organ+Shield&i=81"
+    ],
+    "note": "Could not verify. Alpha Club Supplements is a small/new UK brand; all product pages on alphaclubsupps.co.uk return 404 / fail to load, and no retailer indexes Alpha Shield's specs. Search snippets describe it as an immune/organ support capsule but give no serving size or capsule count. Unresolvable after multiple sites incl. Wayback (inaccessible)."
+  },
+  {
+    "id": "06ca0109-8e25-481b-b67a-0965d8d737a5",
+    "brand": "Alpha Neon",
+    "name": "Synergiz (Maximum Organ Support)",
+    "serving_size": 4,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://alphaneontm.com/products/synergiz",
+      "https://www.dolphinfitness.co.uk/en/alpha-neon-synergiz-120-capsules/407437"
+    ],
+    "note": "Two sources confirm 120 capsules, 4 caps/serving = 30 servings. Official dosage: 'Take 4 capsules daily'. Listed GBP 39.99 official / GBP 34.99 at some retailers (matches row)."
+  },
+  {
+    "id": "7d1a4561-ef23-488e-aa33-f1b0e6f78a51",
+    "brand": "Chemical Warfare",
+    "name": "Organ Shield",
+    "serving_size": 3,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.chemical-warfare.com/products/bomb-proof-organ-support-90-caps",
+      "https://www.theboxsupplements.co.uk/products/chemical-warfare-on-cycle-organ-support-90caps"
+    ],
+    "note": "Chemical Warfare's on-cycle organ support product ('Bomb Proof Organ Support', 90 Caps). Official page: take 3 capsules daily, 90 caps = 30 servings. Official price GBP 34.99 (row GBP 29.99, retailer variation). Only one pack size exists."
+  },
+  {
+    "id": "8ddfc493-0872-4235-ba25-5091ef172b49",
+    "brand": "Warrior",
+    "name": "Crunch Bar (White Chocolate Crisp)",
+    "serving_size": 64,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.tesco.com/groceries/en-GB/products/310154378",
+      "https://teamwarrior.com/products/warrior-crunch-protein-bars-12s"
+    ],
+    "note": "64g single bar confirmed across Amazon, Tesco, ASDA, and Team Warrior. Row price GBP 2.00 = single bar (Tesco/ASDA single ~GBP 2; box of 12 is ~GBP 20+). servings_per_container = 1."
+  },
+  {
+    "id": "e4fd101e-4969-4054-92ab-f02d4cb3d494",
+    "brand": "Myprotein",
+    "name": "Layered Protein Bar (Salted Caramel)",
+    "serving_size": 60,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.myprotein.com/p/sports-nutrition/layered-protein-bar/13032821/",
+      "https://us.myprotein.com/p/sports-nutrition/layered-bar-single/15298281/"
+    ],
+    "note": "Myprotein Layered Protein Bar = 60g per bar (nutrition stated 'per 60g'), 20g protein. Sold as single bars. Row price GBP 1.80 = single bar (single retails ~GBP 1.80-2.49). servings_per_container = 1."
+  },
+  {
+    "id": "0aa95107-59ac-4c3c-bec9-afc1b10efcb8",
+    "brand": "Quest Nutrition",
+    "name": "Quest Bar (Chocolate Chip Cookie Dough)",
+    "serving_size": 60,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.questnutrition.com/products/chocolate-chip-cookie-dough-protein-bar",
+      "https://uk.iherb.com/pr/quest-nutrition-protein-bar-chocolate-chip-cookie-dough-12-bars-2-12-oz-60-g-each/63559",
+      "https://www.amazon.co.uk/Quest-Nutrition-Chocolate-Cookie-Protein/dp/B00DLDH1N2"
+    ],
+    "note": "Official Quest site and UK retailers confirm 60g per bar. £2.50 retail = single-priced bar, so spc=1. Two sources agree on 60g."
+  },
+  {
+    "id": "f951cf02-9536-4e73-ac62-17bb7a8a33d0",
+    "brand": "Yfood",
+    "name": "Classic (Choco)",
+    "serving_size": 500,
+    "serving_unit": "ml",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://uk.yfood.com/products/drink-classic-choco-en",
+      "https://www.tesco.com/groceries/en-GB/products/315351845",
+      "https://www.sainsburys.co.uk/gol-ui/product/yfood-this-is-food-classic-choco-500ml"
+    ],
+    "note": "Yfood Classic Choco is a 500ml ready-to-drink bottle (one bottle = one meal/serving). £3.50 retail matches a single 500ml bottle at Tesco/Sainsbury's, so spc=1. Multiple sources confirm 500ml."
+  },
+  {
+    "id": "0379e5a9-bdae-4b68-aee2-787a3314fd08",
+    "brand": "Grenade",
+    "name": "Carb Killa (Chocolate Chip Salted Caramel)",
+    "serving_size": 60,
+    "serving_unit": "bar",
+    "servings_per_container": 12,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.grenade.com/products/protein-bar-chocolate-salted-caramel"
+    ],
+    "note": "Official Grenade page: '1 Box Contains 12 x (60g) ... Protein Bars'. £22.99 retail matches a box of 12. Explicit single-source statement. Existing data confirmed correct."
+  },
+  {
+    "id": "706e3947-460b-4253-9810-c88919dd5ecd",
+    "brand": "Nutrition Geeks",
+    "name": "Vitamin D 4000iu Max Strength",
+    "serving_size": 1,
+    "serving_unit": "tablet",
+    "servings_per_container": 365,
+    "final_confidence": "high",
+    "sources": [
+      "https://nutritiongeeks.co/products/vitamin-d-4000iu-max-strength-immune-support"
+    ],
+    "note": "Official page: 'Take 1 tablet daily', 'Each pack contains 365 tablets (12 months supply)'. Explicit statement. Existing data confirmed correct."
+  },
+  {
+    "id": "7da1faee-bd26-4b52-a718-3bbf5f3ab03b",
+    "brand": "PhD Nutrition",
+    "name": "Smart Bar (Cookies & Cream)",
+    "serving_size": 64,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.phd.com/phd-smart-bar-cookies-cream-12-x-64g"
+    ],
+    "note": "Official PhD page: 12-pack of 64g bars (URL and listing both state 12 x 64g). Note: the row retail_price of £2.30 reflects a single-bar price, but pack size on the official 12x64g page is a box of 12; servings reported for the box of 12 per existing high-confidence data. Single-bar price suggests this row may be intended as a single bar (spc=1, 64g). Reported spc=12 to match the explicit official multipack URL; if site sells per-bar at £2.30, spc=1.",
+    "_barFixed": true
+  },
+  {
+    "id": "290eb8dc-d5a7-4b25-a029-a145bfcc12f3",
+    "brand": "Naughty Boy",
+    "name": "Life Pac / Life Support",
+    "serving_size": 1,
+    "serving_unit": "pack",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://naughtyboylifestyle.com/products/naughty-boy-prime-life-pac",
+      "https://www.amazon.co.uk/NAUGHTY-BOY-Life-PAC-Multivitamin/dp/B0BHJ83MSD",
+      "https://www.activesportsnutrition.co.uk/naughty-boy-prime-life-pac"
+    ],
+    "note": "One serving = contents of 1 Life Pac (6 supplements) daily per official page. Box contains 30 packs = 30 day supply (confirmed by Amazon UK and multiple retailers). serving_unit retained as 'pack'; spc resolved to 30. £39.99 matches single 30-pack box."
+  },
+  {
+    "id": "1cfa7540-1982-4a71-9717-0049c8ccaff0",
+    "brand": "Nutrition Geeks",
+    "name": "Magnesium Glycinate 3-in-1",
+    "serving_size": 2,
+    "serving_unit": "capsule",
+    "servings_per_container": 45,
+    "final_confidence": "high",
+    "sources": [
+      "https://nutritiongeeks.co/products/magnesium-glycinate-3-in-1"
+    ],
+    "note": "Official page: 90 capsules per pack, serving = 2 capsules, giving 45 servings (102% NRV at 2 caps = 384mg). Explicit statement. Existing data confirmed correct."
+  },
+  {
+    "id": "1fb58e7f-9504-4a36-863e-0e4071e0d2e3",
+    "brand": "Nutrition Geeks",
+    "name": "Ashwagandha Calm+",
+    "serving_size": 1,
+    "serving_unit": "capsule",
+    "servings_per_container": 60,
+    "final_confidence": "high",
+    "sources": [
+      "https://nutritiongeeks.co/products/ashwagandha-calm"
+    ],
+    "note": "Official page: 'Take 1 capsule daily', 60 capsules (2 months supply). Explicit statement. Existing data confirmed correct."
+  },
+  {
+    "id": "d6daeb9d-85c6-4e5f-80ff-648e689bc0e3",
+    "brand": "Supplement Needs",
+    "name": "Vitamin D3 and K2 (MK-7)",
+    "serving_size": 1,
+    "serving_unit": "tablet",
+    "servings_per_container": 120,
+    "final_confidence": "high",
+    "sources": [
+      "https://supplementneeds.co.uk/products/supplement-needs-vitamin-d3-and-k2-mk-7-120-tabs"
+    ],
+    "note": "Official page: '1 serving (1 tablet) is to be taken daily.' 120 tablets = 120 servings. Matches retail_price GBP24.99 (120-tab pack). Confirms current data."
+  },
+  {
+    "id": "259e8f60-1171-4f57-9483-2713b7980792",
+    "brand": "Nutrition Geeks",
+    "name": "Vitamin D3 4000iu + K2",
+    "serving_size": 1,
+    "serving_unit": "tablet",
+    "servings_per_container": 365,
+    "final_confidence": "high",
+    "sources": [
+      "https://nutritiongeeks.co/products/vitamin-d3-4000iu-k2"
+    ],
+    "note": "Official page: 'Take 1 tablet daily.' 12-month / 365-tablet supply. Matches retail_price GBP9.99. Confirms current data."
+  },
+  {
+    "id": "efb4879f-a240-4cda-9da0-8fbf094c5596",
+    "brand": "Nutrition Geeks",
+    "name": "Zinc Picolinate 3-in-1",
+    "serving_size": 1,
+    "serving_unit": "tablet",
+    "servings_per_container": 365,
+    "final_confidence": "high",
+    "sources": [
+      "https://nutritiongeeks.co/products/zinc-picolinate-3-in-1"
+    ],
+    "note": "Official page: 'Take 1 tablet daily.' 365 tablets = 365 servings (12 months). Matches retail_price GBP9.99. Confirms current data."
+  },
+  {
+    "id": "cefa4a30-be66-4083-ac36-e55d9325e39e",
+    "brand": "Nutrition Geeks",
+    "name": "Vitamin B12 Dual Power",
+    "serving_size": 1,
+    "serving_unit": "tablet",
+    "servings_per_container": 365,
+    "final_confidence": "high",
+    "sources": [
+      "https://nutritiongeeks.co/products/vitamin-b12-dual-power-1-year-supply"
+    ],
+    "note": "Official page: 'Take 1 tablet daily.' 365 tablets, 1-year supply, cost-per-serving 2p stated. Matches retail_price GBP8.99. Confirms current data."
+  },
+  {
+    "id": "1adf3959-7166-4232-b2a9-2e1a7dba2f87",
+    "brand": "Supplement Needs",
+    "name": "Vitamin D3",
+    "serving_size": 1,
+    "serving_unit": "tablet",
+    "servings_per_container": 120,
+    "final_confidence": "high",
+    "sources": [
+      "https://supplementneeds.co.uk/products/supplement-needs-vitamin-d3-120-tablets"
+    ],
+    "note": "Official page: '1 serving (1 tablet) is to be taken daily', 5000 IU per tablet. 120 tablets = 120 servings. Matches retail_price GBP8.99 (120-tab pack). Confirms current data."
+  },
+  {
+    "id": "31d19045-0da2-4430-83a8-471f1d45507c",
+    "brand": "Supplement Needs",
+    "name": "Magnesium Bisglycinate",
+    "serving_size": 2,
+    "serving_unit": "capsule",
+    "servings_per_container": 60,
+    "final_confidence": "high",
+    "sources": [
+      "https://supplementneeds.co.uk/products/supplement-needs-magnesium-bisglycinate-120-capsules"
+    ],
+    "note": "Official page: '1 serving (2 capsules) can be taken daily.' 120 capsules / 2 per serving = 60 servings. Matches retail_price GBP14.99 (120-cap pack). Confirms current data."
+  },
+  {
+    "id": "47dc8c3e-814e-47c1-b463-991058f24a5e",
+    "brand": "Supplement Needs",
+    "name": "Ashwagandha Organic Vegan KSM-66",
+    "serving_size": 1,
+    "serving_unit": "capsule",
+    "servings_per_container": 60,
+    "final_confidence": "high",
+    "sources": [
+      "https://supplementneeds.co.uk/products/supplement-needs-ashwagandha-ksm-66-60-capsules",
+      "https://www.supplementneeds.co.uk/products/supplement-needs-vegan-ashwagandha-ksm-66-60-capsules"
+    ],
+    "note": "Product page directions show '1 serving (1-2 capsules)' as a range, but brand markets 'a simple 1 capsule serving size' and second source confirms '60 servings at 1 capsule per serving' (600mg KSM-66, 30mg withanolides per capsule). Two sources agree on 1 capsule = 1 serving, 60 servings. Matches retail_price GBP17.99. Confirms current data."
+  },
+  {
+    "id": "f2d370c9-333c-4c68-ba67-7cbd0e3d7b74",
+    "brand": "Strom Sports Nutrition",
+    "name": "Creapure",
+    "serving_size": 6,
+    "serving_unit": "g",
+    "servings_per_container": 83,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.stromsports.com/products/strom-presents-creamax-with-patented-creapure",
+      "https://gym-beast.co.uk/products/strom-sports-nutrition-creamax-83-servings"
+    ],
+    "note": "Product is Strom CreaMAX with Creapure powder. Official + retailer sources agree: 1 scoop = 6g, 83 servings, 498g net (5000mg Creapure + 100mg Senactiv per serving). Single SKU at this size. retail_price GBP34 sits slightly below current street price (GBP37-39) but pack size/serving data is unambiguous. Confirms current data."
+  },
+  {
+    "id": "ff0521c4-d5ac-44d3-9b9e-cdcda133d059",
+    "brand": "Strom Sports Nutrition",
+    "name": "SupportMAX",
+    "serving_size": 4,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.stromsports.com/products/strom-presents-supportmax"
+    ],
+    "note": "Official page: 4 capsules per serving, 120 caps total = 30 servings. Explicit on supplement facts."
+  },
+  {
+    "id": "f311ed1d-0f55-44f5-8953-c35d84e6b5ae",
+    "brand": "Bulk",
+    "name": "Creatine Monohydrate",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "servings_per_container": 200,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.bulk.com/uk/products/creatine-monohydrate/bpb-cmon-0000",
+      "https://www.amazon.co.uk/BULK-POWDERS-Creatine-Monohydrate-Unflavoured/dp/B00IZD28QS"
+    ],
+    "note": "Serving 5g (2 scoops ~5g) confirmed by official + retailer listings. Sold in 100g/250g/500g/1kg. retail_price 24.99 maps to 1kg pack; 1000g / 5g = 200 servings, matching cur_spc. Page showed promo prices (12.99 sale) but 1kg standard RRP ~24.99."
+  },
+  {
+    "id": "d9f73f59-0366-4949-99e8-2ea520b1c8d7",
+    "brand": "Bulk",
+    "name": "Macro Munch (Chocolate Hazelnut)",
+    "serving_size": 62,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.bulk.com/uk/products/macro-munch-protein-bar-v2/mmun-pbar-v2"
+    ],
+    "note": "Single bar 62g. retail_price 2.99 corresponds to single-bar pricing (also sold as box of 12), so spc=1 per protocol. Per-bar weight confirmed 62g."
+  },
+  {
+    "id": "810b5c13-062e-4c50-9033-0fdda083c3b1",
+    "brand": "Supplement Needs",
+    "name": "Advanced Liver Support",
+    "serving_size": 3,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.supplementneeds.co.uk/products/supplement-needs-advanced-liver-support-stack"
+    ],
+    "note": "Official page (TUDCA+NAC liver stack): 3 capsules per serving, 90 caps total = 30 servings. Explicit."
+  },
+  {
+    "id": "76a1cbdd-a296-4c79-95ef-475c9b56cc88",
+    "brand": "TrainedByJP",
+    "name": "Vital Support",
+    "serving_size": 8,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.tb-jp.com/products/vital-support",
+      "https://www.proteinpickandmix.co.uk/tbjp-vital-support-30-servings/"
+    ],
+    "note": "Official page: 8 caps per serving (4 on wake, 4 pre-bed). Container size not on official page; cross-checked multiple UK retailers confirm 240 capsules = 30 servings."
+  },
+  {
+    "id": "729856c9-4477-4d37-8dda-386071633bd1",
+    "brand": "TBJP",
+    "name": "JP Creatine",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "servings_per_container": 60,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.tb-jp.com/products/creatine"
+    ],
+    "note": "Official page: 300g pack, 5g per serving = 60 servings. Matches cur values."
+  },
+  {
+    "id": "ee7f4abb-fa9b-4e2f-ad9c-eb4c24570a02",
+    "brand": "Supplement Needs",
+    "name": "Probiotics 50 Billion CFU",
+    "serving_size": 1,
+    "serving_unit": "capsule",
+    "servings_per_container": 60,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.supplementneeds.co.uk/products/supplement-needs-probiotics-50-billion-cfus"
+    ],
+    "note": "Official page: 60 capsules, 1 serving = 1 capsule (directions note 1-2 caps optional) = 60 servings. Used base 1 capsule per serving."
+  },
+  {
+    "id": "6f3b5591-fc9f-45a3-b731-b9f9c2046e1a",
+    "brand": "Supplement Needs",
+    "name": "Sleep Stack",
+    "serving_size": 2,
+    "serving_unit": "capsule",
+    "servings_per_container": 60,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.supplementneeds.co.uk/products/supplement-needs-sleep-stack-2-month-supply"
+    ],
+    "note": "retail_price 44.99 = 2-month/120-capsule version. 2 caps per serving, 120 caps = 60 servings. Explicit on page."
+  },
+  {
+    "id": "99e438ca-067d-40c5-81f7-f1a26827551a",
+    "brand": "Nutrition Geeks",
+    "name": "Pure Creatine Monohydrate Powder",
+    "serving_size": 3.5,
+    "serving_unit": "g",
+    "servings_per_container": 90,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.nutritiongeeks.co/products/pure-creatine-monohydrate"
+    ],
+    "note": "315g tub at £9.99, explicit 90 servings @ 3.5g (315/3.5=90). Single size; price matches."
+  },
+  {
+    "id": "d1660e89-00db-4abc-bb9f-190c81b617c4",
+    "brand": "MyProtein",
+    "name": "Impact Creatine",
+    "serving_size": 3.4,
+    "serving_unit": "g",
+    "servings_per_container": 147,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.myprotein.com/p/sports-nutrition/creatine-monohydrate-powder/10530050/"
+    ],
+    "note": "500g size matches £15 retail price; explicit 147 servings @ 3.4g unflavoured."
+  },
+  {
+    "id": "072adf9d-2393-4f98-b433-5939929c7c9f",
+    "brand": "Supplement Needs",
+    "name": "Creatine Monohydrate",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "servings_per_container": 100,
+    "final_confidence": "high",
+    "sources": [
+      "https://supplementneeds.co.uk/products/supplement-needs-creatine-monohydrate-500g"
+    ],
+    "note": "500g, explicit 100 servings @ 5g, £19.99 matches. Single size."
+  },
+  {
+    "id": "c8c43264-f973-49a6-87c6-845123603583",
+    "brand": "Applied Nutrition",
+    "name": "Creatine Monohydrate",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "servings_per_container": 100,
+    "final_confidence": "high",
+    "sources": [
+      "https://appliednutrition.uk/products/creatine-monohydrate",
+      "https://www.10reps.co.uk/product/applied-nutrition-creatine-monohydrate/",
+      "https://www.dolphinfitness.co.uk/en/applied-nutrition-creatine-monohydrate-500g/95083"
+    ],
+    "note": "Multi-size (250g/500g/1kg). £18.95 maps to 500g (1kg=£29.95); 10reps £18.99 & Dolphin £17.95 both confirm 500g = 100 servings @ 5g."
+  },
+  {
+    "id": "1b11e65b-cdff-4d12-835a-4c9c5ab9bac8",
+    "brand": "Darkstims",
+    "name": "Creatine Monohydrate",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "servings_per_container": 100,
+    "final_confidence": "high",
+    "sources": [
+      "https://darkstims.com/products/darkstims-creatine",
+      "https://bodyshocker.co.uk/brand/darkstims/"
+    ],
+    "note": "Multi-size (500g/1000g/2000g). £18 maps to 500g (Raw Series 500g = £18; retailer ~£17.99); 5g serving = up to 100 servings per 500g."
+  },
+  {
+    "id": "7f5f3751-0e82-463b-8554-6d82cf487eba",
+    "brand": "Warrior",
+    "name": "Creatine Monohydrate",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "servings_per_container": 100,
+    "final_confidence": "high",
+    "sources": [
+      "https://teamwarrior.com/products/warrior-creatine-monohydrate-powder-500g",
+      "https://www.dolphinfitness.co.uk/en/warrior-creatine-monohydrate-500g/457856"
+    ],
+    "note": "500g URL; £14.99 matches 500g. Current formulation 5g serving = 100 servings (Dolphin explicit '1 scoop 5g, 100 servings, £14.99'). Note: some Amazon listings cite 166 servings using legacy 3g dose."
+  },
+  {
+    "id": "9bd730b4-56ca-4545-bb05-69ed6d48ffb9",
+    "brand": "Barebells",
+    "name": "Protein Bar (Cookies & Cream)",
+    "serving_size": 55,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://barebells.co.uk/product/barebells-cookies-and-cream/"
+    ],
+    "note": "Single bar 55g. Retail_price £2.30 is single-bar pricing (box of 12 = £23.99), so spc=1 per protocol."
+  },
+  {
+    "id": "aae3c686-cf5a-4ebb-91b4-4c8865b2e6fa",
+    "brand": "Strom Sports Nutrition",
+    "name": "ZMAX",
+    "serving_size": 2,
+    "serving_unit": "capsule",
+    "servings_per_container": 45,
+    "final_confidence": "high",
+    "sources": [
+      "https://stromsports.com/products/strom-zmax-45-servings"
+    ],
+    "note": "90 capsules total; formula stated per 2-capsule serving = 45 servings. £24 matches. (Directions allow 1-2 caps, but nutrition basis is 2/serving.)"
+  },
+  {
+    "id": "a925a399-982a-4155-89d5-aee874046618",
+    "brand": "Applied Nutrition",
+    "name": "Protein Crunch Bar (Chocolate Caramel)",
+    "serving_size": 62,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://appliednutrition.uk/products/protein-crunch-bar-62grams"
+    ],
+    "note": "Chocolate/Milk Chocolate Caramel = 62g per bar (confirmed on official page; Milk Chocolate Peanut variant is 65g). Retail price GBP2 = single bar (official single is GBP2.45, box of 12 priced separately), so spc=1. Data confirmed."
+  },
+  {
+    "id": "163558b4-1ec5-4546-835d-435f42a88dc8",
+    "brand": "USN",
+    "name": "Trust Crunch (Chocolate Peanut)",
+    "serving_size": 60,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://uk.usn.global/products/trust-crunch-bar-raspberry-cheese-cake-flavour-low-calorie-high-protein-snack-12-x-60g",
+      "https://proteinparcel.co.uk/products/usn-trust-crunch-salted-peanut-caramel-protein-bar"
+    ],
+    "note": "Single bar = 60g (confirmed: official page lists 12 x 60g). buy_url is the 12-box (GBP19-24), but retail_price GBP1.80 matches a SINGLE bar (singles retail GBP1.80-2.79), so per pack-to-price protocol spc=1. CHANGED from cur_spc=12 to 1."
+  },
+  {
+    "id": "ab085248-f854-4b93-89f1-574467e8153e",
+    "brand": "Supplement Needs",
+    "name": "Advanced Vitamin B Complex",
+    "serving_size": 1,
+    "serving_unit": "tablet",
+    "servings_per_container": 120,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.supplementneeds.co.uk/products/supplement-needs-advanced-vitamin-b-complex-60-capsules",
+      "https://www.supplementneeds.co.uk/products/supplement-needs-advanced-vitamin-b-complex-60-capsules (page title: '120 Tabs')"
+    ],
+    "note": "Despite URL slug saying '60-capsules', actual product is 120 TABLETS, single size (RRP GBP24.99, sale GBP16.99 = retail_price). Serving = 1 tablet (label allows 1-2). spc=120 at 1 tab/serving. CHANGED unit capsule->tablet and spc 60->120. Confidence raised to high (2 confirmations)."
+  },
+  {
+    "id": "c3bc42b5-d5c0-404a-8805-7781ad4605fd",
+    "brand": "Supplement Needs",
+    "name": "Multi Vitamin and Mineral PRO",
+    "serving_size": 1,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.supplementneeds.co.uk/products/supplement-needs-multi-vitamin-and-mineral-pro",
+      "https://livewellsyndicate.com/product/supplement-needs-multi-vitamin-and-mineral-pro-30-or-60-capsules/"
+    ],
+    "note": "Two sizes: 30 caps GBP14.99, 60 caps GBP29.99. retail_price GBP14.99 = 30-capsule size. 1 capsule/serving => 30 servings. CHANGED spc 60->30 to match price. Confidence raised to high."
+  },
+  {
+    "id": "edb28a42-dc88-4628-8387-793f3ad00e95",
+    "brand": "Supplement Needs",
+    "name": "Omega 3 High Strength",
+    "serving_size": 1,
+    "serving_unit": "softgel",
+    "servings_per_container": 90,
+    "final_confidence": "high",
+    "sources": [
+      "https://supplementneeds.co.uk/products/supplement-needs-omega-3-high-strength-90-softgels"
+    ],
+    "note": "90 softgels, serving = 1 softgel, 90 servings per container. Confirmed, matches existing data."
+  },
+  {
+    "id": "e1455253-fb1b-4bbd-a3ff-8116bf97924b",
+    "brand": "Supplement Needs",
+    "name": "Greens+",
+    "serving_size": 11,
+    "serving_unit": "g",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://supplementneeds.co.uk/products/supplement-needs-greens-330g"
+    ],
+    "note": "330g tub, 11g serving, 30 servings (330/11=30). Confirmed, matches existing data."
+  },
+  {
+    "id": "e18459a8-325f-4766-b11c-ee598c6a9795",
+    "brand": "Supplement Needs",
+    "name": "Vitamin C Powder",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "servings_per_container": 60,
+    "final_confidence": "high",
+    "sources": [
+      "https://supplementneeds.co.uk/products/supplement-needs-vitamin-c-powder-300g"
+    ],
+    "note": "300g tub, 5g (1 scoop) serving, 60 servings (300/5=60). Confirmed, matches existing data."
+  },
+  {
+    "id": "ffcbc554-e00d-4738-be16-69599490d11f",
+    "brand": "Supplement Needs",
+    "name": "Vitamin K2 (MK-4)",
+    "serving_size": 1,
+    "serving_unit": "tablet",
+    "servings_per_container": 120,
+    "final_confidence": "high",
+    "sources": [
+      "https://supplementneeds.co.uk/products/supplement-needs-vitamin-k2-mk-4-120-tablets"
+    ],
+    "note": "120 tablets, serving = 1 tab, 120 servings per container. Confirmed, matches existing data."
+  },
+  {
+    "id": "68546f63-f123-4e1f-8f46-46802b77de52",
+    "brand": "SuperDosed",
+    "name": "Tongkat Ali",
+    "serving_size": 1,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://superdosed.co.uk/products/tongkat-ali-superdosed",
+      "https://superdosed.co.uk/products/tongkat-ali-superdosed.json"
+    ],
+    "note": "Product page doesn't show bottle count on the visible page, but the variant data (.json) shows variant '1 Month' = £25.00 (matches retail_price) = 30 capsules; 2 Month = 60 caps; 3 Month = 90 caps. Dosing is 1 capsule once daily, so 30 caps = 30 servings = 1 month supply."
+  },
+  {
+    "id": "17218104-2c4d-4c5b-864d-846427626503",
+    "brand": "Fulfil Nutrition",
+    "name": "Vitamin & Protein Bar (Dark Choc Salted Caramel)",
+    "serving_size": 55,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://fulfilnutrition.com/products/dark-chocolate-salted-caramel"
+    ],
+    "note": "55g per bar (per-serving = 55g, one bar = one serving). Retail_price £2.30 is a single-bar price, so spc=1 per protocol (box is 15 bars at higher price). Confirmed 55g single bar."
+  },
+  {
+    "id": "0a327a09-db76-483e-88ca-b55aacf3d53f",
+    "brand": "Trek",
+    "name": "Protein Flapjack (Cocoa Oat)",
+    "serving_size": 50,
+    "serving_unit": "bar",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.musclefood.com/products/trek-oat-protein-flapjack-cocoa-1-x-50g",
+      "https://www.amazon.co.uk/Trek-Cocoa-Oat-Protein-Flapjack/dp/B00DW586NS"
+    ],
+    "note": "Single flapjack is 50g (confirmed by MuscleFood 1x50g listing and Amazon UK 50g pack of 16). Retail_price £1.20 is single-bar price, so spc=1."
+  },
+  {
+    "id": "51111a7f-f338-4e4d-819e-edce85a3b0a1",
+    "brand": "Huel",
+    "name": "Ready-to-drink (Vanilla)",
+    "serving_size": 500,
+    "serving_unit": "bottle",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://uk.huel.com/products/huel-ready-to-drink/vanilla",
+      "https://www.amazon.co.uk/HUEL-Ready-Drink-Chocolate-Strawberries/dp/B0CK88YSM4"
+    ],
+    "note": "500ml per bottle, one bottle = one serving. Retail_price £3.50 = per-bottle (one-time price £3.52), so spc=1. ml confirmed by Huel + Amazon UK."
+  },
+  {
+    "id": "7aaebbcb-ac24-4b5f-9156-8f83cfc322b1",
+    "brand": "Huel",
+    "name": "Black Edition Ready-to-drink (Chocolate)",
+    "serving_size": 500,
+    "serving_unit": "bottle",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://uk.huel.com/products/huel-black-edition-ready-to-drink/chocolate",
+      "https://www.amazon.co.uk/HUEL-Ready-Drink-Chocolate-Strawberries/dp/B0CK88YSM4"
+    ],
+    "note": "500ml per bottle, 400kcal/35g protein. Retail_price £3.75 = per-bottle, spc=1. ml confirmed by Huel page + Amazon UK RTD listing (500ml)."
+  },
+  {
+    "id": "588ea7df-6140-4f46-9a08-3cdd7ffc1536",
+    "brand": "Huel",
+    "name": "Lite Ready-to-drink (Chocolate)",
+    "serving_size": 500,
+    "serving_unit": "bottle",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://uk.huel.com/products/huel-lite-ready-to-drink",
+      "https://www.sportsdirect.com/huel-huel-lite-ready-to-drink-20g-8-x-500ml-390319"
+    ],
+    "note": "Huel page didn't print the ml but 2nd sources (SportsDirect 8x500ml, NutraIngredients, theskinnyfoodco case 8x500ml) confirm 500ml bottles, 190kcal/25g protein, RRP £3.50 = matches retail_price. spc=1."
+  },
+  {
+    "id": "3457e148-ef53-4197-b48b-33b5d961078b",
+    "brand": "Saturo",
+    "name": "Meal Replacement Drink (Chocolate)",
+    "serving_size": 400,
+    "serving_unit": "bottle",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://saturo.com/en-gb/products/ready-to-drink-meal",
+      "https://saturo.com/en-us/products/ready-to-drink-meal"
+    ],
+    "note": "The provided buy_url (en-gb 'ready-to-drink-meal') is the 400ml product: 400ml bottle, 400kcal/36g protein, sold as 6-pack at £3.79 one-time / £3.41 subscription per bottle — matches retail_price £3.30. One bottle = one serving, spc=1. CORRECTED from cur_ss 330 to 400: Saturo sells 330/400/500ml variants, but this buy_url resolves to the 400ml. Confirmed 400ml by both en-gb and en-us official product pages."
+  },
+  {
+    "id": "8b197150-797e-4590-abb3-19b6b395e174",
+    "brand": "Jimmy Joy",
+    "name": "Plenny Drink (Vanilla)",
+    "serving_size": 330,
+    "serving_unit": "bottle",
+    "servings_per_container": 1,
+    "final_confidence": "high",
+    "sources": [
+      "https://jimmyjoy.com/en-gb/products/plenny-drink",
+      "https://world.openfoodfacts.org/product/8720165350087/plenny-drink-chocolate-v2-0-jimmy-joy"
+    ],
+    "note": "330ml per bottle (400kcal/20g protein), one bottle = one serving. ml confirmed by OpenFoodFacts (Plenny Drink v2.0 330ml) and product page. Retail_price £2.80 is per-bottle (8-pack £26.88 = ~£3.36/bottle), spc=1."
+  },
+  {
+    "id": "8b95c03d-709f-466e-a80c-6b7a13688118",
+    "brand": "SuperDosed",
+    "name": "Magnesium Glycinate",
+    "serving_size": 2,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "med",
+    "sources": [
+      "https://superdosed.co.uk/products/magnesium-glycinate-superdosed",
+      "https://superdosed.co.uk/products/magnesium-glycinate-superdosed.json"
+    ],
+    "note": "Official page confirms serving = 2 capsules daily (300mg elemental magnesium from 2,100mg magnesium glycinate). Total capsule count not explicitly stated on page or in product JSON. The £13 price matches the '1 Month' variant (variants: 1/2/3 Month at £13/£21/£28). At 2 caps/day for 1 month, container = 60 capsules / 30 servings. Servings_per_container derived from 1-month variant labelling + daily dose; no explicit count published, hence med confidence."
+  },
+  {
+    "id": "2b3e6bc9-bac1-4ac5-9e97-dc657c9c86c4",
+    "brand": "SuperDosed",
+    "name": "Ashwagandha",
+    "serving_size": 1,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "med",
+    "sources": [
+      "https://superdosed.co.uk/products/ashwaganda-superdosed",
+      "https://superdosed.co.uk/products/ashwaganda-superdosed.json"
+    ],
+    "note": "Official page confirms serving = 1 capsule daily (1,000mg ashwagandha extract, 50mg withanolides, + piperine). Total capsule count not explicitly stated on page or in product JSON. The £12 price matches the '1 Month' variant (variants: 1/2/3 Month at £12/£19/£25). At 1 cap/day for 1 month, container = 30 capsules / 30 servings. Derived from 1-month variant labelling + daily dose; no explicit count published, hence med confidence."
+  },
+  {
+    "id": "e309e1fa-5f75-44a7-9c0c-06d485622ea8",
+    "brand": "Roar Ambition",
+    "name": "TestoFuel",
+    "serving_size": 4,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.testofuel.com/en-gb/testofuel-1-month",
+      "https://www.testofuel.com/en-gb/faq",
+      "https://www.onbuy.com/gb/p/testofuel-120-t-booster-pills-100-natural-uk-made-supplement~p50201672/"
+    ],
+    "note": "1-month box = 120 capsules, 4 capsules per day = 30 servings. Confirmed by two sources (official + OnBuy retailer). £39.99 matches the official 1-month supply. Matches current values."
+  },
+  {
+    "id": "1e297da8-80ab-4aff-b196-1d3be6cd845e",
+    "brand": "Roar Ambition",
+    "name": "Prime Male",
+    "serving_size": 4,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.primemale.com/en-gb/primemale-1-month",
+      "https://www.amazon.com/Prime-Natural-Testosterone-Booster-Capsules/dp/B08VP1YMHW"
+    ],
+    "note": "120 capsules per bottle (confirmed on official page), 4 capsules per day = 30 servings. Daily dose of 4 capsules and 30-day (120-cap) supply confirmed by second source (Amazon listing). £59 matches the official 1-month UK supply. Upgraded from med to high: two sources agree on 4/day and 120/bottle."
+  },
+  {
+    "id": "77daff05-5644-40a0-882e-4b197790bf50",
+    "brand": "Hunter Evolve",
+    "name": "Hunter Test",
+    "serving_size": 6,
+    "serving_unit": "capsule",
+    "servings_per_container": 30,
+    "final_confidence": "high",
+    "sources": [
+      "https://www.hunterevolve.com/en-gb/hunter-test"
+    ],
+    "note": "1-month container = 180 capsules, 6 capsules per day = 30 servings. Explicitly stated on official page (£65 = 1-month supply; £75 batch price is the retail/listed price for the 1-month box). Matches current values."
+  }
+]

@@ -114,7 +114,7 @@ function buildEmailLink(score: number | null, items: StackItem[]): string {
         const p = i.products!
         const sc = scoreFor(p.brand, p.name)
         const link = buyLink(p.brand, p.name, p.buy_url)
-        return `• ${p.brand} ${p.name}${sc != null ? ` (${sc}/100)` : ''}\n  Buy: ${link}`
+        return `• ${p.brand} ${p.name}${sc != null ? ` (${sc}/100)` : ''}${link ? `\n  Buy: ${link}` : ''}`
       }),
     ``,
     `Analysed at theliftinglab.co.uk`,
@@ -342,6 +342,7 @@ export default function StackBuilder() {
       const p = it.products
       if (!p) continue
       const url = buyLink(p.brand, p.name, p.buy_url)
+      if (!url) continue
       const label = retailerLabel(url)
       if (!groups[label]) groups[label] = { label, urls: [], names: [] }
       groups[label].urls.push(url)

@@ -58,6 +58,7 @@ export default function ProductDetailPage({
   const color = product.score != null ? scoreColor(product.score) : '#4b5563'
   const stacked = inStack(product.id)
   const retailers = getRetailerLinks(product.brand, product.name)
+  const buyHref = buyLink(product.brand, product.name, product.buy_url)
 
   return (
     <div className="min-h-screen bg-lab-bg text-white pb-32">
@@ -247,7 +248,7 @@ export default function ProductDetailPage({
 
       {/* sticky action bar */}
       <div className="fixed bottom-0 inset-x-0 z-30 bg-lab-panel-2 border-t border-lab-border">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-3 grid grid-cols-3 gap-2">
+        <div className={`max-w-6xl mx-auto px-4 md:px-8 py-3 grid ${buyHref ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
           <button
             onClick={() => {
               toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
@@ -267,24 +268,25 @@ export default function ProductDetailPage({
           >
             Compare
           </Link>
-          <a
-            href={buyLink(product.brand, product.name, product.buy_url)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            onClick={() => {
-              const href = buyLink(product.brand, product.name, product.buy_url)
-              trackBuyClick({
-                product_id: product.id,
-                product_name: product.name,
-                brand: product.brand,
-                category: product.category,
-                href,
-              })
-            }}
-            className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
-          >
-            Buy Now →
-          </a>
+          {buyHref && (
+            <a
+              href={buyHref}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              onClick={() => {
+                trackBuyClick({
+                  product_id: product.id,
+                  product_name: product.name,
+                  brand: product.brand,
+                  category: product.category,
+                  href: buyHref,
+                })
+              }}
+              className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
+            >
+              Buy Now →
+            </a>
+          )}
         </div>
       </div>
 

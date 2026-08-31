@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase'
 import MethodologyModal from '@/components/MethodologyModal'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
-import { sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
+import { hasVerifiedCost, sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
 import { cardHighlights } from '@/lib/card-highlights'
 import { buyLink } from '@/lib/affiliate'
 import { GUIDE_SLUGS } from '@/lib/guides'
@@ -493,9 +493,15 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {visible.map((p, i) => {
           const isSel = selected.includes(p.id)
-          const isTop = i === 0 && (sort === 'score' || sort === 'value' || sort === 'budget')
+          // "Best Value/Budget Pick" may only crown a product with a verified cost;
+          // if the top row has none (e.g. every product unpriced) no pick is shown (TLL-P0-3).
+          const isTop =
+            i === 0 &&
+            (sort === 'score' ||
+              ((sort === 'value' || sort === 'budget') && p.score != null && hasVerifiedCost(p)))
           const medal = MEDALS[i] ?? null
           const stacked = inStack(p.id)
+          const buyHref = buyLink(p.brand, p.name, p.buy_url)
           const benefits = CATEGORY_BENEFITS[p.category] ?? null
           const dosingNote = p.score != null
             ? p.score >= 70
@@ -663,7 +669,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               })()}
 
               {/* action row: stack + compare + buy */}
-              <div className="grid grid-cols-3 gap-1.5 mt-2">
+              <div className={`grid ${buyHref ? 'grid-cols-3' : 'grid-cols-2'} gap-1.5 mt-2`}>
                 <button
                   onClick={() => {
                     toggle({ id: p.id, name: p.name, brand: p.brand, category: p.category, score: p.score })
@@ -688,35 +694,38 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 >
                   {isSel ? 'Added ✓' : 'Compare'}
                 </button>
-                <a
-                  href={buyLink(p.brand, p.name, p.buy_url)}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  onClick={() => {
-                    const href = buyLink(p.brand, p.name, p.buy_url)
-                    trackBuyClick({
-                      product_id: p.id,
-                      product_name: p.name,
-                      brand: p.brand,
-                      category: p.category,
-                      href,
-                    })
-                  }}
-                  className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl transition-all"
-                  style={isTop ? {
-                    background: 'linear-gradient(145deg, color-mix(in srgb, #a6e22e 80%, #fff), #a6e22e 45%, color-mix(in srgb, #a6e22e 72%, #000))',
-                    color: '#0d0d0d',
-                    boxShadow: '0 0 12px rgba(166,226,46,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
-                  } : {
-                    background: 'rgba(255,255,255,0.06)',
-                    color: '#a6e22e',
-                    border: '1px solid rgba(166,226,46,0.5)',
-                  }}
-                >
-                  Buy{isTop ? ' 🏆' : ''}
-                </a>
+                {buyHref && (
+                  <a
+                    href={buyHref}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    onClick={() => {
+                      trackBuyClick({
+                        product_id: p.id,
+                        product_name: p.name,
+                        brand: p.brand,
+                        category: p.category,
+                        href: buyHref,
+                      })
+                    }}
+                    className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl transition-all"
+                    style={isTop ? {
+                      background: 'linear-gradient(145deg, color-mix(in srgb, #a6e22e 80%, #fff), #a6e22e 45%, color-mix(in srgb, #a6e22e 72%, #000))',
+                      color: '#0d0d0d',
+                      boxShadow: '0 0 12px rgba(166,226,46,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
+                    } : {
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#a6e22e',
+                      border: '1px solid rgba(166,226,46,0.5)',
+                    }}
+                  >
+                    Buy{isTop ? ' 🏆' : ''}
+                  </a>
+                )}
               </div>
-              <p className="text-[9px] text-lab-muted/40 text-right mt-1">affiliate link</p>
+              {buyHref && (
+                <p className="text-[9px] text-lab-muted/40 text-right mt-1">affiliate link</p>
+              )}
             </PointerCard>
           )
         })}

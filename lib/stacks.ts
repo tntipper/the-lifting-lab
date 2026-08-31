@@ -9,6 +9,7 @@
 // are skipped, so a thin catalogue never produces an empty/short stack error.
 
 import type { Faq } from '@/lib/guides'
+import { hasVerifiedCost } from '@/lib/products'
 
 export type StackPick = 'score' | 'budget'
 
@@ -246,7 +247,8 @@ export function selectStack<
     if (!inCat || inCat.length === 0) continue
     let best: P | undefined
     if (stack.pick === 'budget') {
-      const priced = inCat.filter((p) => p.cost_per_serving != null && p.score != null)
+      // Only a verified, positive cost may win a budget pick (TLL-P0-3).
+      const priced = inCat.filter((p) => hasVerifiedCost(p) && p.score != null)
       if (priced.length > 0) {
         best = priced.reduce((a, b) =>
           (a.cost_per_serving as number) <= (b.cost_per_serving as number) ? a : b,
