@@ -68,7 +68,7 @@ export default async function ProductsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
         <h1 className="sr-only">Browse Supplements — Scored &amp; Compared by Effectiveness Match</h1>
         <ProductGrid initialProducts={products} />
       </div>

@@ -8,7 +8,7 @@ import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
 import { buyLink } from '@/lib/affiliate'
-import { track } from '@/lib/gtag'
+import { track, trackBuyClick } from '@/lib/gtag'
 import { trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
@@ -78,11 +78,11 @@ export default function ProductDetailPage({
         </span>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 space-y-6">
         {/* hero */}
-        <div className="flex flex-col items-center text-center gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:text-left items-center text-center gap-6 lg:gap-10">
           <div className="flex items-center gap-5">
-            <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={110} />
+            <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} />
             <ScoreBadge score={product.score} size="lg" />
           </div>
           <div>
@@ -248,7 +248,7 @@ export default function ProductDetailPage({
 
       {/* sticky action bar */}
       <div className="fixed bottom-0 inset-x-0 z-30 bg-lab-panel-2 border-t border-lab-border">
-        <div className={`max-w-2xl mx-auto px-4 py-3 grid ${buyHref ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
+        <div className={`max-w-6xl mx-auto px-4 md:px-8 py-3 grid ${buyHref ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
           <button
             onClick={() => {
               toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
@@ -273,7 +273,15 @@ export default function ProductDetailPage({
               href={buyHref}
               target="_blank"
               rel="noopener noreferrer nofollow"
-              onClick={() => track('buy_click', { item_brand: product.brand, item_name: product.name })}
+              onClick={() => {
+                trackBuyClick({
+                  product_id: product.id,
+                  product_name: product.name,
+                  brand: product.brand,
+                  category: product.category,
+                  href: buyHref,
+                })
+              }}
               className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
             >
               Buy Now →

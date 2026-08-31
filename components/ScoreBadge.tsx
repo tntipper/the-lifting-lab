@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 export function scoreColor(score: number): string {
-  if (score >= 70) return '#a6e22e'
+  if (score >= 70) return '#c8e86a'
   if (score >= 50) return '#e8a020'
   return '#e05a2b'
 }
@@ -83,25 +83,9 @@ export default function ScoreBadge({
   }
 
   const color = scoreColor(score)
-  const bloomAlpha = score >= 70 ? '0.4' : score >= 50 ? '0.28' : '0.22'
-  const bloomColor =
-    score >= 70
-      ? `rgba(166,226,46,${bloomAlpha})`
-      : score >= 50
-      ? `rgba(232,160,32,${bloomAlpha})`
-      : `rgba(224,90,43,${bloomAlpha})`
 
   return (
     <div className="shrink-0 relative" style={{ width: px, height: px }}>
-      {/* bloom behind ring */}
-      <span
-        className="pointer-events-none absolute rounded-full"
-        style={{
-          inset: '-6px',
-          background: `radial-gradient(ellipse at center, ${bloomColor} 0%, transparent 68%)`,
-          filter: 'blur(6px)',
-        }}
-      />
       <svg
         width={px}
         height={px}
@@ -129,7 +113,7 @@ export default function ScoreBadge({
           strokeLinecap="round"
           strokeDasharray={`${dashFilled} ${circ - dashFilled}`}
           strokeDashoffset={0}
-          style={{ filter: `drop-shadow(0 0 4px ${color}88)` }}
+          
         />
       </svg>
       {/* number overlay — not rotated */}
@@ -140,7 +124,7 @@ export default function ScoreBadge({
           fontSize: text,
           color,
           WebkitTextStroke: '0.6px rgba(0,0,0,0.55)',
-          textShadow: `0 0 2px #0D0D0D, 0 1px 2px rgba(0,0,0,0.9), 0 0 9px ${color}66`,
+          textShadow: '0 1px 2px rgba(0,0,0,0.85)',
         } as React.CSSProperties}
       >
         {displayNum}
