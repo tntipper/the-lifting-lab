@@ -46,7 +46,7 @@ export function withScore<T extends { brand: string; name: string; servings_per_
   return { ...p, score, cost_per_serving }
 }
 
-export type SortKey = 'score' | 'name' | 'brand' | 'value' | 'budget'
+export type SortKey = 'score' | 'name' | 'brand' | 'value' | 'budget' | 'price'
 
 export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[] {
   const out = [...list]
@@ -59,7 +59,7 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
       const vb = b.score != null && b.cost_per_serving != null ? b.score / b.cost_per_serving : -1
       return vb - va
     }
-    if (sort === 'budget') {
+    if (sort === 'budget' || sort === 'price') {
       // Cheapest per serving among scored products; unpriced last
       const ca = a.cost_per_serving ?? Infinity
       const cb = b.cost_per_serving ?? Infinity
