@@ -13,7 +13,7 @@ function findNutrient(nutrients: Nutrient[], aliases: string[], loose = true): N
   return nutrients.find((n) => {
     const nn = norm(n.nutrient_name)
     if (!nn) return false
-    return aliasNorms.some((a) => nn.includes(a) || a.includes(nn))
+    return aliasNorms.some((a) => nn === a || nn.startsWith(`${a} `) || nn.endsWith(` ${a}`) || nn.includes(` ${a} `))
   })
 }
 
@@ -171,7 +171,7 @@ function resolveSlot(slot: Slot, nutrients: Nutrient[]): CardHighlight[] {
   if (slot.kind === 'or') {
     for (const g of slot.groups) {
       const n = findNutrient(nutrients, g.aliases, false) ?? findNutrient(nutrients, g.aliases, true)
-      if (n) return [{ label: n.nutrient_name, value: fmt(n) }]
+      if (n) return [{ label: g.label, value: fmt(n) }]
     }
     return [{ label: slot.groups[0].label, value: '\u2014' }]
   }
