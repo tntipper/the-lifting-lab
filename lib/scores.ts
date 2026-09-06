@@ -44,10 +44,10 @@ export const PRODUCT_SCORES: Record<string, number> = {
   "Reflex Nutrition|Creatine Powder (Creapure®)": 82,
   "Applied Nutrition|Amino Fuel EAA": 92,
   "Strom Sports Nutrition|EssentialMax": 98,
-  "TrainedByJP|JP EAA": 91,
+  "TrainedByJP|JP EAA": 77,
   "Supplement Needs|Intra EAA+": 56,
   "MyProtein|Impact EAA": 80,
-  "CNP Professional|CNP EAA": 88,
+  "CNP Professional|CNP EAA": 75,
   "Per4m|Per4m EAA": 100,
   "Ghost Lifestyle|Ghost Amino": 73,
   "Naughty Boy|Amino": 91,
@@ -232,7 +232,7 @@ export const PRODUCT_SCORES: Record<string, number> = {
   "Symprove|Symprove Original": 73,
   "Applied Nutrition|ABE All Black Everything Pre-Workout": 53,
   "Bulk|ZMA Zinc Magnesium": 93,
-  "Warrior|EAA Powder": 100
+  "Warrior|EAA Powder": 85,
 }
 
 export function scoreFor(brand: string | null | undefined, name: string | null | undefined): number | null {
