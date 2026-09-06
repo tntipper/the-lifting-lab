@@ -63,10 +63,17 @@ const BY_CATEGORY: Record<string, Slot[]> = {
     { kind: 'alias', label: 'Beta-Alanine', aliases: ['beta alanine', 'beta-alanine'] },
   ],
   eaas: [
-    { kind: 'alias', label: 'EAAs', aliases: ['eaas', 'eaa', 'essential amino acids', 'essential amino acid'] },
     { kind: 'or', groups: [
       { label: 'L-Leucine', aliases: ['l leucine'] },
       { label: 'Leucine', aliases: ['leucine'] },
+    ] },
+    { kind: 'or', groups: [
+      { label: 'L-Isoleucine', aliases: ['l isoleucine'] },
+      { label: 'Isoleucine', aliases: ['isoleucine'] },
+    ] },
+    { kind: 'or', groups: [
+      { label: 'L-Valine', aliases: ['l valine'] },
+      { label: 'Valine', aliases: ['valine'] },
     ] },
   ],
   'intra-workout': [
