@@ -90,7 +90,7 @@ const SCORERS = {
     const mSpectrum = bcaaOnly ? 0 : 1;
     const mHyd = hyd ? 1 : 0.5;
     const W = { dose:0.60, spectrum:0.35, hyd:0.05 };
-    const match = mDose*W.dose + mSpectrum*W.spectrum + mHyd*W.hyd;
+    const propBlend = yes(p["Proprietary Blend"]);     const propPenalty = propBlend ? 0.85 : 1;     const match = (mDose*W.dose + mSpectrum*W.spectrum + mHyd*W.hyd) * propPenalty;
     const score = match*10;
     return {score, cost, match, ref:true, metrics:[], flags:[]};
   },
