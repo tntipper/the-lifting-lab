@@ -6,7 +6,7 @@ import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { GUIDE_SLUGS } from '@/lib/guides'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { fetchCheapest, MIN_SCORE, type CheapProduct } from '@/lib/cheapest'
 
 // SSG with a daily refresh so price/serving + score updates flow into the
@@ -199,19 +199,15 @@ export default async function CheapestPage() {
               See all
             </Link>
           )}
-          <a
-            href={buyLink(r.brand, r.name, r.buy_url)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
+          <ProductOfferLink
+            product={r}
             className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
             style={{
               background: 'rgba(166,226,46,0.12)',
               color: '#a6e22e',
               border: '1px solid rgba(166,226,46,0.5)',
             }}
-          >
-            Buy
-          </a>
+          />
         </div>
       </div>
     )
@@ -326,8 +322,7 @@ export default async function CheapestPage() {
                 not the lowest price full stop. Rankings recalculate as prices change.
               </p>
               <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">
-                Informational only — not medical advice. Buy links are affiliate links; we may earn a
-                commission at no extra cost to you. This never affects scoring or rankings.
+                Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring or rankings.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link

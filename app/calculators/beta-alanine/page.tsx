@@ -245,7 +245,7 @@ export default function BetaAlaninePage() {
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Doses are general, evidence-based starting points for
             healthy adults; if you have a health condition, are pregnant or take medication, speak to a
-            clinician first. Buy links are affiliate links; we may earn a commission at no extra cost to you.
+            clinician first. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

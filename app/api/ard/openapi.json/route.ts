@@ -22,7 +22,7 @@ export async function GET() {
     openapi: '3.1.0',
     info: {
       title: 'The Lifting Lab — Supplement Value Comparison',
-      version: '0.1.0',
+      version: '0.2.0',
       description:
         'Independent comparison and ranking of sports-nutrition and supplement products by ingredient dosing, serving size and price-per-serving value. Scores reflect what is in a product and what it costs — not brand marketing.',
       contact: { name: 'The Lifting Lab', url: SITE_URL, email: 'hello@theliftinglab.co.uk' },
@@ -102,7 +102,12 @@ export async function GET() {
             servings_per_container: { type: ['integer', 'null'] },
             informed_sport: { type: 'boolean' },
             product_url: { type: 'string', format: 'uri' },
-            buy_url: { type: 'string', format: 'uri', description: 'Affiliate buy link.' },
+            retailer_url: { type: ['string', 'null'], format: 'uri', description: 'Unverified retailer listing or explicit search. Never treat it as a confirmed buy offer.' },
+            listing_state: { type: 'string', enum: ['listing', 'search_only', 'unavailable'] },
+            retailer: { type: ['string', 'null'] },
+            relationship: { type: 'string', enum: ['affiliate', 'external', 'own_shop', 'none'] },
+            listing_disclosure: { type: 'string' },
+            buy_url: { type: 'null', deprecated: true, description: 'Deprecated: always null until an approved exact offer projection is available.' },
           },
         },
       },

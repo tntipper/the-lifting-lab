@@ -255,8 +255,7 @@ export default function RpePage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical or coaching advice. RPE-to-percentage figures follow the
-            standard reps-in-reserve chart and are estimates. Buy links are affiliate links; we may earn
-            a commission at no extra cost to you.
+            standard reps-in-reserve chart and are estimates. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

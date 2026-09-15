@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import ScoreBadge from '@/components/ScoreBadge'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import {
   fetchPreWorkoutRows,
   HIGH_STIM_MG,
@@ -198,19 +198,15 @@ export default async function StrongestPreWorkoutPage() {
           >
             Guide
           </Link>
-          <a
-            href={buyLink(r.brand, r.name, r.buy_url)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
+          <ProductOfferLink
+            product={r}
             className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
             style={{
               background: 'rgba(166,226,46,0.12)',
               color: '#a6e22e',
               border: '1px solid rgba(166,226,46,0.5)',
             }}
-          >
-            Buy
-          </a>
+          />
         </div>
       </div>
     )
@@ -341,8 +337,7 @@ export default async function StrongestPreWorkoutPage() {
                 beta-alanine, {CITRULLINE_TARGET_G} g citrulline).
               </p>
               <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">
-                Informational only — not medical advice. Buy links are affiliate links; we may earn a
-                commission at no extra cost to you. This never affects scoring or rankings.
+                Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring or rankings.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link

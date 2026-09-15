@@ -6,7 +6,7 @@ import TopNav from '@/components/TopNav'
 import ScoreBadge from '@/components/ScoreBadge'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS, GUIDES } from '@/lib/guides'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import type { ScoredProduct } from '@/lib/products'
 import {
   MIN_RANKED,
@@ -215,15 +215,11 @@ export default async function BestCategoryPage({
                   {p.cost_per_serving != null && (
                     <p className="text-[11px] text-white/60 mb-3">{fmt(p.cost_per_serving)} per serving</p>
                   )}
-                  <a
-                    href={buyLink(p.brand, p.name, p.buy_url)}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
+                  <ProductOfferLink
+                    product={p}
                     className="mt-auto text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
                     style={{ background: 'rgba(166,226,46,0.12)', color: '#a6e22e', border: '1px solid rgba(166,226,46,0.5)' }}
-                  >
-                    Buy
-                  </a>
+                  />
                 </div>
               ))}
             </div>
@@ -269,15 +265,11 @@ export default async function BestCategoryPage({
                   >
                     Compare
                   </Link>
-                  <a
-                    href={buyLink(p.brand, p.name, p.buy_url)}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
+                  <ProductOfferLink
+                    product={p}
                     className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
                     style={{ background: 'rgba(166,226,46,0.12)', color: '#a6e22e', border: '1px solid rgba(166,226,46,0.5)' }}
-                  >
-                    Buy
-                  </a>
+                  />
                 </div>
               </li>
             ))}
@@ -294,8 +286,7 @@ export default async function BestCategoryPage({
             separate Best Value and Best Budget picks, never the main order.
           </p>
           <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">
-            Informational only — not medical advice. Buy links are affiliate links; we may earn a
-            commission at no extra cost to you. This never affects scoring.
+            Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring.
           </p>
           <div className="flex flex-wrap gap-2">
             {hasGuide && (

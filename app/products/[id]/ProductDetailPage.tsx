@@ -7,8 +7,10 @@ import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
-import { buyLink } from '@/lib/affiliate'
-import { track, trackBuyClick } from '@/lib/gtag'
+import ProductOfferLink from '@/components/ProductOfferLink'
+import { amazonSearch, bulkSearch } from '@/lib/affiliate'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import { track } from '@/lib/gtag'
 import { trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
@@ -20,21 +22,23 @@ import ShareModal from '@/components/ShareModal'
 import TopNav from '@/components/TopNav'
 import RelatedProducts from './RelatedProducts'
 
-function getRetailerLinks(brand: string, name: string): { label: string; url: string }[] {
+function getRetailerLinks(brand: string, name: string): { label: string; url: string; affiliate: boolean }[] {
+  if (isSyntheticPreview()) return []
   const q = encodeURIComponent(`${brand} ${name}`)
-  const links: { label: string; url: string }[] = []
+  const links: { label: string; url: string; affiliate: boolean }[] = []
 
   if (brand.toLowerCase() !== 'bulk') {
-    links.push({ label: 'Amazon UK', url: `https://www.amazon.co.uk/s?k=${q}&tag=theliftinglab-21` })
+    links.push({ label: 'Amazon UK', url: amazonSearch(brand, name), affiliate: true })
   }
   if (brand.toLowerCase() !== 'myprotein') {
-    links.push({ label: 'MyProtein', url: `https://www.myprotein.com/sport-nutrition/search.list?q=${q}` })
+    links.push({ label: 'MyProtein', url: `https://www.myprotein.com/sport-nutrition/search.list?q=${q}`, affiliate: false })
   }
-  links.push({ label: 'The Protein Works', url: `https://www.theproteinworks.com/search?query=${q}` })
+  links.push({ label: 'The Protein Works', url: `https://www.theproteinworks.com/search?query=${q}`, affiliate: false })
   if (brand.toLowerCase() !== 'bulk') {
     links.push({
       label: 'Bulk.com',
-      url: `https://www.awin1.com/cread.php?awinmid=4822&awinaffid=2919631&ued=${encodeURIComponent(`https://www.bulk.com/uk/search?q=${encodeURIComponent(name)}`)}`
+      url: bulkSearch(name),
+      affiliate: true,
     })
   }
   return links.slice(0, 4)
@@ -225,11 +229,11 @@ export default function ProductDetailPage({
         {/* reviews */}
         <ReviewSection productId={product.id} productName={product.name} />
 
-        {/* compare prices across retailers */}
-        <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
-          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">Compare Prices</p>
+        {/* Explicit retailer searches, separate from a product offer. */}
+        {retailers.length > 0 && <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
+          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">Search other retailers</p>
           <p className="text-xs text-gray-500 mb-4">
-            Search for this product across UK retailers — prices vary.
+            Search results do not confirm the exact product, pack, price or stock.
           </p>
           <div className="grid grid-cols-2 gap-2">
             {retailers.map((r) => (
@@ -237,19 +241,18 @@ export default function ProductDetailPage({
                 key={r.label}
                 href={r.url}
                 target="_blank"
-                rel="noopener noreferrer nofollow"
-                onClick={() => track('retailer_click', { item_brand: product.brand, item_name: product.name, retailer: r.label })}
+                rel={r.affiliate ? 'noopener noreferrer nofollow sponsored' : 'noopener noreferrer nofollow'}
+                onClick={() => track('retailer_search_click', { retailer: r.label })}
                 className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-lab-border hover:border-lab-lime/50 hover:bg-lab-lime/5 transition-colors group"
               >
                 <span className="text-white text-xs font-medium">{r.label}</span>
-                <span className="text-lab-muted text-xs group-hover:text-lab-lime transition-colors">Search →</span>
+                <span className="text-lab-muted text-[10px] text-right group-hover:text-lab-lime transition-colors">
+                  Search ↗<br />{r.affiliate ? 'Affiliate link · we may earn a commission' : 'External link'}
+                </span>
               </a>
             ))}
           </div>
-          <p className="text-[10px] text-gray-600 mt-3">
-            We may earn a commission on purchases via affiliate links. Check retailer for current pricing.
-          </p>
-        </div>
+        </div>}
       </div>
 
       {/* sticky action bar */}
@@ -274,24 +277,10 @@ export default function ProductDetailPage({
           >
             Compare
           </Link>
-          <a
-            href={buyLink(product.brand, product.name, product.buy_url)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            onClick={() => {
-              const href = buyLink(product.brand, product.name, product.buy_url)
-              trackBuyClick({
-                product_id: product.id,
-                product_name: product.name,
-                brand: product.brand,
-                category: product.category,
-                href,
-              })
-            }}
+          <ProductOfferLink
+            product={product}
             className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
-          >
-            Buy Now →
-          </a>
+          />
         </div>
       </div>
 

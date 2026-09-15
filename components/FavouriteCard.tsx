@@ -3,13 +3,12 @@
 import ScoreBadge from '@/components/ScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
 import { categoryLabel } from '@/lib/categories'
-import { track } from '@/lib/gtag'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import type { ScoredProduct } from '@/lib/products'
 
 // Shared favourited-product card. Used on the /favourites page and the
 // dashboard so both surfaces render saved products with identical structure
-// (score, brand/name, category, heart, affiliate Buy). The ScoreBadge shows
+// (score, brand/name, category, heart, retailer reference). The ScoreBadge shows
 // the objective formulation score only — reviews are never folded in here.
 export default function FavouriteCard({
   product: p,
@@ -37,16 +36,11 @@ export default function FavouriteCard({
         }}
       />
       <div className="flex flex-col items-end gap-0.5 shrink-0">
-        <a
-          href={buyLink(p.brand, p.name, p.buy_url)}
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name })}
+        <ProductOfferLink
+          product={p}
           className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black px-3 py-1.5 rounded-lg hover:opacity-90"
-        >
-          Buy
-        </a>
-        <span className="text-[9px] text-lab-muted/40 leading-tight">affiliate link</span>
+        />
+
       </div>
     </div>
   )
