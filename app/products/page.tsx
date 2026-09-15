@@ -1,3 +1,4 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import TopNav from '@/components/TopNav'
 import ProductGrid from './ProductGrid'
@@ -61,12 +62,12 @@ export default async function ProductsPage() {
       {itemListJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }}
         />
       )}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
         <h1 className="sr-only">Browse Supplements — Scored &amp; Compared by Effectiveness Match</h1>
