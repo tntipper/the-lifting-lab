@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useId } from 'react'
+import { claimsReviewFor } from '@/lib/claims-review'
+import { listedPackPence, listedPackSubtotal } from '@/lib/wizard-budget'
 import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
@@ -17,7 +19,7 @@ const GOALS: { key: GoalKey; label: string; blurb: string }[] = [
   { key: 'weightloss', label: 'Lean Out', blurb: 'Protein-led, low calorie' },
 ]
 
-// Budget slider config (monthly £). At/above NO_LIMIT we stop filtering by price.
+// Budget applies to listed packs for the initial selection. It is not monthly consumption.
 const BUDGET_MIN = 20
 const BUDGET_MAX = 300
 const BUDGET_STEP = 10
@@ -40,9 +42,21 @@ export default function Wizard() {
   const [step, setStep] = useState(0)
   const [goals, setGoals] = useState<GoalKey[]>([])
   const [budget, setBudget] = useState<number>(120)
+  const [budgetDraft, setBudgetDraft] = useState('120')
   const [hardTrainer, setHardTrainer] = useState<boolean | null>(null)
   const [owned, setOwned] = useState<string[]>([])
   const [all, setAll] = useState<ScoredProduct[]>([])
+  const container = useRef<HTMLDivElement>(null)
+  const previousStep = useRef(step)
+  const addedStackLink = useRef<HTMLAnchorElement>(null)
+  const focusAddedStack = useRef(false)
+  const budgetId = useId()
+
+  useEffect(() => {
+    if (previousStep.current === step) return
+    previousStep.current = step
+    container.current?.querySelector<HTMLElement>('[data-wizard-step-heading]')?.focus()
+  }, [step])
 
   useEffect(() => {
     track('wizard_start')
@@ -56,6 +70,7 @@ export default function Wizard() {
   const topByCategory = useMemo(() => {
     const map = new Map<string, ScoredProduct>()
     for (const p of all) {
+      if (claimsReviewFor(p.category)) continue
       const cur = map.get(p.category)
       if (!cur || (p.score ?? -1) > (cur.score ?? -1)) map.set(p.category, p)
     }
@@ -88,20 +103,16 @@ export default function Wizard() {
     for (const c of cats) {
       const p = topByCategory.get(c)
       if (!p) continue
-      const price = p.retail_price ?? 0
-      // real £ filter: skip a pick that would bust the monthly budget (keep trying
-      // cheaper categories further down the priority list)
-      if (!noLimit && price > 0 && total + price > budget) continue
+      const price = listedPackPence(p.retail_price)
+      // Unknown prices cannot count as free within a finite pack budget.
+      if (!noLimit && (price === null || total + price > Math.round(budget * 100))) continue
       picks.push(p)
-      total += price
+      if (price !== null) total += price
     }
     return picks
   }, [goals, budget, hardTrainer, owned, topByCategory, mergedCats])
 
-  const stackTotal = useMemo(
-    () => stack.reduce((sum, p) => sum + (p.retail_price ?? 0), 0),
-    [stack],
-  )
+  const stackTotal = listedPackSubtotal(stack)
 
   function toggleGoal(k: GoalKey) {
     setGoals((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]))
@@ -115,7 +126,15 @@ export default function Wizard() {
   const inStackCount = stack.filter((p) => inStack(p.id)).length
   const allInStack = stack.length > 0 && inStackCount === stack.length
 
+  useEffect(() => {
+    if (allInStack && focusAddedStack.current) {
+      focusAddedStack.current = false
+      addedStackLink.current?.focus()
+    }
+  }, [allInStack])
+
   function addAllToStack() {
+    focusAddedStack.current = true
     const toAdd = stack.filter((p) => !inStack(p.id))
     toAdd.forEach((p) =>
       toggle({ id: p.id, name: p.name, brand: p.brand, category: p.category, score: p.score }),
@@ -138,8 +157,10 @@ export default function Wizard() {
     setStep(0)
     setGoals([])
     setBudget(120)
+    setBudgetDraft('120')
     setHardTrainer(null)
     setOwned([])
+    focusAddedStack.current = false
   }
 
   const canAdvance =
@@ -149,7 +170,7 @@ export default function Wizard() {
     step === 3
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div ref={container} className="max-w-2xl mx-auto">
       {/* progress */}
       {step < 4 && (
         <div className="flex gap-1.5 mb-8">
@@ -181,21 +202,27 @@ export default function Wizard() {
 
       {/* step 1 — budget slider */}
       {step === 1 && (
-        <Step title="What's your monthly budget?" subtitle="We'll build the best stack that fits the spend.">
+        <Step title="What is your initial pack budget?" subtitle="Choose a budget for the listed packs. Delivery is additional.">
           <div className="bg-lab-panel border border-lab-border rounded-2xl p-6">
             <div className="text-center mb-4">
               <span className="text-4xl font-black text-lab-lime">
                 {budget >= NO_LIMIT ? 'No limit' : `£${budget}`}
               </span>
-              <span className="text-lab-muted text-sm">{budget >= NO_LIMIT ? '' : ' / month'}</span>
+              <span className="text-lab-muted text-sm">{budget >= NO_LIMIT ? '' : ' for packs'}</span>
             </div>
             <input
               type="range"
+              aria-label="Initial pack budget"
+              aria-valuetext={budget >= NO_LIMIT ? 'No limit' : `£${budget} for packs`}
               min={BUDGET_MIN}
               max={BUDGET_MAX}
               step={BUDGET_STEP}
               value={budget}
-              onChange={(e) => setBudget(Number(e.target.value))}
+              onChange={(e) => {
+                const value = Number(e.target.value)
+                setBudget(value)
+                setBudgetDraft(value >= NO_LIMIT ? '' : String(value))
+              }}
               className="w-full accent-lab-lime"
             />
             <div className="flex justify-between text-[10px] uppercase tracking-widest text-lab-muted mt-2">
@@ -203,16 +230,27 @@ export default function Wizard() {
               <span>No limit</span>
             </div>
             <div className="mt-5 flex items-center gap-3">
-              <label className="text-xs text-lab-muted uppercase tracking-widest font-bold shrink-0">Custom £</label>
+              <label htmlFor={budgetId} className="text-xs text-lab-muted uppercase tracking-widest font-bold shrink-0">Custom £</label>
               <input
+                id={budgetId}
+                aria-label="Custom initial pack budget in pounds"
                 type="number"
                 min={BUDGET_MIN}
-                value={budget >= NO_LIMIT ? '' : budget}
+                step="0.01"
+                value={budgetDraft}
                 placeholder="e.g. 95"
                 onChange={(e) => {
+                  setBudgetDraft(e.target.value)
                   const v = Number(e.target.value)
-                  if (!Number.isFinite(v) || v <= 0) return
-                  setBudget(Math.min(Math.max(v, BUDGET_MIN), NO_LIMIT))
+                  if (Number.isFinite(v) && v >= BUDGET_MIN) setBudget(Math.round(Math.min(v, NO_LIMIT) * 100) / 100)
+                }}
+                onBlur={() => {
+                  const value = Number(budgetDraft)
+                  const nextBudget = budgetDraft.trim() && Number.isFinite(value) && value > 0
+                    ? Math.round(Math.min(Math.max(value, BUDGET_MIN), NO_LIMIT) * 100) / 100
+                    : budget
+                  setBudget(nextBudget)
+                  setBudgetDraft(nextBudget >= NO_LIMIT ? '' : String(nextBudget))
                 }}
                 className="w-28 bg-lab-bg text-white border border-lab-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-lab-lime"
               />
@@ -264,18 +302,21 @@ export default function Wizard() {
           <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-3">
             Your stack
           </p>
-          <h2 className="text-2xl font-black uppercase tracking-tight mb-2">
+          <h2 tabIndex={-1} data-wizard-step-heading className="text-2xl font-black uppercase tracking-tight mb-2">
             {stack.length} product{stack.length === 1 ? '' : 's'} for{' '}
             <span className="text-lab-lime">
               {GOALS.filter((g) => goals.includes(g.key)).map((g) => g.label).join(' + ') || 'your goals'}
             </span>
           </h2>
+          <p className="text-lab-muted text-sm mb-2">
+            {stackTotal !== null && stack.length > 0
+              ? <>Listed pack subtotal: <span className="text-white font-bold">£{(stackTotal / 100).toFixed(2)}</span>.</>
+              : 'A complete pack subtotal is unavailable for this selection.'}
+            {' '}Delivery and checkout adjustments are additional.
+          </p>
           <p className="text-lab-muted text-sm mb-6">
-            Highest-scored pick in each recommended category
-            {budget < NO_LIMIT && (
-              <> — about <span className="text-white font-bold">£{Math.round(stackTotal)}/month</span> of your £{budget} budget</>
-            )}
-            .
+            Monthly spending needs the pack contents and how often each product is used.
+            Review each product&apos;s evidence and label before adding it to your stack.
           </p>
 
           {stack.length === 0 ? (
@@ -287,20 +328,20 @@ export default function Wizard() {
               {stack.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
+                  className="grid grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 bg-lab-panel border border-lab-border rounded-xl p-4"
                 >
                   <ScoreBadge score={p.score} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-white text-sm font-bold truncate">{p.brand}</p>
-                    <p className="text-lab-muted text-xs truncate">{p.name}</p>
+                    <p className="text-white text-sm font-bold break-words">{p.brand}</p>
+                    <Link href={`/products/${p.id}`} className="text-lab-muted text-xs break-words hover:text-lab-lime hover:underline">{p.name}</Link>
                     <span className="inline-block mt-1.5 text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                       {categoryLabel(p.category)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="col-span-2 sm:col-span-1 flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => toggle({ id: p.id, name: p.name, brand: p.brand, category: p.category, score: p.score })}
-                      className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-lg border transition-colors ${
+                      className={`text-[10px] uppercase tracking-widest font-bold px-3 min-h-11 rounded-lg border transition-colors ${
                         inStack(p.id)
                           ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
                           : 'border-lab-border text-lab-muted hover:text-white'
@@ -310,9 +351,9 @@ export default function Wizard() {
                     </button>
                     <Link
                       href={`/products?category=${p.category}`}
-                      className="text-[10px] uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-3 py-1.5 rounded-lg"
+                      className="text-[10px] uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-3 min-h-11 inline-flex items-center rounded-lg"
                     >
-                      Swap
+                      Browse alternatives
                     </Link>
                   </div>
                 </div>
@@ -325,6 +366,7 @@ export default function Wizard() {
               allInStack ? (
                 <Link
                   href="/stack"
+                  ref={addedStackLink}
                   className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
                 >
                   View My Stack →
@@ -390,7 +432,7 @@ function Step({
 }) {
   return (
     <div>
-      <h2 className="text-2xl font-black uppercase tracking-tight mb-1">{title}</h2>
+      <h2 tabIndex={-1} data-wizard-step-heading className="text-2xl font-black uppercase tracking-tight mb-1">{title}</h2>
       <p className="text-lab-muted text-sm mb-6">{subtitle}</p>
       {children}
     </div>
@@ -410,6 +452,8 @@ function Choice({
 }) {
   return (
     <button
+      type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={`text-left rounded-xl p-4 border transition-colors ${
         active ? 'border-lab-lime bg-lab-lime/10' : 'border-lab-border bg-lab-panel hover:border-lab-muted'

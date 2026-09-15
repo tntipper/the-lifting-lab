@@ -52,7 +52,7 @@ function fixture({ category = 'cycle-support', modalOpen = false, nutrients = []
       if (name === '@/lib/products') return { PRODUCT_COLUMNS: '*', withScore: p => p, sortScored: a => a, trueCostReason: () => null }
       if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
       if (name === '@/components/ScoreBadge') return { __esModule: true, default: ({ score }) => React.createElement('span', {}, `Score ${score}`), scoreColor: () => '#fff' }
-      if ((name.startsWith('@/components/') && !['@/components/ClaimsReviewNotice', '@/components/MethodologyModal'].includes(name)) || name === './RelatedProducts') return { __esModule: true, default: blank }
+      if ((name.startsWith('@/components/') && !['@/components/ClaimsReviewNotice', '@/components/MethodologyModal', '@/components/AccessibleDialog'].includes(name)) || name === './RelatedProducts') return { __esModule: true, default: blank }
       if (name.startsWith('@/') || name.startsWith('.')) {
         const base = name.startsWith('@/') ? path.join(root, name.slice(2)) : path.resolve(path.dirname(filename), name)
         const resolved = ['.ts', '.tsx'].map(ext => base + ext).find(existsSync)

@@ -84,7 +84,7 @@ export default function ProductDetailPage({
       <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 space-y-6">
         {/* hero */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:text-left items-center text-center gap-6 lg:gap-10">
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-4 max-w-full">
             <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} />
             <ScoreBadge score={product.score} size="lg" />
           </div>
