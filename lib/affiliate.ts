@@ -1,4 +1,4 @@
-import { isSyntheticPreview } from './preview-mode'
+import { isIsolatedEnvironment } from './preview-mode'
 // Centralised affiliate link construction.
 // Bulk products route through Awin deeplinks; everything else goes to Amazon.
 //
@@ -34,7 +34,7 @@ function withApplyCode(url: string): string {
  * appends the referral code; otherwise sends to the referral landing page.
  */
 export function myproteinLink(directUrl?: string | null): string {
-  if (isSyntheticPreview()) return '/preview'
+  if (isIsolatedEnvironment()) return '/preview'
   const base = directUrl && directUrl.trim()
     ? directUrl.trim()
     : 'https://www.myprotein.com/referrals.list'
@@ -42,14 +42,14 @@ export function myproteinLink(directUrl?: string | null): string {
 }
 
 export function amazonSearch(brand: string, name: string): string {
-  if (isSyntheticPreview()) return '/preview'
+  if (isIsolatedEnvironment()) return '/preview'
   const q = encodeURIComponent(`${brand} ${name}`.trim())
   const tag = AMAZON_TAG ? `&tag=${encodeURIComponent(AMAZON_TAG)}` : ''
   return `https://www.amazon.co.uk/s?k=${q}${tag}`
 }
 
 export function bulkSearch(name: string): string {
-  if (isSyntheticPreview()) return '/preview'
+  if (isIsolatedEnvironment()) return '/preview'
   const dest = `https://www.bulk.com/uk/search?q=${encodeURIComponent(name.trim())}`
   return `https://www.awin1.com/cread.php?awinmid=${BULK_MID}&awinaffid=${AWIN_AFFID}&ued=${encodeURIComponent(dest)}`
 }
@@ -60,7 +60,7 @@ export function bulkSearch(name: string): string {
  * code, just the retailer's own current promotions.
  */
 export function bulkDealsLink(): string {
-  if (isSyntheticPreview()) return '/preview'
+  if (isIsolatedEnvironment()) return '/preview'
   const dest = 'https://www.bulk.com/uk/offers.list'
   return `https://www.awin1.com/cread.php?awinmid=${BULK_MID}&awinaffid=${AWIN_AFFID}&ued=${encodeURIComponent(dest)}`
 }
@@ -71,7 +71,7 @@ export function bulkDealsLink(): string {
  * to a retailer search (Awin/Bulk for Bulk products, Amazon for everything else).
  */
 export function buyLink(brand: string, name: string, directUrl?: string | null): string {
-  if (isSyntheticPreview()) return '/preview'
+  if (isIsolatedEnvironment()) return '/preview'
   if (isMyProtein(brand)) return myproteinLink(directUrl)
   if (directUrl && directUrl.trim()) return directUrl.trim()
   if (brand.toLowerCase() === 'bulk') return bulkSearch(name)

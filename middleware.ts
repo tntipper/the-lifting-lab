@@ -1,8 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { isSyntheticPreview, isPreviewAccountPath, previewUnavailableResponse } from './lib/preview-mode'
+import { isSyntheticPreview, isHostedStaging, isPreviewAccountPath, previewUnavailableResponse, stagingConnectionPolicy } from './lib/preview-mode'
 
 export function middleware(request: NextRequest) {
-  if (!isSyntheticPreview()) return NextResponse.next()
+  if (!isSyntheticPreview()) {
+    const response = NextResponse.next()
+    if (isHostedStaging()) {
+      response.headers.set('X-TLL-Preview', 'staging')
+      response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+      response.headers.set('Content-Security-Policy', stagingConnectionPolicy())
+    }
+    return response
+  }
   const path = request.nextUrl.pathname
   if (path === '/api' || path.startsWith('/api/') || !['GET', 'HEAD'].includes(request.method)) {
     return previewUnavailableResponse()
