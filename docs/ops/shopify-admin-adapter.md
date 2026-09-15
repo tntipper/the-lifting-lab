@@ -18,6 +18,7 @@ Shopify currently redirects some explicit `2026-07` documentation links to pages
 | --- | --- | --- |
 | `readTarget(binding)` | Read exact shop, parent product, variant, inventory item and one location; return an immutable observation | `read_products` and `read_inventory` |
 | `prepareChange(input)` | Validate reviewed mapping, inventory binding, source-of-truth policy and `StockProjection`; construct one absolute `available` change | Local operation; no API call |
+| `describePreparedPlan(plan)` | Export frozen exact request/binding/provenance for an issued, still-prepared plan; never restore execution authority | Local operation; no API call |
 | `executeChange(plan)` | Dispatch a previously issued, unexpired plan once when explicitly enabled | `write_inventory` and the user's inventory-update permission, plus read access for the selected result fields |
 | `reconcileChange(plan)` | Perform a new exact read; distinguish acknowledged-and-observed from uncertain or diverged outcomes | Same read access |
 
@@ -37,19 +38,19 @@ Observation age starts before the request, so transport, parsing and review time
 
 ## Reconciliation and remaining runtime work
 
-Persist an approved plan's operation ID, request hash, exact variables, target, provenance versions and outcome **before dispatch** in the future queue. The current adapter only provides an in-process, one-attempt guard and one pending operation per inventory-item/location. It has no database, lease, restart recovery or cross-worker lock. Do not enable production dispatch until those durable controls are implemented and tested; recreating an adapter loses its local history.
+The adapter itself provides an in-process, one-attempt guard and one pending operation per inventory-item/location. The separate [inventory operation ledger](inventory-operation-ledger.md) now persists its exact prepared manifest and adds transactional claims, a committed attempt boundary and conservative read/hold recovery. It is unconnected and disabled by default. Recreating an adapter still loses its executable plan authority; exporting a manifest does not restore it. Hosted and operational acceptance remain required before enabling dispatch.
 
 Successful HTTP transport is not business success. Top-level GraphQL errors, missing fields, malformed bodies, user errors and mismatched adjustment details cannot yield `acknowledged`. Only an exact returned adjustment plus an additional read showing the intended state yields `reconciled`. That state is a point-in-time observation, not a guarantee against later sales or stock changes.
 
-No mutation is automatically retried. A lost response keeps the target held even when a reread matches the desired quantity, because causality is unknown. CAS conflicts and diverged rereads require operator review. The adapter exposes no reset or forced-write method. The future durable worker must reconcile any uncertain attempt before deciding whether a retry is appropriate, retain the original key/parameters for the same operation, respect Shopify's retention boundary, and never blindly generate a replacement key.
+No mutation is automatically retried. A lost response keeps the target held even when a reread matches the desired quantity, because causality is unknown. CAS conflicts and diverged rereads require operator review. The adapter exposes no reset or forced-write method. The durable worker rereads uncertain attempts and holds the target; it does not retry or generate a replacement key. Shopify's retention boundary and the inability to establish causality from a matching quantity still apply.
 
 Next acceptance steps, still pending:
 
 1. Supply reviewed store/location/variant/inventory bindings and verify scopes with exact development-store reads.
 2. Confirm the selected fields and `changeFromQuantity`/`@idempotent` operation against the pinned hosted schema, including inactive/shared inventory behaviour.
 3. With an explicitly authorised synthetic development-store fixture, verify one CAS success, one intervening-change conflict, actual adjustment IDs/results and a fresh reread. Simulate response loss through a controlled transport.
-4. Add durable per-target claims, versioned source observations, reconciliation recovery, operational hold controls and monitoring before connecting supplier schedules. The supplier feed and its commercial/stock approvals remain held.
+4. Validate and deploy the separate durable ledger, then add operational hold resolution and monitoring before connecting supplier schedules. The supplier feed and its commercial/stock approvals remain held.
 
 Synthetic tests cover identity mismatches, SSRF forms, unknown quantities, stale evidence, API fallback, partial/truncated/error responses, concurrent requests, exact adjustment reconciliation and disabled-by-default dispatch. Hosted acceptance is **pending**.
 
-Validation for this foundation: 107 adapter tests and 571 total unit tests pass; TypeScript passes; repository lint has zero errors and six existing warnings outside these files. No build or hosted-operation claim is made for this unconnected server module.
+Validation for this foundation: 108 adapter tests pass; the ledger document records its additional validation; TypeScript passes; repository lint has zero errors and six existing warnings outside these files. No build or hosted-operation claim is made for this unconnected server module.
