@@ -2,8 +2,10 @@
   "name": "the-lifting-lab",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.19.0",
   "engines": {
-    "node": ">=24.0.0 <25"
+    "node": ">=24.0.0 <25",
+    "npm": ">=11.19.0 <12"
   },
   "scripts": {
     "dev": "next dev",
