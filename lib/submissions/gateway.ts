@@ -1,7 +1,8 @@
 import { createHash, createHmac } from 'node:crypto'
 import { isIP } from 'node:net'
+import { SUBMISSION_BODY_BYTE_LIMIT } from './body-size.mjs'
 
-export const SUBMISSION_LIMITS = Object.freeze({ bodyBytes: 16384, name: 120, email: 254, message: 8000, brand: 120, product: 200, url: 2048, notes: 4000 })
+export const SUBMISSION_LIMITS = Object.freeze({ bodyBytes: SUBMISSION_BODY_BYTE_LIMIT, name: 120, email: 254, message: 8000, brand: 120, product: 200, url: 2048, notes: 4000 })
 export const SUBMISSION_CATEGORIES = Object.freeze(['whey', 'whey-isolate', 'casein', 'creatine', 'pre-workout', 'eaas', 'intra-workout', 'post-workout', 'hydration', 'cycle-support', 'protein-bar', 'meal-replacement', 'vitamin', 'multivitamin', 'vitamin-d', 'zma', 'hormone-support', 'gut-digestion', 'heart-health', 'liver-health', 'omega-3', 'joint-health', 'vitamin-c', 'magnesium', 'sleep-recovery'])
 export type SubmissionKind = 'contact' | 'supplement'
 export type SubmissionBody = Record<string, string>

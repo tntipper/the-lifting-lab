@@ -1,4 +1,4 @@
-import { isSyntheticPreview } from './preview-mode'
+import { isIsolatedEnvironment } from './preview-mode'
 
 // Product listings are not verified offers. Legacy URLs lack exact-pack,
 // availability and cost approval; they must never become purchase promises.
@@ -43,7 +43,7 @@ const unavailable = (reason: ProductListing['reason'], own = false): ProductList
 
 /** Classify only an explicitly supplied reference; never infer a listing from a name. */
 export function resolveProductListing(directUrl?: string | null): ProductListing {
-  if (isSyntheticPreview()) return unavailable('preview')
+  if (isIsolatedEnvironment()) return unavailable('preview')
   if (directUrl == null || (typeof directUrl === 'string' && !directUrl.trim())) return unavailable('missing_url')
   let url = parseReference(directUrl)
   if (!url) return unavailable('invalid_url')
@@ -88,26 +88,26 @@ export function resolveProductListing(directUrl?: string | null): ProductListing
 }
 
 // Explicit retailer navigation for editorial promotion pages. These functions
-// are never product purchase fallbacks and are inert in synthetic previews.
+// are never product purchase fallbacks and are inert in isolated environments.
 export function myproteinLink(): string {
-  if (isSyntheticPreview()) return '/preview'
+  if (isIsolatedEnvironment()) return '/preview'
   const url = new URL('https://www.myprotein.com/referrals.list')
   url.searchParams.set('applyCode', MYPROTEIN_REF_CODE)
   return url.href
 }
 export function amazonSearch(brand: string, name: string): string {
-  if (isSyntheticPreview()) return '/preview'
+  if (isIsolatedEnvironment()) return '/preview'
   const url = new URL('https://www.amazon.co.uk/s')
   url.searchParams.set('k', `${brand} ${name}`.trim())
   url.searchParams.set('tag', AMAZON_TAG)
   return url.href
 }
 export function bulkSearch(name: string): string {
-  if (isSyntheticPreview()) return '/preview'
+  if (isIsolatedEnvironment()) return '/preview'
   const url = new URL('https://www.bulk.com/uk/search')
   url.searchParams.set('q', name.trim())
   return awinBulk(url)
 }
 export function bulkDealsLink(): string {
-  return isSyntheticPreview() ? '/preview' : awinBulk(new URL('https://www.bulk.com/uk/offers.list'))
+  return isIsolatedEnvironment() ? '/preview' : awinBulk(new URL('https://www.bulk.com/uk/offers.list'))
 }

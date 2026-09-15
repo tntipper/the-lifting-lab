@@ -4,6 +4,7 @@ import { isSyntheticPreview } from '@/lib/preview-mode'
 import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
+import { submissionSizeError } from '@/lib/submissions/body-size.mjs'
 
 export default function ContactPage() {
   return isSyntheticPreview() ? <PreviewUnavailableContent /> : <ContactPageForm />
@@ -23,6 +24,8 @@ function ContactPageForm() {
     setStatus('sending')
     try {
       const body = JSON.stringify({ name, email, message })
+      const sizeError = submissionSizeError(body)
+      if (sizeError) { setErrorMessage(sizeError); setStatus('error'); return }
       if (!retry.current || retry.current.body !== body) retry.current = { body, key: crypto.randomUUID() }
       const r = await fetch('/api/contact', {
         method: 'POST',

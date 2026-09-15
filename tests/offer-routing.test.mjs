@@ -15,7 +15,7 @@ function loadSource(path, overrides = {}) {
   vm.runInNewContext(js, { require: name => overrides[name] ?? require(name), module: loaded, exports: loaded.exports, process: { env: {} }, URL })
   return loaded.exports
 }
-const affiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isSyntheticPreview: () => false } })
+const affiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } })
 const resolve = affiliate.resolveProductListing
 const ProductOfferLink = loadSource('../components/ProductOfferLink.tsx', { '@/lib/affiliate': affiliate, '@/lib/gtag': { track() { throw new Error('SSR must not track') } } }).default
 const render = url => renderToStaticMarkup(React.createElement(ProductOfferLink, { product: { brand: 'Fixture', name: 'Exact identity unverified', buy_url: url }, className: 'fixture' }))
@@ -90,7 +90,7 @@ test('listing rendering never promises exact stock, price or a purchase', () => 
   assert.doesNotMatch(markup, /Buy|InStock|Add to cart|price=/)
 })
 test('synthetic preview remains entirely inert', () => {
-  const preview = loadSource('../lib/affiliate.ts', { './preview-mode': { isSyntheticPreview: () => true } })
+  const preview = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => true } })
   assert.equal(preview.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').url, null)
   assert.equal(preview.myproteinLink(), '/preview'); assert.equal(preview.bulkDealsLink(), '/preview')
 })

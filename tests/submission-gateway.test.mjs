@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { createHash, createHmac, randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { CATEGORIES } from '../lib/categories.ts'
+import { submissionSizeError, SUBMISSION_BODY_BYTE_LIMIT } from '../lib/submissions/body-size.mjs'
 import { SUBMISSION_CATEGORIES, SUBMISSION_LIMITS, createSubmissionHandler, handlePublicSubmission, signSubmission, validateSubmission, vercelClientIdentity } from '../lib/submissions/gateway.ts'
 
 const config = () => ({ enabled: true, vercel: '1', vercelEnvironment: 'preview', allowedOrigins: ['https://forms.example.test'], audience: 'tll-submissions:synthetic', keyId: 'synthetic-1', signingKeyHex: '12'.repeat(32), privacyKeyHex: '34'.repeat(32), supabaseUrl: 'https://synthetic.supabase.co', anonKey: 'synthetic-anon' })
@@ -82,6 +83,14 @@ test('stream byte cap applies even with misleading Content-Length', async () => 
   assert.equal((await handler(request('x'.repeat(SUBMISSION_LIMITS.bodyBytes + 1), { 'content-length': '1' }), 'contact')).status, 413)
   assert.equal(calls.length, 0)
 })
+test('browser-safe size check rejects multibyte text permitted by HTML maxlength', () => {
+  const value = JSON.stringify({ ...body(), message: '“'.repeat(8000) })
+  assert.ok(new TextEncoder().encode(value).byteLength > SUBMISSION_BODY_BYTE_LIMIT)
+  assert.match(submissionSizeError(value), /shorten/)
+  assert.equal(submissionSizeError('x'.repeat(SUBMISSION_BODY_BYTE_LIMIT)), null)
+  assert.match(submissionSizeError('x'.repeat(SUBMISSION_BODY_BYTE_LIMIT + 1)), /shorten/)
+  assert.equal(SUBMISSION_LIMITS.bodyBytes, SUBMISSION_BODY_BYTE_LIMIT)
+})
 test('optional supplement email/notes become explicit empty strings', () => {
   const value = supplement(); delete value.notes; delete value.email
   assert.deepEqual(validateSubmission('supplement', value), supplement())
@@ -116,6 +125,8 @@ test('forms have associated labels, maxlengths, retry ids and honest receipts', 
     assert.ok(source.includes('Idempotency-Key')); assert.ok(source.includes('role="alert"'))
     for (const match of source.matchAll(/htmlFor="([^"]+)"/g)) assert.ok(source.includes('id="' + match[1] + '"'))
     assert.equal(/ping you|when it&apos;s live|within a few days|we&apos;ll get back/i.test(source), false)
+    assert.ok(source.indexOf('submissionSizeError(body)') < source.indexOf('await fetch('))
+    assert.ok(source.includes("if (sizeError) { setErrorMessage(sizeError); setStatus('error'); return }"))
   }
   assert.ok(contact.includes('Message received for review.'))
   assert.ok(suggest.includes('Suggestion received for review.'))

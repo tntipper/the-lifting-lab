@@ -16,6 +16,10 @@ The new function is owned by `tll_submission_owner`, a `NOLOGIN`, non-superuser,
 
 The migration removes table-level and column-level grants from `PUBLIC`, `anon` and `authenticated`. It checks their *effective* remaining permissions and aborts transactionally if a shared inherited role still supplies access. It does not silently modify that shared role. Client-applicable policies are removed; when a policy also explicitly names a separate staff/service role, that named role and its predicates are retained. Existing table ownership, rows, service grants and separate staff policies remain. An admin workflow implemented solely through the generic authenticated role must be identified before release and moved to a reviewed staff boundary; this migration does not grant every authenticated user inbox access. [PostgreSQL grants are cumulative, including PUBLIC defaults.](https://www.postgresql.org/docs/current/ddl-priv.html)
 
+Effective privileges are checked again after creating all private objects, including inherited schema, table/column and function default ACLs. Any private browser authority aborts the whole migration rather than quietly granting access to a key table. Ownership transfer temporarily grants the migration role SET ROLE authority and the new function owner CREATE on `public`. PostgreSQL 16+ automatically gives a non-superuser role creator ADMIN membership recorded as granted by the bootstrap superuser; that creator cannot directly revoke it. For a newly created owner, this migration uses a transaction-only NOLOGIN/CREATEROLE setup role, revokes its temporary grant, and drops the setup role before commit. Dropping it also removes its automatic ADMIN membership. Final checks require no setup role, no owner memberships in either direction and no owner CREATE on `public`. The non-superuser regression uses session authorization, so a superuser session's SET ROLE powers cannot mask the transfer requirements. A non-superuser CREATEROLE/schema-owner fixture verifies the hosted permission requirements. Later function-owner changes require a migration administrator with authority to manage that role; no lasting membership is retained as a shortcut.
+
+HTML character limits do not measure encoded request bytes. Both forms therefore use the browser-safe shared 16 KiB UTF-8 JSON limit before issuing a request and display a message asking the user to shorten oversized text. The server independently retains its streamed byte cap.
+
 ## Durable quotas, retries and retention
 
 Every valid signed request is validated again in the database. The accepted envelope is at most 40 KB, allowing JSON escaping overhead; its decoded body string is limited to 16 KiB. A short transaction advisory lock serializes the global cap, all subject counters and idempotency decisions. Counter consumption, receipt creation and inbox insertion commit together. A failed insert rolls back all three. Neither process memory nor an instance-local cache decides admission.
@@ -68,39 +72,33 @@ Before production release:
 
 Rollback means disable the gateway and revoke its signing keys while preserving private inbox records. Do not restore unconditional public INSERT/SELECT, undo existing integrity migrations, or replay the old submission-table script. A forward compatibility fix or reviewed staff-only path is safer than reopening the bypass.
 
-## Synthetic local acceptance
+## Synthetic local and Linux CI acceptance
 
-No test below accepts a remote database URL. SQL tests use the fixed disposable `tll_submission_test` database inside `tll-stage0-postgres`; they reset that synthetic database's schemas. They do not touch the separate Auth/Storage test harness or production. Prerequisite: the existing local PostgreSQL 17 test container and Docker image `postgrest/postgrest:v16.3`.
+Run the complete container suite on a Linux host with local Docker and Node 24:
+
+```sh
+node --test tests/submissions/harness.test.mjs tests/submissions/loopback-relay.test.mjs
+node tests/submissions/run-local.mjs
+```
+
+The independent `submissions` job in `.github/workflows/ci.yml` runs these commands. No npm dependencies, project credentials or live service connection are needed. `--help` and `--plan` inspect usage without Docker side effects. There are no options for alternate credentials, database URLs, service hosts, preserved containers or production targets.
+
+The runner requires a local Unix Docker socket, rejecting remote Docker contexts before any connection or mutation. It pulls `postgres:17-alpine` and `postgrest/postgrest:v16.3`, creates a unique labelled network without external egress and starts two disposable containers. Docker publishes no ports. Linux Docker 28 does not expose a usable host binding for an internal network, so a task-owned TCP relay opens an ephemeral `127.0.0.1` listener to the exact verified PostgREST private bridge IP on port 3000. Its Docker calls remain bound to the verified local Unix endpoint. Before listening and before every upstream connection, it verifies the run labels, running container identity, exclusive internal network membership, matching network/container IDs and a usable private IP within that network subnet. A replaced container, changed IP, extra network or any Docker port binding is rejected. The relay closes active sockets and its listener before container cleanup. All database content and credentials are synthetic. The API connects through a dedicated NOINHERIT authenticator granted only the two browser roles, not through a superuser or service-role API credential.
+
+PostgreSQL readiness uses TCP so the image's temporary initialization server is insufficient. PostgREST readiness requires a successful OpenAPI response containing the migrated RPC. Each readiness check has a 60-second deadline; subprocesses also have bounded timeouts. Failure or interruption attempts cleanup of only this run's containers and network after verifying their ownership labels. Cleanup errors fail the job and identify unresolved task-owned resources; the runner never prunes unrelated Docker resources. It prints acceptance success only after successful cleanup.
+
+The execution order is 55 gateway tests, 19 SQL suites (including bootstrap and initial migration), a guarded second migration attempt, and 5 HTTP tests. This migration is intentionally **one-time**, because its private schema/function must not already exist. The second attempt must stop at the exact collision guard. Complete before/after database and role dumps must have identical SHA-256 fingerprints, excluding only `pg_dump`'s random psql restriction tokens. A different failure, successful blind replay or changed dump is a failing check. Normal releases use migration history to skip an already-applied version; they do not replay this file blindly.
+
+The 11 harness tests run without Docker and exercise argument/target restrictions, remote-context rejection, relay wiring, SQL/replay/HTTP ordering, bounded readiness, failure/interruption cleanup and ownership-label protection. The additional 25 relay tests reject unsafe target identities and network states, exercise real synthetic loopback sockets with a 2 MiB transfer and half-close, and prove active sockets/listeners close. These orchestration and transport tests do not substitute for actual PostgREST HTTP acceptance.
+
+For an already-running local synthetic fixture, these focused checks remain available; only `tll_submission_test` within the known `tll-stage0-postgres` container is reset:
 
 ```sh
 node --experimental-strip-types --test tests/submission-gateway.test.mjs
 node --experimental-strip-types --test tests/submissions/database.test.mjs
+node tests/submissions/verify-replay.mjs
 ```
 
-Start a separate local PostgREST container for the HTTP checks; the credentials below are deliberately synthetic and match only the disposable local test container:
+The portable runner is Linux-only because the authoring Mac's Docker daemon stalled new containers in `Created`. No new Mac containers were retried for this change. Authoring validation used the existing SQL fixture and the side-effect-free harness tests. Actual execution of the 5 HTTP tests remains required in Linux CI before release. The Auth/Storage harness and Stage 0 database runner are separate and unchanged.
 
-```sh
-docker run -d --name tll-submission-postgrest \
-  -p 127.0.0.1:55434:3000 \
-  -e PGRST_DB_URI=postgresql://postgres:tll-local-synthetic-only@host.docker.internal:55432/tll_submission_test \
-  -e PGRST_DB_SCHEMAS=public -e PGRST_DB_ANON_ROLE=anon \
-  -e PGRST_JWT_SECRET=tll-submission-synthetic-only-jwt-secret-000000 \
-  postgrest/postgrest:v16.3
-node --experimental-strip-types --test tests/submissions/http.test.mjs
-```
-
-On a Linux CI host, use host networking for this synthetic container because the database port is bound to the host loopback interface. This also keeps the API listener on loopback:
-
-```sh
-docker run -d --name tll-submission-postgrest --network host \
-  -e PGRST_DB_URI=postgresql://postgres:tll-local-synthetic-only@127.0.0.1:55432/tll_submission_test \
-  -e PGRST_SERVER_HOST=127.0.0.1 -e PGRST_SERVER_PORT=55434 \
-  -e PGRST_DB_SCHEMAS=public -e PGRST_DB_ANON_ROLE=anon \
-  -e PGRST_JWT_SECRET=tll-submission-synthetic-only-jwt-secret-000000 \
-  postgrest/postgrest:v16.3
-node --experimental-strip-types --test tests/submissions/http.test.mjs
-```
-
-Wait for `http://127.0.0.1:55434/` to return successfully before running the HTTP suite. A stopped or stalled container is an infrastructure failure, not a passing or skipped HTTP test. The local Docker Desktop daemon used during authoring stalled new containers in `Created`; the HTTP suite is provided for Linux CI and must pass there before release. SQL tests continue to run against the already-running local PostgreSQL fixture.
-
-The suites cover route validation, byte limits, correct field bindings, disabled runtime, Vercel identity selection, exact MAC/audience/body binding, forged/stale/future capabilities, key lifetime/revocation/rotation, SQL and HTTP public-write bypasses, protected private reads, staff compatibility, duplicate/conflicting retries, real concurrent quota boundaries, multiple gateway instances, global caps, transactional rollback and inherited-grant preflight failure. Unit tests do not establish deployed Vercel header provenance or operational queue monitoring; those remain preview/release gates.
+The suites cover route validation, byte limits, correct field bindings, disabled runtime, Vercel identity selection, exact MAC/audience/body binding, forged/stale/future capabilities, key lifetime/revocation/rotation, SQL and HTTP public-write bypasses, protected private reads, staff compatibility, duplicate/conflicting retries, real concurrent quota boundaries, multiple gateway instances, global caps, transactional rollback, inherited/default ACL failure and non-superuser ownership transfer. They do not establish deployed Vercel header provenance or operational queue monitoring; those remain preview/release gates.

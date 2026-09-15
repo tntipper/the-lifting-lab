@@ -2,13 +2,14 @@ import test, { before, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { createHmac, randomUUID } from 'node:crypto'
+import { fixtureTarget } from './fixture.mjs'
 import { signSubmission, createSubmissionHandler } from '../../lib/submissions/gateway.ts'
 
-// Run database.test.mjs first. These fixed targets cannot address a remote service.
-const origin = 'http://127.0.0.1:55434'
+// Run database.test.mjs first. The origin is always loopback.
+const { container, origin } = fixtureTarget()
 const cfg = { enabled: true, vercel: '1', vercelEnvironment: 'preview', allowedOrigins: ['https://forms.example.test'], audience: 'tll-submissions:synthetic', keyId: 'synthetic-1', signingKeyHex: '12'.repeat(32), privacyKeyHex: '34'.repeat(32), supabaseUrl: '', anonKey: '' }
 const body = () => ({ name: 'HTTP synthetic', email: 'http@example.test', message: 'Synthetic HTTP receipt' })
-const sql = text => execFileSync('docker', ['exec', '-i', 'tll-stage0-postgres', 'psql', '-X', '-q', '-U', 'postgres', '-d', 'tll_submission_test', '-v', 'ON_ERROR_STOP=1', '-tA'], { input: text, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
+const sql = text => execFileSync('docker', ['exec', '-i', container, 'psql', '-X', '-q', '-U', 'postgres', '-d', 'tll_submission_test', '-v', 'ON_ERROR_STOP=1', '-tA'], { input: text, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
 function jwt(role) {
   const data = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url') + '.' + Buffer.from(JSON.stringify({ role, exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')
   return data + '.' + createHmac('sha256', 'tll-submission-synthetic-only-jwt-secret-000000').update(data).digest('base64url')
@@ -31,7 +32,8 @@ test('direct REST inserts and personal reads fail for both browser roles', async
     const read = await fetch(origin + '/' + table + '?select=*', { headers })
     assert.ok([401, 403, 404].includes(read.status))
     assert.equal((await read.text()).includes('legacy@example.test'), false)
-    const write = await fetch(origin + '/' + table, { method: 'POST', headers, body: JSON.stringify(body()) })
+    const row = table === 'contact_submissions' ? body() : { category: 'creatine', brand: 'HTTP synthetic', product_name: 'Synthetic product', url: 'https://manufacturer.example.test/product' }
+    const write = await fetch(origin + '/' + table, { method: 'POST', headers, body: JSON.stringify(row) })
     assert.ok([401, 403, 404].includes(write.status))
   }
 })

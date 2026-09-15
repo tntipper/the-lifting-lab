@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
   const { error } = await supabase
     .from('user_favourites')
-    .upsert({ user_id: user.id, product_id: productId }, { onConflict: 'user_id,product_id' })
+    .upsert({ user_id: user.id, product_id: productId }, { onConflict: 'user_id,product_id', ignoreDuplicates: true })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

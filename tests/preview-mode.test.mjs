@@ -90,7 +90,7 @@ test('synthetic retailer links stay local and analytics cannot fire', () => with
   assert.equal(affiliate.amazonSearch('fixture', 'fixture'), '/preview')
   assert.equal(affiliate.bulkSearch('fixture'), '/preview')
   assert.equal(affiliate.bulkDealsLink(), '/preview')
-  assert.equal(affiliate.resolveProductListing('https://shop.fixture.invalid/cart').url, null)
+  assert.equal(affiliate.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').url, null)
   let calls = 0
   const gtag = loadSource('../lib/gtag.ts', resolve, { window: { gtag() { calls++ } } })
   gtag.track('fixture', {})
@@ -104,4 +104,50 @@ test('production listing navigation stays available and analytics follows normal
   const gtag = loadSource('../lib/gtag.ts', resolve, { window: { gtag() { calls++ } } })
   gtag.track('fixture', {})
   assert.equal(calls, 1)
+}))
+
+test('hosted staging permits its account routes but blocks indexing and unrelated browser connections', () => withMode('staging', async () => {
+  const saved = process.env.NEXT_PUBLIC_SUPABASE_URL
+  process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://abcdefghijklmnopqrst.supabase.co'
+  try {
+    const { middleware } = loadSource('../middleware.ts', resolve)
+    for (const [path, method] of [['/auth', 'GET'], ['/api/favourites', 'POST'], ['/api/stack', 'DELETE'], ['/products', 'GET']]) {
+      const url = `https://preview.invalid${path}`
+      const response = middleware({ url, nextUrl: new URL(url), method })
+      assert.equal(response.headers.get('x-middleware-next'), '1')
+      assert.equal(response.headers.get('x-middleware-rewrite'), null)
+      assert.equal(response.headers.get('x-tll-preview'), 'staging')
+      assert.equal(response.headers.get('x-robots-tag'), 'noindex, nofollow')
+      assert.equal(response.headers.get('content-security-policy'), "connect-src 'self' https://abcdefghijklmnopqrst.supabase.co; form-action 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'")
+    }
+    const robots = loadSource('../app/robots.ts', resolve).default()
+    assert.equal(robots.rules.disallow, '/')
+    assert.equal(robots.sitemap, undefined)
+  } finally { if (saved === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = saved }
+}))
+
+test('malformed or production staging endpoint cannot expand the connection policy', () => withMode('staging', async () => {
+  const saved = process.env.NEXT_PUBLIC_SUPABASE_URL
+  try {
+    for (const url of [undefined, 'invalid', 'https://wrhgscovsgsudtedbljr.supabase.co',
+      'https://abcdefghijklmnopqrst.supabase.co.evil.invalid', 'https://user@abcdefghijklmnopqrst.supabase.co',
+      'https://abcdefghijklmnopqrst.supabase.co:444', 'https://abcdefghijklmnopqrst.supabase.co/path',
+      'https://abcdefghijklmnopqrst.supabase.co?x=1', 'https://abcdefghijklmnopqrst.supabase.co#x',
+      "https://abcdefghijklmnopqrst.supabase.co; connect-src *", 'http://abcdefghijklmnopqrst.supabase.co']) {
+      if (url === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = url
+      assert.equal(preview.stagingConnectionPolicy(), "connect-src 'self'; form-action 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'")
+    }
+  } finally { if (saved === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL; else process.env.NEXT_PUBLIC_SUPABASE_URL = saved }
+}))
+
+test('hosted staging never fires analytics or emits affiliate purchase destinations', () => withMode('staging', async () => {
+  let calls = 0
+  loadSource('../lib/gtag.ts', resolve, { window: { gtag() { calls++ } } }).track('fixture')
+  assert.equal(calls, 0)
+  const affiliate = loadSource('../lib/affiliate.ts', resolve)
+  assert.equal(affiliate.myproteinLink(), '/preview')
+  assert.equal(affiliate.amazonSearch('fixture', 'fixture'), '/preview')
+  assert.equal(affiliate.bulkSearch('fixture'), '/preview')
+  assert.equal(affiliate.bulkDealsLink(), '/preview')
+  assert.equal(affiliate.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').url, null)
 }))

@@ -5,6 +5,7 @@ import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { CATEGORIES } from '@/lib/categories'
+import { submissionSizeError } from '@/lib/submissions/body-size.mjs'
 
 export default function SubmitPage() {
   return isSyntheticPreview() ? <PreviewUnavailableContent /> : <SubmitPageForm />
@@ -27,6 +28,8 @@ function SubmitPageForm() {
     setStatus('sending')
     try {
       const body = JSON.stringify({ category, brand, product, url, notes, email })
+      const sizeError = submissionSizeError(body)
+      if (sizeError) { setErrorMessage(sizeError); setStatus('error'); return }
       if (!retry.current || retry.current.body !== body) retry.current = { body, key: crypto.randomUUID() }
       const r = await fetch('/api/submit-supplement', {
         method: 'POST',

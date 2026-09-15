@@ -5,7 +5,7 @@ set local lock_timeout = '5s';
 set local statement_timeout = '60s';
 
 do $$
-declare t text; expected text[]; actual text[];
+declare t text; expected text[]; actual text[]; migration_role name:=current_user;
 begin
   if not exists (select 1 from pg_extension e join pg_namespace n on n.oid=e.extnamespace where e.extname='pgcrypto' and n.nspname='extensions') then
     raise exception 'Prerequisite: pgcrypto installed in extensions schema';
@@ -19,13 +19,27 @@ begin
     if actual is distinct from expected then raise exception 'Submission schema drift: %',t; end if;
   end loop;
   if exists(select 1 from pg_roles where rolname in ('anon','authenticated') and (rolsuper or rolbypassrls)) then raise exception 'Elevated client role'; end if;
+  if exists(select 1 from pg_roles where rolname='tll_submission_role_setup') then raise exception 'Temporary gateway role name collides'; end if;
   if exists(select 1 from pg_roles where rolname='tll_submission_owner') then
     if exists(select 1 from pg_roles where rolname='tll_submission_owner' and (rolcanlogin or rolsuper or rolbypassrls or rolcreaterole or rolcreatedb or rolreplication or rolinherit))
        or exists(select 1 from pg_auth_members where roleid='tll_submission_owner'::regrole or member='tll_submission_owner'::regrole) then
       raise exception 'Unexpected gateway owner role configuration';
     end if;
   else
-    create role tll_submission_owner nologin nosuperuser nobypassrls nocreaterole nocreatedb noreplication noinherit;
+    if current_setting('server_version_num')::integer>=160000 and not (select rolsuper from pg_roles where rolname=current_user) then
+      -- PG16+ gives a non-superuser creator ADMIN membership granted by the
+      -- bootstrap superuser. That creator cannot revoke the automatic grant.
+      -- A transaction-only helper creates the owner; dropping the helper after
+      -- transfer removes its automatic membership without persistent authority.
+      create role tll_submission_role_setup nologin nosuperuser nobypassrls createrole nocreatedb noreplication noinherit;
+      execute format('grant tll_submission_role_setup to %I with inherit false, set true',migration_role);
+      set local role tll_submission_role_setup;
+      create role tll_submission_owner nologin nosuperuser nobypassrls nocreaterole nocreatedb noreplication noinherit;
+      execute format('grant tll_submission_owner to %I with inherit false, set true',migration_role);
+      execute format('set local role %I',migration_role);
+    else
+      create role tll_submission_owner nologin nosuperuser nobypassrls nocreaterole nocreatedb noreplication noinherit;
+    end if;
   end if;
   if to_regnamespace('tll_submission_private') is not null or to_regprocedure('public.submit_public_form(text,text,text)') is not null then
     raise exception 'Gateway already exists or schema name collides; inspect migration history';
@@ -201,9 +215,57 @@ begin
   insert into tll_submission_private.receipts(request_id,binding_digest,expires_at) values(v_request,v_binding,v_now+interval '72 hours');
   return jsonb_build_object('status','accepted');
 end $$;
-alter function public.submit_public_form(text,text,text) owner to tll_submission_owner;
+-- Set final RPC ACLs while the migration role still owns the function.
 revoke all on function public.submit_public_form(text,text,text) from public,anon,authenticated;
 grant execute on function public.submit_public_form(text,text,text) to anon,authenticated;
+-- Hosted Supabase's migration role is not a superuser. Ownership transfer needs
+-- SET ROLE authority and CREATE for the new owner, only within this transaction.
+do $$ begin
+  if not exists(select 1 from pg_roles where rolname='tll_submission_role_setup') then
+    if current_setting('server_version_num')::integer>=160000 then
+      execute format('grant tll_submission_owner to %I with inherit false, set true',current_user);
+    else
+      execute format('grant tll_submission_owner to %I',current_user);
+    end if;
+  end if;
+end $$;
+grant create on schema public to tll_submission_owner;
+alter function public.submit_public_form(text,text,text) owner to tll_submission_owner;
+revoke create on schema public from tll_submission_owner;
+do $$
+declare migration_role name:=current_user;
+begin
+  if exists(select 1 from pg_roles where rolname='tll_submission_role_setup') then
+    set local role tll_submission_role_setup;
+    execute format('revoke tll_submission_owner from %I',migration_role);
+    execute format('set local role %I',migration_role);
+    drop role tll_submission_role_setup;
+  else
+    execute format('revoke tll_submission_owner from %I',migration_role);
+  end if;
+end $$;
+-- Default ACLs can grant NEW objects to a role inherited by browser users.
+-- Check effective authority after all new objects exist, not only named ACLs.
+do $$
+declare browser_role text; object record;
+begin
+  foreach browser_role in array array['anon','authenticated'] loop
+    if has_schema_privilege(browser_role,'tll_submission_private','USAGE,CREATE') then
+      raise exception 'Private gateway privileges inherited by %; inspect schema default ACLs',browser_role;
+    end if;
+    for object in select c.oid from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='tll_submission_private' and c.relkind in ('r','p','v','m','f') loop
+      if has_table_privilege(browser_role,object.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or has_any_column_privilege(browser_role,object.oid,'SELECT,INSERT,UPDATE,REFERENCES') then
+        raise exception 'Private gateway privileges inherited by %; inspect table default ACLs',browser_role;
+      end if;
+    end loop;
+    for object in select p.oid from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='tll_submission_private' loop
+      if has_function_privilege(browser_role,object.oid,'EXECUTE') then raise exception 'Private gateway privileges inherited by %; inspect function default ACLs',browser_role; end if;
+    end loop;
+  end loop;
+  if exists(select 1 from pg_roles where rolname='tll_submission_role_setup') or has_schema_privilege('tll_submission_owner','public','CREATE') or exists(select 1 from pg_auth_members where roleid='tll_submission_owner'::regrole or member='tll_submission_owner'::regrole) then
+    raise exception 'Temporary ownership-transfer authority remains';
+  end if;
+end $$;
 -- No service-role dependency, broad secret access, owner changes to legacy objects,
 -- credentials, key provisioning, quota activation or grants back to public inboxes.
 notify pgrst,'reload schema';
