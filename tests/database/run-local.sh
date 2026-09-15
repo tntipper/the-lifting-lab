@@ -17,10 +17,11 @@ docker run -d --name "$fixture" --network "$network" \
   -e POSTGRES_DB=tll_stage0 -e POSTGRES_PASSWORD=tll-local-synthetic-only \
   postgres:17-alpine >/dev/null
 for attempt in {1..30}; do
-  if docker exec "$fixture" pg_isready -U postgres -d tll_stage0 >/dev/null 2>&1; then break; fi
+  # Initial setup briefly opens a socket-only server; wait for final TCP readiness.
+  if docker exec "$fixture" pg_isready -h 127.0.0.1 -U postgres -d tll_stage0 >/dev/null 2>&1; then break; fi
   sleep 1
 done
-docker exec "$fixture" pg_isready -U postgres -d tll_stage0
+docker exec "$fixture" pg_isready -h 127.0.0.1 -U postgres -d tll_stage0
 docker exec "$fixture" mkdir -p /tmp/tll-integrity/tests /tmp/tll-integrity/supabase
 docker cp scripts "$fixture":/tmp/tll-integrity/scripts >/dev/null
 docker cp tests/database "$fixture":/tmp/tll-integrity/tests/database >/dev/null
