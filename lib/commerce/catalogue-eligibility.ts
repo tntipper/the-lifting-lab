@@ -1,5 +1,5 @@
 /** Shared decision foundation only. No routes, database access, links inferred from names, or publishing. */
-import type { PricingValidityWindow } from './pricing-policy'
+import type { ExactPence, PricingValidityWindow } from './pricing-policy'
 
 export type CatalogueReview = {
   approved: boolean
@@ -24,6 +24,7 @@ export type CataloguePolicy = {
   maxPriceAgeMs: number
   expectedPricingPolicyVersion: string
   expectedPaymentTariffVersion: string
+  expectedSupplierDeliveryTariffVersion: string
 }
 export type ExactMapping = {
   review: CatalogueReview
@@ -59,9 +60,22 @@ export type ApprovedCostGate = {
   currency: 'GBP'
   allAttributableCostsKnown: boolean
   taxTreatmentApproved: boolean
-  supplierDeliveryPencePerBillableItem: number
+  supplierDeliveryTariffVersion: string
+  supplierDeliveryBasis: 'one_item_supplier_order'
+  supplierDeliveryStatus: 'charged' | 'free' | 'boundary_hold'
+  supplierDeliveryGrossCashPence: number
+  wholesaleExVatPence: ExactPence
   /** Derived from the approved contribution calculator; never from wholesale alone. */
   minimumListPricePence: number
+}
+function standaloneDeliveryValid(cost: ApprovedCostGate | null | undefined): boolean {
+  if (!cost || cost.supplierDeliveryBasis !== 'one_item_supplier_order') return false
+  const value = cost.wholesaleExVatPence
+  if (!value || typeof value.numerator !== 'string' || typeof value.denominator !== 'string' || !/^[1-9][0-9]{0,24}$/.test(value.numerator) || !/^[1-9][0-9]{0,24}$/.test(value.denominator)) return false
+  const n = BigInt(value.numerator), d = BigInt(value.denominator)
+  if (n > BigInt(1_000_000_000) * d) return false
+  return cost.supplierDeliveryStatus === 'charged' && cost.supplierDeliveryGrossCashPence === 600 && n < BigInt(10000) * d
+    || cost.supplierDeliveryStatus === 'free' && cost.supplierDeliveryGrossCashPence === 0 && n > BigInt(10000) * d
 }
 export type ApprovedPrice = {
   review: CatalogueReview
@@ -243,7 +257,7 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
   if (!integer(now, 0, Number.MAX_SAFE_INTEGER)) reason(common, 'INVALID_INPUT', 'evaluatedAtMs')
   const policy = value.policy, product = value.product, mapping = value.mapping
   review(policy?.review, 'policy.review', now, common)
-  if (!policy || !integer(policy.maxStockAgeMs, 1, Number.MAX_SAFE_INTEGER) || !integer(policy.maxPriceAgeMs, 1, Number.MAX_SAFE_INTEGER) || !present(policy.expectedPricingPolicyVersion) || !present(policy.expectedPaymentTariffVersion) || !['/products/','/shop/products/'].includes(policy.productPathPrefix)) reason(commerce, 'INVALID_INPUT', 'policy.commerce')
+  if (!policy || !integer(policy.maxStockAgeMs, 1, Number.MAX_SAFE_INTEGER) || !integer(policy.maxPriceAgeMs, 1, Number.MAX_SAFE_INTEGER) || !present(policy.expectedPricingPolicyVersion) || !present(policy.expectedPaymentTariffVersion) || !present(policy.expectedSupplierDeliveryTariffVersion) || !['/products/','/shop/products/'].includes(policy.productPathPrefix)) reason(commerce, 'INVALID_INPUT', 'policy.commerce')
   if (!product || !present(product.id)) reason(common, 'MISSING_INPUT', 'product')
   if (product?.status !== 'active') reason(common, 'PRODUCT_NOT_ACTIVE', 'product.status')
   if (!['research_and_shop','shop_only'].includes(product?.publication ?? '')) reason(common, 'INVALID_INPUT', 'product.publication')
@@ -278,11 +292,12 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
   dependencyValidity(cost?.dependencyValidity, now, commerce)
   if (!cost || cost.allAttributableCostsKnown !== true) reason(commerce, 'UNKNOWN_COST', 'cost')
   if (cost?.taxTreatmentApproved !== true) reason(commerce, 'UNAPPROVED_TAX', 'cost.tax')
-  if (cost?.supplierDeliveryPencePerBillableItem !== 500) reason(commerce, 'DELIVERY_COST_MISSING', 'cost.supplierDelivery')
+  if (!standaloneDeliveryValid(cost)) reason(commerce, 'DELIVERY_COST_MISSING', 'cost.supplierDelivery')
   if (cost?.currency !== 'GBP' || !integer(cost.minimumListPricePence, 1)) reason(commerce, 'INVALID_INPUT', 'cost.minimumListPrice')
   matches(cost?.mappingVersion, mapping?.review?.version, 'cost.mappingVersion', commerce)
   matches(cost?.pricingPolicyVersion, policy?.expectedPricingPolicyVersion, 'cost.pricingPolicyVersion', commerce)
   matches(cost?.paymentTariffVersion, policy?.expectedPaymentTariffVersion, 'cost.paymentTariffVersion', commerce)
+  matches(cost?.supplierDeliveryTariffVersion, policy?.expectedSupplierDeliveryTariffVersion, 'cost.supplierDeliveryTariffVersion', commerce)
   matches(cost?.supplierSku, mapping?.supplierSku, 'cost.supplierSku', commerce)
   review(price?.review, 'price.review', now, commerce)
   observation(price?.observedAtMs, 'price.observedAtMs', now, policy?.maxPriceAgeMs, commerce)

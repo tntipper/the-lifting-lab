@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { evaluateCatalogueEligibility } from '../lib/commerce/catalogue-eligibility.ts'
-import { calculatePriceFloor, TLL_POLICY_VALUES } from '../lib/commerce/pricing-policy.ts'
+import { calculatePriceFloor, TLL_POLICY_VALUES, SUPPLIER_DELIVERY_TARIFF_VERSION, SUPPLIER_DELIVERY_TARIFF_VALUES } from '../lib/commerce/pricing-policy.ts'
 
 const NOW = 1800000000000
 function review(version = 'v1') { return { approved: true, version, expectedVersion: version, verifiedAtMs: NOW - 1000, expiresAtMs: NOW + 10000 } }
@@ -10,11 +10,11 @@ function fixture() {
   const item = identity()
   return {
     evaluatedAtMs: NOW, requestedQuantity: 1,
-    policy: { review: review('catalogue-policy-1'), ownShopOrigin:'https://shop.example.invalid', productPathPrefix:'/products/', maxStockAgeMs:60000, maxPriceAgeMs:300000, expectedPricingPolicyVersion:'pricing-policy-1', expectedPaymentTariffVersion:'payment-1' },
+    policy: { review: review('catalogue-policy-1'), ownShopOrigin:'https://shop.example.invalid', productPathPrefix:'/products/', maxStockAgeMs:60000, maxPriceAgeMs:300000, expectedPricingPolicyVersion:'pricing-policy-1', expectedPaymentTariffVersion:'payment-1',expectedSupplierDeliveryTariffVersion:SUPPLIER_DELIVERY_TARIFF_VERSION },
     product: { id:'product-a', status:'active', publication:'research_and_shop', identity:item },
     mapping: { review:review('mapping-1'), productId:'product-a',shopifyProductId:'gid://shopify/Product/2001',shopifyProductHandle:'product-a',shopifyVariantId:'gid://shopify/ProductVariant/1001',supplierSku:'SYNTHETIC-SKU-A',status:'exact',source:'verified_labels',shopIdentity:structuredClone(item),supplierIdentity:structuredClone(item) },
     commerceLabel: { review:review('commerce-label-1'),formulaId:item.formulaId,formulaVersion:item.formulaVersion,flavourId:item.flavourId,labelVersion:item.labelVersion,packVersion:item.pack.version,source:'manufacturer_label',requiredSellingInformationComplete:true },
-    cost: { review:review('cost-1'),shopifyVariantId:'1001',supplierSku:'SYNTHETIC-SKU-A',mappingVersion:'mapping-1',pricingPolicyVersion:'pricing-policy-1',paymentTariffVersion:'payment-1',dependencyValidity:{validFromMs:NOW-1000,expiresAtMs:NOW+10000},currency:'GBP',allAttributableCostsKnown:true,taxTreatmentApproved:true,supplierDeliveryPencePerBillableItem:500,minimumListPricePence:2604 },
+    cost: { review:review('cost-1'),shopifyVariantId:'1001',supplierSku:'SYNTHETIC-SKU-A',mappingVersion:'mapping-1',pricingPolicyVersion:'pricing-policy-1',paymentTariffVersion:'payment-1',dependencyValidity:{validFromMs:NOW-1000,expiresAtMs:NOW+10000},currency:'GBP',allAttributableCostsKnown:true,taxTreatmentApproved:true,supplierDeliveryTariffVersion:SUPPLIER_DELIVERY_TARIFF_VERSION,supplierDeliveryBasis:'one_item_supplier_order',supplierDeliveryStatus:'charged',supplierDeliveryGrossCashPence:600,wholesaleExVatPence:{numerator:'1000',denominator:'1'},minimumListPricePence:2604 },
     price: { review:review('price-1'),observedAtMs:NOW-1000,shopifyVariantId:'1001',mappingVersion:'mapping-1',costVersion:'cost-1',currency:'GBP',amountPence:3000 },
     stock: { review:review('stock-1'),observedAtMs:NOW-1000,shopifyVariantId:'1001',supplierSku:'SYNTHETIC-SKU-A',packVersion:item.pack.version,basis:'reconciled_sellable_units',availableToSell:10 },
     operator: { review:review('clearance-1'),commerce:'clear',research:'clear' },
@@ -184,7 +184,7 @@ for(const [label,mutate,code] of [
   ['missing cost',v=>v.cost=null,'UNKNOWN_COST'],
   ['unapproved tax',v=>v.cost.taxTreatmentApproved=false,'UNAPPROVED_TAX'],
   ['incomplete attributable cost',v=>v.cost.allAttributableCostsKnown=false,'UNKNOWN_COST'],
-  ['delivery omitted',v=>v.cost.supplierDeliveryPencePerBillableItem=0,'DELIVERY_COST_MISSING'],
+  ['delivery omitted',v=>v.cost.supplierDeliveryGrossCashPence=0,'DELIVERY_COST_MISSING'],
   ['underpriced pack',v=>v.price.amountPence=2603,'BELOW_PRICE_FLOOR'],
   ['zero price',v=>v.price.amountPence=0,'INVALID_INPUT'],
   ['negative price',v=>v.price.amountPence=-1,'INVALID_INPUT'],
@@ -279,9 +279,10 @@ function pricingInputs() {
   const tax = { approved: true, basis: 'not_subject', vatBps: 0, inputVatRecoverable: false }
   return {
     nowMs: NOW,
+    supplierDeliveryTariff: { approval: approval(SUPPLIER_DELIVERY_TARIFF_VERSION), ...SUPPLIER_DELIVERY_TARIFF_VALUES },
     cost: { approval: approval('cost-source-1'), currency: 'GBP', unit: 'sellable_item', unitDefinitionApproved: true,
-      wholesale: { amountPence: 1000, tax }, supplierDelivery: { amountPence: 500, tax }, otherPerItemCosts: [], returnsReservePence: 50,
-      outputVat: { approved: true, rateBps: 2000 } },
+      wholesale: { amountPence: 1000, tax }, otherPerItemCosts: [], returnsReservePence: 50,
+      outputVat: { approved: true, rateBps: 0 } },
     payment: { approval: approval('payment-1'), fixedPence: 25, variableBps: 200 },
     policy: { approval: approval('pricing-policy-1'), ...TLL_POLICY_VALUES, maxDiscountBps: 0 },
   }
@@ -291,6 +292,8 @@ function bindCalculatedFloor(value, calculation) {
   value.cost.pricingPolicyVersion = calculation.approvalVersions.policy
   value.cost.paymentTariffVersion = calculation.approvalVersions.payment
   value.cost.dependencyValidity = calculation.dependencyValidity
+  value.cost.supplierDeliveryTariffVersion = calculation.approvalVersions.supplierDeliveryTariff
+  for (const key of ['supplierDeliveryBasis','supplierDeliveryStatus','supplierDeliveryGrossCashPence','wholesaleExVatPence']) value.cost[key] = calculation[key]
 }
 
 test('a changed payment tariff invalidates an old floor until the new calculator floor and price pass', () => {
@@ -298,7 +301,7 @@ test('a changed payment tariff invalidates an old floor until the new calculator
   const oldFloor = calculatePriceFloor(pricing).calculation
   bindCalculatedFloor(value, oldFloor)
   value.price.amountPence = oldFloor.minimumListPricePence
-  assert.equal(oldFloor.minimumListPricePence, 2604)
+  assert.equal(oldFloor.minimumListPricePence, 2295)
   assert.equal(evaluateCatalogueEligibility(value).commerce.status, 'eligible')
 
   pricing.payment.variableBps = 1500
@@ -311,7 +314,7 @@ test('a changed payment tariff invalidates an old floor until the new calculator
   assert.equal(stale.research.status, 'eligible')
 
   const newFloor = calculatePriceFloor(pricing).calculation
-  assert.equal(newFloor.minimumListPricePence, 3316)
+  assert.equal(newFloor.minimumListPricePence, 2792)
   bindCalculatedFloor(value, newFloor)
   value.cost.review = review('cost-gate-2')
   value.price.costVersion = 'cost-gate-2'
@@ -356,4 +359,21 @@ for (const [label, mutate, code] of [
   assert.equal(result.purchaseTarget, null)
   assert.equal(result.valueRankingEligible, false)
   assert.equal(result.research.status, 'eligible')
+})
+
+for(const [label,mutate,code] of [
+  ['missing delivery tariff',v=>delete v.cost.supplierDeliveryTariffVersion,'IDENTITY_MISMATCH'],
+  ['obsolete delivery tariff',v=>v.cost.supplierDeliveryTariffVersion='old-per-item','IDENTITY_MISMATCH'],
+  ['missing current delivery tariff',v=>delete v.policy.expectedSupplierDeliveryTariffVersion,'INVALID_INPUT'],
+  ['basket-dependent floor',v=>v.cost.supplierDeliveryBasis='shared_basket','DELIVERY_COST_MISSING'],
+  ['boundary HOLD floor',v=>{v.cost.wholesaleExVatPence={numerator:'10000',denominator:'1'};v.cost.supplierDeliveryStatus='boundary_hold'},'DELIVERY_COST_MISSING'],
+  ['free inferred at equality',v=>{v.cost.wholesaleExVatPence={numerator:'10000',denominator:'1'};v.cost.supplierDeliveryStatus='free';v.cost.supplierDeliveryGrossCashPence=0},'DELIVERY_COST_MISSING'],
+  ['free at subthreshold',v=>{v.cost.supplierDeliveryStatus='free';v.cost.supplierDeliveryGrossCashPence=0},'DELIVERY_COST_MISSING'],
+  ['malformed exact wholesale',v=>v.cost.wholesaleExVatPence={numerator:'NaN',denominator:'1'},'DELIVERY_COST_MISSING'],
+]) test(`standalone delivery projection HOLD: ${label}`,()=>{const value=fixture();mutate(value);held(evaluateCatalogueEligibility(value).commerce,code)})
+test('approved above-threshold standalone floor records free delivery',()=>{
+  const value=fixture(),pricing=pricingInputs();pricing.cost.wholesale.amountPence=10001
+  const assessment=calculatePriceFloor(pricing);assert.equal(assessment.eligible,true)
+  bindCalculatedFloor(value,assessment.calculation);value.price.amountPence=assessment.calculation.minimumListPricePence
+  assert.equal(evaluateCatalogueEligibility(value).commerce.status,'eligible')
 })
