@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   assertPreviewIsolation,
-  SYNTHETIC_PREVIEW_PROJECT,
+  SYNTHETIC_PREVIEW_URL,
 } from "../config/preview-isolation.mjs";
 
 const stagingProject = "abcdefghijklmnopqrst";
@@ -34,9 +34,9 @@ test("inherited live database and missing stage markers use synthetic preview en
     },
   ]) {
     assert.doesNotThrow(() => assertPreviewIsolation(env));
-    assert.equal(env.NEXT_PUBLIC_TLL_ENVIRONMENT, "staging");
-    assert.equal(env.TLL_STAGING_SUPABASE_PROJECT_REF, SYNTHETIC_PREVIEW_PROJECT);
-    assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, `https://${SYNTHETIC_PREVIEW_PROJECT}.supabase.co`);
+    assert.equal(env.NEXT_PUBLIC_TLL_ENVIRONMENT, "synthetic-preview");
+    assert.equal(env.TLL_STAGING_SUPABASE_PROJECT_REF, undefined);
+    assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, SYNTHETIC_PREVIEW_URL);
     assert.equal(env.NEXT_PUBLIC_SUPABASE_ANON_KEY, "tll-preview-synthetic-public-key");
   }
 });
@@ -75,4 +75,14 @@ test("partial staging markers without a matching URL still fail closed", () => {
 test("this preview gate does not prevent the existing production build or isolated local checks", () => {
   assert.doesNotThrow(() => assertPreviewIsolation({ VERCEL_ENV: "production" }));
   assert.doesNotThrow(() => assertPreviewIsolation({ NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321" }));
+});
+
+
+test("synthetic preview stays explicit and idempotent across config loads", () => {
+  const env = { VERCEL_ENV: "preview" };
+  assertPreviewIsolation(env);
+  const first = { ...env };
+  assertPreviewIsolation(env);
+  assert.deepEqual(env, first);
+  assert.equal(new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname.endsWith(".invalid"), true);
 });

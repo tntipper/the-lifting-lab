@@ -102,6 +102,7 @@ before(async () => {
     assert.deepEqual(Object.keys(container.NetworkSettings.Networks), [`${PROJECT}-net`])
   }
   const network = JSON.parse(execFileSync('docker', ['network', 'inspect', `${PROJECT}-net`], { encoding: 'utf8' }))[0]
+  // Linux host access is supplied by verified loopback relays, not an egress route.
   assert.equal(network.Internal, true)
   assert.equal(network.Options['com.docker.network.bridge.host_binding_ipv4'], '127.0.0.1')
   const authEnv = containers.find(c => c.Name === `/supabase_auth_${PROJECT}`).Config.Env
