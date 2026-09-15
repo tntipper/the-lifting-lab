@@ -49,7 +49,13 @@ async function run(command, args, { input, visible = false, timeoutMs = 180000 }
       child.on('close', code => {
         clearTimeout(deadline); clearInterval(progress)
         if (code === 0) return resolvePromise()
-        if (command !== 'npx' && diagnostic) console.error(diagnostic)
+        // CLI stdout contains local signing keys; never forward it. Preserve
+        // a scrubbed stderr tail so CI startup failures remain diagnosable.
+        if (diagnostic) console.error(diagnostic.split('\n')
+          .filter(line => !/secret|password|token|api.?key|authorization|BEGIN .*KEY/i.test(line))
+          .join('\n')
+          .replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[redacted local credential]')
+          .replace(/postgres(?:ql)?:\/\/[^\s]+/g, '[redacted local database URL]'))
         reject(new Error(`${command} failed or timed out (${code}); local log: ${log}`))
       })
       child.stdin.end(input)
