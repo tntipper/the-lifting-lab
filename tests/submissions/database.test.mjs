@@ -3,10 +3,11 @@ import assert from 'node:assert/strict'
 import { execFileSync, spawn } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { createHash, createHmac, randomUUID } from 'node:crypto'
+import { fixtureTarget } from './fixture.mjs'
 import { signSubmission, createSubmissionHandler } from '../../lib/submissions/gateway.ts'
 
-// Fixed local Docker target and synthetic database. No environment URL override.
-const container = 'tll-stage0-postgres', database = 'tll_submission_test'
+// Fixed synthetic DB; only known local or generated CI container names allowed.
+const { container, database } = fixtureTarget()
 const cfg = { enabled: true, vercel: '1', vercelEnvironment: 'preview', allowedOrigins: ['https://forms.example.test'], audience: 'tll-submissions:synthetic', keyId: 'synthetic-1', signingKeyHex: '12'.repeat(32), privacyKeyHex: '34'.repeat(32), supabaseUrl: '', anonKey: '' }
 const args = ['exec', '-i', container, 'psql', '-X', '-q', '-U', 'postgres', '-d', database, '-v', 'ON_ERROR_STOP=1', '-tA']
 const sql = text => execFileSync('docker', args, { input: text, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
