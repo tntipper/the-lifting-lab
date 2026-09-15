@@ -18,15 +18,17 @@ A cost-record approval represents approval of the **complete attributable cost s
 
 ## Single-item floor
 
-`calculatePriceFloor(input)` returns the larger of the minimum-margin floor and minimum-cash floor, rounded upward to a whole penny. It also returns a separate target-margin floor, the binding minimum rule, exact economic cost, discounted gross/net revenue, contribution and all approval versions.
+`calculatePriceFloor(input)` returns the lowest whole-penny list price whose actual half-up-rounded percentage discount leaves enough gross receipts to pass both the minimum-margin and minimum-cash tests. It also returns a separate target-margin floor, the binding minimum rule, exact economic cost, discounted gross/net revenue, contribution and all approval versions.
 
-The calculation follows implementation-plan section 9:
+The continuous formula from implementation-plan section 9 establishes the required contribution:
 
 ```text
 margin floor = C / ((1 - d) × ((1 - m) / (1 + v) - f))
 cash floor   = (C + K) / ((1 - d) × (1 / (1 + v) - f))
-list floor   = ceil-to-pence(max(margin floor, cash floor))
+continuous floor = max(margin floor, cash floor)
 ```
+
+Before returning an executable penny price for this simulation, invert its actual receipt rule `gross = P - roundHalfUp(P × d)`. First calculate the required undiscounted gross receipts `G` by taking the maximum cash/margin gross requirement and rounding it upward to a penny. The exact minimum is `floor((G - 0.5) / (1 - d)) + 1`; the strict boundary preserves half-penny discount ties. Apply this independently to minimum and target floors. Merely rounding the continuous formula can be one penny too low when the discount itself rounds upward.
 
 `C` includes one supplier delivery fee, wholesale, other attributable unit costs, reserve and one fixed payment fee. `d` is the maximum allowed discount, `v` output VAT, `f` the variable fee on gross receipts, `m` minimum/target margin and `K` minimum cash contribution. The conservative item floor receives **no customer shipping credit**.
 
@@ -50,10 +52,12 @@ Arithmetic uses reduced BigInt rational fractions; there is no floating-point di
 
 VAT and variable payment fees remain exact in this foundation; actual invoice/payment-provider penny rounding, promotion allocation, refunds and non-refundable fees must be revalidated against the selected checkout/payment configuration before activation. The calculator is not a checkout extension, live inventory check, competitor matcher or transaction guarantee. Current cost versions must be re-read immediately before any future price mutation. Existing manual holds, product/variant matching and independent execution switches remain separate requirements.
 
-Verification: 46 Node tests passed, including independent integer cross-multiplication of lowest-penny boundaries across 30 VAT/discount/cash cases, mixed VAT, fee reconciliation, fixed/percentage promotions, the 500p × quantity rule and missing/unapproved/stale/expired/overflow inputs. Run:
+Verification: 48 Node tests passed, including independent integer cross-multiplication of lowest-penny boundaries across 30 VAT/discount/cash cases and 80 minimum/target one-item basket replays, mixed VAT, fee reconciliation, fixed/percentage promotions, the 500p × quantity rule and missing/unapproved/stale/expired/overflow inputs. Run:
 
 ```sh
 node --experimental-strip-types --test tests/pricing-policy.test.mjs
 ```
+
+The rounding regression is covered explicitly: the reference costs with a 0.02% discount require 2,605p, because the old 2,604p result loses a full penny of discount and misses the minimum margin. The standard 2,604p/2,893p reference scenarios remain valid.
 
 The module also passes strict TypeScript checking with the repository's ES2017 target; no package or lockfile changes are required.

@@ -30,7 +30,8 @@ function hold(result, code) { assert.equal(result.eligible, false); assert.ok(re
 
 // Independent integer cross-multiplication oracle, using the declared economic fixture.
 function referencePass(price, discount, C = 1575n, cash = 300n, margin = 2500n, vat = 2000n, fee = 200n) {
-  const grossN = BigInt(price) * (10000n - BigInt(discount)), grossD = 10000n
+  const discountPence = (2n * BigInt(price) * BigInt(discount) + 10000n) / 20000n
+  const grossN = BigInt(price) - discountPence, grossD = 1n
   const netN = grossN * 10000n, netD = grossD * (10000n + vat)
   const contribN = netN * grossD * 10000n - C * netD * grossD * 10000n - grossN * fee * netD
   const contribD = netD * grossD * 10000n
@@ -244,4 +245,37 @@ test('approved additional unit costs and unrecoverable wholesale tax raise the f
   assert.ok(withPackaging.calculation.minimumListPricePence > baseline)
   value.cost.wholesale.tax = { approved: true, basis: 'exclusive', vatBps: 2000, inputVatRecoverable: false }
   equalFraction(calculatePriceFloor(value).calculation.nonVariableEconomicCostPence, 1875)
+})
+
+
+test('regression: continuous floor can fail when the actual discount rounds upward', () => {
+  const value = input(2) // 0.02% of 2604p rounds to a 1p discount.
+  const oldFloor = basket([line('previous-floor', 1, 2604)])
+  oldFloor.policy.maxDiscountBps = 2; oldFloor.lines[0].percentageDiscountBps = 2
+  hold(evaluateBasket(oldFloor), 'BELOW_MINIMUM_MARGIN')
+  const corrected = calculatePriceFloor(value)
+  assert.equal(corrected.calculation.minimumListPricePence, 2605)
+  assert.ok(referencePass(2605, 2)); assert.equal(referencePass(2604, 2), false)
+  const cashCase = input(5); cashCase.cost.wholesale.amountPence = 1
+  assert.equal(calculatePriceFloor(cashCase).calculation.minimumListPricePence, 1079)
+  assert.ok(referencePass(1079, 5, 576n)); assert.equal(referencePass(1078, 5, 576n), false)
+})
+
+test('minimum and target floors survive their own rounded one-item checkout model', () => {
+  for (const wholesale of [1, 999, 1000, 1001, 1500]) for (const discount of [0, 2, 5, 333, 500, 1000, 2500, 9999]) {
+    const value = input(discount); value.cost.wholesale.amountPence = wholesale
+    const floors = calculatePriceFloor(value)
+    assert.equal(floors.eligible, true)
+    for (const [key, margin] of [['minimumListPricePence',2500], ['targetListPricePence',3500]]) {
+      const p = floors.calculation[key], C = BigInt(wholesale + 575)
+      assert.ok(referencePass(p, discount, C, 300n, BigInt(margin)))
+      assert.equal(referencePass(p - 1, discount, C, 300n, BigInt(margin)), false)
+      const request = basket([line('rounding', 1, p)])
+      request.lines[0].cost = value.cost; request.policy.maxDiscountBps = discount
+      request.lines[0].percentageDiscountBps = discount
+      const result = evaluateBasket(request)
+      assert.equal(result.eligible, true, JSON.stringify({wholesale,discount,key,result}))
+      if (key === 'targetListPricePence') assert.equal(result.calculation.targetMarginMet, true)
+    }
+  }
 })

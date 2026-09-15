@@ -218,22 +218,27 @@ function costs(value: CostRecord, now: number, field = 'cost'): { perItem: Ratio
   return { perItem, delivery, taxFactor: outputTax(value.outputVat, field + '.outputVat') }
 }
 function floorValue(C: Rational, tax: Rational, margin: number, input: PricingContext): { pence: number; limiting: 'margin' | 'cash' | 'both' } {
-  const discountFactor = sub(money(1), rate(input.policy.maxDiscountBps))
   const variable = rate(input.payment.variableBps)
-  const marginDen = mul(discountFactor, sub(div(sub(money(1), rate(margin)), tax), variable))
-  const cashDen = mul(discountFactor, sub(div(money(1), tax), variable))
+  const marginDen = sub(div(sub(money(1), rate(margin)), tax), variable)
+  const cashDen = sub(div(money(1), tax), variable)
   if (marginDen.n <= ZERO || cashDen.n <= ZERO) fail('NON_POSITIVE_DENOMINATOR', 'policy/payment/outputVat')
-  const marginFloor = div(C, marginDen)
-  const cashFloor = div(add(C, money(input.policy.minimumCashPerItemPence)), cashDen)
-  const comparison = compare(marginFloor, cashFloor)
-  return { pence: bounded(ceil(comparison >= 0 ? marginFloor : cashFloor), 'calculatedFloor'), limiting: comparison > 0 ? 'margin' : comparison < 0 ? 'cash' : 'both' }
+  const marginGross = div(C, marginDen)
+  const cashGross = div(add(C, money(input.policy.minimumCashPerItemPence)), cashDen)
+  const comparison = compare(marginGross, cashGross)
+  const requiredGross = ceil(comparison >= 0 ? marginGross : cashGross)
+  // Actual receipt g = P - floor(P*d + 1/2) = ceil(P*(1-d) - 1/2).
+  // For integer G, g >= G iff P*(1-d) > G-1/2 (strict at half-penny ties).
+  // Invert this monotone condition to obtain the lowest passing integer P.
+  const price = ((TWO * requiredGross - ONE) * SCALE) /
+    (TWO * (SCALE - BigInt(input.policy.maxDiscountBps))) + ONE
+  return { pence: bounded(price, 'calculatedFloor'), limiting: comparison > 0 ? 'margin' : comparison < 0 ? 'cash' : 'both' }
 }
 function calculateFloor(input: FloorInput): FloorCalculation {
   const cost = costs(input.cost, input.nowMs)
   const C = add(cost.perItem, money(input.payment.fixedPence))
   const minimum = floorValue(C, cost.taxFactor, input.policy.minimumMarginBps, input)
   const target = floorValue(C, cost.taxFactor, input.policy.targetMarginBps, input)
-  const gross = mul(money(minimum.pence), sub(money(1), rate(input.policy.maxDiscountBps)))
+  const gross = money(minimum.pence - bounded(halfUp(mul(money(minimum.pence), rate(input.policy.maxDiscountBps))), 'discountAtMinimum'))
   const net = div(gross, cost.taxFactor)
   const contribution = sub(sub(net, C), mul(gross, rate(input.payment.variableBps)))
   return {
