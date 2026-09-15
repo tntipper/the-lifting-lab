@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react'
 import { createGuestStore, STACK_STORAGE_PREFIX, type LocalStackProduct } from '@/lib/local-stack'
 import { createStackSync, type StackSyncState } from '@/lib/stack-sync'
+import { createAdditionOutbox } from '@/lib/stack-addition-outbox'
 import { createClient } from '@/lib/supabase'
 import { scoreFor } from '@/lib/scores'
 
@@ -28,8 +29,9 @@ export function LocalStackProvider({ children }: { children: ReactNode }) {
       key: (index: number) => window.localStorage.key(index),
       getItem: (key: string) => window.localStorage.getItem(key),
       setItem: (key: string, value: string) => window.localStorage.setItem(key, value),
+      removeItem: (key: string) => window.localStorage.removeItem(key),
     }
-    const service = createStackSync({ guest: createGuestStore(storage, () => crypto.randomUUID()), request: (...args) => fetch(...args), nonce: () => crypto.randomUUID(), changed: setState })
+    const service = createStackSync({ guest: createGuestStore(storage, () => crypto.randomUUID()), additions: createAdditionOutbox(storage), request: (...args) => fetch(...args), nonce: () => crypto.randomUUID(), changed: setState })
     sync.current = service
     const client = createClient()
     let cancelled = false, authEvent = 0

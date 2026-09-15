@@ -9,6 +9,7 @@ import postcss from 'postcss'
 import tailwind from '@tailwindcss/postcss'
 import { chromium } from 'playwright'
 import { verifyStackAssessment } from './stack-assessment.mjs'
+import { verifyStackOutbox } from './stack-outbox.mjs'
 import { verifyShareResults, verifyWizard } from './journeys.mjs'
 import { verifyRankings } from './rankings.mjs'
 import { verifyOfferLinks } from './offers.mjs'
@@ -35,14 +36,20 @@ const bundle = await build({
         ? 'import React from "react"; export default function Link(props){ return <a {...props}/> }'
         : args.path === 'next/navigation'
           ? 'const params = new URLSearchParams(); export const usePathname = () => "/products"; export const useSearchParams = () => params; export const useRouter = () => ({push(){throw new Error("Unexpected fixture navigation")}});'
-          : 'export const createClient = () => ({auth:{getUser:async()=>({data:{user:window.location.pathname === "/stack-assessment" ? {id:"70000000-0000-4000-8000-000000000001"} : null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}});',
+          : `
+            const listeners = new Set();
+            const user = () => window.location.pathname === '/stack-outbox'
+              ? {id:sessionStorage.getItem('tll_test_owner') || '70000000-0000-4000-8000-000000000001'}
+              : window.location.pathname === '/stack-assessment' ? {id:'70000000-0000-4000-8000-000000000001'} : null;
+            window.__setFixtureUser = id => { sessionStorage.setItem('tll_test_owner',id); for(const fn of listeners) fn('SIGNED_IN',{user:user()}) };
+            export const createClient = () => ({auth:{getUser:async()=>({data:{user:user()}}),onAuthStateChange:fn=>{listeners.add(fn);return{data:{subscription:{unsubscribe(){listeners.delete(fn)}}}}}}});`,
     }))
   } }],
 })
 const css = (await postcss([tailwind()]).process(await readFile(resolve(root, 'app/globals.css'), 'utf8'), { from: resolve(root, 'app/globals.css') })).css
 const html = '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"></head><body><div id="fixture"></div><script src="/fixture.js"></script></body></html>'
 const server = createServer((req, res) => {
-  if (req.url === '/' || req.url === '/wizard' || req.url === '/offers' || req.url === '/rankings' || req.url === '/unassessed' || req.url === '/stack-assessment') { res.setHeader('Content-Type', 'text/html'); res.end(html) }
+  if (req.url === '/' || req.url === '/wizard' || req.url === '/offers' || req.url === '/rankings' || req.url === '/unassessed' || req.url === '/stack-assessment' || req.url === '/stack-outbox') { res.setHeader('Content-Type', 'text/html'); res.end(html) }
   else if (req.url === '/fixture.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(bundle.outputFiles[0].contents) }
   else if (req.url === '/fixture.css') { res.setHeader('Content-Type', 'text/css'); res.end(css) }
   else { res.statusCode = 404; res.end() }
@@ -54,12 +61,13 @@ const browser = await chromium.launch({ headless: true, ...(process.env.TEST_BRO
 const results = []
 try {
   for (const width of [320, 390, 768, 1024, 1280, 1440]) {
-    const page = await browser.newPage({ viewport: { width, height: 950 }, reducedMotion: 'reduce' })
+    const context = await browser.newContext({ viewport: { width, height: 950 }, reducedMotion: 'reduce' })
+    const page = await context.newPage()
     const errors = []
     page.on('pageerror', error => errors.push(error.message))
     await page.route('**/*', route => {
       const url = new URL(route.request().url())
-      return url.origin === origin && ['/', '/wizard', '/offers', '/rankings', '/unassessed', '/stack-assessment', '/fixture.js', '/fixture.css'].includes(url.pathname)
+      return url.origin === origin && ['/', '/wizard', '/offers', '/rankings', '/unassessed', '/stack-assessment', '/stack-outbox', '/fixture.js', '/fixture.css'].includes(url.pathname)
         ? route.continue() : route.abort()
     })
     await page.goto(origin)
@@ -124,9 +132,10 @@ try {
     await verifyOfferLinks(page, origin, width, resultDir)
     await verifyRankings(page, origin, width, resultDir)
     await verifyStackAssessment(page, origin, width, resultDir)
+    if (width === 390) { await verifyStackOutbox(page, origin); console.log('PASS: actual provider/browser reload, lost-response receipt, account switch and two-tab outbox replay') }
     assert.deepEqual(errors, [], 'Fixture browser raised an uncaught error')
     results.push({ width, overflow: false, closedDrawerUnfocusable: true, dialogs: 3, keyboard: 'pass', shareResults: 'busy/success/zero/http-error/network-error', wizard: 'focus/budget/eligibility/long-names', stackAssessment: 'account average/coverage/held/unknown/unresolved/safety/email/social/FAB/failure/no writes', rankings: 'unknown/zero/held/legacy; all sorts; research preservation; own-shop holds; overflow', offers: 'listing/search/missing/own-shop; card/sticky; keyboard/labels/44px/overflow; no navigation' })
-    await page.close()
+    await context.close()
   }
 } finally {
   await browser.close()

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { createGuestStore } from '../lib/local-stack.ts'
 import { createStackSync } from '../lib/stack-sync.ts'
+import { createAdditionOutbox } from '../lib/stack-addition-outbox.ts'
 const U='22222222-2222-4222-8222-222222222222', V='33333333-3333-4333-8333-333333333333'
 const P='aaaaaaaa-aaaa-4aaa-8aaa-000000000001', Q='aaaaaaaa-aaaa-4aaa-8aaa-000000000002'
 const product=(id=P)=>({id,name:'Synthetic',brand:'Fixture',category:'creatine',score:null})
@@ -10,10 +11,10 @@ const item=(id=P,servings=1)=>({id:randomUUID(),product_id:id,servings_per_day:s
 const snap=(items=[],revision=0,userId=U)=>({userId,stackId:items.length?'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb':null,revision,items,recoveryConflicts:0})
 const response=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json'}})
 const applied=(snapshot,acceptedIds=[],rejectedIds=[])=>response({status:'applied',snapshot,acceptedIds,rejectedIds})
-function storage(){const m=new Map();return {get length(){return m.size},key:i=>[...m.keys()][i]??null,getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),m}}
+function storage(){const m=new Map();return {get length(){return m.size},key:i=>[...m.keys()][i]??null,getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k),m}}
 function fixture(request=async()=>response(snap())){
  const data=storage(), guest=createGuestStore(data,randomUUID), states=[],calls=[]
- const service=createStackSync({guest,nonce:randomUUID,request:async(url,options)=>{calls.push([url,options]);return request(url,options)},changed:s=>states.push(s)})
+ const service=createStackSync({guest,additions:createAdditionOutbox(data),nonce:randomUUID,request:async(url,options)=>{calls.push([url,options]);return request(url,options)},changed:s=>states.push(s)})
  return{data,guest,states,calls,service}
 }
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return{promise,resolve}}
@@ -33,8 +34,8 @@ test('legacy items survive migration, acknowledged legacy items stay removed, ma
  assert.equal(JSON.parse(data.getItem('tll_stack_v1')).length,3);guest.add(product());assert.equal(guest.read().length,1)
 })
 test('guest save storage failures cannot be presented as success',async()=>{
- const broken={get length(){return 0},key:()=>null,getItem:()=>null,setItem:()=>{throw new Error('Storage full')}}
- const service=createStackSync({guest:createGuestStore(broken,randomUUID),nonce:randomUUID,request:fetch,changed:()=>{}})
+ const broken={get length(){return 0},key:()=>null,getItem:()=>null,setItem:()=>{throw new Error('Storage full')},removeItem:()=>{}}
+ const service=createStackSync({guest:createGuestStore(broken,randomUUID),additions:createAdditionOutbox(broken),nonce:randomUUID,request:fetch,changed:()=>{}})
  await service.setIdentity(null);await service.add(product());assert.equal(service.getState().guest.length,0);assert.match(service.getState().error,/Storage full/)
 })
 for(const failure of ['network','http500','invalid-body','wrong-owner'])test(`failed ${failure} guest merge retains every local item`,async()=>{

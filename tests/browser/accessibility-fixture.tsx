@@ -41,6 +41,18 @@ const rankingRows: ScoredProduct[] = [
 function StackAssessmentControls() {
   return <><main className="max-w-3xl mx-auto p-4 bg-lab-bg text-white"><h1>Isolated saved-stack assessment acceptance</h1><StackBuilder /></main><StackFAB /></>
 }
+function StackOutboxControls() {
+  const { add, retry, state, stack } = useLocalStack()
+  return <main className="p-4 space-y-4 bg-lab-bg text-white">
+    <h1>Isolated account addition durability</h1>
+    <p data-owner>{state.identity ?? 'signed out'}</p>
+    <p data-ready>{state.loading ? 'Loading' : state.busy ? 'Saving' : 'Ready'}</p>
+    <p role="status">{state.error}</p>
+    <button onClick={() => add(product)} disabled={state.loading || state.busy}>Add synthetic account product</button>
+    <button onClick={retry} disabled={state.loading || state.busy}>Retry account addition</button>
+    <p data-members>{stack.map(p => p.id).join(',')}</p>
+  </main>
+}
 function RankingControls() {
   return <main className="max-w-5xl mx-auto p-4 bg-lab-bg text-white">
     <h1>Isolated assessment display acceptance</h1>
@@ -91,5 +103,5 @@ function Controls() {
 }
 
 createRoot(document.getElementById('fixture')!).render(
-  <StrictMode><LocalStackProvider>{window.location.pathname === '/stack-assessment' ? <StackAssessmentControls /> : ['/rankings', '/unassessed'].includes(window.location.pathname) ? <RankingControls /> : window.location.pathname === '/wizard' ? <WizardPage /> : window.location.pathname === '/offers' ? <OfferControls /> : <Controls />}</LocalStackProvider></StrictMode>,
+  <StrictMode><LocalStackProvider>{window.location.pathname === '/stack-outbox' ? <StackOutboxControls /> : window.location.pathname === '/stack-assessment' ? <StackAssessmentControls /> : ['/rankings', '/unassessed'].includes(window.location.pathname) ? <RankingControls /> : window.location.pathname === '/wizard' ? <WizardPage /> : window.location.pathname === '/offers' ? <OfferControls /> : <Controls />}</LocalStackProvider></StrictMode>,
 )
