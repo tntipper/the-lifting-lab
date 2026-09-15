@@ -1,129 +1,62 @@
-import { guardedSupabaseFetch } from '@/lib/preview-mode'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
-import { awardPoints } from '@/lib/points'
-
-async function getSupabase() {
-  const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: { fetch: guardedSupabaseFetch },
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-          } catch {}
-        },
-      },
-    }
-  )
-}
-
-// GET — fetch user's active stack with products + nutrients
+import { NextResponse } from 'next/server';
+import { createServerSupabase } from '@/lib/supabase-server';
+import { awardPoints } from '@/lib/points';
+import { parseStackOperation, readStackBody } from '@/lib/stack-api';
+export const dynamic = 'force-dynamic';
+const json = (value: unknown, status = 200) => NextResponse.json(value, { status, headers: { 'Cache-Control': 'private, no-store' } });
+// A read never creates a stack, including on first use or a provider failure.
 export async function GET() {
-  const supabase = await getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  // Get or create default stack
-  let { data: stack } = await supabase
-    .from('user_stacks')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .single()
-
-  if (!stack) {
-    const { data: newStack } = await supabase
-      .from('user_stacks')
-      .insert({ user_id: user.id, name: 'My Stack', is_active: true })
-      .select('id')
-      .single()
-    stack = newStack
-  }
-
-  if (!stack) return NextResponse.json({ stackId: null, items: [] })
-
-  const { data: items } = await supabase
-    .from('stack_products')
-    .select(`
-      id,
-      servings_per_day,
-      products (
-        id, name, brand, category, serving_size, serving_unit, buy_url,
-        product_nutrients (nutrient_name, amount, unit)
-      )
-    `)
-    .eq('stack_id', stack.id)
-
-  return NextResponse.json({ stackId: stack.id, items: items || [] })
+    try {
+        const supabase = await createServerSupabase();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (!user)
+            return json({ error: authError ? 'Sign in again to load your stack.' : 'Unauthorized' }, 401);
+        const { data, error } = await supabase.rpc('get_active_stack');
+        if (error || !data || data.userId !== user.id)
+            return json({ error: 'Your saved stack could not be loaded. Please try again.' }, 503);
+        return json(data);
+    }
+    catch {
+        return json({ error: 'Your saved stack could not be loaded. Please try again.' }, 503);
+    }
 }
-
-// POST — add product to stack
-export async function POST(request: Request) {
-  const supabase = await getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { productId, servingsPerDay: rawServings = 1 } = await request.json()
-  const servingsPerDay = Math.min(Math.max(Math.round(Number(rawServings) || 1), 1), 10)
-
-  let { data: stack } = await supabase
-    .from('user_stacks')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .single()
-
-  if (!stack) {
-    const { data: newStack } = await supabase
-      .from('user_stacks')
-      .insert({ user_id: user.id, name: 'My Stack', is_active: true })
-      .select('id')
-      .single()
-    stack = newStack
-  }
-
-  if (!stack) return NextResponse.json({ error: 'Could not create stack' }, { status: 500 })
-
-  const { error } = await supabase
-    .from('stack_products')
-    .upsert(
-      { stack_id: stack.id, product_id: productId, servings_per_day: servingsPerDay },
-      { onConflict: 'stack_id,product_id' }
-    )
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  // Award build_stack once the stack reaches 3+ products (once per stack).
-  let awarded = 0
-  const { count } = await supabase
-    .from('stack_products')
-    .select('id', { count: 'exact', head: true })
-    .eq('stack_id', stack.id)
-  if ((count ?? 0) >= 3) {
-    awarded = await awardPoints(supabase, 'build_stack', stack.id)
-  }
-  return NextResponse.json({ ok: true, pointsAwarded: awarded })
+async function mutate(request: Request) {
+    try {
+        const supabase = await createServerSupabase();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user)
+            return json({ error: 'Unauthorized' }, 401);
+        const parsed = await readStackBody(request);
+        if (parsed.status)
+            return json({ error: parsed.status === 413 ? 'This stack request is too large.' : 'Invalid stack request.' }, parsed.status);
+        const operation = parseStackOperation(request.method, parsed.body, request.headers.get('idempotency-key'));
+        if (!operation)
+            return json({ error: 'Invalid stack request. Refresh your stack and try again.' }, 400);
+        const { data, error } = await supabase.rpc('mutate_active_stack', {
+            p_operation: operation.operation, p_product_ids: operation.productIds, p_request_id: operation.requestId,
+            p_expected_revision: operation.expectedRevision, p_servings: operation.servings,
+        });
+        if (error || !data)
+            return json({ error: 'Your change could not be saved. Please retry.' }, 503);
+        if (data.status === 'conflict')
+            return json({ error: 'Your stack changed elsewhere. Review the latest stack before retrying.', snapshot: data.snapshot }, 409);
+        if (data.status === 'idempotency_conflict')
+            return json({ error: 'This retry does not match the original change. Refresh your stack.' }, 409);
+        if (data.status === 'invalid')
+            return json({ error: 'Invalid stack request.' }, 400);
+        if (data.status === 'not_found')
+            return json({ error: 'This item is no longer in your stack.', snapshot: data.snapshot }, 404);
+        if (data.status !== 'applied' || data.snapshot?.userId !== user.id)
+            return json({ error: 'Your change could not be confirmed. Please retry.' }, 503);
+        let pointsAwarded = 0;
+        if (['add', 'merge'].includes(operation.operation) && data.snapshot?.stackId && data.snapshot.items?.length >= 3)
+            pointsAwarded = await awardPoints(supabase, 'build_stack', data.snapshot.stackId);
+        return json({ ...data, ok: true, pointsAwarded });
+    }
+    catch {
+        return json({ error: 'Your change could not be saved. Please retry.' }, 503);
+    }
 }
-
-// DELETE — remove product from stack
-export async function DELETE(request: Request) {
-  const supabase = await getSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { stackProductId } = await request.json()
-
-  const { error } = await supabase
-    .from('stack_products')
-    .delete()
-    .eq('id', stackProductId)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
-}
+export const POST = mutate;
+export const DELETE = mutate;
+export const PATCH = mutate;
