@@ -38,7 +38,7 @@ function fixture({ category = 'cycle-support', modalOpen = false, nutrients = []
       reportDiagnostics: true,
     })
     assert.deepEqual(compiled.diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error), [], relative)
-    const module = { exports: {} }
+    const loadedModule = { exports: {} }
     const localRequire = name => {
       if (name === 'react' && modalOpen) return { ...React, useState: () => [true, () => {}] }
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
@@ -61,9 +61,9 @@ function fixture({ category = 'cycle-support', modalOpen = false, nutrients = []
       }
       return require(name)
     }
-    vm.runInThisContext(`(function(require,module,exports){${compiled.outputText}\n})`, { filename })(localRequire, module, module.exports)
-    cache.set(filename, module.exports)
-    return module.exports
+    vm.runInThisContext(`(function(require,module,exports){${compiled.outputText}\n})`, { filename })(localRequire, loadedModule, loadedModule.exports)
+    cache.set(filename, loadedModule.exports)
+    return loadedModule.exports
   }
   return { load, lookups, item }
 }
