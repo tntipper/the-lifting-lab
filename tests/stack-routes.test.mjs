@@ -84,3 +84,17 @@ test('additive requests require the originating account and reject session-switc
  const missing=request('POST',{productId:P});missing.headers.delete('x-stack-expected-user')
  const f=fixture();assert.equal((await f.routes.POST(missing)).status,409);assert.equal(f.calls.length,0)
 })
+test('a cookie switch cannot retarget remove, clear or serving edits even when both accounts have the same revision',async()=>{
+ const operations=[['DELETE',{productId:P,expectedRevision:snapshot.revision}],['DELETE',{clear:true,expectedRevision:snapshot.revision}],['PATCH',{productId:P,servingsPerDay:3,expectedRevision:snapshot.revision}]]
+ for(const [method,body] of operations){
+  for(const expected of [undefined,'33333333-3333-4333-8333-333333333333']){
+   const f=fixture(), req=request(method,body)
+   if(expected===undefined)req.headers.delete('x-stack-expected-user')
+   else req.headers.set('x-stack-expected-user',expected)
+   const response=await f.routes[method](req)
+   assert.equal(response.status,409)
+   assert.equal((await response.text()).includes(U),false)
+   assert.equal(f.calls.length,0);assert.equal(f.awards.length,0)
+  }
+ }
+})
