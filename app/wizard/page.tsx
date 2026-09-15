@@ -7,7 +7,7 @@ import Wizard from './Wizard'
 export const metadata: Metadata = {
   title: 'Find My Stack — The Lifting Lab',
   description:
-    'Answer four quick questions and get a personalised supplement stack, built from the highest-scored UK products for your goal and budget.',
+    'Answer four quick questions and get a supplement shortlist to research against your goals and initial pack budget.',
 }
 
 export default function WizardPage() {
@@ -26,14 +26,14 @@ export default function WizardPage() {
         <Wizard />
 
         {/* Ready-made stacks — static cross-links for visitors who would rather
-            grab a proven stack than answer questions (and crawlable internal
+            browse a suggested stack than answer questions (and crawlable internal
             links from this nav-level page to every /stacks goal page). */}
         <section className="mt-14 pt-8 border-t border-lab-border">
           <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-2 text-center">
             Or grab a ready-made stack
           </p>
           <p className="text-lab-muted text-sm text-center mb-6">
-            Proven stacks for the most common goals, built from the top-scoring UK products.
+            Suggested combinations to research, with links to the product evidence.
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {STACK_GUIDES.map((s) => (

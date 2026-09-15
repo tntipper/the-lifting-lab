@@ -476,6 +476,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           {loading ? 'Loading…' : `${visible.length} product${visible.length === 1 ? '' : 's'}`}
         </span>
         <select
+          aria-label="Sort products"
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
           className="bg-lab-panel text-white text-xs border border-lab-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-lab-lime"

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
+import AccessibleDialog from '@/components/AccessibleDialog'
 import { track } from '@/lib/gtag'
 
 // Honour-system share modal: pre-written copy + social links, then a manual
@@ -15,6 +16,8 @@ export default function ShareModal({
   brand: string
   score: number | null
 }) {
+  const titleId = useId()
+  const claimStatus = useRef<HTMLParagraphElement>(null)
   const [url, setUrl] = useState('')
   const [claimed, setClaimed] = useState<null | number>(null)
   const [busy, setBusy] = useState(false)
@@ -39,6 +42,8 @@ export default function ShareModal({
   }
 
   async function claim() {
+    // Keep focus in the modal when the action is disabled or replaced.
+    claimStatus.current?.focus()
     setBusy(true); setNote('')
     try {
       const res = await fetch('/api/share', {
@@ -60,14 +65,14 @@ export default function ShareModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70" onClick={onClose}>
-      <div className="w-full max-w-md bg-lab-panel border border-lab-border rounded-2xl p-5" onClick={(e) => e.stopPropagation()}>
+    <AccessibleDialog open={open} onClose={onClose} labelledBy={titleId}
+      className="tll-centered-dialog bg-lab-panel border border-lab-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Share & earn 25 pts</p>
-          <button onClick={onClose} className="text-lab-muted hover:text-white text-lg leading-none">✕</button>
+          <h2 id={titleId} className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Share & earn 25 pts</h2>
+          <button type="button" aria-label="Close share dialog" data-dialog-initial-focus onClick={onClose} className="text-lab-muted hover:text-white text-lg leading-none min-w-11 min-h-11">✕</button>
         </div>
 
-        <textarea readOnly value={caption} rows={4}
+        <textarea aria-label="Share caption" readOnly value={caption} rows={4}
           className="w-full bg-lab-bg text-white/80 text-sm border border-lab-border rounded-xl px-3 py-2 resize-none" />
 
         <div className="grid grid-cols-2 gap-2 mt-3">
@@ -97,16 +102,13 @@ export default function ShareModal({
               className="w-full text-[11px] font-black uppercase tracking-widest bg-lab-lime text-black rounded-lg px-4 py-3 hover:brightness-110 disabled:opacity-50 transition-all">
               {busy ? 'Claiming…' : "I've shared this · +25 pts"}
             </button>
-          ) : claimed > 0 ? (
-            <p className="text-center text-lab-lime text-sm font-bold">🎉 +{claimed} points claimed!</p>
-          ) : (
-            <p className="text-center text-lab-muted text-sm">
-              Already claimed for this product in the last 24h (or your account is under 24h old).
-            </p>
-          )}
-          {note && <p className="text-center text-lab-muted text-xs mt-2">{note}</p>}
+          ) : null}
+          <p ref={claimStatus} tabIndex={-1} role="status" aria-live="polite" aria-atomic="true" className="text-center text-lab-muted text-xs mt-2">
+            {busy ? 'Recording your share claim…' : note || (claimed === null ? '' : claimed > 0
+              ? `+${claimed} points claimed!`
+              : 'No points were awarded. Your account or this product may not be eligible for another claim yet.')}
+          </p>
         </div>
-      </div>
-    </div>
+    </AccessibleDialog>
   )
 }

@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "test:integration": "node --test tests/integration/*.test.mjs"
+    "test:integration": "node --test tests/integration/*.test.mjs",
+    "test:accessibility": "node tests/browser/accessibility.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -30,8 +31,10 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "0.28.2",
     "eslint": "^9",
     "eslint-config-next": "15.5.25",
+    "playwright": "1.62.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
