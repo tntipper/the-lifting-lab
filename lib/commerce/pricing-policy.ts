@@ -1,5 +1,9 @@
 /** Pure GBP pricing assessment. No IO, side effects, checkout enforcement or price writes. */
-export const SUPPLIER_DELIVERY_FEE_PENCE = 500
+export const SUPPLIER_DELIVERY_TARIFF_VERSION = 'tll-tropship-standard-uk-order-2026-09-15-v2'
+export const SUPPLIER_DELIVERY_TARIFF_VALUES = Object.freeze({ service: 'tropship_standard_uk' as const,
+  quotedExVatPence: 500, vatBps: 2000, inputVatRecoverable: false as const,
+  freeAboveWholesaleExVatPence: 10000, equalityPolicy: 'hold_with_charge' as const,
+  businessVatStatus: 'not_registered' as const })
 export const PRICE_WRITES_ENABLED = false
 export const TLL_POLICY_VALUES = Object.freeze({ targetMarginBps: 3500, minimumMarginBps: 2500, minimumCashPerItemPence: 300 })
 export const MAX_PENCE = 1_000_000_000
@@ -28,10 +32,9 @@ export type CostRecord = {
   unit: 'sellable_item'
   unitDefinitionApproved: boolean
   wholesale: TaxedCost
-  supplierDelivery: TaxedCost
   /** Distinct additional costs only; do not repeat wholesale, delivery or reserve. */
   otherPerItemCosts: { id: string; cost: TaxedCost }[]
-  /** Explicit economic amount after any recoverable tax; zero must be intentional. */
+  /** Explicit economic reserve under the current unrecoverable-input-VAT policy. */
   returnsReservePence: number
   outputVat: { approved: boolean; rateBps: number }
 }
@@ -43,10 +46,15 @@ export type PricingPolicy = {
   minimumCashPerItemPence: number
   maxDiscountBps: number
 }
-export type PricingContext = { nowMs: number; payment: PaymentTariff; policy: PricingPolicy }
+export type SupplierDeliveryTariff = { approval: Approval } & typeof SUPPLIER_DELIVERY_TARIFF_VALUES
+export type SupplierOrderGroup = { id: string; customerDeliveryId: string; approval: Approval; service: 'tropship_standard_uk' }
+export type PricingContext = { nowMs: number; payment: PaymentTariff; policy: PricingPolicy; supplierDeliveryTariff: SupplierDeliveryTariff }
 export type FloorInput = PricingContext & { cost: CostRecord }
 export type BasketLine = {
   id: string
+  /** An explicitly reviewed supplier order/customer-delivery group, never inferred. */
+  supplierOrderId: string
+  customerDeliveryId: string
   quantity: number
   listUnitPricePence: number
   cost: CostRecord
@@ -57,6 +65,7 @@ export type BasketLine = {
 }
 export type BasketInput = PricingContext & {
   lines: BasketLine[]
+  supplierOrders: SupplierOrderGroup[]
   customerShipping: { approval: Approval; grossPence: number; outputVat: { approved: boolean; rateBps: number } }
   /** Omit for the derived conservative £3 × quantity safeguard, not a separately approved order policy. */
   orderCashPolicy?: { approval: Approval; minimumPence: number }
@@ -64,43 +73,51 @@ export type BasketInput = PricingContext & {
 export type HoldCode = 'MISSING_INPUT' | 'INVALID_INPUT' | 'UNAPPROVED' | 'STALE_VERSION' |
   'EXPIRED' | 'NOT_YET_EFFECTIVE' | 'INVALID_UNIT' | 'INVALID_TAX' | 'DELIVERY_FEE_MISMATCH' |
   'OVERFLOW' | 'NON_POSITIVE_DENOMINATOR' | 'EXCESS_DISCOUNT' | 'BELOW_ITEM_FLOOR' |
-  'BELOW_MINIMUM_MARGIN' | 'BELOW_MINIMUM_CASH' | 'BELOW_LINE_MARGIN' | 'BELOW_LINE_CASH'
+  'DELIVERY_THRESHOLD_BOUNDARY' | 'INVALID_DELIVERY_GROUP' | 'BELOW_MINIMUM_MARGIN' | 'BELOW_MINIMUM_CASH' | 'BELOW_LINE_MARGIN' | 'BELOW_LINE_CASH'
 export type Hold = { code: HoldCode; field: string }
 export type FloorCalculation = {
   minimumListPricePence: number
   targetListPricePence: number
   limitingMinimumRule: 'margin' | 'cash' | 'both'
-  supplierDeliveryAmountPence: 500
+  supplierDeliveryBasis: 'one_item_supplier_order'
+  supplierDeliveryStatus: 'charged' | 'free' | 'boundary_hold'
+  wholesaleExVatPence: ExactPence
+  supplierDeliveryQuotedExVatPence: number
+  supplierDeliveryGrossCashPence: number
   supplierDeliveryEconomicPence: ExactPence
   nonVariableEconomicCostPence: ExactPence
   discountedGrossPenceAtMinimum: ExactPence
   netRevenuePenceAtMinimum: ExactPence
   contributionPenceAtMinimum: ExactPence
   marginAtMinimum: ExactPence
-  approvalVersions: { cost: string; policy: string; payment: string }
+  approvalVersions: { cost: string; policy: string; payment: string; supplierDeliveryTariff: string }
   /** Intersection of the input approvals; reviewing a floor cannot extend it. */
   dependencyValidity: PricingValidityWindow
 }
 export type BasketLineCalculation = {
   id: string
+  supplierOrderId: string
+  supplierDeliveryAllocatedQuotedExVatPence: ExactPence
   quantity: number
   grossBeforeDiscountPence: number
   discountPence: number
   grossReceiptsPence: number
   netRevenuePence: ExactPence
-  supplierDeliveryAmountPence: number
+  supplierDeliveryGrossCashPence: number
   supplierDeliveryEconomicPence: ExactPence
   allocatedFixedPaymentFeePence: ExactPence
   contributionPence: ExactPence
   conservativeItemListFloorPence: number
-  /** Gate basis only: full fixed payment fee per billable item, as in the item floor. */
+  /** Separate gate: standalone delivery and full fixed payment fee per item. */
   conservativeLineContributionPence: ExactPence
   minimumLineCashPence: number
 }
 export type BasketCalculation = {
   lines: BasketLineCalculation[]
   billableQuantity: number
-  supplierDeliveryAmountPence: number
+  supplierOrders: SupplierOrderCalculation[]
+  supplierDeliveryQuotedExVatPence: number
+  supplierDeliveryGrossCashPence: number
   supplierDeliveryEconomicPence: ExactPence
   grossReceiptsPence: number
   customerShippingGrossPence: number
@@ -116,7 +133,18 @@ export type BasketCalculation = {
   minimumCashPence: number
   minimumCashBasis: 'derived_per_billable_item' | 'approved_per_order'
   targetMarginMet: boolean
-  approvalVersions: { policy: string; payment: string; costs: { lineId: string; version: string }[]; customerShipping: string; orderCashPolicy?: string }
+  dependencyValidity: PricingValidityWindow
+  approvalVersions: { policy: string; payment: string; supplierDeliveryTariff: string; supplierOrders: { id: string; version: string }[]; costs: { lineId: string; version: string }[]; customerShipping: string; orderCashPolicy?: string }
+}
+export type SupplierOrderCalculation = {
+  id: string
+  customerDeliveryId: string
+  billableQuantity: number
+  wholesaleExVatPence: ExactPence
+  deliveryStatus: 'charged' | 'free' | 'boundary_hold'
+  quotedExVatPence: number
+  grossCashPence: number
+  economicPence: ExactPence
 }
 export type Assessment<T> = {
   eligible: boolean
@@ -174,19 +202,19 @@ function economic(value: TaxedCost, field: string): Rational {
   required(value, field); integer(value.amountPence, field + '.amountPence')
   const tax = value.tax; required(tax, field + '.tax')
   if (tax.approved !== true) fail('UNAPPROVED', field + '.tax')
-  if (!['inclusive', 'exclusive', 'not_subject'].includes(tax.basis) || typeof tax.inputVatRecoverable !== 'boolean') fail('INVALID_TAX', field)
+  if (!['inclusive', 'exclusive', 'not_subject'].includes(tax.basis) || tax.inputVatRecoverable !== false) fail('INVALID_TAX', field)
   integer(tax.vatBps, field + '.tax.vatBps', 0, 10000)
   if (tax.basis === 'not_subject' && (tax.vatBps !== 0 || tax.inputVatRecoverable)) fail('INVALID_TAX', field)
   const grossFactor = add(money(1), rate(tax.vatBps))
   const amount = money(value.amountPence)
-  if (tax.basis === 'inclusive' && tax.inputVatRecoverable) return div(amount, grossFactor)
-  if (tax.basis === 'exclusive' && !tax.inputVatRecoverable) return mul(amount, grossFactor)
+  if (tax.basis === 'exclusive') return mul(amount, grossFactor)
   return amount
 }
 function outputTax(value: { approved: boolean; rateBps: number }, field: string): Rational {
   required(value, field)
   if (value.approved !== true) fail('UNAPPROVED', field)
   integer(value.rateBps, field + '.rateBps', 0, 10000)
+  if (value.rateBps !== 0) fail('INVALID_TAX', field)
   return add(money(1), rate(value.rateBps))
 }
 function context(input: PricingContext): void {
@@ -194,6 +222,12 @@ function context(input: PricingContext): void {
   required(input.policy, 'policy'); required(input.payment, 'payment')
   approval(input.policy.approval, 'policy.approval', input.nowMs)
   approval(input.payment.approval, 'payment.approval', input.nowMs)
+  required(input.supplierDeliveryTariff, 'supplierDeliveryTariff')
+  approval(input.supplierDeliveryTariff.approval, 'supplierDeliveryTariff.approval', input.nowMs)
+  if (input.supplierDeliveryTariff.approval.version !== SUPPLIER_DELIVERY_TARIFF_VERSION) fail('STALE_VERSION', 'supplierDeliveryTariff')
+  for (const key of Object.keys(SUPPLIER_DELIVERY_TARIFF_VALUES) as (keyof typeof SUPPLIER_DELIVERY_TARIFF_VALUES)[]) {
+    if (input.supplierDeliveryTariff[key] !== SUPPLIER_DELIVERY_TARIFF_VALUES[key]) fail('DELIVERY_FEE_MISMATCH', 'supplierDeliveryTariff.' + key)
+  }
   integer(input.policy.minimumMarginBps, 'policy.minimumMarginBps', 1, 9999)
   integer(input.policy.targetMarginBps, 'policy.targetMarginBps', input.policy.minimumMarginBps, 9999)
   integer(input.policy.minimumCashPerItemPence, 'policy.minimumCashPerItemPence', 1)
@@ -201,15 +235,16 @@ function context(input: PricingContext): void {
   integer(input.payment.fixedPence, 'payment.fixedPence')
   integer(input.payment.variableBps, 'payment.variableBps', 0, 9999)
 }
-function costs(value: CostRecord, now: number, field = 'cost'): { perItem: Rational; delivery: Rational; taxFactor: Rational } {
+function costs(value: CostRecord, now: number, field = 'cost'): { perItem: Rational; wholesaleExVat: Rational; taxFactor: Rational } {
   required(value, field); approval(value.approval, field + '.approval', now)
   if (value.currency !== 'GBP' || value.unit !== 'sellable_item') fail('INVALID_UNIT', field)
   if (value.unitDefinitionApproved !== true) fail('UNAPPROVED', field + '.unitDefinition')
   required(value.wholesale, field + '.wholesale'); integer(value.wholesale.amountPence, field + '.wholesale.amountPence', 1)
-  required(value.supplierDelivery, field + '.supplierDelivery')
-  if (value.supplierDelivery.amountPence !== SUPPLIER_DELIVERY_FEE_PENCE) fail('DELIVERY_FEE_MISMATCH', field + '.supplierDelivery')
-  const delivery = economic(value.supplierDelivery, field + '.supplierDelivery')
-  let perItem = add(economic(value.wholesale, field + '.wholesale'), delivery)
+  // Reject superseded per-item delivery records instead of silently double charging.
+  if ('supplierDelivery' in value) fail('DELIVERY_FEE_MISMATCH', field + '.supplierDelivery')
+  let perItem = economic(value.wholesale, field + '.wholesale')
+  const wholesaleExVat = value.wholesale.tax.basis === 'inclusive'
+    ? div(money(value.wholesale.amountPence), add(money(1), rate(value.wholesale.tax.vatBps))) : money(value.wholesale.amountPence)
   if (!Array.isArray(value.otherPerItemCosts)) fail('MISSING_INPUT', field + '.otherPerItemCosts')
   if (value.otherPerItemCosts.length > 30) fail('INVALID_INPUT', field + '.otherPerItemCosts')
   const ids = new Set(['wholesale', 'supplier-delivery', 'returns-reserve'])
@@ -221,7 +256,7 @@ function costs(value: CostRecord, now: number, field = 'cost'): { perItem: Ratio
   integer(value.returnsReservePence, field + '.returnsReservePence')
   perItem = add(perItem, money(value.returnsReservePence))
   bounded(ceil(perItem), field + '.economicTotal')
-  return { perItem, delivery, taxFactor: outputTax(value.outputVat, field + '.outputVat') }
+  return { perItem, wholesaleExVat, taxFactor: outputTax(value.outputVat, field + '.outputVat') }
 }
 function floorValue(C: Rational, tax: Rational, margin: number, input: PricingContext): { pence: number; limiting: 'margin' | 'cash' | 'both' } {
   const variable = rate(input.payment.variableBps)
@@ -239,9 +274,19 @@ function floorValue(C: Rational, tax: Rational, margin: number, input: PricingCo
     (TWO * (SCALE - BigInt(input.policy.maxDiscountBps))) + ONE
   return { pence: bounded(price, 'calculatedFloor'), limiting: comparison > 0 ? 'margin' : comparison < 0 ? 'cash' : 'both' }
 }
+function deliveryFor(wholesaleExVat: Rational, tariff: SupplierDeliveryTariff) {
+  const threshold = compare(wholesaleExVat, money(tariff.freeAboveWholesaleExVatPence))
+  const quoted = threshold > 0 ? 0 : tariff.quotedExVatPence
+  const gross = bounded(ceil(mul(money(quoted), add(money(1), rate(tariff.vatBps)))), 'delivery.gross')
+  return { quoted, gross, economic: money(gross), status: threshold === 0 ? 'boundary_hold' as const : threshold > 0 ? 'free' as const : 'charged' as const }
+}
+function validity(approvals: Approval[]): PricingValidityWindow {
+  return { validFromMs: Math.max(...approvals.map(a => a.validFromMs)), expiresAtMs: Math.min(...approvals.map(a => a.expiresAtMs)) }
+}
 function calculateFloor(input: FloorInput): FloorCalculation {
   const cost = costs(input.cost, input.nowMs)
-  const C = add(cost.perItem, money(input.payment.fixedPence))
+  const delivery = deliveryFor(cost.wholesaleExVat, input.supplierDeliveryTariff)
+  const C = add(add(cost.perItem, delivery.economic), money(input.payment.fixedPence))
   const minimum = floorValue(C, cost.taxFactor, input.policy.minimumMarginBps, input)
   const target = floorValue(C, cost.taxFactor, input.policy.targetMarginBps, input)
   const gross = money(minimum.pence - bounded(halfUp(mul(money(minimum.pence), rate(input.policy.maxDiscountBps))), 'discountAtMinimum'))
@@ -250,14 +295,12 @@ function calculateFloor(input: FloorInput): FloorCalculation {
   return {
     minimumListPricePence: minimum.pence, targetListPricePence: target.pence,
     limitingMinimumRule: minimum.limiting,
-    supplierDeliveryAmountPence: 500, supplierDeliveryEconomicPence: exact(cost.delivery),
+    supplierDeliveryBasis: 'one_item_supplier_order', supplierDeliveryStatus: delivery.status, wholesaleExVatPence: exact(cost.wholesaleExVat),
+    supplierDeliveryQuotedExVatPence: delivery.quoted, supplierDeliveryGrossCashPence: delivery.gross, supplierDeliveryEconomicPence: exact(delivery.economic),
     nonVariableEconomicCostPence: exact(C), discountedGrossPenceAtMinimum: exact(gross),
     netRevenuePenceAtMinimum: exact(net), contributionPenceAtMinimum: exact(contribution), marginAtMinimum: exact(div(contribution, net)),
-    approvalVersions: { cost: input.cost.approval.version, policy: input.policy.approval.version, payment: input.payment.approval.version },
-    dependencyValidity: {
-      validFromMs: Math.max(input.cost.approval.validFromMs, input.policy.approval.validFromMs, input.payment.approval.validFromMs),
-      expiresAtMs: Math.min(input.cost.approval.expiresAtMs, input.policy.approval.expiresAtMs, input.payment.approval.expiresAtMs),
-    },
+    approvalVersions: { cost: input.cost.approval.version, policy: input.policy.approval.version, payment: input.payment.approval.version, supplierDeliveryTariff: input.supplierDeliveryTariff.approval.version },
+    dependencyValidity: validity([input.cost.approval, input.policy.approval, input.payment.approval, input.supplierDeliveryTariff.approval]),
   }
 }
 function assess<T>(calculate: () => { calculation: T; holds?: Hold[] }): Assessment<T> {
@@ -270,15 +313,20 @@ function assess<T>(calculate: () => { calculation: T; holds?: Hold[] }): Assessm
   }
 }
 export function calculatePriceFloor(input: FloorInput): Assessment<FloorCalculation> {
-  return assess(() => { context(input); return { calculation: calculateFloor(input) } })
+  return assess(() => { context(input); const calculation = calculateFloor(input); return { calculation, holds: calculation.supplierDeliveryStatus === 'boundary_hold' ? [{ code: 'DELIVERY_THRESHOLD_BOUNDARY', field: 'standaloneSupplierOrder' }] : [] } })
 }
 export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation> {
   return assess(() => {
     context(input)
     if (!Array.isArray(input.lines) || input.lines.length < 1 || input.lines.length > 100) fail('INVALID_INPUT', 'lines')
-    // Array#map skips holes; reject them before any financial aggregation.
-    for (let index = 0; index < input.lines.length; index++) {
-      if (!Object.prototype.hasOwnProperty.call(input.lines, index)) fail('INVALID_INPUT', `lines[${index}]`)
+    // Iteration deliberately visits sparse entries; missing lines cannot vanish from totals.
+    for (let index = 0; index < input.lines.length; index++) if (!Object.prototype.hasOwnProperty.call(input.lines, index)) fail('INVALID_INPUT', `lines[${index}]`)
+    if (!Array.isArray(input.supplierOrders) || input.supplierOrders.length < 1 || input.supplierOrders.length > 100) fail('INVALID_DELIVERY_GROUP', 'supplierOrders')
+    const groups = new Map<string, { source: SupplierOrderGroup; quantity: number; wholesale: Rational; lines: { id: string; quantity: number }[] }>()
+    for (const group of input.supplierOrders) {
+      if (!group || typeof group.id !== 'string' || !group.id.trim() || groups.has(group.id) || typeof group.customerDeliveryId !== 'string' || !group.customerDeliveryId.trim() || group.service !== input.supplierDeliveryTariff.service) fail('INVALID_DELIVERY_GROUP', 'supplierOrders')
+      approval(group.approval, 'supplierOrders.' + group.id + '.approval', input.nowMs)
+      groups.set(group.id, { source: group, quantity: 0, wholesale: money(0), lines: [] })
     }
     required(input.customerShipping, 'customerShipping')
     approval(input.customerShipping.approval, 'customerShipping.approval', input.nowMs)
@@ -286,12 +334,14 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
     const shippingTax = outputTax(input.customerShipping.outputVat, 'customerShipping.outputVat')
     const shippingNet = div(money(input.customerShipping.grossPence), shippingTax)
     let totalGross = BigInt(input.customerShipping.grossPence), totalQuantity = 0
-    let totalNet = shippingNet, totalCost = money(0), totalDelivery = money(0)
+    let totalNet = shippingNet, totalCost = money(0)
     const holds: Hold[] = [], ids = new Set<string>()
     const intermediate = input.lines.map(line => {
       required(line, 'line')
       if (typeof line.id !== 'string' || !line.id.trim() || ids.has(line.id)) fail('INVALID_INPUT', 'line.id')
       ids.add(line.id)
+      const group = groups.get(line.supplierOrderId)
+      if (!group || line.customerDeliveryId !== group.source.customerDeliveryId) fail('INVALID_DELIVERY_GROUP', line.id + '.supplierOrderId')
       integer(line.quantity, line.id + '.quantity', 1, 10000)
       integer(line.listUnitPricePence, line.id + '.listUnitPricePence', 1)
       integer(line.percentageDiscountBps, line.id + '.percentageDiscountBps', 0, 9999)
@@ -302,25 +352,44 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
       if (discount >= before) fail('EXCESS_DISCOUNT', line.id)
       if (line.percentageDiscountBps > input.policy.maxDiscountBps || BigInt(discount) > halfUp(mul(money(before), rate(input.policy.maxDiscountBps)))) holds.push({ code: 'EXCESS_DISCOUNT', field: line.id })
       const gross = before - discount, net = div(money(gross), cost.taxFactor)
-      const itemFloor = calculateFloor({ ...input, cost: line.cost }).minimumListPricePence
+      const floor = calculateFloor({ ...input, cost: line.cost }), itemFloor = floor.minimumListPricePence
+      if (floor.supplierDeliveryStatus === 'boundary_hold') holds.push({ code: 'DELIVERY_THRESHOLD_BOUNDARY', field: line.id + '.standaloneSupplierOrder' })
       if (line.listUnitPricePence < itemFloor) holds.push({ code: 'BELOW_ITEM_FLOOR', field: line.id })
       const lineCost = mul(cost.perItem, money(line.quantity))
-      // A single-unit floor uses single-unit discount rounding. Test actual
-      // line receipts too: quantity-level rounding can reduce receipts below
-      // that floor's contribution requirement. Keep this gate independent of
-      // profitable neighbours/shipping and of their later fixed-fee allocation.
-      const conservativeContribution = sub(sub(sub(net, lineCost), mul(money(gross), rate(input.payment.variableBps))),
-        mul(money(input.payment.fixedPence), money(line.quantity)))
+      // Independent publication gate models every item sold alone, including its
+      // standalone delivery and full fixed payment fee. This is not a basket charge.
+      const standaloneDelivery = deliveryFor(cost.wholesaleExVat, input.supplierDeliveryTariff)
+      const conservativeCost = add(lineCost, mul(add(standaloneDelivery.economic, money(input.payment.fixedPence)), money(line.quantity)))
+      const conservativeContribution = sub(sub(net, conservativeCost), mul(money(gross), rate(input.payment.variableBps)))
       const minimumLineCash = bounded(BigInt(input.policy.minimumCashPerItemPence) * BigInt(line.quantity), line.id + '.minimumLineCash')
       if (compare(conservativeContribution, mul(net, rate(input.policy.minimumMarginBps))) < 0) holds.push({ code: 'BELOW_LINE_MARGIN', field: line.id })
       if (compare(conservativeContribution, money(minimumLineCash)) < 0) holds.push({ code: 'BELOW_LINE_CASH', field: line.id })
-      const delivery = mul(cost.delivery, money(line.quantity))
+      group.quantity += line.quantity; group.wholesale = add(group.wholesale, mul(cost.wholesaleExVat, money(line.quantity))); group.lines.push({ id: line.id, quantity: line.quantity })
       totalGross += BigInt(gross); totalQuantity += line.quantity
       integer(totalQuantity, 'billableQuantity', 1, 10000)
-      totalNet = add(totalNet, net); totalCost = add(totalCost, lineCost); totalDelivery = add(totalDelivery, delivery)
-      return { line, before, discount, gross, net, lineCost, delivery, itemFloor, conservativeContribution, minimumLineCash }
+      totalNet = add(totalNet, net); totalCost = add(totalCost, lineCost)
+      return { line, before, discount, gross, net, lineCost, itemFloor, conservativeContribution, minimumLineCash }
     })
-    integer(totalQuantity, 'billableQuantity', 1, 10000)
+    const allocations = new Map<string, { gross: number; net: Rational }>(), supplierOrders: SupplierOrderCalculation[] = []
+    let deliveryGross = 0, deliveryQuoted = 0
+    for (const [id, group] of groups) {
+      if (!group.lines.length) fail('INVALID_DELIVERY_GROUP', 'supplierOrders.' + id)
+      bounded(ceil(group.wholesale), id + '.wholesaleExVat')
+      const delivery = deliveryFor(group.wholesale, input.supplierDeliveryTariff)
+      if (delivery.status === 'boundary_hold') holds.push({ code: 'DELIVERY_THRESHOLD_BOUNDARY', field: 'supplierOrders.' + id })
+      // Largest remainder by quantity, tie-broken by line ID: penny-exact and
+      // stable under input reordering. No thresholds pool across group IDs.
+      const shares = group.lines.map(line => ({ ...line, pence: Number(BigInt(delivery.gross) * BigInt(line.quantity) / BigInt(group.quantity)), remainder: Number(BigInt(delivery.gross) * BigInt(line.quantity) % BigInt(group.quantity)) }))
+        .sort((a, b) => b.remainder - a.remainder || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+      let remainder = delivery.gross - shares.reduce((sum, line) => sum + line.pence, 0)
+      for (const share of shares) {
+        const gross = share.pence + (remainder > 0 ? 1 : 0); if (remainder > 0) remainder--
+        allocations.set(share.id, { gross, net: delivery.gross ? mul(money(delivery.quoted), div(money(gross), money(delivery.gross))) : money(0) })
+      }
+      deliveryGross += delivery.gross; deliveryQuoted += delivery.quoted
+      supplierOrders.push({ id, customerDeliveryId: group.source.customerDeliveryId, billableQuantity: group.quantity, wholesaleExVatPence: exact(group.wholesale), deliveryStatus: delivery.status, quotedExVatPence: delivery.quoted, grossCashPence: delivery.gross, economicPence: exact(delivery.economic) })
+    }
+    totalCost = add(totalCost, money(deliveryGross))
     const grossPence = bounded(totalGross, 'basketGross')
     bounded(ceil(totalCost), 'basketCost')
     const variableFee = mul(money(grossPence), rate(input.payment.variableBps))
@@ -328,36 +397,36 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
     let minimumCash = bounded(BigInt(input.policy.minimumCashPerItemPence) * BigInt(totalQuantity), 'basketMinimumCash')
     let cashBasis: BasketCalculation['minimumCashBasis'] = 'derived_per_billable_item'
     if (input.orderCashPolicy !== undefined) {
-      required(input.orderCashPolicy, 'orderCashPolicy')
-      approval(input.orderCashPolicy.approval, 'orderCashPolicy.approval', input.nowMs)
+      required(input.orderCashPolicy, 'orderCashPolicy'); approval(input.orderCashPolicy.approval, 'orderCashPolicy.approval', input.nowMs)
       integer(input.orderCashPolicy.minimumPence, 'orderCashPolicy.minimumPence', 1)
       minimumCash = input.orderCashPolicy.minimumPence; cashBasis = 'approved_per_order'
     }
     if (compare(contribution, mul(totalNet, rate(input.policy.minimumMarginBps))) < 0) holds.push({ code: 'BELOW_MINIMUM_MARGIN', field: 'basket' })
     if (compare(contribution, money(minimumCash)) < 0) holds.push({ code: 'BELOW_MINIMUM_CASH', field: 'basket' })
-    // Allocate the fixed payment fee by gross receipts across products AND shipping.
-    const lines = intermediate.map(({ line, before, discount, gross, net, lineCost, delivery, itemFloor, conservativeContribution, minimumLineCash }): BasketLineCalculation => {
+    const lines = intermediate.map(({ line, before, discount, gross, net, lineCost, itemFloor, conservativeContribution, minimumLineCash }): BasketLineCalculation => {
       const allocation = mul(money(input.payment.fixedPence), div(money(gross), money(grossPence)))
-      return { id: line.id, quantity: line.quantity, grossBeforeDiscountPence: before, discountPence: discount,
-        grossReceiptsPence: gross, netRevenuePence: exact(net), supplierDeliveryAmountPence: SUPPLIER_DELIVERY_FEE_PENCE * line.quantity,
-        supplierDeliveryEconomicPence: exact(delivery), allocatedFixedPaymentFeePence: exact(allocation),
-        contributionPence: exact(sub(sub(sub(net, lineCost), mul(money(gross), rate(input.payment.variableBps))), allocation)),
+      const delivery = allocations.get(line.id)!
+      return { id: line.id, supplierOrderId: line.supplierOrderId, quantity: line.quantity, grossBeforeDiscountPence: before, discountPence: discount,
+        grossReceiptsPence: gross, netRevenuePence: exact(net), supplierDeliveryAllocatedQuotedExVatPence: exact(delivery.net), supplierDeliveryGrossCashPence: delivery.gross,
+        supplierDeliveryEconomicPence: exact(money(delivery.gross)), allocatedFixedPaymentFeePence: exact(allocation),
+        contributionPence: exact(sub(sub(sub(sub(net, lineCost), money(delivery.gross)), mul(money(gross), rate(input.payment.variableBps))), allocation)),
         conservativeItemListFloorPence: itemFloor, conservativeLineContributionPence: exact(conservativeContribution), minimumLineCashPence: minimumLineCash }
     })
     const shippingFixedFee = mul(money(input.payment.fixedPence), div(money(input.customerShipping.grossPence), money(grossPence)))
     const shippingVariableFee = mul(money(input.customerShipping.grossPence), rate(input.payment.variableBps))
     const calculation: BasketCalculation = {
-      lines, billableQuantity: totalQuantity, supplierDeliveryAmountPence: SUPPLIER_DELIVERY_FEE_PENCE * totalQuantity,
-      supplierDeliveryEconomicPence: exact(totalDelivery), grossReceiptsPence: grossPence,
+      lines, supplierOrders, billableQuantity: totalQuantity, supplierDeliveryQuotedExVatPence: deliveryQuoted, supplierDeliveryGrossCashPence: deliveryGross,
+      supplierDeliveryEconomicPence: exact(money(deliveryGross)), grossReceiptsPence: grossPence,
       customerShippingGrossPence: input.customerShipping.grossPence, customerShippingNetPence: exact(shippingNet),
       customerShippingAllocatedFixedFeePence: exact(shippingFixedFee), customerShippingVariableFeePence: exact(shippingVariableFee),
       customerShippingContributionPence: exact(sub(sub(shippingNet, shippingFixedFee), shippingVariableFee)),
       netRevenuePence: exact(totalNet), variablePaymentFeePence: exact(variableFee), fixedPaymentFeePence: input.payment.fixedPence,
       contributionPence: exact(contribution), contributionMargin: exact(div(contribution, totalNet)),
-      minimumCashPence: minimumCash, minimumCashBasis: cashBasis,
-      targetMarginMet: compare(contribution, mul(totalNet, rate(input.policy.targetMarginBps))) >= 0,
-      approvalVersions: { policy: input.policy.approval.version, payment: input.payment.approval.version,
-        costs: input.lines.map(line => ({ lineId: line.id, version: line.cost.approval.version })), customerShipping: input.customerShipping.approval.version,
+      minimumCashPence: minimumCash, minimumCashBasis: cashBasis, targetMarginMet: compare(contribution, mul(totalNet, rate(input.policy.targetMarginBps))) >= 0,
+      dependencyValidity: validity([input.policy.approval, input.payment.approval, input.supplierDeliveryTariff.approval, input.customerShipping.approval,
+        ...input.lines.map(line => line.cost.approval), ...input.supplierOrders.map(group => group.approval), ...(input.orderCashPolicy ? [input.orderCashPolicy.approval] : [])]),
+      approvalVersions: { policy: input.policy.approval.version, payment: input.payment.approval.version, supplierDeliveryTariff: input.supplierDeliveryTariff.approval.version,
+        supplierOrders: input.supplierOrders.map(group => ({ id: group.id, version: group.approval.version })), costs: input.lines.map(line => ({ lineId: line.id, version: line.cost.approval.version })), customerShipping: input.customerShipping.approval.version,
         ...(input.orderCashPolicy ? { orderCashPolicy: input.orderCashPolicy.approval.version } : {}) },
     }
     return { calculation, holds }
