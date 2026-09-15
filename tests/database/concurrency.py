@@ -4,10 +4,15 @@ No network URL/credential input, dependencies, production data or external calls
 Requires the bootstrap + migration already installed in tll-stage0-postgres.
 """
 import concurrent.futures
+import os
+import re
 import subprocess
 import time
 
-COMMAND = ['docker', 'exec', '-i', 'tll-stage0-postgres', 'psql', '-XqAt',
+CONTAINER = os.environ.get('TLL_TEST_CONTAINER', 'tll-stage0-postgres')
+if CONTAINER != 'tll-stage0-postgres' and not re.fullmatch(r'tll-stage0-ci-[0-9]+', CONTAINER):
+    raise ValueError('Only explicitly named local synthetic fixture containers are allowed')
+COMMAND = ['docker', 'exec', '-i', CONTAINER, 'psql', '-XqAt',
            '-U', 'postgres', '-d', 'tll_stage0', '-v', 'ON_ERROR_STOP=1']
 USER = '10000000-0000-4000-8000-000000000002'
 PRODUCT = '20000000-0000-4000-8000-000000000002'

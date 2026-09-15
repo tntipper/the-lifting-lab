@@ -24,7 +24,9 @@ An isolated project still needs its own Auth callbacks, sender recipient allowli
 
 ## Required checks and release record
 
-Run `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:integration`, `npm audit --omit=dev --audit-level=high`, then `npm run build`. Auth integration starts an isolated Next process and loopback fake auth provider; do not run it concurrently with a build sharing the same `.next` directory. CI uses synthetic loopback configuration and has no production credentials. The separate database guide documents SQL, concurrency and direct Data API acceptance.
+Run `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:integration`, `npm audit --omit=dev --audit-level=high`, then `npm run build`. Auth integration starts an isolated Next process and loopback fake auth provider; do not run it concurrently with a build sharing the same `.next` directory. CI uses synthetic loopback configuration and has no production credentials.
+
+The separate database CI job runs `bash tests/database/run-local.sh`. It creates uniquely named disposable PostgreSQL 17 and PostgREST 16.3 containers, bootstraps only synthetic users, applies and tests the migration twice, runs real competing-session reward checks, then exercises the direct Data API with signed fixture JWTs. The trap removes only containers/network created by that run; it does not reset an existing local database. Docker, Python 3, Node 24 and curl are required. The fixture password and JWT signing secret are public test constants and must never be reused in a hosted environment. The database guide explains the assertions and remaining real Supabase Auth/Storage acceptance.
 
 Before production, retain the exact commit, migration identity, private backup/preflight record, passing check output, intended environment/target and compatible rollback revision. Recheck the remote main branch and deployment state to avoid overwriting another release. Review actual hosted staging and production smoke results before closing the finding. Production account creation, emails or paid fulfilment are not implied by offline tests.
 

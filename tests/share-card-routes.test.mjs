@@ -46,7 +46,7 @@ function fixture({ rows = [product], fail = false } = {}) {
     const output = ts.transpileModule(readFileSync(filename, 'utf8'), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX },
     }).outputText
-    const module = { exports: {} }
+    const loadedModule = { exports: {} }
     const localRequire = name => {
       if (name === 'next/og') return { ImageResponse: CapturedImage }
       if (name === '@/lib/supabase-public') return { createPublicClient: () => fakeSupabase }
@@ -56,9 +56,9 @@ function fixture({ rows = [product], fail = false } = {}) {
       if (name.startsWith('@/lib/')) return load(`${name.slice(2)}.ts`)
       return require(name)
     }
-    vm.runInThisContext(`(function(require, module, exports) {${output}\n})`, { filename })(localRequire, module, module.exports)
-    cache.set(relativePath, module.exports)
-    return module.exports
+    vm.runInThisContext(`(function(require, module, exports) {${output}\n})`, { filename })(localRequire, loadedModule, loadedModule.exports)
+    cache.set(relativePath, loadedModule.exports)
+    return loadedModule.exports
   }
   return { load, lookups, awards }
 }
