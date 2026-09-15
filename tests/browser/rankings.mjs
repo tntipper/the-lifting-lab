@@ -22,13 +22,13 @@ export async function verifyRankings(page, origin, width, resultDir) {
         assert.ok(box && box.x >= 0 && box.x + box.width <= width + 1, `Research card overflows at ${width}`)
       }
       const body = await page.locator('main').innerText()
-      if (pathname === '/unassessed' || ['name', 'brand'].includes(sort)) {
-        assert.doesNotMatch(body, /🥇|🥈|🥉|Top Pick|Best Value Pick|Best Budget Pick/)
-      } else {
-        const expectedFirst = sort === 'score' ? 'legacy-high' : 'legacy-value'
-        assert.equal(await cards.first().getAttribute('data-product-id'), expectedFirst)
-        assert.match(await cards.first().innerText(), /🥇/)
-        assert.match(await cards.first().innerText(), /Legacy score/)
+      assert.doesNotMatch(body, /🥇|🥈|🥉|Top Pick|Best Value Pick|Best Budget Pick|Excellent dosing|Good dosing/)
+      if (pathname === '/rankings') {
+        for (const id of ['legacy-high', 'legacy-value']) {
+          const legacy = page.locator(`[data-product-id="${id}"]`)
+          assert.match(await legacy.innerText(), /Legacy score/); assert.match(await legacy.innerText(), /Unverified/)
+          assert.equal(await legacy.locator('[data-assessment="legacy"]').count(), 1)
+        }
       }
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Rankings overflow ${width}/${sort}`)
     }

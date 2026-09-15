@@ -1,11 +1,12 @@
 'use client'
+import { formatListedServingPrice } from '@/lib/products'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { scoreColor } from '@/components/ScoreBadge'
 import ProductAssessment from '@/components/ProductAssessment'
-import { assessmentDisplayFor } from '@/lib/assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
@@ -63,7 +64,7 @@ export default function ProductDetailPage({
 
   const review = claimsReviewFor(product.category)
   const assessment = assessmentDisplayFor(product)
-  const canRecommend = assessment.state === 'legacy'
+  const canRecommend = hasApprovedAssessment(product)
   const costReason = trueCostReason(product)
   const flags = verdictFlags(product.nutrients, product.score, product.informed_sport)
     .filter(flag => canRecommend || flag.kind === 'safety')
@@ -134,7 +135,7 @@ export default function ProductDetailPage({
               {product.retail_price != null ? <span>£{product.retail_price.toFixed(2)} retail</span> : <span>Retail price —</span>}
               <span className="mx-2">·</span>
               {product.cost_per_serving != null ? (
-                <span className="text-white font-bold">£{product.cost_per_serving.toFixed(2)} True Cost / serving</span>
+                <span className="text-white font-bold">{formatListedServingPrice(product.cost_per_serving)} listed price / serving</span>
               ) : (
                 <span title={costReason ?? undefined}>True Cost — <span className="text-xs">({costReason})</span></span>
               )}

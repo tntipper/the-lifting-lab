@@ -5,7 +5,7 @@
 // education) and the interactive /products grid.
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
-import { isLegacyRankable, hasPositiveServingCost } from './assessment-display'
+import { hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
 import { CATEGORIES } from '@/lib/categories'
 
 // Minimum scored products in a category to publish a credible "Top N" ranking.
@@ -16,10 +16,8 @@ export const MIN_RANKED = 5
 // How many products to show in the ranked list.
 export const TOP_N = 10
 
-// Top scored products for one category, score desc (then name for stability),
-// unscored dropped. DB-failure safe: returns [] so the page renders notFound
-// rather than a 500.
-export async function rankedProducts(category: string): Promise<ScoredProduct[]> {
+// Preserve all records in stable research order, independent of approval.
+export async function categoryResearchProducts(category: string): Promise<ScoredProduct[]> {
   try {
     const sb = createPublicClient()
     const { data, error } = await sb
@@ -30,36 +28,19 @@ export async function rankedProducts(category: string): Promise<ScoredProduct[]>
     if (error || !data) return []
     return (data as Product[])
       .map(withScore)
-      .filter(isLegacyRankable)
-      .sort(
-        (a, b) =>
-          (b.score as number) - (a.score as number) || a.name.localeCompare(b.name),
-      )
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
   } catch {
     return []
   }
 }
 
-// All known category slugs with enough scored products to rank, in CATEGORIES
-// (browse-nav) order. Used by generateStaticParams + the sitemap so both stay
-// in lockstep with the live catalogue. DB-failure safe: returns [].
-export async function rankedCategorySlugs(): Promise<string[]> {
-  try {
-    const sb = createPublicClient()
-    const { data, error } = await sb
-      .from('products')
-      .select(PRODUCT_COLUMNS)
-      .eq('status', 'active')
-    if (error || !data) return []
-    const counts = new Map<string, number>()
-    for (const p of (data as Product[]).map(withScore)) {
-      if (!isLegacyRankable(p)) continue
-      counts.set(p.category, (counts.get(p.category) ?? 0) + 1)
-    }
-    return CATEGORIES.map((c) => c.slug).filter((s) => (counts.get(s) ?? 0) >= MIN_RANKED)
-  } catch {
-    return []
-  }
+export async function rankedProducts(category: string): Promise<ScoredProduct[]> {
+  return (await categoryResearchProducts(category)).filter(hasApprovedAssessment)
+}
+
+// The former rankings now preserve every known category as a research route.
+export async function researchCategorySlugs(): Promise<string[]> {
+  return CATEGORIES.map(category => category.slug)
 }
 
 export type CategoryAwards = {
@@ -72,7 +53,7 @@ export type CategoryAwards = {
 // gated to score >= 50 and require real cost-per-serving data, so a cheap-but-
 // underdosed tub never wins "best value" or "best budget".
 export function deriveAwards(ranked: ScoredProduct[]): CategoryAwards {
-  const eligible = ranked.filter(isLegacyRankable)
+  const eligible = ranked.filter(hasApprovedAssessment)
   const bestOverall = eligible[0] ?? null
   const priced = eligible.filter(
     (p) => p.score >= 50 && hasPositiveServingCost(p),

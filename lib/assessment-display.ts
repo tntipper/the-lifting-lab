@@ -18,11 +18,15 @@ export function assessmentDisplayFor(product: AssessmentInput) {
     state: 'unassessed' as const, score: null, label: 'Not assessed',
     explanation: 'Not assessed — no usable assessment is available. Label information remains available for research; no dosing or benefit recommendation is made.',
   }
-  return { state: 'legacy' as const, score, label: 'Legacy score', explanation: 'Existing formula score; scientific review is not complete.' }
+  return { state: 'legacy' as const, score, label: 'Legacy score', explanation: 'Unverified historical formula value. No approved effectiveness or dosing assessment is available; this value must not drive a recommendation.' }
 }
 
-export function isLegacyRankable<T extends AssessmentInput>(product: T): product is T & { score: number } {
-  return assessmentDisplayFor(product).state === 'legacy'
+export function hasApprovedAssessment<T extends AssessmentInput>(product: T): product is T & { score: number } {
+  // There is no approved, versioned assessment dataset yet. Neither a positive
+  // legacy value, a category nor a caller-supplied property can grant approval.
+  // A future reviewed projection must replace this gate, not add a fallback.
+  void product
+  return false
 }
 
 export function hasPositiveServingCost<T extends { cost_per_serving: number | null }>(product: T): product is T & { cost_per_serving: number } {
@@ -31,5 +35,5 @@ export function hasPositiveServingCost<T extends { cost_per_serving: number | nu
 
 // Alphabetical order and raw price order carry no assessment endorsement.
 export function isRankingCandidate(product: AssessmentInput & { cost_per_serving: number | null }, sort: string) {
-  return isLegacyRankable(product) && (sort === 'score' || ((sort === 'value' || sort === 'budget') && hasPositiveServingCost(product)))
+  return hasApprovedAssessment(product) && (sort === 'score' || ((sort === 'value' || sort === 'budget') && hasPositiveServingCost(product)))
 }

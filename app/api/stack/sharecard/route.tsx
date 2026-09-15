@@ -8,12 +8,6 @@ export const runtime = 'edge'
 const W = 1080
 const H = 1920
 
-function scoreColor(score: number | null): string {
-  if (score == null) return '#6b7280'
-  if (score >= 75) return '#a6e22e'
-  if (score >= 50) return '#f5b342'
-  return '#ff5c5c'
-}
 
 export async function GET(request: Request) {
   const ids = parseShareProductIds(new URL(request.url).searchParams)
@@ -84,7 +78,7 @@ export async function GET(request: Request) {
           {items.slice(0, maxItems).map((item, idx) => {
             const assessment = assessmentDisplayFor(item)
             const sc = assessment.score
-            const c = assessment.state === 'legacy' ? scoreColor(sc) : '#9ca3af'
+            const c = '#9ca3af'
             return (
               <div
                 key={idx}

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { assessmentDisplayFor } from '@/lib/assessment-display'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type Nutrient, type SortKey } from '@/lib/products'
 
@@ -12,7 +13,7 @@ function positiveInteger(value: string | null): number | null {
 }
 
 // GET /api/products?category=creatine&sort=score|price&page=1&limit=24
-// Public, read-only. Returns active products with clinical scores attached.
+// Public, read-only. Returns active research records with explicitly unverified historical values.
 // Pagination is opt-in to preserve the legacy array response for existing clients.
 // When page or limit is supplied, the array is sliced and pagination metadata is
 // returned in response headers.
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
   const result = paginationRequested ? scored.slice(start, start + limit) : scored
   const totalPages = scored.length === 0 ? 0 : Math.ceil(scored.length / limit)
 
-  return NextResponse.json(result, {
+  return NextResponse.json(result.map(product => ({ ...product, assessment_state: assessmentDisplayFor(product).state, assessment_note: assessmentDisplayFor(product).explanation, recommendation_status: 'unavailable' })), {
     headers: {
       'X-Total-Count': String(scored.length),
       'X-Page': String(page),

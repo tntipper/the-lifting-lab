@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useId } from 'react'
-import { isLegacyRankable } from '@/lib/assessment-display'
+import { hasApprovedAssessment } from '@/lib/assessment-display'
 import { listedPackPence, listedPackSubtotal } from '@/lib/wizard-budget'
 import Link from 'next/link'
 import ProductAssessment from '@/components/ProductAssessment'
@@ -70,7 +70,7 @@ export default function Wizard() {
   const topByCategory = useMemo(() => {
     const map = new Map<string, ScoredProduct>()
     for (const p of all) {
-      if (!isLegacyRankable(p)) continue
+      if (!hasApprovedAssessment(p)) continue
       const cur = map.get(p.category)
       if (!cur || (p.score ?? -1) > (cur.score ?? -1)) map.set(p.category, p)
     }
@@ -171,6 +171,7 @@ export default function Wizard() {
 
   return (
     <div ref={container} className="max-w-2xl mx-auto">
+      <p className="mb-6 rounded-xl border border-lab-border p-4 text-sm text-lab-muted">Automatic recommendations are unavailable until product assessments are approved. Your answers cannot turn historical scores into approved recommendations. <Link href="/products" className="underline">Browse records</Link> or <Link href="/stack" className="underline">build a manual research stack</Link>.</p>
       {/* progress */}
       {step < 4 && (
         <div className="flex gap-1.5 mb-8">
@@ -321,7 +322,7 @@ export default function Wizard() {
 
           {stack.length === 0 ? (
             <p className="text-lab-muted text-sm">
-              No products available for this combination yet. Try a different goal.
+              Recommendations are unavailable because no product assessment has been approved. Changing goals or budget cannot turn an unverified score into a recommendation. Browse product records to build a manual research stack.
             </p>
           ) : (
             <div className="space-y-3">

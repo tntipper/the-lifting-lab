@@ -8,12 +8,6 @@ export const alt = 'The Lifting Lab — Product Score'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-function scoreColor(score: number | null): string {
-  if (score == null) return '#6b7280'
-  if (score >= 70) return '#a6e22e'
-  if (score >= 50) return '#f5b342'
-  return '#ff5c5c'
-}
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -25,7 +19,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const category = categorySlug.replace(/-/g, ' ').toUpperCase()
   const review = claimsReviewFor(categorySlug)
   const assessment = assessmentDisplayFor({ category: categorySlug, score })
-  const col = assessment.state === 'legacy' ? scoreColor(score) : '#9ca3af'
+  const col = '#9ca3af'
   const displayScore = assessment.score != null ? String(assessment.score) : '—'
 
   return new ImageResponse(
@@ -48,7 +42,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             THE LIFTING LAB
           </span>
           <span style={{ color: '#374151', fontSize: 14, letterSpacing: 3, textTransform: 'uppercase' }}>
-            {review ? 'Claims Under Review' : assessment.state === 'unassessed' ? 'Not assessed' : 'Legacy Formula Score'}
+            {review ? 'Claims Under Review' : assessment.state === 'unassessed' ? 'Not assessed' : 'Unverified Historical Score'}
           </span>
         </div>
 

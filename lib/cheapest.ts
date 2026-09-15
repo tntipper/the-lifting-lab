@@ -1,35 +1,16 @@
-import { isLegacyRankable, hasPositiveServingCost } from './assessment-display'
-// Cheapest-per-serving rankings — the price-ascending complement to /value.
-//
-// /value ranks by True Cost as effectiveness-per-pound and surfaces the single
-// best-value winner in each category. /best ranks by Effectiveness Match score.
-// Neither answers the literal, high-intent query "what is the cheapest [category]
-// UK?" with a full ranked list. This module ranks every credibly-scored, priced
-// product by absolute cost per serving, cheapest first — while still gating to a
-// passing Effectiveness Match, so a dirt-cheap but under-dosed tub can never top
-// the list. The result is an honest "cheapest that still works" ranking.
+import { hasPositiveServingCost } from './assessment-display'
+// Listed price per known serving only. This is not an effectiveness, equivalent-dose
+// or approved-offer comparison. Delivery and checkout costs are excluded.
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
 import { createPublicClient } from '@/lib/supabase-public'
 
-// A product must clear our pass bar before it can rank on price. Cheap means
-// nothing if the dose does not work, so we never list an under-dosed product as
-// "cheapest" without that guard (mirrors the /value MIN_SCORE gate).
-export const MIN_SCORE = 50
+export type CheapProduct = ScoredProduct & { cost_per_serving: number }
 
-export type CheapProduct = ScoredProduct & { cost_per_serving: number; score: number }
-
-/**
- * Rank a product set by cost per serving, cheapest first. Keeps only products
- * that both clear the pass bar and carry the price/servings data needed for an
- * honest per-serving figure. Products missing servings_per_container (so no
- * cost_per_serving) are skipped rather than guessed at.
- */
+/** Order positive finite listed serving costs, independently of historical scores. */
 export function rankCheapest(products: Product[]): CheapProduct[] {
   const rows = products
     .map(withScore)
     .flatMap((p) =>
-      isLegacyRankable(p) &&
-      p.score >= MIN_SCORE &&
       hasPositiveServingCost(p)
         ? [{ ...p, score: p.score, cost_per_serving: p.cost_per_serving }]
         : [],

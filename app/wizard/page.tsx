@@ -7,7 +7,7 @@ import Wizard from './Wizard'
 export const metadata: Metadata = {
   title: 'Find My Stack — The Lifting Lab',
   description:
-    'Answer four quick questions and get a supplement shortlist to research against your goals and initial pack budget.',
+    'Automatic supplement recommendations are unavailable until product assessments are approved. Manual research stacks remain available.',
 }
 
 export default function WizardPage() {
@@ -30,10 +30,10 @@ export default function WizardPage() {
             links from this nav-level page to every /stacks goal page). */}
         <section className="mt-14 pt-8 border-t border-lab-border">
           <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-2 text-center">
-            Or grab a ready-made stack
+            Or browse goal research
           </p>
           <p className="text-lab-muted text-sm text-center mb-6">
-            Suggested combinations to research, with links to the product evidence.
+            Existing goal material is available for research. No product or combined-stack recommendation is approved.
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {STACK_GUIDES.map((s) => (

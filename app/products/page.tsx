@@ -11,10 +11,22 @@ export const revalidate = 86400
 const SITE = 'https://www.theliftinglab.co.uk'
 
 export const metadata: Metadata = {
-  title: 'Browse Supplements — The Lifting Lab',
-  description:
-    'Browse 200+ UK supplements ranked by Effectiveness Match scoring. Filter by category, sort by rating, and compare effective dosing and true value.',
-  alternates: { canonical: `${SITE}/products` },
+  "title": "Supplement research catalogue",
+  "description": "All tracked product records, including historical, unassessed and under-review entries. No approved effectiveness recommendations; compare labels and listed prices.",
+  "alternates": {
+    "canonical": "https://www.theliftinglab.co.uk/products"
+  },
+  "openGraph": {
+    "title": "Supplement research catalogue",
+    "description": "All tracked product records, including historical, unassessed and under-review entries. No approved effectiveness recommendations; compare labels and listed prices.",
+    "url": "https://www.theliftinglab.co.uk/products",
+    "type": "website"
+  },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "Supplement research catalogue",
+    "description": "All tracked product records, including historical, unassessed and under-review entries. No approved effectiveness recommendations; compare labels and listed prices."
+  }
 }
 
 // The catalogue is fetched server-side and passed into ProductGrid as its
@@ -29,10 +41,10 @@ export default async function ProductsPage() {
   const itemListJsonLd = products.length > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'UK Supplements Ranked by Effectiveness Match',
+    name: 'UK Supplement Research Records',
     description:
-      'Every supplement The Lifting Lab tracks, scored against evidence-based reference doses and ranked by Effectiveness Match.',
-    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+      'Active supplement research records. Historical values are unverified and do not grant an effectiveness ranking.',
+    itemListOrder: 'https://schema.org/ItemListUnordered',
     numberOfItems: products.length,
     itemListElement: products.map((p, i) => ({
       '@type': 'ListItem',
@@ -70,7 +82,7 @@ export default async function ProductsPage() {
         dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-6 md:py-10">
-        <h1 className="sr-only">Browse Supplements — Scored &amp; Compared by Effectiveness Match</h1>
+        <h1 className="sr-only">Browse Supplement Research Records &amp; Listed Prices</h1>
         <ProductGrid initialProducts={products} />
       </div>
     </div>

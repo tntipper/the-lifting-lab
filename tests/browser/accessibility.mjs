@@ -134,7 +134,7 @@ try {
     await verifyStackAssessment(page, origin, width, resultDir)
     if (width === 390) { await verifyStackOutbox(page, origin); console.log('PASS: actual provider/browser reload, lost-response receipt, account switch and two-tab outbox replay') }
     assert.deepEqual(errors, [], 'Fixture browser raised an uncaught error')
-    results.push({ width, overflow: false, closedDrawerUnfocusable: true, dialogs: 3, keyboard: 'pass', shareResults: 'busy/success/zero/http-error/network-error', wizard: 'focus/budget/eligibility/long-names', stackAssessment: 'account average/coverage/held/unknown/unresolved/safety/email/social/FAB/failure/no writes', rankings: 'unknown/zero/held/legacy; all sorts; research preservation; own-shop holds; overflow', offers: 'listing/search/missing/own-shop; card/sticky; keyboard/labels/44px/overflow; no navigation' })
+    results.push({ width, overflow: false, closedDrawerUnfocusable: true, dialogs: 3, keyboard: 'pass', shareResults: 'busy/success/zero/http-error/network-error', wizard: 'focus/budget/unapproved-selection hold', stackAssessment: 'account average/coverage/held/unknown/unresolved/safety/email/social/FAB/failure/no writes', rankings: 'unknown/zero/held/positive legacy; no endorsements at all sorts; research preservation; own-shop holds; overflow', offers: 'listing/search/missing/own-shop; card/sticky; keyboard/labels/44px/overflow; no navigation' })
     await context.close()
   }
 } finally {

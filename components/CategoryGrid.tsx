@@ -1,6 +1,6 @@
 'use client'
 
-import { isLegacyRankable } from '@/lib/assessment-display'
+import { hasApprovedAssessment } from '@/lib/assessment-display'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
@@ -242,7 +242,7 @@ export default function CategoryGrid() {
         const computed: Record<string, GroupStats> = {}
         for (const group of CATEGORY_GROUPS) {
           const matches = products.filter((p) => group.categories.includes(p.category))
-          const scores = matches.filter(isLegacyRankable).map((p) => p.score)
+          const scores = matches.filter(hasApprovedAssessment).map((p) => p.score)
           computed[group.slug] = {
             count: matches.length,
             topScore: scores.length > 0 ? Math.max(...scores) : null,

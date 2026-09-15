@@ -25,9 +25,9 @@ const anton = Anton({
 });
 
 const SITE_URL = "https://www.theliftinglab.co.uk";
-const SITE_TITLE = "The Lifting Lab — Evidence-Based Supplement Scoring (UK)";
+const SITE_TITLE = "The Lifting Lab — Supplement Research & Listed Prices (UK)";
 const SITE_DESCRIPTION =
-  "UK supplements ranked against evidence-based reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.";
+  "Browse supplement research records, compare labels and listed prices, and manage your manual stack. Effectiveness recommendations are unavailable pending scientific review.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

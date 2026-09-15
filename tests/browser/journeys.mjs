@@ -128,28 +128,13 @@ export async function verifyWizard(page, origin, width, resultDir) {
   await next.click(); await focusedHeading(page, 'What is your initial pack budget?')
   assert.equal(await custom.inputValue(), '20')
   await finishWizard(page)
-  await page.getByText('Listed pack subtotal:', { exact: false }).waitFor()
-  await page.getByText('£20.00', { exact: true }).waitFor()
-  await page.getByText('Delivery and checkout adjustments are additional.', { exact: false }).waitFor()
-  await page.getByText('Monthly spending needs the pack contents', { exact: false }).waitFor()
-  for (const [index, product] of listed.entries()) {
-    assert.equal(await page.getByRole('link', { name: product.name, exact: true }).count(), index < 2 ? 1 : 0, `Finite-budget eligibility mismatch for ${product.category}`)
-  }
-  assert.equal(await page.getByRole('button', { name: 'Add 2 to My Stack', exact: true }).count(), 1)
-  const dimensions = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, width: innerWidth }))
-  assert.ok(dimensions.scroll <= dimensions.width + 1, `Wizard long names overflow ${width}px: ${dimensions.scroll}`)
-  for (const label of ['Browse alternatives', '+ Stack']) {
-    const controls = page.getByRole(label === '+ Stack' ? 'button' : 'link', { name: label, exact: true })
-    for (const control of await controls.all()) {
-      const box = await control.boundingBox()
-      assert.ok(box && box.x >= 0 && box.x + box.width <= width + 1 && box.height >= 44, `Wizard action clipped or undersized: ${label}`)
-    }
-  }
+  await page.getByText('Recommendations are unavailable because no product assessment has been approved.', { exact: false }).waitFor()
+  assert.equal(await page.getByText('Listed pack subtotal:', { exact: false }).count(), 0)
+  for (const product of listed) assert.equal(await page.getByRole('link', { name: product.name, exact: true }).count(), 0)
+  assert.equal(await page.getByRole('button', { name: /Add .* to My Stack/ }).count(), 0)
+  assert.ok(await page.getByRole('link', { name: 'manual research stack', exact: false }).count() > 0)
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Wizard hold overflows ${width}`)
   await page.screenshot({ path: resolve(resultDir, `${width}-wizard-results.png`), fullPage: true })
-  await page.getByRole('button', { name: 'Add 2 to My Stack', exact: true }).click()
-  const stackLink = page.getByRole('link', { name: 'View My Stack →', exact: true })
-  await stackLink.waitFor()
-  assert.equal(await stackLink.evaluate(element => element === document.activeElement), true, 'Adding a complete stack lost focus when its action changed')
   await page.getByRole('button', { name: 'Start over' }).click()
   await focusedHeading(page, 'What are your goals?')
   assert.equal(await next.isDisabled(), true)
@@ -159,10 +144,7 @@ export async function verifyWizard(page, origin, width, resultDir) {
   await slider.focus(); await page.keyboard.press('End')
   assert.equal(await slider.getAttribute('aria-valuetext'), 'No limit')
   await finishWizard(page)
-  await page.getByText('A complete pack subtotal is unavailable for this selection.', { exact: false }).waitFor()
+  await page.getByText('Recommendations are unavailable because no product assessment has been approved.', { exact: false }).waitFor()
   assert.equal(await page.getByText('Listed pack subtotal:', { exact: false }).count(), 0)
-  assert.equal(await page.getByRole('link', { name: listed[2].name, exact: true }).count(), 1)
-  for (const product of listed.filter(p => ['hormone-support', 'zma'].includes(p.category))) {
-    assert.equal(await page.getByRole('link', { name: product.name, exact: true }).count(), 0, 'Under-review score entered a recommended wizard stack')
-  }
+  for (const product of listed) assert.equal(await page.getByRole('link', { name: product.name, exact: true }).count(), 0, 'Unapproved legacy product entered an unlimited-budget recommendation')
 }

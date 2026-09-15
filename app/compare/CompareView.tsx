@@ -1,9 +1,10 @@
 'use client'
+import { formatListedServingPrice } from '@/lib/products'
 
 import { useEffect } from 'react'
 import Link from 'next/link'
 import ProductAssessment from '@/components/ProductAssessment'
-import { isLegacyRankable, hasPositiveServingCost } from '@/lib/assessment-display'
+import { hasApprovedAssessment, hasPositiveServingCost } from '@/lib/assessment-display'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -48,14 +49,14 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
   }
 
   // verdict: best by score (rating)
-  const scored = products.filter(isLegacyRankable)
+  const scored = products.filter(hasApprovedAssessment)
   const bestRated = scored.length
     ? scored.reduce((a, b) => (b.score > a.score ? b : a))
     : null
 
   // best value: highest score per £/serving among products that have both
   const valued = products.filter(
-    (p) => isLegacyRankable(p) && hasPositiveServingCost(p),
+    (p) => hasApprovedAssessment(p) && hasPositiveServingCost(p),
   ) as (ComparedProduct & { score: number; cost_per_serving: number })[]
   const bestValue = valued.length
     ? valued.reduce((a, b) => (b.score / b.cost_per_serving > a.score / a.cost_per_serving ? b : a))
@@ -67,7 +68,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
 
   return (
     <div className="space-y-8">
-      <p className="text-xs text-lab-muted">Only available legacy scores outside a claims review can enter this comparison ranking. Unassessed and under-review products remain visible without a recommendation. Scientific review of the legacy scores is not complete.</p>
+      <p className="text-xs text-lab-muted">No approved effectiveness assessment is available. Historical scores cannot enter a comparison ranking. All research records remain visible without a recommendation.</p>
       {/* verdict */}
       {bestRated && (
         <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-5 lab-glow">
@@ -80,7 +81,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
             <p className="text-lab-muted text-xs mt-1">
               Best value per serving:{' '}
               <span className="text-white font-bold">{bestValue.brand} {bestValue.name}</span> at{' '}
-              <span className="text-lab-lime font-bold">£{bestValue.cost_per_serving.toFixed(2)}/serving</span>{' '}
+              <span className="text-lab-lime font-bold">{formatListedServingPrice(bestValue.cost_per_serving)}/serving</span>{' '}
               (score {bestValue.score}).
             </p>
           ) : priced.length ? (
@@ -138,12 +139,12 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
         ))}
 
         {/* true cost per serving */}
-        <Cell head>True Cost / serving</Cell>
+        <Cell head>listed price / serving</Cell>
         {products.map((p) => (
           <Cell key={p.id}>
             {p.cost_per_serving != null ? (
               <span className={bestValue?.id === p.id ? 'text-lab-lime font-black' : ''}>
-                £{p.cost_per_serving.toFixed(2)}
+                {formatListedServingPrice(p.cost_per_serving)}
               </span>
             ) : (
               <span title={trueCostReason(p) ?? undefined}>
