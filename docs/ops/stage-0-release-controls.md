@@ -18,9 +18,26 @@ The repository's AGENTS.md requests framework docs inside `node_modules/next/dis
 - `TLL_STAGING_SUPABASE_PROJECT_REF` set to a separate hosted staging project's reference.
 - `NEXT_PUBLIC_SUPABASE_URL` set to that project's HTTPS origin, with its matching public key in `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
-The staging reference must not be the existing production project's public reference. The check rejects inherited production URLs, missing markers and misleading origins. Existing production deployments are not changed by this build-time preview check. Environment-variable values and credentials must not be committed or printed in logs.
+The staging reference must not be the existing production project's public reference. An explicitly declared staging project must use its matching HTTPS origin. Misleading origins and partial staging settings are rejected. Existing production deployments are unchanged. Environment-variable values and credentials must not be committed or printed in logs.
 
-An isolated project still needs its own Auth callbacks, sender recipient allowlist, Storage, policies and supplier test endpoints. A correct URL alone does not prove those controls. When Preview has no staging markers, or would inherit the production project, the build rewrites to a synthetic non-production Supabase identity so the UI can deploy without touching the live database. Auth and catalogue data will not work on that synthetic identity until a real staging project is configured. Mis-declared staging markers still fail closed. Never remove the check merely to bake an inherited production configuration into Preview.
+When Vercel Preview has no staging configuration, or inherits the known production project, it builds in **synthetic visual-preview mode**. This preserves the follow-up preview-build work added in commit `9434539`, while making the resulting deployment visibly inert:
+
+- `NEXT_PUBLIC_TLL_ENVIRONMENT=synthetic-preview` distinguishes a visual preview from configured staging. The fallback removes the staging project marker and uses the reserved `https://tll-preview.invalid` origin, never a guessed Supabase tenant.
+- Every direct Supabase client has a shared transport guard. In synthetic mode it returns a controlled 403 locally, before network access or Auth retry loops. This also covers server rendering outside route handlers.
+- Middleware returns a clear 503 response for all API paths and non-GET/HEAD requests before application handlers. Sign-in, account, rewards, contact and submission pages show an explicit unavailable page. The auth/contact/submission client pages also have their own visual-mode boundary.
+- Every page has a visible preview notice explaining that data, accounts, forms and purchases are disabled and that empty product lists do not represent the live catalogue. Retailer buy-link helpers stay on the local preview information page.
+- The production Google Analytics scripts and event helper are disabled. Preview responses are marked `noindex, nofollow`; robots disallows crawling. A preview-only CSP permits application connections only to the same origin and blocks form submissions and frames.
+
+This does not create hosted staging. An explicit isolated project still needs its own Auth callbacks, sender recipient allowlist, Storage, policies and supplier test endpoints. A correct URL alone does not prove those controls. Remove inherited production secrets from the Vercel Preview environment separately: build-time public-value replacement does not change the platform's stored runtime credentials, and the current isolation must not be treated as permission for future standalone scripts or integrations to use them.
+
+Run the preview regression checks with:
+
+```sh
+node --experimental-strip-types --test tests/preview-isolation.test.mjs tests/preview-mode.test.mjs
+node tests/preview-build-runtime.mjs
+```
+
+Run the second command serially with other Next build/dev tests because it uses this checkout's `.next`. It mocks Google Fonts with Next's bundled local font and blocks every external socket/fetch in Next workers. It builds with an inherited production URL and fake credentials, checks compiled server/browser output for the reserved origin, starts the real build with deliberately conflicting runtime environment values, and verifies the notice, form/account containment, API denials, absent GA script and robots policy. No production credential or live-service call is used.
 
 ## Required checks and release record
 

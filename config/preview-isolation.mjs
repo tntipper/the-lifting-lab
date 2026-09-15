@@ -1,9 +1,9 @@
 // Project references are public endpoint identifiers, not credentials.
 const productionProject = "wrhgscovsgsudtedbljr";
 
-/** Non-existent project used only so Preview can build without the live DB. */
-export const SYNTHETIC_PREVIEW_PROJECT = "tllpreviewsynthetic0";
-const syntheticPreviewUrl = `https://${SYNTHETIC_PREVIEW_PROJECT}.supabase.co`;
+/** Reserved non-resolving origin; all synthetic SDK requests are also blocked. */
+export const SYNTHETIC_PREVIEW_URL = "https://tll-preview.invalid";
+const syntheticPreviewUrl = SYNTHETIC_PREVIEW_URL;
 const syntheticPreviewAnonKey = "tll-preview-synthetic-public-key";
 
 function parseSupabaseOrigin(url) {
@@ -44,8 +44,8 @@ function claimsExplicitStaging(env) {
 
 /** Force Preview onto a synthetic non-production Supabase identity. */
 export function applySyntheticPreviewEnv(env) {
-  env.NEXT_PUBLIC_TLL_ENVIRONMENT = "staging";
-  env.TLL_STAGING_SUPABASE_PROJECT_REF = SYNTHETIC_PREVIEW_PROJECT;
+  env.NEXT_PUBLIC_TLL_ENVIRONMENT = "synthetic-preview";
+  delete env.TLL_STAGING_SUPABASE_PROJECT_REF;
   env.NEXT_PUBLIC_SUPABASE_URL = syntheticPreviewUrl;
   env.NEXT_PUBLIC_SUPABASE_ANON_KEY = syntheticPreviewAnonKey;
 }
@@ -59,6 +59,10 @@ export function applySyntheticPreviewEnv(env) {
 export function assertPreviewIsolation(env) {
   if (env.VERCEL_ENV !== "preview") return;
   if (isValidStagingConfig(env)) return;
+  if (env.NEXT_PUBLIC_TLL_ENVIRONMENT === "synthetic-preview") {
+    applySyntheticPreviewEnv(env);
+    return;
+  }
 
   // Blank Preview env or inherited production → synthetic non-prod build.
   if (!claimsExplicitStaging(env) || pointsAtProduction(env)) {

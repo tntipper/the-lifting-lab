@@ -1,10 +1,17 @@
 'use client'
 
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
+
 import { useState } from 'react'
 import Link from 'next/link'
 import { CATEGORIES } from '@/lib/categories'
 
 export default function SubmitPage() {
+  return isSyntheticPreview() ? <PreviewUnavailableContent /> : <SubmitPageForm />
+}
+
+function SubmitPageForm() {
   const [category, setCategory] = useState('')
   const [brand, setBrand] = useState('')
   const [product, setProduct] = useState('')

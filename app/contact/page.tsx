@@ -1,9 +1,16 @@
 'use client'
 
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
+
 import { useState } from 'react'
 import Link from 'next/link'
 
 export default function ContactPage() {
+  return isSyntheticPreview() ? <PreviewUnavailableContent /> : <ContactPageForm />
+}
+
+function ContactPageForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')

@@ -1,10 +1,17 @@
 'use client'
 
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { authErrorMessage, safeAuthReturnPath } from '@/lib/auth-flow'
 
 export default function AuthPage() {
+  return isSyntheticPreview() ? <PreviewUnavailableContent /> : <AuthPageForm />
+}
+
+function AuthPageForm() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
