@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import AccessibleDialog from '@/components/AccessibleDialog'
 import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
 import { claimsReviewFor } from '@/lib/claims-review'
 import Link from 'next/link'
@@ -9,6 +10,7 @@ import { categoryLabel } from '@/lib/categories'
 
 export default function MethodologyModal({ category }: { category?: string }) {
   const [open, setOpen] = useState(false)
+  const titleId = useId()
   const method = methodologyFor(category)
   const review = claimsReviewFor(category)
   const catLabel = category ? categoryLabel(category) : null
@@ -16,25 +18,27 @@ export default function MethodologyModal({ category }: { category?: string }) {
   return (
     <>
       <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
         onClick={() => setOpen(true)}
         className="text-xs font-bold text-lab-lime hover:underline uppercase tracking-widest shrink-0"
       >
         ⓘ How we score
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
-          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
-        >
-          <div className="w-full max-w-md bg-lab-bg border border-lab-border rounded-2xl p-5 max-h-[90dvh] overflow-y-auto">
+      <AccessibleDialog open={open} onClose={() => setOpen(false)} labelledBy={titleId}
+        className="tll-centered-dialog bg-lab-bg border border-lab-border rounded-2xl p-5">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-black uppercase italic">
+              <h2 id={titleId} className="text-lg font-black uppercase italic">
                 How We <span className="text-lab-lime">Score</span>
-              </h3>
+              </h2>
               <button
+                type="button"
+                aria-label="Close scoring explanation"
+                data-dialog-initial-focus
                 onClick={() => setOpen(false)}
-                className="text-lab-muted text-xl leading-none px-2 hover:text-white"
+                className="text-lab-muted text-xl leading-none px-2 hover:text-white min-w-11 min-h-11"
               >
                 ✕
               </button>
@@ -141,9 +145,7 @@ export default function MethodologyModal({ category }: { category?: string }) {
                 Read the full methodology →
               </Link>
             </div>
-          </div>
-        </div>
-      )}
+      </AccessibleDialog>
     </>
   )
 }

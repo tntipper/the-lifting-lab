@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
+import AccessibleDialog from '@/components/AccessibleDialog'
 import Link from 'next/link'
 import { useLocalStack } from '@/components/LocalStackContext'
 
@@ -9,25 +10,15 @@ const AR = '166,226,46'
 export default function StackFAB() {
   const { stack, remove, clear } = useLocalStack()
   const [open, setOpen] = useState(false)
+  const titleId = useId()
 
   // keep the panel accessible even when stack empties (so user sees "empty" state briefly)
   const count = stack.length
 
   return (
     <>
-      {/* backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      {/* slide-up panel */}
-      <div
-        className="fixed bottom-0 inset-x-0 z-50 transition-transform duration-300"
-        style={{ transform: open ? 'translateY(0)' : 'translateY(110%)' }}
-      >
+      <AccessibleDialog open={open} onClose={() => setOpen(false)} labelledBy={titleId}
+        className="tll-stack-dialog">
         <div
           className="mx-auto max-w-lg rounded-t-2xl"
           style={{
@@ -46,12 +37,12 @@ export default function StackFAB() {
           <div className="flex items-center justify-between px-5 py-3 border-b border-white/06">
             <div className="flex items-center gap-2">
               <span className="text-lg">🧪</span>
-              <span
+              <h2 id={titleId}
                 className="text-[13px] font-black uppercase tracking-wide"
                 style={{ color: `rgba(${AR},1)` }}
               >
                 My Stack
-              </span>
+              </h2>
               {count > 0 && (
                 <span
                   className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
@@ -64,15 +55,22 @@ export default function StackFAB() {
             <div className="flex items-center gap-3">
               {count > 0 && (
                 <button
-                  onClick={clear}
+                  type="button"
+                  onClick={(event) => {
+                    event.currentTarget.closest('dialog')?.querySelector<HTMLElement>('[data-dialog-initial-focus]')?.focus()
+                    clear()
+                  }}
                   className="text-[11px] font-bold uppercase tracking-widest text-white/40 hover:text-red-400 transition-colors"
                 >
                   Clear all
                 </button>
               )}
               <button
+                type="button"
+                aria-label="Close My Stack"
+                data-dialog-initial-focus
                 onClick={() => setOpen(false)}
-                className="text-white/40 hover:text-white text-xl leading-none transition-colors"
+                className="text-white/60 hover:text-white text-xl leading-none transition-colors min-w-11 min-h-11"
               >
                 ×
               </button>
@@ -114,14 +112,19 @@ export default function StackFAB() {
 
                 {/* name */}
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-bold text-white truncate">{item.name}</p>
+                  <Link href={`/products/${item.id}`} onClick={() => setOpen(false)} className="text-[12px] font-bold text-white break-words hover:underline">{item.name}</Link>
                   <p className="text-[10px] text-white/40 uppercase tracking-widest">{item.brand}</p>
                 </div>
 
                 {/* remove */}
                 <button
-                  onClick={() => remove(item.id)}
-                  className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-colors text-base leading-none"
+                  type="button"
+                  aria-label={`Remove ${item.name} from My Stack`}
+                  onClick={(event) => {
+                    event.currentTarget.closest('dialog')?.querySelector<HTMLElement>('[data-dialog-initial-focus]')?.focus()
+                    remove(item.id)
+                  }}
+                  className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-colors text-base leading-none"
                 >
                   ×
                 </button>
@@ -148,7 +151,7 @@ export default function StackFAB() {
           )}
           {count === 0 && <div className="pb-6" />}
         </div>
-      </div>
+      </AccessibleDialog>
 
       {/* FAB — always bottom right */}
       <button
@@ -168,6 +171,8 @@ export default function StackFAB() {
             : `0 4px 16px rgba(0,0,0,0.5)`,
         }}
         aria-label="My Stack"
+        aria-haspopup="dialog"
+        aria-expanded={open}
       >
         {/* count badge */}
         {count > 0 && !open && (
