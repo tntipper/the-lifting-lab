@@ -11,16 +11,16 @@ function fixture() {
     evaluatedAtMs: NOW, requestedQuantity: 1,
     policy: { review: review('catalogue-policy-1'), ownShopOrigin:'https://shop.example.invalid', productPathPrefix:'/products/', maxStockAgeMs:60000, maxPriceAgeMs:300000, expectedPricingPolicyVersion:'pricing-policy-1' },
     product: { id:'product-a', status:'active', publication:'research_and_shop', identity:item },
-    mapping: { review:review('mapping-1'), productId:'product-a',shopifyVariantId:'gid://shopify/ProductVariant/1001',supplierSku:'SYNTHETIC-SKU-A',status:'exact',source:'verified_labels',shopIdentity:structuredClone(item),supplierIdentity:structuredClone(item) },
-    commerceLabel: { review:review('commerce-label-1'),formulaId:item.formulaId,formulaVersion:item.formulaVersion,labelVersion:item.labelVersion,packVersion:item.pack.version,source:'manufacturer_label',requiredSellingInformationComplete:true },
+    mapping: { review:review('mapping-1'), productId:'product-a',shopifyProductId:'gid://shopify/Product/2001',shopifyProductHandle:'product-a',shopifyVariantId:'gid://shopify/ProductVariant/1001',supplierSku:'SYNTHETIC-SKU-A',status:'exact',source:'verified_labels',shopIdentity:structuredClone(item),supplierIdentity:structuredClone(item) },
+    commerceLabel: { review:review('commerce-label-1'),formulaId:item.formulaId,formulaVersion:item.formulaVersion,flavourId:item.flavourId,labelVersion:item.labelVersion,packVersion:item.pack.version,source:'manufacturer_label',requiredSellingInformationComplete:true },
     cost: { review:review('cost-1'),shopifyVariantId:'1001',supplierSku:'SYNTHETIC-SKU-A',mappingVersion:'mapping-1',pricingPolicyVersion:'pricing-policy-1',currency:'GBP',allAttributableCostsKnown:true,taxTreatmentApproved:true,supplierDeliveryPencePerBillableItem:500,minimumListPricePence:2604 },
-    price: { review:review('price-1'),shopifyVariantId:'1001',mappingVersion:'mapping-1',costVersion:'cost-1',currency:'GBP',amountPence:3000 },
-    stock: { review:review('stock-1'),shopifyVariantId:'1001',supplierSku:'SYNTHETIC-SKU-A',packVersion:item.pack.version,basis:'reconciled_sellable_units',availableToSell:10 },
+    price: { review:review('price-1'),observedAtMs:NOW-1000,shopifyVariantId:'1001',mappingVersion:'mapping-1',costVersion:'cost-1',currency:'GBP',amountPence:3000 },
+    stock: { review:review('stock-1'),observedAtMs:NOW-1000,shopifyVariantId:'1001',supplierSku:'SYNTHETIC-SKU-A',packVersion:item.pack.version,basis:'reconciled_sellable_units',availableToSell:10 },
     operator: { review:review('clearance-1'),commerce:'clear',research:'clear' },
     destination: { kind:'own_shop_exact',url:'https://shop.example.invalid/products/product-a?variant=1001',productHandle:'product-a' },
     researchContextId:'healthy-adults-protein-intake',
-    research: {review:review('assessment-1'),formulaId:item.formulaId,formulaVersion:item.formulaVersion,labelVersion:item.labelVersion,modelVersion:'model-2',expectedModelVersion:'model-2',evidenceVersion:'evidence-3',expectedEvidenceVersion:'evidence-3',contextId:'healthy-adults-protein-intake',source:'verified_label',independentReviewComplete:true,outcome:'endorsed'},
-    servingBasis: {review:review('servings-1'),formulaId:item.formulaId,formulaVersion:item.formulaVersion,packVersion:item.pack.version,source:'verified_label',servingsPerSellableUnit:20},
+    research: {review:review('assessment-1'),formulaId:item.formulaId,formulaVersion:item.formulaVersion,flavourId:item.flavourId,labelVersion:item.labelVersion,modelVersion:'model-2',expectedModelVersion:'model-2',evidenceVersion:'evidence-3',expectedEvidenceVersion:'evidence-3',contextId:'healthy-adults-protein-intake',source:'verified_label',independentReviewComplete:true,outcome:'endorsed'},
+    servingBasis: {review:review('servings-1'),formulaId:item.formulaId,formulaVersion:item.formulaVersion,flavourId:item.flavourId,labelVersion:item.labelVersion,packVersion:item.pack.version,source:'verified_label',servingsPerSellableUnit:20},
   }
 }
 function held(decision, code) { assert.equal(decision.status,'hold'); assert.ok(decision.reasons.some(r => r.code===code),JSON.stringify(decision)) }
@@ -127,6 +127,41 @@ test('headless product prefix can be explicitly configured without changing vari
   assert.equal(evaluateCatalogueEligibility(value).commerce.status,'eligible')
 })
 
+test('a matching variant query cannot legitimise a different product handle', () => {
+  const value = fixture()
+  value.destination.productHandle = 'other-product'
+  value.destination.url = 'https://shop.example.invalid/products/other-product?variant=1001'
+  const result = evaluateCatalogueEligibility(value)
+  held(result.commerce, 'DESTINATION_MISMATCH')
+  assert.equal(result.purchaseTarget, null)
+  value.mapping.shopifyProductId = 'gid://shopify/ProductVariant/1001'
+  held(evaluateCatalogueEligibility(value).commerce, 'MISSING_INPUT')
+})
+
+test('fresh approval cannot renew stale supplier stock or storefront price observations', () => {
+  for (const [scope, age, code] of [['stock',60000,'STALE_STOCK'],['price',300000,'STALE_PRICE']]) {
+    const value = fixture()
+    value[scope].review.verifiedAtMs = NOW
+    value[scope].observedAtMs = NOW - age
+    held(evaluateCatalogueEligibility(value).commerce, code)
+    value[scope].observedAtMs = NOW + 1
+    held(evaluateCatalogueEligibility(value).commerce, 'FUTURE_EVIDENCE')
+    delete value[scope].observedAtMs
+    held(evaluateCatalogueEligibility(value).commerce, 'INVALID_INPUT')
+  }
+})
+
+test('one flavour label or assessment cannot approve a different flavour identity', () => {
+  for (const [scope, decision] of [['commerceLabel','commerce'],['research','research'],['servingBasis','servingValue']]) {
+    const value = fixture()
+    value[scope].flavourId = 'chocolate'
+    held(evaluateCatalogueEligibility(value)[decision], 'IDENTITY_MISMATCH')
+  }
+  const value = fixture()
+  value.servingBasis.labelVersion = 'replaced-label'
+  held(evaluateCatalogueEligibility(value).servingValue, 'IDENTITY_MISMATCH')
+})
+
 for(const [label,mutate,code] of [
   ['missing policy',v=>v.policy=null,'MISSING_INPUT'],
   ['missing product',v=>v.product=null,'MISSING_INPUT'],
@@ -162,8 +197,8 @@ for(const [label,mutate,code] of [
   ['stale mapping version',v=>v.mapping.review.expectedVersion='new','STALE_VERSION'],
   ['expired cost',v=>v.cost.review.expiresAtMs=NOW,'EXPIRED'],
   ['future evidence',v=>v.stock.review.verifiedAtMs=NOW+1,'FUTURE_EVIDENCE'],
-  ['stale stock age',v=>v.stock.review.verifiedAtMs=NOW-60000,'STALE_STOCK'],
-  ['stale price age',v=>v.price.review.verifiedAtMs=NOW-300000,'STALE_PRICE'],
+  ['stale stock age',v=>v.stock.observedAtMs=NOW-60000,'STALE_STOCK'],
+  ['stale price age',v=>v.price.observedAtMs=NOW-300000,'STALE_PRICE'],
   ['raw supplier stock',v=>v.stock.basis='supplier_raw','UNRECONCILED_STOCK'],
   ['out of stock',v=>v.stock.availableToSell=0,'OUT_OF_STOCK'],
   ['insufficient requested stock',v=>v.requestedQuantity=11,'INSUFFICIENT_STOCK'],
@@ -230,7 +265,7 @@ test('supplier tax markers and truthy strings cannot substitute for approved tax
 })
 
 test('expiry and stale-age boundaries are exclusive and quantity projection uses sellable units',()=>{
-  const value=fixture();value.stock.review.verifiedAtMs=NOW-59999;value.requestedQuantity=10
+  const value=fixture();value.stock.observedAtMs=NOW-59999;value.requestedQuantity=10
   assert.equal(evaluateCatalogueEligibility(value).commerce.status,'eligible')
   value.evaluatedAtMs=NOW+1
   held(evaluateCatalogueEligibility(value).commerce,'STALE_STOCK')

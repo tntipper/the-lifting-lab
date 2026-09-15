@@ -25,6 +25,8 @@ export type CataloguePolicy = {
 export type ExactMapping = {
   review: CatalogueReview
   productId: string
+  shopifyProductId: string
+  shopifyProductHandle: string
   shopifyVariantId: string
   supplierSku: string
   status: 'exact' | 'ambiguous' | 'unknown'
@@ -36,6 +38,7 @@ export type CommerceLabel = {
   review: CatalogueReview
   formulaId: string
   formulaVersion: string
+  flavourId: string
   labelVersion: string
   packVersion: string
   source: 'manufacturer_label' | 'verified_supplier_label' | 'feed_estimate' | 'unknown'
@@ -56,6 +59,7 @@ export type ApprovedCostGate = {
 }
 export type ApprovedPrice = {
   review: CatalogueReview
+  observedAtMs: number
   shopifyVariantId: string
   mappingVersion: string
   costVersion: string
@@ -64,6 +68,7 @@ export type ApprovedPrice = {
 }
 export type StockProjection = {
   review: CatalogueReview
+  observedAtMs: number
   shopifyVariantId: string
   supplierSku: string
   packVersion: string
@@ -74,6 +79,7 @@ export type ResearchAssessment = {
   review: CatalogueReview
   formulaId: string
   formulaVersion: string
+  flavourId: string
   labelVersion: string
   modelVersion: string
   expectedModelVersion: string
@@ -88,6 +94,8 @@ export type ServingBasis = {
   review: CatalogueReview
   formulaId: string
   formulaVersion: string
+  flavourId: string
+  labelVersion: string
   packVersion: string
   source: 'verified_label' | 'feed_estimate' | 'unknown'
   servingsPerSellableUnit: number
@@ -135,7 +143,7 @@ export type CatalogueEligibilityResult = {
   valueRankingEligible: boolean
   display: { catalogueState: 'research_listed' | 'unassessed' | 'shop_only' | 'unavailable'; availability: 'available' | 'unavailable'; assessmentLabel: 'Research reviewed' | 'Not endorsed' | 'Not assessed' }
   linkState: 'exact_own_shop' | 'search_only' | 'unavailable'
-  purchaseTarget: { url: string; shopifyVariantId: string; supplierSku: string; relationship: 'own_shop' } | null
+  purchaseTarget: { url: string; shopifyProductId: string; shopifyVariantId: string; supplierSku: string; relationship: 'own_shop' } | null
   versions: { policy: string | null; mapping: string | null; cost: string | null; price: string | null; stock: string | null; research: string | null }
 }
 
@@ -144,7 +152,7 @@ const present = (value: unknown): value is string => typeof value === 'string' &
 const integer = (value: unknown, min: number, max = MAX): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= min && value <= max
 const positive = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= MAX
 function reason(list: EligibilityReason[], code: EligibilityReasonCode, field: string): void { list.push({ code, field }) }
-function review(value: CatalogueReview | null | undefined, field: string, now: number, into: EligibilityReason[], maxAge?: number): void {
+function review(value: CatalogueReview | null | undefined, field: string, now: number, into: EligibilityReason[]): void {
   if (!value) { reason(into, 'MISSING_INPUT', field); return }
   if (value.approved !== true) reason(into, 'UNAPPROVED', field)
   if (!present(value.version) || !present(value.expectedVersion)) reason(into, 'MISSING_INPUT', field + '.version')
@@ -153,8 +161,14 @@ function review(value: CatalogueReview | null | undefined, field: string, now: n
   else {
     if (value.verifiedAtMs > now) reason(into, 'FUTURE_EVIDENCE', field)
     if (value.expiresAtMs <= now) reason(into, 'EXPIRED', field)
-    if (maxAge !== undefined && now - value.verifiedAtMs >= maxAge) reason(into, field === 'stock.review' ? 'STALE_STOCK' : 'STALE_PRICE', field)
   }
+}
+function observation(value: unknown, field: 'stock.observedAtMs' | 'price.observedAtMs', now: number, maxAge: number | undefined, into: EligibilityReason[]): void {
+  if (!integer(value, 0, Number.MAX_SAFE_INTEGER) || !integer(maxAge, 1, Number.MAX_SAFE_INTEGER)) {
+    reason(into, 'INVALID_INPUT', field); return
+  }
+  if (value > now) reason(into, 'FUTURE_EVIDENCE', field)
+  if (now - value >= maxAge) reason(into, field === 'stock.observedAtMs' ? 'STALE_STOCK' : 'STALE_PRICE', field)
 }
 function identity(value: FormulaIdentity | undefined, field: string, into: EligibilityReason[]): void {
   if (!value) { reason(into, 'MISSING_INPUT', field); return }
@@ -175,6 +189,10 @@ function variant(value: unknown): string | null {
   if (typeof value !== 'string' || !/^(?:gid:\/\/shopify\/ProductVariant\/)?[1-9][0-9]*$/.test(value)) return null
   return value.replace('gid://shopify/ProductVariant/', '')
 }
+function shopProduct(value: unknown): string | null {
+  if (typeof value !== 'string' || !/^(?:gid:\/\/shopify\/Product\/)?[1-9][0-9]*$/.test(value)) return null
+  return value.replace('gid://shopify/Product/', '')
+}
 function matches(value: unknown, expected: unknown, field: string, into: EligibilityReason[]): void {
   if (!present(value) || !present(expected) || value !== expected) reason(into, 'IDENTITY_MISMATCH', field)
 }
@@ -192,6 +210,7 @@ function destination(input: CatalogueEligibilityInput, into: EligibilityReason[]
     if (origin.protocol !== 'https:' || origin.href !== origin.origin + '/' || origin.username || origin.password ||
         url.protocol !== 'https:' || url.origin !== origin.origin || url.username || url.password || url.hash ||
         !present(target.productHandle) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(target.productHandle) ||
+        target.productHandle !== mapping?.shopifyProductHandle || !shopProduct(mapping?.shopifyProductId) ||
         url.pathname !== policy?.productPathPrefix + target.productHandle || !id ||
         url.searchParams.getAll('variant').length !== 1 || url.searchParams.get('variant') !== id) {
       reason(into, 'DESTINATION_MISMATCH', 'destination'); return null
@@ -227,7 +246,7 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
   if (mapping?.source !== 'verified_labels') reason(commerce, 'ESTIMATED_IDENTITY', 'mapping.source')
   matches(mapping?.productId, product?.id, 'mapping.productId', commerce)
   const variantId = variant(mapping?.shopifyVariantId)
-  if (!variantId || !present(mapping?.supplierSku)) reason(commerce, 'MISSING_INPUT', 'mapping.variant/supplierSku')
+  if (!variantId || !present(mapping?.supplierSku) || !shopProduct(mapping?.shopifyProductId)) reason(commerce, 'MISSING_INPUT', 'mapping.product/variant/supplierSku')
   identity(mapping?.shopIdentity, 'mapping.shopIdentity', commerce)
   identity(mapping?.supplierIdentity, 'mapping.supplierIdentity', commerce)
   if (!sameIdentity(product?.identity, mapping?.shopIdentity)) reason(commerce, 'IDENTITY_MISMATCH', 'mapping.shopIdentity')
@@ -236,7 +255,7 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
   const label = value.commerceLabel
   review(label?.review, 'commerceLabel.review', now, commerce)
   if (!label || !['manufacturer_label','verified_supplier_label'].includes(label.source) || label.requiredSellingInformationComplete !== true) reason(commerce, 'COMMERCE_LABEL_INCOMPLETE', 'commerceLabel')
-  for (const key of ['formulaId','formulaVersion','labelVersion'] as const) matches(label?.[key], product?.identity?.[key], 'commerceLabel.' + key, commerce)
+  for (const key of ['formulaId','formulaVersion','flavourId','labelVersion'] as const) matches(label?.[key], product?.identity?.[key], 'commerceLabel.' + key, commerce)
   matches(label?.packVersion, product?.identity?.pack?.version, 'commerceLabel.packVersion', commerce)
 
   const cost = value.cost, price = value.price, stock = value.stock
@@ -248,12 +267,14 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
   matches(cost?.mappingVersion, mapping?.review?.version, 'cost.mappingVersion', commerce)
   matches(cost?.pricingPolicyVersion, policy?.expectedPricingPolicyVersion, 'cost.pricingPolicyVersion', commerce)
   matches(cost?.supplierSku, mapping?.supplierSku, 'cost.supplierSku', commerce)
-  review(price?.review, 'price.review', now, commerce, policy?.maxPriceAgeMs)
+  review(price?.review, 'price.review', now, commerce)
+  observation(price?.observedAtMs, 'price.observedAtMs', now, policy?.maxPriceAgeMs, commerce)
   if (price?.currency !== 'GBP' || !integer(price.amountPence, 1)) reason(commerce, 'INVALID_INPUT', 'price.amountPence')
   matches(price?.costVersion, cost?.review?.version, 'price.costVersion', commerce)
   matches(price?.mappingVersion, mapping?.review?.version, 'price.mappingVersion', commerce)
   if (price && cost && price.amountPence < cost.minimumListPricePence) reason(commerce, 'BELOW_PRICE_FLOOR', 'price.amountPence')
-  review(stock?.review, 'stock.review', now, commerce, policy?.maxStockAgeMs)
+  review(stock?.review, 'stock.review', now, commerce)
+  observation(stock?.observedAtMs, 'stock.observedAtMs', now, policy?.maxStockAgeMs, commerce)
   if (stock?.basis !== 'reconciled_sellable_units') reason(commerce, 'UNRECONCILED_STOCK', 'stock.basis')
   matches(stock?.supplierSku, mapping?.supplierSku, 'stock.supplierSku', commerce)
   matches(stock?.packVersion, product?.identity?.pack?.version, 'stock.packVersion', commerce)
@@ -266,7 +287,7 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
   const assessment = value.research
   if (product?.publication === 'shop_only') reason(research, 'RESEARCH_NOT_REQUESTED', 'product.publication')
   review(assessment?.review, 'research.review', now, research)
-  for (const key of ['formulaId','formulaVersion','labelVersion'] as const) matches(assessment?.[key], product?.identity?.[key], 'research.' + key, research)
+  for (const key of ['formulaId','formulaVersion','flavourId','labelVersion'] as const) matches(assessment?.[key], product?.identity?.[key], 'research.' + key, research)
   if (!assessment || assessment.source !== 'verified_label' || assessment.independentReviewComplete !== true) reason(research, 'UNVERIFIED_SCIENCE', 'research.source')
   matches(assessment?.modelVersion, assessment?.expectedModelVersion, 'research.modelVersion', research)
   matches(assessment?.evidenceVersion, assessment?.expectedEvidenceVersion, 'research.evidenceVersion', research)
@@ -280,6 +301,8 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
   if (basis?.source !== 'verified_label' || !positive(basis?.servingsPerSellableUnit)) reason(serving, 'SERVING_BASIS_UNVERIFIED', 'servingBasis')
   matches(basis?.formulaId, product?.identity?.formulaId, 'servingBasis.formulaId', serving)
   matches(basis?.formulaVersion, product?.identity?.formulaVersion, 'servingBasis.formulaVersion', serving)
+  matches(basis?.flavourId, product?.identity?.flavourId, 'servingBasis.flavourId', serving)
+  matches(basis?.labelVersion, product?.identity?.labelVersion, 'servingBasis.labelVersion', serving)
   matches(basis?.packVersion, product?.identity?.pack?.version, 'servingBasis.packVersion', serving)
   const commerceDecision = gate(commerce), researchDecision = gate(research), servingDecision = gate(serving)
   const sellable = commerceDecision.status === 'eligible', endorsed = researchDecision.status === 'eligible'
@@ -292,7 +315,7 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
     display: { catalogueState: !sellable ? 'unavailable' : product?.publication === 'shop_only' ? 'shop_only' : (endorsed || assessmentState === 'assessed_not_endorsed') ? 'research_listed' : 'unassessed',
       availability: sellable ? 'available' : 'unavailable', assessmentLabel: endorsed ? 'Research reviewed' : assessmentState === 'assessed_not_endorsed' ? 'Not endorsed' : 'Not assessed' },
     linkState: sellable && url ? 'exact_own_shop' : value.destination?.kind === 'search_only' ? 'search_only' : 'unavailable',
-    purchaseTarget: sellable && url && mapping ? { url, shopifyVariantId: 'gid://shopify/ProductVariant/' + variantId, supplierSku: mapping.supplierSku, relationship: 'own_shop' } : null,
+    purchaseTarget: sellable && url && mapping ? { url, shopifyProductId: 'gid://shopify/Product/' + shopProduct(mapping.shopifyProductId), shopifyVariantId: 'gid://shopify/ProductVariant/' + variantId, supplierSku: mapping.supplierSku, relationship: 'own_shop' } : null,
     versions: { policy: policy?.review?.version ?? null, mapping: mapping?.review?.version ?? null, cost: cost?.review?.version ?? null,
       price: price?.review?.version ?? null, stock: stock?.review?.version ?? null, research: assessment?.review?.version ?? null },
   }

@@ -16,7 +16,7 @@ There is no universal score-50 test. Legacy `score`, brand aliases, feed-derived
 
 ## Required input meaning
 
-Each approval record has a version, expected current version, explicit approval, verification time and expiry. Evaluation time is supplied explicitly. An expiry is exclusive, future-dated evidence is invalid, and stock/price freshness also applies the separately approved maximum ages. Unknown values fail the relevant gate; a missing research assessment does not erase a verified commerce decision. An expired hold remains held until a current clearance is recorded.
+Each approval record has a version, expected current version, explicit approval, verification time and expiry. Evaluation time is supplied explicitly. An expiry is exclusive and future-dated evidence is invalid. Price and stock each require a separate `observedAtMs`, checked against the approved maximum age; a new approval cannot renew an old supplier/storefront observation. Receipt time, file modification time and review time must never substitute for source observation time. Unknown values fail the relevant gate; a missing research assessment does not erase a verified commerce decision. An expired hold remains held until a current clearance is recorded.
 
 The input stamps are **data assertions, not authentication**. A later trusted server projection must load actual approvals, their current expected versions and source timestamps. Never accept these stamps from an unauthenticated request or manufacture them from a supplier feed flag. The module cannot authenticate a person, validate a signature or inspect a missing invoice itself.
 
@@ -26,11 +26,11 @@ Commerce labels require verified manufacturer or supplier label evidence and com
 
 Stock must represent **reconciled sellable units** after reservations/buffers and shared-SKU handling, match the exact variant/SKU/pack, remain fresh and cover the requested quantity. Raw supplier numbers are not accepted. This module consumes the projection; it does not perform reservation arithmetic or guarantee stock remains available after evaluation.
 
-Serving evidence is bound to formula and pack revisions. Scientific evidence is additionally bound to a concrete label, model/evidence revisions and a context ID that identifies the requested outcome/population. A formula or label change invalidates the old scientific assessment. Missing labels, feed estimates, brand aliases and unknown conclusions cannot become endorsements.
+Commerce-label, serving and scientific evidence are each bound to the exact flavour, formula and label revision; serving evidence also matches the pack revision. Scientific evidence additionally requires model/evidence revisions and a context ID that identifies the requested outcome/population. A flavour, formula or label change invalidates the old scientific assessment. Missing labels, feed estimates, brand aliases and unknown conclusions cannot become endorsements.
 
 ## Purchase links and later integration
 
-Only an approved exact own-shop product destination can produce `purchaseTarget`. It must use the configured HTTPS shop origin, the configured product path prefix and one exact variant query parameter. Credentials, fragments, different variants, wrong handles/origins, duplicate variant parameters and retailer referral/tracking parameters produce HOLD. The result identifies the relationship as `own_shop`. It never appends an affiliate code or constructs an Amazon/Bulk/MyProtein fallback.
+Only an approved exact own-shop product destination can produce `purchaseTarget`. It must use the configured HTTPS shop origin, the configured product path prefix, the approved mapping's Shopify product handle and one exact variant query parameter. The mapping includes the Shopify parent product ID; the trusted upstream projection must verify that this variant belongs to that parent and that the handle is current. A caller-supplied handle cannot override the reviewed mapping even if the variant query matches. Credentials, fragments, different variants, wrong handles/origins, duplicate variant parameters and retailer referral/tracking parameters produce HOLD. The result identifies both product and variant IDs and the relationship as `own_shop`. It never appends an affiliate code or constructs an Amazon/Bulk/MyProtein fallback.
 
 Explicit retailer searches are classified `search_only` and never produce a Buy target. External exact offers are outside this own-shop assessment's current scope and are also not converted into own-shop targets. A later external-offer implementation needs its own destination/price/relationship verification; it must not inherit the own-shop cost or stock result.
 
@@ -40,7 +40,7 @@ The old [catalogue PR #2](https://github.com/tntipper/the-lifting-lab/pull/2) wa
 
 ## Verification
 
-80 Node tests cover ordinary eligible offers; sellable unassessed and shop-only records; negative reviewed conclusions; commerce/science independence; no score threshold; mass/volume/count mismatches; single-versus-multipack identity; missing, unapproved, stale, expired and future data; explicit operator holds; insufficient/raw stock; below-floor/zero prices; serving estimates; exact variant URLs; affiliate/search fallbacks; and tax-marker rejection. All fixtures use synthetic records and `example.invalid` domains. No supplier invoices, customer records or private tax status are included.
+83 Node tests cover ordinary eligible offers; sellable unassessed and shop-only records; negative reviewed conclusions; commerce/science independence; no score threshold; mass/volume/count mismatches; single-versus-multipack identity; missing, unapproved, stale, expired and future data; explicit operator holds; insufficient/raw stock; below-floor/zero prices; serving estimates; exact variant URLs and approved parent handles; separate observation freshness; flavour-specific evidence; affiliate/search fallbacks; and tax-marker rejection. All fixtures use synthetic records and `example.invalid` domains. No supplier invoices, customer records or private tax status are included.
 
 ```sh
 node --experimental-strip-types --test tests/catalogue-eligibility.test.mjs
