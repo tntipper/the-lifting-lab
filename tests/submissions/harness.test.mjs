@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fixtureTarget } from './fixture.mjs'
 import { dumpFingerprint, verifyReplay } from './verify-replay.mjs'
-import { namesFor, validateArguments, localEndpoint, loopbackPort, runAcceptance } from './run-local.mjs'
+import { namesFor, validateArguments, localEndpoint, runAcceptance } from './run-local.mjs'
 
 const id = '123abc456def', names = namesFor(id)
 test('runner rejects non-Linux execution and custom targets before side effects', () => {
@@ -19,11 +19,9 @@ test('fixture accepts only generated container names and numeric loopback ports'
   for (const port of ['80', '65536', '04000', '4000/path', '4e3', '4000\n']) assert.throws(() => fixtureTarget({ TLL_SUBMISSION_HTTP_PORT: port }))
   assert.throws(() => namesFor('invalid'))
 })
-test('Docker socket and actual published port must remain local and unambiguous', () => {
+test('Docker socket must remain local and unambiguous', () => {
   assert.equal(localEndpoint('unix:///var/run/docker.sock'), 'unix:///var/run/docker.sock')
   for (const endpoint of ['ssh://remote', 'tcp://127.0.0.1:2375', 'tcp://remote:2376', 'unix://relative', 'unix:///a\n--host=remote']) assert.throws(() => localEndpoint(endpoint))
-  assert.equal(loopbackPort({ '3000/tcp': [{ HostIp: '127.0.0.1', HostPort: '45678' }] }), '45678')
-  for (const value of [{}, { '3000/tcp': [] }, { '3000/tcp': [{ HostIp: '0.0.0.0', HostPort: '45678' }] }, { '3000/tcp': [{ HostIp: '127.0.0.1', HostPort: '1' }] }, { '3000/tcp': [{ HostIp: '127.0.0.1', HostPort: '45678' }, { HostIp: '::', HostPort: '45678' }] }]) assert.throws(() => loopbackPort(value))
 })
 test('dump fingerprint excludes random psql restriction tokens only', () => {
   assert.equal(dumpFingerprint('\\restrict abc\nTABLE DATA\n\\unrestrict abc\n', 'ROLES'), dumpFingerprint('\\restrict xyz\nTABLE DATA\n\\unrestrict xyz', 'ROLES'))
@@ -48,7 +46,7 @@ test('migration replay requires the explicit guard and unchanged whole database/
   assert.throws(() => verifyReplay(replayExecutor('wrong'), {}), /required collision guard/)
 })
 function harness({ failHttp = false, wrongLabel = false, unavailable = false, remote = false, abortAtHttp = false } = {}) {
-  const calls = [], logs = []
+  const calls = [], logs = [], relays = []
   let clock = 0
   const controller = new AbortController()
   const execute = async (binary, args, options = {}) => {
@@ -59,7 +57,6 @@ function harness({ failHttp = false, wrongLabel = false, unavailable = false, re
       return '127.0.0.1:5432 - accepting connections'
     }
     if (args.includes('inspect')) {
-      if (args.includes('{{json .NetworkSettings.Ports}}')) return JSON.stringify({ '3000/tcp': [{ HostIp: '127.0.0.1', HostPort: '45678' }] })
       return wrongLabel ? 'belongs-to-somebody-else' : id
     }
     if (args.includes('tests/submissions/http.test.mjs')) {
@@ -69,8 +66,8 @@ function harness({ failHttp = false, wrongLabel = false, unavailable = false, re
     return 'synthetic success'
   }
   return {
-    calls, logs,
-    run: () => runAcceptance({ execute, request: async () => ({ status: 200, json: async () => ({ paths: { '/rpc/submit_public_form': {} } }) }), pause: async ms => { clock += ms }, now: () => clock, signal: controller.signal, env: {}, platform: 'linux', id, log: value => logs.push(value) }),
+    calls, logs, relays,
+    run: () => runAcceptance({ execute, relayFactory: async options => { relays.push(options); return { address: { address: '127.0.0.1', port: 45678 }, close: async () => { calls.push({ args: ['relay-close'], options: {} }) } } }, request: async () => ({ status: 200, json: async () => ({ paths: { '/rpc/submit_public_form': {} } }) }), pause: async ms => { clock += ms }, now: () => clock, signal: controller.signal, env: {}, platform: 'linux', id, log: value => logs.push(value) }),
   }
 }
 test('runner orders migration, replay and HTTP checks and cleans only its own labelled resources', async () => {
@@ -83,7 +80,11 @@ test('runner orders migration, replay and HTTP checks and cleans only its own la
   assert.ok(commands.some(value => value.includes('network create --internal')))
   const pgCommand = commands.find(value => value.includes(`run --detach --rm --name ${names.postgres}`))
   assert.ok(pgCommand); assert.equal(pgCommand.includes('--publish'), false)
-  assert.ok(commands.some(value => value.includes('--publish 127.0.0.1::3000')))
+  assert.equal(commands.some(value => value.includes('--publish')), false)
+  assert.equal(fixture.relays.length, 1)
+  assert.equal(fixture.relays[0].runId, id)
+  assert.equal(fixture.relays[0].endpoint, 'unix:///var/run/docker.sock')
+  assert.ok(commands.indexOf('relay-close') < commands.findIndex(value => value.includes('container rm')))
   assert.equal(commands.filter(value => value.includes('container rm --force --volumes')).length, 2)
   assert.equal(commands.filter(value => value.includes(`network rm ${names.network}`)).length, 1)
   assert.equal(commands.some(value => /prune|--network host|service_role/.test(value)), false)
@@ -98,6 +99,7 @@ for (const mode of ['failHttp', 'abortAtHttp']) test(`failed or interrupted HTTP
   await assert.rejects(fixture.run())
   const cleanup = fixture.calls.filter(call => call.args.includes('rm'))
   assert.equal(cleanup.length, 3)
+  assert.equal(fixture.calls.filter(call => call.args.includes('relay-close')).length, 1)
   assert.ok(cleanup.every(call => call.options.signal === undefined))
   assert.equal(fixture.logs.some(value => value.startsWith('PASS:')), false)
 })

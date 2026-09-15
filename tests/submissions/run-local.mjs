@@ -2,9 +2,10 @@
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { FIXTURE_LABEL, startSubmissionRelay } from './loopback-relay.mjs'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
-const label = 'uk.co.theliftinglab.submission-ci'
+const label = FIXTURE_LABEL
 export const IMAGES = Object.freeze({ postgres: 'postgres:17-alpine', postgrest: 'postgrest/postgrest:v16.3' })
 const password = 'tll-submission-synthetic-only-database'
 const jwtSecret = 'tll-submission-synthetic-only-jwt-secret-000000'
@@ -23,11 +24,6 @@ export function validateArguments(args, platform) {
 export function localEndpoint(value) {
   if (typeof value !== 'string' || !/^unix:\/\/\/[^\r\n\0]+$/.test(value)) throw new Error('A local Unix Docker socket is required; remote contexts are forbidden')
   return value
-}
-export function loopbackPort(bindings) {
-  const entries = bindings['3000/tcp']
-  if (!Array.isArray(entries) || entries.length !== 1 || entries[0].HostIp !== '127.0.0.1' || !/^[1-9][0-9]{3,4}$/.test(entries[0].HostPort) || Number(entries[0].HostPort) < 1024 || Number(entries[0].HostPort) > 65535) throw new Error('PostgREST must publish one ephemeral loopback-only port')
-  return entries[0].HostPort
 }
 // Capture output so readiness failures and expected rejections are not mistaken
 // for passes. Abort/timeout kills the CLI child; cleanup still runs afterward.
@@ -59,7 +55,7 @@ async function ready(probe, description, { pause = sleep, now = Date.now, signal
   throw new Error(`${description} did not become ready within 60 seconds`)
 }
 
-export async function runAcceptance({ execute = command, request = fetch, pause = sleep, now = Date.now, signal, env = process.env, platform = process.platform, id = randomBytes(6).toString('hex'), log = console.log } = {}) {
+export async function runAcceptance({ execute = command, request = fetch, relayFactory = startSubmissionRelay, pause = sleep, now = Date.now, signal, env = process.env, platform = process.platform, id = randomBytes(6).toString('hex'), log = console.log } = {}) {
   validateArguments([], platform)
   const names = namesFor(id)
   // Inspecting the local context config makes no connection to its endpoint.
@@ -73,7 +69,7 @@ export async function runAcceptance({ execute = command, request = fetch, pause 
   delete safeEnv.DOCKER_CERT_PATH
   const docker = (args, options = {}) => execute('docker', ['--host', endpoint, ...args], { env: safeEnv, signal, ...options })
   const owned = []
-  let originalFailure
+  let originalFailure, relay
   try {
     await docker(['info', '--format', '{{.ServerVersion}}'])
     log('Creating isolated synthetic PostgreSQL 17 and PostgREST 16.3 resources.')
@@ -94,9 +90,9 @@ export async function runAcceptance({ execute = command, request = fetch, pause 
     log(await execute(process.execPath, ['tests/submissions/verify-replay.mjs'], { env: testEnv, signal, timeout: 60000 }))
     await docker(['exec', '-i', names.postgres, 'psql', '-X', '-q', '-U', 'postgres', '-d', database, '-v', 'ON_ERROR_STOP=1'], { input: `create role tll_submission_authenticator noinherit login password '${password}'; grant anon,authenticated to tll_submission_authenticator;` })
     owned.push(['container', names.postgrest])
-    await docker(['run', '--detach', '--rm', '--name', names.postgrest, '--label', `${label}=${id}`, '--network', names.network, '--memory', '256m', '--cpus', '1', '--publish', '127.0.0.1::3000', '-e', `PGRST_DB_URI=postgresql://tll_submission_authenticator:${password}@postgres:5432/${database}`, '-e', 'PGRST_DB_SCHEMAS=public', '-e', 'PGRST_DB_ANON_ROLE=anon', '-e', `PGRST_JWT_SECRET=${jwtSecret}`, IMAGES.postgrest], { timeout: 60000 })
-    const bindings = JSON.parse(await docker(['container', 'inspect', names.postgrest, '--format', '{{json .NetworkSettings.Ports}}']))
-    testEnv.TLL_SUBMISSION_HTTP_PORT = loopbackPort(bindings)
+    await docker(['run', '--detach', '--rm', '--name', names.postgrest, '--label', `${label}=${id}`, '--network', names.network, '--memory', '256m', '--cpus', '1', '-e', `PGRST_DB_URI=postgresql://tll_submission_authenticator:${password}@postgres:5432/${database}`, '-e', 'PGRST_DB_SCHEMAS=public', '-e', 'PGRST_DB_ANON_ROLE=anon', '-e', `PGRST_JWT_SECRET=${jwtSecret}`, IMAGES.postgrest], { timeout: 60000 })
+    relay = await relayFactory({ runId: id, endpoint, docker, platform, onError: () => log('Task-owned PostgREST relay could not reach its verified container.') })
+    testEnv.TLL_SUBMISSION_HTTP_PORT = String(relay.address.port)
     const origin = `http://127.0.0.1:${testEnv.TLL_SUBMISSION_HTTP_PORT}`
     await ready(async () => {
       const response = await request(origin, { signal: AbortSignal.timeout(3000) })
@@ -106,6 +102,7 @@ export async function runAcceptance({ execute = command, request = fetch, pause 
   } catch (error) { originalFailure = error; throw error }
   finally {
     const cleanupFailures = []
+    try { await relay?.close() } catch (error) { cleanupFailures.push(error) }
     for (const [kind, name] of owned.reverse()) {
       try {
         let resourceLabel
@@ -130,7 +127,7 @@ export async function runAcceptance({ execute = command, request = fetch, pause 
 async function main() {
   const mode = validateArguments(process.argv.slice(2), process.platform)
   if (mode !== 'run') {
-    console.log(mode === '--help' ? 'Usage: node tests/submissions/run-local.mjs [--help|--plan]\nRuns only on Linux Docker. No custom services, credentials or targets are accepted.' : JSON.stringify({ images: IMAGES, database, network: 'generated, isolated, no external egress', postgresPublishedPorts: [], apiPublish: '127.0.0.1:<ephemeral>:3000', phases: ['unit', 'SQL bootstrap + one-time migration', 'rejected replay + unchanged dumps', 'HTTP', 'owned resource cleanup'] }, null, 2))
+    console.log(mode === '--help' ? 'Usage: node tests/submissions/run-local.mjs [--help|--plan]\nRuns only on Linux Docker. No custom services, credentials or targets are accepted.' : JSON.stringify({ images: IMAGES, database, network: 'generated, isolated, no external egress', postgresPublishedPorts: [], apiRelay: '127.0.0.1:<ephemeral> to verified task-container IP:3000', phases: ['unit', 'SQL bootstrap + one-time migration', 'rejected replay + unchanged dumps', 'HTTP', 'owned resource cleanup'] }, null, 2))
     return
   }
   const controller = new AbortController()
