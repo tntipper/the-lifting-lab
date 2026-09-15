@@ -33,6 +33,7 @@ psql_fixture -f /tmp/tll-integrity/tests/database/bootstrap.sql
 for replay in 1 2; do
   psql_fixture -f /tmp/tll-integrity/supabase/migrations/202609150001_integrity_boundaries.sql
   psql_fixture -f /tmp/tll-integrity/tests/database/acceptance.sql
+  psql_fixture -f /tmp/tll-integrity/tests/database/review-regressions.sql
 done
 TLL_TEST_CONTAINER="$fixture" python3 tests/database/concurrency.py
 psql_fixture <<'SQL'
