@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og'
-import { scoreFor } from '@/lib/scores'
+import { getShareProducts } from '@/lib/share-products-server'
 
 export const runtime = 'edge'
 export const alt = 'The Lifting Lab — Product Score'
@@ -13,32 +13,14 @@ function scoreColor(score: number | null): string {
   return '#ff5c5c'
 }
 
-async function fetchProduct(id: string) {
-  const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/products?id=eq.${id}&select=id,name,brand,category&status=eq.active`
-  try {
-    const res = await fetch(url, {
-      headers: {
-        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
-      },
-      next: { revalidate: 3600 },
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    return Array.isArray(data) && data.length > 0 ? data[0] : null
-  } catch {
-    return null
-  }
-}
-
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const product = await fetchProduct(id)
-
-  const brand = product?.brand ?? 'The Lifting Lab'
-  const name = product?.name ?? 'Supplement'
-  const category = (product?.category ?? '').replace(/-/g, ' ').toUpperCase()
-  const score = product ? scoreFor(brand, name) : null
+  const result = await getShareProducts([id])
+  if (!result.ok) {
+    return new Response(result.error, { status: result.status, headers: { 'Cache-Control': 'no-store' } })
+  }
+  const { brand, name, category: categorySlug, score } = result.products[0]
+  const category = categorySlug.replace(/-/g, ' ').toUpperCase()
   const col = scoreColor(score)
   const displayScore = score != null ? String(score) : '—'
 
@@ -133,6 +115,6 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         </div>
       </div>
     ),
-    { width: 1200, height: 630 }
+    { width: 1200, height: 630, headers: { 'Cache-Control': 'no-store' } }
   )
 }

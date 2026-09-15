@@ -47,9 +47,15 @@ export default function ShareModal({
       })
       if (res.status === 401) { window.location.href = '/auth'; return }
       const j = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setNote('Your share claim could not be recorded. Please try again.')
+        return
+      }
       const pts = typeof j.pointsAwarded === 'number' ? j.pointsAwarded : 0
       setClaimed(pts)
       if (pts > 0) track('share_claim', { item_id: productId })
+    } catch {
+      setNote('Your share claim could not be recorded. Please try again.')
     } finally { setBusy(false) }
   }
 
