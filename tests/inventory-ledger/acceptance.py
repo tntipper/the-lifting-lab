@@ -107,7 +107,7 @@ for role in ['anon', 'authenticated', 'service_role']:
 for statement in ['select * from '+P+'operations;', 'update '+P+'control set enabled=true;', 'select '+P+"cancel_never_attempted(null,null);", 'create table '+P+'forged(id int);']:
     execute(statement, A, error='permission denied')
     check('worker cannot access table, activation, cancellation or DDL: ' + statement.split()[0])
-check('API roles have no effective table/column/function grants', execute("select not exists(select from pg_roles r cross join pg_class c where r.rolname in ('anon','authenticated','service_role') and c.relnamespace='tll_inventory_private'::regnamespace and (has_table_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or has_any_column_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,REFERENCES'))) and not exists(select from pg_roles r cross join pg_proc p where r.rolname in ('anon','authenticated','service_role') and p.pronamespace='tll_inventory_private'::regnamespace and has_function_privilege(r.oid,p.oid,'EXECUTE'));"), 't')
+check('API roles have no effective table/column/function grants', execute("select not exists(select from pg_roles r cross join pg_class c where r.rolname in ('anon','authenticated','service_role') and c.relnamespace='tll_inventory_private'::regnamespace and (has_table_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN') or has_any_column_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,REFERENCES'))) and not exists(select from pg_roles r cross join pg_proc p where r.rolname in ('anon','authenticated','service_role') and p.pronamespace='tll_inventory_private'::regnamespace and has_function_privilege(r.oid,p.oid,'EXECUTE'));"), 't')
 
 f = fixture(1)
 check('valid adapter manifest enqueued', enqueue(f)['status'], 'enqueued')
@@ -246,17 +246,20 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
     lock.result()
     check('lease expiry while waiting on lock fences attempt',attempted.result()['status'],'fenced')
 
-# Rollback-only inherited ACL probes. Schema/default table grants must abort the migration.
+# Rollback-only inherited ACL probes. Include PG17 MAINTAIN independently of
+# SELECT: maintenance authority is forbidden even without schema USAGE/data access.
 # Savepoint rollback removes the real schema+new roles only inside this transaction.
 inner = re.sub(r'^begin;\n','',MIGRATION,flags=re.M)
 inner = re.sub(r'\ncommit;\s*$','',inner)
-for kind in ['schema','table']:
+for kind in ['schema','table','maintain']:
     sql="begin; drop schema tll_inventory_private cascade; drop owned by tll_inventory_owner,tll_inventory_worker; drop role tll_inventory_owner,tll_inventory_worker; create role tll_inventory_test_leak nologin; grant tll_inventory_test_leak to anon;\n"
     sql+=f"set session authorization {MIGRATOR};\n"
     if kind=='schema':
         sql+="alter default privileges grant usage on schemas to tll_inventory_test_leak;\n"
-    else:
+    elif kind=='table':
         sql+="alter default privileges grant select on tables to tll_inventory_test_leak;\n"
+    else:
+        sql+="alter default privileges grant maintain on tables to tll_inventory_test_leak;\n"
     sql+=inner+'\nrollback;'
     execute(sql,error='Inventory '+('authority inherited' if kind=='schema' else 'table authority inherited'))
     check('inherited default '+kind+' ACL aborts migration and rolls back',execute("select to_regnamespace('tll_inventory_private') is not null and not exists(select from pg_roles where rolname='tll_inventory_test_leak');"),'t')

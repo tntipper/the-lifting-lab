@@ -353,7 +353,7 @@ begin
   foreach r in array array['anon','authenticated','service_role'] loop
     if has_schema_privilege(r,'tll_inventory_private','USAGE,CREATE') or pg_has_role(r,'tll_inventory_owner','MEMBER') or pg_has_role(r,'tll_inventory_worker','MEMBER') then raise exception 'Inventory authority inherited by platform client role'; end if;
     for obj in select c.oid from pg_class c where c.relnamespace='tll_inventory_private'::regnamespace and c.relkind in ('r','p') loop
-      if has_table_privilege(r,obj.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or has_any_column_privilege(r,obj.oid,'SELECT,INSERT,UPDATE,REFERENCES') then raise exception 'Inventory table authority inherited by platform client role'; end if;
+      if has_table_privilege(r,obj.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN') or has_any_column_privilege(r,obj.oid,'SELECT,INSERT,UPDATE,REFERENCES') then raise exception 'Inventory table authority inherited by platform client role'; end if;
     end loop;
     for obj in select p.oid from pg_proc p where p.pronamespace='tll_inventory_private'::regnamespace loop
       if has_function_privilege(r,obj.oid,'EXECUTE') then raise exception 'Inventory function authority inherited by platform client role'; end if;
