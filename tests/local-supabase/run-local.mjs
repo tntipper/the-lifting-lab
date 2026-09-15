@@ -8,6 +8,7 @@ import { resolve, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 import assert from 'node:assert/strict'
+import { startFixtureRelays } from './loopback-relay.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '../..')
@@ -63,11 +64,17 @@ async function run(command, args, { input, visible = false, timeoutMs = 180000 }
   } finally { if (output) await new Promise(resolvePromise => output.end(resolvePromise)) }
 }
 const cli = args => run('npx', ['--yes', 'supabase@2.117.0', ...args, '--workdir', state], { timeoutMs: args[0] === 'start' ? 600000 : 60000 })
-let created = reuse, completed = false
+let created = reuse, completed = false, relays
 try {
   if (!reuse) {
     await run('docker', ['network', 'create', '--internal', '--opt', 'com.docker.network.bridge.host_binding_ipv4=127.0.0.1', '--label', `com.tll.fixture=${project}`, network])
     created = true
+  }
+  // Linux Docker intentionally does not publish internal-only bridge ports.
+  // Open loopback listeners before CLI bootstrap's first host-side DB query.
+  // Every connection resolves only a running, verified fixture container.
+  relays = await startFixtureRelays()
+  if (!reuse) {
     console.log('Starting dedicated local Supabase Auth, Storage and Mailpit fixture; first image download can take several minutes.')
     await cli(['start', '--network-id', network, '--exclude', 'realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor'])
   }
@@ -89,6 +96,8 @@ try {
   await run(process.execPath, ['--test', '--test-timeout=180000', join(here, 'auth-storage.test.mjs')], { visible: true })
   completed = true
 } finally {
+  // Also close on startup/test failure or --keep; no relay outlives this run.
+  await relays?.close()
   if (created && !keep) {
     await cli(['stop', '--no-backup'])
     // CLI normally removes its own network; custom fixture network is separate.
