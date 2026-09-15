@@ -5,7 +5,7 @@ import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel, CATEGORIES } from '@/lib/categories'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
 import {
@@ -368,8 +368,7 @@ export default async function BrandMatchupPage({
             influenced by brands or affiliate deals.
           </p>
           <p className="text-lab-muted/70 text-xs leading-relaxed">
-            Informational only — not medical advice. Buy links are affiliate links; we may earn a
-            commission at no extra cost to you. This never affects scoring.
+            Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring.
           </p>
         </section>
       </main>
@@ -423,19 +422,15 @@ function PickCard({
       {winner && (
         <p className="mt-1 text-[9px] uppercase tracking-widest font-black text-lab-lime">★ Winner</p>
       )}
-      <a
-        href={buyLink(product.brand, product.name, product.buy_url)}
-        target="_blank"
-        rel="noopener noreferrer nofollow"
+      <ProductOfferLink
+        product={product}
         className="mt-2 w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg"
         style={{
           background: 'rgba(166,226,46,0.12)',
           color: '#a6e22e',
           border: '1px solid rgba(166,226,46,0.5)',
         }}
-      >
-        Buy →
-      </a>
+      />
     </div>
   )
 }

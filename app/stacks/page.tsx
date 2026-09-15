@@ -144,8 +144,7 @@ export default function StacksHubPage() {
         </section>
 
         <p className="text-lab-muted/70 text-xs mt-8 leading-relaxed">
-          Informational only — not medical advice. Buy links are affiliate links; we may earn a
-          commission at no extra cost to you. This never affects scoring.
+          Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring.
         </p>
       </main>
     </div>

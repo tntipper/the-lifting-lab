@@ -247,8 +247,7 @@ export default function FfmiPage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. FFMI is an estimate from a field formula and
-            depends on your body fat reading. Buy links are affiliate links; we may earn a commission
-            at no extra cost to you.
+            depends on your body fat reading. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

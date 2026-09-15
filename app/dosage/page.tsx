@@ -248,8 +248,7 @@ export default function DosagePage() {
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Doses are general starting points for healthy adults;
             anything bodyweight-scaled, prescription-only, or affecting a medication or health condition is a
-            question for a clinician. Buy links are affiliate links; we may earn a commission at no extra cost
-            to you.
+            question for a clinician. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

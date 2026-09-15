@@ -7,7 +7,7 @@ import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { rankedCategorySlugs } from '@/lib/best-categories'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
 import { productSlug, matchupSlug } from '@/lib/matchups'
@@ -116,14 +116,10 @@ function AltCard({
           {tag && <span className="text-white/70"> · {tag}</span>}
         </p>
       </div>
-      <a
-        href={buyLink(p.brand, p.name, p.buy_url)}
-        target="_blank"
-        rel="sponsored nofollow noopener"
+      <ProductOfferLink
+        product={p}
         className="shrink-0 text-[11px] uppercase tracking-widest font-black bg-lab-lime text-black px-3 py-2 rounded-lg hover:brightness-110 transition"
-      >
-        Buy
-      </a>
+      />
     </div>
   )
 }

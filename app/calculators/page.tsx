@@ -465,7 +465,7 @@ export default function CalculatorsPage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Figures are general starting points for healthy
-            adults. Buy links are affiliate links; we may earn a commission at no extra cost to you.
+            adults. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

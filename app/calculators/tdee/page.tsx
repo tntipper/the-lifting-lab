@@ -203,8 +203,7 @@ export default function TdeePage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical or nutrition advice. Figures are general starting points
-            for healthy adults and will need adjusting to how your weight actually moves. Buy links are
-            affiliate links; we may earn a commission at no extra cost to you.
+            for healthy adults and will need adjusting to how your weight actually moves. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

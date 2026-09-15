@@ -6,7 +6,7 @@ import TopNav from '@/components/TopNav'
 import ScoreBadge from '@/components/ScoreBadge'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
 import {
   PRODUCT_COLUMNS,
@@ -334,18 +334,14 @@ export default async function MatchupPage({
           <div />
           {products.map((p) => (
             <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
-              <a
-                href={buyLink(p.brand, p.name, p.buy_url)}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
+              <ProductOfferLink
+                product={p}
                 className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
-              >
-                Buy →
-              </a>
+              />
             </div>
           ))}
         </div>
-        <p className="text-[9px] text-lab-muted/40 text-right mt-1">affiliate links · open in a new tab</p>
+
 
         {/* cross-links */}
         <div className="mt-10 flex flex-wrap gap-2">
@@ -386,8 +382,7 @@ export default async function MatchupPage({
             affiliate deals.
           </p>
           <p className="text-lab-muted/70 text-xs leading-relaxed">
-            Informational only — not medical advice. Buy links are affiliate links; we may earn a commission at no extra
-            cost to you. This never affects scoring.
+            Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring.
           </p>
         </section>
       </main>

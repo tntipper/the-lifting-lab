@@ -5,25 +5,11 @@ import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem, t
 import { rniFor, type Sex } from '@/lib/nutrient-rda'
 import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
 import { scoreFor } from '@/lib/scores'
-import { buyLink } from '@/lib/affiliate'
+import { resolveProductListing } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { createClient } from '@/lib/supabase'
 import { useLocalStack } from '@/components/LocalStackContext'
 import type { LocalStackProduct } from '@/lib/local-stack'
-import { track } from '@/lib/gtag'
-
-// Friendly retailer name from a buy URL hostname (for the Buy All panel).
-function retailerLabel(url: string): string {
-  try {
-    const h = new URL(url).hostname.replace(/^www\./, '')
-    if (h.includes('amazon')) return 'Amazon'
-    if (h.includes('awin') || h.includes('bulk')) return 'Bulk'
-    if (h.includes('myprotein')) return 'MyProtein'
-    const base = h.split('.')[0]
-    return base.charAt(0).toUpperCase() + base.slice(1)
-  } catch {
-    return 'Retailer'
-  }
-}
 
 // Batch product shape returned by /api/products/batch
 type BatchProduct = {
@@ -113,8 +99,11 @@ function buildEmailLink(score: number | null, items: StackItem[]): string {
       .map((i) => {
         const p = i.products!
         const sc = scoreFor(p.brand, p.name)
-        const link = buyLink(p.brand, p.name, p.buy_url)
-        return `• ${p.brand} ${p.name}${sc != null ? ` (${sc}/100)` : ''}\n  Buy: ${link}`
+        const listing = resolveProductListing(p.buy_url)
+        const destination = listing.state === 'listing' && listing.url
+          ? `Retailer listing at ${listing.retailer} (check product, pack and price${listing.relationship === 'affiliate' ? '; affiliate link' : '; external link'}): ${listing.url}`
+          : 'No verified offer.'
+        return `• ${p.brand} ${p.name}${sc != null ? ` (${sc}/100)` : ''}\n  ${destination}`
       }),
     ``,
     `Analysed at theliftinglab.co.uk`,
@@ -324,26 +313,20 @@ export default function StackBuilder() {
   const shareUrl = buildShareUrl(stackItems)
   const emailUrl = buildEmailLink(avgScore, stackItems)
 
-  // Buy All — group products by retailer so each supplier opens in its own tab.
+  // Explicit listings only. A research stack does not create a cart or order.
   const retailerGroups = useMemo(() => {
-    const groups: Record<string, { label: string; urls: string[]; names: string[] }> = {}
+    const groups: Record<string, { label: string; products: NonNullable<StackItem['products']>[] }> = {}
     for (const it of stackItems) {
       const p = it.products
       if (!p) continue
-      const url = buyLink(p.brand, p.name, p.buy_url)
-      const label = retailerLabel(url)
-      if (!groups[label]) groups[label] = { label, urls: [], names: [] }
-      groups[label].urls.push(url)
-      groups[label].names.push(`${p.brand} ${p.name}`)
+      const listing = resolveProductListing(p.buy_url)
+      if (listing.state !== 'listing' || !listing.url || !listing.retailer) continue
+      const label = listing.retailer
+      if (!groups[label]) groups[label] = { label, products: [] }
+      groups[label].products.push(p)
     }
-    return Object.values(groups).sort((a, b) => b.urls.length - a.urls.length)
+    return Object.values(groups).sort((a, b) => b.products.length - a.products.length)
   }, [stackItems])
-
-  function openRetailer(urls: string[]) {
-    // Fire one tab per product for this supplier. Triggered by a direct click so
-    // the first opens reliably; grouping keeps the count per gesture small.
-    urls.forEach((u) => window.open(u, '_blank', 'noopener,noreferrer'))
-  }
 
   // Social share text for the whole stack.
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.theliftinglab.co.uk'
@@ -487,33 +470,28 @@ export default function StackBuilder() {
         </div>
       )}
 
-      {/* Buy All — grouped by retailer */}
+      {/* Individual listings — grouped by retailer */}
       {!loading && retailerGroups.length > 0 && (
         <div className="bg-lab-panel border border-lab-border rounded-2xl p-5 space-y-3">
           <div>
-            <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Buy All</p>
+            <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Retailer listings</p>
             <p className="text-[10px] text-gray-600 mt-0.5">
-              Grouped by retailer — each opens that supplier&apos;s products in new tabs.
+              Open individual listings to check the product, pack, price and stock. Your research stack is not a retailer cart.
             </p>
           </div>
           <div className="space-y-2">
             {retailerGroups.map((g) => (
-              <button
-                key={g.label}
-                onClick={() => {
-                  openRetailer(g.urls)
-                  track('buy_all_click', { retailer: g.label, count: g.urls.length })
-                }}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-lab-border hover:border-lab-lime/50 hover:bg-lab-lime/5 transition-colors"
-              >
-                <span className="text-white text-sm font-bold">{g.label}</span>
-                <span className="text-lab-lime text-xs font-black uppercase tracking-widest">
-                  Buy {g.urls.length} →
-                </span>
-              </button>
+              <div key={g.label} className="space-y-2 rounded-xl border border-lab-border px-4 py-3">
+                <p className="text-white text-sm font-bold">{g.label}</p>
+                {g.products.map((product, index) => (
+                  <div key={`${product.id}-${index}`} className="flex items-center justify-between gap-3">
+                    <span className="text-lab-muted text-xs">{product.brand} {product.name}</span>
+                    <ProductOfferLink product={{ brand: product.brand, name: product.name, buy_url: product.buy_url ?? null }} className="text-lab-lime text-xs font-bold rounded-lg border border-lab-border py-2" />
+                  </div>
+                ))}
+              </div>
             ))}
           </div>
-          <p className="text-[10px] text-gray-600">We may earn a commission via affiliate links.</p>
         </div>
       )}
 

@@ -120,16 +120,8 @@ export default async function Page({ params }: Props) {
           worstRating: 1,
         },
       }),
-      // Only advertise an offer when we have both a price and a real buy link.
-      ...(product.retail_price != null && product.buy_url && {
-        offers: {
-          '@type': 'Offer',
-          price: product.retail_price,
-          priceCurrency: 'GBP',
-          availability: 'https://schema.org/InStock',
-          url: product.buy_url,
-        },
-      }),
+      // Legacy prices/URLs do not establish a current purchasable offer or stock.
+      // Offer markup awaits an approved exact-product commerce projection.
     }
 
     const crumbs: { name: string; item: string }[] = [

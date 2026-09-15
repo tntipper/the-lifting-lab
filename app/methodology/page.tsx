@@ -80,7 +80,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Do brands pay to score higher or appear first?',
-    a: 'No. There are no sponsored placements and no paid rankings anywhere on the site. The exact same formula scores every product in a category, and the highest score wins. Buy links are affiliate links that may earn us a commission, but they never influence a score.',
+    a: 'No. There are no sponsored placements and no paid rankings anywhere on the site. The exact same formula scores every product in a category, and the highest score wins. Affiliate relationships are disclosed beside the relevant links and never influence a score.',
   },
   {
     q: 'Why did a well-known brand score low?',
@@ -214,7 +214,7 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-        {/* global penalties / protections */}
+        {/* Scoring penalties and protections */}
         <section className="mb-12">
           <h2 className="text-xl font-black uppercase tracking-wide mb-2">Global Rules & Penalties</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
@@ -322,8 +322,8 @@ export default function MethodologyPage() {
         <section className="rounded-2xl border border-lab-border bg-lab-panel p-6">
           <p className="text-xs text-lab-muted leading-relaxed mb-5">
             Informational only — not medical advice. Always consult a qualified clinician before
-            starting or changing supplements. Buy links across the site are affiliate links; we may
-            earn a commission at no extra cost to you, and it never affects a score.
+            starting or changing supplements. Retailer links carry their own disclosures; affiliate
+            relationships never affect a score.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link

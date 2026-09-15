@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -24,6 +24,8 @@ export default function TopNav() {
   const pathname = usePathname()
   const sweepRef = useRef<HTMLDivElement>(null)
   const prevPath = useRef(pathname)
+  const menuButton = useRef<HTMLButtonElement>(null)
+  const menuId = useId()
   const [menuOpen, setMenuOpen] = useState(false)
   // null = unknown (still checking), then true/false once auth resolves
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
@@ -63,20 +65,26 @@ export default function TopNav() {
       <div ref={sweepRef} className="lab-sweep" />
 
       <header
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && menuOpen) {
+            setMenuOpen(false)
+            menuButton.current?.focus()
+          }
+        }}
         className="sticky top-0 z-20 backdrop-blur"
         style={{
           background: 'rgba(12,12,12,0.92)',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
           {/* wordmark — Anton, skewed, LAB in lime */}
           <Link
             href="/"
             className="shrink-0 uppercase select-none"
             style={{
               fontFamily: 'var(--font-anton), Impact, "Arial Narrow Bold", sans-serif',
-              fontSize: '20px',
+              fontSize: 'clamp(16px, 3.2vw, 20px)',
               letterSpacing: '0.5px',
               transform: 'skewX(-6deg)',
               display: 'inline-block',
@@ -87,16 +95,17 @@ export default function TopNav() {
             <span style={{ color: '#a6e22e', textShadow: `0 0 14px rgba(${AR},0.45)` }}>LAB</span>
           </Link>
 
-          <nav className="flex items-center gap-4">
-            {/* nav links — hidden on mobile, shown from sm breakpoint up */}
-            <div className="hidden sm:flex items-center gap-5">
+          <nav aria-label="Main navigation" className="flex items-center gap-2 sm:gap-4">
+            {/* Keep the full navigation collapsed until it fits with the brand/account. */}
+            <div className="hidden xl:flex items-center gap-4">
               {NAV_LINKS.map(({ href, label }) => {
                 const active = isActive(href)
                 return (
                   <Link
                     key={href}
                     href={href}
-                    className="relative text-[11px] font-bold uppercase tracking-widest py-1.5 transition-colors"
+                    aria-current={active ? 'page' : undefined}
+                    className="relative text-[11px] font-bold uppercase tracking-widest min-h-11 inline-flex items-center transition-colors"
                     style={active
                       ? { color: '#a6e22e', textShadow: `0 0 8px rgba(${AR},0.5)` }
                       : { color: '#a3a3a3' }
@@ -133,7 +142,7 @@ export default function TopNav() {
             {/* My Account — ghost outline button, always visible */}
             <Link
               href={accountHref}
-              className="text-[11px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 transition-all whitespace-nowrap"
+              className="text-[11px] font-black uppercase tracking-widest rounded-lg px-2 sm:px-3 min-h-11 inline-flex items-center transition-all whitespace-nowrap"
               style={{
                 color: '#a6e22e',
                 border: `1px solid rgba(${AR},0.6)`,
@@ -146,10 +155,12 @@ export default function TopNav() {
             {/* hamburger — mobile only, toggles the nav-link panel */}
             <button
               type="button"
-              aria-label="Toggle menu"
+              ref={menuButton}
+              aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+              aria-controls={menuId}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
-              className="sm:hidden flex flex-col items-center justify-center w-8 h-8 gap-[5px] rounded-lg transition-colors"
+              className="xl:hidden flex flex-col items-center justify-center w-11 h-11 gap-[5px] rounded-lg transition-colors"
               style={{ border: '1px solid rgba(255,255,255,0.12)' }}
             >
               <span
@@ -173,7 +184,8 @@ export default function TopNav() {
         {/* mobile dropdown panel — only rendered when open */}
         {menuOpen && (
           <div
-            className="sm:hidden border-t"
+            id={menuId}
+            className="xl:hidden border-t"
             style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(12,12,12,0.98)' }}
           >
             <div className="max-w-5xl mx-auto px-4 py-2 flex flex-col">
@@ -183,6 +195,7 @@ export default function TopNav() {
                   <Link
                     key={href}
                     href={href}
+                    aria-current={active ? 'page' : undefined}
                     onClick={() => setMenuOpen(false)}
                     className="text-[13px] font-bold uppercase tracking-widest py-3 transition-colors"
                     style={active ? { color: '#a6e22e' } : { color: '#d4d4d4' }}

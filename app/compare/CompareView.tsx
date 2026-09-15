@@ -5,13 +5,13 @@ import Link from 'next/link'
 import ScoreBadge from '@/components/ScoreBadge'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { track } from '@/lib/gtag'
 import { trueCostReason, type ComparedProduct } from '@/lib/products'
 
 // Products arrive fully resolved (with nutrients) from the server component in
 // page.tsx, so the comparison table is in the initial HTML — no client fetch,
-// no spinner. Only analytics + affiliate click handlers hydrate.
+// no spinner. Analytics and retailer navigation hydrate on top.
 export default function CompareView({ products }: { products: ComparedProduct[] }) {
   useEffect(() => {
     if (products.length) track('compare_view', { count: products.length })
@@ -184,23 +184,18 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
           </>
         )}
 
-        {/* buy row */}
+        {/* retailer reference row */}
         <div />
         {products.map((p) => (
           <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
-            <a
-              href={buyLink(p.brand, p.name, p.buy_url)}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name, from: 'compare' })}
+            <ProductOfferLink
+              product={p}
               className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
-            >
-              Buy →
-            </a>
+            />
           </div>
         ))}
       </div>
-      <p className="text-[9px] text-lab-muted/40 text-right -mt-4">affiliate links · open in a new tab</p>
+
 
       <div className="text-center pt-2">
         <Link

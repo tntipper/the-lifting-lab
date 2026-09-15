@@ -230,8 +230,7 @@ export default function BmiPage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. BMI bands are population averages and do not
-            account for muscle mass. Buy links are affiliate links; we may earn a commission at no
-            extra cost to you.
+            account for muscle mass. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

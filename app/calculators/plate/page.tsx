@@ -221,8 +221,7 @@ export default function PlatePage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical or coaching advice. Plate colours follow the common
-            competition convention; check your own gym&apos;s plates. Buy links are affiliate links; we
-            may earn a commission at no extra cost to you.
+            competition convention; check your own gym&apos;s plates. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>
