@@ -41,6 +41,19 @@ test('factories are disabled by default and never call even an injected transpor
   assert.equal(await keyLoader({ transport }).verifyIdToken(await jwt(), expected()), null)
   assert.equal(calls, 0)
 })
+test('public keys and token exchange identify the application without impersonating a browser', async () => {
+  const requests = []
+  const transport = async input => {
+    requests.push(input)
+    return input.url === JWKS ? jwksResponse() : response(tokens())
+  }
+  assert.equal((await clockedLoader(transport).loader.refreshPublicKeys()).status, 'ready')
+  await tokenAdapter(options(transport)).exchangeCode(exchange)
+  assert.deepEqual(requests.map(r => r.headers['user-agent']), [
+    'TheLiftingLab-Staging/1.0 (customer account integration)',
+    'TheLiftingLab-Staging/1.0 (customer account integration)',
+  ])
+})
 test('Confidential exchange pins endpoint/client/callback and uses form-encoded Basic credentials only in header', async () => {
   let request
   const adapter = tokenAdapter(options(async input => { request = input; return response(tokens()) }))

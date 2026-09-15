@@ -11,6 +11,7 @@ const SCOPE = CUSTOMER_SCOPES.join(' ')
 const MAX_BYTES = 131_072
 const MAX_AGE_MS = 300_000
 const ROTATION_COOLDOWN_MS = 30_000
+const APPLICATION_USER_AGENT = 'TheLiftingLab-Staging/1.0 (customer account integration)'
 const privateAgent = new Agent({ keepAlive: false, rejectUnauthorized: true })
 
 export class CustomerHttpHeld extends Error {
@@ -67,7 +68,7 @@ async function jsonRequest(options: HttpOptions, url: string, method: 'GET' | 'P
   const controller = new AbortController()
   let timer: ReturnType<typeof setTimeout> | undefined
   try {
-    const input = { url, method, headers: Object.freeze({ accept: 'application/json', 'accept-encoding': 'identity', ...headers }), body, signal: controller.signal, maxBytes: MAX_BYTES }
+    const input = { url, method, headers: Object.freeze({ accept: 'application/json', 'accept-encoding': 'identity', ...headers, 'user-agent': APPLICATION_USER_AGENT }), body, signal: controller.signal, maxBytes: MAX_BYTES }
     const response = await Promise.race([
       Promise.resolve().then(() => (options.transport ?? nodeHttps)(input)),
       new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new CustomerHttpHeld('uncertain')) }, timeout) }),
