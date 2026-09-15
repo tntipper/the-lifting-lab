@@ -18,13 +18,20 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_attribute WHERE attrelid='auth.users'::regclass AND attname='id' AND atttypid='uuid'::regtype AND NOT attisdropped) THEN
     RAISE EXCEPTION 'Unexpected auth.users primary identity';
   END IF;
+  -- Create the delegable executor as the installing role. PostgreSQL17 grants a
+  -- non-superuser creator ADMIN via its bootstrap grantor; the helper must not be
+  -- grantor of the retained edge (otherwise dropping the helper would fail).
+  SET LOCAL createrole_self_grant='';
+  CREATE ROLE tll_customer_executor NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+  IF (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN
+    EXECUTE format('GRANT tll_customer_executor TO %I WITH ADMIN TRUE, INHERIT FALSE, SET FALSE',migration_role);
+  END IF;
   IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN
     CREATE ROLE tll_customer_role_setup NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB CREATEROLE NOREPLICATION NOBYPASSRLS;
     EXECUTE format('GRANT tll_customer_role_setup TO %I WITH INHERIT FALSE, SET TRUE',migration_role);
     SET LOCAL ROLE tll_customer_role_setup;
   END IF;
   CREATE ROLE tll_customer_owner NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
-  CREATE ROLE tll_customer_executor NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
   EXECUTE format('GRANT tll_customer_owner TO %I WITH INHERIT TRUE, SET TRUE',migration_role);
   EXECUTE format('SET LOCAL ROLE %I',migration_role);
 END
@@ -352,8 +359,14 @@ BEGIN
   ELSE
     EXECUTE format('REVOKE tll_customer_owner FROM %I',migration_role);
   END IF;
-  IF EXISTS(SELECT FROM pg_auth_members WHERE roleid IN (SELECT oid FROM pg_roles WHERE rolname IN ('tll_customer_owner','tll_customer_executor')) OR member IN (SELECT oid FROM pg_roles WHERE rolname IN ('tll_customer_owner','tll_customer_executor'))) THEN
-    RAISE EXCEPTION 'Temporary repository role membership remains'; END IF;
+  IF EXISTS(SELECT FROM pg_auth_members WHERE
+    (roleid IN (SELECT oid FROM pg_roles WHERE rolname IN ('tll_customer_owner','tll_customer_executor'))
+     OR member IN (SELECT oid FROM pg_roles WHERE rolname IN ('tll_customer_owner','tll_customer_executor')))
+    AND NOT (roleid='tll_customer_executor'::regrole AND member=migration_role::regrole
+      AND admin_option AND NOT inherit_option AND NOT set_option))
+    OR (SELECT count(*) FROM pg_auth_members WHERE roleid='tll_customer_executor'::regrole AND member=migration_role::regrole
+      AND admin_option AND NOT inherit_option AND NOT set_option)<>1 THEN
+    RAISE EXCEPTION 'Unexpected repository membership or missing scoped delegation'; END IF;
   -- The non-superuser operator retains only USAGE and the two narrow functions.
   -- Administrators may have inherent platform authority; no such grants are added.
   IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN

@@ -30,10 +30,18 @@ admin(`BEGIN;
    BEGIN PERFORM * FROM tll_customer_private.connections; RAISE EXCEPTION 'Operator reads ciphertext'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
    BEGIN UPDATE tll_customer_private.control SET enabled=true; RAISE EXCEPTION 'Operator directly writes control'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
    BEGIN CREATE TABLE tll_customer_private.unexpected_operator_table(id int); RAISE EXCEPTION 'Operator can create'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+   BEGIN SET ROLE tll_customer_executor; RAISE EXCEPTION 'Operator can SET executor role'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
    BEGIN PERFORM tll_customer_private.repository('logout','{}'::jsonb); RAISE EXCEPTION 'Operator can call executor'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
    BEGIN PERFORM tll_customer_private.operator_set_enabled(NULL,'synthetic'); RAISE EXCEPTION 'Null enable accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
    BEGIN PERFORM tll_customer_private.operator_set_enabled(true,'Invalid reason with spaces'); RAISE EXCEPTION 'Invalid reason accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  END$$;
+ -- This disposable LOGIN has no password and is never committed or usable by
+ -- another session. Its exact delegation is granted/revoked under the operator.
+ CREATE ROLE tll_customer_runtime_probe LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+ GRANT tll_customer_executor TO tll_customer_runtime_probe WITH ADMIN FALSE, INHERIT TRUE, SET FALSE;
+ DO $$BEGIN IF NOT pg_has_role('tll_customer_runtime_probe','tll_customer_executor','USAGE') THEN RAISE EXCEPTION 'Runtime delegation failed'; END IF; END$$;
+ REVOKE tll_customer_executor FROM tll_customer_runtime_probe;
+ DO $$BEGIN IF pg_has_role('tll_customer_runtime_probe','tll_customer_executor','MEMBER') THEN RAISE EXCEPTION 'Runtime revocation failed'; END IF; END$$;
  RESET SESSION AUTHORIZATION;
  CREATE ROLE tll_customer_operator_probe NOLOGIN;
  GRANT tll_customer_migrator TO tll_customer_operator_probe WITH INHERIT TRUE, SET TRUE;
@@ -52,5 +60,5 @@ admin(`BEGIN;
  DO $$BEGIN IF has_schema_privilege('anon','tll_customer_private','USAGE') OR has_table_privilege('anon','tll_customer_private.connections','SELECT,MAINTAIN') OR has_schema_privilege('tll_customer_migrator','tll_customer_private','CREATE') OR (SELECT enabled FROM tll_customer_private.control) THEN RAISE EXCEPTION 'Private ACL or disabled-control regression'; END IF; END$$;
  ROLLBACK;`)
 assert.equal(admin("SELECT json_build_object('control',(SELECT row_to_json(c) FROM tll_customer_private.control c),'owners',(SELECT coalesce(json_agg(x),'[]') FROM tll_customer_private.owners x),'attempts',(SELECT coalesce(json_agg(x),'[]') FROM tll_customer_private.attempts x),'connections',(SELECT coalesce(json_agg(x),'[]') FROM tll_customer_private.connections x));"),before)
-assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname IN ('tll_customer_default_probe','tll_customer_role_setup','tll_customer_operator_probe')"),'0')
-console.log('PASS: final canonical migration under non-superuser; inherited schema/table/sequence/function ACLs including MAINTAIN removed; operator status/control usable with no data/CREATE/executor access; session impersonation denied; reconstruction rolled back and fixture unchanged')
+assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname IN ('tll_customer_default_probe','tll_customer_role_setup','tll_customer_operator_probe','tll_customer_runtime_probe')"),'0')
+console.log('PASS: final canonical migration under non-superuser; inherited schema/table/sequence/function ACLs including MAINTAIN removed; operator status/control usable with no data/CREATE/executor access; session impersonation denied; exact ADMIN-only executor delegation granted/revoked for an uncommitted passwordless test LOGIN; reconstruction rolled back and fixture unchanged')
