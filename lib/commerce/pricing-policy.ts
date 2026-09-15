@@ -266,6 +266,10 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
   return assess(() => {
     context(input)
     if (!Array.isArray(input.lines) || input.lines.length < 1 || input.lines.length > 100) fail('INVALID_INPUT', 'lines')
+    // Array#map skips holes; reject them before any financial aggregation.
+    for (let index = 0; index < input.lines.length; index++) {
+      if (!Object.prototype.hasOwnProperty.call(input.lines, index)) fail('INVALID_INPUT', `lines[${index}]`)
+    }
     required(input.customerShipping, 'customerShipping')
     approval(input.customerShipping.approval, 'customerShipping.approval', input.nowMs)
     integer(input.customerShipping.grossPence, 'customerShipping.grossPence')
@@ -297,6 +301,7 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
       totalNet = add(totalNet, net); totalCost = add(totalCost, lineCost); totalDelivery = add(totalDelivery, delivery)
       return { line, before, discount, gross, net, lineCost, delivery, itemFloor }
     })
+    integer(totalQuantity, 'billableQuantity', 1, 10000)
     const grossPence = bounded(totalGross, 'basketGross')
     bounded(ceil(totalCost), 'basketCost')
     const variableFee = mul(money(grossPence), rate(input.payment.variableBps))

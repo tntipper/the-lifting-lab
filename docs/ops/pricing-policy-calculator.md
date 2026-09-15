@@ -44,7 +44,7 @@ Using the plan's synthetic reference costs of 1,000p wholesale, 500p economic de
 - The default cash safeguard is £3 multiplied by billable quantity. This is a **derived conservative basket safeguard**, not a separately approved general order-level policy. A later order-specific minimum requires the optional `orderCashPolicy` with its own valid approval record. Each item's conservative floor still applies.
 - Fixed payment-fee reporting allocates the one charge proportionally to gross receipts across item lines and customer shipping. Exact line and shipping contributions reconcile to the order total. Margin is evaluated against total revenue excluding VAT.
 
-Below-floor lines, excess discounts or failed basket margin/cash tests return `eligible: false` with explainable HOLD codes and the computed assessment when available. Invalid or incomplete inputs return a HOLD without a calculation. The module never clips invalid values into acceptable ranges.
+Below-floor lines, excess discounts or failed basket margin/cash tests return `eligible: false` with explainable HOLD codes and the computed assessment when available. Invalid or incomplete inputs return a HOLD without a calculation. The module never clips invalid values into acceptable ranges. Sparse line arrays are rejected before aggregation, and a basket must contain at least one billable item; shipping-only receipts cannot create an eligible product basket.
 
 ## Precision and release limits
 
@@ -52,7 +52,7 @@ Arithmetic uses reduced BigInt rational fractions; there is no floating-point di
 
 VAT and variable payment fees remain exact in this foundation; actual invoice/payment-provider penny rounding, promotion allocation, refunds and non-refundable fees must be revalidated against the selected checkout/payment configuration before activation. The calculator is not a checkout extension, live inventory check, competitor matcher or transaction guarantee. Current cost versions must be re-read immediately before any future price mutation. Existing manual holds, product/variant matching and independent execution switches remain separate requirements.
 
-Verification: 48 Node tests passed, including independent integer cross-multiplication of lowest-penny boundaries across 30 VAT/discount/cash cases and 80 minimum/target one-item basket replays, mixed VAT, fee reconciliation, fixed/percentage promotions, the 500p × quantity rule and missing/unapproved/stale/expired/overflow inputs. Run:
+Verification: 49 Node tests passed, including independent integer cross-multiplication of lowest-penny boundaries across 30 VAT/discount/cash cases and 80 minimum/target one-item basket replays, mixed VAT, fee reconciliation, fixed/percentage promotions, the 500p × quantity rule and missing/unapproved/stale/expired/overflow inputs. Run:
 
 ```sh
 node --experimental-strip-types --test tests/pricing-policy.test.mjs

@@ -279,3 +279,15 @@ test('minimum and target floors survive their own rounded one-item checkout mode
     }
   }
 })
+
+
+test('entirely and partially sparse baskets hold before aggregation, including shipping-only revenue', () => {
+  for (const grossPence of [0, 3500]) {
+    for (const lines of [Array(1), [, line('second')], [line('first'), ,]]) {
+      const value = basket(lines); value.customerShipping.grossPence = grossPence
+      const result = evaluateBasket(value)
+      hold(result, 'INVALID_INPUT')
+      assert.equal(result.calculation, undefined)
+    }
+  }
+})
