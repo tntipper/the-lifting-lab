@@ -153,8 +153,18 @@ export function createShopifyCustomerTokenAdapter(options: HttpOptions & {
 type KeySnapshot = { sourceUrl: string; verifiedAt: number; expiresAt: number; jwks: JSONWebKeySet }
 type LoadedKeys = { snapshot: KeySnapshot; cacheable: boolean }
 function publicKeys(value: unknown): JSONWebKeySet {
-  if (!object(value) || Object.keys(value).some(k => k !== 'keys') || !Array.isArray(value.keys) || value.keys.length < 1 || value.keys.length > 20) throw new Error('invalid keys')
-  const keys = value.keys.map(k => {
+  if (!object(value) || !Array.isArray(value.keys) || value.keys.length < 1 || value.keys.length > 20) throw new Error('invalid keys')
+  const advertised = value.keys
+  if (advertised.some(k => !object(k) || !text(k.kid, 128) || !text(k.kty, 32)
+    || ['d', 'p', 'q', 'dp', 'dq', 'qi', 'oth', 'k'].some(p => p in k))
+    || new Set(advertised.map(k => k.kid)).size !== advertised.length) throw new Error('invalid public key set')
+  // Shopify publishes both RSA and other signing-key families in one JWKS.
+  // Select only this client's approved RSA family; token verification remains
+  // strictly RS256 and never reinterprets an unsupported key or algorithm.
+  // RFC 7517 permits unrelated JWK Set metadata, which is not projected here.
+  const compatible = advertised.filter(k => k.kty === 'RSA')
+  if (!compatible.length) throw new Error('no approved signing keys')
+  const keys = compatible.map(k => {
     if (!object(k) || k.kty !== 'RSA' || !text(k.kid, 128) || (k.alg !== undefined && k.alg !== 'RS256') || (k.use !== undefined && k.use !== 'sig')
       || !text(k.n, 1400) || !text(k.e, 16) || !/^[A-Za-z0-9_-]+$/.test(k.n) || !/^[A-Za-z0-9_-]+$/.test(k.e)
       || ['d', 'p', 'q', 'dp', 'dq', 'qi', 'oth', 'k'].some(p => p in k)

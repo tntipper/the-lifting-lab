@@ -54,6 +54,16 @@ test('public keys and token exchange identify the application without impersonat
     'TheLiftingLab-Staging/1.0 (customer account integration)',
   ])
 })
+test('mixed public key families retain only approved RSA keys and still verify RS256 signatures', async () => {
+  const other = { kty: 'OKP', crv: 'Ed25519', x: 'public-unselected-key', kid: 'other', use: 'sig', alg: 'ED25519' }
+  const loader = clockedLoader(async () => response({ keys: [other, pubA], vendor_metadata: 'ignored' }, [], JWKS)).loader
+  assert.deepEqual(await loader.refreshPublicKeys(), { status: 'ready', expiresAt: NOW + 300_000, keyCount: 1 })
+  assert.equal((await loader.verifyIdToken(await jwt(), expected())).subject, 'synthetic-customer')
+  assert.equal(await loader.verifyIdToken(await jwt('other'), expected()), null)
+  for (const rejected of [{ ...other, d: 'private-material' }, { ...other, kid: 'A' }]) {
+    assert.deepEqual(await clockedLoader(async () => jwksResponse([rejected, pubA])).loader.refreshPublicKeys(), { status: 'held' })
+  }
+})
 test('Confidential exchange pins endpoint/client/callback and uses form-encoded Basic credentials only in header', async () => {
   let request
   const adapter = tokenAdapter(options(async input => { request = input; return response(tokens()) }))
