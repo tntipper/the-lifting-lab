@@ -61,7 +61,7 @@ function harness({ failHttp = false, wrongLabel = false, unavailable = false, re
     }
     if (args.includes('tests/submissions/http.test.mjs')) {
       if (abortAtHttp) { controller.abort(); throw new Error('interrupted') }
-      if (failHttp) throw new Error('synthetic HTTP test failure')
+      if (failHttp) { const error = new Error('synthetic HTTP test failure'); error.stdout = 'Synthetic assertion detail from stdout'; throw error }
     }
     return 'synthetic success'
   }
@@ -102,6 +102,7 @@ for (const mode of ['failHttp', 'abortAtHttp']) test(`failed or interrupted HTTP
   assert.equal(fixture.calls.filter(call => call.args.includes('relay-close')).length, 1)
   assert.ok(cleanup.every(call => call.options.signal === undefined))
   assert.equal(fixture.logs.some(value => value.startsWith('PASS:')), false)
+  if (mode === 'failHttp') assert.ok(fixture.logs.includes('Synthetic assertion detail from stdout'))
 })
 test('readiness is bounded, propagates failure and cleans only resources already attempted', async () => {
   const fixture = harness({ unavailable: true })

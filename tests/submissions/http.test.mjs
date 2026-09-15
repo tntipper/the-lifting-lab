@@ -32,7 +32,8 @@ test('direct REST inserts and personal reads fail for both browser roles', async
     const read = await fetch(origin + '/' + table + '?select=*', { headers })
     assert.ok([401, 403, 404].includes(read.status))
     assert.equal((await read.text()).includes('legacy@example.test'), false)
-    const write = await fetch(origin + '/' + table, { method: 'POST', headers, body: JSON.stringify(body()) })
+    const row = table === 'contact_submissions' ? body() : { category: 'creatine', brand: 'HTTP synthetic', product_name: 'Synthetic product', url: 'https://manufacturer.example.test/product' }
+    const write = await fetch(origin + '/' + table, { method: 'POST', headers, body: JSON.stringify(row) })
     assert.ok([401, 403, 404].includes(write.status))
   }
 })

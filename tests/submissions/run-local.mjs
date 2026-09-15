@@ -38,7 +38,7 @@ function command(binary, args, { input, env = process.env, signal, timeout = 300
     child.on('close', code => {
       clearTimeout(timer)
       if (code === 0) resolve(stdout.trim())
-      else { const error = new Error(`${binary} exited unsuccessfully (${code}): ${stderr.slice(-4000)}`); error.stderr = stderr; reject(error) }
+      else { const error = new Error(`${binary} exited unsuccessfully (${code}): ${stderr.slice(-4000)}`); error.stderr = stderr; error.stdout = stdout; reject(error) }
     })
     child.stdin.on('error', () => {})
     child.stdin.end(input)
@@ -81,8 +81,14 @@ export async function runAcceptance({ execute = command, request = fetch, relayF
     await ready(async () => (await docker(['exec', names.postgres, 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '-d', database], { timeout: 5000 })).includes('accepting connections'), 'PostgreSQL', { pause, now, signal })
     const testEnv = { ...safeEnv, TLL_SUBMISSION_TEST_CONTAINER: names.postgres }
     const test = async path => {
-      const output = await execute(process.execPath, ['--experimental-strip-types', '--test', path], { env: testEnv, signal, timeout: 180000 })
-      log(output)
+      try {
+        const output = await execute(process.execPath, ['--experimental-strip-types', '--test', path], { env: testEnv, signal, timeout: 180000 })
+        log(output)
+      } catch (error) {
+        // Node writes test assertions to stdout even when its exit code is 1.
+        if (error.stdout) log(String(error.stdout).slice(-16000))
+        throw error
+      }
     }
     await test('tests/submission-gateway.test.mjs')
     // This suite bootstraps only its synthetic DB and applies F21 once.
