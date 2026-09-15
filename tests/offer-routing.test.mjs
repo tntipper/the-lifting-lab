@@ -100,7 +100,8 @@ test('actual comparison API and OpenAPI agree that legacy links are not buy offe
   const rows = references.map((buy_url, index) => ({ id: `fixture-${index}`, brand: 'Myprotein', name: 'Fixture', category: 'whey', score: null, retail_price: 20, servings_per_container: 10, cost_per_serving: 2, buy_url }))
   const filters = []
   const sb = { from(table) { assert.equal(table, 'products'); return this }, select() { return this }, eq(...args) { filters.push(args); return this }, then(done) { return Promise.resolve({ data: rows, error: null }).then(done) } }
-  const shared = { '@/lib/categories': { CATEGORIES: [{ slug: 'whey' }] } }
+  const assessment = loadSource('../lib/assessment-display.ts', { './claims-review': loadSource('../lib/claims-review.ts') })
+  const shared = { '@/lib/assessment-display': assessment, '@/lib/categories': { CATEGORIES: [{ slug: 'whey' }] } }
   const api = loadSource('../app/api/ard/compare/route.ts', { ...shared, '@/lib/affiliate': affiliate, '@/lib/supabase-public': { createPublicClient: () => sb }, '@/lib/products': { PRODUCT_COLUMNS: '*', withScore: p => p, sortScored: products => products } })
   const response = await api.GET(new Request('https://fixture.invalid/api/ard/compare?category=whey'))
   assert.equal(response.status, 200)

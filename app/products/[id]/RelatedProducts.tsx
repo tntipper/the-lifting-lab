@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { isLegacyRankable } from '@/lib/assessment-display'
 import { categoryLabel } from '@/lib/categories'
 import { productSlug } from '@/lib/matchups'
 import { track } from '@/lib/gtag'
@@ -30,7 +31,8 @@ export default function RelatedProducts({
 
   // Prefer genuinely higher-scoring options; if this product already tops the
   // category, fall back to the next-best picks so the slot is never empty.
-  const better = score != null ? items.filter((p) => p.score != null && p.score > score) : []
+  const better = isLegacyRankable({ category, score }) && score != null
+    ? items.filter((p) => isLegacyRankable(p) && p.score > score) : []
   const isUpgrade = better.length > 0
   // List arrives score-desc, so the slice is the top of the list.
   const picks = (isUpgrade ? better : items).slice(0, 3)
@@ -41,12 +43,12 @@ export default function RelatedProducts({
   return (
     <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
       <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">
-        {isUpgrade ? 'Rated Higher' : `Top ${label}`}
+        {isUpgrade ? 'Higher legacy scores' : `Other ${label} records`}
       </p>
       <p className="text-xs text-gray-500 mb-4">
         {isUpgrade
-          ? `Better-scoring ${label.toLowerCase()} on our reference spec.`
-          : `Other strong ${label.toLowerCase()} picks worth a look.`}
+          ? `Higher existing formula scores; scientific review is not complete.`
+          : `Browse label and assessment information without a product recommendation.`}
       </p>
       <div className="space-y-2">
         {picks.map((p) => {
@@ -64,7 +66,7 @@ export default function RelatedProducts({
               }
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-lab-border hover:border-lab-lime/50 hover:bg-lab-lime/5 transition-colors"
             >
-              <ScoreBadge score={p.score} size="sm" />
+              <ProductAssessment product={p} size="sm" />
               <div className="min-w-0 flex-1">
                 <p className="text-white text-xs font-bold truncate">{p.brand}</p>
                 <p className="text-lab-muted text-xs truncate">{p.name}</p>

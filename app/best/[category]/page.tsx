@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS, GUIDES } from '@/lib/guides'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -205,7 +205,7 @@ export default async function BestCategoryPage({
                 <div key={aLabel} className="bg-lab-panel border border-lab-border rounded-xl p-4 flex flex-col">
                   <p className="text-[10px] uppercase tracking-widest text-lab-lime font-bold mb-3">{aLabel}</p>
                   <div className="flex items-center gap-3 mb-3">
-                    <ScoreBadge score={p.score} size="sm" />
+                    <ProductAssessment product={p} size="sm" />
                     <div className="min-w-0">
                       <p className="text-white text-xs font-black leading-tight truncate">{p.brand}</p>
                       <p className="text-lab-muted text-[11px] truncate">{p.name}</p>
@@ -243,7 +243,7 @@ export default async function BestCategoryPage({
                   <span className="text-lg font-black text-lab-muted w-6 text-center shrink-0">
                     {i + 1}
                   </span>
-                  <ScoreBadge score={p.score} />
+                  <ProductAssessment product={p} />
                   <div className="min-w-0 flex-1">
                     <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors">
                       <p className="text-white text-sm font-black leading-tight truncate">{p.brand}</p>

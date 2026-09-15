@@ -1,3 +1,4 @@
+import { isLegacyRankable, hasPositiveServingCost } from './assessment-display'
 // "[Product] alternatives" is one of the highest-intent affiliate search
 // classes ("Myprotein Impact Whey alternatives", "cheaper alternative to
 // Optimum Nutrition"), but the site had no crawlable landing page for it — only
@@ -30,10 +31,11 @@ export type AltProduct = {
 
 /** Value ratio: Effectiveness Match per £ per serving. null when uncomputable. */
 export function valueRatio(p: {
+  category?: string
   score: number | null
   cost_per_serving: number | null
 }): number | null {
-  if (p.score == null || p.cost_per_serving == null || p.cost_per_serving <= 0) return null
+  if (!isLegacyRankable(p) || !hasPositiveServingCost(p)) return null
   return p.score / p.cost_per_serving
 }
 
@@ -46,7 +48,7 @@ export function alternativesFor<T extends AltProduct>(target: T, all: T[]): T[] 
   const targetSlug = productSlug(target.brand, target.name)
   const seen = new Set<string>([targetSlug])
   const sorted = all
-    .filter((p) => p.category === target.category && p.id !== target.id && p.score != null)
+    .filter((p) => p.category === target.category && p.id !== target.id && isLegacyRankable(p))
     .sort((a, b) => (b.score as number) - (a.score as number) || a.name.localeCompare(b.name))
   const out: T[] = []
   for (const p of sorted) {
@@ -67,7 +69,7 @@ export function alternativesFor<T extends AltProduct>(target: T, all: T[]): T[] 
 export function curatedAlternativeTargets<T extends AltProduct>(all: T[]): T[] {
   const byCat = new Map<string, T[]>()
   for (const p of all) {
-    if (p.score == null) continue
+    if (!isLegacyRankable(p)) continue
     const arr = byCat.get(p.category) || []
     arr.push(p)
     byCat.set(p.category, arr)

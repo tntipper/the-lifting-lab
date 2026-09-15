@@ -1,5 +1,6 @@
 // Shared product types + score attachment for the browse/compare features.
 import { scoreFor } from '@/lib/scores'
+import { hasPositiveServingCost, isRankingCandidate } from './assessment-display'
 
 export type Product = {
   id: string
@@ -53,16 +54,22 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
   out.sort((a, b) => {
     if (sort === 'name') return a.name.localeCompare(b.name)
     if (sort === 'brand') return a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
+    if (sort !== 'price') {
+      const eligibility = Number(isRankingCandidate(b, sort)) - Number(isRankingCandidate(a, sort))
+      if (eligibility) return eligibility
+      // Research records stay visible, but are not ordered as recommendations.
+      if (!isRankingCandidate(a, sort)) return a.name.localeCompare(b.name)
+    }
     if (sort === 'value') {
       // Score per £ per serving — highest ratio first; unpriced last
-      const va = a.score != null && a.cost_per_serving != null ? a.score / a.cost_per_serving : -1
-      const vb = b.score != null && b.cost_per_serving != null ? b.score / b.cost_per_serving : -1
+      const va = a.score! / a.cost_per_serving!
+      const vb = b.score! / b.cost_per_serving!
       return vb - va
     }
     if (sort === 'budget' || sort === 'price') {
       // Cheapest per serving among scored products; unpriced last
-      const ca = a.cost_per_serving ?? Infinity
-      const cb = b.cost_per_serving ?? Infinity
+      const ca = hasPositiveServingCost(a) ? a.cost_per_serving : Infinity
+      const cb = hasPositiveServingCost(b) ? b.cost_per_serving : Infinity
       return ca - cb
     }
     // default: score highest first, unscored last

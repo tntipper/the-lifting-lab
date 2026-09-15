@@ -5,6 +5,7 @@
 // education) and the interactive /products grid.
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
+import { isLegacyRankable, hasPositiveServingCost } from './assessment-display'
 import { CATEGORIES } from '@/lib/categories'
 
 // Minimum scored products in a category to publish a credible "Top N" ranking.
@@ -29,7 +30,7 @@ export async function rankedProducts(category: string): Promise<ScoredProduct[]>
     if (error || !data) return []
     return (data as Product[])
       .map(withScore)
-      .filter((p) => p.score != null)
+      .filter(isLegacyRankable)
       .sort(
         (a, b) =>
           (b.score as number) - (a.score as number) || a.name.localeCompare(b.name),
@@ -52,7 +53,7 @@ export async function rankedCategorySlugs(): Promise<string[]> {
     if (error || !data) return []
     const counts = new Map<string, number>()
     for (const p of (data as Product[]).map(withScore)) {
-      if (p.score == null) continue
+      if (!isLegacyRankable(p)) continue
       counts.set(p.category, (counts.get(p.category) ?? 0) + 1)
     }
     return CATEGORIES.map((c) => c.slug).filter((s) => (counts.get(s) ?? 0) >= MIN_RANKED)
@@ -71,9 +72,10 @@ export type CategoryAwards = {
 // gated to score >= 50 and require real cost-per-serving data, so a cheap-but-
 // underdosed tub never wins "best value" or "best budget".
 export function deriveAwards(ranked: ScoredProduct[]): CategoryAwards {
-  const bestOverall = ranked[0] ?? null
-  const priced = ranked.filter(
-    (p) => (p.score ?? 0) >= 50 && p.cost_per_serving != null,
+  const eligible = ranked.filter(isLegacyRankable)
+  const bestOverall = eligible[0] ?? null
+  const priced = eligible.filter(
+    (p) => p.score >= 50 && hasPositiveServingCost(p),
   )
   const bestValue = priced.length
     ? priced.reduce((a, b) =>

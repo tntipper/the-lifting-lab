@@ -1,9 +1,10 @@
 import { serializeJsonForHtml } from '@/lib/json-for-html'
+import { isLegacyRankable } from '@/lib/assessment-display'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { getGuide, GUIDE_SLUGS } from '@/lib/guides'
 import { getCitations, formatCitation } from '@/lib/guide-citations'
 import { categoryLabel } from '@/lib/categories'
@@ -60,7 +61,7 @@ async function categoryScored(category: string): Promise<ScoredProduct[]> {
       .eq('status', 'active')
       .eq('category', category)
     if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore), 'score')
+    return sortScored((data as Product[]).map(withScore).filter(isLegacyRankable), 'score')
   } catch {
     return []
   }
@@ -235,7 +236,7 @@ export default async function GuidePage({
                   key={p.id}
                   className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
                 >
-                  <ScoreBadge score={p.score} />
+                  <ProductAssessment product={p} />
                   <div className="min-w-0 flex-1">
                     <p className="text-white text-sm font-bold truncate">{p.brand}</p>
                     <p className="text-lab-muted text-xs truncate">{p.name}</p>

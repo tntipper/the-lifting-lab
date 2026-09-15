@@ -2,13 +2,14 @@ import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
+import { isLegacyRankable } from '@/lib/assessment-display'
 import { MIN_RANKED } from '@/lib/best-categories'
 
 // SSG with a daily refresh so newly added/rescored products can change the
@@ -59,7 +60,7 @@ async function categoryWinners(): Promise<{ winners: Winner[]; ranked: Set<strin
     const best = new Map<string, ScoredProduct>()
     const counts = new Map<string, number>()
     for (const p of scored) {
-      if (p.score == null) continue
+      if (!isLegacyRankable(p)) continue
       counts.set(p.category, (counts.get(p.category) ?? 0) + 1)
       const cur = best.get(p.category)
       if (!cur || (cur.score ?? -1) < p.score) best.set(p.category, p)
@@ -177,10 +178,10 @@ export default async function BestPage() {
           the catalogue updates, so this page always reflects the current pick.
         </p>
 
+        <p className="mb-4 text-xs text-lab-muted">These are existing formula scores, not newly approved scientific ratings. Unassessed products and claims under review are excluded from awards. <Link href="/products" className="underline">Browse all research records</Link>.</p>
         {winners.length === 0 ? (
           <div className="text-center py-16 text-lab-muted">
-            <p className="text-4xl mb-3">🏆</p>
-            <p className="text-sm">Winners are being tallied. Check back shortly.</p>
+            <p className="text-sm">No ranking is available. Unassessed products and categories with claims under review remain in the research catalogue.</p>
           </div>
         ) : (
           <>
@@ -206,7 +207,7 @@ export default async function BestPage() {
                       <span className="text-xl shrink-0 w-6 text-center">
                         {['🥇', '🥈', '🥉'][i] ?? `#${i + 1}`}
                       </span>
-                      <ScoreBadge score={w.product.score} size="sm" />
+                      <ProductAssessment product={w.product} size="sm" />
                       <div className="min-w-0 flex-1">
                         <p className="text-white text-sm font-bold truncate">{w.product.brand}</p>
                         <p className="text-lab-muted text-xs truncate">{w.product.name}</p>
@@ -244,7 +245,7 @@ export default async function BestPage() {
                         className="bg-lab-panel border border-lab-border rounded-xl p-4"
                       >
                         <div className="flex items-center gap-4">
-                          <ScoreBadge score={p.score} />
+                          <ProductAssessment product={p} />
                           <div className="min-w-0 flex-1">
                             {ranked.has(slug) ? (
                               <Link

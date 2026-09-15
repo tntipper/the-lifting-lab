@@ -1,3 +1,4 @@
+import { isLegacyRankable } from './assessment-display'
 // Data + logic for the "Supplement Watch-Outs" surface (/watch-outs): the
 // honest flip-side of /best and /value. Where those hubs celebrate the top
 // pick in every category, this one surfaces the LOWEST-scoring products our
@@ -82,7 +83,7 @@ export async function categoryWatchOuts(): Promise<CategoryWatchOut[]> {
       .eq('status', 'active')
     if (error || !data) return []
 
-    const scored = (data as Product[]).map(withScore).filter((p) => p.score != null)
+    const scored = (data as Product[]).map(withScore).filter(isLegacyRankable)
 
     // Group scored products by category.
     const byCategory = new Map<string, ScoredProduct[]>()

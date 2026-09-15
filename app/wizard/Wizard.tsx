@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useId } from 'react'
-import { claimsReviewFor } from '@/lib/claims-review'
+import { isLegacyRankable } from '@/lib/assessment-display'
 import { listedPackPence, listedPackSubtotal } from '@/lib/wizard-budget'
 import Link from 'next/link'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { track } from '@/lib/gtag'
 import { useLocalStack } from '@/components/LocalStackContext'
@@ -70,7 +70,7 @@ export default function Wizard() {
   const topByCategory = useMemo(() => {
     const map = new Map<string, ScoredProduct>()
     for (const p of all) {
-      if (claimsReviewFor(p.category)) continue
+      if (!isLegacyRankable(p)) continue
       const cur = map.get(p.category)
       if (!cur || (p.score ?? -1) > (cur.score ?? -1)) map.set(p.category, p)
     }
@@ -330,7 +330,7 @@ export default function Wizard() {
                   key={p.id}
                   className="grid grid-cols-[auto_minmax(0,1fr)] sm:grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 bg-lab-panel border border-lab-border rounded-xl p-4"
                 >
-                  <ScoreBadge score={p.score} />
+                  <ProductAssessment product={p} />
                   <div className="min-w-0 flex-1">
                     <p className="text-white text-sm font-bold break-words">{p.brand}</p>
                     <Link href={`/products/${p.id}`} className="text-lab-muted text-xs break-words hover:text-lab-lime hover:underline">{p.name}</Link>

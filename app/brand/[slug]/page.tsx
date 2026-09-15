@@ -1,9 +1,10 @@
+import { isLegacyRankable } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -43,7 +44,7 @@ async function getBrand(slug: string): Promise<BrandData | null> {
     if (matches.length === 0) return null
 
     const products = sortScored(matches, 'score')
-    const scores = products.map((p) => p.score).filter((s): s is number => s != null)
+    const scores = products.filter(isLegacyRankable).map((p) => p.score)
     return {
       brand: products[0].brand,
       products,
@@ -105,7 +106,7 @@ export default async function BrandPage({
   if (!data) notFound()
 
   const url = `${SITE}/brand/${slug}`
-  const top = data.products[0]
+  const top = data.products.find(isLegacyRankable)
 
   // Brand entity — the canonical node for "[brand] supplements" searches, with
   // its product range as a nested ItemList so Google can cluster the brand and
@@ -121,9 +122,9 @@ export default async function BrandPage({
   const itemListJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: `${data.brand} products ranked`,
-    description: `${data.brand} supplements ranked by The Lifting Lab Effectiveness Match score.`,
-    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    name: `${data.brand} research catalogue`,
+    description: `${data.brand} research records, including unassessed and under-review products.`,
+    itemListOrder: 'https://schema.org/ItemListUnordered',
     numberOfItems: data.products.length,
     itemListElement: data.products.map((p, i) => ({
       '@type': 'ListItem',
@@ -211,7 +212,7 @@ export default async function BrandPage({
             All {data.brand} <span className="text-lab-lime">products</span>
           </h2>
           <p className="text-lab-muted text-sm mb-5">
-            Ranked by The Lifting Lab Effectiveness Match score.
+            Available legacy scores are shown first. Unassessed and under-review records are not ranked; scientific review is incomplete.
           </p>
           <div className="space-y-3">
             {data.products.map((p) => {
@@ -219,7 +220,7 @@ export default async function BrandPage({
               return (
                 <div key={p.id} className="bg-lab-panel border border-lab-border rounded-xl p-4">
                   <div className="flex items-center gap-4">
-                    <ScoreBadge score={p.score} />
+                    <ProductAssessment product={p} />
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] uppercase tracking-widest text-lab-lime mb-0.5">
                         {categoryLabel(p.category)}
