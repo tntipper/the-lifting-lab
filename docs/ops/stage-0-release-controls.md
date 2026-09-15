@@ -4,7 +4,7 @@ This branch is implementation work. A passing local check does not establish a p
 
 ## Supported runtime and dependencies
 
-Use Node 24, matching the inspected production runtime, and `npm ci` with the committed lockfile. Next and its ESLint configuration use the same maintained 15.5.25 release. The stable Next 15 lint configuration is loaded through FlatCompat; builds no longer bypass ESLint errors.
+Use Node 24 and npm 11.19 with the committed lockfile. The project declares the npm version because older npm 11 builds can omit transitive WASM dependency records that the Linux runner requires. If the system npm is older, use `npx --yes npm@11.19.0 ci` without changing the global installation. Next and its ESLint configuration use the same maintained 15.5.25 release. The stable Next 15 lint configuration is loaded through FlatCompat; builds no longer bypass ESLint errors.
 
 Next 15 pins older transitive image/CSS packages. Scoped overrides select PostCSS 8.5.28 and sharp 0.35.4, and compatible transitive updates resolve the remaining advisory ranges. Retain the scoped overrides until an upstream framework release supplies safe versions. Re-run the complete build, image and auth tests before changing them. The local audit on 15 September 2026 reported zero vulnerabilities; dependency advisories are checked again in CI rather than treating that snapshot as permanent.
 
