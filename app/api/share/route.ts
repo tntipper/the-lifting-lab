@@ -10,9 +10,13 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let productId: unknown
-  try { ({ productId } = await request.json()) }
+  let body: unknown
+  try { body = await request.json() }
   catch { return NextResponse.json({ error: 'Invalid body' }, { status: 400 }) }
+  if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).some(key => key !== 'productId')) {
+    return NextResponse.json({ error: 'Only a productId may be submitted' }, { status: 400 })
+  }
+  const productId = (body as { productId?: unknown }).productId
   if (!isProductId(productId)) {
     return NextResponse.json({ error: 'A valid productId is required' }, { status: 400 })
   }

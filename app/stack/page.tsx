@@ -40,7 +40,7 @@ export default async function StackPage() {
               My <span className="text-lab-lime">Stack</span>
             </h1>
             <p className="text-lab-muted text-sm mt-2">
-              Add your supplements — we&apos;ll score them and flag anything over EFSA safe limits.
+              Keep your supplement records, inspect legacy assessment status and review available nutrient alerts.
             </p>
             <p className="text-lab-muted/50 text-xs mt-1">
               For informational purposes only. Not medical advice.

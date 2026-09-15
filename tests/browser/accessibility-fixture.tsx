@@ -1,6 +1,7 @@
 import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import TopNav from '../../components/TopNav'
+import StackBuilder from '../../app/stack/StackBuilder'
 import StackFAB from '../../components/StackFAB'
 import MethodologyModal from '../../components/MethodologyModal'
 import ShareModal from '../../components/ShareModal'
@@ -37,6 +38,9 @@ const rankingRows: ScoredProduct[] = [
   { ...rankingBase, id: 'legacy-high', name: 'Z historical high score', score: 80, cost_per_serving: 2 },
   { ...rankingBase, id: 'legacy-value', name: 'Y historical value score', score: 60, cost_per_serving: 1 },
 ]
+function StackAssessmentControls() {
+  return <><main className="max-w-3xl mx-auto p-4 bg-lab-bg text-white"><h1>Isolated saved-stack assessment acceptance</h1><StackBuilder /></main><StackFAB /></>
+}
 function RankingControls() {
   return <main className="max-w-5xl mx-auto p-4 bg-lab-bg text-white">
     <h1>Isolated assessment display acceptance</h1>
@@ -79,7 +83,7 @@ function Controls() {
       <button type="button" onClick={() => toggle(product)}>Add synthetic product</button>
       <button type="button" onClick={() => setShare(true)}>Open share fixture</button>
       <ShareModal open={share} onClose={() => setShare(false)} productId={product.id}
-        productName={product.name} brand={product.brand} score={null} />
+        productName={product.name} brand={product.brand} />
     </main>
     <footer><a href="#footer">Footer end</a></footer>
     <StackFAB />
@@ -87,5 +91,5 @@ function Controls() {
 }
 
 createRoot(document.getElementById('fixture')!).render(
-  <StrictMode><LocalStackProvider>{['/rankings', '/unassessed'].includes(window.location.pathname) ? <RankingControls /> : window.location.pathname === '/wizard' ? <WizardPage /> : window.location.pathname === '/offers' ? <OfferControls /> : <Controls />}</LocalStackProvider></StrictMode>,
+  <StrictMode><LocalStackProvider>{window.location.pathname === '/stack-assessment' ? <StackAssessmentControls /> : ['/rankings', '/unassessed'].includes(window.location.pathname) ? <RankingControls /> : window.location.pathname === '/wizard' ? <WizardPage /> : window.location.pathname === '/offers' ? <OfferControls /> : <Controls />}</LocalStackProvider></StrictMode>,
 )
