@@ -88,14 +88,16 @@ export async function GET() {
         RankedProduct: {
           type: 'object',
           properties: {
-            rank: { type: 'integer' },
+            rank: { type: ['integer', 'null'], description: 'Null when assessment or requested ranking data is unavailable or under review.' },
+            assessment_state: { type: 'string', enum: ['legacy', 'unassessed', 'under_review'] },
+            assessment_note: { type: 'string' },
             id: { type: 'string' },
             name: { type: 'string' },
             brand: { type: 'string' },
             category: { type: 'string' },
             score: {
               type: ['integer', 'null'],
-              description: 'Lifting Lab clinical score 0-100 (higher is better; null if not yet scored).',
+              description: 'Historical formula score. Scientific review is incomplete; assessment_state and rank control eligibility. Null when no usable assessment exists.',
             },
             retail_price_gbp: { type: ['number', 'null'] },
             cost_per_serving_gbp: { type: ['number', 'null'] },

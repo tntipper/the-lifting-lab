@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
+import { scoreColor } from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { assessmentDisplayFor } from '@/lib/assessment-display'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
@@ -60,10 +62,12 @@ export default function ProductDetailPage({
   const [shareOpen, setShareOpen] = useState(false)
 
   const review = claimsReviewFor(product.category)
+  const assessment = assessmentDisplayFor(product)
+  const canRecommend = assessment.state === 'legacy'
   const costReason = trueCostReason(product)
   const flags = verdictFlags(product.nutrients, product.score, product.informed_sport)
-    .filter((flag) => !review || !flag.text.includes('Effectiveness Match'))
-  const color = product.score != null ? scoreColor(product.score) : '#4b5563'
+    .filter(flag => canRecommend || flag.kind === 'safety')
+  const color = canRecommend && product.score != null ? scoreColor(product.score) : '#9ca3af'
   const stacked = inStack(product.id)
   const retailers = getRetailerLinks(product.brand, product.name)
 
@@ -90,7 +94,7 @@ export default function ProductDetailPage({
         <div className="flex flex-col lg:flex-row lg:items-start lg:text-left items-center text-center gap-6 lg:gap-10">
           <div className="flex flex-wrap items-center justify-center gap-4 max-w-full">
             <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} />
-            <ScoreBadge score={product.score} size="lg" />
+            <ProductAssessment product={product} size="lg" />
           </div>
           <div>
             <Link
@@ -172,7 +176,7 @@ export default function ProductDetailPage({
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-4">Full Label</p>
             <div>
               {product.nutrients.map((n, i) => {
-                const nColor = nutrientColor(n.nutrient_name, n.amount)
+                const nColor = canRecommend ? nutrientColor(n.nutrient_name, n.amount) : null
                 return (
                   <div
                     key={i}
@@ -209,14 +213,14 @@ export default function ProductDetailPage({
             <MethodologyModal category={product.category} />
           </div>
           <p className="text-sm text-white/70 leading-relaxed">
-            {review ? <>Existing formula score: <span className="font-bold">{product.score ?? '–'}/100</span>. Claims and ingredient flags are under review; this score is not a validated prediction of health benefits.</> : <>
-            This product scores{' '}
+            {!canRecommend ? assessment.explanation : <>
+            Existing formula score (scientific review incomplete):{' '}
             <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our
             evidence-based reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
             dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
             </>}
           </p>
-          {!review && <div className="flex gap-3 mt-3 flex-wrap">
+          {canRecommend && <div className="flex gap-3 mt-3 flex-wrap">
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">● Green = meets dose</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">● Amber = below optimal</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
@@ -290,7 +294,7 @@ export default function ProductDetailPage({
         productId={product.id}
         productName={product.name}
         brand={product.brand}
-        score={product.score}
+        score={canRecommend ? product.score : null}
       />
     </div>
   )

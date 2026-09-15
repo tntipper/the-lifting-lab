@@ -1,8 +1,9 @@
+import { isLegacyRankable, hasPositiveServingCost } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { GUIDE_SLUGS } from '@/lib/guides'
@@ -62,7 +63,7 @@ async function categoryWinners(): Promise<Winner[]> {
     const eligible: ValueProduct[] = (data as Product[])
       .map(withScore)
       .flatMap((p) =>
-        p.score != null && p.score >= MIN_SCORE && p.cost_per_serving != null && p.cost_per_serving > 0
+        isLegacyRankable(p) && p.score >= MIN_SCORE && hasPositiveServingCost(p)
           ? [{ ...p, score: p.score, cost_per_serving: p.cost_per_serving, valueRatio: p.score / p.cost_per_serving }]
           : [],
       )
@@ -242,7 +243,7 @@ export default async function ValuePage() {
                       <span className="text-xl shrink-0 w-6 text-center">
                         {['🥇', '🥈', '🥉'][i] ?? `#${i + 1}`}
                       </span>
-                      <ScoreBadge score={w.product.score} size="sm" />
+                      <ProductAssessment product={w.product} size="sm" />
                       <div className="min-w-0 flex-1">
                         <p className="text-white text-sm font-bold truncate">{w.product.brand}</p>
                         <p className="text-lab-muted text-xs truncate">{w.product.name}</p>
@@ -282,7 +283,7 @@ export default async function ValuePage() {
                         className="bg-lab-panel border border-lab-border rounded-xl p-4"
                       >
                         <div className="flex items-center gap-4">
-                          <ScoreBadge score={p.score} />
+                          <ProductAssessment product={p} />
                           <div className="min-w-0 flex-1">
                             <p className="text-[10px] uppercase tracking-widest text-lab-lime mb-0.5">
                               Best value {categoryLabel(slug)}

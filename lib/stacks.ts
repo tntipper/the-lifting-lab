@@ -1,3 +1,4 @@
+import { isLegacyRankable, hasPositiveServingCost } from './assessment-display'
 // Goal-based supplement "stack" guides — the SSG/SEO counterpart to the
 // interactive Find My Stack wizard. Each archetype targets a proven head-term
 // class ("best supplement stack for muscle building UK 2026") and resolves to a
@@ -246,7 +247,7 @@ export function selectStack<
     if (!inCat || inCat.length === 0) continue
     let best: P | undefined
     if (stack.pick === 'budget') {
-      const priced = inCat.filter((p) => p.cost_per_serving != null && p.score != null)
+      const priced = inCat.filter((p) => hasPositiveServingCost(p) && isLegacyRankable(p))
       if (priced.length > 0) {
         best = priced.reduce((a, b) =>
           (a.cost_per_serving as number) <= (b.cost_per_serving as number) ? a : b,
@@ -254,7 +255,7 @@ export function selectStack<
       }
     }
     if (!best) {
-      const scored = inCat.filter((p) => p.score != null)
+      const scored = inCat.filter(isLegacyRankable)
       if (scored.length === 0) continue
       best = scored.reduce((a, b) => ((a.score as number) >= (b.score as number) ? a : b))
     }

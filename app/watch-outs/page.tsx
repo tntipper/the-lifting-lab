@@ -2,7 +2,7 @@ import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { GUIDE_SLUGS } from '@/lib/guides'
@@ -220,7 +220,7 @@ export default async function WatchOutsPage() {
                             style={{ borderColor: 'rgba(224,90,43,0.3)' }}
                           >
                             <div className="flex items-center gap-4">
-                              <ScoreBadge score={p.score} />
+                              <ProductAssessment product={p} />
                               <div className="min-w-0 flex-1">
                                 <span
                                   className="inline-block text-[9px] uppercase tracking-widest font-black px-2 py-0.5 rounded mb-1"
@@ -265,7 +265,7 @@ export default async function WatchOutsPage() {
                         }}
                       >
                         <div className="flex items-center gap-4">
-                          <ScoreBadge score={best.score} />
+                          <ProductAssessment product={best} />
                           <div className="min-w-0 flex-1">
                             <span className="inline-block text-[9px] uppercase tracking-widest font-black text-lab-lime mb-1">
                               ✅ Buy instead — Best {categoryLabel(slug)}

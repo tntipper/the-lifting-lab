@@ -3,7 +3,8 @@
 import { Suspense, useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { assessmentDisplayFor, isRankingCandidate } from '@/lib/assessment-display'
 import FavouriteButton from '@/components/FavouriteButton'
 import ProductImage from '@/components/ProductImage'
 import { createClient } from '@/lib/supabase'
@@ -62,10 +63,12 @@ function PointerCard({
   children,
   className,
   style,
+  productId,
 }: {
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
+  productId: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
   function handleMouseMove(e: React.MouseEvent) {
@@ -78,6 +81,7 @@ function PointerCard({
   return (
     <div
       ref={ref}
+      data-product-id={productId}
       onMouseMove={handleMouseMove}
       className={`lab-card beam ${className ?? ''}`}
       style={{ '--mx': '50%', '--my': '30%', ...style } as React.CSSProperties}
@@ -324,7 +328,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
             </span>
           </h2>
           <p className="text-[11px] text-white/40 mt-1 uppercase tracking-widest">
-            {claimsReviewFor(category) ? 'Existing scores · Claims under review' : 'Ranked by effective dosing · not brand reputation'}
+            {claimsReviewFor(category) ? 'Existing scores · Claims under review' : 'Legacy scores · Unassessed products are not ranked'}
           </p>
         </div>
         <div className="shrink-0 pt-1">
@@ -498,19 +502,21 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {visible.map((p, i) => {
           const isSel = selected.includes(p.id)
-          const isTop = !claimsReviewFor(p.category) && i === 0 && (sort === 'score' || sort === 'value' || sort === 'budget')
-          const medal = claimsReviewFor(p.category) ? null : MEDALS[i] ?? null
+          const assessment = assessmentDisplayFor(p)
+          const ranked = isRankingCandidate(p, sort)
+          const isTop = ranked && i === 0
+          const medal = ranked ? MEDALS[i] ?? null : null
           const stacked = inStack(p.id)
           const benefits = CATEGORY_BENEFITS[p.category] ?? null
-          const dosingNote = !claimsReviewFor(p.category) && p.score != null
+          const dosingNote = assessment.state === 'legacy' && p.score != null
             ? p.score >= 70
               ? p.score >= 90 ? '· Excellent dosing' : '· Good dosing'
               : p.score >= 50
               ? '· Partially dosed'
               : '· Below effective dose'
             : ''
-          const scoreFlag = claimsReviewFor(p.category)
-            ? { color: '#f5b342', text: `${claimsReviewFor(p.category)!.title}. Existing score is not a validated health-benefit assessment.` }
+          const scoreFlag = assessment.state !== 'legacy'
+            ? { color: '#9ca3af', text: assessment.explanation }
             : benefits
             ? {
                 color: p.score != null && p.score >= 70 ? '#a6e22e' : p.score != null && p.score >= 50 ? '#f5b342' : '#ff5c5c',
@@ -526,6 +532,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           return (
             <PointerCard
               key={p.id}
+              productId={p.id}
               className="p-4"
               style={isTop ? {
                 borderColor: 'rgba(166,226,46,0.45)',
@@ -575,7 +582,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
 
                 <div className="shrink-0 flex flex-col items-end gap-2">
                   <Link href={`/products/${p.id}`} className="shrink-0">
-                    <ScoreBadge score={p.score} size="sm" />
+                    <ProductAssessment product={p} size="sm" />
                   </Link>
                   <FavouriteButton
                     productId={p.id}
@@ -609,7 +616,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
                   <div className="text-[8px] text-lab-muted uppercase tracking-wide">Match</div>
                   <div className="text-xs font-bold text-white mt-0.5">
-                    {p.score != null ? `${p.score}%` : '—'}
+                    {assessment.state === 'legacy' ? `${assessment.score}%` : assessment.label}
                   </div>
                 </div>
                 <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">

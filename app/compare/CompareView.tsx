@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { isLegacyRankable, hasPositiveServingCost } from '@/lib/assessment-display'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -47,14 +48,14 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
   }
 
   // verdict: best by score (rating)
-  const scored = products.filter((p) => p.score != null) as (ComparedProduct & { score: number })[]
+  const scored = products.filter(isLegacyRankable)
   const bestRated = scored.length
     ? scored.reduce((a, b) => (b.score > a.score ? b : a))
     : null
 
   // best value: highest score per £/serving among products that have both
   const valued = products.filter(
-    (p) => p.score != null && p.cost_per_serving != null && p.cost_per_serving > 0,
+    (p) => isLegacyRankable(p) && hasPositiveServingCost(p),
   ) as (ComparedProduct & { score: number; cost_per_serving: number })[]
   const bestValue = valued.length
     ? valued.reduce((a, b) => (b.score / b.cost_per_serving > a.score / a.cost_per_serving ? b : a))
@@ -66,6 +67,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
 
   return (
     <div className="space-y-8">
+      <p className="text-xs text-lab-muted">Only available legacy scores outside a claims review can enter this comparison ranking. Unassessed and under-review products remain visible without a recommendation. Scientific review of the legacy scores is not complete.</p>
       {/* verdict */}
       {bestRated && (
         <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-5 lab-glow">
@@ -103,7 +105,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
           <div key={p.id} className="bg-lab-panel border border-lab-border rounded-xl p-4 text-center">
             <div className="flex justify-center items-center gap-3 mb-2">
               <ProductImage src={p.image_url} alt={`${p.brand} ${p.name}`} size={56} />
-              <ScoreBadge score={p.score} />
+              <ProductAssessment product={p} />
             </div>
             <p className="text-white text-xs font-bold leading-tight">{p.brand}</p>
             <p className="text-lab-muted text-[11px] leading-tight mt-0.5">{p.name}</p>

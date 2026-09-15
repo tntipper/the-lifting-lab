@@ -1,3 +1,4 @@
+import { isLegacyRankable } from './assessment-display'
 // Head-to-head matchup helpers for the /vs comparison pages.
 //
 // "[Product A] vs [Product B]" is one of the highest-intent affiliate search
@@ -55,7 +56,7 @@ const TOP_PER_CATEGORY = 5
 export function curatedMatchups<T extends MatchupProduct>(products: T[]): Matchup<T>[] {
   const byCat = new Map<string, T[]>()
   for (const p of products) {
-    if (p.score == null) continue
+    if (!isLegacyRankable(p)) continue
     const arr = byCat.get(p.category) || []
     arr.push(p)
     byCat.set(p.category, arr)

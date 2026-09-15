@@ -1,3 +1,4 @@
+import { isLegacyRankable } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -56,7 +57,7 @@ async function brandSummaries(): Promise<BrandSummary[]> {
 
     const summaries: BrandSummary[] = []
     for (const [slug, items] of groups) {
-      const scores = items.map((p) => p.score).filter((s): s is number => s != null)
+      const scores = items.filter(isLegacyRankable).map((p) => p.score)
       const categories = Array.from(new Set(items.map((p) => p.category)))
       summaries.push({
         brand: items[0].brand,

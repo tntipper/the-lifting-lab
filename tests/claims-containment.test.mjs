@@ -52,7 +52,7 @@ function fixture({ category = 'cycle-support', modalOpen = false, nutrients = []
       if (name === '@/lib/products') return { PRODUCT_COLUMNS: '*', withScore: p => p, sortScored: a => a, trueCostReason: () => null }
       if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
       if (name === '@/components/ScoreBadge') return { __esModule: true, default: ({ score }) => React.createElement('span', {}, `Score ${score}`), scoreColor: () => '#fff' }
-      if ((name.startsWith('@/components/') && !['@/components/ClaimsReviewNotice', '@/components/MethodologyModal', '@/components/AccessibleDialog'].includes(name)) || name === './RelatedProducts') return { __esModule: true, default: blank }
+      if ((name.startsWith('@/components/') && !['@/components/ClaimsReviewNotice', '@/components/MethodologyModal', '@/components/AccessibleDialog', '@/components/ProductAssessment'].includes(name)) || name === './RelatedProducts') return { __esModule: true, default: blank }
       if (name.startsWith('@/') || name.startsWith('.')) {
         const base = name.startsWith('@/') ? path.join(root, name.slice(2)) : path.resolve(path.dirname(filename), name)
         const resolved = ['.ts', '.tsx'].map(ext => base + ext).find(existsSync)
@@ -194,7 +194,7 @@ test('catalogue cards show review status in the all-products view without effect
     const Grid = f.load('app/products/ProductGrid.tsx').default
     const html = render(React.createElement(Grid, { initialProducts: [f.item] }))
     assert.match(html, /under review/i)
-    assert.match(html, /95%/)
+    assert.match(html, /95\/100/)
     assert.doesNotMatch(html, /Excellent dosing|Good dosing|🥇|Liver &amp; organ protection|Hormonal balance|Testosterone &amp; growth hormone/)
   }
 })

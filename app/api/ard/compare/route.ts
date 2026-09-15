@@ -1,3 +1,4 @@
+import { assessmentDisplayFor, isRankingCandidate } from '@/lib/assessment-display'
 import { NextResponse } from 'next/server'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type SortKey } from '@/lib/products'
@@ -54,13 +55,16 @@ export async function GET(request: Request) {
 
   const results = ranked.map((p, i) => {
     const listing = resolveProductListing(p.buy_url)
+    const assessment = assessmentDisplayFor(p)
     return {
-      rank: i + 1,
+      rank: isRankingCandidate(p, sort) ? i + 1 : null,
+      assessment_state: assessment.state,
+      assessment_note: assessment.explanation,
       id: p.id,
       name: p.name,
       brand: p.brand,
       category: p.category,
-      score: p.score, // Lifting Lab clinical score 0-100 (higher is better; null = not yet scored)
+      score: assessment.score, // Legacy value only; status determines ranking eligibility.
       retail_price_gbp: p.retail_price,
       cost_per_serving_gbp: p.cost_per_serving,
       servings_per_container: p.servings_per_container,
@@ -86,7 +90,7 @@ export async function GET(request: Request) {
       count: results.length,
       methodology: `${SITE_URL}/guide`,
       disclosure:
-        'Rankings are independent and based on ingredient dosing, serving size and price-per-serving value. Retailer references are unverified listings or searches, with individual relationship disclosures; they are not confirmed purchase offers.',
+        'Rankings use existing formula scores whose scientific review is incomplete. Unassessed products and claims under review carry no rank. Retailer references are unverified listings or searches, with individual relationship disclosures; they are not confirmed purchase offers.',
       results,
     }),
   )

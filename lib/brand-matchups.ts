@@ -1,3 +1,4 @@
+import { isLegacyRankable, hasPositiveServingCost } from './assessment-display'
 // Brand-tier head-to-head helpers for the /brands-vs comparison pages.
 //
 // "[Brand A] vs [Brand B]" (e.g. "Bulk vs Myprotein", "Optimum Nutrition vs
@@ -38,7 +39,7 @@ const MAX_BRANDS = 10
 export function buildBrandStats(products: ScoredProduct[]): BrandStat[] {
   const byBrand = new Map<string, ScoredProduct[]>()
   for (const p of products) {
-    if (!p.brand || !p.brand.trim()) continue
+    if (!p.brand || !p.brand.trim() || !isLegacyRankable(p)) continue
     const arr = byBrand.get(p.brand) || []
     arr.push(p)
     byBrand.set(p.brand, arr)
@@ -50,7 +51,7 @@ export function buildBrandStats(products: ScoredProduct[]): BrandStat[] {
       (x, y) => (y.score ?? -1) - (x.score ?? -1) || x.name.localeCompare(y.name),
     )
     const scores = sorted.map((p) => p.score).filter((s): s is number => s != null)
-    const costs = sorted
+    const costs = sorted.filter(hasPositiveServingCost)
       .map((p) => p.cost_per_serving)
       .filter((c): c is number => c != null && c > 0)
     stats.push({
