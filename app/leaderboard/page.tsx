@@ -44,7 +44,7 @@ export default async function LeaderboardPage() {
     .maybeSingle()
 
   let season = active as SeasonRow | null
-  let isActive = !!season
+  const isActive = !!season
   if (!season) {
     const { data: latest } = await supabase
       .from('seasons')

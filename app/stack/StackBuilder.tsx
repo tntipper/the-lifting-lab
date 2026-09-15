@@ -264,7 +264,6 @@ export default function StackBuilder() {
         loadServerStack()
       }
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadLocalStack(localStack)
     }
   }, [signedIn, localStack, loadServerStack, loadLocalStack, localClear])
