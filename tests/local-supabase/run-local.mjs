@@ -67,7 +67,12 @@ const cli = args => run('npx', ['--yes', 'supabase@2.117.0', ...args, '--workdir
 let created = reuse, completed = false, relays
 try {
   if (!reuse) {
-    await run('docker', ['network', 'create', '--internal', '--opt', 'com.docker.network.bridge.host_binding_ipv4=127.0.0.1', '--label', `com.tll.fixture=${project}`, network])
+    // Do not mark the bridge --internal: the CLI health/setup path connects
+    // from the host to published loopback ports (e.g. 127.0.0.1:55522). An
+    // internal network leaves those publishes unreachable (ECONNREFUSED) even
+    // when Postgres is healthy inside the container. Loopback binding still
+    // confines host exposure to 127.0.0.1.
+    await run('docker', ['network', 'create', '--opt', 'com.docker.network.bridge.host_binding_ipv4=127.0.0.1', '--label', `com.tll.fixture=${project}`, network])
     created = true
   }
   // Linux Docker intentionally does not publish internal-only bridge ports.
