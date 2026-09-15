@@ -9,6 +9,7 @@ import postcss from 'postcss'
 import tailwind from '@tailwindcss/postcss'
 import { chromium } from 'playwright'
 import { verifyShareResults, verifyWizard } from './journeys.mjs'
+import { verifyOfferLinks } from './offers.mjs'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const resultDir = resolve(root, 'test-results/accessibility')
@@ -20,6 +21,7 @@ const bundle = await build({
     'process.env.NODE_ENV': '"development"',
     // Exercise ordinary component interactions with only the local adapters.
     'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"local-browser-fixture"',
+    'process.env.NEXT_PUBLIC_AMAZON_TAG': '"theliftinglab-21"',
   },
   plugins: [{ name: 'isolated-provider-adapters', setup(builder) {
     builder.onResolve({ filter: /^next\/(link|navigation)$|^@\/lib\/supabase$/ }, args => ({ path: args.path, namespace: 'fixture' }))
@@ -36,7 +38,7 @@ const bundle = await build({
 const css = (await postcss([tailwind()]).process(await readFile(resolve(root, 'app/globals.css'), 'utf8'), { from: resolve(root, 'app/globals.css') })).css
 const html = '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"></head><body><div id="fixture"></div><script src="/fixture.js"></script></body></html>'
 const server = createServer((req, res) => {
-  if (req.url === '/' || req.url === '/wizard') { res.setHeader('Content-Type', 'text/html'); res.end(html) }
+  if (req.url === '/' || req.url === '/wizard' || req.url === '/offers') { res.setHeader('Content-Type', 'text/html'); res.end(html) }
   else if (req.url === '/fixture.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(bundle.outputFiles[0].contents) }
   else if (req.url === '/fixture.css') { res.setHeader('Content-Type', 'text/css'); res.end(css) }
   else { res.statusCode = 404; res.end() }
@@ -53,7 +55,7 @@ try {
     page.on('pageerror', error => errors.push(error.message))
     await page.route('**/*', route => {
       const url = new URL(route.request().url())
-      return url.origin === origin && ['/', '/wizard', '/fixture.js', '/fixture.css'].includes(url.pathname)
+      return url.origin === origin && ['/', '/wizard', '/offers', '/fixture.js', '/fixture.css'].includes(url.pathname)
         ? route.continue() : route.abort()
     })
     await page.goto(origin)
@@ -115,8 +117,9 @@ try {
     await page.keyboard.press('Escape')
     await verifyShareResults(page)
     await verifyWizard(page, origin, width, resultDir)
+    await verifyOfferLinks(page, origin, width, resultDir)
     assert.deepEqual(errors, [], 'Fixture browser raised an uncaught error')
-    results.push({ width, overflow: false, closedDrawerUnfocusable: true, dialogs: 3, keyboard: 'pass', shareResults: 'busy/success/zero/http-error/network-error', wizard: 'focus/budget/eligibility/long-names' })
+    results.push({ width, overflow: false, closedDrawerUnfocusable: true, dialogs: 3, keyboard: 'pass', shareResults: 'busy/success/zero/http-error/network-error', wizard: 'focus/budget/eligibility/long-names', offers: 'listing/search/missing/own-shop; card/sticky; keyboard/labels/44px/overflow; no navigation' })
     await page.close()
   }
 } finally {
