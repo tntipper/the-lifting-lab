@@ -2,21 +2,23 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import AccessibleDialog from '@/components/AccessibleDialog'
+import { assessmentText } from '@/lib/stack-assessment'
+import { useCatalogueAssessments } from '@/components/useCatalogueAssessments'
 import { track } from '@/lib/gtag'
 
 // Honour-system share modal: pre-written copy + social links, then a manual
 // "I've shared this" claim that awards points (DB enforces cooldown/age).
 export default function ShareModal({
-  open, onClose, productId, productName, brand, score,
+  open, onClose, productId, productName, brand,
 }: {
   open: boolean
   onClose: () => void
   productId: string
   productName: string
   brand: string
-  score: number | null
 }) {
   const titleId = useId()
+  const catalogue = useCatalogueAssessments([productId], open)
   const claimStatus = useRef<HTMLParagraphElement>(null)
   const [url, setUrl] = useState('')
   const [claimed, setClaimed] = useState<null | number>(null)
@@ -32,8 +34,10 @@ export default function ShareModal({
 
   if (!open) return null
 
-  const caption =
-    `Just checked ${brand} ${productName}${score != null ? ` — scored ${score}/100` : ''} on The Lifting Lab, evidence-based UK supplement scoring. ${url}`
+  const product = catalogue.products[0]
+  const caption = product
+    ? `${product.brand} ${product.name} — ${assessmentText(product)}. Research record on The Lifting Lab. ${url}`
+    : `${brand} ${productName} — ${catalogue.loading ? 'assessment loading' : 'assessment unavailable'}. Check the current research record; no benefit recommendation. ${url}`
 
   const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}`
 

@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { parseShareProductIds } from '@/lib/share-products'
+import { assessmentDisplayFor } from '@/lib/assessment-display'
 import { getShareProducts } from '@/lib/share-products-server'
 
 export const runtime = 'edge'
@@ -12,13 +13,6 @@ function scoreColor(score: number | null): string {
   if (score >= 75) return '#a6e22e'
   if (score >= 50) return '#f5b342'
   return '#ff5c5c'
-}
-
-function scoreLabel(score: number | null): string {
-  if (score == null) return '—'
-  if (score >= 75) return 'Excellent'
-  if (score >= 50) return 'Good'
-  return 'Weak'
 }
 
 export async function GET(request: Request) {
@@ -78,7 +72,7 @@ export async function GET(request: Request) {
             My Supplement Selection
           </span>
           <span style={{ color: '#9ca3af', fontSize: 22, marginTop: 24 }}>
-            {items.length} product{items.length === 1 ? '' : 's'} · Individual catalogue scores
+            {items.length} product{items.length === 1 ? '' : 's'} · Historical catalogue values
           </span>
           <span style={{ color: '#9ca3af', fontSize: 20, marginTop: 16, textAlign: 'center' }}>
             This selection has not been assessed as a combined stack.
@@ -88,8 +82,9 @@ export async function GET(request: Request) {
         {/* Product list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
           {items.slice(0, maxItems).map((item, idx) => {
-            const sc = item.score
-            const c = scoreColor(sc)
+            const assessment = assessmentDisplayFor(item)
+            const sc = assessment.score
+            const c = assessment.state === 'legacy' ? scoreColor(sc) : '#9ca3af'
             return (
               <div
                 key={idx}
@@ -129,7 +124,7 @@ export async function GET(request: Request) {
                   </span>
                 </div>
                 <span style={{ color: c, fontSize: 15, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, flexShrink: 0 }}>
-                  {scoreLabel(sc)}
+                  {assessment.label}
                 </span>
               </div>
             )
@@ -153,7 +148,7 @@ export async function GET(request: Request) {
           }}
         >
           <span style={{ color: '#374151', fontSize: 14, letterSpacing: 2 }}>
-            Individual product assessments · Not medical advice
+            Scientific review incomplete · No combined-stack assessment
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab

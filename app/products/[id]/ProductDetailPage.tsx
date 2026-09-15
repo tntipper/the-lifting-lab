@@ -294,7 +294,6 @@ export default function ProductDetailPage({
         productId={product.id}
         productName={product.name}
         brand={product.brand}
-        score={canRecommend ? product.score : null}
       />
     </div>
   )

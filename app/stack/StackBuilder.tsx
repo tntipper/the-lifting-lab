@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem } from '@/lib/nutrient-limits'
 import { rniFor, type Sex } from '@/lib/nutrient-rda'
-import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { catalogueAssessment, summariseStackAssessments, assessmentText, stackResearchText } from '@/lib/stack-assessment'
 import { scoreFor } from '@/lib/scores'
 import { resolveProductListing } from '@/lib/affiliate'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -86,26 +87,27 @@ function getDailyTotals(stackItems: StackItem[], sex: Sex): DailyTotal[] {
     })
 }
 
-function buildEmailLink(score: number | null, items: StackItem[]): string {
-  const subject = `My Supplement Stack — Score ${score ?? '?'}/100 | The Lifting Lab`
+function buildEmailLink(items: StackItem[], listedCount: number): string {
+  const summary = summariseStackAssessments(items.flatMap(item => item.products ? [item.products] : []), listedCount)
+  const subject = 'My Supplement Research Stack | The Lifting Lab'
   const lines = [
     `MY SUPPLEMENT STACK`,
-    `Stack Score: ${score ?? '—'}/100`,
+    summary.text,
     ``,
     `Products:`,
     ...items
       .filter((i) => i.products)
       .map((i) => {
         const p = i.products!
-        const sc = scoreFor(p.brand, p.name)
+        const assessment = assessmentText(catalogueAssessment(p))
         const listing = resolveProductListing(p.buy_url)
         const destination = listing.state === 'listing' && listing.url
           ? `Retailer listing at ${listing.retailer} (check product, pack and price${listing.relationship === 'affiliate' ? '; affiliate link' : '; external link'}): ${listing.url}`
           : 'No verified offer.'
-        return `• ${p.brand} ${p.name}${sc != null ? ` (${sc}/100)` : ''}\n  ${destination}`
+        return `• ${p.brand} ${p.name} — ${assessment}\n  ${destination}`
       }),
     ``,
-    `Analysed at theliftinglab.co.uk`,
+    `Research records at theliftinglab.co.uk`,
     `Not medical advice.`,
   ]
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`
@@ -240,18 +242,15 @@ export default function StackBuilder() {
 
   const stackProductIds = new Set(stack.map(item => item.id))
 
-  // ---- clinical scoring (Path A scores, looked up by brand + name) ----
-  const scoredItems = stackItems
-    .map((i) => (i.products ? scoreFor(i.products.brand, i.products.name) : null))
-    .filter((s): s is number => s != null)
-  const avgScore =
-    scoredItems.length > 0
-      ? Math.round(scoredItems.reduce((a, b) => a + b, 0) / scoredItems.length)
-      : null
+  // Catalogue identities are hydrated separately from saved membership. A
+  // stored score, unresolved serving or unavailable record cannot affect this
+  // historical average; it is not a combined-stack assessment.
+  const assessmentProducts = stackItems.flatMap(item => item.products ? [item.products] : [])
+  const assessmentSummary = summariseStackAssessments(assessmentProducts, stack.length)
 
   const dailyTotals = getDailyTotals(stackItems, sex)
   const shareUrl = buildShareUrl(stackItems)
-  const emailUrl = buildEmailLink(avgScore, stackItems)
+  const emailUrl = buildEmailLink(stackItems, stack.length)
 
   // Explicit listings only. A research stack does not create a cart or order.
   const retailerGroups = useMemo(() => {
@@ -270,11 +269,7 @@ export default function StackBuilder() {
 
   // Social share text for the whole stack.
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.theliftinglab.co.uk'
-  const shareText =
-    `My supplement stack${avgScore != null ? ` scored ${avgScore}/100` : ''} on The Lifting Lab` +
-    (stackItems.length
-      ? `: ${stackItems.filter((i) => i.products).map((i) => `${i.products!.brand} ${i.products!.name}`).join(', ')}.`
-      : '.')
+  const shareText = stackResearchText(assessmentProducts, stack.length)
   const xShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(siteUrl)}`
   const fbShare = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(siteUrl)}&quote=${encodeURIComponent(shareText)}`
   const waShare = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${siteUrl}`)}`
@@ -289,9 +284,9 @@ export default function StackBuilder() {
     }
   }
 
-  // RDA coverage summary: nutrients hitting 100% RNI without exceeding the UL.
+  // Reference percentages describe label totals; they do not establish an
+  // effective or recommended combined dose, including for legacy records.
   const rdaTracked = dailyTotals.filter((t) => t.rdaPercent != null)
-  const rdaMet = rdaTracked.filter((t) => t.rdaPercent! >= 100 && (t.ulPercent == null || t.ulPercent < 100))
 
   return (
     <div className="space-y-6">
@@ -306,25 +301,15 @@ export default function StackBuilder() {
         <p>Serving amounts need review. These saved items are excluded from totals and stack analysis until corrected; no default dose has been substituted.</p>
         {unresolved.map(item => <div key={item.product_id} className="flex justify-between gap-3"><span>{item.products?.brand} {item.products?.name || 'Unavailable saved product'} — amount unresolved</span><button type="button" className="underline" disabled={state.busy} onClick={() => remove(item.product_id)}>Remove</button></div>)}
       </div>}
-      {/* Stack score summary */}
+      {/* Historical product summary, not an assessment of the combined stack */}
       {!loading && stackItems.length > 0 && (
         <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5">
-          <ScoreBadge score={avgScore} size="lg" />
+          <div className="shrink-0 text-2xl font-bold text-lab-muted" aria-label="Historical average">
+            {assessmentSummary.average === null ? '—' : `${assessmentSummary.average}/100`}
+          </div>
           <div>
-            <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Stack Score</p>
-            <p className="text-white text-sm mt-1">
-              {avgScore != null ? (
-                <>
-                  Average Effectiveness Match score across{' '}
-                  <span className="font-bold" style={{ color: scoreColor(avgScore) }}>
-                    {scoredItems.length}
-                  </span>{' '}
-                  scored product{scoredItems.length === 1 ? '' : 's'}.
-                </>
-              ) : (
-                'No Effectiveness Match scores available for these products yet.'
-              )}
-            </p>
+            <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Historical product average</p>
+            <p className="text-white text-sm mt-1">{assessmentSummary.text}</p>
           </div>
         </div>
       )}
@@ -470,15 +455,13 @@ export default function StackBuilder() {
             </div>
           </div>
 
-          {/* RDA coverage summary */}
+          {/* Label-derived reference comparison, not a dose endorsement */}
           {rdaTracked.length > 0 && (
             <div className="px-4 py-2.5 border-b border-lab-border flex items-center gap-2">
-              <span className="text-sm" aria-hidden>🎯</span>
-              <span className="text-xs text-white/90">
-                Hitting 100% RDA on{' '}
-                <span className="font-black text-lab-lime">{rdaMet.length}</span>
-                <span className="text-lab-muted"> / {rdaTracked.length}</span> tracked nutrient{rdaTracked.length === 1 ? '' : 's'}
-                <span className="text-gray-600"> ({sex === 'male' ? 'adult male' : 'adult female'} baseline)</span>
+              <span className="text-xs text-lab-muted">
+                Label-derived reference percentages for {rdaTracked.length} nutrient{rdaTracked.length === 1 ? '' : 's'}
+                {' '}({sex === 'male' ? 'adult male' : 'adult female'} baseline).
+                {' '}These totals do not establish an effective or recommended dose.
               </span>
             </div>
           )}
@@ -487,12 +470,10 @@ export default function StackBuilder() {
             {dailyTotals.map((row) => {
               const ul = row.ulPercent
               const rda = row.rdaPercent
-              // Combined RAG: toxicity takes priority, then RDA achievement.
+              // Preserve explicit UL cautions; reference intake is descriptive.
               const dotColor =
                 ul != null && ul >= 100 ? '#ff5c5c'
                 : ul != null && ul >= 80 ? '#f5b342'
-                : rda != null && rda >= 100 ? '#a6e22e'
-                : rda != null ? '#2E8FE0'
                 : '#6b7280'
               return (
                 <div key={row.name} className="flex items-center gap-3 px-4 py-2.5">
@@ -505,7 +486,7 @@ export default function StackBuilder() {
                   {rda != null ? (
                     <span
                       className="text-[10px] font-bold shrink-0 w-14 text-right"
-                      style={{ color: rda >= 100 ? '#a6e22e' : '#2E8FE0' }}
+                      style={{ color: '#9ca3af' }}
                     >
                       {rda}% RDA
                     </span>
@@ -529,7 +510,7 @@ export default function StackBuilder() {
           </div>
           <div className="px-4 py-2 border-t border-lab-border">
             <p className="text-[10px] text-gray-600">
-              RDA = % of UK Reference Nutrient Intake (adult {sex}). <span style={{ color: '#a6e22e' }}>●</span> 100%+ RDA met.
+              RDA = % of UK Reference Nutrient Intake (adult {sex}).{' '}
               UL = EFSA Tolerable Upper Intake Level. <span style={{ color: '#f5b342' }}>●</span> ≥80% caution · <span style={{ color: '#ff5c5c' }}>●</span> ≥100% critical.
             </p>
           </div>
@@ -550,7 +531,7 @@ export default function StackBuilder() {
             {searching && <div className="px-4 py-3 text-lab-muted text-sm">Searching…</div>}
             {searchResults.map((product) => {
               const alreadyAdded = stackProductIds.has(product.id)
-              const score = scoreFor(product.brand, product.name)
+              const assessedProduct = catalogueAssessment(product)
               return (
                 <button
                   key={product.id}
@@ -559,14 +540,7 @@ export default function StackBuilder() {
                   className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-lab-panel-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-b border-lab-border last:border-0"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    {score != null && (
-                      <span
-                        className="text-xs font-black shrink-0 w-7 text-center"
-                        style={{ color: scoreColor(score) }}
-                      >
-                        {score}
-                      </span>
-                    )}
+                    <ProductAssessment product={assessedProduct} size="sm" />
                     <div className="min-w-0">
                       <p className="text-white text-sm font-medium truncate">{product.brand}</p>
                       <p className="text-lab-muted text-xs truncate">{product.name}</p>
@@ -602,7 +576,7 @@ export default function StackBuilder() {
           {stackItems.map((item) => {
             const product = item.products
             if (!product) return null
-            const score = scoreFor(product.brand, product.name)
+            const assessedProduct = catalogueAssessment(product)
             const nutrientFlags = flags.filter((f) =>
               f.products.includes(product.brand + ' ' + product.name)
             )
@@ -611,7 +585,7 @@ export default function StackBuilder() {
                 key={item.id}
                 className="flex gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
               >
-                <ScoreBadge score={score} />
+                <ProductAssessment product={assessedProduct} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">

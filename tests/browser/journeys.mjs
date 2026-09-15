@@ -24,19 +24,32 @@ async function focusIsInside(dialog) {
 
 export async function verifyShareResults(page) {
   const outcomes = [
-    { name: 'success', status: 200, body: { pointsAwarded: 25 }, message: '+25 points claimed!' },
-    { name: 'zero', status: 200, body: { pointsAwarded: 0 }, message: 'No points were awarded.' },
-    { name: 'http-error', status: 503, body: {}, message: 'Your share claim could not be recorded.' },
-    { name: 'network-error', message: 'Your share claim could not be recorded.' },
+    { name: 'success', category: 'zma', score: 99, assessment: 'Under review', status: 200, body: { pointsAwarded: 25 }, message: '+25 points claimed!' },
+    { name: 'zero', category: 'creatine', score: 0, assessment: 'Not assessed', status: 200, body: { pointsAwarded: 0 }, message: 'No points were awarded.' },
+    { name: 'http-error', category: 'creatine', score: 80, assessment: 'Legacy score 80/100', status: 503, body: {}, message: 'Your share claim could not be recorded.' },
+    { name: 'network-error', category: 'creatine', score: null, assessment: 'Not assessed', message: 'Your share claim could not be recorded.' },
   ]
   for (const outcome of outcomes) {
     let captureRoute
     const pending = new Promise(resolveRoute => { captureRoute = resolveRoute })
     const handler = route => { captureRoute(route) }
     await page.route('**/api/share', handler)
+    const captionHandler = route => {
+      assert.equal(route.request().method(), 'GET')
+      assert.deepEqual([...new URL(route.request().url()).searchParams.keys()], ['ids'])
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ products: [{
+        id: '20000000-0000-4000-8000-000000000001', name: `Server record ${outcome.name}`, brand: 'Server fixture', category: outcome.category, score: outcome.score,
+      }] }) })
+    }
+    await page.route('**/api/stack/assessments?*', captionHandler)
     const trigger = page.getByRole('button', { name: 'Open share fixture' })
     await trigger.focus(); await page.keyboard.press('Enter')
     const dialog = page.getByRole('dialog', { name: 'Share & earn 25 pts' })
+    await page.waitForFunction(expected => document.querySelector('textarea[aria-label="Share caption"]')?.value.includes(expected), outcome.assessment)
+    const caption = await dialog.getByRole('textbox', { name: 'Share caption' }).inputValue()
+    assert.match(caption, new RegExp(`Server record ${outcome.name}`))
+    assert.doesNotMatch(caption, /evidence-based UK|Synthetic product with|Excellent|Good dosing/)
+    assert.equal(new URL(await dialog.getByRole('link', { name: 'Share on X' }).getAttribute('href')).searchParams.get('text'), caption)
     const status = dialog.getByRole('status')
     const action = dialog.getByRole('button', { name: "I've shared this · +25 pts" })
     await action.focus(); await page.keyboard.press('Enter')

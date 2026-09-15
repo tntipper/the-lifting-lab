@@ -1,6 +1,8 @@
 'use client'
 
 import { useId, useState } from 'react'
+import ProductAssessment from '@/components/ProductAssessment'
+import { useCatalogueAssessments } from '@/components/useCatalogueAssessments'
 import AccessibleDialog from '@/components/AccessibleDialog'
 import Link from 'next/link'
 import { useLocalStack } from '@/components/LocalStackContext'
@@ -11,6 +13,7 @@ export default function StackFAB() {
   const { stack, state, remove, clear, retry } = useLocalStack()
   const [open, setOpen] = useState(false)
   const titleId = useId()
+  const catalogue = useCatalogueAssessments(stack.map(item => item.id), open)
 
   // keep the panel accessible even when stack empties (so user sees "empty" state briefly)
   const count = stack.length
@@ -93,41 +96,30 @@ export default function StackFAB() {
                 <span className="text-[11px]">Tap + Stack on any product card.</span>
               </p>
             )}
-            {stack.map((item) => (
+            {stack.map((item) => {
+              const trusted = catalogue.products.find(product => product.id === item.id)
+              const display = trusted ?? item
+              return (
               <div
                 key={item.id}
                 className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
               >
-                {/* score ring dot */}
-                <span
-                  className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black"
-                  style={{
-                    background: item.score != null && item.score >= 70
-                      ? 'rgba(166,226,46,0.15)'
-                      : item.score != null && item.score >= 50
-                      ? 'rgba(232,160,32,0.15)'
-                      : 'rgba(224,90,43,0.15)',
-                    color: item.score != null && item.score >= 70
-                      ? '#a6e22e'
-                      : item.score != null && item.score >= 50
-                      ? '#E8A020'
-                      : '#E05A2B',
-                  }}
-                >
-                  {item.score ?? '—'}
-                </span>
+                {/* Stored browser scores are never used as assessments. */}
+                {trusted
+                  ? <ProductAssessment product={trusted} size="sm" />
+                  : <span className="max-w-20 text-[10px] text-lab-muted">{catalogue.loading ? 'Loading assessment…' : 'Assessment unavailable'}</span>}
 
                 {/* name */}
                 <div className="min-w-0 flex-1">
-                  <Link href={`/products/${item.id}`} onClick={() => setOpen(false)} className="text-[12px] font-bold text-white break-words hover:underline">{item.name}</Link>
-                  <p className="text-[10px] text-white/40 uppercase tracking-widest">{item.brand}</p>
+                  <Link href={`/products/${item.id}`} onClick={() => setOpen(false)} className="text-[12px] font-bold text-white break-words hover:underline">{display.name}</Link>
+                  <p className="text-[10px] text-white/40 uppercase tracking-widest">{display.brand}</p>
                 </div>
 
                 {/* remove */}
                 <button
                   type="button"
-                  aria-label={`Remove ${item.name} from My Stack`}
+                  aria-label={`Remove ${display.name} from My Stack`}
                   onClick={(event) => {
                     event.currentTarget.closest('dialog')?.querySelector<HTMLElement>('[data-dialog-initial-focus]')?.focus()
                     remove(item.id)
@@ -139,7 +131,7 @@ export default function StackFAB() {
                   ×
                 </button>
               </div>
-            ))}
+            )})}
           </div>
 
           {/* footer actions */}
