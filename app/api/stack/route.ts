@@ -26,6 +26,10 @@ async function mutate(request: Request) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user)
             return json({ error: 'Unauthorized' }, 401);
+        // Session cookies remain authoritative. A durable addition records its
+        // originating account, so a cookie switch cannot retarget that request.
+        if (request.method === 'POST' && request.headers.get('x-stack-expected-user') !== user.id)
+            return json({ error: 'Your signed-in account changed. Reconnect before retrying this addition.' }, 409);
         const parsed = await readStackBody(request);
         if (parsed.status)
             return json({ error: parsed.status === 413 ? 'This stack request is too large.' : 'Invalid stack request.' }, parsed.status);

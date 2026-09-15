@@ -20,7 +20,7 @@ function fixture({signedIn=true,providerError=false,outcome={status:'applied',sn
  }
  return{routes:load('app/api/stack/route.ts'),parser:load('lib/stack-api.ts'),calls,awards}
 }
-const request=(method,body,headers={})=>new Request('https://fixture.test/api/stack',{method,headers:{'content-type':'application/json','idempotency-key':randomUUID(),...headers},body:typeof body==='string'?body:JSON.stringify(body)})
+const request=(method,body,headers={})=>new Request('https://fixture.test/api/stack',{method,headers:{'content-type':'application/json','idempotency-key':randomUUID(),'x-stack-expected-user':U,...headers},body:typeof body==='string'?body:JSON.stringify(body)})
 test('GET performs only the read RPC and never creates a stack',async()=>{
  const f=fixture();const response=await f.routes.GET()
  assert.equal(response.status,200);assert.deepEqual(await response.json(),snapshot)
@@ -71,4 +71,16 @@ test('conflict responses cannot expose a snapshot for a different account',async
  const f=fixture({outcome:{status:'conflict',snapshot:{...snapshot,userId:'11111111-1111-4111-8111-111111111111'}}})
  const result=await f.routes.DELETE(request('DELETE',{clear:true,expectedRevision:1}))
  assert.equal(result.status,503);assert.equal((await result.text()).includes('11111111'),false)
+})
+test('additive requests require the originating account and reject session-switch races before RPC or reward',async()=>{
+ for(const expected of ['', '33333333-3333-4333-8333-333333333333', 'not-an-account']){
+  const f=fixture()
+  for(const body of [{productId:P},{productIds:[P]}]) {
+   const response=await f.routes.POST(request('POST',body,{'x-stack-expected-user':expected}))
+   assert.equal(response.status,409);assert.equal((await response.text()).includes(U),false)
+  }
+  assert.equal(f.calls.length,0);assert.equal(f.awards.length,0)
+ }
+ const missing=request('POST',{productId:P});missing.headers.delete('x-stack-expected-user')
+ const f=fixture();assert.equal((await f.routes.POST(missing)).status,409);assert.equal(f.calls.length,0)
 })
