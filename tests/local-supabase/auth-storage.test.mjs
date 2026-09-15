@@ -102,7 +102,8 @@ before(async () => {
     assert.deepEqual(Object.keys(container.NetworkSettings.Networks), [`${PROJECT}-net`])
   }
   const network = JSON.parse(execFileSync('docker', ['network', 'inspect', `${PROJECT}-net`], { encoding: 'utf8' }))[0]
-  assert.equal(network.Internal, true)
+  // Internal bridges break host→published-port connectivity the CLI needs.
+  assert.equal(network.Internal, false)
   assert.equal(network.Options['com.docker.network.bridge.host_binding_ipv4'], '127.0.0.1')
   const authEnv = containers.find(c => c.Name === `/supabase_auth_${PROJECT}`).Config.Env
   assert.ok(authEnv.includes(`GOTRUE_SMTP_HOST=supabase_inbucket_${PROJECT}`))

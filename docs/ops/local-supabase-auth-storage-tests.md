@@ -18,7 +18,7 @@ A GitHub Actions job can run the same command after checkout and `actions/setup-
 
 ## Isolation and lifecycle
 
-The runner creates a temporary project outside the checkout, with the fixed project ID `tll-local-integration`. Its dedicated Docker bridge is internal and sets `com.docker.network.bridge.host_binding_ipv4=127.0.0.1`; the CLI uses it through `--network-id`. API HTTPS uses port 55521, database 55522 and Mailpit HTTP 55524. All published addresses and the container/network identity are checked before any synthetic signup. Existing unrelated Docker containers are not stopped, removed or reset, and their IDs and port mappings are checked after the run.
+The runner creates a temporary project outside the checkout, with the fixed project ID `tll-local-integration`. Its dedicated Docker bridge sets `com.docker.network.bridge.host_binding_ipv4=127.0.0.1` (loopback-only publishes) and is **not** marked `--internal`, because an internal bridge makes the CLI's host-side Postgres connect to `127.0.0.1:55522` fail with `ECONNREFUSED` even when the database container is healthy. The CLI uses the bridge through `--network-id`. API HTTPS uses port 55521, database 55522 and Mailpit HTTP 55524. All published addresses and the container/network identity are checked before any synthetic signup. Existing unrelated Docker containers are not stopped, removed or reset, and their IDs and port mappings are checked after the run.
 
 The CLI starts with these exclusions:
 
