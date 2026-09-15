@@ -1,0 +1,49 @@
+# Disabled Shopify customer connection foundation
+
+This is an offline, server-owned account-connection foundation. **`liveEnabled` is permanently false.** No routes, callbacks, Shopify/Supabase providers, credential transports, production UI or database changes are installed. Complete common-login SSO remains pending.
+
+The staging store identity and public discovery were verified on 15 September 2026: shop `107532616020`, storefront `tll-integration-staging.myshopify.com`, issuer `https://shopify.com/authentication/107532616020`, RS256 and S256. These public values are pinned. No real customer claims, JWKS snapshot or login have been accepted here. The client ID, exact immutable staging callback and accountable configuration approval still must be supplied. A missing, expired or mismatched configuration holds without creating an attempt or invoking a transport. This module supports only `/auth/shopify/callback` on an explicitly configured HTTPS Vercel deployment; it does not approve every Vercel origin.
+
+## What is implemented
+
+- Independent random 256-bit state, nonce and PKCE verifier; S256 challenge. The private attempt stores only a hash of the browser state and binds the exact shop, configuration hash, callback, Supabase UUID and session ID. State is consumed once before an exchange; invalid/replayed/expired states cannot exchange a code.
+- Explicit session-proof validation: the adapter must verify the real Supabase session and current revocation status. Start and callback require an actual login/reauthentication within five minutes. A refreshed JWT's `iat`, browser `getSession`, email address or caller-provided UUID is not this proof. Callback rechecks that the same session still exists after the provider exchange. Refresh/logout require a current valid authenticated session.
+- RS256 signature and claim verification with pinned `jose 6.2.12`, using only a supplied, time-bounded public RSA JWKS snapshot. Exact issuer, one client audience, subject, expiry, issue time and nonce are checked; unknown keys, extra audiences, wrong algorithms/signatures, private key material, `jku` and `x5u` fail closed. No remote JWKS fetching occurs. The snapshot is a trusted server input, not a browser-provided key set. Email/verification flags are not used as an identity key. This is real cryptographic verification against synthetic signed tokens, not validation of an actual Shopify identity.
+- An atomic repository contract for one-use attempts, immutable subject ownership, private token storage, refresh claims/fences, uncertain outcomes and logout generations. A binding is `(shop, issuer, subject) -> existing Supabase UUID`, with uniqueness in both directions. Exact reauthentication may replace tokens; another subject or account is a conflict. No auth UUID rewrite, email merge, reward or `auth.identities` mutation exists.
+- Only status, connection ID, expiry and the authorization URL can leave the domain as a caller result. Provider tokens, PKCE verifier, ID claims and raw errors never appear in those DTOs. Authorization state/nonce/challenge are OAuth request parameters, not provider credentials.
+
+## Ports that must be implemented and reviewed before staging login
+
+`CustomerConnectionRepository` is a specification, **not a database implementation**. The sole reference store is under `tests/fixtures/`; its Maps are neither encrypted nor durable. Real PostgreSQL/vault implementation must prove atomic transactions and uniqueness, commit acknowledgement before token exchange, fencing, expiry, logout-generation checks, and recovery using database time. Browser roles must have no grants. Vault encryption/key rotation, restricted secret read access, backup handling and erasure are separate required work; this patch does not invent a database cipher.
+
+`currentSession` is a trusted server adapter. It must authenticate a supplied request using the exact staging Supabase issuer, check revocation/session ownership, and derive the last real authentication time. Signed JWT validity alone is insufficient to prove the session is still current. All epoch timestamps in the domain are milliseconds. The domain clock must be trustworthy and aligned with repository time.
+
+`exchangeCode` / `refreshToken` are injected server-only transports. No transport is shipped. The future Confidential client adapter owns the secret, uses the pinned endpoint and `client_secret_basic`, requires TLS, refuses redirects, limits response sizes/time, and returns a validated complete response. It must not print credentials or token-bearing errors. No request is reconstructed from a browser host or redirect. The OAuth scope set is exactly `openid email customer-account-api:full`; it is separate from the two shop-side read permissions and does not add write scopes.
+
+The JWKS loader is also absent: it must fetch the exact pinned URL, verify TLS, reject redirects/unexpected keys, enforce freshness/size limits, and hold for unknown rotation until a fresh approved snapshot is available. The cryptographic verifier never accepts `decodeJwt` as authentication, arbitrary issuer discovery or a key referenced inside the token.
+
+## Refresh and logout states
+
+| Transition | Required committed repository behaviour |
+| --- | --- |
+| pending -> exchanging | Exact owner/session/config and nonexpired state; one claimant; commit before code exchange. |
+| exchanging -> connected | Both proofs, unchanged logout generation, live attempt/fence; unique binding and encrypted token bundle committed atomically. |
+| exchanging -> held | Any failed/unknown token exchange or commit; never reuse that code/state. |
+| active -> refreshing | One claim per connection with monotonic fence and a 60-second lease, committed before exposing its refresh token. |
+| refreshing -> active | Current fence/generation and live lease; replace access/refresh tokens and provider expiry atomically. Retain prior ID token if refresh omits one; if supplied, verify it and require unchanged subject. Its nonce may be absent; a present nonce must match the privately retained original login nonce. |
+| refreshing -> held | Unknown response, lost commit acknowledgement, invalid claims or expired lease. A timeout must never restore active state or permit a blind retry with the old refresh token. Explicit reauthentication is required. |
+| any -> logged out | Atomically disable token use, invalidate pending callbacks, increment logout generation and fence refreshes. Preserve identity reservation; no implicit unlink/merge. |
+
+Local logout reports upstream logout **pending**, not complete. A future reviewed front-channel logout flow must handle Shopify's `id_token_hint`, CSRF state and redirect requirements without feeding provider credentials into the ordinary Supabase cookie/session pipeline. This foundation deliberately does not return an ID-token-bearing logout URL or claim that a server request clears the browser's Shopify session. Restricted logout-intent material belongs in the private repository.
+
+The repository contract handles races across processes. The tests exercise two foundation instances against one synthetic store and paused/lost operations, but cannot prove PostgreSQL isolation, failover durability or real refresh rotation. A forged implementation of a trusted port is outside this domain's trust boundary. `syntheticExecution:true` exists only to exercise those injected ports; it is not a sandbox against a malicious transport, and there is no production activation flag.
+
+## Acceptance and next integration
+
+Validation: 870 full unit tests passed; the 49 focused connection cases also passed after the final repeated-logout regression. Type checking passed. Full lint passed with zero errors and six existing unrelated warnings. No browser/build rerun was needed because this unreferenced server domain adds no route or UI.
+
+Focused tests cover config/approval lineage, fresh and wrong-user session proofs, PKCE/state secrecy, callback cancellation/replay/concurrency, real signed JWT failures, identity collisions and email changes, lost exchange/commit responses, refresh serialization/expired leases, logout races, and redacted outputs. Existing Next routes and browser cookies are unchanged. No hosted test, email, purchase, cart mutation or supplier action occurred.
+
+Before mounting any staging route: implement and independently test the durable repository/vault and verified session/transport/JWKS adapters; pin the exact reviewed callback/client configuration; exercise authorized synthetic identities and actual token/scopes/expiry/logout behaviour. Common-login migration requires a separate subject-based identity design. Direct Supabase custom OAuth remains held because automatic email linking and upstream token handoff do not meet the approved ownership/token policy.
+
+Sources: [OpenID Connect refresh-token validation](https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse), [Shopify Customer Account authentication](https://shopify.dev/docs/api/customer/latest), [Supabase identity linking](https://supabase.com/docs/guides/auth/auth-identity-linking), [Supabase provider-token responsibility](https://supabase.com/docs/guides/auth/social-login#provider-tokens), [jose JWT verification](https://github.com/panva/jose/blob/main/docs/jwt/verify/functions/jwtVerify.md), [local JWKS verification](https://github.com/panva/jose/blob/main/docs/jwks/local/functions/createLocalJWKSet.md). Next 15.5.25 has no bundled `node_modules/next/dist/docs`; the official [Next 15 server/client boundary documentation](https://nextjs.org/docs/15/app/getting-started/server-and-client-components) was consulted instead. This module must remain server-only when routes are later introduced.
