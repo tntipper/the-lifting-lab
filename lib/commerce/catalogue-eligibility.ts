@@ -1,4 +1,6 @@
 /** Shared decision foundation only. No routes, database access, links inferred from names, or publishing. */
+import type { PricingValidityWindow } from './pricing-policy'
+
 export type CatalogueReview = {
   approved: boolean
   version: string
@@ -21,6 +23,7 @@ export type CataloguePolicy = {
   maxStockAgeMs: number
   maxPriceAgeMs: number
   expectedPricingPolicyVersion: string
+  expectedPaymentTariffVersion: string
 }
 export type ExactMapping = {
   review: CatalogueReview
@@ -50,6 +53,9 @@ export type ApprovedCostGate = {
   supplierSku: string
   mappingVersion: string
   pricingPolicyVersion: string
+  paymentTariffVersion: string
+  /** Copied from the calculator, without extending any dependency's lifetime. */
+  dependencyValidity: PricingValidityWindow
   currency: 'GBP'
   allAttributableCostsKnown: boolean
   taxTreatmentApproved: boolean
@@ -123,7 +129,7 @@ export type CatalogueEligibilityInput = {
   servingBasis: ServingBasis | null
 }
 export type EligibilityReasonCode = 'MISSING_INPUT' | 'INVALID_INPUT' | 'UNAPPROVED' | 'STALE_VERSION' |
-  'EXPIRED' | 'FUTURE_EVIDENCE' | 'STALE_STOCK' | 'STALE_PRICE' | 'PRODUCT_NOT_ACTIVE' |
+  'EXPIRED' | 'NOT_YET_EFFECTIVE' | 'FUTURE_EVIDENCE' | 'STALE_STOCK' | 'STALE_PRICE' | 'PRODUCT_NOT_ACTIVE' |
   'OPERATOR_HOLD' | 'OPERATOR_CLEARANCE_UNKNOWN' | 'MAPPING_NOT_EXACT' | 'ESTIMATED_IDENTITY' |
   'IDENTITY_MISMATCH' | 'INVALID_PACK_UNIT' | 'COMMERCE_LABEL_INCOMPLETE' | 'UNKNOWN_COST' |
   'UNAPPROVED_TAX' | 'DELIVERY_COST_MISSING' | 'BELOW_PRICE_FLOOR' | 'UNRECONCILED_STOCK' |
@@ -144,7 +150,7 @@ export type CatalogueEligibilityResult = {
   display: { catalogueState: 'research_listed' | 'unassessed' | 'shop_only' | 'unavailable'; availability: 'available' | 'unavailable'; assessmentLabel: 'Research reviewed' | 'Not endorsed' | 'Not assessed' }
   linkState: 'exact_own_shop' | 'search_only' | 'unavailable'
   purchaseTarget: { url: string; shopifyProductId: string; shopifyVariantId: string; supplierSku: string; relationship: 'own_shop' } | null
-  versions: { policy: string | null; mapping: string | null; cost: string | null; price: string | null; stock: string | null; research: string | null }
+  versions: { policy: string | null; mapping: string | null; cost: string | null; payment: string | null; price: string | null; stock: string | null; research: string | null }
 }
 
 const MAX = 1_000_000_000
@@ -169,6 +175,15 @@ function observation(value: unknown, field: 'stock.observedAtMs' | 'price.observ
   }
   if (value > now) reason(into, 'FUTURE_EVIDENCE', field)
   if (now - value >= maxAge) reason(into, field === 'stock.observedAtMs' ? 'STALE_STOCK' : 'STALE_PRICE', field)
+}
+function dependencyValidity(value: PricingValidityWindow | null | undefined, now: number, into: EligibilityReason[]): void {
+  const field = 'cost.dependencyValidity'
+  if (!value) { reason(into, 'MISSING_INPUT', field); return }
+  if (!integer(value.validFromMs, 0, Number.MAX_SAFE_INTEGER) || !integer(value.expiresAtMs, 1, Number.MAX_SAFE_INTEGER) || value.expiresAtMs <= value.validFromMs) {
+    reason(into, 'INVALID_INPUT', field); return
+  }
+  if (value.validFromMs > now) reason(into, 'NOT_YET_EFFECTIVE', field)
+  if (value.expiresAtMs <= now) reason(into, 'EXPIRED', field)
 }
 function identity(value: FormulaIdentity | undefined, field: string, into: EligibilityReason[]): void {
   if (!value) { reason(into, 'MISSING_INPUT', field); return }
@@ -228,7 +243,7 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
   if (!integer(now, 0, Number.MAX_SAFE_INTEGER)) reason(common, 'INVALID_INPUT', 'evaluatedAtMs')
   const policy = value.policy, product = value.product, mapping = value.mapping
   review(policy?.review, 'policy.review', now, common)
-  if (!policy || !integer(policy.maxStockAgeMs, 1, Number.MAX_SAFE_INTEGER) || !integer(policy.maxPriceAgeMs, 1, Number.MAX_SAFE_INTEGER) || !present(policy.expectedPricingPolicyVersion) || !['/products/','/shop/products/'].includes(policy.productPathPrefix)) reason(commerce, 'INVALID_INPUT', 'policy.commerce')
+  if (!policy || !integer(policy.maxStockAgeMs, 1, Number.MAX_SAFE_INTEGER) || !integer(policy.maxPriceAgeMs, 1, Number.MAX_SAFE_INTEGER) || !present(policy.expectedPricingPolicyVersion) || !present(policy.expectedPaymentTariffVersion) || !['/products/','/shop/products/'].includes(policy.productPathPrefix)) reason(commerce, 'INVALID_INPUT', 'policy.commerce')
   if (!product || !present(product.id)) reason(common, 'MISSING_INPUT', 'product')
   if (product?.status !== 'active') reason(common, 'PRODUCT_NOT_ACTIVE', 'product.status')
   if (!['research_and_shop','shop_only'].includes(product?.publication ?? '')) reason(common, 'INVALID_INPUT', 'product.publication')
@@ -260,12 +275,14 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
 
   const cost = value.cost, price = value.price, stock = value.stock
   review(cost?.review, 'cost.review', now, commerce)
+  dependencyValidity(cost?.dependencyValidity, now, commerce)
   if (!cost || cost.allAttributableCostsKnown !== true) reason(commerce, 'UNKNOWN_COST', 'cost')
   if (cost?.taxTreatmentApproved !== true) reason(commerce, 'UNAPPROVED_TAX', 'cost.tax')
   if (cost?.supplierDeliveryPencePerBillableItem !== 500) reason(commerce, 'DELIVERY_COST_MISSING', 'cost.supplierDelivery')
   if (cost?.currency !== 'GBP' || !integer(cost.minimumListPricePence, 1)) reason(commerce, 'INVALID_INPUT', 'cost.minimumListPrice')
   matches(cost?.mappingVersion, mapping?.review?.version, 'cost.mappingVersion', commerce)
   matches(cost?.pricingPolicyVersion, policy?.expectedPricingPolicyVersion, 'cost.pricingPolicyVersion', commerce)
+  matches(cost?.paymentTariffVersion, policy?.expectedPaymentTariffVersion, 'cost.paymentTariffVersion', commerce)
   matches(cost?.supplierSku, mapping?.supplierSku, 'cost.supplierSku', commerce)
   review(price?.review, 'price.review', now, commerce)
   observation(price?.observedAtMs, 'price.observedAtMs', now, policy?.maxPriceAgeMs, commerce)
@@ -316,7 +333,7 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
       availability: sellable ? 'available' : 'unavailable', assessmentLabel: endorsed ? 'Research reviewed' : assessmentState === 'assessed_not_endorsed' ? 'Not endorsed' : 'Not assessed' },
     linkState: sellable && url ? 'exact_own_shop' : value.destination?.kind === 'search_only' ? 'search_only' : 'unavailable',
     purchaseTarget: sellable && url && mapping ? { url, shopifyProductId: 'gid://shopify/Product/' + shopProduct(mapping.shopifyProductId), shopifyVariantId: 'gid://shopify/ProductVariant/' + variantId, supplierSku: mapping.supplierSku, relationship: 'own_shop' } : null,
-    versions: { policy: policy?.review?.version ?? null, mapping: mapping?.review?.version ?? null, cost: cost?.review?.version ?? null,
+    versions: { policy: policy?.review?.version ?? null, mapping: mapping?.review?.version ?? null, cost: cost?.review?.version ?? null, payment: cost?.paymentTariffVersion ?? null,
       price: price?.review?.version ?? null, stock: stock?.review?.version ?? null, research: assessment?.review?.version ?? null },
   }
 }

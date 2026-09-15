@@ -291,3 +291,62 @@ test('entirely and partially sparse baskets hold before aggregation, including s
     }
   }
 })
+
+test('floor lifetime is the intersection of cost, policy and payment approvals', () => {
+  for (const latest of ['cost', 'policy', 'payment']) {
+    const value = input()
+    for (const name of ['cost', 'policy', 'payment']) {
+      value[name].approval.validFromMs = NOW - 1000
+      value[name].approval.expiresAtMs = NOW + 1000
+    }
+    value[latest].approval.validFromMs = NOW - 1
+    value[latest].approval.expiresAtMs = NOW + 1
+    const result = calculatePriceFloor(value)
+    assert.equal(result.eligible, true)
+    assert.deepEqual(result.calculation.dependencyValidity, { validFromMs: NOW - 1, expiresAtMs: NOW + 1 })
+    value.nowMs = NOW + 1
+    hold(calculatePriceFloor(value), 'EXPIRED')
+  }
+})
+
+test('quantity-level discount rounding cannot hide a below-margin line behind profitable items or shipping', () => {
+  const ctx = input(2000); ctx.payment.fixedPence = 0
+  const floor = calculatePriceFloor(ctx).calculation.minimumListPricePence
+  assert.equal(floor, 3202)
+  for (const cover of ['item', 'shipping']) {
+    const bulk = line('bulk', 100, floor); bulk.percentageDiscountBps = 2000
+    const value = basket(cover === 'item' ? [bulk, line('profitable', 1, 100000)] : [bulk])
+    value.payment = ctx.payment; value.policy = ctx.policy
+    if (cover === 'shipping') value.customerShipping.grossPence = 100000
+    const result = evaluateBasket(value)
+    hold(result, 'BELOW_LINE_MARGIN')
+    assert.ok(result.holds.some(h => h.code === 'BELOW_LINE_MARGIN' && h.field === 'bulk'))
+    assert.equal(result.holds.some(h => h.code === 'BELOW_ITEM_FLOOR' || h.code === 'BELOW_MINIMUM_MARGIN'), false)
+    const observed = result.calculation.lines[0]
+    equalFraction(observed.conservativeLineContributionPence, ...fraction(observed.contributionPence))
+    const [cn, cd] = fraction(observed.conservativeLineContributionPence), [rn, rd] = fraction(observed.netRevenuePence)
+    assert.ok(cn * rd * 10000n < rn * cd * 2500n)
+    bulk.listUnitPricePence = floor + 1
+    assert.equal(evaluateBasket(value).eligible, true)
+  }
+})
+
+test('a profitable neighbour and lower order minimum cannot conceal a line below the £3-per-item cash floor', () => {
+  const ctx = input(2000); ctx.payment.fixedPence = 0
+  ctx.cost.wholesale.amountPence = 1; ctx.cost.returnsReservePence = 0
+  const floor = calculatePriceFloor(ctx).calculation.minimumListPricePence
+  assert.equal(floor, 1231)
+  const bulk = line('bulk-cash', 100, floor); bulk.cost = ctx.cost; bulk.percentageDiscountBps = 2000
+  const value = basket([bulk, line('profitable', 1, 100000)])
+  value.payment = ctx.payment; value.policy = ctx.policy
+  value.orderCashPolicy = { approval: approved(), minimumPence: 300 }
+  const result = evaluateBasket(value)
+  hold(result, 'BELOW_LINE_CASH')
+  assert.ok(result.holds.some(h => h.code === 'BELOW_LINE_CASH' && h.field === 'bulk-cash'))
+  assert.equal(result.holds.some(h => h.code === 'BELOW_ITEM_FLOOR' || h.code === 'BELOW_MINIMUM_CASH'), false)
+  assert.equal(result.calculation.lines[0].minimumLineCashPence, 30000)
+  const [cn, cd] = fraction(result.calculation.lines[0].conservativeLineContributionPence)
+  assert.ok(cn < 30000n * cd)
+  bulk.listUnitPricePence = floor + 1
+  assert.equal(evaluateBasket(value).eligible, true)
+})

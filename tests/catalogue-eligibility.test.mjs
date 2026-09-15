@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { evaluateCatalogueEligibility } from '../lib/commerce/catalogue-eligibility.ts'
+import { calculatePriceFloor, TLL_POLICY_VALUES } from '../lib/commerce/pricing-policy.ts'
 
 const NOW = 1800000000000
 function review(version = 'v1') { return { approved: true, version, expectedVersion: version, verifiedAtMs: NOW - 1000, expiresAtMs: NOW + 10000 } }
@@ -9,11 +10,11 @@ function fixture() {
   const item = identity()
   return {
     evaluatedAtMs: NOW, requestedQuantity: 1,
-    policy: { review: review('catalogue-policy-1'), ownShopOrigin:'https://shop.example.invalid', productPathPrefix:'/products/', maxStockAgeMs:60000, maxPriceAgeMs:300000, expectedPricingPolicyVersion:'pricing-policy-1' },
+    policy: { review: review('catalogue-policy-1'), ownShopOrigin:'https://shop.example.invalid', productPathPrefix:'/products/', maxStockAgeMs:60000, maxPriceAgeMs:300000, expectedPricingPolicyVersion:'pricing-policy-1', expectedPaymentTariffVersion:'payment-1' },
     product: { id:'product-a', status:'active', publication:'research_and_shop', identity:item },
     mapping: { review:review('mapping-1'), productId:'product-a',shopifyProductId:'gid://shopify/Product/2001',shopifyProductHandle:'product-a',shopifyVariantId:'gid://shopify/ProductVariant/1001',supplierSku:'SYNTHETIC-SKU-A',status:'exact',source:'verified_labels',shopIdentity:structuredClone(item),supplierIdentity:structuredClone(item) },
     commerceLabel: { review:review('commerce-label-1'),formulaId:item.formulaId,formulaVersion:item.formulaVersion,flavourId:item.flavourId,labelVersion:item.labelVersion,packVersion:item.pack.version,source:'manufacturer_label',requiredSellingInformationComplete:true },
-    cost: { review:review('cost-1'),shopifyVariantId:'1001',supplierSku:'SYNTHETIC-SKU-A',mappingVersion:'mapping-1',pricingPolicyVersion:'pricing-policy-1',currency:'GBP',allAttributableCostsKnown:true,taxTreatmentApproved:true,supplierDeliveryPencePerBillableItem:500,minimumListPricePence:2604 },
+    cost: { review:review('cost-1'),shopifyVariantId:'1001',supplierSku:'SYNTHETIC-SKU-A',mappingVersion:'mapping-1',pricingPolicyVersion:'pricing-policy-1',paymentTariffVersion:'payment-1',dependencyValidity:{validFromMs:NOW-1000,expiresAtMs:NOW+10000},currency:'GBP',allAttributableCostsKnown:true,taxTreatmentApproved:true,supplierDeliveryPencePerBillableItem:500,minimumListPricePence:2604 },
     price: { review:review('price-1'),observedAtMs:NOW-1000,shopifyVariantId:'1001',mappingVersion:'mapping-1',costVersion:'cost-1',currency:'GBP',amountPence:3000 },
     stock: { review:review('stock-1'),observedAtMs:NOW-1000,shopifyVariantId:'1001',supplierSku:'SYNTHETIC-SKU-A',packVersion:item.pack.version,basis:'reconciled_sellable_units',availableToSell:10 },
     operator: { review:review('clearance-1'),commerce:'clear',research:'clear' },
@@ -271,4 +272,88 @@ test('expiry and stale-age boundaries are exclusive and quantity projection uses
   held(evaluateCatalogueEligibility(value).commerce,'STALE_STOCK')
   value.evaluatedAtMs=NOW;value.stock.review.expiresAtMs=NOW
   held(evaluateCatalogueEligibility(value).commerce,'EXPIRED')
+})
+
+function pricingInputs() {
+  const approval = version => ({ version, expectedVersion: version, approved: true, validFromMs: NOW - 1000, expiresAtMs: NOW + 10000 })
+  const tax = { approved: true, basis: 'not_subject', vatBps: 0, inputVatRecoverable: false }
+  return {
+    nowMs: NOW,
+    cost: { approval: approval('cost-source-1'), currency: 'GBP', unit: 'sellable_item', unitDefinitionApproved: true,
+      wholesale: { amountPence: 1000, tax }, supplierDelivery: { amountPence: 500, tax }, otherPerItemCosts: [], returnsReservePence: 50,
+      outputVat: { approved: true, rateBps: 2000 } },
+    payment: { approval: approval('payment-1'), fixedPence: 25, variableBps: 200 },
+    policy: { approval: approval('pricing-policy-1'), ...TLL_POLICY_VALUES, maxDiscountBps: 0 },
+  }
+}
+function bindCalculatedFloor(value, calculation) {
+  value.cost.minimumListPricePence = calculation.minimumListPricePence
+  value.cost.pricingPolicyVersion = calculation.approvalVersions.policy
+  value.cost.paymentTariffVersion = calculation.approvalVersions.payment
+  value.cost.dependencyValidity = calculation.dependencyValidity
+}
+
+test('a changed payment tariff invalidates an old floor until the new calculator floor and price pass', () => {
+  const value = fixture(), pricing = pricingInputs()
+  const oldFloor = calculatePriceFloor(pricing).calculation
+  bindCalculatedFloor(value, oldFloor)
+  value.price.amountPence = oldFloor.minimumListPricePence
+  assert.equal(oldFloor.minimumListPricePence, 2604)
+  assert.equal(evaluateCatalogueEligibility(value).commerce.status, 'eligible')
+
+  pricing.payment.variableBps = 1500
+  pricing.payment.approval.version = pricing.payment.approval.expectedVersion = 'payment-2'
+  value.policy.expectedPaymentTariffVersion = 'payment-2'
+  const stale = evaluateCatalogueEligibility(value)
+  held(stale.commerce, 'IDENTITY_MISMATCH')
+  assert.ok(stale.commerce.reasons.some(r => r.field === 'cost.paymentTariffVersion'))
+  assert.equal(stale.purchaseTarget, null)
+  assert.equal(stale.research.status, 'eligible')
+
+  const newFloor = calculatePriceFloor(pricing).calculation
+  assert.equal(newFloor.minimumListPricePence, 3316)
+  bindCalculatedFloor(value, newFloor)
+  value.cost.review = review('cost-gate-2')
+  value.price.costVersion = 'cost-gate-2'
+  held(evaluateCatalogueEligibility(value).commerce, 'BELOW_PRICE_FLOOR')
+  value.price.amountPence = newFloor.minimumListPricePence
+  const result = evaluateCatalogueEligibility(value)
+  assert.equal(result.commerce.status, 'eligible')
+  assert.equal(result.versions.payment, 'payment-2')
+})
+
+test('fresh floor approval cannot extend any calculator dependency beyond its exclusive expiry', () => {
+  for (const dependency of ['payment', 'policy', 'cost']) {
+    const value = fixture(), pricing = pricingInputs()
+    pricing[dependency].approval.expiresAtMs = NOW + 1
+    const assessment = calculatePriceFloor(pricing)
+    assert.equal(assessment.eligible, true)
+    bindCalculatedFloor(value, assessment.calculation)
+    assert.equal(evaluateCatalogueEligibility(value).commerce.status, 'eligible')
+    value.evaluatedAtMs = NOW + 1
+    value.cost.review.verifiedAtMs = NOW + 1
+    value.cost.review.expiresAtMs = NOW + 20000
+    const result = evaluateCatalogueEligibility(value)
+    held(result.commerce, 'EXPIRED')
+    assert.ok(result.commerce.reasons.some(r => r.code === 'EXPIRED' && r.field === 'cost.dependencyValidity'))
+    assert.equal(result.research.status, 'eligible')
+    assert.equal(result.purchaseTarget, null)
+  }
+})
+
+for (const [label, mutate, code] of [
+  ['missing payment binding', v => delete v.cost.paymentTariffVersion, 'IDENTITY_MISMATCH'],
+  ['missing expected tariff', v => delete v.policy.expectedPaymentTariffVersion, 'INVALID_INPUT'],
+  ['missing dependency lifetime', v => delete v.cost.dependencyValidity, 'MISSING_INPUT'],
+  ['future dependency start', v => v.cost.dependencyValidity.validFromMs = NOW + 1, 'NOT_YET_EFFECTIVE'],
+  ['reversed dependency lifetime', v => v.cost.dependencyValidity.expiresAtMs = NOW - 1000, 'INVALID_INPUT'],
+  ['noninteger dependency expiry', v => v.cost.dependencyValidity.expiresAtMs = NOW + 0.5, 'INVALID_INPUT'],
+  ['unbounded dependency expiry', v => v.cost.dependencyValidity.expiresAtMs = Infinity, 'INVALID_INPUT'],
+]) test(`floor dependency HOLD: ${label}`, () => {
+  const value = fixture(); mutate(value)
+  const result = evaluateCatalogueEligibility(value)
+  held(result.commerce, code)
+  assert.equal(result.purchaseTarget, null)
+  assert.equal(result.valueRankingEligible, false)
+  assert.equal(result.research.status, 'eligible')
 })

@@ -14,6 +14,7 @@ export type Approval = {
   validFromMs: number
   expiresAtMs: number
 }
+export type PricingValidityWindow = { validFromMs: number; expiresAtMs: number }
 export type CostTax = {
   approved: boolean
   basis: 'inclusive' | 'exclusive' | 'not_subject'
@@ -63,7 +64,7 @@ export type BasketInput = PricingContext & {
 export type HoldCode = 'MISSING_INPUT' | 'INVALID_INPUT' | 'UNAPPROVED' | 'STALE_VERSION' |
   'EXPIRED' | 'NOT_YET_EFFECTIVE' | 'INVALID_UNIT' | 'INVALID_TAX' | 'DELIVERY_FEE_MISMATCH' |
   'OVERFLOW' | 'NON_POSITIVE_DENOMINATOR' | 'EXCESS_DISCOUNT' | 'BELOW_ITEM_FLOOR' |
-  'BELOW_MINIMUM_MARGIN' | 'BELOW_MINIMUM_CASH'
+  'BELOW_MINIMUM_MARGIN' | 'BELOW_MINIMUM_CASH' | 'BELOW_LINE_MARGIN' | 'BELOW_LINE_CASH'
 export type Hold = { code: HoldCode; field: string }
 export type FloorCalculation = {
   minimumListPricePence: number
@@ -77,6 +78,8 @@ export type FloorCalculation = {
   contributionPenceAtMinimum: ExactPence
   marginAtMinimum: ExactPence
   approvalVersions: { cost: string; policy: string; payment: string }
+  /** Intersection of the input approvals; reviewing a floor cannot extend it. */
+  dependencyValidity: PricingValidityWindow
 }
 export type BasketLineCalculation = {
   id: string
@@ -90,6 +93,9 @@ export type BasketLineCalculation = {
   allocatedFixedPaymentFeePence: ExactPence
   contributionPence: ExactPence
   conservativeItemListFloorPence: number
+  /** Gate basis only: full fixed payment fee per billable item, as in the item floor. */
+  conservativeLineContributionPence: ExactPence
+  minimumLineCashPence: number
 }
 export type BasketCalculation = {
   lines: BasketLineCalculation[]
@@ -248,6 +254,10 @@ function calculateFloor(input: FloorInput): FloorCalculation {
     nonVariableEconomicCostPence: exact(C), discountedGrossPenceAtMinimum: exact(gross),
     netRevenuePenceAtMinimum: exact(net), contributionPenceAtMinimum: exact(contribution), marginAtMinimum: exact(div(contribution, net)),
     approvalVersions: { cost: input.cost.approval.version, policy: input.policy.approval.version, payment: input.payment.approval.version },
+    dependencyValidity: {
+      validFromMs: Math.max(input.cost.approval.validFromMs, input.policy.approval.validFromMs, input.payment.approval.validFromMs),
+      expiresAtMs: Math.min(input.cost.approval.expiresAtMs, input.policy.approval.expiresAtMs, input.payment.approval.expiresAtMs),
+    },
   }
 }
 function assess<T>(calculate: () => { calculation: T; holds?: Hold[] }): Assessment<T> {
@@ -295,11 +305,20 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
       const itemFloor = calculateFloor({ ...input, cost: line.cost }).minimumListPricePence
       if (line.listUnitPricePence < itemFloor) holds.push({ code: 'BELOW_ITEM_FLOOR', field: line.id })
       const lineCost = mul(cost.perItem, money(line.quantity))
+      // A single-unit floor uses single-unit discount rounding. Test actual
+      // line receipts too: quantity-level rounding can reduce receipts below
+      // that floor's contribution requirement. Keep this gate independent of
+      // profitable neighbours/shipping and of their later fixed-fee allocation.
+      const conservativeContribution = sub(sub(sub(net, lineCost), mul(money(gross), rate(input.payment.variableBps))),
+        mul(money(input.payment.fixedPence), money(line.quantity)))
+      const minimumLineCash = bounded(BigInt(input.policy.minimumCashPerItemPence) * BigInt(line.quantity), line.id + '.minimumLineCash')
+      if (compare(conservativeContribution, mul(net, rate(input.policy.minimumMarginBps))) < 0) holds.push({ code: 'BELOW_LINE_MARGIN', field: line.id })
+      if (compare(conservativeContribution, money(minimumLineCash)) < 0) holds.push({ code: 'BELOW_LINE_CASH', field: line.id })
       const delivery = mul(cost.delivery, money(line.quantity))
       totalGross += BigInt(gross); totalQuantity += line.quantity
       integer(totalQuantity, 'billableQuantity', 1, 10000)
       totalNet = add(totalNet, net); totalCost = add(totalCost, lineCost); totalDelivery = add(totalDelivery, delivery)
-      return { line, before, discount, gross, net, lineCost, delivery, itemFloor }
+      return { line, before, discount, gross, net, lineCost, delivery, itemFloor, conservativeContribution, minimumLineCash }
     })
     integer(totalQuantity, 'billableQuantity', 1, 10000)
     const grossPence = bounded(totalGross, 'basketGross')
@@ -317,13 +336,13 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
     if (compare(contribution, mul(totalNet, rate(input.policy.minimumMarginBps))) < 0) holds.push({ code: 'BELOW_MINIMUM_MARGIN', field: 'basket' })
     if (compare(contribution, money(minimumCash)) < 0) holds.push({ code: 'BELOW_MINIMUM_CASH', field: 'basket' })
     // Allocate the fixed payment fee by gross receipts across products AND shipping.
-    const lines = intermediate.map(({ line, before, discount, gross, net, lineCost, delivery, itemFloor }): BasketLineCalculation => {
+    const lines = intermediate.map(({ line, before, discount, gross, net, lineCost, delivery, itemFloor, conservativeContribution, minimumLineCash }): BasketLineCalculation => {
       const allocation = mul(money(input.payment.fixedPence), div(money(gross), money(grossPence)))
       return { id: line.id, quantity: line.quantity, grossBeforeDiscountPence: before, discountPence: discount,
         grossReceiptsPence: gross, netRevenuePence: exact(net), supplierDeliveryAmountPence: SUPPLIER_DELIVERY_FEE_PENCE * line.quantity,
         supplierDeliveryEconomicPence: exact(delivery), allocatedFixedPaymentFeePence: exact(allocation),
         contributionPence: exact(sub(sub(sub(net, lineCost), mul(money(gross), rate(input.payment.variableBps))), allocation)),
-        conservativeItemListFloorPence: itemFloor }
+        conservativeItemListFloorPence: itemFloor, conservativeLineContributionPence: exact(conservativeContribution), minimumLineCashPence: minimumLineCash }
     })
     const shippingFixedFee = mul(money(input.payment.fixedPence), div(money(input.customerShipping.grossPence), money(grossPence)))
     const shippingVariableFee = mul(money(input.customerShipping.grossPence), rate(input.payment.variableBps))
