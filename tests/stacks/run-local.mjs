@@ -79,7 +79,7 @@ export async function runAcceptance({ execute = command, request = fetch, relayF
     owned.push(['container', names.postgres])
     await docker(['run', '--detach', '--rm', '--name', names.postgres, '--label', `${label}=${id}`, '--network', names.network, '--network-alias', 'postgres', '--memory', '512m', '--cpus', '1', '--tmpfs', '/var/lib/postgresql/data:rw,nosuid', '-e', `POSTGRES_PASSWORD=${password}`, '-e', `POSTGRES_DB=${database}`, IMAGES.postgres], { timeout: 60000 })
     await ready(async () => (await docker(['exec', names.postgres, 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres', '-d', database], { timeout: 5000 })).includes('accepting connections'), 'PostgreSQL', { pause, now, signal })
-    const testEnv = { ...safeEnv, TLL_SUBMISSION_TEST_CONTAINER: names.postgres }
+    const testEnv = { ...safeEnv, TLL_STACK_TEST_CONTAINER: names.postgres }
     const test = async path => {
       try {
         const output = await execute(process.execPath, ['--experimental-strip-types', '--test', path], { env: testEnv, signal, timeout: 180000 })
@@ -96,8 +96,8 @@ export async function runAcceptance({ execute = command, request = fetch, relayF
     owned.push(['container', names.postgrest])
     await docker(['run', '--detach', '--rm', '--name', names.postgrest, '--label', `${label}=${id}`, '--network', names.network, '--memory', '256m', '--cpus', '1', '-e', `PGRST_DB_URI=postgresql://tll_stack_authenticator:${password}@postgres:5432/${database}`, '-e', 'PGRST_DB_SCHEMAS=public', '-e', 'PGRST_DB_ANON_ROLE=anon', '-e', `PGRST_JWT_SECRET=${jwtSecret}`, IMAGES.postgrest], { timeout: 60000 })
     relay = await relayFactory({ runId: id, endpoint, docker, platform, onError: () => log('Task-owned PostgREST relay could not reach its verified container.') })
-    testEnv.TLL_SUBMISSION_HTTP_PORT = String(relay.address.port)
-    const origin = `http://127.0.0.1:${testEnv.TLL_SUBMISSION_HTTP_PORT}`
+    testEnv.TLL_STACK_HTTP_PORT = String(relay.address.port)
+    const origin = `http://127.0.0.1:${testEnv.TLL_STACK_HTTP_PORT}`
     const probeUser = '22222222-2222-4222-8222-222222222222'
     const claims = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url') + '.' + Buffer.from(JSON.stringify({ role: 'authenticated', sub: probeUser, exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')
     const probeToken = claims + '.' + createHmac('sha256', jwtSecret).update(claims).digest('base64url')

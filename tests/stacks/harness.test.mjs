@@ -37,6 +37,13 @@ function harness(failHttp=false){
 test('portable runner uses SQL then HTTP, preserves internal isolation and cleans owned resources',async()=>{
  const f=harness();await f.run();const commands=f.calls.map(c=>c.args.join(' '))
  assert.ok(commands.findIndex(c=>c.includes('--test tests/stacks/database.test.mjs'))<commands.findIndex(c=>c.includes('--test tests/stacks/http.test.mjs')))
+ const sqlChild=f.calls.find(c=>c.args.includes('tests/stacks/database.test.mjs'))
+ const httpChild=f.calls.find(c=>c.args.includes('tests/stacks/http.test.mjs'))
+ assert.equal(fixtureTarget(sqlChild.options.env).container,names.postgres)
+ assert.equal(fixtureTarget(httpChild.options.env).container,names.postgres)
+ assert.equal(fixtureTarget(httpChild.options.env).origin,'http://127.0.0.1:45678')
+ assert.equal(sqlChild.options.env.DOCKER_HOST,'unix:///var/run/docker.sock')
+ assert.equal(sqlChild.options.env.DOCKER_CONTEXT,undefined)
  assert.ok(commands.some(c=>c.includes('network create --internal')));assert.equal(commands.some(c=>c.includes('--publish')),false)
  const close=commands.indexOf('relay-close'),remove=commands.findIndex(c=>c.includes('container rm --force'))
  assert.ok(close>=0&&remove>close);assert.ok(commands.some(c=>c.includes('network rm '+names.network)))
