@@ -67,3 +67,8 @@ test('reward evidence uses the verified returned stack only after a successful a
  assert.equal((await f.routes.POST(request('POST',{productId:P}))).status,200)
  assert.deepEqual(f.awards,[['build_stack',S]])
 })
+test('conflict responses cannot expose a snapshot for a different account',async()=>{
+ const f=fixture({outcome:{status:'conflict',snapshot:{...snapshot,userId:'11111111-1111-4111-8111-111111111111'}}})
+ const result=await f.routes.DELETE(request('DELETE',{clear:true,expectedRevision:1}))
+ assert.equal(result.status,503);assert.equal((await result.text()).includes('11111111'),false)
+})

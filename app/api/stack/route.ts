@@ -38,6 +38,8 @@ async function mutate(request: Request) {
         });
         if (error || !data)
             return json({ error: 'Your change could not be saved. Please retry.' }, 503);
+        if (data.snapshot && data.snapshot.userId !== user.id)
+            return json({ error: 'Your change could not be confirmed. Please retry.' }, 503);
         if (data.status === 'conflict')
             return json({ error: 'Your stack changed elsewhere. Review the latest stack before retrying.', snapshot: data.snapshot }, 409);
         if (data.status === 'idempotency_conflict')
