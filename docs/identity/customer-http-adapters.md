@@ -1,0 +1,35 @@
+# Disabled Customer Account HTTP adapters
+
+`lib/identity/customer-http.ts` supplies real Node HTTPS implementations for a Confidential Customer Account client and its public JWKS loader. Both factories default to disabled. An explicit trusted-server `enabled:true` permits the adapter's pinned HTTP operation; it does **not** activate the connection foundation, which remains `liveEnabled:false`, and no route/provider wiring or approved callback configuration is shipped.
+
+The staging shop, issuer, token/JWKS paths and public Customer Account client `c8f7b926-9073-416c-9949-0d99e89a99c0` are fixed. Domain configuration now requires that same client. The exact callback must be supplied from reviewed server configuration and match each code exchange. Client secrets are injected by the server; these modules do not read environment files, browsers, cookies or credential stores. Imports depend on Node HTTPS and cannot be built as browser code; a browser runtime guard also refuses requests. Response tokens are private domain-port material, never a browser DTO.
+
+## Transport and response boundary
+
+The concrete transport uses a private HTTPS agent with certificate verification explicitly enabled and Node's normal hostname validation. There is no caller-provided agent, proxy, CA, TLS override, URL or redirect policy. The only permitted requests are GET to the pinned JWKS URI and POST to the pinned token URI. Node HTTPS does not follow redirects. TLS is not weakened for testing; the tests inject responses or replace the native module with an offline probe.
+
+Each operation has a five-second total deadline, with a trusted test/operating range of 50 ms to ten seconds. It covers connection, headers and the complete streamed body. Responses have a 16 KiB header ceiling and 128 KiB body ceiling. Only HTTP 200, the original exact URL, identity encoding, JSON UTF-8 (including the registered JWK Set media type for keys), complete content length when provided, and the expected response schema pass. Redirects, network/stream errors, invalid UTF-8, partial JSON, unexpected fields or token errors become a fixed `CustomerHttpHeld` error without upstream text, headers, body, cause or credentials. No automatic token POST retry exists.
+
+A successful HTTP exchange is not a committed connection. Call only after the durable domain has consumed the one-use state or acquired its refresh fence. `outcome:uncertain` always requires the domain's HOLD/reconciliation path, including when a non-200 response was received. `not_attempted` records disabled/invalid local configuration or arguments, not permission to reconstruct an already uncertain operation.
+
+## OAuth scope and token semantics
+
+The adapter uses Confidential Basic authentication and URL-encoded form fields. The initial request sends the exact code, verifier and callback. Refresh sends the claimed refresh token and the same explicit OAuth scope set. Shopify distinguishes shop-configured Headless Customer Account clients, which receive refresh tokens, from app clients that do not. This integration targets the former. [Shopify Customer Account authentication](https://shopify.dev/docs/api/customer/2026-07#authentication).
+
+The server must provide the exact original authorization scope `openid email customer-account-api:full` when creating the adapter. Returned scopes must match that set. When the response omits `scope`, RFC 6749 §5.1 defines it as unchanged from the request; §6 prevents refresh expansion. The normalized token retains `scopeProvenance.source = unchanged_request` or `token_response`, the exact requested scope and grant type; the domain validates and stores this inside the private vault. OAuth scopes do not prove the shop-side `customer_read_customers` / `customer_read_orders` configuration, or imply new write permissions. A present `token_type` is required and accepts only case-insensitive Bearer. A successful refresh that omits a new refresh token retains only the exact claimed original, as permitted by §6. `refreshTokenProvenance` records that retention and its prior-token SHA-256; the domain checks both equality and hash before committing. Empty, null or malformed values fail. Failures, missing responses and ambiguous outcomes never trigger retention or retry. No default token type or expiration is invented. [RFC 6749 §§2.3.1, 5.1 and 6](https://www.rfc-editor.org/rfc/rfc6749#section-5.1).
+
+## Public key freshness and rotation
+
+The loader requests revalidation and never follows token-provided discovery, `jku`, `x5u`, embedded keys or certificates. It accepts one to twenty unique public RSA signing keys, rejects private material and unsupported operations, and bounds modulus/exponent sizes. Only canonical public key fields reach `jose`.
+
+Public-key caching is process-local and capped at five minutes, shortened by `max-age`, `Age` and `Date`. Fresh no-store/no-cache/zero-age 200 responses can serve their current verification for at most five seconds and are not retained. Concurrent reads share one in-flight operation. An unknown key can trigger a new pinned read after a 30-second cooldown; bad signatures on a known key do not trigger refresh. Expired keys or failed reloads are held, with a 30-second failure backoff. Replacement snapshots replace the old set. This is public-key caching, not a durable token vault or a cross-process rate limiter.
+
+Tokens are verified using the existing pinned `jose` RS256 verifier at actual post-fetch time, with exact issuer, client, nonce and temporal checks. A ready key set does not claim any real customer has authenticated. Node handles the TLS protocol; this patch does not supply custom certificate verification. [JWK Set media type](https://www.rfc-editor.org/rfc/rfc7517#section-8.5), [Node 24 HTTPS](https://nodejs.org/docs/latest-v24.x/api/https.html), [OpenID Connect signing-key rotation](https://openid.net/specs/openid-connect-core-1_0.html#RotateSigKeys).
+
+## Validation and remaining acceptance
+
+Validation: 939 full unit tests passed, including the connection and HTTP adapter cases. Type checking passed. Full lint completed with zero errors and six existing warnings; final focused lint also passed.
+
+Offline tests cover exact credential destinations and encoding, optional-scope provenance, malformed responses, timeout/abort cleanup, native TLS request settings, signature validation, key rotation, cache freshness and no-store behavior. No real token POST, credential lookup, hosted login, provider change or callback activation occurred. The native-path probe opens no sockets; it is not an actual remote TLS handshake test.
+
+Before route integration: independently review these adapters; implement the durable vault/repository and current/recent Supabase session proof; approve the exact callback/client configuration; run authorized staging acceptance using the actual provider responses and existing read permissions. Complete common-login SSO and browser-wide Shopify logout remain pending.

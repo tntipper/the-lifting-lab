@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { build } from 'esbuild'
 import { SignJWT, generateKeyPair, exportJWK } from 'jose'
 import { syntheticConnectionStore } from './fixtures/customer-connection-store.mjs'
-import { createCustomerConnectionFoundation, connectionConfigHash, STAGING_SHOP_ID, STAGING_ISSUER, STAGING_DISCOVERY, STAGING_SUPABASE_ISSUER, CUSTOMER_SCOPES } from '../lib/identity/customer-connection.ts'
+import { createCustomerConnectionFoundation, connectionConfigHash, STAGING_SHOP_ID, STAGING_CUSTOMER_CLIENT_ID, STAGING_ISSUER, STAGING_DISCOVERY, STAGING_SUPABASE_ISSUER, CUSTOMER_SCOPES } from '../lib/identity/customer-connection.ts'
 
 const compiled = await build({ entryPoints: ['lib/identity/customer-id-token.ts'], bundle: true, format: 'esm', platform: 'node', write: false, logLevel: 'silent' })
 const { createLocalCustomerIdVerifier } = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString('base64')}`)
@@ -16,7 +16,7 @@ const publicJwk = { ...await exportJWK(key.publicKey), kid: 'synthetic-rsa', use
 function config() {
   const c = { shopId: STAGING_SHOP_ID, issuer: STAGING_ISSUER, discoveryUrl: STAGING_DISCOVERY,
     authorizationEndpoint: `${STAGING_ISSUER}/oauth/authorize`, tokenEndpoint: `${STAGING_ISSUER}/oauth/token`,
-    jwksUri: `${STAGING_ISSUER}/.well-known/jwks.json`, logoutEndpoint: `${STAGING_ISSUER}/logout`, clientId: 'synthetic-confidential-client',
+    jwksUri: `${STAGING_ISSUER}/.well-known/jwks.json`, logoutEndpoint: `${STAGING_ISSUER}/logout`, clientId: STAGING_CUSTOMER_CLIENT_ID,
     callbackUrl: 'https://synthetic-staging.vercel.app/auth/shopify/callback', supabaseIssuer: STAGING_SUPABASE_ISSUER }
   return { ...c, verification: { evidenceId: 'synthetic-operator-review', configHash: connectionConfigHash(c), verifiedAt: NOW - 1000, expiresAt: NOW + 3600_000 } }
 }
@@ -76,6 +76,23 @@ test('both proofs bind stable subject and unchanged UUID; no secret reaches retu
   assert.deepEqual(c.binding, { userId: USER, shopId: STAGING_SHOP_ID, issuer: STAGING_ISSUER, subject: 'gid://shopify/Customer/123' })
   assert.equal('email' in c.binding, false); assert.equal(c.tokens.idToken.split('.').length, 3)
   noSecrets(await f.api.refresh(id)); noSecrets(await f.api.logout())
+})
+test('normalized request-derived OAuth scope provenance is stored privately and never becomes shop permission evidence', async () => {
+  const f = fixture(), original = f.ports.exchangeCode
+  f.ports.exchangeCode = async input => ({ ...await original(input), scopeProvenance: { source: 'unchanged_request', requestedScope: CUSTOMER_SCOPES.join(' '), grantType: 'authorization_code' } })
+  const id = await connect(f), stored = f.repository.connections.get(id).tokens.scopeProvenance
+  assert.deepEqual(stored, { source: 'unchanged_request', requestedScope: CUSTOMER_SCOPES.join(' '), grantType: 'authorization_code' })
+  assert.equal('shopPermissions' in stored, false)
+})
+test('retained refresh provenance must match the exact claimed token and stays inside the private vault', async () => {
+  for (const tamper of ['none', 'token', 'hash']) {
+    const f = fixture(), id = await connect(f), original = f.ports.refreshToken
+    f.ports.refreshToken = async input => ({ ...await original(input), refreshToken: tamper === 'token' ? 'wrong-token' : input.refreshToken,
+      refreshTokenProvenance: { source: 'retained_original', grantType: 'refresh_token', previousTokenHash: tamper === 'hash' ? 'wrong-hash' : createHash('sha256').update(input.refreshToken).digest('hex') } })
+    const result = await f.api.refresh(id)
+    assert.equal(result.status, tamper === 'none' ? 'refreshed' : 'held'); noSecrets(result)
+    if (tamper === 'none') assert.equal(f.repository.connections.get(id).tokens.refreshTokenProvenance.source, 'retained_original')
+  }
 })
 test('wrong session/account, callback target and duplicated state never exchange', async () => {
   const f = fixture(), start = await f.api.start()

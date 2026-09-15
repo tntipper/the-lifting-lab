@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto'
 
 export const CUSTOMER_CONNECTION_LIVE_ENABLED = false
 export const STAGING_SHOP_ID = '107532616020'
+export const STAGING_CUSTOMER_CLIENT_ID = 'c8f7b926-9073-416c-9949-0d99e89a99c0'
 export const STAGING_ISSUER = `https://shopify.com/authentication/${STAGING_SHOP_ID}`
 export const STAGING_DISCOVERY = 'https://tll-integration-staging.myshopify.com/.well-known/openid-configuration'
 export const STAGING_SUPABASE_ISSUER = 'https://qdmvngjwkcsilzmqksme.supabase.co/auth/v1'
@@ -38,11 +39,15 @@ export type ConnectAttempt = {
 export type TokenResponse = {
   accessToken: string; refreshToken: string; idToken?: string; tokenType: 'Bearer'
   expiresIn: number; scope: string
+  scopeProvenance?: { source: 'token_response' | 'unchanged_request'; requestedScope: string; grantType: 'authorization_code' | 'refresh_token' }
+  refreshTokenProvenance?: { source: 'token_response'; grantType: 'authorization_code' | 'refresh_token' }
+    | { source: 'retained_original'; grantType: 'refresh_token'; previousTokenHash: string }
 }
 /** Private vault material. No browser DTO, log, cookie or public-table column. */
 export type VaultTokens = {
   accessToken: string; refreshToken: string; idToken: string; accessExpiresAt: number
-  scopes: readonly string[]; originalNonce: string
+  scopes: readonly string[]; originalNonce: string; scopeProvenance: TokenResponse['scopeProvenance'] | null
+  refreshTokenProvenance: TokenResponse['refreshTokenProvenance'] | null
 }
 export type SubjectBinding = { shopId: string; issuer: string; subject: string; userId: string }
 export type VerifiedId = { issuer: string; subject: string; audience: string; nonce: string | null; issuedAt: number; expiresAt: number }
@@ -115,7 +120,7 @@ function validConfig(c: ConnectionConfig, now: number): boolean {
       && c.discoveryUrl === STAGING_DISCOVERY && c.authorizationEndpoint === `${STAGING_ISSUER}/oauth/authorize`
       && c.tokenEndpoint === `${STAGING_ISSUER}/oauth/token` && c.jwksUri === `${STAGING_ISSUER}/.well-known/jwks.json`
       && c.logoutEndpoint === `${STAGING_ISSUER}/logout` && c.supabaseIssuer === STAGING_SUPABASE_ISSUER
-      && text(c.clientId, 128) && callback.protocol === 'https:' && callback.hostname.endsWith('.vercel.app')
+      && c.clientId === STAGING_CUSTOMER_CLIENT_ID && callback.protocol === 'https:' && callback.hostname.endsWith('.vercel.app')
       && callback.hostname !== 'vercel.app' && !callback.username && !callback.password && !callback.port
       && !callback.search && !callback.hash && callback.pathname === '/auth/shopify/callback'
       && callback.href === c.callbackUrl && !!v && text(v.evidenceId, 128)
@@ -129,12 +134,21 @@ function validProof(p: SupabaseSessionProof | null, now: number, recent: boolean
     && p.authenticatedAt <= now && (!recent || now - p.authenticatedAt <= MAX_PROOF_AGE_MS)
     && time(p.expiresAt) && p.expiresAt > now && time(p.checkedAt) && p.checkedAt <= now && now - p.checkedAt <= 5_000
 }
-function validResponse(r: TokenResponse, now: number, requireId: boolean): boolean {
+function validResponse(r: TokenResponse, now: number, requireId: boolean, originalRefreshToken?: string): boolean {
   return !!r && text(r.accessToken) && text(r.refreshToken) && (r.idToken === undefined ? !requireId : text(r.idToken))
     && r.tokenType === 'Bearer' && Number.isSafeInteger(r.expiresIn) && r.expiresIn > 0 && r.expiresIn <= 86_400
     && time(now + r.expiresIn * 1000) && typeof r.scope === 'string'
     && r.scope.split(' ').length === CUSTOMER_SCOPES.length
     && CUSTOMER_SCOPES.every(s => r.scope.split(' ').includes(s))
+    && (r.scopeProvenance === undefined || (!!r.scopeProvenance
+      && ['token_response', 'unchanged_request'].includes(r.scopeProvenance.source)
+      && r.scopeProvenance.requestedScope === CUSTOMER_SCOPES.join(' ')
+      && r.scopeProvenance.grantType === (requireId ? 'authorization_code' : 'refresh_token')))
+    && (r.refreshTokenProvenance === undefined || (!!r.refreshTokenProvenance
+      && r.refreshTokenProvenance.grantType === (requireId ? 'authorization_code' : 'refresh_token')
+      && (r.refreshTokenProvenance.source === 'token_response' || (r.refreshTokenProvenance.source === 'retained_original'
+        && !requireId && text(originalRefreshToken) && r.refreshToken === originalRefreshToken
+        && r.refreshTokenProvenance.previousTokenHash === hash(originalRefreshToken)))))
 }
 function validId(id: VerifiedId | null, expected: IdVerification): id is VerifiedId {
   return !!id && id.issuer === expected.issuer && id.audience === expected.audience && (id.nonce === expected.nonce || (expected.nonceOptional === true && id.nonce === null))
@@ -161,7 +175,8 @@ export function createCustomerConnectionFoundation(input: { config?: ConnectionC
     return validProof(p, ports.now(), recent) ? structuredClone(p) : null
   }
   const sameSession = async (owner: Owner, recent: boolean) => { const p = await checkSession(recent); return !!p && ownerEquals(owner, p) }
-  const bundle = (r: TokenResponse, receivedAt: number, idToken: string, originalNonce: string): VaultTokens => ({ accessToken: r.accessToken, refreshToken: r.refreshToken, idToken, originalNonce, accessExpiresAt: receivedAt + r.expiresIn * 1000, scopes: [...CUSTOMER_SCOPES] })
+  const bundle = (r: TokenResponse, receivedAt: number, idToken: string, originalNonce: string): VaultTokens => ({ accessToken: r.accessToken, refreshToken: r.refreshToken, idToken, originalNonce, accessExpiresAt: receivedAt + r.expiresIn * 1000, scopes: [...CUSTOMER_SCOPES],
+    scopeProvenance: r.scopeProvenance ? structuredClone(r.scopeProvenance) : null, refreshTokenProvenance: r.refreshTokenProvenance ? structuredClone(r.refreshTokenProvenance) : null })
   return Object.freeze({
     liveEnabled: false as const,
     async start(): Promise<StartResult> {
@@ -234,7 +249,7 @@ export function createCustomerConnectionFoundation(input: { config?: ConnectionC
           || !text(claim.tokens.refreshToken) || !text(claim.tokens.idToken) || !/^[A-Za-z0-9_-]{43}$/.test(claim.tokens.originalNonce)) throw new Error('invalid refresh claim')
         const tokens = await ports.refreshToken({ endpoint: config!.tokenEndpoint, clientId: config!.clientId, refreshToken: claim.tokens.refreshToken })
         const receivedAt = ports.now()
-        if (!validResponse(tokens, receivedAt, false)) throw new Error('invalid refreshed tokens')
+        if (!validResponse(tokens, receivedAt, false, claim.tokens.refreshToken)) throw new Error('invalid refreshed tokens')
         let refreshedIdExpiresAt: number | null = null
         if (tokens.idToken) {
           const exp = expected(claim.tokens.originalNonce, true), id = await ports.verifyIdToken(tokens.idToken, exp)
