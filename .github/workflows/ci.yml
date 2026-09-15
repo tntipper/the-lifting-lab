@@ -55,3 +55,4 @@ jobs:
       - run: npm run test:integration
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
+      - run: node tests/preview-build-runtime.mjs
