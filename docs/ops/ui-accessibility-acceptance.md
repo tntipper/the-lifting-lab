@@ -13,6 +13,8 @@ npm audit
 
 The browser suite uses Playwright Chromium. On a machine with Google Chrome but no Playwright browser download, run `TEST_BROWSER_CHANNEL=chrome npm run test:accessibility`. It creates a fresh headless profile and a temporary loopback HTTP server; it does not attach to an existing browser session. CI can install the pinned Playwright version's Chromium with `npx playwright install --with-deps chromium`.
 
+The independent `accessibility` CI job installs npm 11.19.0, the locked dependencies and Chromium, then runs this suite without application environment values or production secrets. The fixture declares its own local mode so preview-aware analytics and navigation can load while all provider interactions remain synthetic.
+
 The fixture renders the actual React components, native dialogs, wizard page and Tailwind stylesheet under React StrictMode. Only Next routing and authentication are replaced by local adapters. All product data and share responses are synthetic; external browser requests are blocked. The suite performs no provider writes, purchases, social posts, customer emails or real sign-ins.
 
 At widths 320, 390, 768, 1024, 1280 and 1440px, it checks:

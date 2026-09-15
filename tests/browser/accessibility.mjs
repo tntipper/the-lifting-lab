@@ -16,7 +16,11 @@ await mkdir(resultDir, { recursive: true })
 const bundle = await build({
   absWorkingDir: root, entryPoints: ['tests/browser/accessibility-fixture.tsx'],
   bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
-  define: { 'process.env.NODE_ENV': '"development"' },
+  define: {
+    'process.env.NODE_ENV': '"development"',
+    // Exercise ordinary component interactions with only the local adapters.
+    'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"local-browser-fixture"',
+  },
   plugins: [{ name: 'isolated-provider-adapters', setup(builder) {
     builder.onResolve({ filter: /^next\/(link|navigation)$|^@\/lib\/supabase$/ }, args => ({ path: args.path, namespace: 'fixture' }))
     builder.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({
