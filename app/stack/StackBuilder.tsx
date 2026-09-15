@@ -196,14 +196,15 @@ export default function StackBuilder() {
   useEffect(() => {
     let cancelled = false
     const controller = new AbortController()
-    if (!idsKey) { setStackItems([]); setDetailsLoading(false); return }
+    if (!idsKey) { setStackItems([]); setDetailsError(null); setDetailsLoading(false); return }
     setDetailsLoading(true)
+    setDetailsError(null)
     setStackItems([])
     // The existing public batch route caps requests at 50 products.
     const ids = idsKey.split(',')
     const batches = Array.from({ length: Math.ceil(ids.length / 50) }, (_, i) => ids.slice(i * 50, i * 50 + 50))
     void Promise.all(batches.map(async batch => {
-      const response = await fetch(`/api/products/batch?ids=${encodeURIComponent(batch.join(','))}`, { signal: controller.signal })
+      const response = await fetch(`/api/products/batch?ids=${encodeURIComponent(batch.join(','))}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) })
       if (!response.ok) throw new Error('Product details unavailable')
       const data: unknown = await response.json()
       if (!Array.isArray(data)) throw new Error('Product details unavailable')
