@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
 -- Synthetic baseline ONLY. Refuses a non-test database or existing schema.
 do $$ begin
-  if current_database() not in ('tll_stage0','tll_stage0_replay') or to_regclass('public.profiles') is not null then
+  if current_database() not in ('tll_stage0','tll_stage0_replay','tll_stage0_review') or to_regclass('public.profiles') is not null then
     raise exception 'Use an empty disposable tll_stage0 database';
   end if;
 end $$;

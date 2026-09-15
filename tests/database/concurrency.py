@@ -52,7 +52,7 @@ def pair(action, first_ref, second_ref, expected):
     assert sql(f"select count(*) || ':' || sum(points) from public.points_ledger where user_id='{USER}' and action_type='{action}';") == f'1:{expected}'
     assert sql(f"select total_points from public.profiles where id='{USER}';") == str(expected)
     if action == 'share':
-        assert sql(f"select count(*) from public.share_claims where user_id='{USER}';") == '1'
+        assert sql(f"select count(*) || ':' || min(product_id) from public.share_claims where user_id='{USER}';") == f'1:{first_ref}'
     print(f'PASS: concurrent {action} {awards}; one ledger credit, reconciled profile balance')
     sql(f"delete from public.points_ledger where user_id='{USER}' and action_type='{action}';"
         f"delete from public.share_claims where user_id='{USER}';"
@@ -63,3 +63,12 @@ assert sql('select current_database();') == 'tll_stage0'
 assert sql(f"select email from auth.users where id='{USER}';") == 'fixture_b@example.invalid'
 pair('daily_login', 'attacker-reference-a', 'attacker-reference-b', 5)
 pair('share', PRODUCT, PRODUCT, 25)
+
+# A global daily cap must retain the winning product as claim evidence while
+# excluding a simultaneous claim for a different, independently valid product.
+assert sql("select limit_type from public.points_config where action_type='share';") == 'per_ref_cooldown'
+sql("update public.points_config set limit_type='per_day' where action_type='share';")
+try:
+    pair('share', PRODUCT, '20000000-0000-4000-8000-000000000001', 25)
+finally:
+    sql("update public.points_config set limit_type='per_ref_cooldown' where action_type='share';")

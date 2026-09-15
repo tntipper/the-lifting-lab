@@ -99,7 +99,7 @@ create policy reviews_insert_own on public.reviews for insert to authenticated
 create policy reviews_update_own on public.reviews for update to authenticated
   using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy reviews_delete_own on public.reviews for delete to authenticated
-  using ((select auth.uid()) = user_id);
+  using ((select auth.uid()) = user_id and status <> 'flagged');
 
 -- The supported community form already writes to this moderation inbox,
 -- never products. Preserve it for both public and signed-in clients.
@@ -162,9 +162,21 @@ create or replace function public.guard_review_client_edit()
 returns trigger language plpgsql security invoker set search_path = '' as $$
 begin
   if exists (select 1 from pg_catalog.pg_roles where rolname = current_user
-             and (rolsuper or rolbypassrls)) then return new; end if;
+             and (rolsuper or rolbypassrls)) then
+    if TG_OP = 'DELETE' then return old; end if;
+    return new;
+  end if;
   if pg_catalog.pg_has_role(current_user,
-      (select relowner from pg_catalog.pg_class where oid = TG_RELID), 'USAGE') then return new; end if;
+      (select relowner from pg_catalog.pg_class where oid = TG_RELID), 'USAGE') then
+    if TG_OP = 'DELETE' then return old; end if;
+    return new;
+  end if;
+  if TG_OP = 'DELETE' then
+    if auth.uid() is null or old.user_id <> auth.uid() or old.status = 'flagged' then
+      raise exception 'Review cannot be deleted by this caller' using errcode = '42501';
+    end if;
+    return old;
+  end if;
   if auth.uid() is null or new.user_id <> auth.uid() then
     raise exception 'Review ownership mismatch' using errcode = '42501';
   end if;
@@ -181,7 +193,7 @@ end;
 $$;
 revoke all on function public.guard_review_client_edit() from public, anon, authenticated;
 drop trigger if exists guard_review_client_edit on public.reviews;
-create trigger guard_review_client_edit before insert or update on public.reviews
+create trigger guard_review_client_edit before insert or update or delete on public.reviews
   for each row execute function public.guard_review_client_edit();
 
 -- Preserve signature and owner. One user/action lock matches all supported
@@ -191,6 +203,9 @@ returns integer language plpgsql security definer set search_path = '' as $$
 declare
   v_user uuid := auth.uid();
   v_cfg public.points_config%rowtype;
+  -- Activity evidence remains tied to the submitted object even when the
+  -- allowance/ledger key is canonicalised to one award per user or day.
+  v_evidence_ref text := p_ref_id;
   v_ref text := p_ref_id;
   v_now timestamptz;
   v_rows integer;
@@ -210,18 +225,18 @@ begin
   ) then return 0; end if;
 
   if p_action = 'review' and not exists (
-    select 1 from public.reviews where user_id = v_user and product_id::text = v_ref
+    select 1 from public.reviews where user_id = v_user and product_id::text = v_evidence_ref
   ) then return 0;
   elsif p_action = 'favourite' and not exists (
-    select 1 from public.user_favourites where user_id = v_user and product_id::text = v_ref
+    select 1 from public.user_favourites where user_id = v_user and product_id::text = v_evidence_ref
   ) then return 0;
   elsif p_action = 'build_stack' and not exists (
     select 1 from public.user_stacks s join public.stack_products sp on sp.stack_id = s.id
-    where s.id::text = v_ref and s.user_id = v_user group by s.id
+    where s.id::text = v_evidence_ref and s.user_id = v_user group by s.id
     having count(distinct sp.product_id) >= 3
   ) then return 0;
   elsif p_action = 'share' and not exists (
-    select 1 from public.products where id::text = v_ref and status = 'active'
+    select 1 from public.products where id::text = v_evidence_ref and status = 'active'
   ) then return 0;
   end if;
 
@@ -247,7 +262,7 @@ begin
   if v_rows = 0 then return 0; end if;
   update public.profiles set total_points = total_points + v_cfg.points where id = v_user;
   if p_action = 'share' then
-    insert into public.share_claims (user_id, product_id, claimed_at) values (v_user, v_ref, v_now);
+    insert into public.share_claims (user_id, product_id, claimed_at) values (v_user, v_evidence_ref, v_now);
   end if;
   return v_cfg.points;
 end;
