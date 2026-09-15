@@ -20,7 +20,7 @@ The server must provide the exact original authorization scope `openid email cus
 
 ## Public key freshness and rotation
 
-The loader requests revalidation and never follows token-provided discovery, `jku`, `x5u`, embedded keys or certificates. It accepts one to twenty unique public RSA signing keys, rejects private material and unsupported operations, and bounds modulus/exponent sizes. Only canonical public key fields reach `jose`.
+The loader requests revalidation and never follows token-provided discovery, `jku`, `x5u`, embedded keys or certificates. It bounds the advertised set to twenty keys, rejects duplicate identifiers and private material across the set, then selects the approved RSA family. Shopify's observed public set contains RSA and OKP keys together; unsupported families cannot authenticate an RS256 token. Approved keys retain strict algorithm, use, operations and modulus/exponent checks. Only canonical public RSA fields reach `jose`; unrelated JWK Set metadata is ignored.
 
 Public-key caching is process-local and capped at five minutes, shortened by `max-age`, `Age` and `Date`. Fresh no-store/no-cache/zero-age 200 responses can serve their current verification for at most five seconds and are not retained. Concurrent reads share one in-flight operation. An unknown key can trigger a new pinned read after a 30-second cooldown; bad signatures on a known key do not trigger refresh. Expired keys or failed reloads are held, with a 30-second failure backoff. Replacement snapshots replace the old set. This is public-key caching, not a durable token vault or a cross-process rate limiter.
 
@@ -31,5 +31,7 @@ Tokens are verified using the existing pinned `jose` RS256 verifier at actual po
 Validation: 939 full unit tests passed, including the connection and HTTP adapter cases. Type checking passed. Full lint completed with zero errors and six existing warnings; final focused lint also passed.
 
 Offline tests cover exact credential destinations and encoding, optional-scope provenance, malformed responses, timeout/abort cleanup, native TLS request settings, signature validation, key rotation, cache freshness and no-store behavior. No real token POST, credential lookup, hosted login, provider change or callback activation occurred. The native-path probe opens no sockets; it is not an actual remote TLS handshake test.
+
+Root subsequently exercised the actual native adapter with a public GET on 15 September 2026. The request succeeded after adding an honest application User-Agent and supporting Shopify's mixed public key families. The response supplied one compatible RS256 key with `private, no-store` caching, so it was accepted only for the bounded current verification and not retained for another call. The 69 focused HTTP cases passed, including mixed-family signature verification and duplicate/private-key rejection. This verifies public TLS/key retrieval only; no customer credential or identity was used or authenticated.
 
 Before route integration: independently review these adapters; implement the durable vault/repository and current/recent Supabase session proof; approve the exact callback/client configuration; run authorized staging acceptance using the actual provider responses and existing read permissions. Complete common-login SSO and browser-wide Shopify logout remain pending.
