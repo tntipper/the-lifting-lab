@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
+import { claimsReviewFor } from '@/lib/claims-review'
 import Link from 'next/link'
 import { methodologyFor } from '@/lib/methodology'
 import { categoryLabel } from '@/lib/categories'
@@ -8,6 +10,7 @@ import { categoryLabel } from '@/lib/categories'
 export default function MethodologyModal({ category }: { category?: string }) {
   const [open, setOpen] = useState(false)
   const method = methodologyFor(category)
+  const review = claimsReviewFor(category)
   const catLabel = category ? categoryLabel(category) : null
 
   return (
@@ -38,16 +41,17 @@ export default function MethodologyModal({ category }: { category?: string }) {
             </div>
 
             <div className="space-y-4 text-sm text-white/80 leading-relaxed">
-              <p>
+              <ClaimsReviewNotice category={category} />
+              {!review && <p>
                 Every product gets an <span className="text-white font-bold">Effectiveness Match score (0–100)</span> —
                 a dose-for-dose comparison against a category-specific &quot;ideal&quot; reference spec built from
                 peer-reviewed evidence.
-              </p>
+              </p>}
 
               {method && (
                 <div className="rounded-xl border border-lab-lime/30 bg-lab-lime/5 p-3">
                   <p className="text-[10px] uppercase tracking-widest font-bold text-lab-lime mb-1.5">
-                    The perfect {catLabel?.toLowerCase()} · weighting
+                    {review ? 'Legacy weights under review' : `The perfect ${catLabel?.toLowerCase()} · weighting`}
                   </p>
                   <p className="text-[11px] text-white/80 leading-relaxed mb-3">{method.blurb}</p>
                   <div className="space-y-1.5">
@@ -75,6 +79,7 @@ export default function MethodologyModal({ category }: { category?: string }) {
                 </div>
               )}
 
+              {!review && <>
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-lab-muted mb-2">The score breakdown</p>
                 <div className="space-y-2">
@@ -125,6 +130,8 @@ export default function MethodologyModal({ category }: { category?: string }) {
                 no commission bias. The perfect 100 belongs to an ideal that doesn&apos;t exist, so real products
                 land below it. <span className="font-bold">Informational only — not medical advice.</span>
               </p>
+
+              </>}
 
               <Link
                 href="/methodology"

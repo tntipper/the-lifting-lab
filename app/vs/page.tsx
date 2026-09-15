@@ -1,3 +1,4 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
@@ -72,7 +73,7 @@ export default async function VsHubPage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         <nav aria-label="Breadcrumb" className="mb-4 text-xs text-lab-muted">

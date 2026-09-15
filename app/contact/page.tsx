@@ -1,25 +1,45 @@
 'use client'
 
-import { useState } from 'react'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
+import { submissionSizeError } from '@/lib/submissions/body-size.mjs'
 
 export default function ContactPage() {
+  return isSyntheticPreview() ? <PreviewUnavailableContent /> : <ContactPageForm />
+}
+
+function ContactPageForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
 
+  const retry = useRef<{ body: string; key: string } | null>(null)
+  const [errorMessage, setErrorMessage] = useState('')
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setStatus('sending')
     try {
+      const body = JSON.stringify({ name, email, message })
+      const sizeError = submissionSizeError(body)
+      if (sizeError) { setErrorMessage(sizeError); setStatus('error'); return }
+      if (!retry.current || retry.current.body !== body) retry.current = { body, key: crypto.randomUUID() }
       const r = await fetch('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message }),
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': retry.current.key },
+        body,
       })
+      if (!r.ok) {
+        const result = await r.json().catch(() => ({}))
+        setErrorMessage(typeof result.error === 'string' ? result.error : 'Your submission could not be received. Please try again.')
+        if (r.status === 409) retry.current = null
+      }
       setStatus(r.ok ? 'done' : 'error')
     } catch {
+      setErrorMessage('Your submission could not be confirmed. Please try again.')
       setStatus('error')
     }
   }
@@ -36,19 +56,21 @@ export default function ContactPage() {
         <div>
           <p className="text-[11px] uppercase tracking-widest font-bold text-lab-lime mb-2">Get In Touch</p>
           <h1 className="text-2xl font-black uppercase">Contact Us</h1>
-          <p className="text-lab-muted text-sm mt-2">Product suggestions, corrections, partnership enquiries — we read everything.</p>
+          <p className="text-lab-muted text-sm mt-2">Send product suggestions, corrections or partnership enquiries for review.</p>
         </div>
 
         {status === 'done' ? (
           <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-6 text-center space-y-2">
             <p className="text-2xl">💪</p>
-            <p className="font-bold text-white">Message sent — we&apos;ll get back to you soon.</p>
+            <p className="font-bold text-white">Message received for review.</p>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Name</label>
+              <label htmlFor="contact-name" className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Name</label>
               <input
+                id="contact-name"
+                maxLength={120}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -56,9 +78,11 @@ export default function ContactPage() {
               />
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Email</label>
+              <label htmlFor="contact-email" className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Email</label>
               <input
                 type="email"
+                id="contact-email"
+                maxLength={254}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -66,8 +90,10 @@ export default function ContactPage() {
               />
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Message</label>
+              <label htmlFor="contact-message" className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Message</label>
               <textarea
+                id="contact-message"
+                maxLength={8000}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 required
@@ -76,7 +102,7 @@ export default function ContactPage() {
               />
             </div>
             {status === 'error' && (
-              <p className="text-lab-red text-sm">Something went wrong — please try again.</p>
+              <p role="alert" className="text-lab-red text-sm">{errorMessage}</p>
             )}
             <button
               type="submit"

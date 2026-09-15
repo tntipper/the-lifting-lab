@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
+import { assertPreviewIsolation } from "./config/preview-isolation.mjs";
+
+assertPreviewIsolation(process.env);
 
 const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   async headers() {
     // ARD: let registries/agent crawlers fetch the capability manifest cross-origin.
     return [

@@ -104,7 +104,7 @@ export default function CaffeineCalculator() {
     const hTo25 = hoursToDecay(doseMg, 25)
 
     const bedMins = parseTime(bedtime)
-    let residualAtBed: number | null = null
+    const residualAtBed: number | null = null
     let latestIntake: string | null = null
     if (bedMins !== null) {
       // Latest clock time to take this dose so residual at bedtime <= sleep-safe.

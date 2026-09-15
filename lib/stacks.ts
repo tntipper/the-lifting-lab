@@ -153,21 +153,21 @@ export const STACK_GUIDES: StackGuide[] = [
     h1: 'Best Supplement Stack for Men Over 40',
     metaTitle: 'Best Supplement Stack for Men Over 40 UK 2026 | The Lifting Lab',
     metaDescription:
-      'Training in your 40s and beyond? This stack focuses on muscle retention, joints, hormones and the nutrients men commonly fall short on. UK products ranked.',
+      'Training in your 40s and beyond? This stack focuses on nutrition and training; hormone-supplement claims are under review. UK products ranked.',
     intro:
       'Training past 40 is less about chasing pumps and more about holding onto muscle, supporting recovery and covering the nutrient gaps that widen with age. Muscle is harder to build and easier to lose, recovery slows, and certain vitamins and minerals become more important. This stack is built around that reality, not around hype.',
     paras: [
       'Protein and creatine do even more heavy lifting as you age. Older muscle is more resistant to protein, so hitting a solid daily target with the help of a good whey matters more, not less. Creatine, meanwhile, supports strength and may help offset age-related muscle loss, making it arguably more valuable after 40 than before.',
       'Vitamin D and omega-3 address two of the most common gaps for men in this age group. Vitamin D supports bone, muscle and mood and is low in most UK adults over winter, while omega-3 supports heart and joint health if you do not eat much oily fish.',
-      'Magnesium and ZMA-style support help with sleep and recovery, both of which tend to suffer with age and both of which underpin everything else you do in the gym. Hormone-support products are included for completeness, but with a clear caveat below.',
-      'On testosterone: no over-the-counter product reliably raises it in healthy men. The genuine benefit is correcting deficiencies in nutrients like zinc, magnesium and vitamin D. If you suspect genuinely low testosterone through fatigue, low libido or poor recovery, that is a medical matter; get a blood test and speak to a qualified clinician rather than self-treating. The picks below are the top-scoring options in each supporting category.',
+      'ZMA and hormone-support claims are under review. Hormone-support products are excluded from this suggested stack while their evidence and scoring interpretation are checked.',
+      'On testosterone: an age bracket, nutrient label or product score cannot establish a hormone benefit. If you are concerned about low testosterone, speak to a clinician rather than self-treating. Our testosterone information page explains the interim review and links to clinical guidance.',
     ],
-    categories: ['whey', 'creatine', 'vitamin-d', 'omega-3', 'magnesium', 'hormone-support'],
+    categories: ['whey', 'creatine', 'vitamin-d', 'omega-3', 'magnesium'],
     maxProducts: 5,
     pick: 'score',
     faqs: [
       { q: 'What supplements should men over 40 take?', a: 'Protein and creatine to hold onto muscle, vitamin D and omega-3 to cover common gaps, and magnesium for sleep and recovery. These cover the basics that matter most with age.' },
-      { q: 'Do testosterone boosters work for men over 40?', a: 'No over-the-counter product reliably raises testosterone in healthy men. The real benefit is fixing deficiencies in zinc, magnesium and vitamin D. Suspected low testosterone should be assessed by a clinician with a blood test.' },
+      { q: 'Do testosterone boosters work for men over 40?', a: 'TLL’s hormone-supplement claims are under review. We do not recommend a testosterone booster from this stack. Suspected low testosterone needs clinical assessment.' },
       { q: 'Is creatine good for older men?', a: 'Yes, arguably more so. Creatine supports strength and may help offset age-related muscle loss, and it remains safe for daily use at 3 to 5g.' },
     ],
   },

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { isSyntheticPreview } from '@/lib/preview-mode'
 
 const AR = '166,226,46'
 
@@ -53,8 +54,8 @@ export default function TopNav() {
   // Account button target: signed-in → dashboard, signed-out → auth.
   // While auth is unknown we point at /dashboard, which itself redirects
   // unauthenticated users to /auth — so the link is always safe.
-  const accountHref = signedIn === false ? '/auth' : '/dashboard'
-  const accountLabel = signedIn === false ? 'Sign In' : 'My Account'
+  const accountHref = isSyntheticPreview() ? '/preview' : signedIn === false ? '/auth' : '/dashboard'
+  const accountLabel = isSyntheticPreview() ? 'Preview only' : signedIn === false ? 'Sign In' : 'My Account'
 
   return (
     <>

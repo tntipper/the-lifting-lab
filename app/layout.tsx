@@ -1,7 +1,9 @@
+import { isSyntheticPreview, isHostedStaging, isIsolatedEnvironment, PREVIEW_UNAVAILABLE_MESSAGE } from '@/lib/preview-mode'
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Anton } from "next/font/google";
 import Script from "next/script";
 import { GA_MEASUREMENT_ID } from "@/lib/gtag";
+import { serializeJsonForHtml } from "@/lib/json-for-html";
 import { LocalStackProvider } from "@/components/LocalStackContext";
 import StackFAB from "@/components/StackFAB";
 import "./globals.css";
@@ -29,6 +31,7 @@ const SITE_DESCRIPTION =
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  ...(isIsolatedEnvironment() ? { robots: { index: false, follow: false } } : {}),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   applicationName: "The Lifting Lab",
@@ -59,11 +62,22 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {isSyntheticPreview() && (
+          <aside role="status" data-testid="synthetic-preview-notice" className="border-b border-lab-lime bg-lab-lime px-4 py-3 text-center text-sm font-semibold text-black">
+            {PREVIEW_UNAVAILABLE_MESSAGE} Product lists may be empty.
+          </aside>
+        )}
+        {isHostedStaging() && (
+          <aside role="status" data-testid="staging-notice" className="border-b border-lab-lime bg-lab-lime px-4 py-3 text-center text-sm font-semibold text-black">
+            Staging test site. Synthetic products and test accounts only.
+          </aside>
+        )}
         <LocalStackProvider>
           {children}
           <StackFAB />
         </LocalStackProvider>
       </body>
+      {!isIsolatedEnvironment() && <>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
         strategy="afterInteractive"
@@ -73,9 +87,10 @@ export default function RootLayout({
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}');
+          gtag('config', ${serializeJsonForHtml(GA_MEASUREMENT_ID)});
         `}
       </Script>
+      </>}
     </html>
   );
 }

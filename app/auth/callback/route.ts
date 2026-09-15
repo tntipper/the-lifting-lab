@@ -1,19 +1,16 @@
+import { guardedSupabaseFetch } from '@/lib/preview-mode'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { completeAuthCallback } from '@/lib/auth-flow'
 
-export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') ?? '/dashboard'
-
-  if (code) {
+export async function GET(request: Request) {
+  return completeAuthCallback(new URL(request.url), async code => {
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
+      global: { fetch: guardedSupabaseFetch },
         cookies: {
           getAll() {
             return cookieStore.getAll()
@@ -26,8 +23,6 @@ export async function GET(request: NextRequest) {
         },
       }
     )
-    await supabase.auth.exchangeCodeForSession(code)
-  }
-
-  return NextResponse.redirect(new URL(next, request.url))
+    return supabase.auth.exchangeCodeForSession(code)
+  })
 }
