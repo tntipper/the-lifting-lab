@@ -1,8 +1,6 @@
 // Guard every Next worker in the preview build/runtime acceptance test.
 // Node --require preloads must be CommonJS before Next worker imports run.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const fs = require('node:fs')
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const net = require('node:net')
 const allowed = new Set(['127.0.0.1', 'localhost', '::1'])
 function check(host) {

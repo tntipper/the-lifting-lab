@@ -11,9 +11,9 @@ const require = createRequire(import.meta.url)
 function loadSource(path, customRequire = require, extra = {}) {
   const source = readFileSync(new URL(path, import.meta.url), 'utf8')
   const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-  const loadedModule = { exports: {} }
-  vm.runInNewContext(js, { require: customRequire, module: loadedModule, exports: loadedModule.exports, process, URL, Response, ...extra })
-  return loadedModule.exports
+  const loaded = { exports: {} }
+  vm.runInNewContext(js, { require: customRequire, module: loaded, exports: loaded.exports, process, URL, Response, ...extra })
+  return loaded.exports
 }
 const resolve = name => ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
 
