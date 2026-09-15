@@ -32,9 +32,12 @@ $preflight$;
 CREATE SCHEMA tll_customer_private AUTHORIZATION tll_customer_owner;
 CREATE SEQUENCE tll_customer_private.fences AS bigint NO CYCLE;
 CREATE TABLE tll_customer_private.control (
-  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton), enabled boolean NOT NULL DEFAULT false
+  singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton), enabled boolean NOT NULL DEFAULT false,
+  -- Exact installing role; operator functions additionally require this SESSION user.
+  operator_oid oid NOT NULL, changed_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  reason_code text NOT NULL DEFAULT 'installed_disabled' CHECK(reason_code ~ '^[a-z0-9][a-z0-9_-]{0,63}$')
 );
-INSERT INTO tll_customer_private.control VALUES(true,false);
+INSERT INTO tll_customer_private.control(singleton,enabled,operator_oid) VALUES(true,false,current_user::regrole::oid);
 CREATE TABLE tll_customer_private.owners (
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   shop_id text NOT NULL CHECK(shop_id='107532616020'),
@@ -100,7 +103,7 @@ DECLARE
   c tll_customer_private.connections%ROWTYPE;
   o tll_customer_private.owners%ROWTYPE;
   uid uuid; shop text; ts timestamptz; f bigint; cid uuid; expiry timestamptz;
-  ctx jsonb; answer jsonb; made boolean;
+  ctx jsonb; answer jsonb; made boolean; use_enabled boolean;
 BEGIN
   IF p IS NULL OR jsonb_typeof(p)<>'object' OR op NOT IN
     ('create_attempt','claim_attempt','attempt_context','finish_attempt','hold_attempt',
@@ -108,9 +111,11 @@ BEGIN
     RAISE EXCEPTION 'Invalid repository request' USING ERRCODE='22023';
   END IF;
   -- Disabling blocks use/new material; revocation and uncertainty holds still work.
-  IF op NOT IN ('hold_attempt','hold_refresh','logout') AND
-     (SELECT enabled FROM tll_customer_private.control WHERE singleton) IS DISTINCT FROM true THEN
-    RETURN jsonb_build_object('status','rejected');
+  IF op NOT IN ('hold_attempt','hold_refresh','logout') THEN
+    -- A completed operator disable also waits for already-admitted SQL work.
+    -- It cannot cancel an external request already sent after an earlier claim.
+    SELECT enabled INTO use_enabled FROM tll_customer_private.control WHERE singleton FOR SHARE;
+    IF use_enabled IS DISTINCT FROM true THEN RETURN jsonb_build_object('status','rejected'); END IF;
   END IF;
   IF op='create_attempt' THEN uid:=(p->>'userId')::uuid; shop:=p->>'shopId';
   ELSIF op='logout' THEN uid:=(p->>'userId')::uuid; shop:=p->>'shopId';
@@ -249,8 +254,45 @@ BEGIN
 END
 $fn$;
 
+-- Narrow operator surface: counts/control only, never identity or envelope rows.
+-- SET ROLE alone is insufficient: only the recorded installing SESSION user may
+-- operate this surface. Re-provisioning an operator requires a reviewed migration.
+CREATE FUNCTION tll_customer_private.operator_status() RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,tll_customer_private AS $operator$
+DECLARE ctl tll_customer_private.control%ROWTYPE;
+BEGIN
+  SELECT * INTO ctl FROM tll_customer_private.control WHERE singleton;
+  IF ctl.operator_oid IS DISTINCT FROM session_user::regrole::oid THEN
+    RAISE EXCEPTION 'Customer repository operator unavailable' USING ERRCODE='42501';
+  END IF;
+  RETURN jsonb_build_object('enabled',ctl.enabled,'changedAt',ctl.changed_at,'reasonCode',ctl.reason_code,
+    'owners',(SELECT count(*) FROM tll_customer_private.owners),
+    'attempts',(SELECT jsonb_build_object('pending',count(*) FILTER(WHERE status='pending'),
+      'exchanging',count(*) FILTER(WHERE status='exchanging'),'connected',count(*) FILTER(WHERE status='connected'),
+      'held',count(*) FILTER(WHERE status='held')) FROM tll_customer_private.attempts),
+    'connections',(SELECT jsonb_build_object('active',count(*) FILTER(WHERE status='active'),
+      'refreshing',count(*) FILTER(WHERE status='refreshing'),'held',count(*) FILTER(WHERE status='held'),
+      'loggedOut',count(*) FILTER(WHERE status='logged_out')) FROM tll_customer_private.connections));
+END
+$operator$;
+CREATE FUNCTION tll_customer_private.operator_set_enabled(enable_use boolean, change_reason_code text) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,tll_customer_private AS $operator$
+DECLARE ctl tll_customer_private.control%ROWTYPE;
+BEGIN
+  SELECT * INTO ctl FROM tll_customer_private.control WHERE singleton FOR UPDATE;
+  IF ctl.operator_oid IS DISTINCT FROM session_user::regrole::oid THEN
+    RAISE EXCEPTION 'Customer repository operator unavailable' USING ERRCODE='42501';
+  END IF;
+  IF enable_use IS NULL OR change_reason_code IS NULL OR change_reason_code !~ '^[a-z0-9][a-z0-9_-]{0,63}$' THEN
+    RAISE EXCEPTION 'Invalid customer repository control request' USING ERRCODE='22023';
+  END IF;
+  UPDATE tll_customer_private.control SET enabled=enable_use,changed_at=clock_timestamp(),reason_code=change_reason_code WHERE singleton;
+  RETURN tll_customer_private.operator_status();
+END
+$operator$;
+
 -- Own all scoped objects, erase EVERY creation ACL (including default grants to
--- indirect browser roles), then grant only the one server operation. No shared
+-- indirect browser roles), then grant only the scoped server/operator operations. No shared
 -- role/default privileges are changed. No automatic executor login is provisioned.
 DO $acl$
 DECLARE r record; g record;
@@ -275,6 +317,12 @@ END
 $acl$;
 GRANT USAGE ON SCHEMA tll_customer_private TO tll_customer_executor;
 GRANT EXECUTE ON FUNCTION tll_customer_private.repository(text,jsonb) TO tll_customer_executor;
+DO $operator_grants$
+BEGIN
+  EXECUTE format('GRANT USAGE ON SCHEMA tll_customer_private TO %I',current_user);
+  EXECUTE format('GRANT EXECUTE ON FUNCTION tll_customer_private.operator_status(), tll_customer_private.operator_set_enabled(boolean,text) TO %I',current_user);
+END
+$operator_grants$;
 DO $postflight$
 DECLARE r record; b record; fnrow record;
 BEGIN
@@ -294,7 +342,7 @@ BEGIN
 END
 $postflight$;
 DO $retire_authority$
-DECLARE migration_role name:=current_user;
+DECLARE migration_role name:=current_user; r record; fnrow record;
 BEGIN
   IF EXISTS(SELECT FROM pg_roles WHERE rolname='tll_customer_role_setup') THEN
     SET LOCAL ROLE tll_customer_role_setup;
@@ -306,8 +354,21 @@ BEGIN
   END IF;
   IF EXISTS(SELECT FROM pg_auth_members WHERE roleid IN (SELECT oid FROM pg_roles WHERE rolname IN ('tll_customer_owner','tll_customer_executor')) OR member IN (SELECT oid FROM pg_roles WHERE rolname IN ('tll_customer_owner','tll_customer_executor'))) THEN
     RAISE EXCEPTION 'Temporary repository role membership remains'; END IF;
-  IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) AND has_schema_privilege(current_user,'tll_customer_private','CREATE') THEN
-    RAISE EXCEPTION 'Temporary migration schema authority remains'; END IF;
+  -- The non-superuser operator retains only USAGE and the two narrow functions.
+  -- Administrators may have inherent platform authority; no such grants are added.
+  IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN
+    IF has_schema_privilege(current_user,'tll_customer_private','CREATE') OR NOT has_schema_privilege(current_user,'tll_customer_private','USAGE') THEN
+      RAISE EXCEPTION 'Unexpected operator schema authority'; END IF;
+    FOR r IN SELECT c.oid,c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='tll_customer_private' AND c.relkind IN ('r','S') LOOP
+      IF r.relkind='r' AND (has_table_privilege(current_user,r.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+        OR has_any_column_privilege(current_user,r.oid,'SELECT,INSERT,UPDATE,REFERENCES')) THEN RAISE EXCEPTION 'Unexpected operator table/column authority'; END IF;
+      IF r.relkind='S' AND has_sequence_privilege(current_user,r.oid,'USAGE,SELECT,UPDATE') THEN RAISE EXCEPTION 'Unexpected operator sequence authority'; END IF;
+    END LOOP;
+    FOR fnrow IN SELECT p.oid,p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='tll_customer_private' LOOP
+      IF has_function_privilege(current_user,fnrow.oid,'EXECUTE') IS DISTINCT FROM (fnrow.proname IN ('operator_status','operator_set_enabled')) THEN
+        RAISE EXCEPTION 'Unexpected operator function authority'; END IF;
+    END LOOP;
+  END IF;
 END
 $retire_authority$;
 COMMIT;

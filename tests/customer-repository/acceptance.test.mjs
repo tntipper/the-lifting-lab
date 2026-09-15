@@ -32,11 +32,46 @@ test('private executor cannot bypass transitions and browser/service roles have 
  assert.equal(admin("SELECT has_schema_privilege('tll_customer_migrator','tll_customer_private','CREATE')"),'f')
  assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname='tll_customer_role_setup'"),'0')
 })
+test('recorded non-superuser operator receives only aggregate status/control, not stored identity or ciphertext',async()=>{
+ const query=sql=>JSON.parse(admin('SET SESSION AUTHORIZATION tll_customer_migrator; '+sql))
+ const status=query('SELECT tll_customer_private.operator_status();')
+ assert.deepEqual(Object.keys(status).sort(),['attempts','changedAt','connections','enabled','owners','reasonCode'])
+ assert.equal(status.owners,0);assert.equal(status.enabled,true)
+ assert.deepEqual(status.attempts,{pending:0,exchanging:0,connected:0,held:0})
+ assert.deepEqual(status.connections,{active:0,refreshing:0,held:0,loggedOut:0})
+ await connect()
+ const occupied=query('SELECT tll_customer_private.operator_status();')
+ assert.equal(occupied.owners,1);assert.equal(occupied.attempts.connected,1);assert.equal(occupied.connections.active,1)
+ assert.doesNotMatch(JSON.stringify(occupied),/SYNTHETIC_SECRET|gid:\/\/shopify|a0000000|ciphertext|tokens|operator_oid/)
+ const changed=query("SELECT tll_customer_private.operator_set_enabled(false,'synthetic_operator_test');")
+ assert.equal(changed.enabled,false);assert.equal(changed.reasonCode,'synthetic_operator_test');assert.ok(Number.isFinite(Date.parse(changed.changedAt)))
+ assert.equal(query("SELECT tll_customer_private.operator_set_enabled(true,'synthetic_operator_restore');").enabled,true)
+ for(const sql of ['SELECT * FROM tll_customer_private.control','SELECT tokens FROM tll_customer_private.connections',"UPDATE tll_customer_private.control SET enabled=true",'CREATE TABLE tll_customer_private.forbidden(id int)',"SELECT tll_customer_private.repository('logout','{}'::jsonb)"]){
+  assert.throws(()=>admin('SET SESSION AUTHORIZATION tll_customer_migrator; '+sql))
+ }
+ for(const role of ['anon','authenticated','service_role','tll_customer_executor'])for(const sql of ['SELECT tll_customer_private.operator_status()',"SELECT tll_customer_private.operator_set_enabled(true,'synthetic')"]){
+  assert.throws(()=>admin('SET SESSION AUTHORIZATION '+role+'; '+sql))
+ }
+})
+test('operator disable waits for admitted SQL, then blocks material claims while permitting revocation',async()=>{
+ const attempt=a();assert.equal(await repo.createAttempt(attempt),true)
+ const admitted=await localPool().connect();await admitted.query('BEGIN')
+ await admitted.query("SELECT tll_customer_private.repository('claim_attempt',$1::jsonb) AS result",[JSON.stringify({stateHash:attempt.stateHash,...owned(),configHash:CONFIG})])
+ // Run in another psql connection; exact SESSION identity, never privileged status.
+ const operator=await localPool({role:'postgres'}).connect();await operator.query('SET SESSION AUTHORIZATION tll_customer_migrator')
+ let complete=false
+ const disabling=operator.query("SELECT tll_customer_private.operator_set_enabled(false,'synthetic_wait_test') AS result").then(r=>{complete=true;return r})
+ await pause(100);assert.equal(complete,false)
+ await admitted.query('COMMIT');admitted.release()
+ assert.equal((await disabling).rows[0].result.enabled,false);operator.release()
+ assert.equal(await repo.createAttempt(a(1)),false)
+ assert.equal((await repo.beginLogout(owned(),SHOP,Date.now())).status,'local_revoked')
+})
 test('two explicit disabled gates prevent allocation and SQL use, while logout can revoke after DB switch-off',async()=>{
  const never={async connect(){throw new Error('disabled adapter touched pool')}}
  for(const opts of [{},{syntheticExecution:false},{syntheticExecution:true,liveEnabled:true}]){const r=createCustomerConnectionRepository({pool:never,vault,...opts});assert.equal(await r.createAttempt(a()),false);assert.equal((await r.claimRefresh(randomUUID(),owned(),CONFIG,Date.now(),60000)).status,'rejected');await assert.rejects(()=>r.beginLogout(owned(),SHOP,Date.now()))}
  admin('UPDATE tll_customer_private.control SET enabled=false;');assert.equal(await repo.createAttempt(a()),false);assert.equal(snapshot().attempts.length,0)
- admin('DELETE FROM tll_customer_private.control;');try{assert.equal(await repo.createAttempt(a()),false)}finally{admin('INSERT INTO tll_customer_private.control VALUES(true,false);')}
+ admin('DELETE FROM tll_customer_private.control;');try{assert.equal(await repo.createAttempt(a()),false);assert.throws(()=>admin('SET SESSION AUTHORIZATION tll_customer_migrator; SELECT tll_customer_private.operator_status();'));assert.throws(()=>admin("SET SESSION AUTHORIZATION tll_customer_migrator; SELECT tll_customer_private.operator_set_enabled(true,'synthetic');"))}finally{admin("INSERT INTO tll_customer_private.control(singleton,enabled,operator_oid) VALUES(true,false,'tll_customer_migrator'::regrole::oid);")}
  admin('UPDATE tll_customer_private.control SET enabled=true;');await connect();admin('UPDATE tll_customer_private.control SET enabled=false;')
  assert.equal((await repo.beginLogout(owned(),SHOP,Date.now())).status,'local_revoked');assert.equal(snapshot().connections[0].status,'logged_out')
 })
