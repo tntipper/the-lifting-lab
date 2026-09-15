@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { getShareProducts } from '@/lib/share-products-server'
+import { claimsReviewFor } from '@/lib/claims-review'
 
 export const runtime = 'edge'
 export const alt = 'The Lifting Lab — Product Score'
@@ -21,7 +22,8 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   }
   const { brand, name, category: categorySlug, score } = result.products[0]
   const category = categorySlug.replace(/-/g, ' ').toUpperCase()
-  const col = scoreColor(score)
+  const review = claimsReviewFor(categorySlug)
+  const col = review ? '#f5b342' : scoreColor(score)
   const displayScore = score != null ? String(score) : '—'
 
   return new ImageResponse(
@@ -44,7 +46,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             THE LIFTING LAB
           </span>
           <span style={{ color: '#374151', fontSize: 14, letterSpacing: 3, textTransform: 'uppercase' }}>
-            Evidence-Based Scoring
+            {review ? 'Claims Under Review' : 'Evidence-Based Scoring'}
           </span>
         </div>
 
@@ -107,7 +109,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         {/* footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#374151', fontSize: 13, letterSpacing: 2 }}>
-            Effective-dose analysis · EFSA reference values · Not medical advice
+            {review ? 'Existing formula score · Benefits not validated · Not medical advice' : 'Effective-dose analysis · EFSA reference values · Not medical advice'}
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab

@@ -4,6 +4,8 @@ import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { METHODOLOGY, METHODOLOGY_INDEX } from '@/lib/methodology'
 import { GUIDE_SLUGS } from '@/lib/guides'
+import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
+import { claimsReviewFor } from '@/lib/claims-review'
 
 const SITE = 'https://www.theliftinglab.co.uk'
 const URL = `${SITE}/methodology`
@@ -17,12 +19,12 @@ const URL = `${SITE}/methodology`
 export const metadata: Metadata = {
   title: 'How We Score Supplements — The Lifting Lab Methodology',
   description:
-    'Exactly how The Lifting Lab scores every supplement: a 0-100 Effectiveness Match against an evidence-based clinical reference dose for each category. Full weightings, global penalties (proprietary blends, amino-spiking, caffeine), and per-category reference specs. No brand deals, no pay-to-win.',
+    'TLL’s current scoring rules and reference weights. Cycle-support, liver-health, hormone-support and ZMA claims are under review; scores are not validated protection or hormone-benefit assessments.',
   alternates: { canonical: `${SITE}/methodology` },
   openGraph: {
     title: 'How We Score Supplements — The Lifting Lab Methodology',
     description:
-      'The full, transparent scoring methodology behind every Effectiveness Match score: category reference doses, weightings, and penalties. No pay-to-win.',
+      'Current category weights and scoring rules, including interim notices for organ-protection and hormone claims under review.',
     url: `${SITE}/methodology`,
     type: 'article',
     siteName: 'The Lifting Lab',
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'How We Score Supplements — The Lifting Lab Methodology',
     description:
-      'The full, transparent scoring methodology behind every Effectiveness Match score. No brand deals, no pay-to-win.',
+      'Current scoring rules and the organ-protection and hormone claims under review.',
   },
 }
 
@@ -67,14 +69,14 @@ const GLOBAL_RULES: { title: string; body: string }[] = [
   {
     title: 'Evidence over manufacturer claims',
     body:
-      'Every reference dose is drawn from peer-reviewed human evidence (ISSN/JISSN position stands, meta-analyses, NHS/NIH fact sheets), not brand-funded studies or label marketing. Ingredients with only animal data or token doses are flagged, not scored.',
+      'The evidence supporting reference doses and weights needs to be traceable to the studied population, formulation and outcome. Cycle-support, liver-health, hormone-support and ZMA claims are under review. Their legacy weights do not establish clinical benefits.',
   },
 ]
 
 const FAQ: { q: string; a: string }[] = [
   {
     q: 'What is an Effectiveness Match score?',
-    a: 'It is a 0-100 rating of how closely a product’s active ingredient doses match an evidence-based clinical reference spec for its category. 100 represents a perfect theoretical formula, so real products land below it. It rates the formulation only — not the brand, its safety, or its reputation.',
+    a: 'It is an existing 0-100 formula-based rating. Cycle-support, liver-health, hormone-support and ZMA claims are under review; their scores are not validated measures of protection or hormone benefits. A score is not a safety assessment, diagnosis or treatment recommendation.',
   },
   {
     q: 'Do brands pay to score higher or appear first?',
@@ -86,7 +88,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'What do the score colours mean?',
-    a: 'Green (70-100) meets or beats the effective dose for its category. Amber (50-69) is below optimal but usable. Red (under 50) is significantly underdosed or carries a major penalty such as a proprietary blend.',
+    a: 'Green, amber and red indicate existing formula bands. In categories under review they must not be interpreted as verified benefits, effective doses, safety findings or reasons to add a missing ingredient.',
   },
   {
     q: 'Is a score medical advice?',
@@ -122,9 +124,8 @@ export default function MethodologyPage() {
     name: 'How We Score Supplements — The Lifting Lab Methodology',
     url: URL,
     description:
-      'The full scoring methodology behind The Lifting Lab: a 0-100 Effectiveness Match against evidence-based clinical reference doses per supplement category.',
+      'Current scoring rules and reference weights, with interim notices for organ-protection and hormone claims under review.',
     publisher: { '@type': 'Organization', name: 'The Lifting Lab', url: SITE },
-    lastReviewed: '2026-07-01',
   }
 
   return (
@@ -152,15 +153,15 @@ export default function MethodologyPage() {
           How We <span className="text-lab-lime">Score</span> Supplements
         </h1>
         <p className="text-lg text-white/90 leading-relaxed mb-4">
-          Every product on The Lifting Lab gets an <span className="text-white font-bold">Effectiveness
-          Match score from 0 to 100</span> — a dose-for-dose comparison against an evidence-based
-          clinical reference spec for its category. No brand deals. No sponsored placements. No
-          pay-to-win. Just the numbers on the label measured against what the research says works.
+          Our catalogue uses an <span className="text-white font-bold">Effectiveness
+          Match score from 0 to 100</span> based on current category reference formulas.
+          This page records the displayed weights and rules, including the categories whose claims
+          and clinical interpretation are under review.
         </p>
         <p className="text-lab-muted leading-relaxed mb-10">
-          The perfect 100 belongs to an ideal formula that does not exist, so real products land
-          below it. Below is the exact framework — the score tiers, the global penalties that stop
-          marketing from gaming the number, and the reference spec for every category we track.
+          A formula score is not a diagnosis, a safety assessment or a promise of benefit.
+          Cycle-support, liver-health, hormone-support and ZMA need the specific review notices below;
+          their reference weights must not be interpreted as clinically established targets.
         </p>
 
         {/* score tiers */}
@@ -182,6 +183,8 @@ export default function MethodologyPage() {
             ))}
           </div>
         </section>
+
+        <p className="mb-8 text-sm text-yellow-400">The score bands and ranking descriptions are not validated health-benefit assessments for cycle-support, liver-health, hormone-support or ZMA. Read their review notices below.</p>
 
         {/* the three ways we rank */}
         <section className="mb-12">
@@ -234,8 +237,8 @@ export default function MethodologyPage() {
             The Reference Spec, Category by Category
           </h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-6">
-            Each category is scored against its own evidence-defined ideal. Here is the weighting and
-            reasoning behind every one.
+            The current category reference weights are listed below. The marked categories are under review;
+            their legacy weights are not established protective doses or hormone-benefit thresholds.
           </p>
           <div className="space-y-8">
             {METHODOLOGY_INDEX.map((entry) => {
@@ -253,10 +256,11 @@ export default function MethodologyPage() {
                       {hasGuide ? 'Read the guide →' : 'See products →'}
                     </Link>
                   </div>
+                  <ClaimsReviewNotice category={entry.categorySlug} />
                   <p className="text-sm text-white/80 leading-relaxed mb-4">{m.blurb}</p>
 
                   <p className="text-[10px] uppercase tracking-widest font-bold text-lab-muted mb-2">
-                    Weighting
+                    {claimsReviewFor(entry.categorySlug) ? 'Legacy weights under review' : 'Weighting'}
                   </p>
                   <div className="space-y-1.5 mb-4">
                     {m.rows.map((row) => (

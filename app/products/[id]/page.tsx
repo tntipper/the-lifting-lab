@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase-public'
 import { categoryLabel } from '@/lib/categories'
+import { claimsReviewFor } from '@/lib/claims-review'
 import { getGuide } from '@/lib/guides'
 import { fetchProductDetail, fetchCategory } from '@/lib/product-data'
 import ProductDetailPage from './ProductDetailPage'
@@ -50,7 +51,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const score = product.score
   const cat = categoryLabel(product.category)
   const title = `${product.brand} ${product.name} Score & Review | The Lifting Lab`
-  const description = score != null
+  const review = claimsReviewFor(product.category)
+  const description = review
+    ? `${product.brand} ${product.name}. ${review.title}. Existing category scores are not validated health-benefit assessments.`
+    : score != null
     ? `${product.brand} ${product.name} scores ${score}/100 on our Effectiveness Match ${cat.toLowerCase()} rating. Dose-for-dose analysis vs EFSA reference values.`
     : `${product.brand} ${product.name} — evidence-based ${cat.toLowerCase()} analysis from The Lifting Lab.`
 
@@ -93,7 +97,7 @@ export default async function Page({ params }: Props) {
       // The Lifting Lab's editorial Effectiveness Match score, expressed on its
       // native 0-100 scale. We are an independent reviewer of these products
       // (not the seller), so this is a legitimate editorial Review.
-      ...(score != null && {
+      ...(score != null && !claimsReviewFor(product.category) && {
         review: {
           '@type': 'Review',
           name: `${fullName} Effectiveness Match analysis`,

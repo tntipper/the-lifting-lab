@@ -8,6 +8,8 @@ import FavouriteButton from '@/components/FavouriteButton'
 import ProductImage from '@/components/ProductImage'
 import { createClient } from '@/lib/supabase'
 import MethodologyModal from '@/components/MethodologyModal'
+import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
+import { claimsReviewFor } from '@/lib/claims-review'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
@@ -40,20 +42,20 @@ const CATEGORY_BENEFITS: Record<string, string> = {
   'hydration':        'Electrolyte balance · Performance hydration · Cramp prevention',
   'protein-bar':      'On-the-go protein · Controlled macros · Convenient muscle support',
   'meal-replacement': 'Balanced macro profile · Calorie management · Convenient nutrition',
-  'cycle-support':    'Liver & organ protection · Hormone balance · Lipid management',
-  'hormone-support':  'Testosterone support · Hormonal balance · Recovery optimisation',
+  'cycle-support':    'Cycle-support formulas · Organ-protection claims under review',
+  'hormone-support':  'Hormone-support formulas · Claims under review',
   'vitamin':          'Micronutrient support · Immune function · Overall health foundation',
   'multivitamin':     'Full micronutrient spectrum · Immune & metabolic support · Daily baseline',
-  'vitamin-d':        'Bone density · Immune regulation · Testosterone support',
+  'vitamin-d':        'Vitamin D products · Compare forms and label amounts',
   'vitamin-c':        'Immune defence · Collagen synthesis · Antioxidant protection',
   'gut-digestion':    'Digestive enzyme support · Gut microbiome · Nutrient absorption',
   'heart-health':     'Cardiovascular support · Cholesterol balance · Blood pressure',
-  'liver-health':     'Liver detoxification · Hepatoprotective support · Antioxidant defence',
+  'liver-health':     'Liver-health formulas · Organ-protection claims under review',
   'omega-3':          'Inflammation reduction · Heart & brain health · Joint lubrication',
   'joint-health':     'Cartilage support · Joint lubrication · Anti-inflammatory',
   'magnesium':        'Sleep quality · Muscle relaxation · Hormonal & nerve function',
   'sleep-recovery':   'Sleep onset · Deep sleep quality · Recovery & cortisol regulation',
-  'zma':              'Testosterone & growth hormone · Sleep depth · Muscle recovery',
+  'zma':              'Zinc, magnesium and B6 · Hormone claims under review',
 }
 
 function PointerCard({
@@ -322,13 +324,15 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
             </span>
           </h2>
           <p className="text-[11px] text-white/40 mt-1 uppercase tracking-widest">
-            Ranked by effective dosing · not brand reputation
+            {claimsReviewFor(category) ? 'Existing scores · Claims under review' : 'Ranked by effective dosing · not brand reputation'}
           </p>
         </div>
         <div className="shrink-0 pt-1">
           <MethodologyModal category={category === 'all' ? undefined : category} />
         </div>
       </div>
+
+      <ClaimsReviewNotice category={category} />
 
       {/* search */}
       <input
@@ -493,18 +497,20 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {visible.map((p, i) => {
           const isSel = selected.includes(p.id)
-          const isTop = i === 0 && (sort === 'score' || sort === 'value' || sort === 'budget')
-          const medal = MEDALS[i] ?? null
+          const isTop = !claimsReviewFor(p.category) && i === 0 && (sort === 'score' || sort === 'value' || sort === 'budget')
+          const medal = claimsReviewFor(p.category) ? null : MEDALS[i] ?? null
           const stacked = inStack(p.id)
           const benefits = CATEGORY_BENEFITS[p.category] ?? null
-          const dosingNote = p.score != null
+          const dosingNote = !claimsReviewFor(p.category) && p.score != null
             ? p.score >= 70
               ? p.score >= 90 ? '· Excellent dosing' : '· Good dosing'
               : p.score >= 50
               ? '· Partially dosed'
               : '· Below effective dose'
             : ''
-          const scoreFlag = benefits
+          const scoreFlag = claimsReviewFor(p.category)
+            ? { color: '#f5b342', text: `${claimsReviewFor(p.category)!.title}. Existing score is not a validated health-benefit assessment.` }
+            : benefits
             ? {
                 color: p.score != null && p.score >= 70 ? '#a6e22e' : p.score != null && p.score >= 50 ? '#f5b342' : '#ff5c5c',
                 text: benefits + (p.score != null ? ' ' + dosingNote : ''),
