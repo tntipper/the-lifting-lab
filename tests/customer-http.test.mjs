@@ -89,12 +89,18 @@ test('successful refresh may retain only its exact claimed token when replacemen
   for (const value of ['', null]) await assert.rejects(tokenAdapter(options(async () => response({ ...r, refresh_token: value }))).refreshToken(refresh), held)
   await assert.rejects(tokenAdapter(options(async () => ({ ...response(r), status: 500 }))).refreshToken(refresh), held)
 })
-for (const change of [{ access_token: '' }, { refresh_token: undefined }, { id_token: undefined }, { token_type: undefined }, { token_type: 'MAC' }, { expires_in: '3600' }, { expires_in: 0 }, { expires_in: 86401 }, { scope: '' }, { scope: null }, { scope: 'openid email' }, { scope: SCOPE + ' customer-account-mcp-api:full' }, { error: 'private-error-body' }, { unexpected: true }]) {
+for (const change of [{ access_token: '' }, { refresh_token: undefined }, { id_token: undefined }, { token_type: undefined }, { token_type: 'MAC' }, { expires_in: '3600' }, { expires_in: 0 }, { expires_in: 86401 }, { scope: '' }, { scope: null }, { scope: 'openid email' }, { scope: SCOPE + ' customer-account-mcp-api:full' }, { error: 'private-error-body' }]) {
   test(`invalid token response holds without retry: ${JSON.stringify(change)}`, async () => {
     let calls = 0; const adapter = tokenAdapter(options(async () => { calls++; return response({ ...tokens(), ...change }) }))
     await assert.rejects(adapter.exchangeCode(exchange), e => held(e) && e.outcome === 'uncertain'); assert.equal(calls, 1)
   })
 }
+test('unrecognized OAuth response parameters are ignored and never projected into domain/vault data', async () => {
+  const adapter = tokenAdapter(options(async () => response({ ...tokens(), vendor_extension: { internal: 'private-extension-value' }, provider_metadata: 'private-extension-value' })))
+  const r = await adapter.exchangeCode(exchange)
+  assert.equal(r.tokenType, 'Bearer'); assert.equal('vendor_extension' in r, false)
+  assert.doesNotMatch(JSON.stringify(r), /private-extension-value|provider_metadata/)
+})
 for (const kind of ['redirect', 'wrong-response-url', 'http-error', 'oversized', 'truncated', 'invalid-utf8', 'partial-json', 'array', 'content-type', 'duplicate-header', 'compressed']) {
   test(`HTTP ${kind} is rejected and never retried`, async () => {
     const r = response(tokens())

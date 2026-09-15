@@ -114,7 +114,10 @@ export function createShopifyCustomerTokenAdapter(options: HttpOptions & {
     const body = new URLSearchParams({ grant_type: grantType, client_id: STAGING_CUSTOMER_CLIENT_ID, ...fields }).toString()
     const { data } = await jsonRequest(config, TOKEN_URL, 'POST', { authorization: `Basic ${auth}`, 'content-type': 'application/x-www-form-urlencoded', 'cache-control': 'no-store' }, body)
     try {
-      if (!object(data) || Object.keys(data).some(k => !['access_token', 'refresh_token', 'id_token', 'token_type', 'expires_in', 'scope'].includes(k))
+      // RFC 6749 §5.1 requires ignoring unrecognized response parameters. Only
+      // validated known fields are projected below; OAuth error fields are not
+      // extension metadata and must never turn a failure into success.
+      if (!object(data) || ['error', 'error_description', 'error_uri'].some(k => k in data)
         || !text(data.access_token, 32_768)
         || (data.refresh_token === undefined ? grantType !== 'refresh_token' || !text(fields.refresh_token, 32_768) : !text(data.refresh_token, 32_768))
         || (data.id_token === undefined ? grantType === 'authorization_code' : !text(data.id_token, 32_768))
