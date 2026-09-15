@@ -19,7 +19,7 @@ const r = (ingredient: string, target: string, weight: string): MethodologyRow =
 export const METHODOLOGY: Record<string, Methodology> = {
   pre_workouts: {
     blurb:
-      'Scored dose-for-dose vs an evidence-defined perfect pre-workout. Core actives carry 85%; 15% covers secondaries. Every claim on this site is backed by peer-reviewed evidence — not manufacturer studies.',
+      'Scored dose-for-dose vs an evidence-defined perfect pre-workout. Core actives carry 85%; 15% covers secondaries. Category claims and their supporting evidence are subject to review; see the interim notices below.',
     rows: [
       r('L-Citrulline (pure)', '8,000mg', '35%'),
       r('Beta-Alanine', '3,200mg', '25%'),
@@ -72,7 +72,7 @@ export const METHODOLOGY: Record<string, Methodology> = {
   },
   cycle_support: {
     blurb:
-      'We score only the five ingredients with the strongest evidence for organ and cardiovascular protection. A long ingredient list with token doses of unproven herbs is a warning sign, not a selling point.',
+      'The following are legacy formula weights, retained to explain existing scores while the claims are reviewed. They are not established protective doses or a measure of safety during anabolic steroid use.',
     rows: [
       r('NAC (N-Acetyl Cysteine)', '600mg', '40%'),
       r('TUDCA', '250mg', '30%'),
@@ -81,9 +81,9 @@ export const METHODOLOGY: Record<string, Methodology> = {
       r('Omega-3 / DHA', '1,000mg', '5%'),
     ],
     notes: [
-      "No TUDCA is flagged red — it's the key liver protection agent.",
-      'Proprietary blends on cycle support products are a serious red flag — hidden doses means you cannot verify protection. -15% score penalty applied.',
-      "Many products add turmeric, milk thistle, or antioxidant blends at token doses to appear comprehensive. We don't score these — efficacy at typical supplement doses is unproven.",
+      'A missing-TUDCA flag is a legacy formula output, not evidence that adding TUDCA prevents liver injury.',
+      'The legacy formula applies a 15% penalty for undisclosed doses. Label transparency does not establish organ protection.',
+      "NCCIH describes the liver-disease evidence for milk thistle as conflicting or too limited for conclusions. Findings in a clinical condition cannot be assumed to show prevention of steroid-related harm.",
     ],
   },
   whey_normal: {
@@ -191,16 +191,16 @@ export const METHODOLOGY: Record<string, Methodology> = {
   },
   hormone_support: {
     blurb:
-      'Natural OTC hormone support rated on evidence quality and value. We score only ingredients with meaningful human trial data — not every herb on the label.',
+      'The following are legacy formula weights, retained to explain existing scores. The ingredient, dose and outcome evidence must be reviewed before this category can support hormone-benefit recommendations.',
     rows: [
       r('Evidence-backed dose', 'peer-reviewed threshold', '50%'),
       r('Value (cost per day)', '≤£1.00/day', '30%'),
       r('Formula transparency', 'no prop blends', '20%'),
     ],
     notes: [
-      'Testosterone-support claims require human RCT evidence at the scored dose — animal data does not count.',
+      'Review must distinguish the studied population, extract, comparator, duration and measured outcome. A change in a blood marker is not automatically a meaningful health benefit.',
       'SARMs, prohormones, and any prescription-only compound are excluded from this category entirely.',
-      'Ashwagandha, Tongkat Ali, Boron, and Zinc are the four ingredients with the strongest human evidence — products scoring here lead on these.',
+      'No ingredient is endorsed here as a reliable testosterone booster. See the linked evidence limitations and safety information.',
     ],
   },
   gut_digestion: {
@@ -279,7 +279,7 @@ export const METHODOLOGY_INDEX: MethodologyIndexEntry[] = [
   { key: 'hydration', title: 'Hydration & Electrolytes', categorySlug: 'hydration' },
   { key: 'protein_bars', title: 'Protein Bars', categorySlug: 'protein-bar' },
   { key: 'meal_replacement_rtd', title: 'Meal Replacements & RTDs', categorySlug: 'meal-replacement' },
-  { key: 'cycle_support', title: 'Cycle Support & Organ Health', categorySlug: 'cycle-support' },
+  { key: 'cycle_support', title: 'Cycle Support / Liver Claims', categorySlug: 'cycle-support' },
   { key: 'vitamins_wellbeing', title: 'Vitamins & Wellbeing', categorySlug: 'vitamin' },
   { key: 'hormone_support', title: 'Hormone Support', categorySlug: 'hormone-support' },
   { key: 'gut_digestion', title: 'Gut & Digestion', categorySlug: 'gut-digestion' },

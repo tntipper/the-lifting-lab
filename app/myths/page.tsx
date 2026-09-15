@@ -156,7 +156,7 @@ export default function MythsPage() {
               <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">Related</p>
               <p className="text-sm font-black uppercase tracking-wide text-white">Testosterone Support</p>
               <p className="text-xs text-lab-muted leading-snug mt-1">
-                The honest, evidence-based verdict on natural testosterone boosters — what works, what is weak, and what to skip.
+                Testosterone supplement claims are under review. Read the evidence limitations and when to seek clinical assessment.
               </p>
             </div>
             <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>

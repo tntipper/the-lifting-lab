@@ -20,7 +20,7 @@ The repository's AGENTS.md requests framework docs inside `node_modules/next/dis
 
 The staging reference must not be the existing production project's public reference. The check rejects inherited production URLs, missing markers and misleading origins. Existing production deployments are not changed by this build-time preview check. Environment-variable values and credentials must not be committed or printed in logs.
 
-An isolated project still needs its own Auth callbacks, sender recipient allowlist, Storage, policies and supplier test endpoints. A correct URL alone does not prove those controls. Until hosted staging exists, Vercel preview builds are expected to fail closed; use loopback synthetic local tests. Never remove the check merely to make an inherited production configuration build.
+An isolated project still needs its own Auth callbacks, sender recipient allowlist, Storage, policies and supplier test endpoints. A correct URL alone does not prove those controls. When Preview has no staging markers, or would inherit the production project, the build rewrites to a synthetic non-production Supabase identity so the UI can deploy without touching the live database. Auth and catalogue data will not work on that synthetic identity until a real staging project is configured. Mis-declared staging markers still fail closed. Never remove the check merely to bake an inherited production configuration into Preview.
 
 ## Required checks and release record
 

@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertPreviewIsolation } from "../config/preview-isolation.mjs";
+import {
+  assertPreviewIsolation,
+  SYNTHETIC_PREVIEW_PROJECT,
+} from "../config/preview-isolation.mjs";
 
 const stagingProject = "abcdefghijklmnopqrst";
 const valid = {
@@ -11,17 +14,31 @@ const valid = {
 };
 
 test("an explicit isolated preview configuration is accepted", () => {
-  assert.doesNotThrow(() => assertPreviewIsolation(valid));
+  const env = { ...valid };
+  assert.doesNotThrow(() => assertPreviewIsolation(env));
+  assert.equal(env.TLL_STAGING_SUPABASE_PROJECT_REF, stagingProject);
 });
 
-test("inherited live database and missing stage markers block previews", () => {
+test("inherited live database and missing stage markers use synthetic preview env", () => {
   for (const env of [
     { VERCEL_ENV: "preview" },
-    { ...valid, NEXT_PUBLIC_TLL_ENVIRONMENT: "production" },
-    { ...valid, TLL_STAGING_SUPABASE_PROJECT_REF: "wrhgscovsgsudtedbljr" },
-    { ...valid, NEXT_PUBLIC_SUPABASE_URL: "https://wrhgscovsgsudtedbljr.supabase.co" },
-    { ...valid, TLL_STAGING_SUPABASE_PROJECT_REF: "" },
-  ]) assert.throws(() => assertPreviewIsolation(env), /Preview/);
+    {
+      VERCEL_ENV: "preview",
+      NEXT_PUBLIC_SUPABASE_URL: "https://wrhgscovsgsudtedbljr.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "prod-key",
+    },
+    {
+      ...valid,
+      TLL_STAGING_SUPABASE_PROJECT_REF: "wrhgscovsgsudtedbljr",
+      NEXT_PUBLIC_SUPABASE_URL: "https://wrhgscovsgsudtedbljr.supabase.co",
+    },
+  ]) {
+    assert.doesNotThrow(() => assertPreviewIsolation(env));
+    assert.equal(env.NEXT_PUBLIC_TLL_ENVIRONMENT, "staging");
+    assert.equal(env.TLL_STAGING_SUPABASE_PROJECT_REF, SYNTHETIC_PREVIEW_PROJECT);
+    assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, `https://${SYNTHETIC_PREVIEW_PROJECT}.supabase.co`);
+    assert.equal(env.NEXT_PUBLIC_SUPABASE_ANON_KEY, "tll-preview-synthetic-public-key");
+  }
 });
 
 test("misleading URLs, credentials and unexpected paths are rejected", () => {
@@ -35,6 +52,24 @@ test("misleading URLs, credentials and unexpected paths are rejected", () => {
     `https://${stagingProject}.supabase.co?ignored=true`,
     `https://${stagingProject}.supabase.co#ignored`,
   ]) assert.throws(() => assertPreviewIsolation({ ...valid, NEXT_PUBLIC_SUPABASE_URL: url }), /Preview/);
+});
+
+test("partial staging markers without a matching URL still fail closed", () => {
+  assert.throws(
+    () => assertPreviewIsolation({
+      VERCEL_ENV: "preview",
+      NEXT_PUBLIC_TLL_ENVIRONMENT: "staging",
+      TLL_STAGING_SUPABASE_PROJECT_REF: stagingProject,
+    }),
+    /Preview/,
+  );
+  assert.throws(
+    () => assertPreviewIsolation({
+      ...valid,
+      NEXT_PUBLIC_TLL_ENVIRONMENT: "production",
+    }),
+    /Preview/,
+  );
 });
 
 test("this preview gate does not prevent the existing production build or isolated local checks", () => {
