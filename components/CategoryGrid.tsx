@@ -1,5 +1,6 @@
 'use client'
 
+import { isLegacyRankable } from '@/lib/assessment-display'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
@@ -108,14 +109,14 @@ function TileCard({
         {/* bottom row: product count + top score */}
         <div className="flex items-center justify-between mt-4 pt-3" style={{ borderTop: `1px solid rgba(${rgb},0.12)` }}>
           <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">
-            {stats ? `${stats.count} ranked` : '…'}
+            {stats ? `${stats.count} listed` : '…'}
           </span>
           {topScore != null && scoreCol && (
             <span
               className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border"
               style={{ color: scoreCol, borderColor: `${scoreCol}44`, background: `${scoreCol}14` }}
             >
-              top {topScore}
+              legacy top {topScore}
             </span>
           )}
         </div>
@@ -241,7 +242,7 @@ export default function CategoryGrid() {
         const computed: Record<string, GroupStats> = {}
         for (const group of CATEGORY_GROUPS) {
           const matches = products.filter((p) => group.categories.includes(p.category))
-          const scores = matches.map((p) => p.score).filter((s): s is number => s != null)
+          const scores = matches.filter(isLegacyRankable).map((p) => p.score)
           computed[group.slug] = {
             count: matches.length,
             topScore: scores.length > 0 ? Math.max(...scores) : null,

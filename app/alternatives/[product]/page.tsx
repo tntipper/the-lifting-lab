@@ -1,9 +1,10 @@
+import { isLegacyRankable } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { rankedCategorySlugs } from '@/lib/best-categories'
@@ -100,10 +101,10 @@ function AltCard({
   tag?: string
 }) {
   const delta =
-    target.score != null && p.score != null ? p.score - target.score : null
+    isLegacyRankable(target) && isLegacyRankable(p) ? p.score - target.score : null
   return (
     <div className="flex items-center gap-3 bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5">
-      <ScoreBadge score={p.score} size="sm" />
+      <ProductAssessment product={p} size="sm" />
       <div className="min-w-0 flex-1">
         <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors">
           <p className="text-sm font-bold leading-tight text-white truncate">{p.brand} {p.name}</p>
@@ -143,7 +144,7 @@ export default async function AlternativesPage({
 
   // Better-rated: higher Effectiveness Match. alternatives is already score-desc.
   const betterRated =
-    target.score != null
+    isLegacyRankable(target)
       ? alternatives.filter((p) => p.score != null && p.score > target.score!).slice(0, MAX_SHOWN)
       : []
 
@@ -166,7 +167,7 @@ export default async function AlternativesPage({
 
   const verdict = topRated
     ? `${topRated.brand} ${topRated.name} is our top-rated alternative to ${target.brand} ${target.name}, scoring ${topRated.score}/100 on Effectiveness Match versus ${target.score}.`
-    : target.score != null
+    : isLegacyRankable(target)
     ? `${target.brand} ${target.name} is among the best-scoring ${labelLower} we've tested (${target.score}/100), so there's no better-rated swap — but the picks below match or undercut it on price.`
     : `We surface the top-scoring ${labelLower} below as alternatives to ${target.brand} ${target.name}.`
 
@@ -258,7 +259,7 @@ export default async function AlternativesPage({
         {/* current product + verdict */}
         <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-5 lab-glow mb-10">
           <div className="flex items-center gap-4 mb-3">
-            <ScoreBadge score={target.score} />
+            <ProductAssessment product={target} />
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">
                 You&apos;re looking at

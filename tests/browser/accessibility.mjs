@@ -9,6 +9,7 @@ import postcss from 'postcss'
 import tailwind from '@tailwindcss/postcss'
 import { chromium } from 'playwright'
 import { verifyShareResults, verifyWizard } from './journeys.mjs'
+import { verifyRankings } from './rankings.mjs'
 import { verifyOfferLinks } from './offers.mjs'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
@@ -30,7 +31,7 @@ const bundle = await build({
       contents: args.path === 'next/link'
         ? 'import React from "react"; export default function Link(props){ return <a {...props}/> }'
         : args.path === 'next/navigation'
-          ? 'export const usePathname = () => "/products";'
+          ? 'const params = new URLSearchParams(); export const usePathname = () => "/products"; export const useSearchParams = () => params; export const useRouter = () => ({push(){throw new Error("Unexpected fixture navigation")}});'
           : 'export const createClient = () => ({auth:{getUser:async()=>({data:{user:null}})}});',
     }))
   } }],
@@ -38,7 +39,7 @@ const bundle = await build({
 const css = (await postcss([tailwind()]).process(await readFile(resolve(root, 'app/globals.css'), 'utf8'), { from: resolve(root, 'app/globals.css') })).css
 const html = '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"></head><body><div id="fixture"></div><script src="/fixture.js"></script></body></html>'
 const server = createServer((req, res) => {
-  if (req.url === '/' || req.url === '/wizard' || req.url === '/offers') { res.setHeader('Content-Type', 'text/html'); res.end(html) }
+  if (req.url === '/' || req.url === '/wizard' || req.url === '/offers' || req.url === '/rankings' || req.url === '/unassessed') { res.setHeader('Content-Type', 'text/html'); res.end(html) }
   else if (req.url === '/fixture.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(bundle.outputFiles[0].contents) }
   else if (req.url === '/fixture.css') { res.setHeader('Content-Type', 'text/css'); res.end(css) }
   else { res.statusCode = 404; res.end() }
@@ -55,7 +56,7 @@ try {
     page.on('pageerror', error => errors.push(error.message))
     await page.route('**/*', route => {
       const url = new URL(route.request().url())
-      return url.origin === origin && ['/', '/wizard', '/offers', '/fixture.js', '/fixture.css'].includes(url.pathname)
+      return url.origin === origin && ['/', '/wizard', '/offers', '/rankings', '/unassessed', '/fixture.js', '/fixture.css'].includes(url.pathname)
         ? route.continue() : route.abort()
     })
     await page.goto(origin)
@@ -118,8 +119,9 @@ try {
     await verifyShareResults(page)
     await verifyWizard(page, origin, width, resultDir)
     await verifyOfferLinks(page, origin, width, resultDir)
+    await verifyRankings(page, origin, width, resultDir)
     assert.deepEqual(errors, [], 'Fixture browser raised an uncaught error')
-    results.push({ width, overflow: false, closedDrawerUnfocusable: true, dialogs: 3, keyboard: 'pass', shareResults: 'busy/success/zero/http-error/network-error', wizard: 'focus/budget/eligibility/long-names', offers: 'listing/search/missing/own-shop; card/sticky; keyboard/labels/44px/overflow; no navigation' })
+    results.push({ width, overflow: false, closedDrawerUnfocusable: true, dialogs: 3, keyboard: 'pass', shareResults: 'busy/success/zero/http-error/network-error', wizard: 'focus/budget/eligibility/long-names', rankings: 'unknown/zero/held/legacy; all sorts; research preservation; own-shop holds; overflow', offers: 'listing/search/missing/own-shop; card/sticky; keyboard/labels/44px/overflow; no navigation' })
     await page.close()
   }
 } finally {

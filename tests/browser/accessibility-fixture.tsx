@@ -5,6 +5,8 @@ import StackFAB from '../../components/StackFAB'
 import MethodologyModal from '../../components/MethodologyModal'
 import ShareModal from '../../components/ShareModal'
 import WizardPage from '../../app/wizard/page'
+import ProductGrid from '../../app/products/ProductGrid'
+import type { ScoredProduct } from '../../lib/products'
 import ProductOfferLink from '../../components/ProductOfferLink'
 import { LocalStackProvider, useLocalStack } from '../../components/LocalStackContext'
 
@@ -20,6 +22,27 @@ const offerCases = [
   { state: 'missing', buy_url: null },
   { state: 'own-shop', buy_url: 'https://shop.theliftinglab.co.uk/products/synthetic-fixture?variant=12345' },
 ]
+
+
+const rankingBase = {
+  ...product, nutrients: [{ nutrient_name: 'creatine', amount: 5000, unit: 'mg' }], category: 'creatine',
+  retail_price: 20, cost_per_serving: 1, servings_per_container: 20, serving_size: 5, serving_unit: 'g',
+  informed_sport: false, image_url: null, proprietary_blend: false, amino_spiked: false, protein_yield: null,
+  buy_url: 'https://shop.theliftinglab.co.uk/products/fixture?variant=123',
+}
+const rankingRows: ScoredProduct[] = [
+  { ...rankingBase, id: 'unknown', name: 'A unknown synthetic formula with a long descriptive research name', score: null },
+  { ...rankingBase, id: 'zero', name: 'B zero synthetic formula', score: 0, cost_per_serving: .01 },
+  { ...rankingBase, id: 'held', name: 'C held synthetic formula', category: 'zma', score: 99, cost_per_serving: .01 },
+  { ...rankingBase, id: 'legacy-high', name: 'Z historical high score', score: 80, cost_per_serving: 2 },
+  { ...rankingBase, id: 'legacy-value', name: 'Y historical value score', score: 60, cost_per_serving: 1 },
+]
+function RankingControls() {
+  return <main className="max-w-5xl mx-auto p-4 bg-lab-bg text-white">
+    <h1>Isolated assessment display acceptance</h1>
+    <ProductGrid initialProducts={window.location.pathname === '/unassessed' ? rankingRows.slice(0, 3) : rankingRows} />
+  </main>
+}
 
 function OfferControls() {
   return <main className="min-h-screen bg-lab-bg p-4 space-y-6 text-white">
@@ -64,5 +87,5 @@ function Controls() {
 }
 
 createRoot(document.getElementById('fixture')!).render(
-  <StrictMode><LocalStackProvider>{window.location.pathname === '/wizard' ? <WizardPage /> : window.location.pathname === '/offers' ? <OfferControls /> : <Controls />}</LocalStackProvider></StrictMode>,
+  <StrictMode><LocalStackProvider>{['/rankings', '/unassessed'].includes(window.location.pathname) ? <RankingControls /> : window.location.pathname === '/wizard' ? <WizardPage /> : window.location.pathname === '/offers' ? <OfferControls /> : <Controls />}</LocalStackProvider></StrictMode>,
 )

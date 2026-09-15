@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -215,7 +215,7 @@ export default async function StackPage({
                       <span className="text-xs font-black text-lab-muted w-5 text-center shrink-0">
                         {i + 1}
                       </span>
-                      <ScoreBadge score={p.score} />
+                      <ProductAssessment product={p} />
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] uppercase tracking-widest text-lab-lime mb-0.5">
                           {categoryLabel(p.category)}

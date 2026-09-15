@@ -1,3 +1,4 @@
+import { isLegacyRankable, hasPositiveServingCost } from './assessment-display'
 // Cheapest-per-serving rankings — the price-ascending complement to /value.
 //
 // /value ranks by True Cost as effectiveness-per-pound and surfaces the single
@@ -27,10 +28,9 @@ export function rankCheapest(products: Product[]): CheapProduct[] {
   const rows = products
     .map(withScore)
     .flatMap((p) =>
-      p.score != null &&
+      isLegacyRankable(p) &&
       p.score >= MIN_SCORE &&
-      p.cost_per_serving != null &&
-      p.cost_per_serving > 0
+      hasPositiveServingCost(p)
         ? [{ ...p, score: p.score, cost_per_serving: p.cost_per_serving }]
         : [],
     )

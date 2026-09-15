@@ -3,7 +3,8 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { isLegacyRankable, hasPositiveServingCost } from '@/lib/assessment-display'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -119,7 +120,7 @@ export default async function MatchupPage({
   const products: ComparedProduct[] = [a, b]
 
   // winner on Effectiveness Match score
-  const scored = products.filter((p): p is ComparedProduct & { score: number } => p.score != null)
+  const scored = products.filter(isLegacyRankable)
   const bestRated = scored.length
     ? scored.reduce((x, y) => (y.score > x.score ? y : x))
     : null
@@ -128,7 +129,7 @@ export default async function MatchupPage({
   // best value: highest score per £/serving
   const valued = products.filter(
     (p): p is ComparedProduct & { score: number; cost_per_serving: number } =>
-      p.score != null && p.cost_per_serving != null && p.cost_per_serving > 0,
+      isLegacyRankable(p) && hasPositiveServingCost(p),
   )
   const bestValue = valued.length
     ? valued.reduce((x, y) => (y.score / y.cost_per_serving > x.score / x.cost_per_serving ? y : x))
@@ -157,7 +158,7 @@ export default async function MatchupPage({
     ? `${a.brand} ${a.name} and ${b.brand} ${b.name} are level on Effectiveness Match (${a.score} each).`
     : bestRated
     ? `${bestRated.brand} ${bestRated.name} wins on Effectiveness Match with ${bestRated.score}/100.`
-    : `Neither product is scored yet on Effectiveness Match.`
+    : `No eligible legacy assessment is available for a verdict. Unassessed products and claims under review are not recommended.`
 
   // BreadcrumbList + ItemList + FAQPage — all backed 1:1 by visible content.
   const breadcrumbJsonLd = {
@@ -265,7 +266,7 @@ export default async function MatchupPage({
           {products.map((p) => (
             <div key={p.id} className="bg-lab-panel border border-lab-border rounded-xl p-4 text-center">
               <div className="flex justify-center mb-2">
-                <ScoreBadge score={p.score} />
+                <ProductAssessment product={p} />
               </div>
               <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors">
                 <p className="text-white text-xs font-bold leading-tight">{p.brand}</p>

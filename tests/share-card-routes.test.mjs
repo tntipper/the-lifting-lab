@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import vm from 'node:vm'
+import path from 'node:path'
 import test from 'node:test'
+
+const root = fileURLToPath(new URL('../', import.meta.url))
 
 const require = createRequire(import.meta.url)
 const ts = require('typescript')
@@ -53,6 +56,7 @@ function fixture({ rows = [product], fail = false } = {}) {
       if (name === '@/lib/supabase-server') return { createServerSupabase: async () => fakeSupabase }
       if (name === '@/lib/scores') return { scoreFor: () => 61 }
       if (name === '@/lib/points') return { awardPoints: async (_, action, ref) => { awards.push({ action, ref }); return 25 } }
+      if (name.startsWith('./')) return load(path.relative(root, path.resolve(path.dirname(filename), name)) + '.ts')
       if (name.startsWith('@/lib/')) return load(`${name.slice(2)}.ts`)
       return require(name)
     }

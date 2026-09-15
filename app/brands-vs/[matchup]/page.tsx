@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel, CATEGORIES } from '@/lib/categories'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
@@ -411,7 +411,7 @@ function PickCard({
 }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <ScoreBadge score={product.score} />
+      <ProductAssessment product={product} />
       <p className="text-[10px] uppercase tracking-widest text-lab-muted mt-2">{brand}</p>
       <Link href={`/products/${product.id}`} className="hover:text-lab-lime transition-colors">
         <p className="text-white text-xs font-bold leading-tight mt-0.5">{product.name}</p>
