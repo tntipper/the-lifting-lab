@@ -8,7 +8,7 @@ import { useLocalStack } from '@/components/LocalStackContext'
 const AR = '166,226,46'
 
 export default function StackFAB() {
-  const { stack, remove, clear } = useLocalStack()
+  const { stack, state, remove, clear, retry } = useLocalStack()
   const [open, setOpen] = useState(false)
   const titleId = useId()
 
@@ -60,9 +60,11 @@ export default function StackFAB() {
                     event.currentTarget.closest('dialog')?.querySelector<HTMLElement>('[data-dialog-initial-focus]')?.focus()
                     clear()
                   }}
+                  disabled={state.loading || state.busy}
+
                   className="text-[11px] font-bold uppercase tracking-widest text-white/40 hover:text-red-400 transition-colors"
                 >
-                  Clear all
+                  {state.identity ? 'Clear saved' : 'Clear all'}
                 </button>
               )}
               <button
@@ -77,9 +79,15 @@ export default function StackFAB() {
             </div>
           </div>
 
+          <div role="status" aria-live="polite" className="px-5 py-2 text-xs text-amber-200 space-y-2">
+            {state.loading && <p>Loading your stack…</p>}
+            {state.busy && <p>Saving stack…</p>}
+            {state.identity && state.guest.length > 0 && <p>{state.guest.length} browser item(s) awaiting confirmation in your account. <button type="button" className="underline" disabled={state.busy || state.loading} onClick={retry}>Save browser items</button></p>}
+            {state.error && <p>{state.error} {state.retryable && <button type="button" onClick={retry} disabled={state.busy} className="underline">Retry sync</button>}</p>}
+          </div>
           {/* stack items */}
           <div className="overflow-y-auto max-h-64 px-4 py-2 space-y-1">
-            {count === 0 && (
+            {count === 0 && !state.loading && !state.error && (
               <p className="text-center text-sm text-white/30 py-6">
                 No supplements in your stack yet.<br />
                 <span className="text-[11px]">Tap + Stack on any product card.</span>
@@ -125,6 +133,8 @@ export default function StackFAB() {
                     remove(item.id)
                   }}
                   className="shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-colors text-base leading-none"
+                  disabled={state.loading || state.busy}
+
                 >
                   ×
                 </button>

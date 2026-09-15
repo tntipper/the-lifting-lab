@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem, type SafetyFlag } from '@/lib/nutrient-limits'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem } from '@/lib/nutrient-limits'
 import { rniFor, type Sex } from '@/lib/nutrient-rda'
 import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
 import { scoreFor } from '@/lib/scores'
 import { resolveProductListing } from '@/lib/affiliate'
 import ProductOfferLink from '@/components/ProductOfferLink'
-import { createClient } from '@/lib/supabase'
+import { analysisServings, validStackServings } from '@/lib/stack-sync'
 import { useLocalStack } from '@/components/LocalStackContext'
-import type { LocalStackProduct } from '@/lib/local-stack'
 
 // Batch product shape returned by /api/products/batch
 type BatchProduct = {
@@ -149,21 +148,20 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 export default function StackBuilder() {
-  const { stack: localStack, toggle: localToggle, remove: localRemove, clear: localClear } = useLocalStack()
+  const { stack, state, add, remove, retry } = useLocalStack()
   const [stackItems, setStackItems] = useState<StackItem[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Product[]>([])
   const [searching, setSearching] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [flags, setFlags] = useState<SafetyFlag[]>([])
+  const [detailsLoading, setDetailsLoading] = useState(true)
+  const [detailAttempt, setDetailAttempt] = useState(0)
+  const [detailsError, setDetailsError] = useState<string | null>(null)
+  const loading = state.loading || detailsLoading
+  const unresolved = (state.snapshot?.items || []).filter(item => !validStackServings(item.servings_per_day))
+  const flags = analyseStack(stackItems)
   const [showTotals, setShowTotals] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [sex, setSex] = useState<Sex>('male')
-  // null = auth unresolved. Drives single-source-of-truth: logged-out reads local
-  // (localStorage); logged-in reads server and merges any local items on first load.
-  const [signedIn, setSignedIn] = useState<boolean | null>(null)
-  const mergedRef = useRef(false)
-
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Persist the RDA baseline (gender toggle) so it survives reloads.
@@ -181,71 +179,38 @@ export default function StackBuilder() {
     }
   }
 
-  const loadServerStack = useCallback(async () => {
-    const res = await fetch('/api/stack')
-    const data = await res.json()
-    const items = data.items || []
-    setStackItems(items)
-    setFlags(analyseStack(items))
-    setLoading(false)
-  }, [])
-
-  const loadLocalStack = useCallback(async (items: LocalStackProduct[]) => {
-    if (!items.length) {
-      setStackItems([])
-      setFlags([])
-      setLoading(false)
-      return
-    }
-    const ids = items.map((i) => i.id).join(',')
-    try {
-      const res = await fetch(`/api/products/batch?ids=${encodeURIComponent(ids)}`)
-      const data = await res.json()
-      const mapped = (Array.isArray(data) ? data : []).map(toStackItem)
-      setStackItems(mapped)
-      setFlags(analyseStack(mapped))
-    } catch {
-      setStackItems([])
-      setFlags([])
-    }
-    setLoading(false)
-  }, [])
-
-  // resolve auth once
+  // Both the main page and floating panel use the provider's membership. Only
+  // product detail hydration lives here, and late responses cannot replace it.
+  const idsKey = stack.map(item => item.id).sort().join(',')
   useEffect(() => {
     let cancelled = false
-    createClient().auth.getUser()
-      .then(({ data }) => { if (!cancelled) setSignedIn(!!data.user) })
-      .catch(() => { if (!cancelled) setSignedIn(false) })
-    return () => { cancelled = true }
-  }, [])
-
-  // single source of truth: logged-out → local; logged-in → server (+ merge local once)
-  useEffect(() => {
-    if (signedIn == null) return
-    if (signedIn) {
-      if (!mergedRef.current && localStack.length) {
-        mergedRef.current = true
-        setLoading(true)
-        Promise.all(
-          localStack.map((p) =>
-            fetch('/api/stack', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ productId: p.id }),
-            }).catch(() => {}),
-          ),
-        ).then(() => {
-          localClear()
-          loadServerStack()
-        })
-      } else {
-        loadServerStack()
-      }
-    } else {
-      loadLocalStack(localStack)
-    }
-  }, [signedIn, localStack, loadServerStack, loadLocalStack, localClear])
+    const controller = new AbortController()
+    if (!idsKey) { setStackItems([]); setDetailsError(null); setDetailsLoading(false); return }
+    setDetailsLoading(true)
+    setDetailsError(null)
+    setStackItems([])
+    // The existing public batch route caps requests at 50 products.
+    const ids = idsKey.split(',')
+    const batches = Array.from({ length: Math.ceil(ids.length / 50) }, (_, i) => ids.slice(i * 50, i * 50 + 50))
+    void Promise.all(batches.map(async batch => {
+      const response = await fetch(`/api/products/batch?ids=${encodeURIComponent(batch.join(','))}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) })
+      if (!response.ok) throw new Error('Product details unavailable')
+      const data: unknown = await response.json()
+      if (!Array.isArray(data)) throw new Error('Product details unavailable')
+      return data as BatchProduct[]
+    }))
+      .then(results => {
+        const data = results.flat()
+        if (cancelled) return
+        setStackItems(data.flatMap((p: BatchProduct) => {
+          const servings = analysisServings(state.snapshot, p.id)
+          return servings === null ? [] : [{ ...toStackItem(p), servings_per_day: servings }]
+        }))
+        setDetailsError(data.length < idsKey.split(',').length ? 'Some saved products are unavailable for analysis. They remain in your stack and can be managed in the floating panel.' : null)
+      }).catch(() => { if (!cancelled) setDetailsError('Product details could not be loaded. Your saved stack is kept; retry when connected.') })
+      .finally(() => { if (!cancelled) setDetailsLoading(false) })
+    return () => { cancelled = true; controller.abort() }
+  }, [idsKey, state.snapshot, detailAttempt])
 
   function handleSearchChange(value: string) {
     setSearchQuery(value)
@@ -263,42 +228,17 @@ export default function StackBuilder() {
     }, 300)
   }
 
-  async function addProduct(product: Product) {
+  function addProduct(product: Product) {
     setSearchQuery('')
     setSearchResults([])
-    if (signedIn) {
-      await fetch('/api/stack', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id }),
-      })
-      loadServerStack()
-    } else {
-      // local add — context change triggers the load effect to rehydrate detail
-      localToggle({
-        id: product.id,
-        name: product.name,
-        brand: product.brand,
-        category: product.category,
-        score: scoreFor(product.brand, product.name),
-      })
-    }
+    add({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: scoreFor(product.brand, product.name) })
   }
 
-  async function removeItem(item: StackItem) {
-    if (signedIn) {
-      await fetch('/api/stack', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stackProductId: item.id }),
-      })
-      loadServerStack()
-    } else if (item.products) {
-      localRemove(item.products.id) // context change triggers the load effect
-    }
+  function removeItem(item: StackItem) {
+    if (item.products) remove(item.products.id)
   }
 
-  const stackProductIds = new Set(stackItems.map((i) => i.products?.id))
+  const stackProductIds = new Set(stack.map(item => item.id))
 
   // ---- clinical scoring (Path A scores, looked up by brand + name) ----
   const scoredItems = stackItems
@@ -355,6 +295,17 @@ export default function StackBuilder() {
 
   return (
     <div className="space-y-6">
+      <div role="status" aria-live="polite" className="text-sm text-lab-muted space-y-2">
+        {state.busy && <p>Saving stack…</p>}
+        {state.identity && state.guest.length > 0 && <p>{state.guest.length} browser item(s) awaiting confirmation in your account. <button type="button" className="underline" disabled={state.busy || state.loading} onClick={retry}>Save browser items</button></p>}
+        {Boolean(state.snapshot?.recoveryConflicts) && <p>Earlier saved stacks contain differing serving amounts. Original entries are preserved for support review; conflicting amounts have not been added together.</p>}
+        {state.error && <p className="text-amber-300">{state.error} {state.retryable && <button type="button" className="underline" disabled={state.busy} onClick={retry}>Retry sync</button>}</p>}
+        {detailsError && <p className="text-amber-300">{detailsError} <button type="button" className="underline" onClick={() => setDetailAttempt(n => n + 1)}>Retry details</button></p>}
+      </div>
+      {unresolved.length > 0 && <div className="border border-amber-400/40 rounded-xl p-4 text-sm text-amber-200 space-y-2">
+        <p>Serving amounts need review. These saved items are excluded from totals and stack analysis until corrected; no default dose has been substituted.</p>
+        {unresolved.map(item => <div key={item.product_id} className="flex justify-between gap-3"><span>{item.products?.brand} {item.products?.name || 'Unavailable saved product'} — amount unresolved</span><button type="button" className="underline" disabled={state.busy} onClick={() => remove(item.product_id)}>Remove</button></div>)}
+      </div>}
       {/* Stack score summary */}
       {!loading && stackItems.length > 0 && (
         <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5">
@@ -641,7 +592,7 @@ export default function StackBuilder() {
       {/* Stack items */}
       {loading ? (
         <p className="text-lab-muted text-sm">Loading your stack…</p>
-      ) : stackItems.length === 0 ? (
+      ) : stack.length === 0 && !state.error && !detailsError ? (
         <div className="text-center py-12 text-gray-600">
           <p className="text-4xl mb-3">🧪</p>
           <p className="text-sm">Your stack is empty. Search above to add products.</p>
