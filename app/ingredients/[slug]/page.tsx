@@ -1,4 +1,4 @@
-import { isLegacyRankable } from '@/lib/assessment-display'
+import { hasApprovedAssessment } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -62,7 +62,7 @@ async function topProducts(category: string | undefined, limit = 3): Promise<Sco
       .eq('status', 'active')
       .eq('category', category)
     if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore).filter(isLegacyRankable), 'score').slice(0, limit)
+    return sortScored((data as Product[]).map(withScore).filter(hasApprovedAssessment), 'score').slice(0, limit)
   } catch {
     return []
   }

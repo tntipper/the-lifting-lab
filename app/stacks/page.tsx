@@ -9,22 +9,22 @@ const SITE = 'https://www.theliftinglab.co.uk'
 const URL = `${SITE}/stacks`
 
 export const metadata: Metadata = {
-  title: 'Best Supplement Stacks UK 2026 — By Goal | The Lifting Lab',
+  title: 'Goal-based supplement research — By Goal | The Lifting Lab',
   description:
-    'Ready-made supplement stacks for every goal: muscle building, fat loss, strength, endurance, over 40, everyday health and budget. Real UK products ranked by effectiveness.',
+    'Goal research records. Automatic product and combined-stack recommendations are unavailable until assessments are approved.',
   alternates: { canonical: URL },
   openGraph: {
-    title: 'Best Supplement Stacks UK 2026 — By Goal',
+    title: 'Goal-based supplement research — By Goal',
     description:
-      'Ready-made supplement stacks for every goal, built from real UK products ranked by effectiveness.',
+      'Goal research records. Automatic product and combined-stack recommendations are unavailable until assessments are approved.',
     url: URL,
     type: 'website',
     siteName: 'The Lifting Lab',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Best Supplement Stacks UK 2026 — By Goal',
-    description: 'Ready-made supplement stacks for every goal, ranked by effectiveness.',
+    title: 'Goal-based supplement research — By Goal',
+    description: 'Goal research records. Automatic product and combined-stack recommendations are unavailable until assessments are approved.',
   },
 }
 
@@ -34,7 +34,7 @@ export default function StacksHubPage() {
   const itemListJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'Best Supplement Stacks UK 2026',
+    name: 'Goal-based supplement research',
     description: 'Supplement stacks by training and health goal.',
     numberOfItems: STACK_GUIDES.length,
     itemListElement: STACK_GUIDES.map((s, i) => ({
@@ -81,16 +81,13 @@ export default function StacksHubPage() {
           Supplement Stacks · 2026
         </p>
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
-          Best Supplement <span className="text-lab-lime">Stacks</span> by Goal
+          Supplement <span className="text-lab-lime">research</span> by goal
         </h1>
         <p className="text-lg text-white/90 leading-relaxed mb-4">
-          A stack is just the handful of supplements worth combining for a specific goal. We have
-          built one for each, using only the ingredients with real evidence and filling each slot
-          with the current top-scoring UK product.
+          Explore the existing goal research material. No product or combined-stack assessment is approved, so automatic selections are unavailable.
         </p>
         <p className="text-lab-muted leading-relaxed mb-10">
-          Pick the goal closest to yours below, or answer a few quick questions to personalise a
-          stack to your budget and training.
+          Choose a goal to inspect the research material. The wizard cannot select products until their assessments are approved; manual stack tools remain available.
         </p>
 
         {/* stack cards */}
@@ -107,7 +104,7 @@ export default function StacksHubPage() {
                     {s.eyebrow.replace(/^Goal · /, '')}
                   </p>
                   <h2 className="text-white text-base font-black leading-tight mb-1">{s.h1}</h2>
-                  <p className="text-lab-muted text-sm leading-relaxed line-clamp-2">{s.intro}</p>
+                  <p className="text-lab-muted text-sm leading-relaxed line-clamp-2">{'Product recommendations unavailable; browse the existing goal research and linked records.'}</p>
                   <p className="text-[11px] text-white/50 mt-2 truncate">
                     {s.categories.slice(0, s.maxProducts).map((c) => categoryLabel(c)).join(' · ')}
                   </p>
@@ -125,7 +122,7 @@ export default function StacksHubPage() {
           </h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
             Find My Stack asks a few quick questions about your goals, budget and training, then
-            builds a stack around your answers and what you already take.
+            shows the current assessment availability. You can still build a manual research stack.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link

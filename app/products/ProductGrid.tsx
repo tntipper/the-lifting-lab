@@ -1,10 +1,11 @@
 'use client'
+import { formatListedServingPrice } from '@/lib/products'
 
 import { Suspense, useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ProductAssessment from '@/components/ProductAssessment'
-import { assessmentDisplayFor, isRankingCandidate } from '@/lib/assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment, isRankingCandidate } from '@/lib/assessment-display'
 import FavouriteButton from '@/components/FavouriteButton'
 import ProductImage from '@/components/ProductImage'
 import { createClient } from '@/lib/supabase'
@@ -22,9 +23,9 @@ import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
 
 const SORTS: { key: SortKey; label: string }[] = [
-  { key: 'score', label: 'Best Rating' },
-  { key: 'value', label: 'Best Value for Score' },
-  { key: 'budget', label: 'Budget Pick' },
+  { key: 'score', label: 'Assessment unavailable (A–Z)' },
+  { key: 'value', label: 'Effectiveness value unavailable (A–Z)' },
+  { key: 'budget', label: 'Listed £/serving (low–high)' },
   { key: 'name', label: 'Name (A–Z)' },
   { key: 'brand', label: 'Brand (A–Z)' },
 ]
@@ -475,7 +476,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
       )}
 
       {/* sort + count */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-lab-muted text-xs uppercase tracking-widest font-bold shrink-0">
           {loading ? 'Loading…' : `${visible.length} product${visible.length === 1 ? '' : 's'}`}
         </span>
@@ -483,7 +484,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           aria-label="Sort products"
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
-          className="bg-lab-panel text-white text-xs border border-lab-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-lab-lime"
+          className="min-w-0 max-w-full bg-lab-panel text-white text-xs border border-lab-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-lab-lime"
         >
           {SORTS.map((s) => (
             <option key={s.key} value={s.key}>{s.label}</option>
@@ -508,14 +509,14 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           const medal = ranked ? MEDALS[i] ?? null : null
           const stacked = inStack(p.id)
           const benefits = CATEGORY_BENEFITS[p.category] ?? null
-          const dosingNote = assessment.state === 'legacy' && p.score != null
+          const dosingNote = hasApprovedAssessment(p) && p.score != null
             ? p.score >= 70
               ? p.score >= 90 ? '· Excellent dosing' : '· Good dosing'
               : p.score >= 50
               ? '· Partially dosed'
               : '· Below effective dose'
             : ''
-          const scoreFlag = assessment.state !== 'legacy'
+          const scoreFlag = !hasApprovedAssessment(p)
             ? { color: '#9ca3af', text: assessment.explanation }
             : benefits
             ? {
@@ -626,7 +627,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                     title={trueCostReason(p) ?? undefined}
                     style={p.cost_per_serving != null ? { fontSize: '12px', fontWeight: 800, color: '#f2f2f2' } : { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}
                   >
-                    {p.cost_per_serving != null ? `£${p.cost_per_serving.toFixed(2)}` : '—'}
+                    {p.cost_per_serving != null ? `${formatListedServingPrice(p.cost_per_serving)}` : '—'}
                     {p.cost_per_serving == null && (
                       <span className="block text-[8px] normal-case tracking-normal leading-tight">{trueCostReason(p)}</span>
                     )}

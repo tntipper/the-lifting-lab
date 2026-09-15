@@ -1,8 +1,9 @@
 'use client'
+import { formatListedServingPrice } from '@/lib/products'
 
 import Link from 'next/link'
 import ProductAssessment from '@/components/ProductAssessment'
-import { isLegacyRankable } from '@/lib/assessment-display'
+import { hasApprovedAssessment } from '@/lib/assessment-display'
 import { categoryLabel } from '@/lib/categories'
 import { productSlug } from '@/lib/matchups'
 import { track } from '@/lib/gtag'
@@ -31,8 +32,8 @@ export default function RelatedProducts({
 
   // Prefer genuinely higher-scoring options; if this product already tops the
   // category, fall back to the next-best picks so the slot is never empty.
-  const better = isLegacyRankable({ category, score }) && score != null
-    ? items.filter((p) => isLegacyRankable(p) && p.score > score) : []
+  const better = hasApprovedAssessment({ category, score }) && score != null
+    ? items.filter((p) => hasApprovedAssessment(p) && p.score > score) : []
   const isUpgrade = better.length > 0
   // List arrives score-desc, so the slice is the top of the list.
   const picks = (isUpgrade ? better : items).slice(0, 3)
@@ -73,7 +74,7 @@ export default function RelatedProducts({
               </div>
               {p.cost_per_serving != null && (
                 <span className="text-[10px] text-lab-muted shrink-0">
-                  £{p.cost_per_serving.toFixed(2)}/srv
+                  {formatListedServingPrice(p.cost_per_serving)}/srv
                 </span>
               )}
               {delta != null && delta > 0 && (

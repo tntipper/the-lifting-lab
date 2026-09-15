@@ -185,18 +185,14 @@ export default function ProteinCalculatorPage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Hit your number with the right whey</h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Once you know your daily target, the easiest way to close the gap is a scoop or two of
-            whey. We score every whey protein 0–100 on the evidence and rank them by true cost per
-            effective serving, so you pay for protein, not marketing.
-          </p>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Explore product research records</h2>
+          <p className="text-lab-muted text-sm leading-relaxed mb-5">No approved effectiveness assessment is available. Historical scores cannot choose products or validate a dose. Browse recorded labels and listed prices, or build a manual research stack.</p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/whey"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best whey 2026 →
+              Whey research records →
             </Link>
             <Link
               href="/calculators"

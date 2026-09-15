@@ -1,4 +1,4 @@
-import { isLegacyRankable } from '@/lib/assessment-display'
+import { hasApprovedAssessment } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -44,7 +44,7 @@ async function getBrand(slug: string): Promise<BrandData | null> {
     if (matches.length === 0) return null
 
     const products = sortScored(matches, 'score')
-    const scores = products.filter(isLegacyRankable).map((p) => p.score)
+    const scores = products.filter(hasApprovedAssessment).map((p) => p.score)
     return {
       brand: products[0].brand,
       products,
@@ -82,7 +82,7 @@ export async function generateMetadata({
   if (!data) return { title: 'Brand not found — The Lifting Lab' }
   const url = `${SITE}/brand/${slug}`
   const title = `${data.brand} Supplements — Reviews & Scores UK ${YEAR} | The Lifting Lab`
-  const description = `${data.brand} supplements scored against evidence-based dosing. We track ${data.products.length} ${data.brand} ${data.products.length === 1 ? 'product' : 'products'}${data.avgScore != null ? `, averaging ${data.avgScore}/100` : ''}. See every product ranked by effectiveness.`
+  const description = 'No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research. Listed prices are not confirmed offers; formulations and serving sizes differ.'
   return {
     title,
     description,
@@ -106,7 +106,7 @@ export default async function BrandPage({
   if (!data) notFound()
 
   const url = `${SITE}/brand/${slug}`
-  const top = data.products.find(isLegacyRankable)
+  const top = data.products.find(hasApprovedAssessment)
 
   // Brand entity — the canonical node for "[brand] supplements" searches, with
   // its product range as a nested ItemList so Google can cluster the brand and
@@ -116,7 +116,7 @@ export default async function BrandPage({
     '@type': 'Brand',
     name: data.brand,
     url,
-    description: `${data.brand} sports nutrition and supplements, independently scored by The Lifting Lab against evidence-based clinical dosing.`,
+    description: `${data.brand} supplement research records. No approved effectiveness assessment is available.`,
   }
 
   const itemListJsonLd = {
@@ -173,14 +173,7 @@ export default async function BrandPage({
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
           {data.brand} <span className="text-lab-lime">Supplements</span>
         </h1>
-        <p className="text-lg text-white/90 leading-relaxed mb-4">
-          We score {data.products.length} {data.brand}{' '}
-          {data.products.length === 1 ? 'product' : 'products'} across{' '}
-          {data.categories.length}{' '}
-          {data.categories.length === 1 ? 'category' : 'categories'}, rating each on how closely its
-          active doses match the evidence-based clinical reference for its category — never on brand
-          reputation or marketing.
-        </p>
+        <p className="text-lg text-white/90 leading-relaxed mb-4">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
         {top && (
           <p className="text-lab-muted leading-relaxed mb-8">
             Their strongest pick on our scoring is{' '}
@@ -212,7 +205,7 @@ export default async function BrandPage({
             All {data.brand} <span className="text-lab-lime">products</span>
           </h2>
           <p className="text-lab-muted text-sm mb-5">
-            Available legacy scores are shown first. Unassessed and under-review records are not ranked; scientific review is incomplete.
+            Research records are shown alphabetically. All historical scores are unverified; no effectiveness ranking is available.
           </p>
           <div className="space-y-3">
             {data.products.map((p) => {
@@ -275,12 +268,7 @@ export default async function BrandPage({
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">
             How {data.brand} is scored
           </h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-3">
-            Each product earns an Effectiveness Match score (0–100) measuring how closely its active
-            ingredient doses match the evidence-based clinical reference for its category.
-            Proprietary blends and amino-spiked formulas are penalised because they hide the real
-            dose. We are independent — scores are never influenced by brands or affiliate deals.
-          </p>
+          <p className="text-lab-muted text-sm leading-relaxed mb-3">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
           <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">
             Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring.
           </p>

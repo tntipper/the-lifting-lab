@@ -78,8 +78,7 @@ export default function SleepPage() {
         <p className="text-lg text-white/90 leading-relaxed mb-4">
           The sleep aisle is full of &ldquo;PM&rdquo; tubs and knockout blends, and most of them lean on
           ingredients that barely move the needle. Here is the honest version: the handful of habits and
-          supplements with real evidence behind them, the weak bets, and the ones to skip — scored in the
-          same green, amber and red we use on products.
+          supplements with real evidence behind them, the weak bets, and the ones to skip. Historical product scores are unverified and do not grant effectiveness recommendations.
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
           {itemCount()} of the most-searched sleep levers below, and only {worksN} carry real evidence —
@@ -208,13 +207,8 @@ export default function SleepPage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Buy the few things that help, done right</h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            If a supplement earns its place — magnesium glycinate, a standardised ashwagandha, maybe glycine —
-            the job is buying it at a proper dose without overpaying. Every product we track is scored
-            0&ndash;100 on how closely it matches the evidence, with the true cost per effective serving, or
-            let the wizard build a clean, sensible stack in a minute.
-          </p>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Explore product research records</h2>
+          <p className="text-lab-muted text-sm leading-relaxed mb-5">No approved effectiveness assessment is available. Historical scores cannot choose products or validate a dose. Browse recorded labels and listed prices, or build a manual research stack.</p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/products?category=magnesium"

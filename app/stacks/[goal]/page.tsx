@@ -31,20 +31,20 @@ export async function generateMetadata({
   if (!stack) return { title: 'Stack not found — The Lifting Lab' }
   const url = `${SITE}/stacks/${stack.slug}`
   return {
-    title: stack.metaTitle,
-    description: stack.metaDescription,
+    title: `${stack.eyebrow.replace(/^Goal · /, '')} research — recommendations unavailable`,
+    description: 'Goal research and underlying records. No approved product assessment is available, so no automatic product selection or combined-stack recommendation is made.',
     alternates: { canonical: url },
     openGraph: {
-      title: stack.metaTitle,
-      description: stack.metaDescription,
+      title: `${stack.eyebrow.replace(/^Goal · /, '')} research — recommendations unavailable`,
+      description: 'Goal research and underlying records. No approved product assessment is available, so no automatic product selection or combined-stack recommendation is made.',
       url,
       type: 'article',
       siteName: 'The Lifting Lab',
     },
     twitter: {
       card: 'summary_large_image',
-      title: stack.metaTitle,
-      description: stack.metaDescription,
+      title: `${stack.eyebrow.replace(/^Goal · /, '')} research — recommendations unavailable`,
+      description: 'Goal research and underlying records. No approved product assessment is available, so no automatic product selection or combined-stack recommendation is made.',
     },
   }
 }
@@ -115,7 +115,7 @@ export default async function StackPage({
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: stack.h1,
-    description: stack.metaDescription,
+    description: 'Goal research and underlying records. No approved product assessment is available, so no automatic product selection or combined-stack recommendation is made.',
     itemListOrder: 'https://schema.org/ItemListOrderAscending',
     numberOfItems: picks.length,
     itemListElement: picks.map((p, i) => ({
@@ -179,13 +179,13 @@ export default async function StackPage({
           {stack.h1} <span className="text-lab-lime">UK 2026</span>
         </h1>
 
-        <p className="text-lg text-white/90 leading-relaxed mb-6">{stack.intro}</p>
+        <p className="text-lg text-white/90 leading-relaxed mb-6">Automatic product recommendations are unavailable. The existing goal material below remains for research and has not approved any product or combined stack.</p>
 
         {/* The recommended stack */}
         {picks.length === 0 ? (
           <div className="text-center py-16 text-lab-muted bg-lab-panel border border-lab-border rounded-2xl">
             <p className="text-4xl mb-3">🧪</p>
-            <p className="text-sm">This stack is being assembled. Check back shortly.</p>
+            <p className="text-sm">No approved product assessments are available. Build a manual research stack from product records; historical scores will not select products for this goal.</p>
           </div>
         ) : (
           <section className="mb-12">

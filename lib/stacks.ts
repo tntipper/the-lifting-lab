@@ -1,4 +1,4 @@
-import { isLegacyRankable, hasPositiveServingCost } from './assessment-display'
+import { hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
 // Goal-based supplement "stack" guides — the SSG/SEO counterpart to the
 // interactive Find My Stack wizard. Each archetype targets a proven head-term
 // class ("best supplement stack for muscle building UK 2026") and resolves to a
@@ -31,7 +31,7 @@ export const STACK_GUIDES: StackGuide[] = [
   {
     slug: 'muscle-building',
     eyebrow: 'Goal · Build Muscle',
-    h1: 'Best Supplement Stack for Building Muscle',
+    h1: 'Building Muscle Research',
     metaTitle: 'Best Supplement Stack for Muscle Building UK 2026 | The Lifting Lab',
     metaDescription:
       'The evidence-based supplement stack for building muscle: protein, creatine and the few extras that actually help. Real UK products ranked by effectiveness.',
@@ -40,8 +40,8 @@ export const STACK_GUIDES: StackGuide[] = [
     paras: [
       'Protein is the foundation. A good whey makes it realistic to hit roughly 0.8 to 1g of protein per pound of bodyweight a day, which is the single biggest dietary lever for muscle growth. Everything else in this stack is secondary to getting that right.',
       'Creatine monohydrate is the most studied supplement in sport, reliably improving strength, power and lean mass at 3 to 5g a day. It is also one of the cheapest things you can buy, which makes it a non-negotiable in any muscle-building stack.',
-      'Beyond protein and creatine the returns drop off fast. EAAs are useful intra-workout for fasted or long sessions, and a pre-workout can sharpen hard training days, but neither builds muscle on its own. We have ordered the stack so the essentials come first and the optional extras only get added if your budget stretches.',
-      'Every product below is the current highest-scoring option in its category, judged purely on how closely its active doses match the evidence-based reference for that ingredient. Swap any pick for an alternative on its category page if you prefer a different brand.',
+      'Beyond protein and creatine the returns drop off fast. EAAs are useful intra-workout for fasted or long sessions, and a pre-workout can sharpen hard training days, but neither builds muscle on its own. No automatic product or combined-stack recommendation is available.',
+      'No approved product assessment is available; recorded labels and listed prices can be explored manually.',
     ],
     categories: ['whey', 'creatine', 'eaas', 'pre-workout', 'casein'],
     maxProducts: 4,
@@ -49,13 +49,13 @@ export const STACK_GUIDES: StackGuide[] = [
     faqs: [
       { q: 'What supplements are best for building muscle?', a: 'A quality whey protein and creatine monohydrate (3 to 5g daily) are the two with the strongest evidence. EAAs and a pre-workout are optional extras that support hard training but are not essential.' },
       { q: 'Do I need a pre-workout to build muscle?', a: 'No. A pre-workout can help you train harder on tough days, but muscle growth is driven by progressive training, total protein and a calorie surplus, not by stimulants.' },
-      { q: 'How much does a muscle-building stack cost?', a: 'A core stack of whey and creatine can run well under £60 a month. Adding EAAs and a pre-workout pushes it higher; the picks below show current pricing where available.' },
+      { q: 'How much does a muscle-building stack cost?', a: 'A core stack of whey and creatine can run well under £60 a month. Adding EAAs and a pre-workout pushes it higher; no automatic product picks are available; check current pack prices and delivery costs separately.' },
     ],
   },
   {
     slug: 'beginner',
     eyebrow: 'Goal · Just Starting Out',
-    h1: 'Best Beginner Supplement Stack',
+    h1: 'Beginner Supplement Research',
     metaTitle: 'Best Beginner Supplement Stack UK 2026 | The Lifting Lab',
     metaDescription:
       'New to training? Skip the hype. This beginner supplement stack covers the three things worth buying first, with the best-value UK products ranked.',
@@ -65,7 +65,7 @@ export const STACK_GUIDES: StackGuide[] = [
       'Whey protein is first because the hardest part of starting out is simply eating enough protein. A shake is the cheapest, most convenient way to top up towards 0.8 to 1g per pound of bodyweight without cooking another meal.',
       'Creatine monohydrate is second because nothing else gives you as much proven benefit for as little money. At 3 to 5g a day it supports strength and recovery, and it is safe for long-term daily use. There is no reason for a beginner to skip it.',
       'Vitamin D rounds out the stack for a simple reason: most people in the UK are low on it, especially over winter, and being deficient affects energy, mood and recovery. It is not a muscle supplement, but correcting a common gap helps everything else work better.',
-      'That is genuinely all you need to start. Ignore fat burners, test boosters and 15-ingredient pre-workouts until your training and diet are dialled in. The picks below are the top-scoring options in each of these three categories right now.',
+      'That is genuinely all you need to start. Ignore fat burners, test boosters and 15-ingredient pre-workouts until your training and diet are dialled in. No approved product assessment is available, so automatic picks are withheld.',
     ],
     categories: ['whey', 'creatine', 'vitamin-d'],
     maxProducts: 3,
@@ -79,7 +79,7 @@ export const STACK_GUIDES: StackGuide[] = [
   {
     slug: 'fat-loss',
     eyebrow: 'Goal · Lean Out',
-    h1: 'Best Supplement Stack for Fat Loss',
+    h1: 'Fat Loss Research',
     metaTitle: 'Best Supplement Stack for Fat Loss & Cutting UK 2026 | The Lifting Lab',
     metaDescription:
       'Cutting? Protein and a few low-calorie helpers protect muscle while you lose fat. The honest fat-loss supplement stack, with real UK products ranked.',
@@ -89,7 +89,7 @@ export const STACK_GUIDES: StackGuide[] = [
       'Protein matters even more in a deficit, because it preserves muscle while you lose fat and keeps you fuller for fewer calories. A lean whey isolate is ideal here: high protein with minimal carbs and fat, so it fits a tight calorie budget.',
       'EAAs are a useful intra-workout sipper when training fasted or on very low calories, helping protect muscle without adding much to your daily total. Electrolytes help too, since lower food intake often means lower sodium and the flat, drained feeling that comes with it.',
       'A high-protein bar earns its place as a convenient, portion-controlled snack that satisfies cravings without derailing the deficit. Creatine stays in the stack because it does not cause fat gain; any scale bump is water, and it keeps your strength up while calories are low.',
-      'What you will not find here are fat burners. The evidence for them is weak, the stimulant doses can be unpleasant, and they distract from the only thing that actually drives fat loss: the deficit. The picks below are the top-scoring options in each supporting category.',
+      'What you will not find here are fat burners. The evidence for them is weak, the stimulant doses can be unpleasant, and they distract from the only thing that actually drives fat loss: the deficit. No approved product assessment is available, so automatic picks are withheld.',
     ],
     categories: ['whey-isolate', 'eaas', 'protein-bar', 'hydration', 'creatine'],
     maxProducts: 4,
@@ -103,7 +103,7 @@ export const STACK_GUIDES: StackGuide[] = [
   {
     slug: 'strength-power',
     eyebrow: 'Goal · Strength & Power',
-    h1: 'Best Supplement Stack for Strength & Power',
+    h1: 'Strength & Power Research',
     metaTitle: 'Best Supplement Stack for Strength & Power UK 2026 | The Lifting Lab',
     metaDescription:
       'Lifting heavy? This strength-focused supplement stack pairs creatine and protein with smart training-day extras. Real UK products ranked by effectiveness.',
@@ -112,8 +112,8 @@ export const STACK_GUIDES: StackGuide[] = [
     paras: [
       'Creatine monohydrate is the headline act for strength. By topping up your muscles’ phosphocreatine stores it directly supports short, explosive efforts, which is exactly what heavy lifting demands. At 3 to 5g a day it is the most reliable strength supplement there is.',
       'Protein supports the recovery and muscle repair that underpin getting stronger over time. Even a pure strength athlete needs enough daily protein, and a quality whey is the easiest way to guarantee it without forcing down extra meals.',
-      'A well-dosed pre-workout can help on the heaviest training days, with caffeine improving focus and perceived effort under a loaded bar. Keep it sensible: we penalise products that push past 400mg of caffeine, and you do not need a stimulant for every session.',
-      'EAAs round things out for hard or longer sessions, supporting muscle through high-volume work. The picks below are the current top-scoring options in each category, chosen on how well their doses match the evidence rather than on marketing.',
+      'A well-dosed pre-workout can help on the heaviest training days, with caffeine improving focus and perceived effort under a loaded bar. Keep it sensible: recorded caffeine cautions remain available separately, and you do not need a stimulant for every session.',
+      'EAAs round things out for hard or longer sessions, supporting muscle through high-volume work. No approved product assessment is available, so automatic picks are withheld.',
     ],
     categories: ['creatine', 'whey', 'pre-workout', 'eaas'],
     maxProducts: 4,
@@ -127,7 +127,7 @@ export const STACK_GUIDES: StackGuide[] = [
   {
     slug: 'endurance',
     eyebrow: 'Goal · Endurance',
-    h1: 'Best Supplement Stack for Endurance',
+    h1: 'Endurance Research',
     metaTitle: 'Best Supplement Stack for Endurance & Cardio UK 2026 | The Lifting Lab',
     metaDescription:
       'Running, cycling or long sessions? This endurance supplement stack covers hydration, intra-workout fuel and recovery. Real UK products ranked.',
@@ -137,7 +137,7 @@ export const STACK_GUIDES: StackGuide[] = [
       'Hydration leads because endurance athletes lose a lot of fluid and sodium through sweat, and performance drops sharply when you are behind. A proper electrolyte product (with a meaningful sodium dose, not just flavour) helps you hold onto water and keep going on long or hot sessions.',
       'An intra-workout drink combining fast carbohydrate and electrolytes is where endurance differs most from gym training: sipping fuel through a long effort maintains output and reduces the muscle breakdown that comes with training on empty. For sessions over an hour this is genuinely useful.',
       'EAAs support muscle through long efforts, particularly when training fasted, and creatine still has a place even for endurance athletes by supporting repeated high-intensity bursts and recovery between them.',
-      'Protein closes the loop on recovery, helping you repair and adapt so you can train consistently. The picks below are the top-scoring options in each category, chosen on dosing quality rather than brand.',
+      'Protein closes the loop on recovery, helping you repair and adapt so you can train consistently. No approved product assessment is available, so automatic picks are withheld.',
     ],
     categories: ['hydration', 'intra-workout', 'eaas', 'creatine', 'whey'],
     maxProducts: 4,
@@ -151,7 +151,7 @@ export const STACK_GUIDES: StackGuide[] = [
   {
     slug: 'men-over-40',
     eyebrow: 'Goal · Over 40',
-    h1: 'Best Supplement Stack for Men Over 40',
+    h1: 'Men Over 40 Research',
     metaTitle: 'Best Supplement Stack for Men Over 40 UK 2026 | The Lifting Lab',
     metaDescription:
       'Training in your 40s and beyond? This stack focuses on nutrition and training; hormone-supplement claims are under review. UK products ranked.',
@@ -175,7 +175,7 @@ export const STACK_GUIDES: StackGuide[] = [
   {
     slug: 'everyday-health',
     eyebrow: 'Goal · Health & Wellbeing',
-    h1: 'Best Everyday Health & Wellbeing Stack',
+    h1: 'Everyday Health & Wellbeing Stack Research',
     metaTitle: 'Best Everyday Health Supplement Stack UK 2026 | The Lifting Lab',
     metaDescription:
       'Not chasing gains, just better daily health? This wellbeing stack covers the vitamins and minerals UK adults commonly fall short on. Real products ranked.',
@@ -185,7 +185,7 @@ export const STACK_GUIDES: StackGuide[] = [
       'Vitamin D is the standout for almost everyone in the UK, because limited winter sunlight means deficiency is common, and it affects bone health, immunity, muscle and mood. A daily 1000 to 4000iu dose is a sensible, evidence-backed place to start.',
       'Omega-3 supports heart and brain health and is worth supplementing if you eat little oily fish. Magnesium helps with sleep, muscle function and stress, and many people simply do not get enough from diet, with better-absorbed forms like glycinate worth choosing.',
       'A good multivitamin acts as a backstop against smaller dietary gaps, and a gut or digestion product can help if that is a specific concern for you. The principle throughout is simple: a supplement only helps if you are actually short of what it provides, so target known gaps rather than supplementing by default.',
-      'For anything persistent, like ongoing fatigue, a blood test beats guessing. The picks below are the top-scoring options in each category, judged on dosing and form rather than marketing claims.',
+      'For anything persistent, like ongoing fatigue, a blood test beats guessing. No approved product assessment is available, so automatic picks are withheld.',
     ],
     categories: ['vitamin-d', 'omega-3', 'magnesium', 'multivitamin', 'gut-digestion'],
     maxProducts: 4,
@@ -199,7 +199,7 @@ export const STACK_GUIDES: StackGuide[] = [
   {
     slug: 'budget',
     eyebrow: 'Goal · Best Value',
-    h1: 'Best Budget Supplement Stack',
+    h1: 'Budget Supplement Research',
     metaTitle: 'Best Budget Supplement Stack UK 2026 | The Lifting Lab',
     metaDescription:
       'Great results do not need a big spend. This budget supplement stack picks the best-value protein, creatine and vitamin D by cost per serving. UK products ranked.',
@@ -207,9 +207,9 @@ export const STACK_GUIDES: StackGuide[] = [
       'You do not need to spend a lot to get the benefit supplements actually offer. Most of the results come from a handful of cheap, proven basics, and the marketing markup is on the extras you can skip. This stack picks the best-value option in each essential category by real cost per serving, not by brand.',
     paras: [
       'The three pillars of a value stack are protein, creatine and vitamin D, in that order. They have the strongest evidence per pound spent, and buying them well keeps a complete, effective stack comfortably affordable each month.',
-      'For protein, a plain whey concentrate in a large pouch almost always beats fancy formats on cost per gram of protein. We rank by cost per serving where we have the data, so the pick below is the cheapest effective option we currently track, not just the cheapest tub.',
+      'For protein, a plain whey concentrate in a large pouch almost always beats fancy formats on cost per gram of protein. Listed serving-price comparisons do not establish an effective dose or a product recommendation.',
       'Creatine is where budget shoppers win biggest: plain micronised monohydrate in a large bag costs pennies per serving and performs identically to premium-branded versions. There is no need to pay more for exotic forms that the research does not support.',
-      'Vitamin D is cheap insurance against a common UK deficiency and rounds out the stack without adding much cost. The picks below are chosen by lowest cost per serving among scored products, falling back to the top-scoring option where price data is not yet available.',
+      'Vitamin D is cheap insurance against a common UK deficiency and rounds out the stack without adding much cost. No approved product assessment is available, so automatic picks are withheld.',
     ],
     categories: ['whey', 'creatine', 'vitamin-d'],
     maxProducts: 3,
@@ -247,7 +247,7 @@ export function selectStack<
     if (!inCat || inCat.length === 0) continue
     let best: P | undefined
     if (stack.pick === 'budget') {
-      const priced = inCat.filter((p) => hasPositiveServingCost(p) && isLegacyRankable(p))
+      const priced = inCat.filter((p) => hasPositiveServingCost(p) && hasApprovedAssessment(p))
       if (priced.length > 0) {
         best = priced.reduce((a, b) =>
           (a.cost_per_serving as number) <= (b.cost_per_serving as number) ? a : b,
@@ -255,7 +255,7 @@ export function selectStack<
       }
     }
     if (!best) {
-      const scored = inCat.filter(isLegacyRankable)
+      const scored = inCat.filter(hasApprovedAssessment)
       if (scored.length === 0) continue
       best = scored.reduce((a, b) => ((a.score as number) >= (b.score as number) ? a : b))
     }

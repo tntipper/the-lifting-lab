@@ -1,15 +1,16 @@
+import { formatListedServingPrice } from '@/lib/products'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import {
   fetchPreWorkoutRows,
   HIGH_STIM_MG,
   SINGLE_DOSE_MG,
-  BETA_ALANINE_TARGET_G,
-  CITRULLINE_TARGET_G,
+
+
   type PreWorkoutRow,
 } from '@/lib/pre-workout-actives'
 
@@ -22,23 +23,22 @@ const URL = `${SITE}/strongest-pre-workout`
 const YEAR = 2026
 
 export const metadata: Metadata = {
-  title: `Strongest Pre-Workouts UK ${YEAR} — Caffeine Content Ranked`,
-  description:
-    'UK pre-workouts ranked by caffeine per serving, plus beta-alanine and citrulline content and our effectiveness score. See the strongest, highest-caffeine pre-workouts and how they compare to the 400 mg daily safe limit.',
-  alternates: { canonical: URL },
-  openGraph: {
-    title: `Strongest Pre-Workouts UK ${YEAR} — Caffeine Content Ranked`,
-    description:
-      'Every UK pre-workout ranked by caffeine per serving, with beta-alanine and citrulline doses and effectiveness scores.',
-    url: URL,
-    type: 'website',
-    siteName: 'The Lifting Lab',
+  "title": "Pre-workout caffeine label comparison",
+  "description": "Compare recorded caffeine amounts and other label data. Higher amounts are not an endorsement; no approved effectiveness score is available.",
+  "alternates": {
+    "canonical": "https://www.theliftinglab.co.uk/strongest-pre-workout"
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: `Strongest Pre-Workouts UK ${YEAR}`,
-    description: 'UK pre-workouts ranked by caffeine per serving, with beta-alanine and citrulline doses.',
+  "openGraph": {
+    "title": "Pre-workout caffeine label comparison",
+    "description": "Compare recorded caffeine amounts and other label data. Higher amounts are not an endorsement; no approved effectiveness score is available.",
+    "url": "https://www.theliftinglab.co.uk/strongest-pre-workout",
+    "type": "website"
   },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "Pre-workout caffeine label comparison",
+    "description": "Compare recorded caffeine amounts and other label data. Higher amounts are not an endorsement; no approved effectiveness score is available."
+  }
 }
 
 function citrullineLabel(r: PreWorkoutRow): string {
@@ -56,7 +56,7 @@ export default async function StrongestPreWorkoutPage() {
       ? {
           '@context': 'https://schema.org',
           '@type': 'ItemList',
-          name: `Strongest Pre-Workouts UK ${YEAR}`,
+          name: `Caffeine Label Comparison UK ${YEAR}`,
           description: `UK pre-workouts ranked by caffeine content per serving for ${YEAR}.`,
           itemListOrder: 'https://schema.org/ItemListOrderDescending',
           numberOfItems: ranked.length,
@@ -84,7 +84,7 @@ export default async function StrongestPreWorkoutPage() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'On caffeine per serving, the strongest UK pre-workouts sit at 350 to 500 mg, well above a standard 200 mg dose. Strongest is not the same as best: we rank every pre-workout by caffeine here, but each product also carries its Effectiveness Match score so you can see whether a high-stim formula is actually well dosed on beta-alanine and citrulline too.',
+            'This page orders recorded caffeine amounts per serving. A higher amount is not a quality grade or recommendation. Historical formula scores are unverified and cannot establish effective dosing.',
         },
       },
       {
@@ -102,16 +102,16 @@ export default async function StrongestPreWorkoutPage() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'No. Beyond roughly 3 to 6 mg of caffeine per kg of bodyweight there is little extra performance benefit, just more jitters, higher heart rate and a harder crash. A great pre-workout also delivers a clinical dose of citrulline for pump and beta-alanine for muscular endurance. That is why our Effectiveness Match score, shown next to every product, rewards balanced dosing rather than raw stimulant load.',
+            'No. Higher caffeine content is not an effectiveness or quality recommendation. Historical formula values remain unverified; consult the recorded amounts and the caffeine cautions separately.',
         },
       },
       {
         '@type': 'Question',
-        name: 'How much beta-alanine and citrulline should a pre-workout have?',
+        name: 'What do the recorded beta-alanine and citrulline amounts mean?',
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            `Evidence-based doses are about ${BETA_ALANINE_TARGET_G} g of beta-alanine for muscular endurance (the tingling is harmless) and ${CITRULLINE_TARGET_G} g or more of L-citrulline (or around 8 g of citrulline malate) for blood flow and pump. We list the beta-alanine and citrulline content of every pre-workout so you can check it is doing more than just caffeine.`,
+            'The figures are recorded label amounts, not approved dosing targets or proof of benefit. Ingredient forms, serving sizes and individual circumstances differ. No product effectiveness recommendation is available.',
         },
       },
     ],
@@ -122,42 +122,36 @@ export default async function StrongestPreWorkoutPage() {
     '@type': 'BreadcrumbList',
     itemListElement: [
       { name: 'Home', item: SITE },
-      { name: `Strongest Pre-Workouts ${YEAR}`, item: URL },
+      { name: `Caffeine Label Comparison ${YEAR}`, item: URL },
     ].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
   }
 
   const row = (r: PreWorkoutRow, i: number) => {
     const highStim = r.caffeineMg > HIGH_STIM_MG
-    const baHit = r.betaAlanineG != null && r.betaAlanineG >= BETA_ALANINE_TARGET_G
-    const citHit = r.citrullineG != null && r.citrullineG >= CITRULLINE_TARGET_G
     return (
       <div
         key={r.id}
         className="bg-lab-panel border rounded-xl p-4"
-        style={
-          i === 0
-            ? { borderColor: 'rgba(166,226,46,0.45)', boxShadow: '0 0 22px rgba(166,226,46,0.12)' }
-            : { borderColor: '#262626' }
-        }
+        style={{ borderColor: '#262626' }}
       >
         <div className="flex items-center gap-4">
           <span className="text-xl shrink-0 w-6 text-center">
-            {['🥇', '🥈', '🥉'][i] ?? `#${i + 1}`}
+            {`#${i + 1}`}
           </span>
-          <ScoreBadge score={r.score} size="sm" />
+          <ProductAssessment product={r} size="sm" />
           <div className="min-w-0 flex-1">
             <Link href={`/products/${r.id}`} className="hover:text-lab-lime transition-colors">
               <p className="text-white text-sm font-black leading-tight truncate">{r.brand}</p>
             </Link>
             <p className="text-lab-muted text-xs truncate">{r.name}</p>
             <p className="text-[10px] uppercase tracking-widest text-lab-muted mt-1">
-              {r.costPerServing != null ? `£${r.costPerServing.toFixed(2)}/serving` : 'Effectiveness Match score'}
+              {r.costPerServing != null ? `${formatListedServingPrice(r.costPerServing)}/serving` : 'Listed serving price unavailable'}
             </p>
           </div>
           <div className="shrink-0 text-right">
             <p
               className="text-base font-black leading-none"
-              style={{ color: highStim ? '#e05a2b' : '#a6e22e' }}
+              style={{ color: highStim ? '#e05a2b' : '#9ca3af' }}
             >
               {r.caffeineMg}mg
             </p>
@@ -177,11 +171,11 @@ export default async function StrongestPreWorkoutPage() {
           )}
           <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full bg-white/5 text-lab-muted border border-lab-border">
             β-Alanine {r.betaAlanineG != null ? `${r.betaAlanineG}g` : '—'}
-            {baHit ? ' ✓' : ''}
+
           </span>
           <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full bg-white/5 text-lab-muted border border-lab-border">
             Citrulline {citrullineLabel(r)}
-            {citHit ? ' ✓' : ''}
+
           </span>
         </div>
 
@@ -240,7 +234,7 @@ export default async function StrongestPreWorkoutPage() {
               /
             </li>
             <li aria-current="page" className="text-white/80">
-              Strongest Pre-Workouts {YEAR}
+              Caffeine Label Comparison {YEAR}
             </li>
           </ol>
         </nav>
@@ -250,7 +244,7 @@ export default async function StrongestPreWorkoutPage() {
           Caffeine Content Ranked · {YEAR}
         </p>
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
-          Strongest Pre-Workouts <span className="text-lab-lime">UK {YEAR}</span>
+          Caffeine Label Comparison <span className="text-lab-lime">UK {YEAR}</span>
         </h1>
         <p className="text-lg text-white/90 leading-relaxed mb-4">
           Every UK pre-workout below is ranked by the number that decides how &ldquo;strong&rdquo; it
@@ -258,9 +252,7 @@ export default async function StrongestPreWorkoutPage() {
           proper pre-workout does far more than just wire you.
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
-          Each product carries its Effectiveness Match score, so you can see at a glance whether a
-          high-caffeine formula is actually well built or just a stimulant hit. Strongest is not the
-          same as best.
+Historical values are unverified and do not establish formula quality or effective dosing. This ordering describes caffeine content only; it is not a recommendation to choose a higher amount.
         </p>
 
         {/* safety callout */}
@@ -292,7 +284,7 @@ export default async function StrongestPreWorkoutPage() {
                 Ranked by <span className="text-lab-lime">Caffeine</span>
               </h2>
               <p className="text-lab-muted text-sm mb-5">
-                Most caffeine per serving first. ✓ marks an evidence-based dose of that active.
+                Most caffeine per serving first. Amounts are label records, not effective-dose endorsements.
               </p>
               <div className="space-y-3">{ranked.map((r, i) => row(r, i))}</div>
             </section>
@@ -328,14 +320,7 @@ export default async function StrongestPreWorkoutPage() {
               <h2 className="text-lg font-black uppercase tracking-wide mb-3">
                 How this ranking works
               </h2>
-              <p className="text-lab-muted text-sm leading-relaxed mb-3">
-                We read the labelled caffeine, beta-alanine and citrulline content of every active UK
-                pre-workout and rank by caffeine per serving. The Effectiveness Match score next to
-                each product is our separate, evidence-based rating of the whole formula — dosing,
-                stimulant balance and value — so you can weigh strength against quality. A ✓ means the
-                product hits an evidence-based dose of that active ({BETA_ALANINE_TARGET_G} g
-                beta-alanine, {CITRULLINE_TARGET_G} g citrulline).
-              </p>
+              <p className="text-lab-muted text-sm leading-relaxed mb-3">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
               <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">
                 Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring or rankings.
               </p>

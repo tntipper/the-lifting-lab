@@ -59,12 +59,13 @@ export async function GET(request: Request) {
     return {
       rank: isRankingCandidate(p, sort) ? i + 1 : null,
       assessment_state: assessment.state,
+      recommendation_status: 'unavailable',
       assessment_note: assessment.explanation,
       id: p.id,
       name: p.name,
       brand: p.brand,
       category: p.category,
-      score: assessment.score, // Legacy value only; status determines ranking eligibility.
+      score: assessment.score, // Unverified historical value only; never an approval.
       retail_price_gbp: p.retail_price,
       cost_per_serving_gbp: p.cost_per_serving,
       servings_per_container: p.servings_per_container,
@@ -90,7 +91,7 @@ export async function GET(request: Request) {
       count: results.length,
       methodology: `${SITE_URL}/guide`,
       disclosure:
-        'Rankings use existing formula scores whose scientific review is incomplete. Unassessed products and claims under review carry no rank. Retailer references are unverified listings or searches, with individual relationship disclosures; they are not confirmed purchase offers.',
+        'No approved effectiveness assessments are available. All ranks are null; historical scores must not drive recommendations. Score/value ordering falls back to alphabetical research order. Budget ordering compares listed price per known serving only, without a health-benefit or approved-offer implication. Retailer references are unverified listings or searches, with individual relationship disclosures; they are not confirmed purchase offers.',
       results,
     }),
   )

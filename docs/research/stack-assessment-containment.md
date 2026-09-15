@@ -9,7 +9,7 @@ This extends the [unassessed ranking containment](unassessed-ranking-containment
 - Only positive finite historical scores outside the existing category holds contribute to a historical average. Each product contributes once; servings do not weight the average.
 - Held, missing, zero and invalid scores remain explicit. The average states how many products were included out of the complete membership count. Unavailable products and unresolved serving records remain excluded from the account aggregate.
 - A held positive value can remain inspectable as a historical value alongside `Under review`. It does not become a dosing or benefit recommendation.
-- Every average states that it is not a combined-stack assessment and that scientific review is incomplete. An entirely excluded stack has no numeric average.
+- Every average states that it is not a combined-stack assessment, that scientific review is incomplete, and that no effectiveness recommendation is made. Historical averages and individual values use neutral presentation; they never grant the separate approval gate. An entirely excluded stack has no numeric average.
 
 ## Public surfaces
 

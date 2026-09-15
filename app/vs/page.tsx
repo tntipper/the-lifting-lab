@@ -13,17 +13,22 @@ const SITE = 'https://www.theliftinglab.co.uk'
 const YEAR = 2026
 
 export const metadata: Metadata = {
-  title: `Supplement Comparisons — Head-to-Head UK ${YEAR} | The Lifting Lab`,
-  description:
-    'Side-by-side supplement comparisons scored against evidence-based dosing. See which whey, creatine, pre-workout, EAA and more wins on Effectiveness Match and true cost per serving.',
-  alternates: { canonical: `${SITE}/vs` },
-  openGraph: {
-    title: `Supplement Comparisons — Head-to-Head UK ${YEAR}`,
-    description: 'Side-by-side supplement comparisons scored against evidence-based dosing.',
-    url: `${SITE}/vs`,
-    type: 'website',
-    siteName: 'The Lifting Lab',
+  "title": "Supplement research comparisons",
+  "description": "Compare product labels and recorded prices side by side. Historical values are unverified; no effectiveness winner is selected.",
+  "alternates": {
+    "canonical": "https://www.theliftinglab.co.uk/vs"
   },
+  "openGraph": {
+    "title": "Supplement research comparisons",
+    "description": "Compare product labels and recorded prices side by side. Historical values are unverified; no effectiveness winner is selected.",
+    "url": "https://www.theliftinglab.co.uk/vs",
+    "type": "website"
+  },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "Supplement research comparisons",
+    "description": "Compare product labels and recorded prices side by side. Historical values are unverified; no effectiveness winner is selected."
+  }
 }
 
 // One DB query, derive the curated matchup set, group by category.
@@ -90,10 +95,7 @@ export default async function VsHubPage() {
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
           Supplement <span className="text-lab-lime">Comparisons</span>
         </h1>
-        <p className="text-lg text-white/90 leading-relaxed mb-4">
-          The most-asked head-to-head matchups, scored against the same evidence-based clinical reference. Each
-          comparison shows active doses, true cost per serving and Effectiveness Match scores side by side.
-        </p>
+        <p className="text-lg text-white/90 leading-relaxed mb-4">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
         <p className="text-lab-muted text-sm mb-10">
           Want a custom matchup of any three products?{' '}
           <Link href="/compare" className="text-lab-lime hover:underline underline-offset-2">
@@ -124,7 +126,7 @@ export default async function VsHubPage() {
                       </p>
                       {m.a.score != null && m.b.score != null && (
                         <p className="text-[11px] text-lab-muted mt-1">
-                          Effectiveness Match {m.a.score} vs {m.b.score}
+                          Unverified historical values: {m.a.score} and {m.b.score}
                         </p>
                       )}
                     </Link>

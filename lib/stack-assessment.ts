@@ -22,14 +22,14 @@ export function summariseStackAssessments(products: CatalogueIdentity[], listedC
     : `Historical average: ${average}/100 across ${legacy.length} of ${total} products.`
   return {
     average, included: legacy.length, total, underReview, unassessed,
-    text: `${text} ${underReview} under review and ${unassessed} unassessed or unavailable excluded. This is not a combined-stack assessment. Scientific review is incomplete.`,
+    text: `${text} ${underReview} under review and ${unassessed} unassessed or unavailable excluded. This is not a combined-stack assessment. Scientific review is incomplete; no effectiveness recommendation is made.`,
   }
 }
 
 export function assessmentText(product: { category: string; score: number | null }) {
   const assessment = assessmentDisplayFor(product)
   return assessment.state === 'legacy'
-    ? `Legacy score ${assessment.score}/100; scientific review incomplete`
+    ? `Legacy score ${assessment.score}/100; scientific review incomplete; no effectiveness recommendation`
     : assessment.state === 'under_review'
       ? `Under review${assessment.score === null ? '' : `; historical value ${assessment.score}/100`}; no benefit recommendation`
       : 'Not assessed; no benefit recommendation'

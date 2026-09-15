@@ -53,7 +53,7 @@ function ShareReview({ productName, rating }: { productName?: string; rating?: n
   function shareText() {
     const stars = rating ? ` ${rating}★` : ''
     const name = productName || 'this supplement'
-    return `I reviewed ${name}${stars} on The Lifting Lab 💪 — evidence-based supplement scoring.`
+    return `I reviewed ${name}${stars} on The Lifting Lab 💪 — supplement research records; product assessments remain unverified.`
   }
 
   function open(url: string, network: string) {
