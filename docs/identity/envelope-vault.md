@@ -1,0 +1,11 @@
+# Server-held envelope encryption
+
+`createAesGcmEnvelopeVault` is a Node-only, unmounted primitive. It performs no network, database, file, environment or secret-manager access. It requires an injected active key ID and a map of 32-byte server-held keys. No operational key is generated or provisioned by this implementation; tests use ephemeral synthetic keys. Browser code must never import the vault or receive an envelope decryption key.
+
+The format is `{v:1, alg:"A256GCM", kid, iv, tag, ciphertext}` with canonical unpadded base64url fields, a new cryptographic random 12-byte IV for every seal, and a 16-byte authentication tag. AES-256-GCM authenticates format version, algorithm, key ID, and the caller's ordered context array. Every caller must bind an explicit purpose/version, environment, owner, resource and claim/generation as appropriate. Changing a context component or substituting another row's envelope fails authentication. A context is not secret and is not an authorization proof.
+
+Plaintext is bounded to 131,072 UTF-8 bytes. Secret buffers used internally are overwritten where practical, and `destroy()` clears the vault's copied key buffers. JavaScript strings, the caller's key copies and returned object values cannot be reliably erased; callers must minimize lifetime and suppress raw errors, request bodies, provider responses and SQL bind logging. Production key custody, access auditing and process/backup controls remain required.
+
+Rotation writes only with the active ID and permits reads with retained key IDs. Removing a key immediately makes its old envelopes unreadable; it is not a migration. A separately reviewed re-encryption/retention process and restore proof must precede old-key retirement. Do not reuse an ID for different key bytes. Database backups contain ciphertext and metadata, while restoration also requires the corresponding independently protected key versions. Encryption protects stored token contents; it cannot stop a compromised authorized application from using its own keys or an attacker from restoring an entire old database/key snapshot.
+
+`EnvelopeVault` is deliberately generic so customer connection and cart repositories can share the primitive while using separate purpose contexts and separately injected keys. It does not activate either feature.
