@@ -6,6 +6,7 @@ import { GA_MEASUREMENT_ID } from "@/lib/gtag";
 import { serializeJsonForHtml } from "@/lib/json-for-html";
 import { LocalStackProvider } from "@/components/LocalStackContext";
 import StackFAB from "@/components/StackFAB";
+import StagingCartProvider from "@/components/StagingCartProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -72,10 +73,10 @@ export default function RootLayout({
             Staging test site. Synthetic products and test accounts only.
           </aside>
         )}
-        <LocalStackProvider>
+        <StagingCartProvider><LocalStackProvider>
           {children}
           <StackFAB />
-        </LocalStackProvider>
+        </LocalStackProvider></StagingCartProvider>
       </body>
       {!isIsolatedEnvironment() && <>
       <Script

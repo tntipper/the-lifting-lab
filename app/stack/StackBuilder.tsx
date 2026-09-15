@@ -8,6 +8,7 @@ import { catalogueAssessment, summariseStackAssessments, assessmentText, stackRe
 import { scoreFor } from '@/lib/scores'
 import { resolveProductListing } from '@/lib/affiliate'
 import ProductOfferLink from '@/components/ProductOfferLink'
+import { StagingCartAdd } from '@/components/StagingCartActions'
 import { analysisServings, validStackServings } from '@/lib/stack-sync'
 import { useLocalStack } from '@/components/LocalStackContext'
 
@@ -422,7 +423,7 @@ export default function StackBuilder() {
                 {g.products.map((product, index) => (
                   <div key={`${product.id}-${index}`} className="flex items-center justify-between gap-3">
                     <span className="text-lab-muted text-xs">{product.brand} {product.name}</span>
-                    <ProductOfferLink product={{ brand: product.brand, name: product.name, buy_url: product.buy_url ?? null }} className="text-lab-lime text-xs font-bold rounded-lg border border-lab-border py-2" />
+                    <ProductOfferLink product={{ id: product.id, brand: product.brand, name: product.name, buy_url: product.buy_url ?? null }} className="text-lab-lime text-xs font-bold rounded-lg border border-lab-border py-2" />
                   </div>
                 ))}
               </div>
@@ -608,6 +609,7 @@ export default function StackBuilder() {
                       </button>
                     </div>
                   </div>
+                  <StagingCartAdd productId={product.id} />
                   <div className="flex flex-wrap gap-1 mt-2">
                     {(product.product_nutrients || []).slice(0, 4).map((n) => (
                       <span

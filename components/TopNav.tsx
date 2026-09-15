@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { isSyntheticPreview } from '@/lib/preview-mode'
+import { StagingCartButton } from './StagingCartActions'
 
 const AR = '166,226,46'
 
@@ -139,6 +140,7 @@ export default function TopNav() {
               })}
             </div>
 
+            <span className="hidden xl:contents"><StagingCartButton /></span>
             {/* My Account — ghost outline button, always visible */}
             <Link
               href={accountHref}
@@ -204,6 +206,7 @@ export default function TopNav() {
                   </Link>
                 )
               })}
+              <StagingCartButton />
             </div>
           </div>
         )}

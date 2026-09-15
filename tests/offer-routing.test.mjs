@@ -17,7 +17,9 @@ function loadSource(path, overrides = {}) {
 }
 const affiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } })
 const resolve = affiliate.resolveProductListing
-const ProductOfferLink = loadSource('../components/ProductOfferLink.tsx', { '@/lib/affiliate': affiliate, '@/lib/gtag': { track() { throw new Error('SSR must not track') } } }).default
+const cartContext = loadSource('../components/StagingCartContext.tsx')
+const cartActions = loadSource('../components/StagingCartActions.tsx', { './StagingCartContext': cartContext })
+const ProductOfferLink = loadSource('../components/ProductOfferLink.tsx', { './StagingCartContext': cartContext, './StagingCartActions': cartActions, '@/lib/affiliate': affiliate, '@/lib/gtag': { track() { throw new Error('SSR must not track') } } }).default
 const render = url => renderToStaticMarkup(React.createElement(ProductOfferLink, { product: { brand: 'Fixture', name: 'Exact identity unverified', buy_url: url }, className: 'fixture' }))
 
 for (const input of [null, undefined, '', '   ']) test(`missing reference stays unavailable: ${String(input)}`, () => {
