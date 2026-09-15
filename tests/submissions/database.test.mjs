@@ -177,7 +177,7 @@ test('failed inbox insertion rolls back quota consumption and idempotency togeth
 test('inherited grants cause a transactional preflight stop instead of changing shared staff authority', () => {
   const migration = readFileSync(new URL('../../supabase/migrations/202609150002_public_submission_gateway.sql', import.meta.url), 'utf8')
   try {
-    sql("begin; drop function public.submit_public_form(text,text,text); drop schema tll_submission_private cascade; create role tll_submission_test_inherited nologin; grant tll_submission_test_inherited to anon; grant select(email) on public.contact_submissions to tll_submission_test_inherited;" + migration)
+    sql("begin; drop function public.submit_public_form(text,text,text); drop schema tll_submission_private cascade; drop policy submission_gateway_contact on public.contact_submissions; drop policy submission_gateway_supplement on public.supplement_submissions; create role tll_submission_test_inherited nologin; grant tll_submission_test_inherited to anon; grant select(email) on public.contact_submissions to tll_submission_test_inherited;" + migration)
     assert.fail('Expected inherited privilege preflight failure')
   } catch (error) {
     assert.ok(String(error.stderr).includes('Inherited inbox privileges remain'))
@@ -185,4 +185,22 @@ test('inherited grants cause a transactional preflight stop instead of changing 
   assert.equal(sql("select count(*) from pg_roles where rolname='tll_submission_test_inherited'"), '0')
   assert.equal(call(sign()).status, 'accepted')
   assert.equal(sql("select has_any_column_privilege('anon','public.contact_submissions','SELECT,INSERT,UPDATE,REFERENCES')"), 'f')
+})
+for (const defaultGrant of ['usage on schemas', 'select on tables']) test(`inherited default ${defaultGrant} on NEW private objects causes complete rollback`, () => {
+  const migration = readFileSync(new URL('../../supabase/migrations/202609150002_public_submission_gateway.sql', import.meta.url), 'utf8')
+  try {
+    sql("begin; drop function public.submit_public_form(text,text,text); drop schema tll_submission_private cascade; drop policy submission_gateway_contact on public.contact_submissions; drop policy submission_gateway_supplement on public.supplement_submissions; create role tll_submission_test_defaults nologin; grant tll_submission_test_defaults to anon; alter default privileges for role postgres grant " + defaultGrant + " to tll_submission_test_defaults;" + migration)
+    assert.fail('Expected inherited private-object ACL rejection')
+  } catch (error) { assert.ok(String(error.stderr).includes('Private gateway privileges inherited')) }
+  assert.equal(sql("select count(*) from pg_roles where rolname='tll_submission_test_defaults'"), '0')
+  assert.throws(() => sql('set role anon; select count(*) from tll_submission_private.signing_keys'))
+  assert.equal(call(sign()).status, 'accepted')
+})
+test('non-superuser schema owner can migrate with no lasting SET ROLE or CREATE authority', () => {
+  let migration = readFileSync(new URL('../../supabase/migrations/202609150002_public_submission_gateway.sql', import.meta.url), 'utf8')
+  migration = migration.replace(/^begin;$/m, '').replace(/^commit;$/m, '').replaceAll('tll_submission_owner', 'tll_submission_non_super_owner')
+  const setup = "begin; drop function public.submit_public_form(text,text,text); drop schema tll_submission_private cascade; drop policy submission_gateway_contact on public.contact_submissions; drop policy submission_gateway_supplement on public.supplement_submissions; create role tll_submission_migrator nologin nosuperuser createrole; grant create on database tll_submission_test to tll_submission_migrator; alter schema public owner to tll_submission_migrator; alter table public.contact_submissions owner to tll_submission_migrator; alter table public.supplement_submissions owner to tll_submission_migrator; grant usage on schema extensions to tll_submission_migrator with grant option; set session authorization tll_submission_migrator;"
+  const checks = "reset session authorization; select not has_schema_privilege('tll_submission_non_super_owner','public','CREATE') and not exists(select 1 from pg_auth_members where roleid='tll_submission_non_super_owner'::regrole or member='tll_submission_non_super_owner'::regrole) and not exists(select 1 from pg_roles where rolname='tll_submission_role_setup') and has_function_privilege('anon','public.submit_public_form(text,text,text)','EXECUTE') and has_function_privilege('authenticated','public.submit_public_form(text,text,text)','EXECUTE') and (select proowner='tll_submission_non_super_owner'::regrole from pg_proc where oid='public.submit_public_form(text,text,text)'::regprocedure); rollback;"
+  assert.equal(sql(setup + migration + checks), 't')
+  assert.equal(sql("select count(*) from pg_roles where rolname in ('tll_submission_migrator','tll_submission_non_super_owner')"), '0')
 })
