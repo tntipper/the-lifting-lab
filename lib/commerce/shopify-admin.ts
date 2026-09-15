@@ -63,6 +63,25 @@ export type ShopifyInventoryPlan = {
   /** Reviewable request without credentials. Execution accepts only an issued plan. */
   request: { operationName: string; query: string; variables: RecordValue }
 }
+export type ShopifyPreparedManifest = {
+  schemaVersion: 'tll-inventory-operation/v1'
+  endpoint: string
+  requestDocument: string
+  plan: ShopifyInventoryPlan
+  binding: ShopifyInventoryBinding
+  provenance: {
+    policyReview: CatalogueReview
+    mappingReview: CatalogueReview
+    stockReview: CatalogueReview
+    mappingProductId: string
+    supplierSku: string
+    formulaIdentity: unknown[]
+    stockPackVersion: string
+    stockBasis: 'reconciled_sellable_units'
+    stockObservedAtMs: number
+    readObservedAtMs: number
+  }
+}
 export type ShopifyMutationResult = Hold | {
   status: 'acknowledged' | 'unknown' | 'rejected'
   code: ShopifyAdapterCode | null
@@ -79,7 +98,7 @@ export type ShopifyReconciliationResult = Hold | {
   retryAllowed: false
   operatorReviewRequired: boolean
 }
-type PlanState = { binding: ShopifyInventoryBinding; plan: ShopifyInventoryPlan; phase: 'prepared' | 'sent' | 'acknowledged' | 'unknown' | 'rejected' | 'reconciled'; startedAtMs: number | null; reconciling: boolean }
+type PlanState = { binding: ShopifyInventoryBinding; plan: ShopifyInventoryPlan; manifest: ShopifyPreparedManifest; phase: 'prepared' | 'sent' | 'acknowledged' | 'unknown' | 'rejected' | 'reconciled'; startedAtMs: number | null; reconciling: boolean }
 type Transport = (url: string, init: RequestInit) => Promise<Response>
 
 const READ_QUERY = `query TllInventoryTarget($variantId: ID!, $locationId: ID!) {
@@ -129,6 +148,7 @@ function freeze<T>(value: T): T {
   return value
 }
 const hold = (error: unknown): Hold => ({ status: 'hold', code: error instanceof AdapterFailure ? error.code : 'INVALID_INPUT', retryAllowed: false })
+const copyReview = (value: CatalogueReview): CatalogueReview => ({ approved: value.approved, version: value.version, expectedVersion: value.expectedVersion, verifiedAtMs: value.verifiedAtMs, expiresAtMs: value.expiresAtMs })
 function review(value: CatalogueReview, now: number): void {
   requireValue(integer(now, 0, Number.MAX_SAFE_INTEGER))
   requireValue(value?.approved === true && text(value.version) && value.version === value.expectedVersion, 'REVIEW_REQUIRED')
@@ -152,7 +172,7 @@ function bindingValid(binding: ShopifyInventoryBinding, policy: ShopifyInventory
   same(binding.shopDomain, policy.shopDomain); same(gid(binding.shopId, 'Shop'), gid(policy.shopId, 'Shop'))
   same(gid(binding.locationId, 'Location'), gid(policy.locationId, 'Location'))
   requireValue(text(binding.mappingVersion) && text(binding.shopifySku) && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(binding.shopifyProductHandle))
-  return { review: { ...binding.review }, shopDomain: binding.shopDomain, shopId: gid(binding.shopId, 'Shop'), mappingVersion: binding.mappingVersion,
+  return { review: copyReview(binding.review), shopDomain: binding.shopDomain, shopId: gid(binding.shopId, 'Shop'), mappingVersion: binding.mappingVersion,
     shopifyProductId: gid(binding.shopifyProductId, 'Product'), shopifyProductHandle: binding.shopifyProductHandle,
     shopifyVariantId: gid(binding.shopifyVariantId, 'ProductVariant'), inventoryItemId: gid(binding.inventoryItemId, 'InventoryItem'),
     locationId: gid(binding.locationId, 'Location'), shopifySku: binding.shopifySku }
@@ -299,9 +319,19 @@ export function createShopifyAdminAdapter(options: {
         requestHash: hash({ endpoint, body }), createdAtMs: now, expiresAtMs: Math.min(policy.review.expiresAtMs, binding.review.expiresAtMs, mapping.review.expiresAtMs, stock.review.expiresAtMs,
           observation.observedAtMs + policy.maxReadAgeMs, stock.observedAtMs + policy.maxStockAgeMs),
         bindingHash: observation.bindingHash, mappingVersion: mapping.review.version, stockVersion: stock.review.version, expectedAvailable: expected, desiredAvailable: stock.availableToSell, request: body })
-      plans.set(plan, { binding: freeze(binding), plan, phase: 'prepared', startedAtMs: null, reconciling: false }); operationIds.add(plan.operationId)
+      const manifest: ShopifyPreparedManifest = freeze({ schemaVersion: 'tll-inventory-operation/v1', endpoint, requestDocument: JSON.stringify({ endpoint, body }), plan, binding,
+        provenance: { policyReview: copyReview(policy.review), mappingReview: copyReview(mapping.review), stockReview: copyReview(stock.review),
+          mappingProductId: mapping.productId, supplierSku: mapping.supplierSku, formulaIdentity: identity(mapping.shopIdentity), stockPackVersion: stock.packVersion,
+          stockBasis: 'reconciled_sellable_units', stockObservedAtMs: stock.observedAtMs, readObservedAtMs: observation.observedAtMs } })
+      plans.set(plan, { binding, plan, manifest, phase: 'prepared', startedAtMs: null, reconciling: false }); operationIds.add(plan.operationId)
       return { status: 'prepared', plan }
     } catch (error) { return hold(error) }
+  }
+  function describePreparedPlan(plan: ShopifyInventoryPlan): Hold | { status: 'manifest'; manifest: ShopifyPreparedManifest } {
+    const state = plans.get(plan)
+    if (!state) return hold(new AdapterFailure('FOREIGN_PLAN'))
+    if (state.phase !== 'prepared') return hold(new AdapterFailure('ALREADY_ATTEMPTED'))
+    return { status: 'manifest', manifest: state.manifest }
   }
 
   async function executeChange(plan: ShopifyInventoryPlan): Promise<ShopifyMutationResult> {
@@ -371,5 +401,5 @@ export function createShopifyAdminAdapter(options: {
     } catch (error) { return hold(error) }
     finally { if (locked) locked.reconciling = false }
   }
-  return Object.freeze({ readTarget, prepareChange, executeChange, reconcileChange })
+  return Object.freeze({ readTarget, prepareChange, describePreparedPlan, executeChange, reconcileChange })
 }

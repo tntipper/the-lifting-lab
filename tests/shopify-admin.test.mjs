@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { createShopifyAdminAdapter, SHOPIFY_ADMIN_API_VERSION, SHOPIFY_MUTATIONS_ENABLED_BY_DEFAULT, shopifyGraphqlEndpoint } from '../lib/commerce/shopify-admin.ts'
 
 const NOW = 1_800_000_000_000
@@ -269,4 +270,20 @@ test('slow read completion cannot refresh the observation timestamp', async () =
   const f = fixture({ read: body => new Promise(resolve => { finish = () => resolve(response(body)) }) })
   const pending = f.adapter.readTarget(f.binding); f.tick(10000); finish()
   held(await pending, 'STALE_OBSERVATION')
+})
+test('prepared manifest captures immutable canonical provenance without authorizing restored plans', async () => {
+  const f = fixture({ enabled: true }), { plan } = await f.prepare()
+  f.binding.review.version = 'swapped'; f.mapping.supplierSku = 'swapped'; f.stock.observedAtMs = NOW; f.stock.review.version = 'swapped'
+  const exported = f.adapter.describePreparedPlan(plan); assert.equal(exported.status, 'manifest')
+  const { manifest } = exported
+  assert.equal(manifest.provenance.supplierSku, 'SUPPLIER-SKU-1'); assert.equal(manifest.binding.review.version, 'binding-1')
+  assert.equal(manifest.provenance.stockReview.version, 'stock-1'); assert.equal(manifest.provenance.stockObservedAtMs, NOW - 1000)
+  assert.equal(createHash('sha256').update(manifest.requestDocument).digest('hex'), plan.requestHash)
+  assert.equal(createHash('sha256').update(JSON.stringify(manifest.binding)).digest('hex'), plan.bindingHash)
+  assert.equal(JSON.stringify(manifest).includes(TOKEN), false)
+  assert.throws(() => { manifest.provenance.stockReview.version = 'tampered' })
+  held(f.adapter.describePreparedPlan(clone(plan)), 'FOREIGN_PLAN')
+  held(await f.adapter.executeChange(clone(manifest).plan), 'FOREIGN_PLAN')
+  assert.equal((await f.adapter.executeChange(plan)).status, 'acknowledged')
+  held(f.adapter.describePreparedPlan(plan), 'ALREADY_ATTEMPTED')
 })
