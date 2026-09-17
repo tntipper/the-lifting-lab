@@ -83,7 +83,9 @@ test('exact payload and every envelope field are bound to the MAC', () => {
 test('validly signed wrong audience, stale/future token, body digest and malformed values fail', () => {
   assert.equal(call(modify(sign(), { audience: 'tll-submissions:other' })).status, 'rejected')
   assert.equal(call(sign(contact(), randomUUID(), '192.0.2.1', 'contact', Date.now() - 301000)).status, 'rejected')
-  assert.equal(call(sign(contact(), randomUUID(), '192.0.2.1', 'contact', Date.now() + 31000)).status, 'rejected')
+  // Stay well outside the 30-second allowance despite integer-second timestamps
+  // and transport delay on a busy runner; this checks rejection, not its boundary.
+  assert.equal(call(sign(contact(), randomUUID(), '192.0.2.1', 'contact', Date.now() + 300000)).status, 'rejected')
   assert.equal(call(modify(sign(), { body_sha256: '00'.repeat(32) })).status, 'invalid')
   assert.equal(call(modify(sign(), { issued_at: '123' })).status, 'invalid')
   assert.equal(call(modify(sign(), { request_id: 'not-a-uuid' })).status, 'invalid')
