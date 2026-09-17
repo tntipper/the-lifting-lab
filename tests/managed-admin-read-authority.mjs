@@ -42,11 +42,15 @@ for (const name of chosen.length ? chosen : Object.keys(fixtures)) {
   assert.equal(admin(`SELECT rolsuper OR rolbypassrls OR pg_has_role('${operator}','pg_read_all_data','USAGE') OR pg_has_role('${operator}','pg_write_all_data','USAGE') OR pg_has_role('${operator}','pg_maintain','USAGE') FROM pg_roles WHERE rolname='${operator}'`), 'f')
   const tables = JSON.parse(admin(`SELECT json_agg(n.nspname||'.'||c.relname ORDER BY n.nspname,c.relname) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN (${schemaSQL}) AND c.relkind='r'`))
   const fingerprint = () => {
+    // PG17 VACUUM/ANALYZE can change these five maintenance estimates/horizons
+    // between rollback snapshots. Preserve every identity, ownership, ACL, RLS,
+    // storage and structural field, plus the complete role/function/data checks.
+    // https://www.postgresql.org/docs/17/catalog-pg-class.html
     const catalog = admin(`SELECT jsonb_build_object(
       'roles',(SELECT jsonb_agg(to_jsonb(r) ORDER BY oid) FROM pg_roles r),
       'members',(SELECT jsonb_agg(to_jsonb(m) ORDER BY oid) FROM pg_auth_members m),
       'namespaces',(SELECT jsonb_agg(to_jsonb(n) ORDER BY oid) FROM pg_namespace n WHERE nspname IN (${schemaSQL})),
-      'relations',(SELECT jsonb_agg(to_jsonb(c) ORDER BY oid) FROM pg_class c WHERE relnamespace IN (SELECT oid FROM pg_namespace WHERE nspname IN (${schemaSQL}))),
+      'relations',(SELECT jsonb_agg(to_jsonb(c)-ARRAY['relpages','reltuples','relallvisible','relfrozenxid','relminmxid'] ORDER BY oid) FROM pg_class c WHERE relnamespace IN (SELECT oid FROM pg_namespace WHERE nspname IN (${schemaSQL}))),
       'columns',(SELECT jsonb_agg(to_jsonb(a) ORDER BY attrelid,attnum) FROM pg_attribute a WHERE attrelid IN (SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN (${schemaSQL}))),
       'functions',(SELECT jsonb_agg(to_jsonb(p) ORDER BY oid) FROM pg_proc p WHERE pronamespace IN (SELECT oid FROM pg_namespace WHERE nspname IN (${schemaSQL}))),
       'defaults',(SELECT jsonb_agg(to_jsonb(d) ORDER BY oid) FROM pg_default_acl d))`)
