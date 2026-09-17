@@ -51,3 +51,4 @@ node --experimental-strip-types --test tests/subject-broker-repository/acceptanc
 node tests/provisional-admission-repository/setup.mjs --create-once
 node tests/provisional-admission-repository/migration-regression.mjs
 node --experimental-strip-types --test tests/provisional-admission-repository/acceptance.test.mjs
+node --experimental-strip-types --test tests/admission-coordinator/acceptance.test.mjs

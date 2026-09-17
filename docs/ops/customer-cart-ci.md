@@ -21,7 +21,10 @@ leaving its control disabled and its synthetic rows empty. Migration008 then
 receives its own marked database and the same installation, migration regression
 and actual repository checks. This proves encrypted admission intents, one-use
 claims and uncertainty holds without dispatching a provider request; the fixture
-finishes disabled and empty. The enclosing owned
+finishes disabled and empty. The admission coordinator then uses that fixture
+with signed synthetic HTTP to verify real session-reader/admission adapters,
+commit ordering, account changes and lost acknowledgements. No hosted request
+is dispatched, and the fixture is again disabled and emptied. The enclosing owned
 container and anonymous data volume are removed when the job exits. The separate
 browser job covers the cart at six widths.
 
