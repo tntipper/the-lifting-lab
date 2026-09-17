@@ -100,11 +100,13 @@ test('claim and finish share one operation but unrelated phase and cross-flow op
 })
 test('finish requires claim fence/generation, fresh minimal proof and independent inner challenge',async()=>{
  const c=await claim(),input=finishInput(c)
+ // Exercise PostgreSQL's omitted trailing fractional zero deterministically.
+ input.hardDeadline=Math.floor(input.hardDeadline/10)*10
  for(const change of [{fence:String(BigInt(input.fence)+1n)},{generation:'1'},{browserHash:hash(opaque())},{hardDeadline:Date.now()+60000},
   {shopifyProof:{...input.shopifyProof,verifiedAt:Date.now()-6000}},{shopifyProof:{...input.shopifyProof,verifiedAt:Date.now()+10000}},
   {shopifyProof:{...input.shopifyProof,innerPkceChallenge:c.r.outer.challenge}},{shopifyProof:{...input.shopifyProof,innerPkceChallenge:c.r.applicationPkceChallenge}}])assert.equal(await repo.finishReadiness({...input,...change}),false)
  assert.equal(await repo.finishReadiness(input),true)
- assert.equal(snapshot().flows[0].hard_deadline,new Date(input.hardDeadline).toISOString().replace('Z','+00:00'))
+ assert.equal(Date.parse(snapshot().flows[0].hard_deadline),input.hardDeadline)
 })
 test('one-use code/userinfo across real simultaneous connections and code replay revokes outstanding bearer',async()=>{
  const c=await ready(),a=redeemInput(c),b=redeemInput(c)
