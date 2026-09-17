@@ -57,4 +57,5 @@ node --experimental-strip-types --test tests/admission-coordinator/acceptance.te
 node tests/admission-bridge/setup.mjs --create-once
 node tests/admission-bridge/migration-regression.mjs
 node --experimental-strip-types --test tests/admission-bridge/acceptance.test.mjs
+node --experimental-strip-types --test tests/admission-bridge/continuation.test.mjs
 node tests/managed-admin-read-authority.mjs

@@ -5,6 +5,11 @@ import type { BrokerRegistrationRecord, CustomerSubjectBrokerRepository, BrokerL
 
 type Row = Record<string, unknown>
 type Input<M extends keyof CustomerSubjectBrokerRepository> = Parameters<CustomerSubjectBrokerRepository[M]>[0]
+/** releaseHash is supplied only by trusted server extraction/derivation. Omit it
+ * for standalone 007; installed 010 requires it and rejects the old path. */
+export type CustomerSubjectBrokerDurableRepository = Omit<CustomerSubjectBrokerRepository, 'admit'> & {
+  liveEnabled: false; admit(input: Input<'admit'> & { releaseHash?: string }): Promise<boolean>
+}
 const CONFIG = '7c54b659cf0e2ecdf07ce2b34ea10d7fc0a7c6ef3c9f59f38ca8f5cd79e86780'
 const CLIENT = 'tll-staging-subject-broker-v1', CALLBACK = 'https://qdmvngjwkcsilzmqksme.supabase.co/auth/v1/callback'
 const unavailable = () => new Error('Subject broker repository unavailable')
@@ -58,7 +63,7 @@ function locator(l: BrokerLocator): BrokerLocator {
  * No hosted pool, runtime LOGIN, provider or route is provisioned here. */
 export function createCustomerSubjectBrokerRepository(input: {
   pool: CustomerRepositoryPool; syntheticExecution?: boolean; liveEnabled?: boolean
-}): CustomerSubjectBrokerRepository & { liveEnabled: false } {
+}): CustomerSubjectBrokerDurableRepository {
   const pool = input.pool, enabled = input.syntheticExecution === true && input.liveEnabled !== true
   const active = () => enabled && typeof window === 'undefined'
   async function call(op: string, payload: object): Promise<Row> {
@@ -95,7 +100,9 @@ export function createCustomerSubjectBrokerRepository(input: {
     async admit(p) {
       if (!active()) return false
       const base = browser(p); ensure(sha(p.outerHash))
-      return (await call('admit',{ ...base, outerHash: p.outerHash })).status === 'admitted'
+      const hasRelease = Object.hasOwn(p, 'releaseHash')
+      if (hasRelease) ensure(sha(p.releaseHash))
+      return (await call('admit',{ ...base, outerHash: p.outerHash, ...(hasRelease ? { releaseHash: p.releaseHash } : {}) })).status === 'admitted'
     },
     async claimReadiness(p) {
       if (!active()) return { status: 'rejected' }
@@ -152,5 +159,5 @@ export function createCustomerSubjectBrokerRepository(input: {
       if (!active()) return false
       return (await call('cancel',browser(p))).status === 'cancelled'
     },
-  } satisfies CustomerSubjectBrokerRepository & { liveEnabled: false })
+  } satisfies CustomerSubjectBrokerDurableRepository)
 }
