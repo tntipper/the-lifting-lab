@@ -3,10 +3,12 @@
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {admin,assertFixture} from './local-pg.mjs'
+import {migrationAuthorityProof} from '../repository-migration-authority.mjs'
 assertFixture()
 assert.equal(admin('SELECT enabled FROM tll_broker_private.control'),'f')
 assert.equal(admin("SELECT count(*) FROM pg_shdepend WHERE refclassid='pg_authid'::regclass AND refobjid IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole) AND dbid NOT IN (0,(SELECT oid FROM pg_database WHERE datname=current_database()))"),'0')
-const before=admin("SELECT json_build_object('control',(SELECT row_to_json(c) FROM tll_broker_private.control c),'owners',(SELECT coalesce(json_agg(x),'[]') FROM tll_broker_private.subjects x),'attempts',(SELECT coalesce(json_agg(x),'[]') FROM tll_broker_private.operations x),'connections',(SELECT coalesce(json_agg(x),'[]') FROM tll_broker_private.flows x));")
+const snapshot=()=>admin("SELECT json_build_object('control',(SELECT row_to_json(c) FROM tll_broker_private.control c),'owners',(SELECT coalesce(json_agg(x),'[]') FROM tll_broker_private.subjects x),'attempts',(SELECT coalesce(json_agg(x),'[]') FROM tll_broker_private.operations x),'connections',(SELECT coalesce(json_agg(x),'[]') FROM tll_broker_private.flows x));")
+const before=snapshot()
 const sql=readFileSync(new URL('../../supabase/migrations/202609150007_customer_subject_broker_repository.sql',import.meta.url),'utf8')
 assert.ok(sql.includes('BEGIN;\n')&&sql.endsWith('COMMIT;\n'))
 const body=sql.replace('BEGIN;\n','').replace(/COMMIT;\n$/,'')
@@ -19,6 +21,7 @@ admin(`BEGIN;
  ALTER DEFAULT PRIVILEGES GRANT USAGE,SELECT,UPDATE ON SEQUENCES TO tll_broker_default_probe;
  ALTER DEFAULT PRIVILEGES GRANT EXECUTE ON FUNCTIONS TO tll_broker_default_probe;
  ${body}
+ ${migrationAuthorityProof('broker')}
  DO $$DECLARE result jsonb; BEGIN
    result:=tll_broker_private.operator_status();
    IF result->'enabled'<>'false'::jsonb OR result->>'flows'<>'0'
@@ -59,6 +62,17 @@ admin(`BEGIN;
  END$$; RESET SESSION AUTHORIZATION;`).join('\n')}
  DO $$BEGIN IF has_schema_privilege('anon','tll_broker_private','USAGE') OR has_table_privilege('anon','tll_broker_private.flows','SELECT,MAINTAIN') OR has_schema_privilege('tll_broker_migrator','tll_broker_private','CREATE') OR (SELECT enabled FROM tll_broker_private.control) THEN RAISE EXCEPTION 'Private ACL or disabled-control regression'; END IF; END$$;
  ROLLBACK;`)
-assert.equal(admin("SELECT json_build_object('control',(SELECT row_to_json(c) FROM tll_broker_private.control c),'owners',(SELECT coalesce(json_agg(x),'[]') FROM tll_broker_private.subjects x),'attempts',(SELECT coalesce(json_agg(x),'[]') FROM tll_broker_private.operations x),'connections',(SELECT coalesce(json_agg(x),'[]') FROM tll_broker_private.flows x));"),before)
+assert.equal(snapshot(),before)
+admin(`BEGIN;
+ DROP SCHEMA tll_broker_private CASCADE; DROP ROLE tll_broker_owner; DROP ROLE tll_broker_executor;
+ ${body}
+ DO $$BEGIN
+  IF (SELECT count(*) FROM pg_auth_members WHERE roleid IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole))<>2
+   OR EXISTS(SELECT FROM pg_auth_members WHERE roleid IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole)
+     AND NOT(member=current_user::regrole AND grantor=current_user::regrole AND admin_option AND NOT inherit_option AND NOT set_option))
+   OR (SELECT enabled FROM tll_broker_private.control) THEN RAISE EXCEPTION 'Superuser single-edge retirement failed'; END IF;
+ END$$;
+ ROLLBACK;`)
+assert.equal(snapshot(),before)
 assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname IN ('tll_broker_default_probe','tll_broker_role_setup','tll_broker_operator_probe','tll_broker_runtime_probe')"),'0')
-console.log('PASS: final canonical migration under non-superuser; inherited schema/table/sequence/function ACLs including MAINTAIN removed; operator status/control usable with no data/CREATE/executor access; session impersonation denied; exact ADMIN-only executor delegation granted/revoked for an uncommitted NOLOGIN probe; reconstruction rolled back and fixture unchanged')
+console.log('PASS: final canonical migration under non-superuser and superuser; temporary owner SET permits future ALTER FUNCTION/TABLE/GRANT then retires to exact bootstrap ADMIN-only edge; inherited schema/table/sequence/function ACLs including MAINTAIN removed; operator status/control usable with no data/CREATE/executor access; session impersonation denied; exact ADMIN-only executor delegation granted/revoked for an uncommitted NOLOGIN probe; reconstruction rolled back and fixture unchanged')

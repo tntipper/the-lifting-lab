@@ -41,11 +41,17 @@ test('private admission owner/executor and tables are independent from browsers,
   if(role!=='tll_provisional_executor')assert.equal(admin(`SELECT has_schema_privilege('${role}','tll_provisional_private','USAGE')`),'f')
  }
  assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'tll_provisional_%' AND rolcanlogin"),'0')
- assert.equal(admin("SELECT count(*) FROM pg_auth_members WHERE (roleid IN ('tll_provisional_owner'::regrole,'tll_provisional_executor'::regrole) OR member IN ('tll_provisional_owner'::regrole,'tll_provisional_executor'::regrole)) AND NOT(roleid='tll_provisional_executor'::regrole AND member='tll_provisional_migrator'::regrole AND admin_option AND NOT inherit_option AND NOT set_option)"),'0')
+ assert.equal(admin("SELECT count(*) FROM pg_auth_members WHERE (roleid IN ('tll_provisional_owner'::regrole,'tll_provisional_executor'::regrole) OR member IN ('tll_provisional_owner'::regrole,'tll_provisional_executor'::regrole)) AND NOT(roleid IN ('tll_provisional_owner'::regrole,'tll_provisional_executor'::regrole) AND member='tll_provisional_migrator'::regrole AND grantor='postgres'::regrole AND admin_option AND NOT inherit_option AND NOT set_option)"),'0')
+ for(const role of ['tll_provisional_owner','tll_provisional_executor']){
+  assert.equal(admin(`SELECT count(*) FROM pg_auth_members WHERE roleid='${role}'::regrole`),'1')
+  assert.equal(admin(`SELECT pg_has_role('tll_provisional_migrator','${role}','USAGE') OR pg_has_role('tll_provisional_migrator','${role}','SET')`),'f')
+ }
+
 })
 test('operator controls aggregate state only and retains ADMIN-only executor delegation',()=>{
  const status=JSON.parse(admin('SET SESSION AUTHORIZATION tll_provisional_migrator; SELECT tll_provisional_private.operator_status()'))
- assert.deepEqual(Object.keys(status).sort(),['admitted','changedAt','enabled','held','inflight','intents','operations','reasonCode'])
+ assert.deepEqual(Object.keys(status).sort(),['admitted','changedAt','dailyQuota','enabled','held','inflight','intents','operations','reasonCode'])
+ assert.equal(status.dailyQuota,0);admin("INSERT INTO tll_provisional_private.daily_quota VALUES(current_date,1)");assert.equal(JSON.parse(admin('SET SESSION AUTHORIZATION tll_provisional_migrator; SELECT tll_provisional_private.operator_status()')).dailyQuota,1)
  for(const sql of ['SELECT * FROM tll_provisional_private.intents','SET ROLE tll_provisional_executor','SET ROLE tll_provisional_owner','CREATE TABLE tll_provisional_private.forbidden(id int)'])assert.throws(()=>admin('SET SESSION AUTHORIZATION tll_provisional_migrator; '+sql))
  for(const role of ['anon','authenticated','service_role','tll_provisional_executor'])assert.throws(()=>admin(`SET SESSION AUTHORIZATION ${role}; SELECT tll_provisional_private.operator_status()`))
  admin(`BEGIN; SET SESSION AUTHORIZATION tll_provisional_migrator; CREATE ROLE tll_provisional_delegation_probe NOLOGIN NOINHERIT;

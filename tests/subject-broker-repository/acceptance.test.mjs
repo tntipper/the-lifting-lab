@@ -40,15 +40,21 @@ test('actual non-superuser migration isolates roles, schema, tables, sequences a
   assert.throws(()=>admin(`SET ROLE ${role}; SELECT * FROM tll_broker_private.flows`))
   if(role!=='tll_broker_executor')assert.throws(()=>admin(`SET ROLE ${role}; `+query('register',{...operation(),record:record()})))
  }
- assert.equal(admin("SELECT count(*) FROM pg_auth_members WHERE (roleid IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole) OR member IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole)) AND NOT(roleid='tll_broker_executor'::regrole AND member='tll_broker_migrator'::regrole AND admin_option AND NOT inherit_option AND NOT set_option)"),'0')
+ assert.equal(admin("SELECT count(*) FROM pg_auth_members WHERE (roleid IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole) OR member IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole)) AND NOT(roleid IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole) AND member='tll_broker_migrator'::regrole AND grantor='postgres'::regrole AND admin_option AND NOT inherit_option AND NOT set_option)"),'0')
  assert.equal(admin("SELECT count(*) FROM pg_auth_members WHERE roleid='tll_broker_executor'::regrole AND member='tll_broker_migrator'::regrole AND admin_option AND NOT inherit_option AND NOT set_option"),'1')
  assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname IN ('tll_broker_owner','tll_broker_executor','tll_broker_migrator') AND rolcanlogin"),'0')
  assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname='tll_broker_role_setup'"),'0')
+ for(const role of ['tll_broker_owner','tll_broker_executor']){
+  assert.equal(admin(`SELECT count(*) FROM pg_auth_members WHERE roleid='${role}'::regrole`),'1')
+  assert.equal(admin(`SELECT pg_has_role('tll_broker_migrator','${role}','USAGE') OR pg_has_role('tll_broker_migrator','${role}','SET')`),'f')
+ }
+
 })
 test('operator uses aggregate control only and its retained ADMIN edge delegates without executor authority',()=>{
  const operator=sql=>JSON.parse(admin('SET SESSION AUTHORIZATION tll_broker_migrator; '+sql))
- const status=operator('SELECT tll_broker_private.operator_status()');assert.equal(status.enabled,true)
- assert.deepEqual(Object.keys(status).sort(),['changedAt','enabled','flows','heldFlows','operations','pendingMigrationSubjects','provisionalSubjects','reasonCode'])
+ const status=operator('SELECT tll_broker_private.operator_status()');assert.equal(status.enabled,true);assert.equal(status.dailyQuota,0)
+ assert.deepEqual(Object.keys(status).sort(),['changedAt','dailyQuota','enabled','flows','heldFlows','operations','pendingMigrationSubjects','provisionalSubjects','reasonCode'])
+ admin("INSERT INTO tll_broker_private.daily_quota VALUES(current_date,1)");assert.equal(operator('SELECT tll_broker_private.operator_status()').dailyQuota,1)
  assert.equal(operator("SELECT tll_broker_private.operator_set_enabled(false,'synthetic_test')").enabled,false)
  for(const sql of ['SET ROLE tll_broker_executor','SET ROLE tll_broker_owner','SELECT * FROM tll_broker_private.control','CREATE TABLE tll_broker_private.forbidden(id int)',query('cancel',browser(record()))])assert.throws(()=>admin('SET SESSION AUTHORIZATION tll_broker_migrator; '+sql))
  for(const role of ['anon','authenticated','service_role','tll_broker_executor'])for(const sql of ['SELECT tll_broker_private.operator_status()',"SELECT tll_broker_private.operator_set_enabled(true,'synthetic')"])assert.throws(()=>admin(`SET SESSION AUTHORIZATION ${role}; `+sql))

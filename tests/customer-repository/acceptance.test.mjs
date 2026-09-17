@@ -20,7 +20,7 @@ async function connect(i=0,subject){const claim=await claimed(i),tokens=t();cons
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))
 before(()=>{assertFixture();fixtureVerified=true;assert.equal(admin('SELECT enabled FROM tll_customer_private.control'),'f')})
 beforeEach(()=>{vault?.destroy();admin('TRUNCATE tll_customer_private.owners CASCADE; UPDATE tll_customer_private.control SET enabled=true;');vault=createAesGcmEnvelopeVault({activeKeyId:'synthetic-1',keys:new Map([['synthetic-1',randomBytes(32)]])});repo=createCustomerConnectionRepository({pool:localPool(),vault,syntheticExecution:true})})
-after(async()=>{if(!fixtureVerified)return;admin('UPDATE tll_customer_private.control SET enabled=false;');vault?.destroy();await closeClients();assert.equal(admin('SELECT enabled FROM tll_customer_private.control'),'f')})
+after(async()=>{if(!fixtureVerified)return;admin('UPDATE tll_customer_private.control SET enabled=false; TRUNCATE tll_customer_private.owners CASCADE;');vault?.destroy();await closeClients();assert.equal(admin('SELECT enabled FROM tll_customer_private.control'),'f')})
 
 test('private executor cannot bypass transitions and browser/service roles have no effective authority',async()=>{
  for(const role of ['anon','authenticated','service_role','tll_customer_executor']){
@@ -28,10 +28,15 @@ test('private executor cannot bypass transitions and browser/service roles have 
   const pool=localPool({role});const c=await pool.connect();await assert.rejects(()=>c.query('SELECT * FROM tll_customer_private.connections'));c.release()
   if(role!=='tll_customer_executor'){const c=await pool.connect();await assert.rejects(()=>c.query("SELECT tll_customer_private.repository('logout','{}'::jsonb)"));c.release()}
  }
- assert.equal(admin("SELECT count(*) FROM pg_auth_members WHERE (roleid IN ('tll_customer_owner'::regrole,'tll_customer_executor'::regrole) OR member IN ('tll_customer_owner'::regrole,'tll_customer_executor'::regrole)) AND NOT(roleid='tll_customer_executor'::regrole AND member='tll_customer_migrator'::regrole AND admin_option AND NOT inherit_option AND NOT set_option)"),'0')
+ assert.equal(admin("SELECT count(*) FROM pg_auth_members WHERE (roleid IN ('tll_customer_owner'::regrole,'tll_customer_executor'::regrole) OR member IN ('tll_customer_owner'::regrole,'tll_customer_executor'::regrole)) AND NOT(roleid IN ('tll_customer_owner'::regrole,'tll_customer_executor'::regrole) AND member='tll_customer_migrator'::regrole AND grantor='postgres'::regrole AND admin_option AND NOT inherit_option AND NOT set_option)"),'0')
  assert.equal(admin("SELECT count(*) FROM pg_auth_members WHERE roleid='tll_customer_executor'::regrole AND member='tll_customer_migrator'::regrole AND admin_option AND NOT inherit_option AND NOT set_option"),'1')
  assert.equal(admin("SELECT has_schema_privilege('tll_customer_migrator','tll_customer_private','CREATE')"),'f')
  assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname='tll_customer_role_setup'"),'0')
+ for(const role of ['tll_customer_owner','tll_customer_executor']){
+  assert.equal(admin(`SELECT count(*) FROM pg_auth_members WHERE roleid='${role}'::regrole`),'1')
+  assert.equal(admin(`SELECT pg_has_role('tll_customer_migrator','${role}','USAGE') OR pg_has_role('tll_customer_migrator','${role}','SET')`),'f')
+ }
+
 })
 test('recorded non-superuser operator receives only aggregate status/control, not stored identity or ciphertext',async()=>{
  const query=sql=>JSON.parse(admin('SET SESSION AUTHORIZATION tll_customer_migrator; '+sql))
@@ -47,7 +52,7 @@ test('recorded non-superuser operator receives only aggregate status/control, no
  const changed=query("SELECT tll_customer_private.operator_set_enabled(false,'synthetic_operator_test');")
  assert.equal(changed.enabled,false);assert.equal(changed.reasonCode,'synthetic_operator_test');assert.ok(Number.isFinite(Date.parse(changed.changedAt)))
  assert.equal(query("SELECT tll_customer_private.operator_set_enabled(true,'synthetic_operator_restore');").enabled,true)
- for(const sql of ['SET ROLE tll_customer_executor','SELECT * FROM tll_customer_private.control','SELECT tokens FROM tll_customer_private.connections',"UPDATE tll_customer_private.control SET enabled=true",'CREATE TABLE tll_customer_private.forbidden(id int)',"SELECT tll_customer_private.repository('logout','{}'::jsonb)"]){
+ for(const sql of ['SET ROLE tll_customer_owner','SET ROLE tll_customer_executor','SELECT * FROM tll_customer_private.control','SELECT tokens FROM tll_customer_private.connections',"UPDATE tll_customer_private.control SET enabled=true",'CREATE TABLE tll_customer_private.forbidden(id int)',"SELECT tll_customer_private.repository('logout','{}'::jsonb)"]){
   assert.throws(()=>admin('SET SESSION AUTHORIZATION tll_customer_migrator; '+sql))
  }
  for(const role of ['anon','authenticated','service_role','tll_customer_executor'])for(const sql of ['SELECT tll_customer_private.operator_status()',"SELECT tll_customer_private.operator_set_enabled(true,'synthetic')"]){

@@ -21,25 +21,16 @@ begin
   foreach r in array array['anon','authenticated','service_role'] loop
     if not exists(select 1 from pg_roles where rolname=r) then raise exception 'Missing platform role'; end if;
   end loop;
-  -- Create the narrow gateway directly as the installing operator. PG17 gives
-  -- its non-superuser creator ADMIN with a durable bootstrap grantor; an empty
-  -- self-grant setting prevents inherited use or SET ROLE. The owner stays with
-  -- the temporary creator so none of its administration survives.
+  -- Preserve bootstrap ADMIN-only owner/gateway edges for deliberate trusted
+  -- migrations and runtime provisioning, without default inherited/SET access.
   set local createrole_self_grant='';
   create role tll_cart_gateway nologin nosuperuser nobypassrls nocreaterole nocreatedb noreplication noinherit;
+  create role tll_cart_owner nologin nosuperuser nobypassrls nocreaterole nocreatedb noreplication noinherit;
   if (select rolsuper from pg_roles where rolname=current_user) then
     execute format('grant tll_cart_gateway to %I with admin true, inherit false, set false',migration_role);
+    execute format('grant tll_cart_owner to %I with admin true, inherit false, set false',migration_role);
   end if;
-  if not (select rolsuper from pg_roles where rolname=current_user) then
-    -- PG17 automatically gives a non-superuser creator ADMIN membership. A
-    -- transaction-only creator is dropped after transfer, removing that grant.
-    create role tll_cart_role_setup nologin nosuperuser nobypassrls createrole nocreatedb noreplication noinherit;
-    execute format('grant tll_cart_role_setup to %I with inherit false, set true',migration_role);
-    set local role tll_cart_role_setup;
-  end if;
-  create role tll_cart_owner nologin nosuperuser nobypassrls nocreaterole nocreatedb noreplication noinherit;
   execute format('grant tll_cart_owner to %I with inherit false, set true',migration_role);
-  execute format('set local role %I',migration_role);
 end $$;
 
 create schema tll_cart_private;
@@ -193,10 +184,11 @@ end $$;
 revoke create on schema public,tll_cart_private from tll_cart_owner;
 do $$ declare migration_role name:=current_user;
 begin
-  if exists(select from pg_roles where rolname='tll_cart_role_setup') then set local role tll_cart_role_setup; end if;
-  execute format('revoke tll_cart_owner from %I',migration_role);
-  execute format('set local role %I',migration_role);
-  if exists(select from pg_roles where rolname='tll_cart_role_setup') then drop role tll_cart_role_setup; end if;
+  if (select rolsuper from pg_roles where rolname=current_user) then
+    execute format('grant tll_cart_owner to %I with admin true, inherit false, set false',migration_role);
+  else
+    execute format('revoke tll_cart_owner from %I granted by %I',migration_role,migration_role);
+  end if;
 end $$;
 do $$ declare r text; fn record; acl record; tbl record;
 begin
@@ -224,10 +216,13 @@ begin
     end loop;
   end loop;
   if (select operator_oid from tll_cart_private.control where singleton)<>current_user::regrole then raise exception 'Cart operator mismatch'; end if;
-  if (select count(*) from pg_auth_members where roleid='tll_cart_gateway'::regrole and member=current_user::regrole
-    and admin_option and not inherit_option and not set_option)<>1 then raise exception 'Missing or duplicate narrow gateway administration'; end if;
+  if (select count(*) from pg_auth_members where roleid='tll_cart_gateway'::regrole and member=current_user::regrole)<>1
+    or (select count(*) from pg_auth_members where roleid='tll_cart_owner'::regrole and member=current_user::regrole)<>1 then raise exception 'Missing or duplicate scoped cart administration'; end if;
   if exists(select from pg_auth_members where (roleid in ('tll_cart_owner'::regrole,'tll_cart_gateway'::regrole) or member in ('tll_cart_owner'::regrole,'tll_cart_gateway'::regrole))
-    and not (roleid='tll_cart_gateway'::regrole and member=current_user::regrole and admin_option and not inherit_option and not set_option)) then raise exception 'Unexpected cart role membership'; end if;
-  if not (select rolsuper from pg_roles where rolname=current_user) and (pg_has_role(current_user,'tll_cart_gateway','USAGE') or pg_has_role(current_user,'tll_cart_gateway','SET')) then raise exception 'Operator has effective gateway authority'; end if;
+    and not (roleid in ('tll_cart_owner'::regrole,'tll_cart_gateway'::regrole) and member=current_user::regrole and admin_option and not inherit_option and not set_option
+      and (select rolsuper from pg_roles where oid=grantor))) then raise exception 'Unexpected cart role membership'; end if;
+  if not (select rolsuper from pg_roles where rolname=current_user) and
+    (pg_has_role(current_user,'tll_cart_gateway','USAGE') or pg_has_role(current_user,'tll_cart_gateway','SET')
+     or pg_has_role(current_user,'tll_cart_owner','USAGE') or pg_has_role(current_user,'tll_cart_owner','SET')) then raise exception 'Operator has effective cart role authority'; end if;
 end $$;
 commit;

@@ -18,22 +18,17 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_attribute WHERE attrelid='auth.users'::regclass AND attname='id' AND atttypid='uuid'::regtype AND NOT attisdropped) THEN
     RAISE EXCEPTION 'Unexpected auth.users primary identity';
   END IF;
-  -- Create the delegable executor as the installing role. PostgreSQL17 grants a
-  -- non-superuser creator ADMIN via its bootstrap grantor; the helper must not be
-  -- grantor of the retained edge (otherwise dropping the helper would fail).
+  -- Direct creation preserves PostgreSQL17's bootstrap-granted ADMIN-only
+  -- edges. They are deliberate trusted migration/provisioning authority, not
+  -- inherited data access. The separate self-granted owner edge is temporary.
   SET LOCAL createrole_self_grant='';
   CREATE ROLE tll_broker_executor NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+  CREATE ROLE tll_broker_owner NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
   IF (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN
     EXECUTE format('GRANT tll_broker_executor TO %I WITH ADMIN TRUE, INHERIT FALSE, SET FALSE',migration_role);
+    EXECUTE format('GRANT tll_broker_owner TO %I WITH ADMIN TRUE, INHERIT FALSE, SET FALSE',migration_role);
   END IF;
-  IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN
-    CREATE ROLE tll_broker_role_setup NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB CREATEROLE NOREPLICATION NOBYPASSRLS;
-    EXECUTE format('GRANT tll_broker_role_setup TO %I WITH INHERIT FALSE, SET TRUE',migration_role);
-    SET LOCAL ROLE tll_broker_role_setup;
-  END IF;
-  CREATE ROLE tll_broker_owner NOLOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
   EXECUTE format('GRANT tll_broker_owner TO %I WITH INHERIT TRUE, SET TRUE',migration_role);
-  EXECUTE format('SET LOCAL ROLE %I',migration_role);
 END
 $preflight$;
 CREATE SCHEMA tll_broker_private AUTHORIZATION tll_broker_owner;
@@ -295,6 +290,7 @@ BEGIN
  IF ctl.operator_oid IS DISTINCT FROM session_user::regrole::oid THEN RAISE EXCEPTION 'Broker operator unavailable' USING ERRCODE='42501'; END IF;
  RETURN jsonb_build_object('enabled',ctl.enabled,'changedAt',ctl.changed_at,'reasonCode',ctl.reason_code,
    'flows',(SELECT count(*) FROM tll_broker_private.flows),'operations',(SELECT count(*) FROM tll_broker_private.operations),
+   'dailyQuota',(SELECT count(*) FROM tll_broker_private.daily_quota),
    'provisionalSubjects',(SELECT count(*) FROM tll_broker_private.subjects WHERE reservation='provisional'),
    'pendingMigrationSubjects',(SELECT count(*) FROM tll_broker_private.subjects WHERE reservation='pending_migration'),
    'heldFlows',(SELECT count(*) FROM tll_broker_private.flows WHERE status='held'));
@@ -365,25 +361,27 @@ $postflight$;
 DO $retire_authority$
 DECLARE migration_role name:=current_user; r record; fnrow record;
 BEGIN
-  IF EXISTS(SELECT FROM pg_roles WHERE rolname='tll_broker_role_setup') THEN
-    SET LOCAL ROLE tll_broker_role_setup;
-    EXECUTE format('REVOKE tll_broker_owner FROM %I',migration_role);
-    EXECUTE format('SET LOCAL ROLE %I',migration_role);
-    DROP ROLE tll_broker_role_setup;
+  IF (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN
+    -- A superuser has one self-granted edge, not an automatic creator edge.
+    EXECUTE format('GRANT tll_broker_owner TO %I WITH ADMIN TRUE, INHERIT FALSE, SET FALSE',migration_role);
   ELSE
-    EXECUTE format('REVOKE tll_broker_owner FROM %I',migration_role);
+    -- Remove only our temporary edge; preserve the bootstrap ADMIN-only edge.
+    EXECUTE format('REVOKE tll_broker_owner FROM %I GRANTED BY %I',migration_role,migration_role);
   END IF;
   IF EXISTS(SELECT FROM pg_auth_members WHERE
-    (roleid IN (SELECT oid FROM pg_roles WHERE rolname IN ('tll_broker_owner','tll_broker_executor'))
-     OR member IN (SELECT oid FROM pg_roles WHERE rolname IN ('tll_broker_owner','tll_broker_executor')))
-    AND NOT (roleid='tll_broker_executor'::regrole AND member=migration_role::regrole
-      AND admin_option AND NOT inherit_option AND NOT set_option))
-    OR (SELECT count(*) FROM pg_auth_members WHERE roleid='tll_broker_executor'::regrole AND member=migration_role::regrole
-      AND admin_option AND NOT inherit_option AND NOT set_option)<>1 THEN
+    (roleid IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole)
+     OR member IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole))
+    AND NOT (roleid IN ('tll_broker_owner'::regrole,'tll_broker_executor'::regrole) AND member=migration_role::regrole
+      AND admin_option AND NOT inherit_option AND NOT set_option
+      AND (SELECT rolsuper FROM pg_roles WHERE oid=grantor)))
+    OR (SELECT count(*) FROM pg_auth_members WHERE roleid='tll_broker_owner'::regrole AND member=migration_role::regrole)<>1
+    OR (SELECT count(*) FROM pg_auth_members WHERE roleid='tll_broker_executor'::regrole AND member=migration_role::regrole)<>1 THEN
     RAISE EXCEPTION 'Unexpected repository membership or missing scoped delegation'; END IF;
   -- The non-superuser operator retains only USAGE and the two narrow functions.
   -- Administrators may have inherent platform authority; no such grants are added.
   IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN
+    IF pg_has_role(current_user,'tll_broker_owner','USAGE') OR pg_has_role(current_user,'tll_broker_owner','SET')
+      OR pg_has_role(current_user,'tll_broker_executor','USAGE') OR pg_has_role(current_user,'tll_broker_executor','SET') THEN RAISE EXCEPTION 'Unexpected effective repository role authority'; END IF;
     IF has_schema_privilege(current_user,'tll_broker_private','CREATE') OR NOT has_schema_privilege(current_user,'tll_broker_private','USAGE') THEN
       RAISE EXCEPTION 'Unexpected operator schema authority'; END IF;
     FOR r IN SELECT c.oid,c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='tll_broker_private' AND c.relkind IN ('r','S') LOOP

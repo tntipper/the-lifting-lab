@@ -155,8 +155,10 @@ def main():
     assert not sql("select datname from pg_database where datname='"+DB+"';",'postgres'), 'Existing DB is not replaced'
     assert not sql("select rolname from pg_roles where rolname in ("+','.join(literal(r)for r in ROLES)+');','postgres'), 'Existing roles are not modified'
     created=False
+    marker='tll-cart-policy-proof:'+str(uuid.uuid4())
     try:
         sql('create database '+DB+';','postgres');created=True
+        sql('comment on database '+DB+' is '+literal(marker)+';','postgres')
         sql('create role '+MIGRATOR+' nologin createrole noinherit; alter database '+DB+' owner to '+MIGRATOR+';')
         sql("create schema tll_staging_private; revoke all on schema tll_staging_private from public; create table tll_staging_private.environment(singleton boolean primary key,environment text,operator_project_ref text,identity_basis text); insert into tll_staging_private.environment values(true,'tll-hosted-staging-v1','abcdefghijklmnopqrst','explicit-operator-dashboard-binding'); grant usage on schema tll_staging_private to "+MIGRATOR+'; grant select on tll_staging_private.environment to '+MIGRATOR+';')
         migration=(ROOT/'supabase/migrations/202609150006_staging_cart_sessions.sql').read_text()
@@ -164,10 +166,35 @@ def main():
         check('missing explicit staging context rejects migration atomically','Explicit staging context required' in error and not sql("select to_regnamespace('tll_cart_private');"))
         sql("set tll.cart_migration_environment='staging'; set tll.cart_expected_project_ref='abcdefghijklmnopqrst';\n"+migration,role=MIGRATOR)
         check('managed-style non-superuser PG17 migration succeeds',sql("select rolsuper from pg_roles where rolname='"+MIGRATOR+"';")=='f')
-        check('control stays disabled and gateway is not provisioned',sql("select enabled from tll_cart_private.control;")=='f' and sql("select count(*) from pg_auth_members where roleid='tll_cart_owner'::regrole;")=='0' and sql("select count(*) from pg_auth_members where roleid='tll_cart_gateway'::regrole and member='"+MIGRATOR+"'::regrole and admin_option and not inherit_option and not set_option;")=='1')
+        check('control stays disabled and gateway is not provisioned',sql("select enabled from tll_cart_private.control;")=='f' and sql("select count(*) from pg_auth_members where roleid='tll_cart_owner'::regrole and member='"+MIGRATOR+"'::regrole and grantor='postgres'::regrole and admin_option and not inherit_option and not set_option;")=='1' and sql("select count(*) from pg_auth_members where roleid='tll_cart_gateway'::regrole and member='"+MIGRATOR+"'::regrole and admin_option and not inherit_option and not set_option;")=='1')
         check('installing operator retains ADMIN only, not inherited gateway authority or SET ROLE',sql("select pg_has_role(current_user,'tll_cart_gateway','USAGE') or pg_has_role(current_user,'tll_cart_gateway','SET');",role=MIGRATOR)=='f' and 'permission denied' in sql('set role tll_cart_gateway;',role=MIGRATOR,failure=True))
+        check('owner administration does not grant default function use or SET authority',sql("select pg_has_role(current_user,'tll_cart_owner','USAGE') or pg_has_role(current_user,'tll_cart_owner','SET') or has_function_privilege(current_user,'public.tll_cart_open(text,text)','EXECUTE');",role=MIGRATOR)=='f' and 'must be owner' in sql('alter function public.tll_cart_open(text,text) cost 101;',role=MIGRATOR,failure=True))
+        upgrade="""begin;
+grant tll_cart_owner to """+MIGRATOR+""" with admin false,inherit false,set true;
+grant create on schema public,tll_cart_private to tll_cart_owner;
+set local role tll_cart_owner;
+alter function public.tll_cart_open(text,text) cost 101;
+do $$begin execute pg_get_functiondef('public.tll_cart_open(text,text)'::regprocedure); execute pg_get_functiondef('tll_cart_private.snapshot(tll_cart_private.sessions)'::regprocedure); end$$;
+select procost=101 from pg_proc where oid='public.tll_cart_open(text,text)'::regprocedure;
+reset role;
+revoke create on schema public,tll_cart_private from tll_cart_owner;
+revoke tll_cart_owner from """+MIGRATOR+""" granted by """+MIGRATOR+""";
+select count(*)=1 and bool_and(grantor='postgres'::regrole and admin_option and not inherit_option and not set_option) from pg_auth_members where roleid='tll_cart_owner'::regrole;
+select not(pg_has_role(current_user,'tll_cart_owner','USAGE') or pg_has_role(current_user,'tll_cart_owner','SET') or has_function_privilege(current_user,'public.tll_cart_open(text,text)','EXECUTE'));
+rollback;"""
+        check('future function migration explicitly acquires and retires scoped owner authority',sql(upgrade,role=MIGRATOR)=='t\nt\nt' and sql("select procost from pg_proc where oid='public.tll_cart_open(text,text)'::regprocedure;")=='100')
+        super_proof="""begin;
+drop function public.tll_cart_open(text,text),public.tll_cart_read(text,text),public.tll_cart_claim(text,text,uuid,text,bigint,integer),public.tll_cart_finish(text,text,uuid,text,jsonb,integer,integer,integer);
+drop schema tll_cart_private cascade;
+revoke usage on schema public from tll_cart_gateway;
+drop role tll_cart_owner; drop role tll_cart_gateway;
+set local tll.cart_migration_environment='staging'; set local tll.cart_expected_project_ref='abcdefghijklmnopqrst';
+"""+migration.replace('begin;\n','',1).removesuffix('commit;\n')+"""
+select count(*)=2 and bool_and(member=current_user::regrole and grantor=current_user::regrole and admin_option and not inherit_option and not set_option) from pg_auth_members where roleid in('tll_cart_owner'::regrole,'tll_cart_gateway'::regrole);
+rollback;"""
+        check('superuser installation retires its single self-granted edges to ADMIN only',sql(super_proof)=='t' and sql("select operator_oid='"+MIGRATOR+"'::regrole from tll_cart_private.control;")=='t')
         provision="""begin;
-create role tll_cart_provisioning_probe login nosuperuser nobypassrls nocreaterole nocreatedb noreplication;
+create role tll_cart_provisioning_probe nologin nosuperuser nobypassrls nocreaterole nocreatedb noreplication;
 grant tll_cart_gateway to tll_cart_provisioning_probe with inherit true,set false;
 select has_function_privilege('tll_cart_provisioning_probe','public.tll_cart_open(text,text)','EXECUTE') and not has_schema_privilege('tll_cart_provisioning_probe','tll_cart_private','USAGE');
 revoke tll_cart_gateway from tll_cart_provisioning_probe;
@@ -226,6 +253,7 @@ rollback;"""
         if created:
             # This invocation created the entire named DB, and never adopts an
             # existing DB. Original fixture databases/services remain untouched.
+            assert sql("select shobj_description(oid,'pg_database') from pg_database where datname=current_database();")==marker, 'Cleanup requires this invocation marker'
             sql('drop database '+DB+';','postgres')
             for role in ROLES:
                 sql('drop role if exists '+role+';','postgres')

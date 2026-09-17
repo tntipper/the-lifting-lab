@@ -38,7 +38,9 @@ If hold persistence itself is unavailable, the protocol releases no credential/s
 
 Known-flow quarantine and cancellation remain available when normal operation capacity is exhausted and when SQL execution is disabled. They do not reopen a flow or release material. At full quarantine capacity an unknown hold fails closed. Because there is no automatic tombstone deletion and registration uses stricter caps under the same lock, a delayed registration cannot reopen space after that refusal. These are small staging limits; a reviewed retention/deletion and recovery procedure is required before broader use. Repeated fresh holds on an already held flow do not grow its ledger.
 
-The operator can inspect aggregate counts and switch the foundation off with `operator_status()` and `operator_set_enabled(false, 'reason_code')`. Disable waits for the current serialized transition and then blocks new material use; it permits revocation. It is not a substitute for provider logout or final identity cleanup.
+The operator can inspect aggregate counts, including the nonsecret `dailyQuota` row count, and switch the foundation off with `operator_status()` and `operator_set_enabled(false, 'reason_code')`. Disable waits for the current serialized transition and then blocks new material use; it permits revocation. It is not a substitute for provider logout or final identity cleanup.
+
+The installing operator retains one ADMIN-only membership on each of the private owner and executor, with INHERIT FALSE and SET FALSE. Its ordinary data/function restrictions remain. It is explicitly trusted to provision runtime execution and temporarily acquire SET-only owner authority for future reviewed migrations. The temporary self-granted edge is revoked by its exact grantor before commit, retaining the bootstrap ADMIN edge. See [repository migration authority](repository-migration-authority.md); this power is not a security boundary against the trusted operator.
 
 ## Reproducible local proof
 
