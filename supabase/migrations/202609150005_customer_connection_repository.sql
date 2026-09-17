@@ -344,7 +344,7 @@ BEGIN
 END
 $postflight$;
 DO $retire_authority$
-DECLARE migration_role name:=current_user; r record; fnrow record;
+DECLARE migration_role name:=current_user; r record; fnrow record; operator_read_all boolean:=pg_has_role(current_user,'pg_read_all_data','USAGE');
 BEGIN
   IF (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN
     -- A superuser has one self-granted edge, not an automatic creator edge.
@@ -362,17 +362,27 @@ BEGIN
     OR (SELECT count(*) FROM pg_auth_members WHERE roleid='tll_customer_owner'::regrole AND member=migration_role::regrole)<>1
     OR (SELECT count(*) FROM pg_auth_members WHERE roleid='tll_customer_executor'::regrole AND member=migration_role::regrole)<>1 THEN
     RAISE EXCEPTION 'Unexpected repository membership or missing scoped delegation'; END IF;
-  -- The non-superuser operator retains only USAGE and the two narrow functions.
-  -- Administrators may have inherent platform authority; no such grants are added.
+  -- No explicit private relation/column ACL may be added, including to an
+  -- installer whose platform role already supplies implicit read-all access.
+  IF EXISTS(SELECT FROM pg_class c WHERE c.relnamespace='tll_customer_private'::regnamespace AND c.relkind IN ('r','S')
+    AND (c.relowner<>'tll_customer_owner'::regrole
+      OR EXISTS(SELECT FROM aclexplode(COALESCE(c.relacl,acldefault(CASE WHEN c.relkind='S' THEN 'S'::"char" ELSE 'r'::"char" END,c.relowner))) x WHERE x.grantee<>c.relowner)
+      OR EXISTS(SELECT FROM pg_attribute a CROSS JOIN LATERAL aclexplode(a.attacl) x WHERE a.attrelid=c.oid AND x.grantee<>c.relowner))) THEN
+    RAISE EXCEPTION 'Unexpected private relation or column ACL'; END IF;
+  -- The trusted installer may already inherit platform-wide SELECT. This
+  -- migration adds no such membership, grants no data ACL, and permits no writes.
   IF NOT (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN
     IF pg_has_role(current_user,'tll_customer_owner','USAGE') OR pg_has_role(current_user,'tll_customer_owner','SET')
       OR pg_has_role(current_user,'tll_customer_executor','USAGE') OR pg_has_role(current_user,'tll_customer_executor','SET') THEN RAISE EXCEPTION 'Unexpected effective repository role authority'; END IF;
     IF has_schema_privilege(current_user,'tll_customer_private','CREATE') OR NOT has_schema_privilege(current_user,'tll_customer_private','USAGE') THEN
       RAISE EXCEPTION 'Unexpected operator schema authority'; END IF;
     FOR r IN SELECT c.oid,c.relkind FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='tll_customer_private' AND c.relkind IN ('r','S') LOOP
-      IF r.relkind='r' AND (has_table_privilege(current_user,r.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
-        OR has_any_column_privilege(current_user,r.oid,'SELECT,INSERT,UPDATE,REFERENCES')) THEN RAISE EXCEPTION 'Unexpected operator table/column authority'; END IF;
-      IF r.relkind='S' AND has_sequence_privilege(current_user,r.oid,'USAGE,SELECT,UPDATE') THEN RAISE EXCEPTION 'Unexpected operator sequence authority'; END IF;
+      IF r.relkind='r' AND ((has_table_privilege(current_user,r.oid,'SELECT') IS DISTINCT FROM operator_read_all)
+        OR (has_any_column_privilege(current_user,r.oid,'SELECT') IS DISTINCT FROM operator_read_all)
+        OR has_table_privilege(current_user,r.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+        OR has_any_column_privilege(current_user,r.oid,'INSERT,UPDATE,REFERENCES')) THEN RAISE EXCEPTION 'Unexpected operator table/column authority'; END IF;
+      IF r.relkind='S' AND ((has_sequence_privilege(current_user,r.oid,'SELECT') IS DISTINCT FROM operator_read_all)
+        OR has_sequence_privilege(current_user,r.oid,'USAGE,UPDATE')) THEN RAISE EXCEPTION 'Unexpected operator sequence authority'; END IF;
     END LOOP;
     FOR fnrow IN SELECT p.oid,p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='tll_customer_private' LOOP
       IF has_function_privilege(current_user,fnrow.oid,'EXECUTE') IS DISTINCT FROM (fnrow.proname IN ('operator_status','operator_set_enabled')) THEN

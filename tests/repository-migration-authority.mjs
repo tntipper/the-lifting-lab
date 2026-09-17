@@ -8,7 +8,11 @@ DO $authority_before$ BEGIN
     OR (SELECT count(*) FROM pg_auth_members WHERE roleid='${owner}'::regrole)<>1 THEN RAISE EXCEPTION 'Expected one bootstrap ADMIN-only owner edge'; END IF;
   BEGIN ALTER FUNCTION ${schema}.operator_status() COST 101; RAISE EXCEPTION 'Default operator can alter function'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN ALTER TABLE ${schema}.control ADD COLUMN upgrade_probe boolean; RAISE EXCEPTION 'Default operator can alter table'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
-  BEGIN GRANT SELECT ON ${schema}.control TO ${executor}; RAISE EXCEPTION 'Default operator can grant data'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  -- PostgreSQL may warn and grant nothing when the operator can SELECT but
+  -- has no grant option. Prove the outcome instead of requiring an exception.
+  BEGIN GRANT SELECT ON ${schema}.control TO ${executor}; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  IF has_table_privilege('${executor}','${schema}.control','SELECT')
+    OR EXISTS(SELECT FROM pg_class c CROSS JOIN LATERAL aclexplode(c.relacl) a WHERE c.oid='${schema}.control'::regclass AND a.grantee='${executor}'::regrole) THEN RAISE EXCEPTION 'Default operator can grant data'; END IF;
 END $authority_before$;
 GRANT ${owner} TO ${operator} WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;
 DO $authority_temporary$ BEGIN
@@ -35,7 +39,7 @@ DO $authority_after$ BEGIN
   IF (SELECT count(*) FROM pg_auth_members WHERE roleid='${owner}'::regrole)<>1
     OR NOT EXISTS(SELECT FROM pg_auth_members WHERE roleid='${owner}'::regrole AND member=current_user::regrole AND grantor='postgres'::regrole AND admin_option AND NOT inherit_option AND NOT set_option)
     OR pg_has_role(current_user,'${owner}','USAGE') OR pg_has_role(current_user,'${owner}','SET')
-    OR has_table_privilege(current_user,'${schema}.control','SELECT') OR has_table_privilege('${executor}','${schema}.control','SELECT') THEN RAISE EXCEPTION 'Future migration authority not retired'; END IF;
+    OR (has_table_privilege(current_user,'${schema}.control','SELECT') IS DISTINCT FROM pg_has_role(current_user,'pg_read_all_data','USAGE')) OR has_table_privilege('${executor}','${schema}.control','SELECT') THEN RAISE EXCEPTION 'Future migration authority not retired'; END IF;
   BEGIN ALTER FUNCTION ${schema}.operator_status() COST 101; RAISE EXCEPTION 'Retired operator can alter function'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $authority_after$;
 `

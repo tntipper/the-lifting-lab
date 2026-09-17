@@ -284,7 +284,7 @@ test('terminal known-flow headroom is bounded and survives normal bridge operati
   assert.equal((await rpc('bridge', 'hold', { ...p, operationId: randomUUID() })).status, 'rejected')
   assert.equal(admin('SELECT count(*) FROM tll_bridge_private.operations'), count)
 })
-test('all private helpers and raw tables remain inaccessible to executors and installer after retirement', () => {
+test('plain local installer and executors cannot access private helpers or raw tables after retirement', () => {
   for (const role of [...Object.values(roleFor), 'anon', 'authenticated', 'service_role', 'tll_admission_bridge_migrator']) {
     for (const schema of Object.values(schemaFor)) {
       assert.equal(admin(`SELECT has_schema_privilege('${role}','${schema}','CREATE')`), 'f')

@@ -8,8 +8,8 @@ export const mappings = Object.freeze({
   tll_bridge_owner: 'tll_ab_bridge_owner', tll_bridge_executor: 'tll_ab_bridge_executor',
 })
 export const migrations = [
-  ['202609150007_customer_subject_broker_repository.sql', '37448121534cca6fee076cbccc783b1eb13622d319d8151a4366f91e0afbce5b'],
-  ['202609170008_customer_provisional_admission_repository.sql', '2c98a3de46b6bab744681f05dadad0a10b4b258dd63b251beda9f636591ec089'],
+  ['202609150007_customer_subject_broker_repository.sql', '85a118335d91d896b707dcdff1570f6c2df22a9b2037e9a569b587b89ad41c21'],
+  ['202609170008_customer_provisional_admission_repository.sql', '038b2bfc9d236f39c0cb5ae9b657a5a54b572fc304e6da318b00a07cf0d201e2'],
   ['202609170010_customer_admission_bridge.sql', null],
 ]
 export const digest = text => createHash('sha256').update(text).digest('hex')

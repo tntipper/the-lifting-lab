@@ -348,11 +348,11 @@ BEGIN
  END LOOP;
 END $retire$;
 DO $postflight$
-DECLARE s text; r record; f record; owner_name text; role_name text; expected boolean;
+DECLARE s text; r record; f record; owner_name text; role_name text; expected boolean; expected_read boolean;
 BEGIN
  IF tll_bridge_private.operator_status()->'enabled'<>'false'::jsonb OR tll_broker_private.operator_status()->'enabled'<>'false'::jsonb
    OR tll_provisional_private.operator_status()->'enabled'<>'false'::jsonb THEN RAISE EXCEPTION 'Unexpected bridge activation'; END IF;
- FOREACH role_name IN ARRAY ARRAY['tll_bridge_owner','tll_bridge_executor'] LOOP
+ FOREACH role_name IN ARRAY ARRAY['tll_broker_owner','tll_broker_executor','tll_provisional_owner','tll_provisional_executor','tll_bridge_owner','tll_bridge_executor'] LOOP
    IF EXISTS(SELECT FROM pg_roles WHERE rolname=role_name AND (rolcanlogin OR rolsuper OR rolcreaterole OR rolcreatedb OR rolbypassrls OR rolreplication OR rolinherit))
      OR (SELECT count(*) FROM pg_auth_members WHERE roleid=role_name::regrole)<>1
      OR NOT EXISTS(SELECT FROM pg_auth_members WHERE roleid=role_name::regrole AND member=current_user::regrole
@@ -392,14 +392,23 @@ BEGIN
      IF NOT expected OR f.privilege_type<>'EXECUTE' OR f.is_grantable THEN RAISE EXCEPTION 'Unexpected private function ACL'; END IF;
    END LOOP;
    FOREACH role_name IN ARRAY ARRAY['anon','authenticated','service_role','tll_broker_executor','tll_provisional_executor','tll_bridge_executor',current_user::text] LOOP
-     IF (SELECT rolsuper FROM pg_roles WHERE rolname=role_name) THEN CONTINUE; END IF;
+     IF (SELECT rolsuper FROM pg_roles WHERE rolname=role_name) THEN
+       IF role_name=current_user::text THEN CONTINUE; END IF;
+       RAISE EXCEPTION 'Unexpected protected role superuser';
+     END IF;
      IF has_schema_privilege(role_name,s,'CREATE') THEN RAISE EXCEPTION 'Unexpected private schema CREATE'; END IF;
      expected:=role_name=current_user::text OR role_name=(CASE s WHEN 'tll_broker_private' THEN 'tll_broker_executor' WHEN 'tll_provisional_private' THEN 'tll_provisional_executor' ELSE 'tll_bridge_executor' END);
      IF has_schema_privilege(role_name,s,'USAGE') IS DISTINCT FROM expected THEN RAISE EXCEPTION 'Unexpected effective schema authority'; END IF;
+     -- Only the trusted installing operator may retain existing platform-wide
+     -- SELECT; browser and runtime roles must have zero effective data authority.
+     expected_read:=role_name=current_user::text AND pg_has_role(role_name,'pg_read_all_data','USAGE');
      FOR r IN SELECT oid,relkind FROM pg_class WHERE relnamespace=s::regnamespace AND relkind IN ('r','S') LOOP
-       IF r.relkind='r' AND (has_table_privilege(role_name,r.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
-         OR has_any_column_privilege(role_name,r.oid,'SELECT,INSERT,UPDATE,REFERENCES')) THEN RAISE EXCEPTION 'Unexpected effective private data access'; END IF;
-       IF r.relkind='S' AND has_sequence_privilege(role_name,r.oid,'USAGE,SELECT,UPDATE') THEN RAISE EXCEPTION 'Unexpected effective sequence access'; END IF;
+       IF r.relkind='r' AND ((has_table_privilege(role_name,r.oid,'SELECT') IS DISTINCT FROM expected_read)
+         OR (has_any_column_privilege(role_name,r.oid,'SELECT') IS DISTINCT FROM expected_read)
+         OR has_table_privilege(role_name,r.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+         OR has_any_column_privilege(role_name,r.oid,'INSERT,UPDATE,REFERENCES')) THEN RAISE EXCEPTION 'Unexpected effective private data access'; END IF;
+       IF r.relkind='S' AND ((has_sequence_privilege(role_name,r.oid,'SELECT') IS DISTINCT FROM expected_read)
+         OR has_sequence_privilege(role_name,r.oid,'USAGE,UPDATE')) THEN RAISE EXCEPTION 'Unexpected effective sequence access'; END IF;
      END LOOP;
      FOR f IN SELECT oid,proname FROM pg_proc WHERE pronamespace=s::regnamespace LOOP
        expected:=(role_name=current_user::text AND f.proname IN ('operator_status','operator_set_enabled'))

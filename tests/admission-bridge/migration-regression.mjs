@@ -5,6 +5,8 @@ import { createHash } from 'node:crypto'
 import { admin, assertFixture } from './local-pg.mjs'
 import { source, body } from './sources.mjs'
 assertFixture()
+const exclusive = `DO $$BEGIN IF EXISTS(SELECT FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()) THEN RAISE EXCEPTION 'Fixture is not exclusive'; END IF; END$$;`
+admin(exclusive)
 for (const schema of ['tll_bridge_private', 'tll_broker_private', 'tll_provisional_private']) assert.equal(admin(`SELECT enabled FROM ${schema}.control`), 'f')
 assert.equal(admin("SELECT count(*) FROM pg_shdepend WHERE refclassid='pg_authid'::regclass AND refobjid IN ('tll_ab_bridge_owner'::regrole,'tll_ab_bridge_executor'::regrole) AND dbid NOT IN (0,(SELECT oid FROM pg_database WHERE datname=current_database()))"), '0')
 const fingerprint = () => admin(`SELECT json_build_object(
@@ -21,7 +23,7 @@ for (const [, name, implementation] of definitions) {
   assert.equal(admin(`SELECT md5(prosrc) FROM pg_proc WHERE pronamespace='${schema}'::regnamespace AND proname='${fn}'`),
     createHash('md5').update(implementation).digest('hex'), `Fixture function differs from final canonical source: ${name}`)
 }
-admin(`BEGIN;
+admin(`BEGIN; ${exclusive}
 DROP FUNCTION tll_broker_private.repository(text,jsonb),tll_provisional_private.repository(text,jsonb),tll_broker_private.operator_set_enabled(boolean,text),tll_provisional_private.operator_set_enabled(boolean,text);
 ALTER FUNCTION tll_broker_private.repository_v1(text,jsonb) RENAME TO repository;
 ALTER FUNCTION tll_provisional_private.repository_v1(text,jsonb) RENAME TO repository;
@@ -62,7 +64,7 @@ assert.equal(fingerprint(), before)
 assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname='tll_ab_default_probe'"), '0')
 const guard = canonical.adapted.match(/DO \$postflight\$[\s\S]*?END \$postflight\$;/)?.[0]
 assert.ok(guard)
-admin(`BEGIN; SET SESSION AUTHORIZATION tll_admission_bridge_migrator; ${guard} ROLLBACK;`)
+admin(`BEGIN; ${exclusive} SET SESSION AUTHORIZATION tll_admission_bridge_migrator; ${guard} ROLLBACK;`)
 const mutations = [
   'GRANT SELECT ON tll_bridge_private.grants TO tll_ab_guard_probe',
   'GRANT SELECT(release_hash) ON tll_bridge_private.grants TO tll_ab_guard_probe',
@@ -77,7 +79,7 @@ const mutations = [
 for (const mutation of mutations) {
   // ON_ERROR_STOP closes the transaction on rejection: every malicious change
   // and the probe role are rolled back, even though the final ROLLBACK is skipped.
-  assert.throws(() => admin(`BEGIN; CREATE ROLE tll_ab_guard_probe NOLOGIN; ${mutation}; SET SESSION AUTHORIZATION tll_admission_bridge_migrator; ${guard} ROLLBACK;`))
+  assert.throws(() => admin(`BEGIN; ${exclusive} CREATE ROLE tll_ab_guard_probe NOLOGIN; ${mutation}; SET SESSION AUTHORIZATION tll_admission_bridge_migrator; ${guard} ROLLBACK;`))
   assert.equal(fingerprint(), before)
   assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname='tll_ab_guard_probe'"), '0')
 }

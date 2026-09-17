@@ -5,6 +5,8 @@ import {readFileSync} from 'node:fs'
 import {admin,assertFixture} from './local-pg.mjs'
 import {migrationAuthorityProof} from '../repository-migration-authority.mjs'
 assertFixture()
+const exclusive = `DO $$BEGIN IF EXISTS(SELECT FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()) THEN RAISE EXCEPTION 'Fixture is not exclusive'; END IF; END$$;`
+admin(exclusive)
 assert.equal(admin('SELECT enabled FROM tll_provisional_private.control'),'f')
 assert.equal(admin("SELECT count(*) FROM pg_shdepend WHERE refclassid='pg_authid'::regclass AND refobjid IN ('tll_provisional_owner'::regrole,'tll_provisional_executor'::regrole) AND dbid NOT IN (0,(SELECT oid FROM pg_database WHERE datname=current_database()))"),'0')
 const snapshot=()=>admin("SELECT json_build_object('control',(SELECT row_to_json(c) FROM tll_provisional_private.control c),'attempts',(SELECT coalesce(json_agg(x),'[]') FROM tll_provisional_private.operations x),'connections',(SELECT coalesce(json_agg(x),'[]') FROM tll_provisional_private.intents x));")
@@ -12,7 +14,7 @@ const before=snapshot()
 const sql=readFileSync(new URL('../../supabase/migrations/202609170008_customer_provisional_admission_repository.sql',import.meta.url),'utf8')
 assert.ok(sql.includes('BEGIN;\n')&&sql.endsWith('COMMIT;\n'))
 const body=sql.replace('BEGIN;\n','').replace(/COMMIT;\n$/,'')
-admin(`BEGIN;
+admin(`BEGIN; ${exclusive}
  DROP SCHEMA tll_provisional_private CASCADE; DROP ROLE tll_provisional_owner; DROP ROLE tll_provisional_executor;
  CREATE ROLE tll_provisional_default_probe NOLOGIN; GRANT tll_provisional_default_probe TO anon WITH INHERIT TRUE;
  SET SESSION AUTHORIZATION tll_provisional_migrator;
@@ -63,7 +65,7 @@ admin(`BEGIN;
  DO $$BEGIN IF has_schema_privilege('anon','tll_provisional_private','USAGE') OR has_table_privilege('anon','tll_provisional_private.intents','SELECT,MAINTAIN') OR has_schema_privilege('tll_provisional_migrator','tll_provisional_private','CREATE') OR (SELECT enabled FROM tll_provisional_private.control) THEN RAISE EXCEPTION 'Private ACL or disabled-control regression'; END IF; END$$;
  ROLLBACK;`)
 assert.equal(snapshot(),before)
-admin(`BEGIN;
+admin(`BEGIN; ${exclusive}
  DROP SCHEMA tll_provisional_private CASCADE; DROP ROLE tll_provisional_owner; DROP ROLE tll_provisional_executor;
  ${body}
  DO $$BEGIN

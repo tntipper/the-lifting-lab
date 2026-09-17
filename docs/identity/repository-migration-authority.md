@@ -15,9 +15,25 @@ creator grant: installation instead resets its single explicit membership to the
 same ADMIN-only flags. See the official [PostgreSQL17 role attribute rules](https://www.postgresql.org/docs/17/role-attributes.html).
 
 At rest, the non-superuser installer cannot inherit or SET either scoped role.
-For005/007/008, its direct SQL access remains schema USAGE and the two aggregate
-operator functions; it cannot read private data, call the runtime repository,
-alter its functions/tables or create private objects. Cart006 differs: the
+For005/007/008, the migration grants only schema USAGE and the two aggregate
+operator functions. A plain installer cannot read private data. A managed
+installer that already effectively inherits PostgreSQL's `pg_read_all_data`
+retains implicit SELECT on tables, columns and sequences, with no explicit data
+ACL added. PostgreSQL's predefined role also supplies schema USAGE; it does not
+itself bypass RLS. Supabase's managed administrator may separately have BYPASSRLS,
+so these checks do not promise confidentiality from that trusted administrator.
+The migrations neither grant nor revoke any managed platform role.
+
+Both nonsuperuser installer profiles are denied direct table/column writes,
+MAINTAIN, sequence USAGE/UPDATE, runtime repository calls, function/table DDL and
+schema CREATE. Exact owner-only relation and column ACLs reject even an explicit
+SELECT grant to an installer who already has read-all authority. Browser,
+service and executor roles retain zero effective table/column/sequence access;
+the platform-read exception is exclusive to the trusted installer. See the
+[PostgreSQL17 predefined roles](https://www.postgresql.org/docs/17/predefined-roles.html)
+and [Supabase managed administrator model](https://supabase.com/docs/guides/database/postgres/roles-superuser).
+
+Cart006 differs: the
 installer already owns its private schema/tables and control, while its six
 functions belong to `tll_cart_owner`. That existing table authority is retained;
 no effective cart function-owner or gateway use is added.
@@ -59,7 +75,11 @@ An owner ADMIN grant cannot be recovered using CREATEROLE alone once every owner
 administrator has been retired. Already installed versions with that state need
 a separate authorized platform recovery or a previously established migration
 capability. Replaying or editing their historical migration is not recovery.
-This change revises only the four unapplied versions; it does not alter installed004.
+These revisions apply only to the unapplied versions; they do not alter installed004.
+The later010 bridge postflight applies the same installer-read distinction and
+verifies exact ADMIN-only membership for all six broker/provisional/bridge roles,
+including predecessor roles. A superuser exception applies only to the installer;
+a protected browser/runtime role becoming superuser is rejected.
 The underlying ownership and grant rules are described in [PostgreSQL17 GRANT](https://www.postgresql.org/docs/17/sql-grant.html).
 
 ## Local proof
@@ -77,3 +97,26 @@ authority, and the existing RLS denial of owner UPDATE(enabled). Its separate
 row/advisory-lock tests still prove disable and expiry behavior. No test creates
 a committed LOGIN or password. These are local PostgreSQL proofs, not hosted
 installation, hosted role discovery or activation acceptance.
+
+## Managed administrator regression
+
+Run `node tests/managed-admin-read-authority.mjs` against the four existing marked
+local fixtures, or supply `customer`, `broker`, `provisional` or `bridge` to select
+a bounded fixture. The harness refuses another session before each rollback
+transaction, and verifies no role being reconstructed has another database's
+dependencies. It does not create containers, databases, logins or credentials.
+
+Each fixture proves the plain guard, full canonical reconstruction under a
+nonsuperuser with temporary read-all and BYPASSRLS, effective SELECT-only access,
+and rejection of applied explicit table/column/sequence SELECT grants, write-all,
+MAINTAIN, protected-role read-all/superuser, sequence mutation grants and changed
+owner delegation.010 additionally rejects predecessor SET/INHERIT and duplicate
+membership edges. Mutation application is confirmed before guard rejection to
+avoid counting invalid mutations as passing tests. Complete role, membership,
+private catalog and data fingerprints must match after every rollback. This is
+local compatibility/security evidence, not a managed-provider installation proof.
+
+Future DDL delegation is exercised under both nonsuperuser profiles. PostgreSQL
+can warn and grant nothing when a SELECT-capable operator attempts GRANT without
+grant option; the proof checks the resulting ACL and executor privilege rather
+than assuming every denied grant raises an exception.
