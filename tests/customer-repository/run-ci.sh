@@ -48,3 +48,6 @@ python3 tests/staging-cart/acceptance.py
 node tests/subject-broker-repository/setup.mjs --create-once
 node tests/subject-broker-repository/migration-regression.mjs
 node --experimental-strip-types --test tests/subject-broker-repository/acceptance.test.mjs
+node tests/provisional-admission-repository/setup.mjs --create-once
+node tests/provisional-admission-repository/migration-regression.mjs
+node --experimental-strip-types --test tests/provisional-admission-repository/acceptance.test.mjs

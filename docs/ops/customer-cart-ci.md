@@ -1,8 +1,8 @@
 # Customer and cart repository CI
 
 The `customer-cart-repositories` job exercises the real PostgreSQL boundaries for
-the customer repository, bounded driver, anonymous staging cart and subject
-broker repository on a fresh GitHub-hosted Linux runner. It requires no project
+the customer repository, bounded driver, anonymous staging cart, subject
+broker and provisional admission repositories on a fresh GitHub-hosted Linux runner. It requires no project
 credentials or hosted services.
 
 `tests/customer-repository/run-ci.sh` refuses ordinary local/self-hosted execution,
@@ -17,7 +17,11 @@ behavior, and runs006's disposable-database acceptance. The customer runner leav
 its control disabled; the cart runner drops only its own database and roles.
 Migration007's separate marked database then receives the same
 non-superuser installation, rollback regression and actual repository suite,
-leaving its control disabled and its synthetic rows empty. The enclosing owned
+leaving its control disabled and its synthetic rows empty. Migration008 then
+receives its own marked database and the same installation, migration regression
+and actual repository checks. This proves encrypted admission intents, one-use
+claims and uncertainty holds without dispatching a provider request; the fixture
+finishes disabled and empty. The enclosing owned
 container and anonymous data volume are removed when the job exits. The separate
 browser job covers the cart at six widths.
 
