@@ -1,23 +1,26 @@
 'use client'
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 
 /** Native modal semantics keep closed content out of focus and the page inert. */
 export default function AccessibleDialog({
-  open, onClose, labelledBy, children, className = '',
+  open, onClose, labelledBy, children, className = '', returnFocusRef,
 }: {
   open: boolean
   onClose: () => void
   labelledBy: string
   children: ReactNode
   className?: string
+  returnFocusRef?: RefObject<HTMLElement | null>
 }) {
   const ref = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
     const dialog = ref.current
     if (!open || !dialog) return
-    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    // A mutation can disable its trigger before this effect runs. Callers that
+    // do so capture it in the opening event, before React updates the DOM.
+    const trigger = returnFocusRef?.current ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null)
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     dialog.showModal()
@@ -28,7 +31,7 @@ export default function AccessibleDialog({
       document.body.style.overflow = previousOverflow
       if (trigger?.isConnected) trigger.focus({ preventScroll: true })
     }
-  }, [open])
+  }, [open, returnFocusRef])
 
   return (
     <dialog

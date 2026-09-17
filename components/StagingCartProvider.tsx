@@ -23,6 +23,15 @@ export default function StagingCartProvider({ children }: { children: ReactNode 
   const enabled = stagingCartUiEnabled(), [view, setView] = useState<StagingCartView | null>(null)
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState(''), [opened, setOpened] = useState(false)
   const current = useRef<StagingCartView | null>(null), generation = useRef(0), mutation = useRef(false), mounted = useRef(false), readSequence = useRef(0)
+  const returnFocus = useRef<HTMLElement | null>(null), panelOpen = useRef(false)
+  const open = useCallback(() => {
+    if (!panelOpen.current) {
+      returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      panelOpen.current = true
+    }
+    setOpened(true)
+  }, [])
+  const close = useCallback(() => { panelOpen.current = false; setOpened(false) }, [])
   const invalidate = useCallback(() => { generation.current++; readSequence.current++ }, [])
   const commit = useCallback((next: StagingCartView) => { current.current = next; setView(next) }, [])
   const refresh = useCallback(async () => {
@@ -60,7 +69,8 @@ export default function StagingCartProvider({ children }: { children: ReactNode 
     if (!enabled || !mounted.current || mutation.current || !Number.isSafeInteger(quantity) || quantity < 0 || quantity > 5) return
     let before = current.current
     if (!before || !['ready', 'empty', 'session_changed'].includes(before.state) || productId && before.productId !== productId) return
-    mutation.current = true; readSequence.current++; setBusy(true); setOpened(true); setNotice('Checking the test cart change…')
+    open()
+    mutation.current = true; readSequence.current++; setBusy(true); setNotice('Checking the test cart change…')
     const ownerGeneration = generation.current
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json', 'X-TLL-Cart-Intent': 'staging-cart' }
@@ -91,8 +101,8 @@ export default function StagingCartProvider({ children }: { children: ReactNode 
         if (ownerGeneration !== generation.current) void refresh()
       }
     }
-  }, [commit, enabled, refresh])
+  }, [commit, enabled, open, refresh])
 
-  const value: CartContext = { enabled, view, busy, notice, open: () => setOpened(true), close: () => setOpened(false), refresh, setQuantity }
-  return <StagingCartContext.Provider value={value}>{children}{enabled && <StagingCartPanel open={opened} onClose={value.close} />}</StagingCartContext.Provider>
+  const value: CartContext = { enabled, view, busy, notice, open, close, refresh, setQuantity }
+  return <StagingCartContext.Provider value={value}>{children}{enabled && <StagingCartPanel open={opened} onClose={close} returnFocusRef={returnFocus} />}</StagingCartContext.Provider>
 }
