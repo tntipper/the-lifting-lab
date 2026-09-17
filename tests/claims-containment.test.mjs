@@ -52,7 +52,7 @@ function fixture({ category = 'cycle-support', modalOpen = false, nutrients = []
       if (name === '@/lib/products') return { PRODUCT_COLUMNS: '*', withScore: p => p, sortScored: a => a, trueCostReason: () => null }
       if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
       if (name === '@/components/ScoreBadge') return { __esModule: true, default: ({ score }) => React.createElement('span', {}, `Score ${score}`), scoreColor: () => '#fff' }
-      if ((name.startsWith('@/components/') && !['@/components/ClaimsReviewNotice', '@/components/MethodologyModal'].includes(name)) || name === './RelatedProducts') return { __esModule: true, default: blank }
+      if ((name.startsWith('@/components/') && !['@/components/ClaimsReviewNotice', '@/components/MethodologyModal', '@/components/AccessibleDialog', '@/components/ProductAssessment'].includes(name)) || name === './RelatedProducts') return { __esModule: true, default: blank }
       if (name.startsWith('@/') || name.startsWith('.')) {
         const base = name.startsWith('@/') ? path.join(root, name.slice(2)) : path.resolve(path.dirname(filename), name)
         const resolved = ['.ts', '.tsx'].map(ext => base + ext).find(existsSync)
@@ -123,12 +123,12 @@ test('affected guides have aligned FAQ and metadata, official citations, and no 
   }
 })
 
-test('unaffected guide still renders its catalogue picks and matching ItemList', async () => {
+test('ordinary guide retains research while withholding all unapproved product picks and ranked schema', async () => {
   const f = fixture({ category: 'creatine' })
   const page = f.load('app/guide/[category]/page.tsx')
   const html = render(await page.default({ params: Promise.resolve({ category: 'creatine' }) }))
-  assert.ok(schemas(html).some(data => data['@type'] === 'ItemList' && data.numberOfItems === 3))
-  assert.match(html, /Fixture formula/)
+  assert.equal(schemas(html).some(data => data['@type'] === 'ItemList'), false)
+  assert.match(html, /No approved product effectiveness/); assert.doesNotMatch(html, /Fixture formula/)
   assert.deepEqual(f.lookups, ['products'])
 })
 
@@ -155,13 +155,13 @@ test('affected product pages retain the score with an honest notice and no edito
   }
 })
 
-test('ordinary product rating remains unchanged outside the marked categories', async () => {
+test('ordinary positive historical value does not publish an approved editorial rating', async () => {
   const f = fixture({ category: 'creatine' })
   const page = f.load('app/products/[id]/page.tsx')
   const html = render(await page.default({ params: Promise.resolve({ id: product.id }) }))
   const productSchema = schemas(html).find(s => s['@type'] === 'Product')
-  assert.equal(productSchema.review.reviewRating.ratingValue, 95)
-  assert.match(html, /Excellent Effectiveness Match/)
+  assert.equal(productSchema.review, undefined)
+  assert.doesNotMatch(html, /Excellent Effectiveness Match/); assert.match(html, /95\/100/)
 })
 
 test('open methodology modal presents legacy weights and sources, without perfect-dose promises for review categories', () => {
@@ -173,7 +173,7 @@ test('open methodology modal presents legacy weights and sources, without perfec
     assert.match(html, /https:\/\//)
     assert.doesNotMatch(html, /The perfect|key liver protection agent|strongest human evidence|meets effective dose|How the winner is chosen/)
   }
-  assert.match(render(React.createElement(Modal, { category: 'creatine' })), /The perfect creatine/)
+  assert.match(render(React.createElement(Modal, { category: 'creatine' })), /Historical formula inputs — unverified/)
 })
 
 test('crawlable methodology includes the same interim notices and FAQ limitations', () => {
@@ -194,7 +194,7 @@ test('catalogue cards show review status in the all-products view without effect
     const Grid = f.load('app/products/ProductGrid.tsx').default
     const html = render(React.createElement(Grid, { initialProducts: [f.item] }))
     assert.match(html, /under review/i)
-    assert.match(html, /95%/)
+    assert.match(html, /95\/100/)
     assert.doesNotMatch(html, /Excellent dosing|Good dosing|🥇|Liver &amp; organ protection|Hormonal balance|Testosterone &amp; growth hormone/)
   }
 })

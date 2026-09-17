@@ -84,10 +84,7 @@ export default function DosagePage() {
           supplement aisle on one page: the evidence-based dose, when to take it, which form to buy, and the
           honest ceiling on each.
         </p>
-        <p className="text-lab-muted leading-relaxed mb-8">
-          {itemCount()} of the most-searched supplements below, scored in the same green, amber and red we use
-          on products — {strongN} carry strong evidence at the dose shown. Tap any one for the full breakdown.
-        </p>
+        <p className="text-lab-muted leading-relaxed mb-8">{itemCount()} recorded research entries below; {strongN} carry the existing strong-evidence label. These ingredient labels require separate source review and do not grant a product an approved effectiveness assessment.</p>
 
         {/* clinical callout — this is health-adjacent, so it leads, not hides in the footer */}
         <div
@@ -224,13 +221,8 @@ export default function DosagePage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Now buy the ones dosed right</h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Knowing the target dose is only half the job — the other half is finding a product that actually
-            hits it without overpaying. Every supplement we track is scored 0&ndash;100 on how closely it
-            matches the evidence, with the true cost per effective serving, or let the wizard build a clean,
-            properly-dosed stack in a minute.
-          </p>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Explore product research records</h2>
+          <p className="text-lab-muted text-sm leading-relaxed mb-5">No approved effectiveness assessment is available. Historical scores cannot choose products or validate a dose. Browse recorded labels and listed prices, or build a manual research stack.</p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best"
@@ -248,8 +240,7 @@ export default function DosagePage() {
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Doses are general starting points for healthy adults;
             anything bodyweight-scaled, prescription-only, or affecting a medication or health condition is a
-            question for a clinician. Buy links are affiliate links; we may earn a commission at no extra cost
-            to you.
+            question for a clinician. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

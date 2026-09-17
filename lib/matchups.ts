@@ -55,7 +55,6 @@ const TOP_PER_CATEGORY = 5
 export function curatedMatchups<T extends MatchupProduct>(products: T[]): Matchup<T>[] {
   const byCat = new Map<string, T[]>()
   for (const p of products) {
-    if (p.score == null) continue
     const arr = byCat.get(p.category) || []
     arr.push(p)
     byCat.set(p.category, arr)
@@ -72,7 +71,7 @@ export function curatedMatchups<T extends MatchupProduct>(products: T[]): Matchu
     // page 404s — and the bad URL also leaks into the sitemap. Keeping only the
     // first (highest-scoring) product per slug removes the collision at source.
     const sorted = [...arr].sort(
-      (x, y) => (y.score as number) - (x.score as number) || x.name.localeCompare(y.name),
+      (x, y) => x.name.localeCompare(y.name) || x.id.localeCompare(y.id),
     )
     const bySlug = new Map<string, T>()
     for (const p of sorted) {

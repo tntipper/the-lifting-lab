@@ -233,7 +233,7 @@ export default function CombinePage() {
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Combination guidance is general and evidence-based for healthy
             adults; if you take medication, have a health condition, are pregnant or breastfeeding, speak to a
-            clinician first. Buy links are affiliate links; we may earn a commission at no extra cost to you.
+            clinician first. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

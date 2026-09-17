@@ -3,10 +3,10 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
 import { getStackGuide, selectStack, STACK_GUIDES, STACK_SLUGS } from '@/lib/stacks'
@@ -31,20 +31,20 @@ export async function generateMetadata({
   if (!stack) return { title: 'Stack not found — The Lifting Lab' }
   const url = `${SITE}/stacks/${stack.slug}`
   return {
-    title: stack.metaTitle,
-    description: stack.metaDescription,
+    title: `${stack.eyebrow.replace(/^Goal · /, '')} research — recommendations unavailable`,
+    description: 'Goal research and underlying records. No approved product assessment is available, so no automatic product selection or combined-stack recommendation is made.',
     alternates: { canonical: url },
     openGraph: {
-      title: stack.metaTitle,
-      description: stack.metaDescription,
+      title: `${stack.eyebrow.replace(/^Goal · /, '')} research — recommendations unavailable`,
+      description: 'Goal research and underlying records. No approved product assessment is available, so no automatic product selection or combined-stack recommendation is made.',
       url,
       type: 'article',
       siteName: 'The Lifting Lab',
     },
     twitter: {
       card: 'summary_large_image',
-      title: stack.metaTitle,
-      description: stack.metaDescription,
+      title: `${stack.eyebrow.replace(/^Goal · /, '')} research — recommendations unavailable`,
+      description: 'Goal research and underlying records. No approved product assessment is available, so no automatic product selection or combined-stack recommendation is made.',
     },
   }
 }
@@ -115,7 +115,7 @@ export default async function StackPage({
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: stack.h1,
-    description: stack.metaDescription,
+    description: 'Goal research and underlying records. No approved product assessment is available, so no automatic product selection or combined-stack recommendation is made.',
     itemListOrder: 'https://schema.org/ItemListOrderAscending',
     numberOfItems: picks.length,
     itemListElement: picks.map((p, i) => ({
@@ -179,13 +179,13 @@ export default async function StackPage({
           {stack.h1} <span className="text-lab-lime">UK 2026</span>
         </h1>
 
-        <p className="text-lg text-white/90 leading-relaxed mb-6">{stack.intro}</p>
+        <p className="text-lg text-white/90 leading-relaxed mb-6">Automatic product recommendations are unavailable. The existing goal material below remains for research and has not approved any product or combined stack.</p>
 
         {/* The recommended stack */}
         {picks.length === 0 ? (
           <div className="text-center py-16 text-lab-muted bg-lab-panel border border-lab-border rounded-2xl">
             <p className="text-4xl mb-3">🧪</p>
-            <p className="text-sm">This stack is being assembled. Check back shortly.</p>
+            <p className="text-sm">No approved product assessments are available. Build a manual research stack from product records; historical scores will not select products for this goal.</p>
           </div>
         ) : (
           <section className="mb-12">
@@ -215,7 +215,7 @@ export default async function StackPage({
                       <span className="text-xs font-black text-lab-muted w-5 text-center shrink-0">
                         {i + 1}
                       </span>
-                      <ScoreBadge score={p.score} />
+                      <ProductAssessment product={p} />
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] uppercase tracking-widest text-lab-lime mb-0.5">
                           {categoryLabel(p.category)}
@@ -258,19 +258,15 @@ export default async function StackPage({
                           See all
                         </Link>
                       )}
-                      <a
-                        href={buyLink(p.brand, p.name, p.buy_url)}
-                        target="_blank"
-                        rel="noopener noreferrer nofollow"
+                      <ProductOfferLink
+                        product={p}
                         className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
                         style={{
                           background: 'rgba(166,226,46,0.12)',
                           color: '#a6e22e',
                           border: '1px solid rgba(166,226,46,0.5)',
                         }}
-                      >
-                        Buy
-                      </a>
+                      />
                     </div>
                   </div>
                 )
@@ -342,8 +338,7 @@ export default async function StackPage({
         </section>
 
         <p className="text-lab-muted/70 text-xs mt-8 leading-relaxed">
-          Informational only — not medical advice. Buy links are affiliate links; we may earn a
-          commission at no extra cost to you. This never affects scoring. For personal health
+          Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring. For personal health
           concerns, or before starting a supplement that could affect a condition or medication,
           speak to a qualified clinician.
         </p>

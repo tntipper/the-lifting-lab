@@ -224,8 +224,7 @@ export default function BodyFatPage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Body fat is an estimate from a field formula, not
-            a clinical measurement. Buy links are affiliate links; we may earn a commission at no extra
-            cost to you.
+            a clinical measurement. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

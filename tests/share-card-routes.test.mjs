@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import vm from 'node:vm'
+import path from 'node:path'
 import test from 'node:test'
+
+const root = fileURLToPath(new URL('../', import.meta.url))
 
 const require = createRequire(import.meta.url)
 const ts = require('typescript')
@@ -20,7 +23,7 @@ class CapturedImage extends Response {
 
 // Run the actual route and server adapter against an in-memory catalogue. No
 // Supabase client, environment credentials, HTTP requests or social posts exist.
-function fixture({ rows = [product], fail = false } = {}) {
+function fixture({ rows = [product], fail = false, scoreFor = () => 61 } = {}) {
   const lookups = []
   const awards = []
   const cache = new Map()
@@ -51,8 +54,9 @@ function fixture({ rows = [product], fail = false } = {}) {
       if (name === 'next/og') return { ImageResponse: CapturedImage }
       if (name === '@/lib/supabase-public') return { createPublicClient: () => fakeSupabase }
       if (name === '@/lib/supabase-server') return { createServerSupabase: async () => fakeSupabase }
-      if (name === '@/lib/scores') return { scoreFor: () => 61 }
+      if (name === '@/lib/scores') return { scoreFor }
       if (name === '@/lib/points') return { awardPoints: async (_, action, ref) => { awards.push({ action, ref }); return 25 } }
+      if (name.startsWith('./')) return load(path.relative(root, path.resolve(path.dirname(filename), name)) + '.ts')
       if (name.startsWith('@/lib/')) return load(`${name.slice(2)}.ts`)
       return require(name)
     }
@@ -95,7 +99,7 @@ test('stack image renders stored data and individual scores from explicitly acti
   assert.match(text, /Stored Brand/)
   assert.match(text, /Stored Product/)
   assert.match(text, /61/)
-  assert.match(text, /Individual catalogue scores/)
+  assert.match(text, /Historical catalogue values/)
   assert.match(text, /not been assessed as a combined stack/)
   assert.deepEqual(f.lookups[0], {
     table: 'products', columns: 'id, name, brand, category, status',
@@ -137,4 +141,38 @@ test('share reward route rejects malformed IDs and passes a canonical UUID to ex
   const valid = await claim(A.toUpperCase())
   assert.equal(valid.status, 200)
   assert.deepEqual(f.awards, [{ action: 'share', ref: A }])
+})
+
+test('stack image withholds quality grades for held, zero and missing assessments', async () => {
+  for (const [category, score, label] of [['zma', 99, 'Under review'], ['creatine', 0, 'Not assessed'], ['creatine', null, 'Not assessed'], ['creatine', 80, 'Legacy score']]) {
+    const f = fixture({ rows: [{ ...product, category, score: 100 }], scoreFor: () => score })
+    const response = await f.load('app/api/stack/sharecard/route.tsx').GET(new Request(`https://fixture.invalid/card?ids=${A}`))
+    const text = visibleText(response.element)
+    assert.match(text, new RegExp(label)); assert.doesNotMatch(text, /Excellent|Good|Poor|Stack Score/)
+    assert.match(text, /Scientific review incomplete/)
+    if (category === 'zma') assert.match(text, /99/)
+    assert.doesNotMatch(text, /100/, 'Incidental score property on a DB row is not authoritative')
+  }
+})
+test('JSON assessment projection resolves active identities and rejects supplied names or scores', async () => {
+  const f = fixture({ rows: [{ ...product, category: 'zma', score: 100 }], scoreFor: () => 61 })
+  const { GET } = f.load('app/api/stack/assessments/route.ts')
+  for (const query of [`ids=${A}&score=100`, `ids=${A}&name=Invented`, 'ids=invalid']) {
+    assert.equal((await GET(new Request(`https://fixture.invalid/assessment?${query}`))).status, 400)
+  }
+  assert.equal(f.lookups.length, 0)
+  const response = await GET(new Request(`https://fixture.invalid/assessment?ids=${A}`))
+  assert.equal(response.headers.get('cache-control'), 'no-store')
+  assert.deepEqual((await response.json()).products, [{ id: A, brand: product.brand, name: product.name, category: 'zma', score: 61 }])
+  assert.deepEqual(f.lookups[0].filter, ['status', 'active'])
+  assert.equal((await GET(new Request(`https://fixture.invalid/assessment?ids=${UNKNOWN}`))).status, 404)
+  assert.equal((await fixture({ fail: true }).load('app/api/stack/assessments/route.ts').GET(new Request(`https://fixture.invalid/assessment?ids=${A}`))).status, 503)
+})
+test('reward claims accept no caller-authored score or caption payload', async () => {
+  const f = fixture(), { POST } = f.load('app/api/share/route.ts')
+  for (const extra of [{ score: 100 }, { caption: 'Clinically approved' }, { name: 'Invented' }]) {
+    const response = await POST(new Request('https://fixture.invalid/api/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: A, ...extra }) }))
+    assert.equal(response.status, 400)
+  }
+  assert.equal(f.awards.length, 0)
 })

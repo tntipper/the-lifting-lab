@@ -240,8 +240,7 @@ export default function OneRepMaxPage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical or coaching advice. Warm up, use safety pins or a spotter
-            near your max, and stop if a lift feels unsafe. Buy links are affiliate links; we may earn a
-            commission at no extra cost to you.
+            near your max, and stop if a lift feels unsafe. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>
