@@ -2,7 +2,7 @@
 
 The `customer-cart-repositories` job exercises the real PostgreSQL boundaries for
 the customer repository, bounded driver, anonymous staging cart, subject
-broker and provisional admission repositories on a fresh GitHub-hosted Linux runner. It requires no project
+broker, provisional admission and atomic registration bridge repositories on a fresh GitHub-hosted Linux runner. It requires no project
 credentials or hosted services.
 
 `tests/customer-repository/run-ci.sh` refuses ordinary local/self-hosted execution,
@@ -24,9 +24,24 @@ claims and uncertainty holds without dispatching a provider request; the fixture
 finishes disabled and empty. The admission coordinator then uses that fixture
 with signed synthetic HTTP to verify real session-reader/admission adapters,
 commit ordering, account changes and lost acknowledgements. No hosted request
-is dispatched, and the fixture is again disabled and emptied. The enclosing owned
-container and anonymous data volume are removed when the job exits. The separate
-browser job covers the cart at six widths.
+is dispatched, and the fixture is again disabled and emptied.
+
+Finally, the bridge setup installs source-verified 007/008/010 together under a
+non-superuser in the separate marked `tll_admission_bridge` database, using its
+fixed `tll_ab_*` role mapping. The rollback-only 010 reconstruction runs first,
+checking the exact installed function bodies, ACL mutation rejection and baseline
+restoration. The bridge acceptance suite then exercises the real repositories and
+coordinator with synthetic signed HTTP, including release capability checks,
+atomic terminal propagation, disable epochs, lock ordering and post-lock expiry.
+These two bridge suites run sequentially and leave all three controls disabled
+and private workload empty. Standalone 007/008 fixtures remain separate.
+
+The bridge helper accepts the same exact `tll-stage0-postgres` container name as
+this runner and preserves the local `tll_admission_bridge` database identity; no
+arbitrary container or database override is introduced. The enclosing owned
+container and anonymous data volume are removed on job exit, including failures,
+only after the ownership label matches. The separate browser job covers the cart
+at six widths.
 
 These results establish local synthetic database behavior against the tested
 commit. They do not establish hosted migration, runtime credential, pooler, real
