@@ -27,3 +27,23 @@ else
 fi
 TLL_INVENTORY_TEST_CONTAINER="$fixture" python3 tests/inventory-ledger/acceptance.py
 TLL_INVENTORY_TEST_CONTAINER="$fixture" node --experimental-strip-types tests/inventory-ledger/worker-postgres.mjs
+# Finish the existing acceptance window before the forward-repair proof. Refuse
+# unexpected data instead of resetting it to make 009 pass. Its own regression
+# rechecks disabled12/43 and restores the full fixture through rollback.
+docker exec -i "$fixture" psql -X -q -U postgres -d tll_inventory_ledger -v ON_ERROR_STOP=1 <<'SQL'
+begin;
+do $$ begin
+  if current_database()<>'tll_inventory_ledger'
+    or (select count(*) from public.tll_inventory_test_marker)<>1
+    or not exists(select from public.tll_inventory_test_marker where marker='synthetic-inventory-ledger-v1')
+    or (select count(*) from tll_inventory_private.control)<>1
+    or not exists(select from tll_inventory_private.control where singleton)
+    or (select count(*) from tll_inventory_private.operations)<>12
+    or (select count(*) from tll_inventory_private.events)<>43 then
+    raise exception 'Unexpected final inventory acceptance fixture; refuse maintenance proof';
+  end if;
+end $$;
+update tll_inventory_private.control set enabled=false where singleton;
+commit;
+SQL
+TLL_INVENTORY_TEST_CONTAINER="$fixture" node --experimental-strip-types tests/inventory-ledger/maintenance-regression.mjs

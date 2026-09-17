@@ -5,7 +5,9 @@ import { createHash, randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 import { fixture } from './fixture.mjs'
-const CONTAINER='tll-stage0-postgres', DB='tll_inventory_ledger', OPERATOR='tll_inventory_test_migrator'
+const CONTAINER=process.env.TLL_INVENTORY_TEST_CONTAINER??'tll-stage0-postgres'
+assert.ok(CONTAINER==='tll-stage0-postgres'||(process.platform==='linux'&&/^tll-inventory-ci-[1-9][0-9]*$/.test(CONTAINER)),'Only the approved existing container or a fresh Linux inventory CI fixture is allowed')
+const DB='tll_inventory_ledger', OPERATOR='tll_inventory_test_migrator'
 const OWNER='tll_inventory_owner_v2', WORKER='tll_inventory_worker_v2', A='tll_inventory009_worker_a', B='tll_inventory009_worker_b', PROBE='tll_inventory009_probe'
 const args=['exec','-i',CONTAINER,'psql','-XqAt','-U','postgres','-d',DB,'-v','ON_ERROR_STOP=1']
 const options={encoding:'utf8',stdio:['pipe','pipe','pipe'],timeout:30000,maxBuffer:12*1024*1024}
@@ -41,6 +43,10 @@ const snapshot=`SELECT jsonb_build_object(
  'roles',(SELECT jsonb_agg(to_jsonb(r) ORDER BY oid) FROM pg_roles r WHERE rolname LIKE 'tll_inventory%'),
  'memberships',(SELECT jsonb_agg(to_jsonb(m) ORDER BY roleid,member,grantor) FROM pg_auth_members m WHERE roleid IN('tll_inventory_owner'::regrole,'tll_inventory_worker'::regrole)))`
 const before=admin(snapshot)
+const bootstrap=JSON.parse(admin("SELECT json_build_object('oid',oid,'name',rolname,'superuser',rolsuper) FROM pg_roles WHERE oid=10"))
+assert.equal(bootstrap.superuser,true,'Expected PostgreSQL bootstrap grantor')
+const membershipRows=`SELECT jsonb_agg(jsonb_build_object('role',r.rolname,'member',m.member::regrole::text,'grantorOid',m.grantor,'grantor',g.rolname,'superuserGrantor',g.rolsuper,'admin',m.admin_option,'inherit',m.inherit_option,'set',m.set_option) ORDER BY r.rolname) FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid JOIN pg_roles g ON g.oid=m.grantor WHERE m.roleid IN('${OWNER}'::regrole,'${WORKER}'::regrole)`
+const expectedMemberships=[OWNER,WORKER].map(role=>({role,member:OPERATOR,grantorOid:bootstrap.oid,grantor:bootstrap.name,superuserGrantor:true,admin:true,inherit:false,set:false}))
 // The historical fixture has two synthetic clients. Remove only their known
 // membership edges inside this proof's rollback, never the fixture's rows/schema.
 const preparation=`BEGIN; SET LOCAL lock_timeout='5s'; SET LOCAL statement_timeout='60s';
@@ -106,6 +112,7 @@ const db=connection()
 try{
  await db.query(preparation+`ALTER DEFAULT PRIVILEGES GRANT EXECUTE ON FUNCTIONS TO ${PROBE};\n`+body)
  check('nonsuperuser forward repair and exact postflight pass with stray creation default ACL removed')
+ check('exact owner and worker ADMIN-only edges have the bootstrap superuser grantor',JSON.parse(await db.query(membershipRows)),expectedMemberships)
  const preserved=JSON.parse(before)
  check('existing control data preserved',JSON.parse(await db.query('SELECT row_to_json(c) FROM tll_inventory_private.control c')),preserved.control[0])
  for(const table of['operations','events'])check('existing '+table+' rows preserved',JSON.parse(await db.query(`SELECT jsonb_agg(to_jsonb(x) ORDER BY ${table==='events'?'event_id':'operation_id'}) FROM tll_inventory_private.${table} x`)),preserved[table])
@@ -119,6 +126,7 @@ try{
  await db.query(denial('ALTER FUNCTION tll_inventory_private.exact_keys(jsonb,text[]) COST 101'))
  check('explicit temporary SET permits future ALTER/replacement and removes only self-granted edge')
  check('new function owner still cannot update control or delete operation evidence')
+ check('future maintenance restores precisely the two original bootstrap grantors',JSON.parse(await db.query(membershipRows)),expectedMemberships)
  await db.query(`CREATE ROLE ${A} NOLOGIN NOINHERIT; CREATE ROLE ${B} NOLOGIN NOINHERIT; GRANT ${WORKER} TO ${A},${B} WITH ADMIN FALSE,INHERIT TRUE,SET FALSE; GRANT ${A},${B} TO ${OPERATOR} WITH ADMIN FALSE,INHERIT FALSE,SET TRUE`)
  check('installer can delegate new worker without platform superuser')
  async function as(role,sql){await db.query(`SET LOCAL ROLE ${role}`);return db.query(sql)}

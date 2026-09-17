@@ -23,7 +23,7 @@ require a platform superuser to recover the retired role identities.
 The new roles are exactly `tll_inventory_owner_v2` and `tll_inventory_worker_v2`.
 They remain NOLOGIN, NOINHERIT, NOSUPERUSER, NOBYPASSRLS, NOCREATEROLE, NOCREATEDB
 and NOREPLICATION. Each has exactly one durable ADMIN-only edge to the trusted
-installing operator, with INHERIT FALSE and SET FALSE. The operator creates these
+installing operator, with INHERIT FALSE and SET FALSE and a bootstrap superuser grantor. The operator creates these
 roles directly and retains PostgreSQL17's bootstrap-granted edge. Initial setup
 uses a separate SET-only self-grant, removed explicitly with `GRANTED BY` before
 commit. The owner has no schema CREATE authority at rest.
@@ -92,7 +92,10 @@ node --experimental-strip-types tests/inventory-ledger/maintenance-regression.mj
 node --experimental-strip-types --test tests/inventory-ledger.test.mjs
 ```
 
-The first command refuses a remote Docker endpoint, a different image/database,
+The first command accepts the approved existing container by default. On Linux,
+`TLL_INVENTORY_TEST_CONTAINER=tll-inventory-ci-<positive integer>` also selects the
+fresh fixture created by the existing inventory CI runner. It refuses other
+names, CI names on macOS, a remote Docker endpoint, a different image/database,
 missing exact marker, active fixture sessions, or existing new/proof roles. It
 uses the existing `tll-stage0-postgres` / `tll_inventory_ledger` fixture with marker
 `synthetic-inventory-ledger-v1`, disabled control and its preserved12 operations
@@ -114,9 +117,17 @@ both immutable-evidence triggers. These transaction-local API checks do not clai
 a new multiconnection concurrency or commit-acknowledgement test: canonical004's
 function statements are unchanged, and those separate regressions remain intact.
 
-The author run on PostgreSQL17.11 passed66 actual-database checks, including24
-changed-state/dependency probes and two rejected installer contexts. The existing
+The author run on PostgreSQL17.11 passed68 actual-database checks, including24
+changed-state/dependency probes, two rejected installer contexts, and exact
+bootstrap-grantor assertions before and after future maintenance. The existing
 15 inventory protocol tests and the focused regression-file lint also passed.
+
+The existing Linux `tests/inventory-ledger/run-local.sh` appends this rollback-only
+regression after its original acceptance and worker tests. Before running009 it
+requires the exact marker, singleton control and12/43 counts, then closes the
+synthetic acceptance window by disabling control. Unexpected state aborts; it is
+never reset to satisfy009. This reset-capable runner was not executed on macOS.
+The existing approved local fixture was used directly for the009 author proof.
 
 All test writes, temporary grants and new roles are rolled back. Final comparison
 requires the original fixture catalog and row bytes, disabled state and no new
