@@ -34,7 +34,7 @@ const hash = value => createHash('sha256').update(value).digest('hex')
 
 function fixture(faults = {}) {
   const rows = new Map(), ops = new Map(), calls = []
-  let count = 0, actor = null
+  let count = 0, actor = null, authReads = 0
   const variant = () => ({ id: faults.wrongVariant ? 'gid://shopify/ProductVariant/9' : sf.STAGING_SHOPIFY_VARIANT,
     availableForSale: !faults.unavailable, product: { id: faults.wrongProduct ? 'gid://shopify/Product/9' : sf.STAGING_SHOPIFY_PRODUCT }, price: { amount: faults.zeroPrice ? '0.00' : '12.00', currencyCode: faults.foreignCurrency ? 'USD' : 'GBP' } })
   const cart = () => ({ id: RAW_CART, totalQuantity: count, cost: { subtotalAmount: { amount: (count * 12).toFixed(2), currencyCode: 'GBP' } },
@@ -97,7 +97,7 @@ function fixture(faults = {}) {
   const vault = createAesGcmEnvelopeVault({ activeKeyId: 'cart-v1', keys: new Map([['cart-v1', Buffer.alloc(32, 1)]]) })
   const storefront = sf.createStagingStorefront({ enabled: true, environment: 'staging', shop: sf.STAGING_CART_SHOP, privateToken: 'synthetic-private-token', transport })
   const service = svc.createCartService({ repository, storefront, vault, context: ['synthetic-project', sf.STAGING_CART_SHOP, ORIGIN] })
-  const handler = http.createCartHandler({ enabled: true, origin: ORIGIN, hmacKeyHex: HMAC, service, currentActor: async () => actor })
+  const handler = http.createCartHandler({ enabled: true, origin: ORIGIN, hmacKeyHex: HMAC, service, currentActor: async () => { authReads++; return actor } })
   let cookie = '', view
   async function request(method = 'GET', body, headers = {}, rawCookie = cookie) {
     const response = await handler(new Request(ORIGIN + '/api/cart', { method, headers: { ...(rawCookie ? { cookie: rawCookie } : {}),
@@ -109,7 +109,7 @@ function fixture(faults = {}) {
   }
   const open = () => request('POST', { action: 'open' })
   const set = (quantity, headers = {}) => request('PATCH', { productId: sf.STAGING_CART_PRODUCT, quantity, revision: view.revision }, headers)
-  return { rows, ops, calls, transport, repository, service, handler, request, open, set, faults, setActor: value => { actor = value }, get cookie() { return cookie }, get view() { return view } }
+  return { rows, ops, calls, transport, repository, service, handler, request, open, set, faults, setActor: value => { actor = value }, get cookie() { return cookie }, get view() { return view }, get authReads() { return authReads } }
 }
 
 test('opaque HttpOnly bootstrap precedes cart creation; browser receives only safe prices and quantities', async () => {
@@ -169,6 +169,14 @@ test('unmapped products, caller variant/cart IDs, excessive quantities and malfo
     assert.equal((await f.request('PATCH', body, { 'X-TLL-Cart-CSRF': csrf })).response.status, 400)
   }
   assert.equal(f.calls.length, 0)
+})
+test('POST accepts only open and cannot apply an authenticated PATCH-shaped mutation', async () => {
+  const f = fixture(); await f.open()
+  const csrf = f.view.csrfToken, before = structuredClone([...f.rows.values()]), authReads = f.authReads
+  for (const input of [{ productId: sf.STAGING_CART_PRODUCT, quantity: 1, revision: 0 }, { action: 'open', quantity: 1 }, { action: 'set' }]) {
+    assert.equal((await f.request('POST', input, { 'X-TLL-Cart-CSRF': csrf })).response.status, 400)
+  }
+  assert.equal(f.authReads, authReads); assert.equal(f.calls.length, 0); assert.equal(f.ops.size, 0); assert.deepEqual([...f.rows.values()], before)
 })
 for (const fault of ['zeroPrice', 'unavailable', 'wrongVariant', 'wrongProduct', 'foreignCurrency', 'redirect', 'warning', 'truncated']) test(`provider ${fault} cannot yield a cart-ready success`, async () => {
   const f = fixture({ [fault]: true }); await f.open(); const result = await f.set(1)

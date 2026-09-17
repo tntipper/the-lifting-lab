@@ -77,8 +77,12 @@ alter table tll_cart_private.control enable row level security;
 alter table tll_cart_private.sessions enable row level security;
 alter table tll_cart_private.operations enable row level security;
 grant select on tll_cart_private.control to tll_cart_owner;
+-- SELECT FOR SHARE requires UPDATE on at least one column. RLS permits the
+-- locking read but rejects every actual control update by the function owner.
+grant update(enabled) on tll_cart_private.control to tll_cart_owner;
 grant select,insert,update on tll_cart_private.sessions,tll_cart_private.operations to tll_cart_owner;
 create policy cart_control_owner on tll_cart_private.control for select to tll_cart_owner using(true);
+create policy cart_control_lock on tll_cart_private.control for update to tll_cart_owner using(true) with check(false);
 create policy cart_sessions_owner on tll_cart_private.sessions to tll_cart_owner using(true) with check(true);
 create policy cart_operations_owner on tll_cart_private.operations to tll_cart_owner using(true) with check(true);
 
@@ -99,9 +103,11 @@ $$;
 create function public.tll_cart_open(p_session text,p_actor text) returns jsonb language plpgsql security definer set search_path='' as $$
 declare s tll_cart_private.sessions%rowtype;
 begin
-  if not coalesce((select enabled from tll_cart_private.control where singleton),false) then raise exception 'Staging cart repository unavailable' using errcode='55000'; end if;
   if p_session is null or p_session !~ '^[a-f0-9]{64}$' or p_actor is null or p_actor !~ '^[a-f0-9]{64}$' then raise exception 'Invalid cart context'; end if;
   perform pg_advisory_xact_lock(706006);
+  -- Admit only after resource waits. Hold the shared control lock until COMMIT,
+  -- so operator disable cannot acknowledge between admission and persistence.
+  if not coalesce((select enabled from tll_cart_private.control where singleton for share),false) then raise exception 'Staging cart repository unavailable' using errcode='55000'; end if;
   select * into s from tll_cart_private.sessions where session_hash=p_session;
   if found then
     if s.actor_hash<>p_actor or s.expires_at<=clock_timestamp() then return null; end if;
@@ -115,9 +121,9 @@ end $$;
 create function public.tll_cart_read(p_session text,p_actor text) returns jsonb language plpgsql security definer set search_path='' as $$
 declare s tll_cart_private.sessions%rowtype;
 begin
-  if not coalesce((select enabled from tll_cart_private.control where singleton),false) then raise exception 'Staging cart repository unavailable' using errcode='55000'; end if;
-  select * into s from tll_cart_private.sessions where session_hash=p_session and actor_hash=p_actor and expires_at>clock_timestamp() for update;
-  if not found then return null; end if;
+  select * into s from tll_cart_private.sessions where session_hash=p_session and actor_hash=p_actor for update;
+  if not coalesce((select enabled from tll_cart_private.control where singleton for share),false) then raise exception 'Staging cart repository unavailable' using errcode='55000'; end if;
+  if s.session_hash is null or s.expires_at<=clock_timestamp() then return null; end if;
   if s.phase='working' and s.lease_until<=clock_timestamp() then
     update tll_cart_private.operations set state='held' where session_hash=p_session and request_id=s.operation_id and state='working';
     update tll_cart_private.sessions set phase='held',lease_until=null where session_hash=p_session returning * into s;
@@ -127,10 +133,10 @@ end $$;
 create function public.tll_cart_claim(p_session text,p_actor text,p_request uuid,p_hash text,p_revision bigint,p_quantity integer) returns jsonb language plpgsql security definer set search_path='' as $$
 declare s tll_cart_private.sessions%rowtype; op tll_cart_private.operations%rowtype;
 begin
-  if not coalesce((select enabled from tll_cart_private.control where singleton),false) then raise exception 'Staging cart repository unavailable' using errcode='55000'; end if;
   if p_request is null or p_hash is null or p_hash !~ '^[a-f0-9]{64}$' or p_revision is null or p_revision<0 or p_quantity is null or p_quantity not between 0 and 5 then raise exception 'Invalid cart operation'; end if;
-  select * into s from tll_cart_private.sessions where session_hash=p_session and actor_hash=p_actor and expires_at>clock_timestamp() for update;
-  if not found then return null; end if;
+  select * into s from tll_cart_private.sessions where session_hash=p_session and actor_hash=p_actor for update;
+  if not coalesce((select enabled from tll_cart_private.control where singleton for share),false) then raise exception 'Staging cart repository unavailable' using errcode='55000'; end if;
+  if s.session_hash is null or s.expires_at<=clock_timestamp() then return null; end if;
   select * into op from tll_cart_private.operations where session_hash=p_session and request_id=p_request;
   if found then
     return jsonb_build_object('status',case when op.request_hash=p_hash and op.target_quantity=p_quantity and op.expected_revision=p_revision then 'replay' else 'conflict' end,'record',tll_cart_private.snapshot(s));
@@ -145,9 +151,9 @@ end $$;
 create function public.tll_cart_finish(p_session text,p_actor text,p_request uuid,p_state text,p_envelope jsonb,p_quantity integer,p_unit integer,p_subtotal integer) returns jsonb language plpgsql security definer set search_path='' as $$
 declare s tll_cart_private.sessions%rowtype; op tll_cart_private.operations%rowtype;
 begin
-  if not coalesce((select enabled from tll_cart_private.control where singleton),false) then raise exception 'Staging cart repository unavailable' using errcode='55000'; end if;
-  select * into s from tll_cart_private.sessions where session_hash=p_session and actor_hash=p_actor and expires_at>clock_timestamp() for update;
-  if not found then return null; end if;
+  select * into s from tll_cart_private.sessions where session_hash=p_session and actor_hash=p_actor for update;
+  if not coalesce((select enabled from tll_cart_private.control where singleton for share),false) then raise exception 'Staging cart repository unavailable' using errcode='55000'; end if;
+  if s.session_hash is null or s.expires_at<=clock_timestamp() then return null; end if;
   if s.phase<>'working' or s.operation_id is distinct from p_request then return tll_cart_private.snapshot(s); end if;
   if p_state is null or p_state not in ('ready','held') then raise exception 'Invalid cart outcome'; end if;
   select * into strict op from tll_cart_private.operations where session_hash=p_session and request_id=p_request;

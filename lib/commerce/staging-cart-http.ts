@@ -47,6 +47,8 @@ export function createCartHandler(options: {
     if (url.origin !== options.origin || url.pathname !== '/api/cart' || url.search || origin && origin !== options.origin
       || site && !['same-origin', 'none'].includes(site) || request.method !== 'GET' && (origin !== options.origin || request.headers.get('x-tll-cart-intent') !== 'staging-cart')) return respond(unavailable, 403)
     try {
+      const input = request.method === 'GET' ? {} : await body(request)
+      if (!input || request.method === 'POST' && (input.action !== 'open' || Object.keys(input).length !== 1)) return respond(unavailable, 400)
       const actor = await options.currentActor(request)
       if (actor !== null && !UUID.test(actor)) throw new Error('Invalid verified account')
       const actorHash = mac(options.hmacKeyHex, 'cart-actor/v1\n' + (actor ?? 'guest'))
@@ -57,9 +59,7 @@ export function createCartHandler(options: {
         const view = await options.service.read(sessionHash, actorHash)
         return respond({ ...view, csrfToken: csrf(sessionHash) }, 200)
       }
-      const input = await body(request)
-      if (!input) return respond(unavailable, 400)
-      if (request.method === 'POST' && input.action === 'open' && Object.keys(input).length === 1) {
+      if (request.method === 'POST') {
         if (sessionHash) return respond({ ...await options.service.read(sessionHash, actorHash), csrfToken: csrf(sessionHash) }, 200)
         // Bootstrap sets the opaque cookie before a separate request can create a
         // Shopify cart. Losing this response can only orphan an empty local session.

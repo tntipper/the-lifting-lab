@@ -2,6 +2,7 @@
 import concurrent.futures
 import json
 import subprocess
+import time
 import uuid
 from pathlib import Path
 
@@ -18,7 +19,7 @@ def sql(text, database=DB, role=None, failure=False):
     result = subprocess.run(['docker', 'exec', '-i', CONTAINER, 'psql', '-X', '-qAt', '-U', 'postgres', '-d', database, '-v', 'ON_ERROR_STOP=1'],
                             input=prefix+text, capture_output=True, text=True, timeout=30)
     if failure:
-        assert result.returncode != 0, 'Expected SQL denial'
+        assert result.returncode != 0, 'Expected SQL denial, got: '+result.stdout[:1500]
         return result.stderr
     assert result.returncode == 0, result.stderr[-1500:]
     return result.stdout.strip()
@@ -37,6 +38,117 @@ def rpc(name, *args, role='tll_cart_gateway', failure=False):
 def check(name, condition):
     assert condition, name
     CHECKS.append(name)
+
+
+class Barrier:
+    """A real, unchanged row/advisory lock; no sleep guesses establish ordering."""
+    def __init__(self, statement, commit=False):
+        self.commit = commit
+        self.process = subprocess.Popen(['docker', 'exec', '-i', CONTAINER, 'psql', '-X', '-qAt', '-U', 'postgres', '-d', DB, '-v', 'ON_ERROR_STOP=1'],
+                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        self.process.stdin.write("set statement_timeout='15s'; begin; " + statement + "; select 'barrier-ready';\n")
+        self.process.stdin.flush()
+        while True:
+            line = self.process.stdout.readline()
+            assert line, 'Lock barrier exited before acquiring its lock'
+            if line.strip() == 'barrier-ready': break
+
+    def release(self):
+        if self.process.poll() is None:
+            self.process.stdin.write('commit;\n' if self.commit else 'rollback;\n')
+            self.process.stdin.flush()
+            self.process.communicate(timeout=20)
+            assert self.process.returncode == 0, 'Lock barrier failed'
+
+
+def until(predicate, message):
+    deadline = time.monotonic() + 10
+    while not predicate():
+        assert time.monotonic() < deadline, message
+        time.sleep(0.02)
+
+
+def queued_rpc(statement, barrier, before_release, failure=False, role='tll_cart_gateway'):
+    label = 'cart-race-' + uuid.uuid4().hex
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        pending = pool.submit(sql, "set application_name="+literal(label)+"; set statement_timeout='15s'; "+statement, role=role, failure=failure)
+        try:
+            until(lambda: sql('select exists(select from pg_stat_activity where datname='+literal(DB)+' and application_name='+literal(label)+" and wait_event_type='Lock' and cardinality(pg_blocking_pids(pid))>0);") == 't',
+                  'RPC did not reach its lock barrier')
+            before_release()
+        finally:
+            barrier.release()
+        return pending.result(timeout=20)
+
+
+def expiry_races(actor, envelope, lock='session'):
+    results = []
+    for method in ['read', 'claim', 'finish']:
+        session = uuid.uuid4().hex * 2
+        rpc('open', session, actor)
+        request = str(uuid.uuid4())
+        if method == 'finish': rpc('claim', session, actor, request, 'd'*64, 0, 1)
+        sql("update tll_cart_private.sessions set expires_at=clock_timestamp()+interval '2 seconds' where session_hash="+literal(session)+';')
+        barrier = Barrier('select enabled from tll_cart_private.control for update' if lock == 'control' else
+                          'select session_hash from tll_cart_private.sessions where session_hash='+literal(session)+' for update')
+        args = literal(session)+','+literal(actor)
+        if method == 'claim': args += ','+literal(request)+','+literal('d'*64)+',0,1'
+        if method == 'finish': args += ','+literal(request)+",'ready',"+literal(json.dumps(envelope))+'::jsonb,1,1200,1200'
+        result = queued_rpc('select public.tll_cart_'+method+'('+args+');', barrier,
+                            lambda: until(lambda: sql('select expires_at<=clock_timestamp() from tll_cart_private.sessions where session_hash='+literal(session)+';') == 't', 'Session did not expire'))
+        results.append((method, result))
+    assert all(result == '' for _, result in results), 'Stale expiry decisions: '+str(results)
+    for method, _ in results:
+        check(method+' rechecks expiry after a confirmed '+lock+' lock wait', True)
+
+
+def disable_races(actor):
+    for method in ['claim', 'open', 'read', 'finish']:
+        session = uuid.uuid4().hex * 2
+        request = str(uuid.uuid4())
+        if method != 'open': rpc('open', session, actor)
+        if method == 'finish': rpc('claim', session, actor, request, 'd'*64, 0, 1)
+        before = sql('select row_to_json(s) from tll_cart_private.sessions s where session_hash='+literal(session)+';')
+        args = literal(session)+','+literal(actor)
+        if method == 'claim': args += ','+literal(request)+','+literal('d'*64)+',0,1'
+        if method == 'finish': args += ','+literal(request)+",'held',null,null,null,null"
+        barrier = Barrier('select pg_advisory_xact_lock(706006)' if method == 'open' else
+                          'select session_hash from tll_cart_private.sessions where session_hash='+literal(session)+' for update')
+        try:
+            denied = queued_rpc('select public.tll_cart_'+method+'('+args+');', barrier,
+                                lambda: sql('update tll_cart_private.control set enabled=false;'), failure=True)
+            check(method+' waiting on its resource rejects a committed operator disable', 'Staging cart repository unavailable' in denied and
+                  sql('select row_to_json(s) from tll_cart_private.sessions s where session_hash='+literal(session)+';') == before)
+        finally:
+            sql('update tll_cart_private.control set enabled=true;')
+
+
+def control_commit_barrier(actor):
+    session = uuid.uuid4().hex * 2
+    rpc('open', session, actor)
+    request = str(uuid.uuid4())
+    barrier = Barrier('set local role tll_cart_gateway; select public.tll_cart_claim('+literal(session)+','+literal(actor)+','+
+                      literal(request)+','+literal('d'*64)+',0,1)', commit=True)
+    try:
+        queued_rpc('update tll_cart_private.control set enabled=false;', barrier, lambda: None, role=MIGRATOR)
+        check('operator disable waits for an admitted reservation to commit', sql('select phase from tll_cart_private.sessions where session_hash='+literal(session)+';') == 'working' and
+              sql('select enabled from tll_cart_private.control;') == 'f')
+    finally:
+        sql('update tll_cart_private.control set enabled=true;')
+
+
+def pending_disable(actor):
+    session = uuid.uuid4().hex * 2
+    opened = rpc('open', session, actor)
+    request = str(uuid.uuid4())
+    barrier = Barrier('update tll_cart_private.control set enabled=false', commit=True)
+    try:
+        denied = queued_rpc('select public.tll_cart_claim('+literal(session)+','+literal(actor)+','+literal(request)+','+literal('d'*64)+',0,1);',
+                            barrier, lambda: None, failure=True)
+        check('claim waiting on the control row observes the newly committed disable', 'Staging cart repository unavailable' in denied and
+              json.loads(sql('select tll_cart_private.snapshot(s) from tll_cart_private.sessions s where session_hash='+literal(session)+';')) == opened)
+    finally:
+        sql('update tll_cart_private.control set enabled=true;')
 
 
 def main():
@@ -68,6 +180,13 @@ rollback;"""
             check(role+' cannot call cart RPC','permission denied' in rpc('open',session,actor,role=role,failure=True))
             check(role+' cannot access private table','permission denied' in sql('select * from tll_cart_private.sessions;',role=role,failure=True))
         check('gateway cannot access private table or enable control','permission denied' in sql('update tll_cart_private.control set enabled=true;',role='tll_cart_gateway',failure=True))
+        check('function owner can lock control but RLS rejects actual control updates',sql('begin; select enabled from tll_cart_private.control for share; rollback;',role='tll_cart_owner')=='f' and
+              'row-level security policy' in sql('update tll_cart_private.control set enabled=true;',role='tll_cart_owner',failure=True))
+        for method, args in [('open', literal(session)+','+literal(actor)), ('read', literal(session)+','+literal(actor)),
+                             ('claim', literal(session)+','+literal(actor)+','+literal(str(uuid.uuid4()))+','+literal('d'*64)+',0,1'),
+                             ('finish', literal(session)+','+literal(actor)+','+literal(str(uuid.uuid4()))+",'held',null,null,null,null")]:
+            error = sql('begin; delete from tll_cart_private.control; set local role tll_cart_gateway; select public.tll_cart_'+method+'('+args+');', failure=True)
+            check(method+' fails closed when the control row is missing', 'Staging cart repository unavailable' in error and sql('select count(*) from tll_cart_private.control;') == '1')
         sql('update tll_cart_private.control set enabled=true;')
         opened=rpc('open',session,actor)
         check('empty session created once with private context',opened['revision']==0 and opened['envelope'] is None and rpc('open',session,actor)==opened)
@@ -96,6 +215,11 @@ rollback;"""
         sql("update tll_cart_private.sessions set lease_until=clock_timestamp()-interval '1 second' where session_hash="+literal(second)+';')
         check('process death expires to hold without replay',rpc('read',second,actor)['phase']=='held')
         check('late acknowledgement cannot release expired reservation',rpc('finish',second,actor,late,'ready',envelope,1,1200,1200)['phase']=='held')
+        expiry_races(actor, envelope)
+        expiry_races(actor, envelope, lock='control')
+        disable_races(actor)
+        control_commit_barrier(actor)
+        pending_disable(actor)
         check('all private tables have RLS and gateway has no direct table grants',sql("select bool_and(relrowsecurity) from pg_class where relnamespace='tll_cart_private'::regnamespace and relkind='r';")=='t' and sql("select has_table_privilege('tll_cart_gateway','tll_cart_private.sessions','SELECT,INSERT,UPDATE,DELETE');")=='f')
         print(json.dumps({'status':'pass','checks':CHECKS,'count':len(CHECKS),'transport':'local docker exec / new isolated PG17 DB only','hostedCalls':False},indent=2))
     finally:
