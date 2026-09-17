@@ -279,3 +279,23 @@ test('operation and quarantine caps retain safe revocation when normal allocatio
  await assert.rejects(()=>repo.holdOperation({...operation(),locator:locator(record())}),/unavailable/)
  assert.equal(admin('SELECT count(*) FROM tll_broker_private.flows'),'2')
 })
+
+test('sign-in cannot reuse a pending-migration subject before authoritative promotion',async()=>{
+ const migration=await ready(record({mode:'migration',target:owner()})),saved=structuredClone(snapshot().subjects)
+ const signin=await claim(),p=finishInput(signin);p.shopifyProof.subject=migration.input.shopifyProof.subject
+ assert.equal(await repo.finishReadiness(p),false);assert.deepEqual(snapshot().subjects,saved)
+ const row=snapshot().flows.find(f=>f.id===signin.r.id);assert.equal(row.code_hash,null);assert.equal(row.bearer_hash,null)
+ assert.equal(admin('SELECT count(*) FROM auth.users'),'20')
+})
+test('concurrent migration/sign-in completion reserves one mode and never issues both codes',async()=>{
+ for(const migrationFirst of [true,false]){
+  const migration=await claim(record({mode:'migration',target:owner()})),signin=await claim(),mp=finishInput(migration),sp=finishInput(signin)
+  sp.shopifyProof.subject=mp.shopifyProof.subject
+  const inputs=migrationFirst?[mp,sp]:[sp,mp],results=await Promise.all(inputs.map(p=>repo.finishReadiness(p)))
+  assert.equal(results.filter(Boolean).length,1)
+  const subject=snapshot().subjects.find(s=>s.subject===mp.shopifyProof.subject),winner=inputs[results.findIndex(Boolean)]
+  assert.equal(subject.reservation,winner===mp?'pending_migration':'provisional')
+  assert.equal(subject.pending_user_id,winner===mp?migration.r.target.userId:null)
+  const rows=snapshot().flows.filter(f=>[migration.r.id,signin.r.id].includes(f.id));assert.equal(rows.filter(f=>f.code_hash!==null).length,1)
+ }
+})

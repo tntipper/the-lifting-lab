@@ -46,6 +46,7 @@ export function syntheticBrokerStore(now) {
       const key = JSON.stringify([p.shopId, p.issuer, p.subject]), existing = subjects.get(key)
       // This model's sign-in allocation is deliberately provisional. Tests may
       // inspect it but no auth UUID is invented or marked linked.
+      if (r.mode === 'sign_in' && existing && !existing.provisional) return false
       if (r.mode === 'migration' && existing && (existing.provisional || (existing.targetUserId && existing.targetUserId !== r.target.userId))) return false
       const subject = existing ?? { sub: i.candidateSubject, provisional: r.mode === 'sign_in', targetUserId: r.target?.userId ?? null, boundUserId: null }
       subjects.set(key, subject)

@@ -325,3 +325,26 @@ test('failed quarantine persistence cannot restore a claimed transaction or expo
   assert.equal(f.repository.records.get(f.browser.transactionId).status, 'verifying')
   assert.equal((await f.api.ready()).status, 'held'); assert.equal(proofCalls, 1); assert.equal(holdCalls, 1)
 })
+
+test('sign-in cannot expose a pending-migration subject before authoritative UUID promotion', async () => {
+  const migration = fixture(); await ready(migration)
+  const reservation = structuredClone([...migration.repository.subjects.values()][0])
+  const signIn = fixture({ mode: 'sign_in', repository: migration.repository }); await admitted(signIn)
+  const result = await signIn.api.ready(); assert.equal(result.status, 'held'); assert.equal(result.redirectUrl, undefined)
+  assert.deepEqual([...migration.repository.subjects.values()][0], reservation)
+  const row = migration.repository.records.get(signIn.browser.transactionId)
+  assert.equal(row.status, 'held'); assert.equal(row.codeHash, undefined); assert.equal(row.bearerHash, undefined)
+})
+test('concurrent migration and sign-in for one Shopify subject permit one reservation mode only', async () => {
+  for (const migrationFirst of [true, false]) {
+    const migration = fixture(), signIn = fixture({ mode: 'sign_in', repository: migration.repository })
+    await admitted(migration); await admitted(signIn)
+    const flows = migrationFirst ? [migration, signIn] : [signIn, migration]
+    const results = await Promise.all(flows.map(f => f.api.ready()))
+    assert.equal(results.filter(r => r.status === 'authorization_ready').length, 1)
+    assert.equal(results.filter(r => r.status === 'held').length, 1)
+    assert.equal(migration.repository.subjects.size, 1)
+    const won = flows[results.findIndex(r => r.status === 'authorization_ready')]
+    assert.equal([...migration.repository.subjects.values()][0].provisional, won === signIn)
+  }
+})

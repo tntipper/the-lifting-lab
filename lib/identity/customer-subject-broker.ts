@@ -65,6 +65,8 @@ type BrowserOperation = Operation & { transactionId: string; browserHash: string
  * unique opaque subject for exact (shop,issuer,subject). Sign-in is provisional,
  * not a new authenticated UUID. Migration records a pending target reservation,
  * not a completed link; reject conflicting bound or pending UUID reservations.
+ * Sign-in must reject pending-migration subjects until authoritative promotion
+ * exists; otherwise a concurrent sign-in could create a different upstream UUID.
  * No binding may be inferred from an email or from the other connection ledger.
  *
  * redeemCode: ready -> token_issued once; fixed client/callback/S256, current

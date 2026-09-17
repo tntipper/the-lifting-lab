@@ -249,7 +249,12 @@ BEGIN
    ELSIF migration IS DISTINCT FROM 'null'::jsonb THEN RETURN jsonb_build_object('status','rejected'); END IF;
    IF EXISTS(SELECT FROM tll_broker_private.flows WHERE code_hash=p->>'codeHash' OR proof_receipt_id=(proof->>'receiptId')::uuid) THEN RETURN jsonb_build_object('status','rejected'); END IF;
    SELECT * INTO subject_row FROM tll_broker_private.subjects WHERE shop_id=proof->>'shopId' AND issuer=proof->>'issuer' AND subject=proof->>'subject';
-   IF subject_row.sub IS NOT NULL AND target_user IS NOT NULL AND (subject_row.reservation='provisional' OR subject_row.pending_user_id IS DISTINCT FROM target_user) THEN RETURN jsonb_build_object('status','rejected'); END IF;
+   -- A pending migration has not proved its original UUID was linked upstream.
+   -- A sign-in using that sub could create a different UUID before linking.
+   -- Only provisional sign-ins may reuse a reservation until promotion exists.
+   IF subject_row.sub IS NOT NULL AND ((target_user IS NULL AND subject_row.reservation<>'provisional')
+     OR (target_user IS NOT NULL AND (subject_row.reservation='provisional' OR subject_row.pending_user_id IS DISTINCT FROM target_user))) THEN
+     RETURN jsonb_build_object('status','rejected'); END IF;
    IF subject_row.sub IS NULL THEN
      IF (SELECT count(*) FROM tll_broker_private.subjects)>=5000 THEN RETURN jsonb_build_object('status','rejected'); END IF;
      INSERT INTO tll_broker_private.subjects VALUES(p->>'candidateSubject',proof->>'shopId',proof->>'issuer',proof->>'subject',CASE WHEN target_user IS NULL THEN 'provisional' ELSE 'pending_migration' END,target_user,ts)
