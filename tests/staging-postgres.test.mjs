@@ -29,14 +29,14 @@ function setup(options={},driver=new Driver()){
 
 test('import and default-disabled runtime allocate no driver or connection, even without credentials',async()=>{
  let calls=0
- for(const options of [{purpose:'customer'},{purpose:'cart',enabled:false},{purpose:'broker'},{purpose:'provisional'},{purpose:'customer',enabled:'true'}]){
+ for(const options of [{purpose:'customer'},{purpose:'cart',enabled:false},{purpose:'broker'},{purpose:'provisional'},{purpose:'bridge'},{purpose:'customer',enabled:'true'}]){
   const runtime=createStagingPostgresRuntime(options,{createPool(){calls++;throw privateError()}})
   assert.equal(runtime.enabled,false);await assert.rejects(()=>runtime.pool.connect(),unavailable);await runtime.close()
  }
  assert.equal(calls,0)
 })
 test('enabled factory is lazy and pins separate exact pool identities with strict TLS and bounded settings',async()=>{
- for(const purpose of ['customer','cart','broker','provisional']){
+ for(const purpose of ['customer','cart','broker','provisional','bridge']){
   const {runtime,driver,captures}=setup({purpose,host:'attacker.invalid',port:1,user:'postgres',connectionString:'ignored',ssl:false})
   assert.equal(runtime.enabled,true);assert.equal(captures.length,0)
   const client=await runtime.pool.connect(),config=captures[0]

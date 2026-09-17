@@ -10,6 +10,7 @@ export const STAGING_POSTGRES_HOST = 'aws-0-eu-west-2.pooler.supabase.com'
 const runtimeUsers = Object.freeze({
   customer: 'tll_customer_runtime', cart: 'tll_cart_runtime',
   broker: 'tll_broker_runtime', provisional: 'tll_provisional_runtime',
+  bridge: 'tll_bridge_runtime',
 })
 export const STAGING_POSTGRES_LIMITS = Object.freeze({
   connectMs: 3_000, acquireMs: 4_000, queryMs: 12_000, leaseMs: 30_000,
