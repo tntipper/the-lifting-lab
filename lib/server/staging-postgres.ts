@@ -5,6 +5,12 @@ import type { PoolConfig } from 'pg'
 
 export const STAGING_POSTGRES_PROJECT_REF = 'qdmvngjwkcsilzmqksme'
 export const STAGING_POSTGRES_HOST = 'aws-0-eu-west-2.pooler.supabase.com'
+// Each repository receives its own credential and narrowly delegated role.
+// A purpose never grants authority; these LOGIN roles require separate provisioning.
+const runtimeUsers = Object.freeze({
+  customer: 'tll_customer_runtime', cart: 'tll_cart_runtime',
+  broker: 'tll_broker_runtime', provisional: 'tll_provisional_runtime',
+})
 export const STAGING_POSTGRES_LIMITS = Object.freeze({
   connectMs: 3_000, acquireMs: 4_000, queryMs: 12_000, leaseMs: 30_000,
   closeMs: 2_000, idleMs: 10_000, maxLifetimeSeconds: 300, maxPending: 2,
@@ -20,7 +26,7 @@ export type StagingPostgresRuntime = {
   close(): Promise<void>
 }
 export type StagingPostgresOptions = {
-  purpose: 'customer' | 'cart'
+  purpose: keyof typeof runtimeUsers
   enabled?: boolean
   password?: string
   /** Public CA only, obtained/approved separately. Hash covers certificate DER. */
@@ -51,7 +57,7 @@ const serverEnvironmentSafe = () => typeof window === 'undefined'
 export function createStagingPostgresRuntime(input: StagingPostgresOptions, fixture?: StagingPostgresTestDriver): StagingPostgresRuntime {
   const enabled = input?.enabled === true
   if (!enabled) return Object.freeze({ enabled: false, pool: Object.freeze({ async connect() { throw unavailable() } }), async close() {} })
-  if (!serverEnvironmentSafe() || !['customer', 'cart'].includes(input.purpose)
+  if (!serverEnvironmentSafe() || typeof input.purpose !== 'string' || !Object.hasOwn(runtimeUsers, input.purpose)
     || typeof input.password !== 'string' || input.password.length < 1 || input.password.length > 1024
     || /[\x00-\x1f\x7f]/.test(input.password)) throw unavailable()
   let ca: string | undefined
@@ -72,7 +78,7 @@ export function createStagingPostgresRuntime(input: StagingPostgresOptions, fixt
   // a connection string (which can replace pg's carefully supplied TLS options).
   const config: PoolConfig = {
     host: STAGING_POSTGRES_HOST, port: 6543, database: 'postgres',
-    user: `tll_${input.purpose}_runtime.${STAGING_POSTGRES_PROJECT_REF}`, password: input.password,
+    user: `${runtimeUsers[input.purpose]}.${STAGING_POSTGRES_PROJECT_REF}`, password: input.password,
     ssl: { ...(ca ? { ca } : {}), rejectUnauthorized: true, minVersion: 'TLSv1.2', servername: STAGING_POSTGRES_HOST,
       checkServerIdentity(hostname, cert) {
         if (hostname !== STAGING_POSTGRES_HOST || checkServerIdentity(STAGING_POSTGRES_HOST, cert)) return unavailable()

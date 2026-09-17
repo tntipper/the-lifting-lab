@@ -29,14 +29,14 @@ function setup(options={},driver=new Driver()){
 
 test('import and default-disabled runtime allocate no driver or connection, even without credentials',async()=>{
  let calls=0
- for(const options of [{purpose:'customer'},{purpose:'cart',enabled:false},{purpose:'customer',enabled:'true'}]){
+ for(const options of [{purpose:'customer'},{purpose:'cart',enabled:false},{purpose:'broker'},{purpose:'provisional'},{purpose:'customer',enabled:'true'}]){
   const runtime=createStagingPostgresRuntime(options,{createPool(){calls++;throw privateError()}})
   assert.equal(runtime.enabled,false);await assert.rejects(()=>runtime.pool.connect(),unavailable);await runtime.close()
  }
  assert.equal(calls,0)
 })
 test('enabled factory is lazy and pins separate exact pool identities with strict TLS and bounded settings',async()=>{
- for(const purpose of ['customer','cart']){
+ for(const purpose of ['customer','cart','broker','provisional']){
   const {runtime,driver,captures}=setup({purpose,host:'attacker.invalid',port:1,user:'postgres',connectionString:'ignored',ssl:false})
   assert.equal(runtime.enabled,true);assert.equal(captures.length,0)
   const client=await runtime.pool.connect(),config=captures[0]
@@ -58,7 +58,7 @@ test('hostname identity check rejects a valid-looking certificate for another ho
  client.release();await runtime.close()
 })
 test('unknown purpose, invalid password and browser execution fail before a constructor is invoked',()=>{
- for(const options of [{purpose:'admin'},{purpose:null},{password:''},{password:()=>''},{password:'x'.repeat(1025)},{password:'private\nsecret'}])assert.throws(()=>setup(options),unavailable)
+ for(const options of [{purpose:'admin'},{purpose:'__proto__'},{purpose:'constructor'},{purpose:'broker.other-project'},{purpose:{toString:()=> 'customer'}},{purpose:null},{password:''},{password:()=>''},{password:'x'.repeat(1025)},{password:'private\nsecret'}])assert.throws(()=>setup(options),unavailable)
  const prior=globalThis.window;try{globalThis.window={};assert.throws(()=>setup(),unavailable)}finally{if(prior===undefined)delete globalThis.window;else globalThis.window=prior}
 })
 test('ambient PG destination, SSL, options and native-driver overrides are rejected without reading credential stores',async()=>{
