@@ -64,16 +64,16 @@ export function createCustomerAdmissionBridgeContinuation(options: {
   provisionalPool: CustomerRepositoryPool; bridgePool: CustomerRepositoryPool; vault: EnvelopeVault
   applicationOrigin: string; publishableKey?: string; readAccessToken(): Promise<string | null>
   syntheticExecution?: boolean; liveEnabled?: boolean; sessionTransport?: SupabaseSessionTransport
-  admissionTransport?: SupabaseAdmissionTransport; now?: () => number; timeoutMs?: number
+  admissionTransport?: SupabaseAdmissionTransport; now?: () => number; timeoutMs?: number; transactionExpiresAt?: number
 }) {
   const { provisionalPool, bridgePool, vault, applicationOrigin, publishableKey, readAccessToken, sessionTransport, admissionTransport } = options
-  const now = options.now ?? Date.now, timeoutMs = options.timeoutMs ?? 5000
+  const now = options.now ?? Date.now, timeoutMs = options.timeoutMs ?? 5000, transactionExpiresAt = options.transactionExpiresAt
   const enabled = options.syntheticExecution === true && options.liveEnabled !== true
   const active = () => enabled && typeof window === 'undefined' && originValid(applicationOrigin)
     && typeof publishableKey === 'string' && /^sb_publishable_[A-Za-z0-9_-]{16,256}$/.test(publishableKey)
     && typeof readAccessToken === 'function' && Number.isInteger(timeoutMs) && timeoutMs >= 50 && timeoutMs <= 10000
   const coordinator = createCustomerAdmissionCoordinator({ pool: provisionalPool, vault, applicationOrigin, publishableKey, readAccessToken,
-    syntheticExecution: enabled, sessionTransport, admissionTransport, now, timeoutMs })
+    syntheticExecution: enabled, sessionTransport, admissionTransport, now, timeoutMs, transactionExpiresAt })
   const repository = () => createCustomerProvisionalAdmissionRepository({ pool: provisionalPool, vault, applicationOrigin, syntheticExecution: true })
   let started = false
   function bound(input: BoundInput) {
@@ -140,7 +140,8 @@ export function createCustomerAdmissionBridgeContinuation(options: {
       const m = s.metadata, o = s.outer
       ensure(JSON.stringify([o.clientId,o.redirectUri,o.state,o.scope,o.challenge,o.method]) === JSON.stringify(outer)
         && authorizationUrl === applicationOrigin + '/auth/customer/authorize?' + candidate.admission.authorizationQuery)
-      const at = now(); ensure(ms(at) && at >= m.createdAt && at < m.expiresAt)
+      const at = now(); ensure(ms(at) && at >= m.createdAt && at < m.expiresAt
+        && (transactionExpiresAt === undefined || m.expiresAt <= transactionExpiresAt))
       let proof: SupabaseSessionProof | null = null, token: string | undefined
       if (mode === 'migration') {
         ensure(m.original)

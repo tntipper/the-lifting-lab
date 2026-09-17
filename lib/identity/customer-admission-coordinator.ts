@@ -44,14 +44,15 @@ export function createCustomerAdmissionCoordinator(options: {
   readAccessToken(): Promise<string | null>
   syntheticExecution?: boolean; liveEnabled?: boolean
   sessionTransport?: SupabaseSessionTransport; admissionTransport?: SupabaseAdmissionTransport
-  now?: () => number; timeoutMs?: number
+  now?: () => number; timeoutMs?: number; transactionExpiresAt?: number
 }) {
   const { pool, vault, applicationOrigin, publishableKey, readAccessToken, sessionTransport, admissionTransport } = options
-  const now = options.now ?? Date.now, timeoutMs = options.timeoutMs ?? 5000
+  const now = options.now ?? Date.now, timeoutMs = options.timeoutMs ?? 5000, transactionExpiresAt = options.transactionExpiresAt
   const enabled = options.syntheticExecution === true && options.liveEnabled !== true
   const active = () => enabled && typeof window === 'undefined' && originValid(applicationOrigin)
     && typeof publishableKey === 'string' && /^sb_publishable_[A-Za-z0-9_-]{16,256}$/.test(publishableKey)
     && typeof readAccessToken === 'function' && Number.isInteger(timeoutMs) && timeoutMs >= 50 && timeoutMs <= 10_000
+    && (transactionExpiresAt === undefined || (clock(transactionExpiresAt) && transactionExpiresAt > now()))
   // Lazy construction keeps invalid/default-disabled calls away from all ports.
   const repository = () => createCustomerProvisionalAdmissionRepository({ pool, vault, applicationOrigin, syntheticExecution: true })
   const admission = createSupabaseAuthorizationAdmission({ enabled, applicationOrigin, publishableKey, transport: admissionTransport, timeoutMs })
@@ -92,17 +93,20 @@ export function createCustomerAdmissionCoordinator(options: {
     let verifier: string, prepareOperation: string, claimOperation: string
     try {
       if (mode === 'migration') original = await verifyOriginal()
-      const createdAt = now(); requireValue(clock(createdAt))
+      const createdAt = now(); requireValue(clock(createdAt) && (transactionExpiresAt === undefined || transactionExpiresAt > createdAt))
       verifier = randomBytes(32).toString('base64url'); prepareOperation = randomUUID(); claimOperation = randomUUID()
       metadata = createProvisionalAdmissionMetadata({ transactionId: randomUUID(), browserHash, applicationOrigin, mode,
         original: original ? { userId: original.proof.userId, sessionId: original.proof.sessionId, accessTokenHash: hash(original.token) } : null,
-        applicationPkceChallenge: createHash('sha256').update(verifier).digest('base64url'), createdAt, expiresAt: createdAt + 300000 })
+        applicationPkceChallenge: createHash('sha256').update(verifier).digest('base64url'), createdAt,
+        expiresAt: Math.min(createdAt + 300000, transactionExpiresAt ?? Infinity) })
       if (metadata.original) Object.freeze(metadata.original)
       Object.freeze(metadata); binding = bindingOf(metadata)
     } catch { return earlyHeld() }
     const repo = repository()
     let operationId = prepareOperation, claim: { fence: string; generation: string } | undefined
     try {
+      requireValue(now() < metadata.expiresAt)
+      // SQL checks this immutable expiry again after its connection/gate wait.
       requireValue(await repo.prepare({ operationId, metadata, applicationPkceVerifier: verifier }))
       operationId = claimOperation
       // A DB wait can outlive the initial proof. Verify the exact original token
