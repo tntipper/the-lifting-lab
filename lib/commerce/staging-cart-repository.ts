@@ -1,7 +1,7 @@
 import { CartUnavailable, type CartRecord, type CartRepository } from './staging-cart-service'
 
 const HEX = /^[a-f0-9]{64}$/
-function record(value: unknown, session: string, actor: string): CartRecord {
+export function parseCartRecord(value: unknown, session: string, actor: string): CartRecord {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new CartUnavailable()
   const row = value as CartRecord
   if (row.sessionHash !== session || row.actorHash !== actor || !HEX.test(session) || !HEX.test(actor)
@@ -45,15 +45,15 @@ export function createCartRepository(options: { enabled: boolean; pool: CartRepo
     } finally { connection?.release(!acknowledged) }
   }
   return {
-    async open(session, actor) { return record(await rpc('open', [session, actor]), session, actor) },
-    async read(session, actor) { const value = await rpc('read', [session, actor]); return value === null ? null : record(value, session, actor) },
+    async open(session, actor) { return parseCartRecord(await rpc('open', [session, actor]), session, actor) },
+    async read(session, actor) { const value = await rpc('read', [session, actor]); return value === null ? null : parseCartRecord(value, session, actor) },
     async claim(session, actor, requestId, requestHash, revision, quantity) {
       const value = await rpc('claim', [session, actor, requestId, requestHash, revision, quantity]) as { status?: string; record?: unknown }
       if (!value || !['claimed', 'replay', 'conflict', 'held'].includes(value.status ?? '')) throw new CartUnavailable()
-      return { status: value.status as 'claimed' | 'replay' | 'conflict' | 'held', record: record(value.record, session, actor) }
+      return { status: value.status as 'claimed' | 'replay' | 'conflict' | 'held', record: parseCartRecord(value.record, session, actor) }
     },
     async finish(session, actor, requestId, state, envelope, observation) {
-      return record(await rpc('finish', [session, actor, requestId, state, envelope === null ? null : JSON.stringify(envelope),
+      return parseCartRecord(await rpc('finish', [session, actor, requestId, state, envelope === null ? null : JSON.stringify(envelope),
         observation?.quantity ?? null, observation?.unitPricePence ?? null, observation?.subtotalPence ?? null]), session, actor)
     },
   }
