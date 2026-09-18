@@ -1,16 +1,25 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { build } from 'esbuild'
 
 const bundle = await build({ stdin: { contents: "export * from './lib/server/staging-customer.ts'", resolveDir: process.cwd() },
   bundle: true, format: 'esm', platform: 'node', write: false, logLevel: 'silent' })
 const { createStagingCustomerRuntime } = await import('data:text/javascript;base64,' + Buffer.from(bundle.outputFiles[0].text).toString('base64'))
 const ORIGIN = 'https://the-lifting-customer-test-my-lifting-lab-s-projects.vercel.app'
+const proofHash = createHash('sha256').update(JSON.stringify(['tll-shopify-proof/v1','107532616020','https://shopify.com/authentication/107532616020',
+  'c8f7b926-9073-416c-9949-0d99e89a99c0','https://shopify.com/authentication/107532616020/oauth/authorize',
+  'https://shopify.com/authentication/107532616020/oauth/token','https://shopify.com/authentication/107532616020/.well-known/jwks.json',
+  ORIGIN + '/auth/customer/shopify/callback','openid email customer-account-api:full'])).digest('hex')
+const now = Date.now()
 const base = Object.freeze({ NEXT_PUBLIC_TLL_ENVIRONMENT: 'staging', NEXT_PUBLIC_TLL_STAGING_CUSTOMER: 'enabled',
   TLL_STAGING_CUSTOMER_ENABLED: 'true', VERCEL: '1', VERCEL_ENV: 'preview', TLL_STAGING_CUSTOMER_ORIGIN: ORIGIN,
   TLL_STAGING_SUPABASE_PROJECT_REF: 'qdmvngjwkcsilzmqksme', NEXT_PUBLIC_SUPABASE_URL: 'https://qdmvngjwkcsilzmqksme.supabase.co',
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_staging_customer_fixture', TLL_STAGING_POSTGRES_CA_PEM: 'synthetic-public-ca',
   TLL_STAGING_POSTGRES_CA_SHA256: 'a'.repeat(64), TLL_STAGING_CUSTOMER_DATABASE_PASSWORD: 'customer-' + '1'.repeat(40),
+  TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET: 'shopify-' + '5'.repeat(40), TLL_STAGING_SHOPIFY_PROOF_EVIDENCE_ID: 'synthetic-review-v1',
+  TLL_STAGING_SHOPIFY_PROOF_CONFIG_SHA256: proofHash, TLL_STAGING_SHOPIFY_PROOF_VERIFIED_AT_MS: String(now - 1000),
+  TLL_STAGING_SHOPIFY_PROOF_EXPIRES_AT_MS: String(now + 3600000),
   TLL_STAGING_BROKER_DATABASE_PASSWORD: 'broker-' + '2'.repeat(40), TLL_STAGING_PROVISIONAL_DATABASE_PASSWORD: 'provisional-' + '3'.repeat(40),
   TLL_STAGING_BRIDGE_DATABASE_PASSWORD: 'bridge-' + '4'.repeat(40), TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_ID: 'customer-token-v1',
   TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_HEX: 'b'.repeat(64), TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_ID: 'customer-provisional-v1',
@@ -32,13 +41,23 @@ function fixture(env = base, changes = {}) {
   }
   const delivery = Object.freeze({ marker: 'delivery' })
   const deliveryFactory = options => { calls.push(['delivery', options]); return delivery }
+  const proofRepository = Object.freeze({ marker: 'proof-repository' })
+  const proofRepositoryFactory = options => { calls.push(['proof-repository', options]); return proofRepository }
+  const tokenAdapter = Object.freeze({ exchangeCode: async () => { throw Error('No exchange expected') } })
+  const tokenAdapterFactory = options => { calls.push(['token-adapter', options]); return tokenAdapter }
+  const jwks = Object.freeze({ verifyIdToken: async () => null })
+  const jwksLoaderFactory = options => { calls.push(['jwks', options]); return jwks }
+  const shopifyProof = Object.freeze({ marker: 'shopify-proof' })
+  const proofFlowFactory = options => { calls.push(['proof-flow', options]); return shopifyProof }
   const readAccessToken = async () => null
-  return { runtime: createStagingCustomerRuntime({ env, readAccessToken }, { runtimeFactory, vaultFactory, deliveryFactory, ...changes }),
-    calls, closed, destroyed, pools, delivery, readAccessToken }
+  return { runtime: createStagingCustomerRuntime({ env, readAccessToken }, { runtimeFactory, vaultFactory, deliveryFactory,
+      proofRepositoryFactory, tokenAdapterFactory, jwksLoaderFactory, proofFlowFactory, ...changes }),
+    calls, closed, destroyed, pools, delivery, proofRepository, tokenAdapter, jwks, readAccessToken }
 }
 
 test('valid preview composition owns four distinct purpose pools and three isolated keyrings', async () => {
   const f = fixture(); assert.ok(f.runtime); assert.equal(f.runtime.enabled, true); assert.equal(f.runtime.delivery, f.delivery)
+  assert.equal(f.runtime.shopifyProof.marker, 'shopify-proof')
   const runtimeCalls = f.calls.filter(([kind]) => kind === 'runtime'); assert.deepEqual(runtimeCalls.map(([, x]) => x.purpose), ['customer','broker','provisional','bridge'])
   assert.equal(new Set(runtimeCalls.map(([, x]) => x.password)).size, 4)
   for (const [, options] of runtimeCalls) { assert.equal(options.enabled, true); assert.equal(options.tlsCa.pem, base.TLL_STAGING_POSTGRES_CA_PEM); assert.equal(options.tlsCa.sha256, base.TLL_STAGING_POSTGRES_CA_SHA256) }
@@ -49,6 +68,18 @@ test('valid preview composition owns four distinct purpose pools and three isola
   assert.notEqual(options.vault, options.cookieVault); assert.equal(options.applicationOrigin, ORIGIN); assert.equal(options.publishableKey, base.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
   assert.equal(options.readAccessToken, f.readAccessToken); assert.equal(options.syntheticExecution, true); assert.equal(options.liveEnabled, false)
   assert.equal(f.runtime.customerPool, f.pools.get('customer')); assert.notEqual(f.runtime.tokenVault, options.vault); assert.notEqual(f.runtime.tokenVault, options.cookieVault)
+  const proofRepo = f.calls.find(([kind]) => kind === 'proof-repository')[1]
+  assert.equal(proofRepo.pool, f.pools.get('customer')); assert.equal(proofRepo.vault, f.runtime.tokenVault)
+  assert.equal(proofRepo.syntheticExecution, true); assert.equal(proofRepo.liveEnabled, false)
+  const adapter = f.calls.find(([kind]) => kind === 'token-adapter')[1]
+  assert.equal(adapter.clientSecret, base.TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET)
+  assert.equal(adapter.callbackUrl, ORIGIN + '/auth/customer/shopify/callback')
+  assert.equal(adapter.authorizationScope, 'openid email customer-account-api:full'); assert.equal(adapter.enabled, true)
+  assert.deepEqual(f.calls.find(([kind]) => kind === 'jwks')[1], { enabled: true })
+  const flow = f.calls.find(([kind]) => kind === 'proof-flow')[1]
+  assert.equal(flow.config.applicationOrigin, ORIGIN); assert.equal(flow.config.verification.configHash, proofHash)
+  assert.equal(flow.ports.repository, f.proofRepository); assert.equal(flow.ports.exchangeCode, f.tokenAdapter.exchangeCode)
+  assert.equal(flow.ports.verifyIdToken, f.jwks.verifyIdToken); assert.equal(flow.syntheticExecution, true); assert.equal(flow.liveEnabled, false)
   assert.deepEqual(f.runtime.connection, { projectRef:'qdmvngjwkcsilzmqksme', shopId:'107532616020', clientId:'c8f7b926-9073-416c-9949-0d99e89a99c0',
     issuer:'https://shopify.com/authentication/107532616020', discovery:'https://tll-integration-staging.myshopify.com/.well-known/openid-configuration' })
   await f.runtime.close(); await f.runtime.close(); assert.deepEqual(f.closed.sort(), ['bridge','broker','customer','provisional']); assert.deepEqual(f.destroyed, ['customer-token-v1','customer-provisional-v1','customer-cookie-v1'])
@@ -60,6 +91,8 @@ test('missing, production, malformed and overlapping configuration fails before 
     ['VERCEL_ENV','production'], ['TLL_STAGING_CUSTOMER_ORIGIN','https://example.com'], ['TLL_STAGING_SUPABASE_PROJECT_REF','wrhgscovsgsudtedbljr'],
     ['NEXT_PUBLIC_SUPABASE_URL','https://wrhgscovsgsudtedbljr.supabase.co'], ['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY','bad'],
     ['TLL_STAGING_POSTGRES_CA_PEM',''], ['TLL_STAGING_POSTGRES_CA_SHA256','bad'], ['TLL_STAGING_CUSTOMER_DATABASE_PASSWORD','short'],
+    ['TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET','short'], ['TLL_STAGING_SHOPIFY_PROOF_EVIDENCE_ID','bad evidence'],
+    ['TLL_STAGING_SHOPIFY_PROOF_CONFIG_SHA256','a'.repeat(64)], ['TLL_STAGING_SHOPIFY_PROOF_EXPIRES_AT_MS',base.TLL_STAGING_SHOPIFY_PROOF_VERIFIED_AT_MS],
     ['TLL_STAGING_BROKER_DATABASE_PASSWORD',base.TLL_STAGING_CUSTOMER_DATABASE_PASSWORD], ['TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_HEX','bad'],
     ['TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_HEX',base.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_HEX],
     ['TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_ID',base.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_ID],
