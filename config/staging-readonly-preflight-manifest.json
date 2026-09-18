@@ -1,19 +1,19 @@
 {
-  "schema": "tll-staging-readonly-preflight/v3",
+  "schema": "tll-staging-readonly-preflight/v4",
   "target": "qdmvngjwkcsilzmqksme",
   "productionExcluded": "wrhgscovsgsudtedbljr",
   "nativeAccessApproved": false,
   "query": {
     "id": "tll-staging-readonly-preflight/v1",
-    "sha256": "dfe78edb81e37f98516ad597191dbbcd7b845546dcb1d0f5747530740d1c72c9",
+    "sha256": "58b500f4e4069d21c4f7dd5ef5f9b238cccdbea32f313dd2761a3a4d05af8982",
     "beginsReadOnly": true,
-    "receiptExecutions": 2,
-    "finalStatementIsReceipt": true
+    "assertionsInReadOnlyTransaction": true,
+    "finalStatementLiteralReceipt": true
   },
   "sourcePins": [
     {
       "path": "scripts/staging-readonly-preflight.mjs",
-      "sha256": "311e3c66d91201af9706b6c6ee3e279cfe8e11c9f51bb4a6925059cf54180c91"
+      "sha256": "0f470d3854838465a7c5c391ae297b38a29c18aed31f0658977ddfc003d4bf93"
     },
     {
       "path": "scripts/staging-readonly-preflight-keychain.py",

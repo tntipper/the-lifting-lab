@@ -30,12 +30,22 @@ const sha256 = value => createHash('sha256').update(value).digest('hex')
 const sqlList = values => values.map(value => `'${value}'`).join(',')
 const migrationPairs = BASELINE_MIGRATIONS.map(([version, hash]) => `('${version}','${hash}')`).join(',')
 
-// One catalog/status receipt. It returns counts/booleans only: no table rows,
-// credential values, role configuration, session identifiers or raw errors.
-// The Management API exposes the final statement's result. The exact receipt
-// is therefore evaluated once under the database-enforced read-only guards and
-// again after COMMIT, so its one-row envelope is unambiguous to the API.
-export const RECEIPT_SELECT = `SELECT jsonb_build_object(
+// The transaction checks catalog and application state, but never returns that
+// state. The API receives only the literal receipt after the assertion commits.
+// Any mismatch raises in the read-only transaction and therefore has no receipt.
+export const EXPECTED_RECEIPT = Object.freeze({
+  queryId: QUERY_ID,
+  projectRef: PROJECT_REF,
+  environmentMarker: true,
+  operator: { current: true, session: true, database: true, notSuperuser: true, createrole: true, readAll: true, writeAll: true, maintain: true },
+  migrations: { totalCount: 10, baselinePairCount: 10, forbiddenCount: 0 },
+  controls: { customer: true, cart: true, broker: true, provisional: true, bridge: true },
+  runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, edgeCount: 5, retiredOperatorEdgeCount: 5, sessionCount: 0, retiredMarkerCount: 5 },
+  absentObjects: { shopifyProofs: true, finalizations: true, cartTransitions: true, accountGenerations: true, accountLogouts: true },
+})
+const EXPECTED_RECEIPT_LITERAL = JSON.stringify(EXPECTED_RECEIPT)
+
+export const RECEIPT_ASSERTION_SELECT = `SELECT jsonb_build_object(
  'queryId','${QUERY_ID}',
  'projectRef','${PROJECT_REF}',
  'environmentMarker',coalesce((SELECT environment='tll-hosted-staging-v1' AND operator_project_ref='${PROJECT_REF}' FROM tll_staging_private.environment WHERE singleton),false),
@@ -55,8 +65,18 @@ export const RECEIPT_SELECT = `SELECT jsonb_build_object(
 export const FIXED_QUERY = `BEGIN READ ONLY;
 SET LOCAL statement_timeout='15s';
 SET LOCAL lock_timeout='5s';
-${RECEIPT_SELECT}COMMIT;
-${RECEIPT_SELECT}`
+DO $tll_preflight$
+DECLARE observed jsonb;
+BEGIN
+  ${RECEIPT_ASSERTION_SELECT.replace(' AS tll_staging_preflight;\n', ' INTO observed;\n')}
+  IF observed IS DISTINCT FROM '${EXPECTED_RECEIPT_LITERAL}'::jsonb THEN
+    RAISE EXCEPTION 'staging preflight assertion failed';
+  END IF;
+END
+$tll_preflight$;
+COMMIT;
+SELECT '${EXPECTED_RECEIPT_LITERAL}'::jsonb AS tll_staging_preflight;
+`
 
 const unavailable = () => { throw new Error('Staging read-only preflight unavailable') }
 export function validateSupabaseProfile (content) {
