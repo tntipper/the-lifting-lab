@@ -17,7 +17,19 @@ Before any later reviewed activation, regenerate and inspect the artifacts:
 ```sh
 node scripts/staging-disabled-migrations-012-016.prepare.mjs
 node --test tests/staging-disabled-migrations-012-016.test.mjs
+node tests/staging-disabled-migrations-012-016-actual.mjs
 ```
+
+The final command is the PostgreSQL 17 acceptance fixture. It creates one
+fresh Docker container per scenario, with `--network none`, and removes each
+container before it starts the next. It builds a canonical 002--011 baseline
+under a literal non-superuser `postgres` operator, executes the generated
+012--016 SQL byte-for-byte, then proves the five-migration commit, disabled
+controls, 15-entry ledger, empty destinations, RLS and ADMIN-only owner edges.
+Fresh fixtures also prove late-failure rollback, a mutated predecessor ledger,
+enabled and missing controls, pre-existing destination refusal, and replay
+refusal. It only permits a local Unix Docker daemon and has no hosted endpoint,
+credential or native access path.
 
 An authorised installer run must use a clean environment, a separate review of
 the generated diff and manifest, and exactly one Management API request. The

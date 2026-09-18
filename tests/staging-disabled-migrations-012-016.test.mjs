@@ -68,3 +68,14 @@ test('the executable distinguishes no-dispatch from an uncertain dispatched outc
   assert.match(source, /READ_ONLY_RECONCILIATION_REQUIRED/)
   assert.match(source, /try \{ return await post\(token, now\(\) \+ MAX_AGE_MS\) \} catch/)
 })
+
+test('actual PostgreSQL acceptance is isolated and executes the generated package', () => {
+  const source = readFileSync('tests/staging-disabled-migrations-012-016-actual.mjs', 'utf8')
+  assert.match(source, /readFileSync\(new URL\('\.\.\/config\/staging-disabled-migrations-012-016\.sql'/)
+  assert.match(source, /--network', 'none'/)
+  assert.match(source, /Remote Docker refused/)
+  assert.match(source, /all five additions committed atomically/)
+  assert.match(source, /late failure rollback/)
+  assert.match(source, /replay refusal/)
+  assert.doesNotMatch(source, /https?:\/\//)
+})
