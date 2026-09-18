@@ -1,0 +1,275 @@
+{
+  "schema": "tll-staging-account-activation/v1",
+  "target": {
+    "supabaseProjectRef": "qdmvngjwkcsilzmqksme",
+    "shopDomain": "tll-integration-staging.myshopify.com",
+    "vercelProjectId": "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4",
+    "environment": "preview",
+    "productionProjectRefExcluded": "wrhgscovsgsudtedbljr"
+  },
+  "prerequisites": {
+    "hostedMigrations": [
+      "002",
+      "003",
+      "004",
+      "005",
+      "006",
+      "007",
+      "008",
+      "009",
+      "010",
+      "011"
+    ],
+    "retiredCredentialGenerations": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "controlsRequiredDisabled": [
+      "customer",
+      "cart",
+      "broker",
+      "provisional",
+      "bridge"
+    ],
+    "noLoginCredentialsInSource": true,
+    "noPurchaseJourney": true
+  },
+  "sourceTree": {
+    "roots": [
+      "lib/identity",
+      "lib/server",
+      "lib/commerce",
+      "app/auth/customer",
+      "app/account/orders",
+      "app/api/account",
+      "supabase/functions"
+    ],
+    "fileCount": 60,
+    "sha256": "029a5466a1eb4bff3c0ee8058427ce4edeadfc09259265920ec42686cacabec6"
+  },
+  "migrations": [
+    {
+      "path": "supabase/migrations/202609180012_customer_shopify_proof_repository.sql",
+      "sha256": "c0b105293f01b79329c050a16702ad98123b744b63c85a63dbce8c1a2b7b6e61"
+    },
+    {
+      "path": "supabase/migrations/202609180013_customer_final_reconciliation.sql",
+      "sha256": "4dc438d016fbe2f4e1a5cac7c76aa9f48f0bde369488702661f516fdd88841a6"
+    },
+    {
+      "path": "supabase/migrations/202609180014_staging_cart_account_transition.sql",
+      "sha256": "99b3737bcffe7957e5eeb64d46566953ad2a9e8b4d045fdaf9e995a223a29061"
+    },
+    {
+      "path": "supabase/migrations/202609180015_customer_account_operations.sql",
+      "sha256": "dfaafaa6ee121c5f33e7f1aff6a83f14d972455ef5fdd0ed2a49411f8b15c0ee"
+    },
+    {
+      "path": "supabase/migrations/202609180016_customer_account_logout.sql",
+      "sha256": "b512d9d18599b60a18ea20d94b3502d94c5735c1ac20bbb76321efd46dea8349"
+    }
+  ],
+  "edge": {
+    "functions": [
+      {
+        "name": "tll-broker-token",
+        "verifyJwt": false,
+        "protocolAuthentication": "confidential_basic"
+      },
+      {
+        "name": "tll-broker-userinfo",
+        "verifyJwt": false,
+        "protocolAuthentication": "one_use_bearer"
+      }
+    ],
+    "sources": [
+      {
+        "path": "supabase/functions/tll-broker-token/index.ts",
+        "sha256": "d0fce3e10c228041f5962b3e50d32df99ce299b70c2aefa97a8bb78680ec1e54"
+      },
+      {
+        "path": "supabase/functions/tll-broker-token/deno.json",
+        "sha256": "c0a2ec7dc07ce15c7da34ae53320ed65328e6d878b74a690e1cd631a761e355f"
+      },
+      {
+        "path": "supabase/functions/tll-broker-userinfo/index.ts",
+        "sha256": "ca6f234d8f7ac2adc5b2e4e33c129749c68354c13ef76f178469013c6630e928"
+      },
+      {
+        "path": "supabase/functions/tll-broker-userinfo/deno.json",
+        "sha256": "c0a2ec7dc07ce15c7da34ae53320ed65328e6d878b74a690e1cd631a761e355f"
+      },
+      {
+        "path": "lib/identity/customer-subject-broker-edge.ts",
+        "sha256": "babc2af8d57a60e2f65772c2c00e8883aadba23c0c62c2bc5184442c8addfa93"
+      },
+      {
+        "path": "lib/identity/customer-subject-broker.ts",
+        "sha256": "050a3bee769cc1c5bb3d81291dc18cdba44f8dbb0c769de6c59eb7d1fede7ba7"
+      },
+      {
+        "path": "lib/identity/customer-subject-broker-repository.ts",
+        "sha256": "94e3c8241eddd2adc8fc3ca66b841250978e1f5861bbff6019d4781e82f41fb6"
+      },
+      {
+        "path": "lib/server/staging-postgres.ts",
+        "sha256": "522eb20f7c7a61771d0e5c08e2297ef736a982bdda8a640901620b7c21bde5b4"
+      }
+    ],
+    "requiredSecrets": [
+      "TLL_STAGING_BROKER_DATABASE_PASSWORD",
+      "TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET",
+      "TLL_STAGING_POSTGRES_CA_PEM",
+      "TLL_STAGING_POSTGRES_CA_SHA256"
+    ],
+    "enableLast": "TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED"
+  },
+  "runtime": {
+    "sources": [
+      {
+        "path": "lib/server/staging-customer.ts",
+        "sha256": "89ee525b90a58e46ee083b209c867ef6d430ba224bc674986af14d57cb1f9f0c"
+      },
+      {
+        "path": "lib/server/staging-customer-route.ts",
+        "sha256": "ed36a9ed7b73224c9256176c3f5152de218b392c0c2def04874db219485c9796"
+      },
+      {
+        "path": "lib/identity/customer-account-operations.ts",
+        "sha256": "dc6e83ad6e3c368a83b0fcd7236a86592ce83b72696b211fd0c7edd68bbbd701"
+      },
+      {
+        "path": "lib/identity/customer-account-operations-repository.ts",
+        "sha256": "1e8581545b9c917403992008b92f0ac9bc7a34004511264c6bfb51773b642a7d"
+      },
+      {
+        "path": "lib/identity/customer-account-logout.ts",
+        "sha256": "8db6bf22b46f200586377ea9e4bff9843b6d801263b33f986db55a7da7d1bd8c"
+      },
+      {
+        "path": "lib/identity/customer-account-logout-repository.ts",
+        "sha256": "23275b5fba028c1ebb23e7256889683d334bed661479b22498f99e795ade2dbb"
+      },
+      {
+        "path": "lib/identity/customer-orders.ts",
+        "sha256": "0c834a73d8961d73900cd6028d3d6f7ba7a3bf0c30077e3858540840dbdc6be4"
+      },
+      {
+        "path": "app/api/account/orders/route.ts",
+        "sha256": "793c791f31f2a81a3391126a88ca2dc13bdfbf8edb23e40f66b4553b3bdf6ca9"
+      },
+      {
+        "path": "app/auth/customer/logout/route.ts",
+        "sha256": "63c91e80663b757292252e83f4b9e3d864eb14d4e5d791b12c29e6f7d632f705"
+      }
+    ],
+    "databaseIdentities": {
+      "customer": {
+        "login": "tll_customer_runtime",
+        "membership": "tll_customer_executor"
+      },
+      "cart": {
+        "login": "tll_cart_runtime",
+        "membership": "tll_cart_gateway"
+      },
+      "broker": {
+        "login": "tll_broker_runtime",
+        "membership": "tll_broker_executor"
+      },
+      "provisional": {
+        "login": "tll_provisional_runtime",
+        "membership": "tll_provisional_executor"
+      },
+      "bridge": {
+        "login": "tll_bridge_runtime",
+        "membership": "tll_bridge_executor"
+      }
+    },
+    "vercelSecrets": [
+      "TLL_STAGING_BRIDGE_DATABASE_PASSWORD",
+      "TLL_STAGING_BROKER_DATABASE_PASSWORD",
+      "TLL_STAGING_CART_DATABASE_PASSWORD",
+      "TLL_STAGING_CART_HMAC_KEY_HEX",
+      "TLL_STAGING_CART_STOREFRONT_TOKEN",
+      "TLL_STAGING_CART_VAULT_KEY_HEX",
+      "TLL_STAGING_CART_VAULT_KEY_ID",
+      "TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_HEX",
+      "TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_ID",
+      "TLL_STAGING_CUSTOMER_DATABASE_PASSWORD",
+      "TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_HEX",
+      "TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_ID",
+      "TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_HEX",
+      "TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_ID",
+      "TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_HEX",
+      "TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_ID",
+      "TLL_STAGING_PROVISIONAL_DATABASE_PASSWORD",
+      "TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET",
+      "TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET"
+    ],
+    "vercelConfiguration": [
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_TLL_ENVIRONMENT",
+      "NEXT_PUBLIC_TLL_STAGING_CART",
+      "NEXT_PUBLIC_TLL_STAGING_CUSTOMER",
+      "TLL_STAGING_CART_ENABLED",
+      "TLL_STAGING_CART_ORIGIN",
+      "TLL_STAGING_CART_SHOP",
+      "TLL_STAGING_CUSTOMER_ENABLED",
+      "TLL_STAGING_CUSTOMER_ORIGIN",
+      "TLL_STAGING_POSTGRES_CA_PEM",
+      "TLL_STAGING_POSTGRES_CA_SHA256",
+      "TLL_STAGING_SHOPIFY_PROOF_CONFIG_SHA256",
+      "TLL_STAGING_SHOPIFY_PROOF_EVIDENCE_ID",
+      "TLL_STAGING_SHOPIFY_PROOF_EXPIRES_AT_MS",
+      "TLL_STAGING_SHOPIFY_PROOF_VERIFIED_AT_MS",
+      "TLL_STAGING_SUPABASE_PROJECT_REF"
+    ],
+    "enableLast": [
+      "TLL_STAGING_CUSTOMER_ENABLED",
+      "TLL_STAGING_CART_ENABLED",
+      "NEXT_PUBLIC_TLL_STAGING_CUSTOMER",
+      "NEXT_PUBLIC_TLL_STAGING_CART"
+    ]
+  },
+  "provider": {
+    "customerClientId": "c8f7b926-9073-416c-9949-0d99e89a99c0",
+    "shopId": "107532616020",
+    "issuer": "https://shopify.com/authentication/107532616020",
+    "discovery": "https://tll-integration-staging.myshopify.com/.well-known/openid-configuration",
+    "authorizationEndpoint": "https://shopify.com/authentication/107532616020/oauth/authorize",
+    "tokenEndpoint": "https://shopify.com/authentication/107532616020/oauth/token",
+    "endSessionEndpoint": "https://shopify.com/authentication/107532616020/logout",
+    "scopes": [
+      "openid",
+      "email",
+      "customer-account-api:full"
+    ],
+    "previewOriginPattern": "^https://the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\\.vercel\\.app$",
+    "callbackPath": "/auth/customer/shopify/callback",
+    "logoutPath": "/auth",
+    "subjectBrokerClientId": "tll-staging-subject-broker-v1",
+    "subjectBrokerCallback": "https://qdmvngjwkcsilzmqksme.supabase.co/auth/v1/callback",
+    "subjectBrokerTokenPath": "/functions/v1/tll-broker-token",
+    "subjectBrokerUserinfoPath": "/functions/v1/tll-broker-userinfo"
+  },
+  "gates": [
+    "verify_exact_target_and_production_exclusion",
+    "verify_hosted_002_through_011_and_all_controls_disabled",
+    "verify_pins_and_operator_authority",
+    "install_012_through_016_in_one_disabled_window",
+    "verify_roles_rls_acls_function_sources_and_empty_new_stores",
+    "deploy_edge_disabled_and_verify_fixed_503",
+    "install_distinct_runtime_credentials_and_secret_configuration",
+    "verify_provider_endpoints_callbacks_permissions_and_logout_uri",
+    "deploy_immutable_preview_with_public_feature_flags_disabled",
+    "run_unavailable_route_and_cross_role_denial_checks",
+    "enable_database_controls_then_edge_then_server_feature_flags",
+    "run_one_authenticated_account_orders_logout_journey",
+    "retire_temporary_operator_access_and_preserve_postflight_evidence"
+  ]
+}
