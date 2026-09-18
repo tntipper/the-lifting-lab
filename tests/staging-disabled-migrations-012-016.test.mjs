@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import * as nativeFs from 'node:fs'
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -79,7 +79,7 @@ test('the executable distinguishes no-dispatch from an uncertain dispatched outc
   assert.match(source, /return dispatchWithJournal\(\{ token, post, manifest, journal, now \}\)/)
 })
 
-test('the durable nonsecret intent is fsynced and renamed before the only post', async () => {
+test('the exclusive durable intent claim is fsynced before the only post', async () => {
   const { directory, path } = temporaryJournal()
   const events = []
   const descriptors = new Map()
@@ -90,14 +90,16 @@ test('the durable nonsecret intent is fsynced and renamed before the only post',
     fsyncSync (fd) { events.push(`fsync:${descriptors.get(fd) === directory ? 'directory' : 'temporary'}`); return nativeFs.fsyncSync(fd) },
     closeSync (fd) { events.push('close'); return nativeFs.closeSync(fd) },
     renameSync (...args) { events.push('rename'); return nativeFs.renameSync(...args) },
+    unlinkSync (...args) { events.push('unlink'); return nativeFs.unlinkSync(...args) },
     readFileSync: nativeFs.readFileSync,
   }
   const journal = createDispatchJournal({ path, fileSystem: spyFs, makeRunId: () => 'test-run-0001' })
   try {
     const result = await dispatchWithJournal({ token: 'opaque', manifest, journal, now: () => 0, post: async () => { events.push('post'); return validateResult([{ tll_disabled_migration_postflight: receipt }]) } })
     assert.equal(result.status, 'PASS')
-    assert.ok(events.indexOf('rename') < events.indexOf('post'))
-    assert.ok(events.indexOf('fsync:temporary') < events.indexOf('rename'))
+    assert.ok(events.indexOf('fsync:directory') < events.indexOf('post'))
+    assert.ok(events.lastIndexOf('fsync:temporary') > events.indexOf('post'))
+    assert.ok(events.lastIndexOf('rename') > events.indexOf('post'))
     assert.ok(events.lastIndexOf('fsync:directory') > events.lastIndexOf('rename'))
     const record = JSON.parse(readFileSync(path, 'utf8'))
     assert.equal(record.state, 'RECEIPT_VALIDATED'); assert.equal(record.target, PROJECT_REF)
@@ -129,7 +131,42 @@ test('a journal write failure proves no dispatch and a recorded uncertainty bloc
   try {
     const first = await dispatchWithJournal({ token: 'opaque', manifest, journal, now: () => 0, post: async () => { requests += 1; throw new Error('timeout') } })
     const second = await dispatchWithJournal({ token: 'opaque', manifest, journal, now: () => 0, post: async () => { requests += 1; return receipt } })
-    assert.equal(first.status, 'UNCERTAIN_POST_DISPATCH'); assert.equal(second.status, 'RECONCILIATION_REQUIRED'); assert.equal(requests, 1)
+    assert.equal(first.status, 'UNCERTAIN_POST_DISPATCH'); assert.equal(second.status, 'PRE_DISPATCH_UNAVAILABLE'); assert.equal(requests, 1)
+  } finally { rmSync(directory, { recursive: true, force: true }) }
+})
+
+test('an exclusive on-disk claim allows one concurrent owner to cross the post boundary', async () => {
+  const { directory, path } = temporaryJournal()
+  const counter = join(directory, 'post-count.txt')
+  const moduleUrl = new URL('../scripts/staging-disabled-migrations-012-016.mjs', import.meta.url).href
+  const child = `import { appendFileSync } from 'node:fs';
+import { createDispatchJournal, dispatchWithJournal } from ${JSON.stringify(moduleUrl)};
+const [journalPath, counterPath] = process.argv.slice(-2);
+const manifest = ${JSON.stringify(manifest)};
+const receipt = { status: 'PASS', target: 'qdmvngjwkcsilzmqksme', installId: 'tll-staging-disabled-migrations-012-016/v1', migrationCount: 5, transactionSha256: manifest.transactionSha256 };
+const journal = createDispatchJournal({ path: journalPath, makeRunId: () => 'child-run-' + process.pid });
+const result = await dispatchWithJournal({ token: 'opaque', manifest, journal, now: () => 0, post: async () => { appendFileSync(counterPath, 'post\\n'); await new Promise(resolve => setTimeout(resolve, 80)); return receipt } });
+process.stdout.write(JSON.stringify(result));`
+  const runChild = () => new Promise((resolvePromise, reject) => {
+    const childProcess = spawn(globalThis.process.execPath, ['--input-type=module', '--eval', child, path, counter], { stdio: ['ignore', 'pipe', 'pipe'] })
+    let output = '', errors = ''
+    childProcess.stdout.on('data', chunk => { output += chunk }); childProcess.stderr.on('data', chunk => { errors += chunk })
+    childProcess.on('error', reject); childProcess.on('exit', code => code === 0 ? resolvePromise(JSON.parse(output)) : reject(new Error(errors || `child exit ${code}`)))
+  })
+  try {
+    const results = await Promise.all([runChild(), runChild()])
+    assert.deepEqual(results.map(result => result.status).sort(), ['PASS', 'PRE_DISPATCH_UNAVAILABLE'])
+    assert.equal(readFileSync(counter, 'utf8'), 'post\n')
+  } finally { rmSync(directory, { recursive: true, force: true }) }
+})
+
+test('a foreign journal instance cannot transition a run it did not claim', () => {
+  const { directory, path, journal } = temporaryJournal()
+  try {
+    const intent = journal.recordIntent({ manifest, timestamp: new Date(0).toISOString() })
+    const foreign = createDispatchJournal({ path, makeRunId: () => 'foreign-run-0001' })
+    assert.throws(() => foreign.transition(intent, 'RECONCILIATION_REQUIRED'))
+    assert.equal(JSON.parse(readFileSync(path, 'utf8')).state, 'INTENT_RECORDED')
   } finally { rmSync(directory, { recursive: true, force: true }) }
 })
 

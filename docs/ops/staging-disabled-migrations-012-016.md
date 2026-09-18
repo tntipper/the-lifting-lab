@@ -61,19 +61,23 @@ durable nonsecret intent journal at:
 ../implementation-state/staging/tll-disabled-migrations-012-016-dispatch.json
 ```
 
-The intent is written to a same-directory temporary file, fsynced, atomically
-renamed, and followed by a directory fsync. It binds the fixed staging target,
+The intent is created as the journal file with an exclusive on-disk claim
+(`O_CREAT|O_EXCL`), then fsynced with a directory fsync before the request
+boundary. A concurrent process therefore loses before it can issue a request;
+it cannot overwrite an existing journal. It binds the fixed staging target,
 install ID, transaction SHA-256, reviewed migration and transport source-pin
 SHA-256 values, timestamp and per-run ID. Its initial state is
 `INTENT_RECORDED`. It never contains SQL, access tokens, provider responses,
 role details, customer data or passwords.
 
-On an exact validated PASS receipt, the same record becomes
-`RECEIPT_VALIDATED` and adds only a SHA-256 of the redacted receipt. Any
-timeout, malformed receipt, lost acknowledgement, or failure after dispatch
-changes it to `RECONCILIATION_REQUIRED`; if that final write itself cannot
-finish, the prior durable `INTENT_RECORDED` still prevents another request.
-There is no retry path.
+On an exact validated PASS receipt, the owner takes an exclusive transition
+lock, rereads and verifies the exact claimed run ID and `INTENT_RECORDED`
+state, then atomically replaces the record with `RECEIPT_VALIDATED` and only a
+SHA-256 of the redacted receipt. A foreign or stale process cannot perform this
+transition. Any timeout, malformed receipt, lost acknowledgement, or failure
+after dispatch changes it to `RECONCILIATION_REQUIRED`; if that final write
+cannot finish, the prior durable `INTENT_RECORDED` still prevents another
+request. There is no retry path.
 
 Do not run the installer when a journal for this install is
 `INTENT_RECORDED` or `RECONCILIATION_REQUIRED`. Stop and use a separately

@@ -31,13 +31,42 @@ function fsyncDirectory (directory, fileSystem) {
   try { descriptor = fileSystem.openSync(directory, 'r'); fileSystem.fsyncSync(descriptor) } finally { if (descriptor !== undefined) fileSystem.closeSync(descriptor) }
 }
 
-function durableReplace (path, record, { fileSystem = fs, runId = randomUUID() } = {}) {
+function durableClaim (path, record, { fileSystem = fs } = {}) {
   const directory = dirname(path)
-  const temporary = resolve(directory, `.${INSTALL_ID.replace(/[^a-z0-9]/gi, '_')}.${runId}.tmp`)
   const data = Buffer.from(JSON.stringify(record) + '\n', 'utf8')
   let descriptor
   try {
     fileSystem.mkdirSync(directory, { recursive: true, mode: 0o700 })
+    // The journal itself is the exclusive, durable claim. A losing process
+    // gets EEXIST and cannot overwrite or reach the request boundary.
+    descriptor = fileSystem.openSync(path, 'wx', 0o600)
+    fileSystem.writeSync(descriptor, data)
+    fileSystem.fsyncSync(descriptor)
+    fileSystem.closeSync(descriptor); descriptor = undefined
+    fsyncDirectory(directory, fileSystem)
+  } finally {
+    if (descriptor !== undefined) fileSystem.closeSync(descriptor)
+    data.fill(0)
+  }
+}
+
+function transitionLockPath (path) { return `${path}.transition-lock` }
+
+function durableTransition (path, intent, record, { fileSystem = fs } = {}) {
+  const directory = dirname(path)
+  const lockPath = transitionLockPath(path)
+  const temporary = resolve(directory, `.${INSTALL_ID.replace(/[^a-z0-9]/gi, '_')}.${intent.runId}.tmp`)
+  const data = Buffer.from(JSON.stringify(record) + '\n', 'utf8')
+  let lockDescriptor; let descriptor; let ownsLock = false
+  try {
+    // The lock serializes the read/verify/replace sequence. It is created
+    // exclusively and never removes or replaces the original intent claim.
+    lockDescriptor = fileSystem.openSync(lockPath, 'wx', 0o600)
+    ownsLock = true
+    fileSystem.fsyncSync(lockDescriptor)
+    fileSystem.closeSync(lockDescriptor); lockDescriptor = undefined
+    const current = readJournal(path, fileSystem)
+    if (!current || current.runId !== intent.runId || current.state !== 'INTENT_RECORDED') unavailable()
     descriptor = fileSystem.openSync(temporary, 'wx', 0o600)
     fileSystem.writeSync(descriptor, data)
     fileSystem.fsyncSync(descriptor)
@@ -46,6 +75,8 @@ function durableReplace (path, record, { fileSystem = fs, runId = randomUUID() }
     fsyncDirectory(directory, fileSystem)
   } finally {
     if (descriptor !== undefined) fileSystem.closeSync(descriptor)
+    if (lockDescriptor !== undefined) fileSystem.closeSync(lockDescriptor)
+    if (ownsLock) try { fileSystem.unlinkSync(lockPath); fsyncDirectory(directory, fileSystem) } catch { /* retained lock fails closed */ }
     data.fill(0)
   }
 }
@@ -81,25 +112,22 @@ function validateJournalReceipt (receipt) {
  */
 export function createDispatchJournal ({ path = DEFAULT_JOURNAL_PATH, fileSystem = fs, makeRunId = randomUUID } = {}) {
   const existing = () => readJournal(path, fileSystem)
+  let ownedRunId
   return Object.freeze({
     path,
-    refusePriorDispatch () {
-      const record = existing()
-      if (!record) return null
-      if (['INTENT_RECORDED', 'RECONCILIATION_REQUIRED'].includes(record.state)) return Object.freeze({ status: 'RECONCILIATION_REQUIRED', target: PROJECT_REF, installId: INSTALL_ID, nextAction: 'READ_ONLY_RECONCILIATION_REQUIRED' })
-      return Object.freeze({ status: 'INSTALL_ALREADY_RECORDED', target: PROJECT_REF, installId: INSTALL_ID, nextAction: 'READ_ONLY_RECONCILIATION_REQUIRED' })
-    },
     recordIntent ({ manifest, timestamp }) {
       const runId = makeRunId()
       if (typeof runId !== 'string' || runId.length < 8) unavailable()
       const record = Object.freeze({ schema: `${INSTALL_ID}/dispatch-journal/v1`, state: 'INTENT_RECORDED', installId: INSTALL_ID, target: PROJECT_REF, transactionSha256: manifest.transactionSha256, sourcePinSha256: journalSourcePins(manifest), timestamp, runId })
-      durableReplace(path, record, { fileSystem, runId })
+      durableClaim(path, record, { fileSystem })
+      ownedRunId = runId
       return record
     },
     transition (intent, state, additions = {}) {
-      if (!intent || intent.state !== 'INTENT_RECORDED' || !['RECEIPT_VALIDATED', 'RECONCILIATION_REQUIRED'].includes(state)) unavailable()
+      if (!intent || ownedRunId !== intent.runId || intent.state !== 'INTENT_RECORDED' || !['RECEIPT_VALIDATED', 'RECONCILIATION_REQUIRED'].includes(state)) unavailable()
       const record = Object.freeze({ ...intent, ...additions, state })
-      durableReplace(path, record, { fileSystem, runId: intent.runId })
+      durableTransition(path, intent, record, { fileSystem })
+      ownedRunId = undefined
       return record
     },
     read: existing,
@@ -176,8 +204,6 @@ export async function postExactlyOnce (token, deadline = Date.now() + MAX_AGE_MS
  * enabling the transport. Callers must never invoke it after a prior record.
  */
 export async function dispatchWithJournal ({ token, post, manifest, journal = createDispatchJournal(), now = Date.now } = {}) {
-  const prior = journal.refusePriorDispatch()
-  if (prior) return prior
   let intent
   try {
     intent = journal.recordIntent({ manifest, timestamp: new Date(now()).toISOString() })
