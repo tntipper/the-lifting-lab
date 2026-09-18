@@ -9,7 +9,7 @@ const TX = 'aaaaaaaa-1111-4222-8333-444444444444', USER = 'bbbbbbbb-1111-4222-83
 const IDENTITY = 'cccccccc-1111-4222-8333-444444444444', RECEIPT = 'dddddddd-1111-4222-8333-444444444444'
 const VERIFIER = Buffer.alloc(32, 1).toString('base64url'), CHALLENGE = createHash('sha256').update(VERIFIER).digest('base64url')
 const SUBJECT = `tllb_${Buffer.alloc(32, 2).toString('base64url')}`, BROWSER = '3'.repeat(64)
-const CALLBACK = `https://the-lifting-preview-my-lifting-lab-s-projects.vercel.app/auth/customer/callback?code=${TX}&state=${RECEIPT}`
+const CALLBACK = `https://the-lifting-preview-my-lifting-lab-s-projects.vercel.app/auth/customer/callback?code=${TX}`
 const NOW = Date.parse('2026-09-18T12:00:00Z')
 const callback = () => ({ transactionId: TX, browserHash: BROWSER, callbackUrl: CALLBACK })
 const result = (userId = USER) => Object.freeze({ kind: 'private_provisional',

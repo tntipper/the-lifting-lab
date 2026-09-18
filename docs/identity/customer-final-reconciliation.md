@@ -2,7 +2,7 @@
 
 `lib/identity/customer-final-reconciliation.ts` is the default-disabled, source-only coordinator between the existing isolated Supabase PKCE exchange and the still-pending durable reconciliation repository. It adds no route, cookie, SDK storage, database object, credential, provider setting or activation.
 
-The browser-facing input is limited to the exact transaction UUID, browser-binding hash and final staging callback URL containing one UUID `code` and one UUID `state`. The coordinator does not parse identity from either value. It asks the repository to claim the callback under a fresh operation UUID. Only the repository may return the retained PKCE verifier, its challenge, reserved broker subject, mode, original migration UUID, Shopify proof receipt, fence and generation.
+The browser-facing input is limited to the exact transaction UUID, browser-binding hash and final staging callback URL containing exactly one UUID `code`. The coordinator does not parse identity from either value. It asks the repository to claim the callback under a fresh operation UUID. Only the repository may return the retained PKCE verifier, its challenge, reserved broker subject, mode, original migration UUID, Shopify proof receipt, fence and generation.
 
 The claim is copied into an immutable allowlisted projection before the first provider await. Sign-in invokes `exchangeSignIn`; migration invokes `exchangeMigration` with the repository-retained original UUID and never falls back to sign-in. The existing final-exchange adapter remains responsible for the one POST, exact-token `/user` read and authoritative Supabase identity checks.
 

@@ -6,7 +6,7 @@ const bundle=await build({stdin:{contents:"export * from './lib/identity/custome
 const {createCustomerFinalReconciliationRepository,createAesGcmEnvelopeVault}=await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'))
 const TX='aaaaaaaa-1111-4222-8333-444444444444',USER='bbbbbbbb-1111-4222-8333-444444444444',IDENTITY='cccccccc-1111-4222-8333-444444444444',RECEIPT='dddddddd-1111-4222-8333-444444444444'
 const BROWSER='3'.repeat(64),CONFIG='4'.repeat(64),INTENT='5'.repeat(64),VERIFIER=Buffer.alloc(32,1).toString('base64url'),CHALLENGE=createHash('sha256').update(VERIFIER).digest('base64url'),SUBJECT='tllb_'+Buffer.alloc(32,2).toString('base64url')
-const CALLBACK=`https://the-lifting-preview-my-lifting-lab-s-projects.vercel.app/auth/customer/callback?code=${TX}&state=${RECEIPT}`,CALLBACK_HASH=createHash('sha256').update(CALLBACK).digest('hex'),NOW=Date.parse('2026-09-18T12:00:00Z')
+const CALLBACK=`https://the-lifting-preview-my-lifting-lab-s-projects.vercel.app/auth/customer/callback?code=${TX}`,CALLBACK_HASH=createHash('sha256').update(CALLBACK).digest('hex'),NOW=Date.parse('2026-09-18T12:00:00Z')
 const vault=id=>createAesGcmEnvelopeVault({activeKeyId:id,keys:new Map([[id,Buffer.alloc(32,id==='p'?1:2)]])})
 const pVault=vault('p'),fVault=vault('f')
 const provisional=pVault.seal({verifier:VERIFIER},['tll-provisional-admission/1','qdmvngjwkcsilzmqksme','application-pkce',TX,CONFIG,BROWSER,INTENT,'0'])

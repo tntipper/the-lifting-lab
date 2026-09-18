@@ -43,14 +43,14 @@ export function createCustomerFinalReconciliationRepository(input: {
   const bound=(p:{transactionId:string;browserHash:string;callbackUrl:string})=>{
     ensure(p&&uuid(p.transactionId)&&sha(p.browserHash)&&typeof p.callbackUrl==='string'&&p.callbackUrl.length<=2048)
     const u=new URL(p.callbackUrl);ensure(/^https:\/\/the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\.vercel\.app$/.test(u.origin)
-      &&u.pathname==='/auth/customer/callback'&&!u.hash&&!u.username&&!u.password&&[...u.searchParams.keys()].sort().join(',')==='code,state')
-    const code=u.searchParams.get('code'),state=u.searchParams.get('state');ensure(uuid(code)&&uuid(state));const callbackHash=hash(u.href)
-    return {transactionId:p.transactionId,browserHash:p.browserHash,callbackUrl:u.href,callbackHash,authCode:code,state}
+      &&u.pathname==='/auth/customer/callback'&&!u.hash&&!u.username&&!u.password&&[...u.searchParams.keys()].join(',')==='code')
+    const code=u.searchParams.get('code');ensure(uuid(code));const callbackHash=hash(u.href)
+    return {transactionId:p.transactionId,browserHash:p.browserHash,callbackUrl:u.href,callbackHash,authCode:code}
   }
   return Object.freeze({liveEnabled:false as const,
     async claim(p: ClaimInput){if(!active())return rejected();const b=bound(p);ensure(uuid(p.operationId))
       const material=finalVault.seal({authCode:b.authCode},callbackContext(b.transactionId,b.browserHash,b.callbackHash))
-      const r=await call('claim',{operationId:p.operationId,transactionId:b.transactionId,browserHash:b.browserHash,callbackHash:b.callbackHash,state:b.state,callbackMaterial:material})
+      const r=await call('claim',{operationId:p.operationId,transactionId:b.transactionId,browserHash:b.browserHash,callbackHash:b.callbackHash,callbackMaterial:material})
       if(r.status!=='claimed')return rejected()
       ensure(r.transactionId===b.transactionId&&r.browserHash===b.browserHash&&r.callbackHash===b.callbackHash&&(r.mode==='sign_in'||r.mode==='migration')
         &&((r.mode==='sign_in'&&r.originalUserId===null)||(r.mode==='migration'&&uuid(r.originalUserId)))&&uuid(r.shopifyProofReceiptId)

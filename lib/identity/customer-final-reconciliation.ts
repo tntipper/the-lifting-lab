@@ -78,9 +78,8 @@ function callback(input: CustomerFinalCallback): CustomerFinalCallback {
   ensure(url.origin === 'https://the-lifting-staging-my-lifting-lab-s-projects.vercel.app'
     || /^https:\/\/the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\.vercel\.app$/.test(url.origin))
   ensure(url.pathname === '/auth/customer/callback' && !url.hash && !url.username && !url.password
-    && url.searchParams.getAll('code').length === 1 && url.searchParams.getAll('state').length === 1
-    && [...url.searchParams.keys()].sort().join(',') === 'code,state')
-  ensure(uuid(url.searchParams.get('code')) && uuid(url.searchParams.get('state')))
+    && url.searchParams.getAll('code').length === 1 && [...url.searchParams.keys()].join(',') === 'code')
+  ensure(uuid(url.searchParams.get('code')))
   return Object.freeze({ transactionId: input.transactionId, browserHash: input.browserHash, callbackUrl: url.href })
 }
 
