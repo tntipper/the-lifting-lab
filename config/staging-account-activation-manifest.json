@@ -286,7 +286,7 @@
     "sources": [
       {
         "path": "scripts/staging-readonly-preflight.mjs",
-        "sha256": "85e551b0922fbeed0f99967ca8b29ae63cd6435686ad2262f7245a38d525f42b"
+        "sha256": "04c2b8506bdce6e9902600ba819411038ccabfb7b72467a49c8f14680a5c0cee"
       },
       {
         "path": "scripts/staging-readonly-preflight-keychain.py",
@@ -294,11 +294,11 @@
       },
       {
         "path": "scripts/staging-readonly-preflight-manifest.mjs",
-        "sha256": "20b7f062bca1894ae10c1bf154db051e3a13108a098a66406fdcbea1f9dd0ce5"
+        "sha256": "c8fa8be234a3696b6eb382b91840b071c7ef174e8ca2f221deadbc31c513a3ae"
       },
       {
         "path": "config/staging-readonly-preflight-manifest.json",
-        "sha256": "57b1aa48e2224387297e7187e5c5e1a5cb134fa6fca2cbc11609da54c88643ec"
+        "sha256": "9740ceafd4103b7ab73efb77c02d42a0916844dc3eab1e94ac0acc2b3ea4b442"
       }
     ],
     "queryId": "tll-staging-readonly-preflight/v1",
@@ -309,15 +309,15 @@
     "sources": [
       {
         "path": "scripts/staging-account-activation-recovery.mjs",
-        "sha256": "ec3e22132d06650b98fc558713556bff4435ff9c42a5daccdf84913b487867ca"
+        "sha256": "62039b42ac909009abba2b1d8a0533fbd3b81e856f2201b9cb4c35f15c840b88"
       },
       {
         "path": "config/staging-account-activation-recovery.sql",
-        "sha256": "2e9be329046cb0fc78e3e21f58129be6a750c8bb7374751b6798e0fd91c4adae"
+        "sha256": "03fb9b6754d5118cb57c119ae569e91789de1786ecc92a6327fa8bdf5e3c3da7"
       },
       {
         "path": "config/staging-account-activation-recovery-postcommit.sql",
-        "sha256": "78162f5ef3508f7c2f4689acff41ad7218211192c0cec97a3f48f2f0c8dce1c5"
+        "sha256": "278953bd725c9ccdba2e2da0faaafac76aafd94e65234e1fa0c62d68b1d78d35"
       }
     ],
     "requiredInstalledMigrations": [

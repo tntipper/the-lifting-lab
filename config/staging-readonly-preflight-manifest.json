@@ -11,7 +11,7 @@
   "sourcePins": [
     {
       "path": "scripts/staging-readonly-preflight.mjs",
-      "sha256": "85e551b0922fbeed0f99967ca8b29ae63cd6435686ad2262f7245a38d525f42b"
+      "sha256": "04c2b8506bdce6e9902600ba819411038ccabfb7b72467a49c8f14680a5c0cee"
     },
     {
       "path": "scripts/staging-readonly-preflight-keychain.py",
@@ -30,6 +30,7 @@
     "method": "POST",
     "redirects": false,
     "maxAgeMs": 60000,
+    "nativeHelperTimeoutMs": 15000,
     "maxRequests": 1
   },
   "output": [

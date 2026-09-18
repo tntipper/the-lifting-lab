@@ -19,6 +19,7 @@ export const KEYCHAIN_SERVICE = 'Supabase CLI'
 export const KEYCHAIN_ACCOUNT = 'supabase'
 export const ENDPOINT = Object.freeze({ hostname: 'api.supabase.com', path: `/v1/projects/${PROJECT_REF}/database/query`, method: 'POST' })
 export const MAX_AGE_MS = 60_000
+export const NATIVE_HELPER_TIMEOUT_MS = 15_000
 const RUNTIME_ROLES = Object.freeze(['tll_customer_runtime', 'tll_cart_runtime', 'tll_broker_runtime', 'tll_provisional_runtime', 'tll_bridge_runtime'])
 const CONTROLS = Object.freeze(['customer', 'cart', 'broker', 'provisional', 'bridge'])
 const BASELINE_MIGRATIONS = Object.freeze([['202609150002_public_submission_gateway', 'c82f9afb10c7ee7e46549033d4076046568557226a7864f8c2b8c8117ecd4bca'], ['202609150003_active_stack_integrity', '05cac500b24262975a773b2db284bc3fb95b62dc25fc6d47670eefbc86f15a60'], ['202609150004_inventory_operation_ledger', '030ccb26228aca6665147eced447815f8a290abd74b8003b0f32bfb2a05e5a76'], ['202609150005_customer_connection_repository', 'f0f49edca9a0938b8e40b4d87ba7ee1eaee02dbc5082fc019a58ca949b263d0b'], ['202609150006_staging_cart_sessions', '17d039a6d1f343f35d1551c259a3f8c0e8643fe669b8230170a235bbc941155c'], ['202609150007_customer_subject_broker_repository', '85a118335d91d896b707dcdff1570f6c2df22a9b2037e9a569b587b89ad41c21'], ['202609170008_customer_provisional_admission_repository', '038b2bfc9d236f39c0cb5ae9b657a5a54b572fc304e6da318b00a07cf0d201e2'], ['202609170009_inventory_maintenance_authority', '4f054b145466a6ef2136ec79a0e1c17e8aa252e5bc02fa8c27deb23664eb153f'], ['202609170010_customer_admission_bridge', '711b92ef8a6e5760a126e340396f68cc372e361ee3e6bf66f3e6f3370be5f7aa'], ['202609170011_customer_browser_admission_once', '12bf5b5916d2f266f218bcd39c38098aea3225acef1cb0f67b47fe76bc29f58f']])
@@ -99,7 +100,7 @@ export function readTokenFromExactKeychain () {
   if (!NATIVE_ACCESS_APPROVED || process.platform !== 'darwin') unavailable()
   noAmbientOverrides()
   const native = fileURLToPath(new URL('./staging-readonly-preflight-keychain.py', import.meta.url))
-  const result = spawnSync('/usr/bin/python3', ['-I', '-S', native], { env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, timeout: 2_000, maxBuffer: 512 })
+  const result = spawnSync('/usr/bin/python3', ['-I', '-S', native], { env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, timeout: NATIVE_HELPER_TIMEOUT_MS, maxBuffer: 512 })
   return consumeNativeTokenOutput(result)
 }
 

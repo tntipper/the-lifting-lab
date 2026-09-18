@@ -2,12 +2,13 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
-import { ENDPOINT, FIXED_QUERY, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, PROJECT_REF, QUERY_ID, consumeNativeTokenOutput, nativeDesignReference, normalizeKeychainToken, runPreflightOnce, validateResult, validateSupabaseProfile } from '../scripts/staging-readonly-preflight.mjs'
+import { ENDPOINT, FIXED_QUERY, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, NATIVE_HELPER_TIMEOUT_MS, PROJECT_REF, QUERY_ID, consumeNativeTokenOutput, nativeDesignReference, normalizeKeychainToken, runPreflightOnce, validateResult, validateSupabaseProfile } from '../scripts/staging-readonly-preflight.mjs'
 
 const receipt = { queryId: QUERY_ID, projectRef: PROJECT_REF, environmentMarker: true, operator: { current: true, session: true, database: true, notSuperuser: true, createrole: true, readAll: true, writeAll: true, maintain: true }, migrations: { totalCount: 10, baselinePairCount: 10, forbiddenCount: 0 }, controls: { customer: true, cart: true, broker: true, provisional: true, bridge: true }, runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, edgeCount: 5, retiredOperatorEdgeCount: 5, sessionCount: 0, retiredMarkerCount: 5 }, absentObjects: { shopifyProofs: true, finalizations: true, cartTransitions: true, accountGenerations: true, accountLogouts: true } }
 
 test('preflight is fixed to the intended staging project and remains disabled', () => {
   assert.equal(NATIVE_ACCESS_APPROVED, false)
+  assert.equal(NATIVE_HELPER_TIMEOUT_MS, 15_000)
   assert.equal(PROJECT_REF, 'qdmvngjwkcsilzmqksme')
   assert.deepEqual(ENDPOINT, { hostname: 'api.supabase.com', path: '/v1/projects/qdmvngjwkcsilzmqksme/database/query', method: 'POST' })
   assert.equal(KEYCHAIN_SERVICE, 'Supabase CLI'); assert.equal(KEYCHAIN_ACCOUNT, 'supabase')
