@@ -37,7 +37,7 @@ SELECT jsonb_build_object(
  'queryId','${QUERY_ID}',
  'projectRef','${PROJECT_REF}',
  'environmentMarker',coalesce((SELECT environment='tll-hosted-staging-v1' AND operator_project_ref='${PROJECT_REF}' FROM tll_staging_private.environment WHERE singleton),false),
- 'operator',jsonb_build_object('current',current_user='postgres','session',session_user='postgres','database',current_database()='postgres','superuser',coalesce((SELECT rolsuper FROM pg_roles WHERE rolname=current_user),false),'createrole',coalesce((SELECT rolcreaterole FROM pg_roles WHERE rolname=current_user),false),'readAll',pg_has_role(current_user,'pg_read_all_data','USAGE'),'writeAll',NOT pg_has_role(current_user,'pg_write_all_data','USAGE'),'maintain',NOT pg_has_role(current_user,'pg_maintain','USAGE')),
+ 'operator',jsonb_build_object('current',current_user='postgres','session',session_user='postgres','database',current_database()='postgres','notSuperuser',NOT coalesce((SELECT rolsuper FROM pg_roles WHERE rolname=current_user),true),'createrole',coalesce((SELECT rolcreaterole FROM pg_roles WHERE rolname=current_user),false),'readAll',pg_has_role(current_user,'pg_read_all_data','USAGE'),'writeAll',NOT pg_has_role(current_user,'pg_write_all_data','USAGE'),'maintain',NOT pg_has_role(current_user,'pg_maintain','USAGE')),
  'migrations',jsonb_build_object('baselineCount',(SELECT count(*) FROM tll_staging_private.applied_migrations WHERE version IN (${sqlList(BASELINE_MIGRATIONS)})),'forbiddenCount',(SELECT count(*) FROM tll_staging_private.applied_migrations WHERE version IN (${sqlList(FORBIDDEN_MIGRATIONS)}))),
  'controls',jsonb_build_object(
    'customer',coalesce((tll_customer_private.operator_status()->>'enabled')='false',false),
@@ -52,12 +52,16 @@ COMMIT;
 `
 
 const unavailable = () => { throw new Error('Staging read-only preflight unavailable') }
+export function validateSupabaseProfile (content) {
+  if (content !== undefined && (typeof content !== 'string' || content.trim() !== 'supabase')) unavailable()
+  return true
+}
 function noAmbientOverrides () {
   for (const name of Object.keys(process.env)) {
     if (name.startsWith('PG') || name.startsWith('SUPABASE_') || ['HTTPS_PROXY', 'HTTP_PROXY', 'ALL_PROXY', 'https_proxy', 'http_proxy', 'all_proxy', 'NODE_TLS_REJECT_UNAUTHORIZED', 'NODE_EXTRA_CA_CERTS'].includes(name)) unavailable()
   }
   const profile = resolve(homedir(), '.supabase/profile')
-  try { if (readFileSync(profile, 'utf8').trim() !== 'supabase') unavailable() } catch { unavailable() }
+  try { validateSupabaseProfile(readFileSync(profile, 'utf8')) } catch (error) { if (error?.code !== 'ENOENT') unavailable() }
 }
 
 export function nativeDesignReference () {
@@ -65,13 +69,24 @@ export function nativeDesignReference () {
   return Object.freeze({ path: legacyNativeAdapter, sha256: sha256(readFileSync(path)), service: KEYCHAIN_SERVICE, account: KEYCHAIN_ACCOUNT })
 }
 
+export function consumeNativeTokenOutput ({ status, stdout, stderr }) {
+  try {
+    if (status !== 0 || !Buffer.isBuffer(stdout) || (stderr?.length ?? 0) !== 0) unavailable()
+    const token = stdout.toString('utf8').trim()
+    if (!/^(?:go-keyring-base64:)?sbp_(?:oauth_|v0_)?[a-f0-9]{40}$/.test(token)) unavailable()
+    return token
+  } finally {
+    if (Buffer.isBuffer(stdout)) stdout.fill(0)
+    if (Buffer.isBuffer(stderr)) stderr.fill(0)
+  }
+}
+
 export function readTokenFromExactKeychain () {
   if (!NATIVE_ACCESS_APPROVED || process.platform !== 'darwin') unavailable()
   noAmbientOverrides()
   const native = fileURLToPath(new URL('./staging-readonly-preflight-keychain.py', import.meta.url))
-  const result = spawnSync('/usr/bin/python3', ['-I', '-S', native], { encoding: 'utf8', env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, timeout: 2_000, maxBuffer: 512 })
-  if (result.status !== 0 || result.stderr || !/^(?:go-keyring-base64:)?sbp_(?:oauth_|v0_)?[a-f0-9]{40}$/.test(result.stdout.trim())) unavailable()
-  return result.stdout.trim()
+  const result = spawnSync('/usr/bin/python3', ['-I', '-S', native], { env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, timeout: 2_000, maxBuffer: 512 })
+  return consumeNativeTokenOutput(result)
 }
 
 export function validateResult (rows) {
@@ -82,7 +97,8 @@ export function validateResult (rows) {
   const controls = receipt.controls
   const expectedControls = CONTROLS
   if (!controls || Object.keys(controls).sort().join('|') !== [...expectedControls].sort().join('|') || !expectedControls.every(key => controls[key] === true)) unavailable()
-  if (!receipt.environmentMarker || !receipt.operator?.current || !receipt.operator?.session || !receipt.operator?.database || !receipt.operator?.superuser || !receipt.operator?.createrole || !receipt.operator?.readAll || !receipt.operator?.writeAll || !receipt.operator?.maintain) unavailable()
+  const operatorKeys = ['createrole', 'current', 'database', 'maintain', 'notSuperuser', 'readAll', 'session', 'writeAll']
+  if (!receipt.environmentMarker || Object.keys(receipt.operator ?? {}).sort().join('|') !== operatorKeys.join('|') || !receipt.operator.current || !receipt.operator.session || !receipt.operator.database || !receipt.operator.notSuperuser || !receipt.operator.createrole || !receipt.operator.readAll || !receipt.operator.writeAll || !receipt.operator.maintain) unavailable()
   if (receipt.migrations?.baselineCount !== BASELINE_MIGRATIONS.length || receipt.migrations?.forbiddenCount !== 0) unavailable()
   if (receipt.runtime?.roleCount !== RUNTIME_ROLES.length || receipt.runtime?.loginCount !== 0 || receipt.runtime?.passwordCount !== 0 || receipt.runtime?.membershipCount !== 0 || receipt.runtime?.sessionCount !== 0 || receipt.runtime?.retiredMarkerCount !== RUNTIME_ROLES.length) unavailable()
   if (!receipt.absentObjects || Object.keys(receipt.absentObjects).length !== 5 || !Object.values(receipt.absentObjects).every(value => value === true)) unavailable()

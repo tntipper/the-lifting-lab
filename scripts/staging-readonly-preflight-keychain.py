@@ -1,23 +1,85 @@
-"""Disabled exact Keychain reader. Its only lookup is Supabase CLI/supabase."""
+"""Disabled exact Keychain reader for one Supabase CLI token item only."""
+import ctypes
 import os
+import re
 import sys
 
 APPROVED_NATIVE_READ = False
 SERVICE = "Supabase CLI"
 ACCOUNT = "supabase"
 
-def main():
+def unavailable():
+    raise RuntimeError("Staging read-only preflight unavailable")
+
+def read_exact_native_token():
+    # No service/account fallback, enumeration, update, deletion, argv input or
+    # persistent output exists. Node bounds, validates and wipes stdout bytes.
     if not APPROVED_NATIVE_READ or sys.platform != "darwin":
-        raise RuntimeError("disabled")
+        unavailable()
     if any(name in os.environ for name in ("SUPABASE_PROFILE", "SUPABASE_HOME", "SUPABASE_ACCESS_TOKEN", "SUPABASE_NO_KEYRING")):
-        raise RuntimeError("override")
-    # The reviewed native design is pinned by the Node manifest. A future,
-    # separately reviewed enablement must implement SecItemCopyMatching here;
-    # this package has no fallback, enumeration, write, delete or argv path.
-    raise RuntimeError("review required")
+        unavailable()
+    security = ctypes.CDLL("/System/Library/Frameworks/Security.framework/Security")
+    cf = ctypes.CDLL("/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")
+    ptr = ctypes.c_void_p
+    cf.CFStringCreateWithCString.argtypes = [ptr, ctypes.c_char_p, ctypes.c_uint32]
+    cf.CFStringCreateWithCString.restype = ptr
+    cf.CFDictionaryCreate.argtypes = [ptr, ctypes.POINTER(ptr), ctypes.POINTER(ptr), ctypes.c_long, ptr, ptr]
+    cf.CFDictionaryCreate.restype = ptr
+    cf.CFDataGetLength.argtypes = [ptr]
+    cf.CFDataGetLength.restype = ctypes.c_long
+    cf.CFDataGetBytePtr.argtypes = [ptr]
+    cf.CFDataGetBytePtr.restype = ptr
+    cf.CFRelease.argtypes = [ptr]
+    security.SecItemCopyMatching.argtypes = [ptr, ctypes.POINTER(ptr)]
+    security.SecItemCopyMatching.restype = ctypes.c_int32
+    constant = lambda name: ptr.in_dll(security, name).value
+    service = cf.CFStringCreateWithCString(None, SERVICE.encode(), 0x08000100)
+    account = cf.CFStringCreateWithCString(None, ACCOUNT.encode(), 0x08000100)
+    query = None
+    result = ptr()
+    token_bytes = None
+    try:
+        if not service or not account:
+            unavailable()
+        keys = (ptr * 5)(*[constant(name) for name in ("kSecClass", "kSecAttrService", "kSecAttrAccount", "kSecMatchLimit", "kSecReturnData")])
+        values = (ptr * 5)(constant("kSecClassGenericPassword"), service, account, constant("kSecMatchLimitOne"), ptr.in_dll(cf, "kCFBooleanTrue").value)
+        query = cf.CFDictionaryCreate(None, keys, values, 5, None, None)
+        if not query or security.SecItemCopyMatching(query, ctypes.byref(result)) != 0 or not result.value:
+            unavailable()
+        length = cf.CFDataGetLength(result)
+        if length < 1 or length > 256:
+            unavailable()
+        token_bytes = bytearray(ctypes.string_at(cf.CFDataGetBytePtr(result), length))
+        token = token_bytes.decode("utf-8")
+        if not re.fullmatch(r"(?:go-keyring-base64:)?sbp_(?:oauth_|v0_)?[a-f0-9]{40}", token):
+            unavailable()
+        return token
+    finally:
+        if token_bytes is not None:
+            token_bytes[:] = b"\0" * len(token_bytes)
+        if result.value:
+            cf.CFRelease(result)
+        if query:
+            cf.CFRelease(query)
+        if service:
+            cf.CFRelease(service)
+        if account:
+            cf.CFRelease(account)
+
+def main():
+    if len(sys.argv) != 1:
+        unavailable()
+    token = read_exact_native_token()
+    output = bytearray(token.encode("utf-8"))
+    try:
+        while output:
+            written = os.write(1, output)
+            del output[:written]
+    finally:
+        output[:] = b"\0" * len(output)
 
 if __name__ == "__main__":
     try:
         main()
     except BaseException:
-        sys.exit(1)
+        os._exit(1)

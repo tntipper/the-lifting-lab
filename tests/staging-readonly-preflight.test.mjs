@@ -2,9 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
-import { ENDPOINT, FIXED_QUERY, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, PROJECT_REF, QUERY_ID, nativeDesignReference, validateResult } from '../scripts/staging-readonly-preflight.mjs'
+import { ENDPOINT, FIXED_QUERY, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, PROJECT_REF, QUERY_ID, consumeNativeTokenOutput, nativeDesignReference, validateResult, validateSupabaseProfile } from '../scripts/staging-readonly-preflight.mjs'
 
-const receipt = { queryId: QUERY_ID, projectRef: PROJECT_REF, environmentMarker: true, operator: { current: true, session: true, database: true, superuser: true, createrole: true, readAll: true, writeAll: true, maintain: true }, migrations: { baselineCount: 10, forbiddenCount: 0 }, controls: { customer: true, cart: true, broker: true, provisional: true, bridge: true }, runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, membershipCount: 0, sessionCount: 0, retiredMarkerCount: 5 }, absentObjects: { shopifyProofs: true, finalizations: true, cartTransitions: true, accountGenerations: true, accountLogouts: true } }
+const receipt = { queryId: QUERY_ID, projectRef: PROJECT_REF, environmentMarker: true, operator: { current: true, session: true, database: true, notSuperuser: true, createrole: true, readAll: true, writeAll: true, maintain: true }, migrations: { baselineCount: 10, forbiddenCount: 0 }, controls: { customer: true, cart: true, broker: true, provisional: true, bridge: true }, runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, membershipCount: 0, sessionCount: 0, retiredMarkerCount: 5 }, absentObjects: { shopifyProofs: true, finalizations: true, cartTransitions: true, accountGenerations: true, accountLogouts: true } }
 
 test('preflight is fixed to the intended staging project and remains disabled', () => {
   assert.equal(NATIVE_ACCESS_APPROVED, false)
@@ -13,6 +13,7 @@ test('preflight is fixed to the intended staging project and remains disabled', 
   assert.equal(KEYCHAIN_SERVICE, 'Supabase CLI'); assert.equal(KEYCHAIN_ACCOUNT, 'supabase')
   assert.ok(FIXED_QUERY.startsWith('BEGIN READ ONLY;\n')); assert.ok(FIXED_QUERY.endsWith('COMMIT;\n'))
   assert.match(FIXED_QUERY, /"generation":5/); assert.match(FIXED_QUERY, /forbiddenCount/)
+  assert.match(FIXED_QUERY, /'notSuperuser',NOT coalesce/)
   assert.doesNotMatch(FIXED_QUERY, /\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|GRANT|REVOKE|COMMENT)\b/i)
 })
 
@@ -20,6 +21,7 @@ test('only the exact compact receipt is accepted and redacted', () => {
   const result = validateResult([{ tll_staging_preflight: receipt }])
   assert.deepEqual(Object.keys(result).sort(), ['counts', 'queryId', 'receiptHash', 'status', 'target', 'timestamp'])
   assert.equal(result.status, 'PASS'); assert.equal(result.counts.runtimeSessions, 0)
+  assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, operator: { ...receipt.operator, notSuperuser: false } } }]))
   assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, runtime: { ...receipt.runtime, sessionCount: 1 } } }]))
   assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, unexpected: true } }]))
 })
@@ -42,4 +44,24 @@ test('reviewed native Keychain design is hash-pinned without enabling it', () =>
   assert.equal(manifest.target, PROJECT_REF)
   assert.equal(manifest.keychain.reviewedDesignSha256, reference.sha256)
   assert.equal(manifest.transport.maxRequests, 1)
+})
+
+test('profile absence is permitted but every present profile must be exact', () => {
+  assert.doesNotThrow(() => validateSupabaseProfile(undefined))
+  assert.doesNotThrow(() => validateSupabaseProfile('supabase\n'))
+  assert.throws(() => validateSupabaseProfile('other'))
+})
+
+test('native helper uses one exact Keychain item and the Node parent redacts and wipes output', () => {
+  const helper = readFileSync('scripts/staging-readonly-preflight-keychain.py', 'utf8')
+  assert.match(helper, /SecItemCopyMatching/)
+  assert.match(helper, /kSecAttrService.*kSecAttrAccount.*kSecMatchLimit.*kSecReturnData/)
+  assert.match(helper, /kSecMatchLimitOne/)
+  assert.doesNotMatch(helper, /SecItem(?:Add|Update|Delete)|find-generic-password|security\s+find/i)
+  const stdout = Buffer.from(`sbp_${'a'.repeat(40)}\n`), stderr = Buffer.from('')
+  assert.equal(consumeNativeTokenOutput({ status: 0, stdout, stderr }), `sbp_${'a'.repeat(40)}`)
+  assert.ok(stdout.every(byte => byte === 0)); assert.ok(stderr.every(byte => byte === 0))
+  const rejected = Buffer.from('untrusted')
+  assert.throws(() => consumeNativeTokenOutput({ status: 0, stdout: rejected, stderr: Buffer.from('') }))
+  assert.ok(rejected.every(byte => byte === 0))
 })
