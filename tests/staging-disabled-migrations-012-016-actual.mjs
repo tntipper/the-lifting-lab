@@ -49,10 +49,11 @@ function check (label, actual, expected = true) { assert.deepEqual(actual, expec
 
 async function withFixture (label, mutate, verify) {
   const container = containerPrefix + randomBytes(6).toString('hex')
-  let started = false
+  let started = false, attachedVolumes = []
   try {
     run(['run', '-d', '--name', container, '--network', 'none', '-e', 'POSTGRES_HOST_AUTH_METHOD=trust', '-e', 'POSTGRES_USER=tll_fixture_admin', '-e', 'POSTGRES_DB=postgres', 'postgres:17-alpine'])
     started = true
+    attachedVolumes = run(['inspect', '--format', '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}} {{end}}{{end}}', container]).trim().split(/\s+/).filter(Boolean)
     let ready = false
     for (let i = 0; i < 30; i++) {
       try {
@@ -71,8 +72,9 @@ async function withFixture (label, mutate, verify) {
     verify(container)
   } finally {
     if (started) {
-      run(['rm', '-f', container])
+      run(['rm', '-fv', container])
       assert.throws(() => run(['inspect', container]), /No such object|Error/)
+      for (const volume of attachedVolumes) assert.throws(() => run(['volume', 'inspect', volume]), /No such volume|Error/)
     }
   }
 }
