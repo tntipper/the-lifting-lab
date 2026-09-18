@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { ENDPOINT, FIXED_QUERY, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, PROJECT_REF, QUERY_ID, consumeNativeTokenOutput, nativeDesignReference, normalizeKeychainToken, runPreflightOnce, validateResult, validateSupabaseProfile } from '../scripts/staging-readonly-preflight.mjs'
 
-const receipt = { queryId: QUERY_ID, projectRef: PROJECT_REF, environmentMarker: true, operator: { current: true, session: true, database: true, notSuperuser: true, createrole: true, readAll: true, writeAll: true, maintain: true }, migrations: { baselineCount: 10, forbiddenCount: 0 }, controls: { customer: true, cart: true, broker: true, provisional: true, bridge: true }, runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, membershipCount: 0, sessionCount: 0, retiredMarkerCount: 5 }, absentObjects: { shopifyProofs: true, finalizations: true, cartTransitions: true, accountGenerations: true, accountLogouts: true } }
+const receipt = { queryId: QUERY_ID, projectRef: PROJECT_REF, environmentMarker: true, operator: { current: true, session: true, database: true, notSuperuser: true, createrole: true, readAll: true, writeAll: true, maintain: true }, migrations: { totalCount: 10, baselinePairCount: 10, forbiddenCount: 0 }, controls: { customer: true, cart: true, broker: true, provisional: true, bridge: true }, runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, edgeCount: 5, retiredOperatorEdgeCount: 5, sessionCount: 0, retiredMarkerCount: 5 }, absentObjects: { shopifyProofs: true, finalizations: true, cartTransitions: true, accountGenerations: true, accountLogouts: true } }
 
 test('preflight is fixed to the intended staging project and remains disabled', () => {
   assert.equal(NATIVE_ACCESS_APPROVED, false)
@@ -14,6 +14,7 @@ test('preflight is fixed to the intended staging project and remains disabled', 
   assert.ok(FIXED_QUERY.startsWith('BEGIN READ ONLY;\n')); assert.ok(FIXED_QUERY.endsWith('COMMIT;\n'))
   assert.match(FIXED_QUERY, /"generation":5/); assert.match(FIXED_QUERY, /forbiddenCount/)
   assert.match(FIXED_QUERY, /'notSuperuser',NOT coalesce/)
+  assert.match(FIXED_QUERY, /baselinePairCount/); assert.match(FIXED_QUERY, /retiredOperatorEdgeCount/)
   assert.doesNotMatch(FIXED_QUERY, /\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|GRANT|REVOKE|COMMENT)\b/i)
 })
 
@@ -23,6 +24,8 @@ test('only the exact compact receipt is accepted and redacted', () => {
   assert.equal(result.status, 'PASS'); assert.equal(result.counts.runtimeSessions, 0)
   assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, operator: { ...receipt.operator, notSuperuser: false } } }]))
   assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, runtime: { ...receipt.runtime, sessionCount: 1 } } }]))
+  assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, migrations: { ...receipt.migrations, totalCount: 11 } } }]))
+  assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, runtime: { ...receipt.runtime, edgeCount: 6 } } }]))
   assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, unexpected: true } }]))
 })
 
@@ -49,6 +52,7 @@ test('reviewed native Keychain design is hash-pinned without enabling it', () =>
   assert.equal(manifest.query.id, QUERY_ID)
   assert.match(manifest.query.sha256, /^[a-f0-9]{64}$/)
   assert.deepEqual(manifest.sourcePins.map(pin => pin.path), ['scripts/staging-readonly-preflight.mjs', 'scripts/staging-readonly-preflight-keychain.py'])
+  assert.match(readFileSync('scripts/staging-readonly-preflight-manifest.mjs', 'utf8'), /native access flags disagree/)
 })
 
 test('profile absence is permitted but every present profile must be exact', () => {
@@ -92,4 +96,5 @@ test('disabled run path performs zero native reads and zero management requests'
   assert.match(source, /request\?\.destroy\(\); finish\(new Error\('timeout'\)\)/)
   assert.match(source, /response\.on\('aborted'/)
   assert.match(source, /const wipeChunks = \(\) =>/)
+  for (const key of ['NODE_DEBUG', 'NODE_DEBUG_NATIVE', 'NODE_OPTIONS', 'SSLKEYLOGFILE', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'OPENSSL_CONF', 'OPENSSL_MODULES']) assert.match(source, new RegExp(`'${key}'`))
 })

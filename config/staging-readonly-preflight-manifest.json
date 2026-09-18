@@ -5,13 +5,13 @@
   "nativeAccessApproved": false,
   "query": {
     "id": "tll-staging-readonly-preflight/v1",
-    "sha256": "235fe69cee6135eb31ee4011ddfa05df59f772acab76ad811e918dc24cb9d7e6",
+    "sha256": "e8cda6832371dec387f60603fb1dcecd2c6bbaa7f78b45ef01773700f110ccb4",
     "beginsReadOnly": true
   },
   "sourcePins": [
     {
       "path": "scripts/staging-readonly-preflight.mjs",
-      "sha256": "d87d058436c1a528ffcceee9de0acae7689522ce52df6c09c6eade1aa4d06c74"
+      "sha256": "85e551b0922fbeed0f99967ca8b29ae63cd6435686ad2262f7245a38d525f42b"
     },
     {
       "path": "scripts/staging-readonly-preflight-keychain.py",
