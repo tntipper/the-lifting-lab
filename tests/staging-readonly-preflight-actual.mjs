@@ -22,7 +22,6 @@ const MIGRATIONS = [
   ['202609170011_customer_browser_admission_once', '202609170011_customer_browser_admission_once.sql', '12bf5b5916d2f266f218bcd39c38098aea3225acef1cb0f67b47fe76bc29f58f'],
 ]
 const RUNTIME = ['tll_customer_runtime', 'tll_cart_runtime', 'tll_broker_runtime', 'tll_provisional_runtime', 'tll_bridge_runtime']
-const OWNERS = ['tll_customer_owner', 'tll_cart_owner', 'tll_broker_owner', 'tll_provisional_owner', 'tll_bridge_owner']
 const RETIRED_MARKER = 'tll-runtime-window/v1:{"projectRef":"qdmvngjwkcsilzmqksme","generation":5,"windowId":"e8aeb142-d2f8-4a58-b0a5-8931d90a6952","expiresAt":"2026-09-18T14:24:02.000Z","state":"retired"}'
 const prefix = 'tll-preflight-actual-'
 const run = (args, options = {}) => execFileSync('docker', args, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 32 * 1024 * 1024, timeout: 90_000, ...options })

@@ -23,6 +23,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.preflight.queryId, 'tll-staging-readonly-preflight/v1')
   assert.equal(manifest.preflight.maximumRequests, 1)
   assert.equal(manifest.preflight.productionExcluded, true)
+  assert.equal(manifest.preflight.actualPostgresAcceptanceRequired, true)
   assert.equal(manifest.disabledMigrationInstall.installId, 'tll-staging-disabled-migrations-012-016/v1')
   assert.match(manifest.disabledMigrationInstall.transactionSha256, /^[a-f0-9]{64}$/)
   assert.equal(manifest.disabledMigrationInstall.nativeAccessApproved, false)

@@ -46,6 +46,7 @@ const preflightSources = [
   'scripts/staging-readonly-preflight-keychain.py',
   'scripts/staging-readonly-preflight-manifest.mjs',
   'config/staging-readonly-preflight-manifest.json',
+  'tests/staging-readonly-preflight-actual.mjs',
 ]
 const disabledMigrationInstallSources = [
   'scripts/staging-disabled-migrations-012-016.prepare.mjs',
@@ -132,6 +133,7 @@ const manifest = {
     queryId: 'tll-staging-readonly-preflight/v1',
     maximumRequests: 1,
     productionExcluded: true,
+    actualPostgresAcceptanceRequired: true,
   },
   disabledMigrationInstall: {
     sources: await Promise.all(disabledMigrationInstallSources.map(pin)),

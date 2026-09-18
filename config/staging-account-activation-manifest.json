@@ -286,7 +286,7 @@
     "sources": [
       {
         "path": "scripts/staging-readonly-preflight.mjs",
-        "sha256": "0f470d3854838465a7c5c391ae297b38a29c18aed31f0658977ddfc003d4bf93"
+        "sha256": "e2e7c1e2cb0cbeba198baf9010bf8e5fa96d7ebb1ec3f9749af8c03f22d52756"
       },
       {
         "path": "scripts/staging-readonly-preflight-keychain.py",
@@ -298,12 +298,17 @@
       },
       {
         "path": "config/staging-readonly-preflight-manifest.json",
-        "sha256": "f5aa6a549c3316bb82fcc6be1611345935e878234b84f8f78386aa4d7f3df5c3"
+        "sha256": "b4b2cfb17f754390100ba7945ecfe1acd0cc55d0dd742a78d01eea7009e2a23d"
+      },
+      {
+        "path": "tests/staging-readonly-preflight-actual.mjs",
+        "sha256": "03966c8e97ecbde1989ca2a5641125e106ad28f1e17bb37bc8f15d982a2659c3"
       }
     ],
     "queryId": "tll-staging-readonly-preflight/v1",
     "maximumRequests": 1,
-    "productionExcluded": true
+    "productionExcluded": true,
+    "actualPostgresAcceptanceRequired": true
   },
   "disabledMigrationInstall": {
     "sources": [
