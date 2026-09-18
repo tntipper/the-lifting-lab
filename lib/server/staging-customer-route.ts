@@ -4,7 +4,7 @@ import { STAGING_POSTGRES_PROJECT_REF } from '@/lib/server/staging-postgres'
 
 const STORAGE = `sb-${STAGING_POSTGRES_PROJECT_REF}-auth-token`
 const MAX_COOKIE_BYTES = 32_768, MAX_SESSION_BYTES = 32_768, MAX_CHUNKS = 12, MAX_TOKEN_BYTES = 16_384
-type Action = 'prepare' | 'start' | 'authorize' | 'recover'
+type Action = 'prepare' | 'start' | 'authorize' | 'shopify-callback' | 'recover'
 type RuntimeFactory = typeof createStagingCustomerRuntime
 
 function held() {
@@ -61,7 +61,7 @@ export async function stagingCustomerRoute(request: Request, action: Action,
   try {
     runtime = runtimeFactory({ readAccessToken: async () => stagingSupabaseAccessToken(request) })
     if (!runtime) return held()
-    const method = action === 'authorize' ? 'admit' : action
+    const method = action === 'authorize' ? 'admit' : action === 'shopify-callback' ? 'shopifyCallback' : action
     const response = await runtime.delivery[method](request)
     await runtime.close(); runtime = null
     return response

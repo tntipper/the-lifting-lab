@@ -77,6 +77,7 @@ export function createStagingCustomerRuntime(input: {
   const publishableKey = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? ''
   const caPem = env.TLL_STAGING_POSTGRES_CA_PEM ?? '', caSha = env.TLL_STAGING_POSTGRES_CA_SHA256 ?? ''
   const customerClientSecret = env.TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET ?? ''
+  const subjectBrokerClientSecret = env.TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET ?? ''
   const proofEvidenceId = env.TLL_STAGING_SHOPIFY_PROOF_EVIDENCE_ID ?? ''
   const proofConfigHash = env.TLL_STAGING_SHOPIFY_PROOF_CONFIG_SHA256 ?? ''
   const proofVerifiedAt = env.TLL_STAGING_SHOPIFY_PROOF_VERIFIED_AT_MS ?? ''
@@ -92,7 +93,8 @@ export function createStagingCustomerRuntime(input: {
     || projectRef !== STAGING_POSTGRES_PROJECT_REF || env.NEXT_PUBLIC_SUPABASE_URL !== `https://${projectRef}.supabase.co`
     || !/^sb_publishable_[A-Za-z0-9_-]{16,256}$/.test(publishableKey)
     || !caPem || !/^[a-f0-9]{64}$/.test(caSha)
-    || !password(customerClientSecret) || !evidenceId(proofEvidenceId) || !/^[a-f0-9]{64}$/.test(proofConfigHash)
+    || !password(customerClientSecret) || !password(subjectBrokerClientSecret) || customerClientSecret === subjectBrokerClientSecret
+    || !evidenceId(proofEvidenceId) || !/^[a-f0-9]{64}$/.test(proofConfigHash)
     || !timestamp(proofVerifiedAt) || !timestamp(proofExpiresAt) || Number(proofExpiresAt) <= Number(proofVerifiedAt)
     || Number(proofExpiresAt) - Number(proofVerifiedAt) > 86_400_000
     || passwords.some(value => !password(value)) || new Set(passwords).size !== PURPOSES.length
@@ -142,7 +144,8 @@ export function createStagingCustomerRuntime(input: {
       syntheticExecution: true, liveEnabled: false })
     const delivery = deliveryFactory({ provisionalPool: provisional.pool, bridgePool: bridge.pool, brokerPool: broker.pool,
       vault: provisionalVault, cookieVault, applicationOrigin: origin, publishableKey,
-      readAccessToken: input.readAccessToken, syntheticExecution: true, liveEnabled: false })
+      readAccessToken: input.readAccessToken, shopifyProof, shopifyProofRepository: proofRepository,
+      subjectBrokerClientSecret, syntheticExecution: true, liveEnabled: false })
     return Object.freeze({ enabled: true as const, delivery, shopifyProof, customerPool: customer.pool, tokenVault,
       connection: Object.freeze({ projectRef: STAGING_POSTGRES_PROJECT_REF, shopId: STAGING_SHOP_ID,
         clientId: STAGING_CUSTOMER_CLIENT_ID, issuer: STAGING_ISSUER, discovery: STAGING_DISCOVERY }), close })

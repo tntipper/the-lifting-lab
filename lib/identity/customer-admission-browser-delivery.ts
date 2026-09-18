@@ -2,7 +2,12 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { createCustomerAdmissionBridgeContinuation, customerBridgeReleaseHash, type CustomerBridgeRecovery } from './customer-admission-bridge-continuation'
 import { createCustomerSubjectBrokerRepository } from './customer-subject-broker-repository'
+import { createCustomerSubjectBroker, type BrokerServerRegistration } from './customer-subject-broker'
+import type { CustomerShopifyProofRepository } from './customer-shopify-proof-repository'
+import type { ShopifyProofResult } from './customer-shopify-proof'
+import { createStagingSupabaseSessionReader } from './supabase-session-proof'
 import type { CustomerRepositoryPool } from './customer-connection-repository'
+import type { SupabaseSessionProof } from './customer-connection'
 import type { EnvelopeVault } from './customer-token-vault'
 
 const BOOT = '__Host-tll-customer-start', TRANSACTION = '__Host-tll-customer-transaction'
@@ -16,10 +21,17 @@ const ms = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number)
 const ensure: (v: unknown) => asserts v = v => { if (!v) throw new Error('Customer transaction unavailable') }
 type Mode = 'sign_in' | 'migration'
 type Bootstrap = { browserSecret: string; csrf: string; mode: Mode; issuedAt: number; startBefore: number; fenceAt: number }
-type Capsule = { bootstrap: Bootstrap; recovery: CustomerBridgeRecovery; expiresAt: number } & (
-  { phase: 'registered'; releaseSecret: string; authorizationUrl: string } | { phase: 'admitted' | 'held' })
+type Capsule = { bootstrap: Bootstrap; recovery: CustomerBridgeRecovery; expiresAt: number; authorizationQuery: string } & (
+  { phase: 'registered'; releaseSecret: string; authorizationUrl: string }
+  | { phase: 'shopify_pending' | 'held' }
+  | { phase: 'ready'; callbackHash: string; redirectUrl: string })
+type ShopifyProofFlow = Readonly<{
+  start(value: { transactionId: string; transactionExpiresAt: number }): Promise<ShopifyProofResult>
+  complete(value: { transactionId: string; callbackUrl: string }): Promise<ShopifyProofResult>
+}>
 type Options = Omit<Parameters<typeof createCustomerAdmissionBridgeContinuation>[0], 'transactionExpiresAt'> & {
-  cookieVault: EnvelopeVault; brokerPool: CustomerRepositoryPool
+  cookieVault: EnvelopeVault; brokerPool: CustomerRepositoryPool; shopifyProof: ShopifyProofFlow
+  shopifyProofRepository: Pick<CustomerShopifyProofRepository, 'verifiedSubject'>; subjectBrokerClientSecret: string
 }
 
 /** Request-scoped trusted composition only. Requires additive migration 011.
@@ -28,11 +40,15 @@ type Options = Omit<Parameters<typeof createCustomerAdmissionBridgeContinuation>
  * Synthetic execution is only for offline/local fixtures; activation stays false. */
 export function createCustomerAdmissionBrowserDelivery(input: Options) {
   const options = Object.freeze({ ...input })
-  const { cookieVault, applicationOrigin: origin, brokerPool } = options
+  const { cookieVault, applicationOrigin: origin, brokerPool, shopifyProof, shopifyProofRepository } = options
   const now = options.now ?? Date.now
   const active = () => options.syntheticExecution === true && options.liveEnabled !== true && typeof window === 'undefined'
     && /^https:\/\/the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\.vercel\.app$/.test(origin)
     && new URL(origin).origin === origin && origin.length <= 253 && cookieVault !== options.vault
+    && typeof shopifyProof?.start === 'function' && typeof shopifyProof?.complete === 'function'
+    && typeof shopifyProofRepository?.verifiedSubject === 'function'
+    && typeof options.subjectBrokerClientSecret === 'string' && Buffer.byteLength(options.subjectBrokerClientSecret) >= 32
+    && Buffer.byteLength(options.subjectBrokerClientSecret) <= 512 && !/[\x00-\x1f\x7f]/.test(options.subjectBrokerClientSecret)
   const continuation = (deadline?: number) => createCustomerAdmissionBridgeContinuation({ ...options, transactionExpiresAt: deadline })
   function response(status: number, body: object | null = null) {
     return new Response(body === null ? null : JSON.stringify(body), { status, headers: {
@@ -90,17 +106,26 @@ export function createCustomerAdmissionBrowserDelivery(input: Options) {
   function readCapsule(values: Map<string, string>): Capsule {
     const b = readBootstrap(values), raw = values.get(TRANSACTION); ensure(raw)
     const v = open<Capsule>(raw, TRANSACTION)
-    ensure(exact(v, v?.phase === 'registered' ? 'authorizationUrl,bootstrap,expiresAt,phase,recovery,releaseSecret' : 'bootstrap,expiresAt,phase,recovery')
-      && ['registered', 'admitted', 'held'].includes(v.phase))
+    const keys = v?.phase === 'registered' ? 'authorizationQuery,authorizationUrl,bootstrap,expiresAt,phase,recovery,releaseSecret'
+      : v?.phase === 'ready' ? 'authorizationQuery,bootstrap,callbackHash,expiresAt,phase,recovery,redirectUrl'
+        : 'authorizationQuery,bootstrap,expiresAt,phase,recovery'
+    ensure(exact(v, keys) && ['registered', 'shopify_pending', 'ready', 'held'].includes(v.phase))
     const retained = bootstrap(v.bootstrap)
     ensure(JSON.stringify(retained) === JSON.stringify(b) && ms(v.expiresAt) && v.expiresAt <= b.fenceAt && v.expiresAt > now()
       && v.recovery?.binding?.browserHash === hash(b.browserSecret))
+    ensure(typeof v.authorizationQuery === 'string' && v.authorizationQuery.length <= 4096
+      && v.authorizationQuery === new URL(origin + PATH + 'authorize?' + v.authorizationQuery).search.slice(1))
     // Existing digest validation checks the complete canonical recovery shape;
     // this call validates custody only and is never sent as admit authority.
     customerBridgeReleaseHash(b.browserSecret, v.recovery)
     if (v.phase === 'registered') {
       ensure(opaque(v.releaseSecret) && typeof v.authorizationUrl === 'string' && v.authorizationUrl.length <= 2048)
       const u = new URL(v.authorizationUrl); ensure(u.origin === origin && u.pathname === PATH + 'authorize' && !u.hash && !u.username && !u.password)
+    }
+    if (v.phase === 'ready') {
+      ensure(/^[a-f0-9]{64}$/.test(v.callbackHash) && typeof v.redirectUrl === 'string' && v.redirectUrl.length <= 2048)
+      const u = new URL(v.redirectUrl); ensure(u.origin === 'https://qdmvngjwkcsilzmqksme.supabase.co' && u.pathname === '/auth/v1/callback'
+        && !u.hash && !u.username && !u.password && u.searchParams.getAll('code').length === 1 && u.searchParams.getAll('state').length === 1)
     }
     return v
   }
@@ -154,8 +179,9 @@ export function createCustomerAdmissionBrowserDelivery(input: Options) {
         owned = continuation(b.fenceAt)
         const r = await (b.mode === 'sign_in' ? owned.startSignIn({ browserSecret: b.browserSecret }) : owned.startMigration({ browserSecret: b.browserSecret }))
         if (r.status !== 'private_registered') return denied() // Preserve bootstrap and winning attempt on prepare conflict.
+        const authorizationQuery = new URL(r.authorizationUrl).search.slice(1); ensure(authorizationQuery.length > 0)
         registered = { phase: 'registered', bootstrap: b, recovery: r.recovery, expiresAt: r.expiresAt,
-          releaseSecret: r.releaseSecret, authorizationUrl: r.authorizationUrl }
+          releaseSecret: r.releaseSecret, authorizationUrl: r.authorizationUrl, authorizationQuery }
         ensure(!request.signal.aborted && r.expiresAt <= b.fenceAt && r.expiresAt > now())
         const result = response(303); setCookie(result, TRANSACTION, registered, r.expiresAt)
         ensure(r.expiresAt > now()); result.headers.set('location', r.authorizationUrl); return result
@@ -164,8 +190,8 @@ export function createCustomerAdmissionBrowserDelivery(input: Options) {
         return denied()
       }
     },
-    /** Consumes the release capability through actual 007/010 exactly once.
-     * A 204 acknowledges browser admission only; no inner Shopify flow exists. */
+    /** Consumes the release capability and starts the independently bound inner
+     * Shopify proof. Only its public authorization URL leaves server custody. */
     async admit(request: Request): Promise<Response> {
       let c: Capsule | undefined, uncertain = false
       try {
@@ -178,11 +204,69 @@ export function createCustomerAdmissionBrowserDelivery(input: Options) {
         // A committed rejection (including a concurrent one-use loser) must not
         // revoke a successful winner. Only unknown ACK or failed delivery holds.
         if (!await repository.admit(payload)) { uncertain = false; return denied() }
+        const proof = await shopifyProof.start({ transactionId: b.transactionId, transactionExpiresAt: c.expiresAt })
+        ensure(proof.status === 'authorization_ready' && proof.expiresAt <= c.expiresAt && proof.expiresAt > now())
+        const target = new URL(proof.authorizationUrl)
+        ensure(target.origin === 'https://shopify.com' && target.pathname === '/authentication/107532616020/oauth/authorize')
         ensure(!request.signal.aborted && c.expiresAt > now())
-        const result = response(204); setCookie(result, TRANSACTION, { phase: 'admitted', bootstrap: c.bootstrap, recovery: c.recovery, expiresAt: c.expiresAt }, c.expiresAt)
-        return result
+        const result = response(303); setCookie(result, TRANSACTION, { phase: 'shopify_pending', bootstrap: c.bootstrap,
+          recovery: c.recovery, expiresAt: c.expiresAt, authorizationQuery: c.authorizationQuery }, c.expiresAt)
+        ensure(c.expiresAt > now()); result.headers.set('location', proof.authorizationUrl); return result
       } catch {
         if (c && uncertain) await continuation().hold({ browserSecret: c.bootstrap.browserSecret, recovery: c.recovery })
+        return denied()
+      }
+    },
+    /** Completes the exact provider callback, then asks the durable broker to
+     * consume only the repository-backed verified subject. A replay can recover
+     * the already committed final redirect only for the exact callback URL. */
+    async shopifyCallback(request: Request): Promise<Response> {
+      let c: Capsule | undefined
+      try {
+        ensure(active() && request.method === 'GET' && !request.signal.aborted)
+        const url = new URL(request.url)
+        ensure(url.origin === origin && url.pathname === PATH + 'shopify/callback' && !url.hash && !url.username && !url.password
+          && request.headers.get('sec-fetch-mode') === 'navigate' && request.headers.get('sec-fetch-dest') === 'document'
+          && ['cross-site', 'same-origin'].includes(request.headers.get('sec-fetch-site') ?? ''))
+        c = readCapsule(cookies(request)); const callbackHash = hash(request.url)
+        if (c.phase === 'ready') {
+          ensure(c.callbackHash === callbackHash)
+          const replay = response(303); replay.headers.set('location', c.redirectUrl); return replay
+        }
+        ensure(c.phase === 'shopify_pending')
+        const b = c.recovery.binding
+        const completed = await shopifyProof.complete({ transactionId: b.transactionId, callbackUrl: request.url })
+        ensure(completed.status === 'verified' && !request.signal.aborted && c.expiresAt > now())
+        let session: SupabaseSessionProof | null | undefined
+        const currentSession = async () => {
+          if (c!.bootstrap.mode !== 'migration') return null
+          if (session === undefined) session = await createStagingSupabaseSessionReader({ enabled: true,
+            publishableKey: options.publishableKey, readAccessToken: options.readAccessToken,
+            transport: options.sessionTransport, now, timeoutMs: options.timeoutMs }).currentSession()
+          return session
+        }
+        const registration = async (): Promise<BrokerServerRegistration> => {
+          const proof = await currentSession()
+          return { transactionId: b.transactionId, cookieSecret: c!.bootstrap.browserSecret,
+            authorizationQuery: c!.authorizationQuery,
+            applicationPkceChallenge: b.applicationPkceChallenge, mode: c!.bootstrap.mode,
+            target: proof ? { userId: proof.userId, sessionId: proof.sessionId } : null }
+        }
+        const broker = createCustomerSubjectBroker({ clientSecret: options.subjectBrokerClientSecret,
+          syntheticExecution: true, liveEnabled: false, ports: {
+            repository: createCustomerSubjectBrokerRepository({ pool: brokerPool, syntheticExecution: true }),
+            currentBrowser: async () => ({ transactionId: b.transactionId, cookieSecret: c!.bootstrap.browserSecret }),
+            serverRegistration: registration, currentSession,
+            verifiedShopifySubject: transactionId => shopifyProofRepository.verifiedSubject(transactionId), now,
+          } })
+        const ready = await broker.ready()
+        ensure(ready.status === 'authorization_ready' && ready.transactionId === b.transactionId && typeof ready.redirectUrl === 'string')
+        const result = response(303); setCookie(result, TRANSACTION, { phase: 'ready', bootstrap: c.bootstrap,
+          recovery: c.recovery, expiresAt: c.expiresAt, authorizationQuery: c.authorizationQuery,
+          callbackHash, redirectUrl: ready.redirectUrl }, c.expiresAt)
+        ensure(!request.signal.aborted && c.expiresAt > now()); result.headers.set('location', ready.redirectUrl); return result
+      } catch {
+        if (c && c.phase !== 'ready') await continuation().hold({ browserSecret: c.bootstrap.browserSecret, recovery: c.recovery })
         return denied()
       }
     },
@@ -198,7 +282,8 @@ export function createCustomerAdmissionBrowserDelivery(input: Options) {
         }
         const r = await api[action](input), result = response(r.status === 'cancelled' ? 200 : 409, { status: r.status })
         if (r.status === 'cancelled' || r.quarantine === 'acknowledged') clear(result)
-        else setCookie(result, TRANSACTION, { phase: 'held', bootstrap: c.bootstrap, recovery: c.recovery, expiresAt: c.expiresAt }, c.expiresAt)
+        else setCookie(result, TRANSACTION, { phase: 'held', bootstrap: c.bootstrap, recovery: c.recovery,
+          expiresAt: c.expiresAt, authorizationQuery: c.authorizationQuery }, c.expiresAt)
         return result
       } catch { return denied() }
     },

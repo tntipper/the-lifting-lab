@@ -51,13 +51,27 @@ function pool(kind, events, hook) {
     }, release(destroy) { events.push({ kind, phase: 'release', destroy }); client.release(destroy) } }
   } }
 }
-async function fixture({ mode = 'sign_in', hook, sessionHook, admissionHook, cookieSeal, now, transactionExpiresAt } = {}) {
+async function fixture({ mode = 'sign_in', hook, sessionHook, admissionHook, cookieSeal, now, transactionExpiresAt, proofIssue } = {}) {
   const events = [], http = [], privateVault = vault(), sealedVault = vault(), at = Math.floor(Date.now() / 1000)
+  const proofState = opaque(), innerPkceChallenge = opaque(), proofCalls=[]; let proofTransaction = null, proofVerified = false
   const token = await new SignJWT({ iss: ISSUER, aud: 'authenticated', role: 'authenticated', sub: 'eeeeeeee-dddd-4ccc-8bbb-aaaaaaaaaaaa',
     session_id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', is_anonymous: false, iat: at - 1, exp: at + 3600, amr: [{ method: 'password', timestamp: at - 1 }] }).setProtectedHeader({ alg: 'HS256', typ: 'JWT' }).sign(SIGNING)
+  const shopifyProof = { async start(input) { proofCalls.push('start');proofTransaction = input.transactionId
+      if(proofIssue==='start')return{status:'held',liveEnabled:false}
+      const authorizationUrl = 'https://shopify.com/authentication/107532616020/oauth/authorize?' + new URLSearchParams({ state: proofState,
+        client_id: 'c8f7b926-9073-416c-9949-0d99e89a99c0', redirect_uri: ORIGIN + '/auth/customer/shopify/callback' })
+      return { status:'authorization_ready', authorizationUrl, expiresAt:Math.min(input.transactionExpiresAt,Date.now()+300000), liveEnabled:false }
+    }, async complete(input) { proofCalls.push('complete');const u=new URL(input.callbackUrl)
+      if(proofIssue==='complete')return{status:'held',liveEnabled:false}
+      if(input.transactionId!==proofTransaction||u.searchParams.get('state')!==proofState||u.searchParams.get('code')!=='synthetic-provider-code')return{status:'held',liveEnabled:false}
+      proofVerified=true; return {status:'verified',liveEnabled:false} } }
+  const shopifyProofRepository = { async verifiedSubject(id) { proofCalls.push('read');if(proofIssue==='read'||!proofVerified||id!==proofTransaction)return null; const verifiedAt=Date.now()
+      return {transactionId:id,receiptId:randomUUID(),shopId:'107532616020',issuer:'https://shopify.com/authentication/107532616020',
+        subject:'synthetic-browser-customer',innerPkceChallenge,verifiedAt,expiresAt:verifiedAt+60000} } }
   const options = { provisionalPool: pool('provisional', events, hook), bridgePool: pool('bridge', events, hook), brokerPool: pool('broker', events, hook),
     vault: privateVault, cookieVault: { ...sealedVault, seal(value, context) { cookieSeal?.(value); return sealedVault.seal(value, context) } }, applicationOrigin: ORIGIN,
     publishableKey: 'sb_publishable_synthetic00000000000', syntheticExecution: true, now, transactionExpiresAt, readAccessToken: async () => token,
+    shopifyProof,shopifyProofRepository,subjectBrokerClientSecret:'synthetic-broker-secret-'+'x'.repeat(32),
     sessionTransport: async r => { http.push(r); const { payload } = await jwtVerify(r.headers.authorization.slice(7), SIGNING, { issuer: ISSUER, audience: 'authenticated' })
       await sessionHook?.(r); return { url: r.url, status: 200, headers: [['content-type','application/json']], body: Buffer.from(JSON.stringify({ id: payload.sub, role: 'authenticated', aud: 'authenticated', is_anonymous: false })) } },
     admissionTransport: async r => { http.push(r); await admissionHook?.(r)
@@ -68,9 +82,12 @@ async function fixture({ mode = 'sign_in', hook, sessionHook, admissionHook, coo
     } }
   const prepared = await delivery(options).prepare(request('prepare', { mode })), bootstrapCookie = jar(prepared), { csrf } = await prepared.json()
   const open = (cookie, name = TX) => sealedVault.open(JSON.parse(Buffer.from(cookieValue(cookie,name),'base64url').toString()), ['tll-customer-browser-cookie/v1',ORIGIN,name,'/'])
-  return { options, mode, events, http, csrf, bootstrapCookie, open, token, api: () => delivery(options),
+  const callbackUrl=response=>{const u=new URL(response.headers.get('location'));return ORIGIN+'/auth/customer/shopify/callback?'+new URLSearchParams({state:u.searchParams.get('state'),code:'synthetic-provider-code'})}
+  return { options, mode, events, http, csrf, bootstrapCookie, open, token, proofCalls, callbackUrl, api: () => delivery(options),
     start: () => delivery(options).start(request('start', { mode, csrf }, bootstrapCookie)),
     authorize: (response, cookie = bootstrapCookie + '; ' + jar(response)) => delivery(options).admit(visit(response.headers.get('location'), cookie)),
+    callback: (response, cookie = bootstrapCookie + '; ' + jar(response)) => delivery(options).shopifyCallback(visit(callbackUrl(response),cookie)),
+    callbackRequest: (url,cookie) => delivery(options).shopifyCallback(visit(url,cookie)),
     recover: (cookie, action = 'inspect', csrfValue = csrf) => delivery(options).recover(request('recover', { action, csrf: csrfValue }, cookie)) }
 }
 const ops = f => f.events.filter(e => e.payload).map(e => `${e.kind}:${e.op}`)
@@ -90,9 +107,12 @@ test('real sign-in/migration only deliver sealed private cookies and redirect af
     const exposed = JSON.stringify([...r.headers]); for (const secret of [c.bootstrap.browserSecret,c.releaseSecret,f.token]) assert.equal(exposed.includes(secret), false)
     assert.equal(dispatches(f),1); assert.equal(f.http.filter(x => x.url.endsWith('/user')).length, mode === 'migration' ? 3 : 0)
     const denied = await f.api().start(request('start',{mode,csrf:f.csrf},cookie)); await held(denied); assert.equal(dispatches(f),1)
-    const admitted = await f.authorize(r); assert.equal(admitted.status,204); const consumed = f.open(jar(admitted))
-    assert.equal(consumed.phase,'admitted'); assert.equal(Object.hasOwn(consumed,'releaseSecret'),false); assert.equal(Object.hasOwn(consumed,'authorizationUrl'),false)
+    const admitted = await f.authorize(r); assert.equal(admitted.status,303); const consumed = f.open(jar(admitted))
+    assert.equal(consumed.phase,'shopify_pending'); assert.equal(Object.hasOwn(consumed,'releaseSecret'),false); assert.equal(Object.hasOwn(consumed,'authorizationUrl'),false)
     assert.equal(state(b.transactionId).g.release_hash,null); assert.equal(state(b.transactionId).g.state,'browser_admitted')
+    const completed=await f.callback(admitted);assert.equal(completed.status,303);assert.match(completed.headers.get('location'),/^https:\/\/qdmvngjwkcsilzmqksme\.supabase\.co\/auth\/v1\/callback\?code=/)
+    const ready=f.open(jar(completed));assert.equal(ready.phase,'ready');assert.equal(Object.hasOwn(ready,'redirectUrl'),true)
+    assert.equal(JSON.stringify([...completed.headers]).includes('synthetic-browser-customer'),false)
     await held(await f.authorize(r)); assert.equal(state(b.transactionId).g.state,'browser_admitted')
   })
 })
@@ -104,7 +124,21 @@ test('concurrent starts sharing sealed bootstrap dispatch once; losing quarantin
   assert.equal(rows('tll_provisional_private.intents').length,1)
   for (const loser of results.filter(r=>r.status===409)) assert.equal(loser.headers.has('set-cookie'),false)
   await held(await f.start()); assert.equal(dispatches(f),1); assert.equal(state(c.recovery.binding.transactionId).g.state,'pending_browser')
-  assert.equal((await f.authorize(winner)).status,204)
+  assert.equal((await f.authorize(winner)).status,303)
+})
+test('exact completed callback replays only its sealed final redirect; substitution is held without another proof read',async()=>{
+  const f=await fixture(),started=await f.start(),admitted=await f.authorize(started),providerCallback=f.callbackUrl(admitted)
+  const completed=await f.callbackRequest(providerCallback,f.bootstrapCookie+'; '+jar(admitted));assert.equal(completed.status,303)
+  const final=completed.headers.get('location'),readyCookie=f.bootstrapCookie+'; '+jar(completed),before=[...f.proofCalls]
+  const replay=await f.callbackRequest(providerCallback,readyCookie);assert.equal(replay.status,303);assert.equal(replay.headers.get('location'),final)
+  await held(await f.callbackRequest(providerCallback.replace('synthetic-provider-code','substituted'),readyCookie));assert.deepEqual(f.proofCalls,before)
+})
+test('proof start, completion or durable subject-read failure yields no redirect and holds the admitted transaction',async t=>{
+  for(const issue of ['start','complete','read'])await t.test(issue,async()=>{const f=await fixture({proofIssue:issue}),started=await f.start(),id=f.open(jar(started)).recovery.binding.transactionId
+    const admitted=await f.authorize(started)
+    if(issue==='start')await held(admitted);else{assert.equal(admitted.status,303);await held(await f.callback(admitted))}
+    assert.equal(state(id).g.state,'held');assert.equal(admitted.headers.has('location'),issue!=='start')
+  })
 })
 test('lost prepare, finish or registration ACK is never replayed with retained bootstrap', async t => {
   for (const target of ['provisional:prepare','provisional:finish_admission','bridge:register']) await t.test(target, async () => {
@@ -172,7 +206,7 @@ test('private response expiry releases nothing; a later disabled gate refuses ad
 test('concurrent and replayed authorize GET rejection preserves the admitted winner', async () => {
   const f=await fixture(), r=await f.start(), c=f.open(jar(r)), before=ops(f).length
   const results=await Promise.all([f.authorize(r),f.authorize(r),f.authorize(r)])
-  assert.deepEqual(results.map(x=>x.status).sort(),[204,409,409])
+  assert.deepEqual(results.map(x=>x.status).sort(),[303,409,409])
   await held(await f.authorize(r)); assert.equal(state(c.recovery.binding.transactionId).g.state,'browser_admitted')
   assert.equal(ops(f).slice(before).filter(x=>x==='bridge:hold').length,0)
   const bad=visit(r.headers.get('location')+'&state=duplicate',f.bootstrapCookie+'; '+jar(r)), count=ops(f).length

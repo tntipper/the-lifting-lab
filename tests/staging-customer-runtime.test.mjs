@@ -18,6 +18,7 @@ const base = Object.freeze({ NEXT_PUBLIC_TLL_ENVIRONMENT: 'staging', NEXT_PUBLIC
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_staging_customer_fixture', TLL_STAGING_POSTGRES_CA_PEM: 'synthetic-public-ca',
   TLL_STAGING_POSTGRES_CA_SHA256: 'a'.repeat(64), TLL_STAGING_CUSTOMER_DATABASE_PASSWORD: 'customer-' + '1'.repeat(40),
   TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET: 'shopify-' + '5'.repeat(40), TLL_STAGING_SHOPIFY_PROOF_EVIDENCE_ID: 'synthetic-review-v1',
+  TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET: 'broker-secret-' + '6'.repeat(40),
   TLL_STAGING_SHOPIFY_PROOF_CONFIG_SHA256: proofHash, TLL_STAGING_SHOPIFY_PROOF_VERIFIED_AT_MS: String(now - 1000),
   TLL_STAGING_SHOPIFY_PROOF_EXPIRES_AT_MS: String(now + 3600000),
   TLL_STAGING_BROKER_DATABASE_PASSWORD: 'broker-' + '2'.repeat(40), TLL_STAGING_PROVISIONAL_DATABASE_PASSWORD: 'provisional-' + '3'.repeat(40),
@@ -67,6 +68,8 @@ test('valid preview composition owns four distinct purpose pools and three isola
   assert.equal(options.provisionalPool, f.pools.get('provisional')); assert.equal(options.bridgePool, f.pools.get('bridge')); assert.equal(options.brokerPool, f.pools.get('broker'))
   assert.notEqual(options.vault, options.cookieVault); assert.equal(options.applicationOrigin, ORIGIN); assert.equal(options.publishableKey, base.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
   assert.equal(options.readAccessToken, f.readAccessToken); assert.equal(options.syntheticExecution, true); assert.equal(options.liveEnabled, false)
+  assert.equal(options.shopifyProof.marker, 'shopify-proof'); assert.equal(options.shopifyProofRepository, f.proofRepository)
+  assert.equal(options.subjectBrokerClientSecret, base.TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET)
   assert.equal(f.runtime.customerPool, f.pools.get('customer')); assert.notEqual(f.runtime.tokenVault, options.vault); assert.notEqual(f.runtime.tokenVault, options.cookieVault)
   const proofRepo = f.calls.find(([kind]) => kind === 'proof-repository')[1]
   assert.equal(proofRepo.pool, f.pools.get('customer')); assert.equal(proofRepo.vault, f.runtime.tokenVault)
@@ -92,6 +95,8 @@ test('missing, production, malformed and overlapping configuration fails before 
     ['NEXT_PUBLIC_SUPABASE_URL','https://wrhgscovsgsudtedbljr.supabase.co'], ['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY','bad'],
     ['TLL_STAGING_POSTGRES_CA_PEM',''], ['TLL_STAGING_POSTGRES_CA_SHA256','bad'], ['TLL_STAGING_CUSTOMER_DATABASE_PASSWORD','short'],
     ['TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET','short'], ['TLL_STAGING_SHOPIFY_PROOF_EVIDENCE_ID','bad evidence'],
+    ['TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET','short'],
+    ['TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET',base.TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET],
     ['TLL_STAGING_SHOPIFY_PROOF_CONFIG_SHA256','a'.repeat(64)], ['TLL_STAGING_SHOPIFY_PROOF_EXPIRES_AT_MS',base.TLL_STAGING_SHOPIFY_PROOF_VERIFIED_AT_MS],
     ['TLL_STAGING_BROKER_DATABASE_PASSWORD',base.TLL_STAGING_CUSTOMER_DATABASE_PASSWORD], ['TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_HEX','bad'],
     ['TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_HEX',base.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_HEX],
