@@ -168,11 +168,11 @@ await withFixture('membership mismatch', container => {
 }, container => assertAssertionFailure(container, 'edge'))
 await withFixture('duplicated qualifying role edge', container => {
   // Recreate customer under a distinct CREATEROLE owner. PostgreSQL grants a
-  // CREATEROLE role implicit ADMIN authority over roles it creates without a
-  // pg_auth_members row. It can therefore make a second explicit customer ->
-  // postgres grant without adding a runtime -> grantor edge. Removing bridge
-  // leaves five total runtime edges and five qualifying rows, but only four
-  // distinct granted runtime roles.
+  // CREATEROLE role an ADMIN membership over the role it creates. That edge is
+  // a prerequisite of the explicit second-grantor row and PostgreSQL refuses
+  // to revoke it without cascading the dependent grant. This is therefore the
+  // faithful supported-SQL duplicate state: six runtime edges, five qualifying
+  // postgres rows, and four distinct qualifying runtime roles.
   psql(container, 'tll_fixture_admin', `
     DROP ROLE tll_customer_runtime;
     CREATE ROLE tll_fixture_second_grantor NOLOGIN NOSUPERUSER CREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS;
@@ -184,10 +184,11 @@ await withFixture('duplicated qualifying role edge', container => {
     REVOKE tll_bridge_runtime FROM postgres;
     COMMENT ON ROLE tll_customer_runtime IS ${q(RETIRED_MARKER)};
   `)
-  check('duplicate case retains five runtime edges', psql(container, 'tll_fixture_admin', `SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${RUNTIME.map(q).join(',')}) OR member.rolname IN (${RUNTIME.map(q).join(',')});`), '5')
+  check('duplicate case has six runtime edges including second-grantor authority', psql(container, 'tll_fixture_admin', `SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${RUNTIME.map(q).join(',')}) OR member.rolname IN (${RUNTIME.map(q).join(',')});`), '6')
   check('duplicate case retains five qualifying rows', psql(container, 'tll_fixture_admin', `SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${RUNTIME.map(q).join(',')}) AND member.rolname='postgres' AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option;`), '5')
   check('duplicate case has two customer-to-postgres rows', psql(container, 'tll_fixture_admin', "SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname='tll_customer_runtime' AND member.rolname='postgres';"), '2')
   check('duplicate customer rows have distinct grantors', psql(container, 'tll_fixture_admin', "SELECT count(DISTINCT grantor.oid) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member JOIN pg_roles grantor ON grantor.oid=m.grantor WHERE granted.rolname='tll_customer_runtime' AND member.rolname='postgres';"), '2')
+  check('second-grantor authority edge remains', psql(container, 'tll_fixture_admin', "SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname='tll_customer_runtime' AND member.rolname='tll_fixture_second_grantor' AND m.admin_option;"), '1')
   check('duplicate case has four distinct qualifying roles', psql(container, 'tll_fixture_admin', `SELECT count(DISTINCT granted.oid) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${RUNTIME.map(q).join(',')}) AND member.rolname='postgres' AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option;`), '4')
 }, container => assertAssertionFailure(container, 'duplicate qualifying role edge'))
 await withFixture('comment mismatch', container => {
