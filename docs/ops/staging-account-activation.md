@@ -16,7 +16,13 @@ Verify Shopify discovery still returns the pinned issuer, authorization, token, 
 
 ## 2. Install the disabled database layer
 
-Open one bounded operator window with fresh temporary credentials. Apply migrations 012, 013, 014, 015 and 016 in manifest order without enabling any control. Every migration performs its own source and authority preflight. A failure ends the window; do not skip, edit or replay a partially applied migration.
+Use only the manifest-pinned `disabledMigrationInstall` package. Its actual PostgreSQL 17 acceptance must pass against the exact generated transaction before the window. Do not use `supabase db query`, link, dump or another generic CLI database resolver: those paths can create or refresh writable credentials outside this reviewed transaction.
+
+Proceed only after the authenticated read-only preflight returns PASS and confirms the Management API status/envelope assumed by the installer. Verify the enabled JavaScript and Python flags, regenerated transport manifest, generated SQL hash and activation-manifest pins as one exact diff. The committed source remains disabled and `executionPolicy` remains a hold until these gates are recorded.
+
+Before the only request, the installer must acquire the exclusive journal claim at `disabledMigrationInstall.dispatchJournal.path`. The nonsecret intent binds the run ID, staging target, install ID, exact transaction hash and migration source hashes and is fsynced before dispatch. An existing intent, uncertainty or completed receipt forbids another install request. A timeout, rejected/malformed response or lost acknowledgement becomes `RECONCILIATION_REQUIRED`; stop and perform an independent read-only installed-state check. Never retry an uncertain installation.
+
+Open one bounded operator window and send the fixed package once. It applies migrations 012, 013, 014, 015 and 016 in one outer transaction without enabling any control. Every canonical migration retains its source and authority preflight. Accept success only when the exact redacted receipt validates and the journal reaches `RECEIPT_VALIDATED`; otherwise leave the application closed and reconcile read-only.
 
 Before creating runtime logins, verify exact owners, RLS, ACLs, function source hashes, search paths, foreign keys, empty new stores and all five controls disabled. Verify anonymous, authenticated and service roles cannot read private relations or execute private helpers. Preserve a catalog/data fingerprint and the migration receipts.
 

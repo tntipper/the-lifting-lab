@@ -47,6 +47,15 @@ const preflightSources = [
   'scripts/staging-readonly-preflight-manifest.mjs',
   'config/staging-readonly-preflight-manifest.json',
 ]
+const disabledMigrationInstallSources = [
+  'scripts/staging-disabled-migrations-012-016.prepare.mjs',
+  'scripts/staging-disabled-migrations-012-016.mjs',
+  'scripts/staging-disabled-migrations-012-016-keychain.py',
+  'config/staging-disabled-migrations-012-016.json',
+  'config/staging-disabled-migrations-012-016.sql',
+  'tests/staging-disabled-migrations-012-016-actual.mjs',
+]
+const disabledMigrationInstallManifest = JSON.parse(await readFile(resolve(root, 'config/staging-disabled-migrations-012-016.json'), 'utf8'))
 const databasePasswords = ['CUSTOMER','CART','BROKER','PROVISIONAL','BRIDGE'].map(purpose => `TLL_STAGING_${purpose}_DATABASE_PASSWORD`)
 const vaults = ['TOKEN','PROVISIONAL','COOKIE','FINAL'].flatMap(purpose =>
   [`TLL_STAGING_CUSTOMER_${purpose}_VAULT_KEY_ID`, `TLL_STAGING_CUSTOMER_${purpose}_VAULT_KEY_HEX`])
@@ -124,6 +133,23 @@ const manifest = {
     maximumRequests: 1,
     productionExcluded: true,
   },
+  disabledMigrationInstall: {
+    sources: await Promise.all(disabledMigrationInstallSources.map(pin)),
+    installId: 'tll-staging-disabled-migrations-012-016/v1',
+    transactionSha256: disabledMigrationInstallManifest.transactionSha256,
+    nativeAccessApproved: false,
+    maximumRequests: 1,
+    executionPolicy: 'HOLD_UNTIL_ALL_REVIEWED_GATES_PASS',
+    prerequisites: ['authenticated_read_only_preflight_pass','management_api_status_and_envelope_confirmed','enabled_source_and_manifest_pins_verified'],
+    dispatchJournal: {
+      path: '../implementation-state/staging/tll-disabled-migrations-012-016-dispatch.json',
+      exclusiveClaimRequired: true,
+      noRetryAfterDispatch: true,
+      uncertainState: 'RECONCILIATION_REQUIRED',
+      successState: 'RECEIPT_VALIDATED',
+    },
+    actualPostgresAcceptanceRequired: true,
+  },
   recovery: {
     sources: await Promise.all(recoverySources.map(pin)),
     requiredInstalledMigrations: ['012','013','014','015','016'],
@@ -138,7 +164,8 @@ const manifest = {
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
     'verify_hosted_002_through_011_and_all_controls_disabled',
-    'verify_pins_and_operator_authority', 'install_012_through_016_in_one_disabled_window',
+    'verify_pins_operator_authority_and_actual_pg_acceptance', 'record_exclusive_nonsecret_dispatch_intent',
+    'install_012_through_016_in_one_disabled_window', 'reconcile_any_uncertain_install_read_only_without_retry',
     'verify_roles_rls_acls_function_sources_and_empty_new_stores', 'verify_post_016_recovery_package_before_credentials',
     'deploy_edge_disabled_and_verify_fixed_503',
     'install_distinct_runtime_credentials_and_secret_configuration', 'verify_provider_endpoints_callbacks_permissions_and_logout_uri',

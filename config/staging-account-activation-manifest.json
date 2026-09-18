@@ -305,6 +305,52 @@
     "maximumRequests": 1,
     "productionExcluded": true
   },
+  "disabledMigrationInstall": {
+    "sources": [
+      {
+        "path": "scripts/staging-disabled-migrations-012-016.prepare.mjs",
+        "sha256": "3d6ea9bc1defb03ae90b56d7fb1cc3058ad025b9d159293da9091cbbedc06d05"
+      },
+      {
+        "path": "scripts/staging-disabled-migrations-012-016.mjs",
+        "sha256": "c7ceb4693264a67a955d90f7b017f453da46cb149236815215820ebf9a99ead5"
+      },
+      {
+        "path": "scripts/staging-disabled-migrations-012-016-keychain.py",
+        "sha256": "139e7e5194934da4471e31b0faf64176702d0ecb622908d31d363c00f225ed77"
+      },
+      {
+        "path": "config/staging-disabled-migrations-012-016.json",
+        "sha256": "7e436af79728c494884f37a0644bbf70ee40b411c36b4bf64eccd7109a153015"
+      },
+      {
+        "path": "config/staging-disabled-migrations-012-016.sql",
+        "sha256": "f355f7280b979966f665d691f267c999ebd51396c2062b196fc5a8208bdc3f48"
+      },
+      {
+        "path": "tests/staging-disabled-migrations-012-016-actual.mjs",
+        "sha256": "48fa128462e36378dbedcb8a2754dd62b3e5b2896ff2399a1cc805f0919c0e25"
+      }
+    ],
+    "installId": "tll-staging-disabled-migrations-012-016/v1",
+    "transactionSha256": "f355f7280b979966f665d691f267c999ebd51396c2062b196fc5a8208bdc3f48",
+    "nativeAccessApproved": false,
+    "maximumRequests": 1,
+    "executionPolicy": "HOLD_UNTIL_ALL_REVIEWED_GATES_PASS",
+    "prerequisites": [
+      "authenticated_read_only_preflight_pass",
+      "management_api_status_and_envelope_confirmed",
+      "enabled_source_and_manifest_pins_verified"
+    ],
+    "dispatchJournal": {
+      "path": "../implementation-state/staging/tll-disabled-migrations-012-016-dispatch.json",
+      "exclusiveClaimRequired": true,
+      "noRetryAfterDispatch": true,
+      "uncertainState": "RECONCILIATION_REQUIRED",
+      "successState": "RECEIPT_VALIDATED"
+    },
+    "actualPostgresAcceptanceRequired": true
+  },
   "recovery": {
     "sources": [
       {
@@ -358,8 +404,10 @@
     "verify_exact_target_and_production_exclusion",
     "run_one_pinned_authenticated_read_only_preflight",
     "verify_hosted_002_through_011_and_all_controls_disabled",
-    "verify_pins_and_operator_authority",
+    "verify_pins_operator_authority_and_actual_pg_acceptance",
+    "record_exclusive_nonsecret_dispatch_intent",
     "install_012_through_016_in_one_disabled_window",
+    "reconcile_any_uncertain_install_read_only_without_retry",
     "verify_roles_rls_acls_function_sources_and_empty_new_stores",
     "verify_post_016_recovery_package_before_credentials",
     "deploy_edge_disabled_and_verify_fixed_503",
