@@ -1,9 +1,23 @@
 {
-  "schema": "tll-staging-readonly-preflight/v1",
+  "schema": "tll-staging-readonly-preflight/v2",
   "target": "qdmvngjwkcsilzmqksme",
   "productionExcluded": "wrhgscovsgsudtedbljr",
-  "queryId": "tll-staging-readonly-preflight/v1",
   "nativeAccessApproved": false,
+  "query": {
+    "id": "tll-staging-readonly-preflight/v1",
+    "sha256": "235fe69cee6135eb31ee4011ddfa05df59f772acab76ad811e918dc24cb9d7e6",
+    "beginsReadOnly": true
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/staging-readonly-preflight.mjs",
+      "sha256": "d87d058436c1a528ffcceee9de0acae7689522ce52df6c09c6eade1aa4d06c74"
+    },
+    {
+      "path": "scripts/staging-readonly-preflight-keychain.py",
+      "sha256": "a581bbd8fc224382238c4b50a76cd27f22c6efff5fa54e49328eca1862c4f859"
+    }
+  ],
   "keychain": {
     "service": "Supabase CLI",
     "account": "supabase",
@@ -18,5 +32,12 @@
     "maxAgeMs": 60000,
     "maxRequests": 1
   },
-  "output": ["target", "queryId", "timestamp", "status", "counts", "receiptHash"]
+  "output": [
+    "target",
+    "queryId",
+    "timestamp",
+    "status",
+    "counts",
+    "receiptHash"
+  ]
 }

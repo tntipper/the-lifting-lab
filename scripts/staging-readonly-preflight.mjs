@@ -123,17 +123,28 @@ export async function postExactlyOnce (token, deadline = Date.now() + MAX_AGE_MS
   const body = Buffer.from(JSON.stringify({ query: FIXED_QUERY, read_only: false }))
   try {
     return await new Promise((resolvePromise, reject) => {
-      let done = false; const finish = (error, value) => { if (done) return; done = true; clearTimeout(timer); if (error) reject(error); else resolvePromise(value) }
-      const timer = setTimeout(() => finish(new Error('timeout')), Math.max(1, deadline - Date.now()))
-      const request = https.request({ protocol: 'https:', hostname: ENDPOINT.hostname, port: 443, path: ENDPOINT.path, method: ENDPOINT.method, minVersion: 'TLSv1.2', rejectUnauthorized: true, servername: ENDPOINT.hostname, agent: false, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'Content-Length': body.length } }, response => {
-        const chunks = []; let size = 0
-        if (response.statusCode !== 201 || !/^application\/json(?:;|$)/i.test(String(response.headers['content-type'] ?? ''))) return finish(new Error('response'))
-        response.on('data', chunk => { size += chunk.length; if (size > 16_384) { response.destroy(); finish(new Error('body')) } else chunks.push(chunk) })
-        response.on('error', () => finish(new Error('response')))
-        response.on('end', () => { try { finish(null, validateResult(JSON.parse(Buffer.concat(chunks).toString('utf8')))) } catch { finish(new Error('result')) } })
-      })
-      request.on('error', () => finish(new Error('transport')))
-      request.end(body)
+      const chunks = []; let size = 0; let request; let timer; let done = false
+      const wipeChunks = () => { for (const chunk of chunks) chunk.fill(0); chunks.length = 0 }
+      const finish = (error, value) => {
+        if (done) return
+        done = true; clearTimeout(timer); wipeChunks()
+        if (error) reject(error); else resolvePromise(value)
+      }
+      timer = setTimeout(() => { request?.destroy(); finish(new Error('timeout')) }, Math.max(1, deadline - Date.now()))
+      try {
+        request = https.request({ protocol: 'https:', hostname: ENDPOINT.hostname, port: 443, path: ENDPOINT.path, method: ENDPOINT.method, minVersion: 'TLSv1.2', rejectUnauthorized: true, servername: ENDPOINT.hostname, agent: false, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'Content-Length': body.length } }, response => {
+          if (response.statusCode !== 201 || !/^application\/json(?:;|$)/i.test(String(response.headers['content-type'] ?? ''))) { response.destroy(); return finish(new Error('response')) }
+          response.on('data', chunk => { size += chunk.length; if (size > 16_384) { chunk.fill(0); response.destroy(); finish(new Error('body')) } else chunks.push(chunk) })
+          response.on('aborted', () => finish(new Error('response')))
+          response.on('error', () => finish(new Error('response')))
+          response.on('end', () => {
+            let responseBody
+            try { responseBody = Buffer.concat(chunks); finish(null, validateResult(JSON.parse(responseBody.toString('utf8')))) } catch { finish(new Error('result')) } finally { responseBody?.fill(0) }
+          })
+        })
+        request.on('error', () => finish(new Error('transport')))
+        request.end(body)
+      } catch { finish(new Error('transport')) }
     })
   } finally { body.fill(0) }
 }

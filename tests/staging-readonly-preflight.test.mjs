@@ -37,13 +37,18 @@ test('package has no mutation launcher dependency or caller-controlled dispatch 
 
 test('reviewed native Keychain design is hash-pinned without enabling it', () => {
   const reference = nativeDesignReference()
+  execFileSync(process.execPath, ['scripts/staging-readonly-preflight-manifest.mjs', '--check'], { stdio: 'pipe' })
   const manifest = JSON.parse(readFileSync('config/staging-readonly-preflight-manifest.json', 'utf8'))
   assert.equal(reference.service, 'Supabase CLI'); assert.equal(reference.account, 'supabase')
   assert.match(reference.sha256, /^[a-f0-9]{64}$/)
   assert.equal(manifest.nativeAccessApproved, false)
   assert.equal(manifest.target, PROJECT_REF)
+  assert.equal(manifest.schema, 'tll-staging-readonly-preflight/v2')
   assert.equal(manifest.keychain.reviewedDesignSha256, reference.sha256)
   assert.equal(manifest.transport.maxRequests, 1)
+  assert.equal(manifest.query.id, QUERY_ID)
+  assert.match(manifest.query.sha256, /^[a-f0-9]{64}$/)
+  assert.deepEqual(manifest.sourcePins.map(pin => pin.path), ['scripts/staging-readonly-preflight.mjs', 'scripts/staging-readonly-preflight-keychain.py'])
 })
 
 test('profile absence is permitted but every present profile must be exact', () => {
@@ -84,4 +89,7 @@ test('disabled run path performs zero native reads and zero management requests'
   assert.match(source, /if \(!NATIVE_ACCESS_APPROVED\) return Object\.freeze/)
   assert.match(source, /const deadline = now\(\) \+ MAX_AGE_MS\n  const token = readToken\(\)\n  try \{ return await post\(token, deadline\)/)
   assert.match(source, /status: 'UNAVAILABLE', target: PROJECT_REF, queryId: QUERY_ID/)
+  assert.match(source, /request\?\.destroy\(\); finish\(new Error\('timeout'\)\)/)
+  assert.match(source, /response\.on\('aborted'/)
+  assert.match(source, /const wipeChunks = \(\) =>/)
 })
