@@ -78,6 +78,15 @@ test('Confidential exchange pins endpoint/client/callback and uses form-encoded 
   assert.deepEqual(result.scopeProvenance, { source: 'token_response', requestedScope: SCOPE, grantType: 'authorization_code' })
   assert.equal(JSON.stringify(adapter), '{}'); assert.doesNotMatch(JSON.stringify(result), /synthetic:secret|Basic|authorizationUrl/)
 })
+test('customer admission callback uses the same confidential Basic exchange without exposing its secret', async () => {
+  const callback='https://the-lifting-synthetic-my-lifting-lab-s-projects.vercel.app/auth/customer/shopify/callback'
+  let request
+  const adapter=tokenAdapter({...options(async input=>{request=input;return response(tokens())}),callbackUrl:callback})
+  await adapter.exchangeCode({...exchange,redirectUri:callback})
+  assert.equal(new URLSearchParams(request.body).get('redirect_uri'),callback)
+  assert.equal(new URLSearchParams(request.body).has('client_secret'),false)
+  assert.equal(Buffer.from(request.headers.authorization.slice(6),'base64').toString(),`${CLIENT}:synthetic%3Asecret%2B%25%2Fonly`)
+})
 for (const change of [{ endpoint: 'https://127.0.0.1/token' }, { endpoint: TOKEN + '?next=https://wrong.invalid' }, { clientId: 'wrong' }, { redirectUri: CALLBACK + '?next=wrong' }, { verifier: 'short' }, { code: '' }]) {
   test(`invalid exchange input cannot send credentials: ${Object.keys(change)[0]}`, async () => {
     let calls = 0; const adapter = tokenAdapter(options(async () => { calls++; return response(tokens()) }))

@@ -58,7 +58,8 @@ const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v ===
 const clock = (n: number) => Number.isSafeInteger(n) && n > 0
 const exactScope = (v: unknown): v is string => typeof v === 'string' && v.split(' ').length === CUSTOMER_SCOPES.length && CUSTOMER_SCOPES.every(s => v.split(' ').includes(s))
 const callbackValid = (value: string) => {
-  try { const u = new URL(value); return u.href === value && u.protocol === 'https:' && u.hostname.endsWith('.vercel.app') && !u.username && !u.password && !u.port && !u.search && !u.hash && u.pathname === '/auth/shopify/callback' } catch { return false }
+  try { const u = new URL(value); return u.href === value && u.protocol === 'https:' && u.hostname.endsWith('.vercel.app') && !u.username && !u.password && !u.port && !u.search && !u.hash
+    && ['/auth/shopify/callback', '/auth/customer/shopify/callback'].includes(u.pathname) } catch { return false }
 }
 type HttpOptions = { enabled?: boolean; transport?: CustomerHttpTransport; timeoutMs?: number }
 
