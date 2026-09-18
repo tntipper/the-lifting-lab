@@ -1,5 +1,6 @@
 // Disabled Node/server protocol core. No routes, provider, HTTP or SQL adapter.
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
+import { Buffer } from 'node:buffer'
 import { STAGING_SHOP_ID, STAGING_ISSUER, STAGING_SUPABASE_ISSUER, type Owner, type SupabaseSessionProof } from './customer-connection'
 
 /** Intended public identifiers only: this does not register or approve a client. */
