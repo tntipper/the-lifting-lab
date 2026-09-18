@@ -50,7 +50,16 @@ try {
       assert.equal(request.headers()['x-tll-cart-intent'],'staging-cart')
       const body=request.postDataJSON()
       if(body.action==='open'){view={...view,csrfToken:'a'.repeat(64)};return reply(route)}
-      assert.equal(request.headers()['x-tll-cart-csrf'],'a'.repeat(64));assert.match(request.headers()['idempotency-key'],/^[a-f0-9-]{36}$/)
+      assert.equal(request.headers()['x-tll-cart-csrf'],'a'.repeat(64))
+      if(body.action==='transfer'){
+        assert.match(request.headers()['idempotency-key'],/^[a-f0-9-]{36}$/);assert.equal(body.revision,view.revision)
+        view={...view,state:view.quantity?'ready':'empty',message:'Your guest cart is now connected to this account.'};return reply(route)
+      }
+      if(body.action==='use_account'){
+        assert.equal(request.headers()['idempotency-key'],undefined)
+        view={...view,state:view.quantity?'ready':'empty',message:'Using the cart already saved to this account.'};return reply(route)
+      }
+      assert.match(request.headers()['idempotency-key'],/^[a-f0-9-]{36}$/)
       if(mode==='delayed'||mode==='switch'){pending=true;await new Promise(resolvePromise=>{release=resolvePromise})}
       const quantity=request.method()==='DELETE'?0:body.quantity
       view={...view,revision:view.revision+1,state:quantity?'ready':'empty',quantity,unitPricePence:quantity?1200:null,subtotalPence:quantity*1200,message:'Synthetic cart response.'}
@@ -97,6 +106,10 @@ try {
     assert.equal(await dialog.getByText('No items in this test cart.').count(),0);assert.equal(await dialog.getByText('£0.00',{exact:true}).count(),0)
     await dialog.getByText('Unavailable',{exact:true}).waitFor()
     view={...saved,state:'ready'};await dialog.getByRole('button',{name:'Refresh cart'}).click();await dialog.getByRole('button',{name:'Increase test product quantity'}).waitFor()
+    view={...view,state:'transition_required',message:'Choose whether to connect this guest cart to your signed-in account.'}
+    await dialog.getByRole('button',{name:'Refresh cart'}).click();await dialog.getByRole('region',{name:'Choose saved cart'}).waitFor()
+    await dialog.getByRole('button',{name:'Connect guest cart'}).click();await dialog.getByRole('status').filter({hasText:'connected to this account'}).waitFor()
+    assert.equal(calls.at(-1).body.action,'transfer');assert.equal(await dialog.getByRole('region',{name:'Choose saved cart'}).count(),0)
     mode='switch';pending=false;await dialog.getByRole('button',{name:'Increase test product quantity'}).click();await page.waitForTimeout(50);assert.equal(pending,true)
     await page.evaluate(()=>window.__cartUser('70000000-0000-4000-8000-000000000002'));release()
     await dialog.getByRole('status').filter({hasText:'Previous cart withheld.'}).waitFor()
@@ -115,7 +128,7 @@ try {
     await page.waitForTimeout(100)
     assert.equal(calls.filter(c=>c.method==='GET').length,reads,'unmounted provider must not refresh after its old mutation')
     assert.deepEqual(errors,[])
-    results.push({width,productAndManualStackActions:true,plainTotals:true,keyboardAndFocus:true,unknownMutation:'read only recovery; no replay',held:'edits disabled',accountSwitch:'old response ignored and prior cart withheld',cartPage:true,externalCalls:0})
+    results.push({width,productAndManualStackActions:true,plainTotals:true,keyboardAndFocus:true,unknownMutation:'read only recovery; no replay',held:'edits disabled',explicitAccountTransition:true,accountSwitch:'old response ignored and prior cart withheld',cartPage:true,externalCalls:0})
     await context.close()
   }
 } finally {await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r))}

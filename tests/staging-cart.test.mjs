@@ -24,6 +24,7 @@ function modules({ env = {}, fetch = async () => { throw new Error('Unexpected n
   return load
 }
 const load = modules(), sf = load('lib/commerce/staging-cart-storefront.ts'), svc = load('lib/commerce/staging-cart-service.ts'), http = load('lib/commerce/staging-cart-http.ts')
+const transitions = load('lib/commerce/staging-cart-transition.ts')
 const { createAesGcmEnvelopeVault } = load('lib/identity/customer-token-vault.ts')
 const ORIGIN = 'https://the-lifting-cart-test-my-lifting-lab-s-projects.vercel.app'
 const RAW_CART = 'gid://shopify/Cart/synthetic-cart?key=PRIVATE-CART-KEY-NEVER-RETURN'
@@ -33,7 +34,7 @@ const jsonResponse = value => new Response(JSON.stringify(value), { status: 200,
 const hash = value => createHash('sha256').update(value).digest('hex')
 
 function fixture(faults = {}) {
-  const rows = new Map(), ops = new Map(), calls = []
+  const rows = new Map(), ops = new Map(), transitionRows = new Map(), calls = []
   let count = 0, actor = null, authReads = 0
   const variant = () => ({ id: faults.wrongVariant ? 'gid://shopify/ProductVariant/9' : sf.STAGING_SHOPIFY_VARIANT,
     availableForSale: !faults.unavailable, product: { id: faults.wrongProduct ? 'gid://shopify/Product/9' : sf.STAGING_SHOPIFY_PRODUCT }, price: { amount: faults.zeroPrice ? '0.00' : '12.00', currencyCode: faults.foreignCurrency ? 'USD' : 'GBP' } })
@@ -97,19 +98,49 @@ function fixture(faults = {}) {
   const vault = createAesGcmEnvelopeVault({ activeKeyId: 'cart-v1', keys: new Map([['cart-v1', Buffer.alloc(32, 1)]]) })
   const storefront = sf.createStagingStorefront({ enabled: true, environment: 'staging', shop: sf.STAGING_CART_SHOP, privateToken: 'synthetic-private-token', transport })
   const service = svc.createCartService({ repository, storefront, vault, context: ['synthetic-project', sf.STAGING_CART_SHOP, ORIGIN] })
-  const handler = http.createCartHandler({ enabled: true, origin: ORIGIN, hmacKeyHex: HMAC, service, currentActor: async () => { authReads++; return actor } })
+  const transitionRepository = {
+    async read(binding) {
+      const receipt = transitionRows.get(binding.sourceSession)
+      if (receipt) return structuredClone(receipt)
+      const source = rows.get(binding.sourceSession), target = rows.get(binding.targetSession)
+      if (target) return { status: 'conflict', source: null, target: null }
+      return { status: 'absent', source: source ? structuredClone(source) : null, target: null }
+    },
+    async claim(binding, requestId, revision) {
+      const prior = transitionRows.get(binding.sourceSession)
+      if (prior) return structuredClone(prior)
+      const source = rows.get(binding.sourceSession), target = rows.get(binding.targetSession)
+      if (!source || target || source.actorHash !== binding.sourceActor || source.revision !== revision || source.phase !== 'ready') return { status: 'conflict', source: null, target: null }
+      source.phase = 'working'; source.operationId = requestId
+      const claimed = { status: 'claimed', source: structuredClone(source), target: null }
+      transitionRows.set(binding.sourceSession, claimed); return structuredClone(claimed)
+    },
+    async finish(binding, requestId, envelope, source) {
+      const target = { ...structuredClone(source), sessionHash: binding.targetSession, actorHash: binding.targetActor, phase: 'ready', envelope, operationId: null }
+      rows.set(binding.targetSession, target)
+      const original = rows.get(binding.sourceSession); Object.assign(original, { phase: 'held', envelope: null, quantity: 0, unitPricePence: null, subtotalPence: 0 })
+      const reconciled = { status: 'reconciled', source: structuredClone(original), target: structuredClone(target) }
+      transitionRows.set(binding.sourceSession, reconciled)
+      if (faults.transitionFinishLost) throw Error('Lost transition finish response')
+      return { status: 'reconciled', target: structuredClone(target) }
+    },
+  }
+  const transition = transitions.createCartTransitionService({ repository: transitionRepository, vault, context: ['synthetic-project', sf.STAGING_CART_SHOP, ORIGIN] })
+  const handler = http.createCartHandler({ enabled: true, origin: ORIGIN, hmacKeyHex: HMAC, service, transition, currentActor: async () => { authReads++; return actor } })
   let cookie = '', view
   async function request(method = 'GET', body, headers = {}, rawCookie = cookie) {
     const response = await handler(new Request(ORIGIN + '/api/cart', { method, headers: { ...(rawCookie ? { cookie: rawCookie } : {}),
       ...(method !== 'GET' ? { Origin: ORIGIN, 'Content-Type': 'application/json', 'X-TLL-Cart-Intent': 'staging-cart', 'X-TLL-Cart-CSRF': view?.csrfToken ?? '', 'Idempotency-Key': randomUUID() } : {}), ...headers },
       body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body) }))
     const text = await response.text(); assert.equal(text.includes('PRIVATE'), false); assert.equal(text.includes(RAW_CART), false); assert.equal(text.includes(LINE), false)
-    if (response.headers.has('set-cookie')) cookie = response.headers.get('set-cookie').split(';')[0]
+    if (response.headers.has('set-cookie')) cookie = /Max-Age=0/.test(response.headers.get('set-cookie')) ? '' : response.headers.get('set-cookie').split(';')[0]
     view = JSON.parse(text); return { response, view }
   }
   const open = () => request('POST', { action: 'open' })
   const set = (quantity, headers = {}) => request('PATCH', { productId: sf.STAGING_CART_PRODUCT, quantity, revision: view.revision }, headers)
-  return { rows, ops, calls, transport, repository, service, handler, request, open, set, faults, setActor: value => { actor = value }, get cookie() { return cookie }, get view() { return view }, get authReads() { return authReads } }
+  return { rows, ops, transitionRows, calls, transport, repository, service, handler, request, open, set, faults,
+    setActor: value => { actor = value }, setProviderQuantity: value => { count = value },
+    get cookie() { return cookie }, get view() { return view }, get authReads() { return authReads } }
 }
 
 test('opaque HttpOnly bootstrap precedes cart creation; browser receives only safe prices and quantities', async () => {
@@ -147,12 +178,36 @@ test('same request retry and concurrent clients cannot duplicate a mutation; sta
   assert.equal((await f.request('PATCH', body)).response.status, 409)
   assert.equal((await f.request('PATCH', { ...body, quantity: 4 }, { 'Idempotency-Key': id })).response.status, 409)
 })
-test('guest/sign-in/account changes hide and invalidate old session without transferring its cart', async () => {
-  const f = fixture(); await f.open(); await f.set(1); const old = f.cookie
-  f.setActor(ACTOR); const changed = await f.request(); assert.equal(changed.response.status, 409); assert.equal(changed.view.state, 'session_changed'); assert.equal(changed.view.quantity, 0)
-  assert.match(changed.response.headers.get('set-cookie'), /Max-Age=0/)
-  assert.equal([...f.rows.values()][0].quantity, 1)
-  assert.equal((await f.request('PATCH', { productId: sf.STAGING_CART_PRODUCT, revision: 1, quantity: 2 }, {}, old)).response.status, 403)
+test('sign-in exposes an explicit one-use guest cart decision and acknowledged transfer clears the capability', async () => {
+  const f = fixture(); await f.open(); await f.set(1); const guestCookie = f.cookie
+  f.setActor(ACTOR); const choice = await f.request(); assert.equal(choice.response.status, 200); assert.equal(choice.view.state, 'transition_required'); assert.equal(choice.view.quantity, 1)
+  const moved = await f.request('POST', { action: 'transfer', revision: choice.view.revision })
+  assert.equal(moved.response.status, 200); assert.equal(moved.view.state, 'ready'); assert.equal(moved.view.quantity, 1); assert.match(moved.response.headers.get('set-cookie'), /Max-Age=0/)
+  assert.equal(f.cookie, ''); assert.equal((await f.request()).view.quantity, 1)
+  const replay = await f.request('GET', undefined, {}, guestCookie); assert.equal(replay.response.status, 200); assert.equal(replay.view.quantity, 1)
+})
+
+test('signed-in carts use one deterministic server session across browser reads without a cart cookie', async () => {
+  const f = fixture(); f.setActor(ACTOR)
+  assert.equal((await f.request()).view.state, 'empty'); await f.open(); await f.set(2)
+  assert.equal(f.cookie, ''); assert.equal((await f.request()).view.quantity, 2)
+  assert.equal((await f.request('PATCH', { productId: sf.STAGING_CART_PRODUCT, revision: f.view.revision, quantity: 3 })).view.quantity, 3)
+})
+
+test('choosing the account cart never merges the guest cart and clears only the browser capability', async () => {
+  const f = fixture(); f.setActor(ACTOR); await f.open(); await f.set(2)
+  f.setActor(null); await f.open(); await f.set(1); const guestSession = hash(f.cookie.slice(f.cookie.indexOf('=') + 1)); f.setActor(ACTOR)
+  const choice = await f.request(); assert.equal(choice.view.state, 'transition_required'); assert.match(choice.view.message, /already has a cart/)
+  f.setProviderQuantity(2)
+  const selected = await f.request('POST', { action: 'use_account' }); assert.equal(selected.view.quantity, 2); assert.equal(f.cookie, '')
+  assert.equal(f.rows.get(guestSession).quantity, 1)
+})
+
+test('a lost transfer finish response is recovered by inspection and is never transferred twice', async () => {
+  const f = fixture({ transitionFinishLost: true }); await f.open(); await f.set(1); f.setActor(ACTOR); await f.request()
+  const attempted = await f.request('POST', { action: 'transfer', revision: f.view.revision }); assert.equal(attempted.response.status, 503)
+  const recovered = await f.request(); assert.equal(recovered.response.status, 200); assert.equal(recovered.view.quantity, 1); assert.equal(f.cookie, '')
+  assert.equal(f.transitionRows.size, 1)
 })
 test('cross-site requests, missing intent and CSRF are rejected before provider or repository writes', async () => {
   const f = fixture(); await f.open(); const count = f.ops.size

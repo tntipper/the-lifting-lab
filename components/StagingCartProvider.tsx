@@ -9,7 +9,7 @@ import { StagingCartContext, type CartContext } from './StagingCartContext'
 function parse(value: unknown): StagingCartView {
   if (!value || typeof value !== 'object') throw new Error('Cart response unavailable')
   const view = value as StagingCartView
-  if (!['empty', 'ready', 'pending', 'held', 'unavailable', 'session_changed'].includes(view.state)
+  if (!['empty', 'ready', 'pending', 'held', 'unavailable', 'session_changed', 'transition_required'].includes(view.state)
     || !Number.isSafeInteger(view.revision) || view.revision < 0 || !Number.isSafeInteger(view.quantity) || view.quantity < 0 || view.quantity > 5
     || view.currency !== 'GBP' || typeof view.message !== 'string' || view.message.length > 500
     || view.subtotalPence !== null && (!Number.isSafeInteger(view.subtotalPence) || view.subtotalPence < 0)
@@ -103,6 +103,31 @@ export default function StagingCartProvider({ children }: { children: ReactNode 
     }
   }, [commit, enabled, open, refresh])
 
-  const value: CartContext = { enabled, view, busy, notice, open, close, refresh, setQuantity }
+  const resolveTransition = useCallback(async (action: 'transfer' | 'use_account') => {
+    const before = current.current
+    if (!enabled || !mounted.current || mutation.current || before?.state !== 'transition_required' || !before.csrfToken) return
+    mutation.current = true; readSequence.current++; setBusy(true)
+    setNotice(action === 'transfer' ? 'Connecting the guest cart to your account…' : 'Opening the cart saved to your account…')
+    const ownerGeneration = generation.current
+    try {
+      const result = await fetch('/api/cart', { method: 'POST', credentials: 'same-origin', signal: AbortSignal.timeout(30000),
+        headers: { 'Content-Type': 'application/json', 'X-TLL-Cart-Intent': 'staging-cart', 'X-TLL-Cart-CSRF': before.csrfToken,
+          ...(action === 'transfer' ? { 'Idempotency-Key': crypto.randomUUID() } : {}) },
+        body: JSON.stringify(action === 'transfer' ? { action, revision: before.revision } : { action }),
+      })
+      const next = parse(await result.json())
+      if (ownerGeneration !== generation.current) return
+      commit(next); setNotice(next.message)
+    } catch {
+      if (ownerGeneration === generation.current) {
+        current.current = null; setView(null); setNotice('The response was interrupted. Refresh to inspect which cart is saved; the transfer will not be sent again automatically.')
+      }
+    } finally {
+      mutation.current = false
+      if (mounted.current) { setBusy(false); if (ownerGeneration !== generation.current) void refresh() }
+    }
+  }, [commit, enabled, refresh])
+
+  const value: CartContext = { enabled, view, busy, notice, open, close, refresh, setQuantity, resolveTransition }
   return <StagingCartContext.Provider value={value}>{children}{enabled && <StagingCartPanel open={opened} onClose={close} returnFocusRef={returnFocus} />}</StagingCartContext.Provider>
 }

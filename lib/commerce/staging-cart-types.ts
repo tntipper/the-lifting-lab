@@ -1,6 +1,6 @@
 /** Safe browser projection only. Shopify cart IDs, line IDs and keys stay server-side. */
 export type StagingCartView = {
-  state: 'empty' | 'ready' | 'pending' | 'held' | 'unavailable' | 'session_changed'
+  state: 'empty' | 'ready' | 'pending' | 'held' | 'unavailable' | 'session_changed' | 'transition_required'
   revision: number
   productId: string | null
   quantity: number

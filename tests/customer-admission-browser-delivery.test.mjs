@@ -11,7 +11,9 @@ function fixture(changes = {}) {
   let calls = 0, at = Date.now(); const fail = () => { calls++; throw Error('No repository or HTTP work expected') }
   const cookieVault = vault(), provisionalVault = vault(), options = { applicationOrigin: ORIGIN, syntheticExecution: true, publishableKey: 'sb_publishable_synthetic00000000000',
     provisionalPool: { connect: fail }, bridgePool: { connect: fail }, brokerPool: { connect: fail }, vault: provisionalVault, cookieVault,
-    readAccessToken: fail, sessionTransport: fail, admissionTransport: fail, now: () => at, ...changes }
+    readAccessToken: fail, sessionTransport: fail, admissionTransport: fail,
+    shopifyProof: { start: fail, complete: fail }, shopifyProofRepository: { verifiedSubject: fail }, subjectBrokerClientSecret: 's'.repeat(64),
+    now: () => at, ...changes }
   return { api: delivery(options), options, count: () => calls, cookieVault, advance: ms => { at += ms }, close() { cookieVault.destroy(); provisionalVault.destroy() } }
 }
 const request = (path = 'prepare', fields = { mode: 'sign_in' }, changes = {}) => new Request(ORIGIN + '/auth/customer/' + path, { method: 'POST',

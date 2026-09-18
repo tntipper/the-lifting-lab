@@ -6,6 +6,7 @@ import { createCartHandler } from './staging-cart-http'
 import { createCartRepository } from './staging-cart-repository'
 import { createCartService, emptyCart } from './staging-cart-service'
 import { createStagingStorefront, STAGING_CART_SHOP } from './staging-cart-storefront'
+import { createCartTransitionRepository, createCartTransitionService } from './staging-cart-transition'
 
 const unavailable = () => Response.json({ ...emptyCart(), productId: null, subtotalPence: null, state: 'unavailable', message: 'Test cart unavailable.' }, { status: 404, headers: { 'Cache-Control': 'private, no-store' } })
 /** All configuration is server-owned. No request can supply a provider URL/key or enable transport. */
@@ -28,11 +29,13 @@ export async function stagingCartRoute(request: Request): Promise<Response> {
     database = createStagingPostgresRuntime({ purpose: 'cart', enabled: true, password: process.env.TLL_STAGING_CART_DATABASE_PASSWORD, tlsCa: { pem: caPem, sha256: caSha } })
     if (!database.enabled) return unavailable()
     const repository = createCartRepository({ enabled: true, pool: database.pool })
+    const context = [projectRef, STAGING_CART_SHOP, origin] as const
     const buyerIp = vercelClientIdentity(request, { vercel: process.env.VERCEL, vercelEnvironment: process.env.VERCEL_ENV })?.replace(/^\[|\]$/g, '')
     const storefront = createStagingStorefront({ enabled: true, environment: 'staging', shop: STAGING_CART_SHOP,
       privateToken: process.env.TLL_STAGING_CART_STOREFRONT_TOKEN ?? '', transport: fetch, buyerIp })
     const handler = createCartHandler({ enabled: true, origin, hmacKeyHex,
-      service: createCartService({ repository, storefront, vault, context: [projectRef, STAGING_CART_SHOP, origin] }),
+      service: createCartService({ repository, storefront, vault, context }),
+      transition: createCartTransitionService({ repository: createCartTransitionRepository({ enabled: true, pool: database.pool }), vault, context }),
       currentActor: async () => {
         const client = await createServerSupabase(), { data, error } = await client.auth.getUser()
         if (error && error.name !== 'AuthSessionMissingError') throw new Error('Account context unavailable')
