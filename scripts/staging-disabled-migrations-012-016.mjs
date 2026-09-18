@@ -90,14 +90,18 @@ export async function postExactlyOnce (token, deadline = Date.now() + MAX_AGE_MS
 
 export async function runInstallOnce ({ readToken = readTokenFromExactKeychain, post = postExactlyOnce, now = Date.now } = {}) {
   if (!NATIVE_ACCESS_APPROVED) return Object.freeze({ status: 'NATIVE_ACCESS_DISABLED', target: PROJECT_REF, installId: INSTALL_ID })
-  const token = readToken()
-  try { return await post(token, now() + MAX_AGE_MS) } finally { /* never persist or log token */ }
+  try { assertGeneratedArtifacts(); } catch { return Object.freeze({ status: 'PRE_DISPATCH_UNAVAILABLE', target: PROJECT_REF, installId: INSTALL_ID }) }
+  let token
+  try { token = readToken() } catch { return Object.freeze({ status: 'PRE_DISPATCH_UNAVAILABLE', target: PROJECT_REF, installId: INSTALL_ID }) }
+  try { return await post(token, now() + MAX_AGE_MS) } catch { return Object.freeze({ status: 'UNCERTAIN_POST_DISPATCH', target: PROJECT_REF, installId: INSTALL_ID, nextAction: 'READ_ONLY_RECONCILIATION_REQUIRED' }) }
 }
 
 function assertGeneratedArtifacts () {
   const manifest = JSON.parse(readFileSync(new URL('../config/staging-disabled-migrations-012-016.json', import.meta.url), 'utf8'))
   const helper = readFileSync(new URL('./staging-disabled-migrations-012-016-keychain.py', import.meta.url), 'utf8')
-  if (manifest.target !== PROJECT_REF || manifest.productionExcluded !== PRODUCTION_PROJECT_REF || manifest.nativeAccessApproved !== false || manifest.transport?.maxRequests !== MAX_REQUESTS || manifest.transactionSha256 !== sha256(FIXED_QUERY) || !/^APPROVED_NATIVE_READ = False$/m.test(helper)) unavailable()
+  const ownSource = readFileSync(fileURLToPath(import.meta.url), 'utf8')
+  const pins = manifest.sourcePinsForTransport
+  if (manifest.target !== PROJECT_REF || manifest.productionExcluded !== PRODUCTION_PROJECT_REF || manifest.nativeAccessApproved !== NATIVE_ACCESS_APPROVED || manifest.transport?.maxRequests !== MAX_REQUESTS || manifest.transactionSha256 !== sha256(FIXED_QUERY) || !Array.isArray(pins) || pins.length !== 2 || pins[0]?.sha256 !== sha256(ownSource) || pins[1]?.sha256 !== sha256(helper) || !new RegExp(`^APPROVED_NATIVE_READ = ${NATIVE_ACCESS_APPROVED ? 'True' : 'False'}$`, 'm').test(helper)) unavailable()
 }
 
 async function main () {

@@ -30,7 +30,17 @@
       "sha256": "b512d9d18599b60a18ea20d94b3502d94c5735c1ac20bbb76321efd46dea8349"
     }
   ],
-  "transactionSha256": "9a4d4706559fb435ad47c8f5e2c67c8f096ba99f11cdf876e6283ebdb77b35ea",
+  "transactionSha256": "f355f7280b979966f665d691f267c999ebd51396c2062b196fc5a8208bdc3f48",
+  "sourcePinsForTransport": [
+    {
+      "path": "scripts/staging-disabled-migrations-012-016.mjs",
+      "sha256": "649723a92f006def382dccdfc1010d0b1812e82469e96f41174b63e17ec0197b"
+    },
+    {
+      "path": "scripts/staging-disabled-migrations-012-016-keychain.py",
+      "sha256": "139e7e5194934da4471e31b0faf64176702d0ecb622908d31d363c00f225ed77"
+    }
+  ],
   "transport": {
     "hostname": "api.supabase.com",
     "path": "/v1/projects/qdmvngjwkcsilzmqksme/database/query",

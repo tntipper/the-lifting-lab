@@ -26,6 +26,8 @@ test('the generated transaction pins every source and only removes their outer w
   const pkg = buildPackage(), artifact = readFileSync('config/staging-disabled-migrations-012-016.sql', 'utf8')
   const manifest = JSON.parse(readFileSync('config/staging-disabled-migrations-012-016.json', 'utf8'))
   assert.equal(artifact, pkg.sql); assert.equal(manifest.transactionSha256, pkg.sqlSha256)
+  assert.equal(manifest.nativeAccessApproved, false); assert.equal(manifest.sourcePinsForTransport.length, 2)
+  execFileSync(process.execPath, ['scripts/staging-disabled-migrations-012-016.prepare.mjs', '--check'], { stdio: 'pipe' })
   assert.equal(pkg.sources.length, 5); assert.deepEqual(pkg.sources.map(source => source.version), MIGRATIONS.map(([version]) => version))
   assert.equal((artifact.match(/^BEGIN;$/gm) || []).length, 1); assert.equal((artifact.match(/^COMMIT;$/gm) || []).length, 1)
   assert.equal((artifact.match(/INSERT INTO tll_staging_private\.applied_migrations/g) || []).length, 1)
@@ -57,4 +59,12 @@ test('disabled run cannot read Keychain or make any management request', async (
   const stdout = Buffer.from(`sbp_${'a'.repeat(40)}\n`), stderr = Buffer.from('')
   assert.equal(consumeNativeTokenOutput({ status: 0, stdout, stderr }), `sbp_${'a'.repeat(40)}`)
   assert.ok(stdout.every(byte => byte === 0)); assert.ok(stderr.every(byte => byte === 0))
+})
+
+test('the executable distinguishes no-dispatch from an uncertain dispatched outcome without retry', () => {
+  const source = readFileSync('scripts/staging-disabled-migrations-012-016.mjs', 'utf8')
+  assert.match(source, /status: 'PRE_DISPATCH_UNAVAILABLE'/)
+  assert.match(source, /status: 'UNCERTAIN_POST_DISPATCH'/)
+  assert.match(source, /READ_ONLY_RECONCILIATION_REQUIRED/)
+  assert.match(source, /try \{ return await post\(token, now\(\) \+ MAX_AGE_MS\) \} catch/)
 })

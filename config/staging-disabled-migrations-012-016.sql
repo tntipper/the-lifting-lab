@@ -11,31 +11,17 @@ BEGIN
    OR coalesce((SELECT rolsuper FROM pg_roles WHERE rolname=current_user),true)
    OR NOT coalesce((SELECT rolcreaterole FROM pg_roles WHERE rolname=current_user),false)
    OR NOT pg_has_role(current_user,'pg_read_all_data','USAGE') OR pg_has_role(current_user,'pg_write_all_data','USAGE')
-   OR NOT pg_has_role(current_user,'pg_read_all_stats','USAGE') THEN
-   RAISE EXCEPTION 'Exact managed non-superuser staging postgres operator authority required';
- END IF;
+   OR NOT pg_has_role(current_user,'pg_read_all_stats','USAGE') THEN RAISE EXCEPTION 'Exact managed non-superuser staging postgres operator authority required'; END IF;
  IF to_regclass('tll_staging_private.environment') IS NULL OR (SELECT count(*) FROM tll_staging_private.environment)<>1
-   OR NOT EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE singleton AND environment='tll-hosted-staging-v1'
-     AND operator_project_ref='qdmvngjwkcsilzmqksme' AND operator_context='supabase-dashboard:qdmvngjwkcsilzmqksme:staging-bootstrap:reviewed'
-     AND identity_basis='explicit-operator-dashboard-binding' AND bootstrap_version='2026-09-15-v2')
-   OR EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE operator_project_ref='wrhgscovsgsudtedbljr') THEN
-   RAISE EXCEPTION 'Exact staging environment binding required; production is excluded';
- END IF;
+   OR NOT EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE singleton AND environment='tll-hosted-staging-v1' AND operator_project_ref='qdmvngjwkcsilzmqksme' AND operator_context='supabase-dashboard:qdmvngjwkcsilzmqksme:staging-bootstrap:reviewed' AND identity_basis='explicit-operator-dashboard-binding' AND bootstrap_version='2026-09-15-v2')
+   OR EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE operator_project_ref='wrhgscovsgsudtedbljr') THEN RAISE EXCEPTION 'Exact staging environment binding required; production is excluded'; END IF;
  SELECT count(*),count(*) FILTER (WHERE (version,source_sha256) IN (VALUES ('202609150002_public_submission_gateway','c82f9afb10c7ee7e46549033d4076046568557226a7864f8c2b8c8117ecd4bca'),('202609150003_active_stack_integrity','05cac500b24262975a773b2db284bc3fb95b62dc25fc6d47670eefbc86f15a60'),('202609150004_inventory_operation_ledger','030ccb26228aca6665147eced447815f8a290abd74b8003b0f32bfb2a05e5a76'),('202609150005_customer_connection_repository','f0f49edca9a0938b8e40b4d87ba7ee1eaee02dbc5082fc019a58ca949b263d0b'),('202609150006_staging_cart_sessions','17d039a6d1f343f35d1551c259a3f8c0e8643fe669b8230170a235bbc941155c'),('202609150007_customer_subject_broker_repository','85a118335d91d896b707dcdff1570f6c2df22a9b2037e9a569b587b89ad41c21'),('202609170008_customer_provisional_admission_repository','038b2bfc9d236f39c0cb5ae9b657a5a54b572fc304e6da318b00a07cf0d201e2'),('202609170009_inventory_maintenance_authority','4f054b145466a6ef2136ec79a0e1c17e8aa252e5bc02fa8c27deb23664eb153f'),('202609170010_customer_admission_bridge','711b92ef8a6e5760a126e340396f68cc372e361ee3e6bf66f3e6f3370be5f7aa'),('202609170011_customer_browser_admission_once','12bf5b5916d2f266f218bcd39c38098aea3225acef1cb0f67b47fe76bc29f58f'))) INTO actual_count,matched_count FROM tll_staging_private.applied_migrations;
- IF actual_count<>expected_count OR matched_count<>expected_count OR EXISTS(SELECT 1 FROM tll_staging_private.applied_migrations WHERE version IN ('202609180012_customer_shopify_proof_repository','202609180013_customer_final_reconciliation','202609180014_staging_cart_account_transition','202609180015_customer_account_operations','202609180016_customer_account_logout')) THEN
-   RAISE EXCEPTION 'Exact 002--011 predecessor ledger required';
- END IF;
- IF tll_customer_private.operator_status()->'enabled'<>'false'::jsonb OR (SELECT enabled FROM tll_cart_private.control WHERE singleton)
-   OR tll_broker_private.operator_status()->'enabled'<>'false'::jsonb OR tll_provisional_private.operator_status()->'enabled'<>'false'::jsonb
-   OR tll_bridge_private.operator_status()->'enabled'<>'false'::jsonb THEN RAISE EXCEPTION 'All controls must remain disabled'; END IF;
- IF to_regclass('tll_customer_private.shopify_proofs') IS NOT NULL OR to_regclass('tll_bridge_private.finalizations') IS NOT NULL
-   OR to_regclass('tll_cart_private.transitions') IS NOT NULL OR to_regclass('tll_bridge_private.account_generations') IS NOT NULL
-   OR to_regclass('tll_bridge_private.account_logouts') IS NOT NULL THEN RAISE EXCEPTION 'Expected empty migration destination required'; END IF;
+ IF actual_count<>expected_count OR matched_count<>expected_count OR EXISTS(SELECT 1 FROM tll_staging_private.applied_migrations WHERE version IN ('202609180012_customer_shopify_proof_repository','202609180013_customer_final_reconciliation','202609180014_staging_cart_account_transition','202609180015_customer_account_operations','202609180016_customer_account_logout')) THEN RAISE EXCEPTION 'Exact 002--011 predecessor ledger required'; END IF;
+ IF tll_customer_private.operator_status()->'enabled'<>'false'::jsonb OR coalesce((SELECT enabled FROM tll_cart_private.control WHERE singleton),true)
+   OR tll_broker_private.operator_status()->'enabled'<>'false'::jsonb OR tll_provisional_private.operator_status()->'enabled'<>'false'::jsonb OR tll_bridge_private.operator_status()->'enabled'<>'false'::jsonb THEN RAISE EXCEPTION 'All controls must remain disabled'; END IF;
+ IF to_regclass('tll_customer_private.shopify_proofs') IS NOT NULL OR to_regclass('tll_bridge_private.finalizations') IS NOT NULL OR to_regclass('tll_cart_private.transitions') IS NOT NULL OR to_regclass('tll_bridge_private.account_generations') IS NOT NULL OR to_regclass('tll_bridge_private.account_logouts') IS NOT NULL THEN RAISE EXCEPTION 'Expected empty migration destination required'; END IF;
  FOREACH r IN ARRAY ARRAY['tll_customer_owner','tll_cart_owner','tll_broker_owner','tll_provisional_owner','tll_bridge_owner'] LOOP
-   IF NOT EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid JOIN pg_roles member ON member.oid=e.member
-     WHERE granted.rolname=r AND member.rolname=current_user AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option) THEN
-     RAISE EXCEPTION 'Exact reviewed ADMIN-only owner authority required: %',r;
-   END IF;
+   IF NOT EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid JOIN pg_roles member ON member.oid=e.member WHERE granted.rolname=r AND member.rolname=current_user AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option) THEN RAISE EXCEPTION 'Exact reviewed ADMIN-only owner authority required: %',r; END IF;
  END LOOP;
 END $tll_install_guard$;
 -- Disabled additive Shopify proof custody for the customer executor. This adds
@@ -1045,12 +1031,12 @@ DECLARE installed integer;
 BEGIN
  SELECT count(*) INTO installed FROM tll_staging_private.applied_migrations WHERE (version,source_sha256) IN (VALUES ('202609180012_customer_shopify_proof_repository','c0b105293f01b79329c050a16702ad98123b744b63c85a63dbce8c1a2b7b6e61'),('202609180013_customer_final_reconciliation','4dc438d016fbe2f4e1a5cac7c76aa9f48f0bde369488702661f516fdd88841a6'),('202609180014_staging_cart_account_transition','99b3737bcffe7957e5eeb64d46566953ad2a9e8b4d045fdaf9e995a223a29061'),('202609180015_customer_account_operations','dfaafaa6ee121c5f33e7f1aff6a83f14d972455ef5fdd0ed2a49411f8b15c0ee'),('202609180016_customer_account_logout','b512d9d18599b60a18ea20d94b3502d94c5735c1ac20bbb76321efd46dea8349'));
  IF installed<>5 OR (SELECT count(*) FROM tll_staging_private.applied_migrations)<>15
-   OR tll_customer_private.operator_status()->'enabled'<>'false'::jsonb OR (SELECT enabled FROM tll_cart_private.control WHERE singleton)
-   OR tll_broker_private.operator_status()->'enabled'<>'false'::jsonb OR tll_provisional_private.operator_status()->'enabled'<>'false'::jsonb
-   OR tll_bridge_private.operator_status()->'enabled'<>'false'::jsonb
-   OR to_regclass('tll_customer_private.shopify_proofs') IS NULL OR to_regclass('tll_bridge_private.finalizations') IS NULL
-   OR to_regclass('tll_cart_private.transitions') IS NULL OR to_regclass('tll_bridge_private.account_generations') IS NULL
-   OR to_regclass('tll_bridge_private.account_logouts') IS NULL THEN RAISE EXCEPTION 'Disabled migration postflight mismatch'; END IF;
+   OR tll_customer_private.operator_status()->'enabled'<>'false'::jsonb OR coalesce((SELECT enabled FROM tll_cart_private.control WHERE singleton),true)
+   OR tll_broker_private.operator_status()->'enabled'<>'false'::jsonb OR tll_provisional_private.operator_status()->'enabled'<>'false'::jsonb OR tll_bridge_private.operator_status()->'enabled'<>'false'::jsonb
+   OR to_regclass('tll_customer_private.shopify_proofs') IS NULL OR to_regclass('tll_bridge_private.finalizations') IS NULL OR to_regclass('tll_cart_private.transitions') IS NULL OR to_regclass('tll_bridge_private.account_generations') IS NULL OR to_regclass('tll_bridge_private.account_logouts') IS NULL
+   OR EXISTS(SELECT 1 FROM tll_customer_private.shopify_proofs) OR EXISTS(SELECT 1 FROM tll_bridge_private.finalizations) OR EXISTS(SELECT 1 FROM tll_cart_private.transitions) OR EXISTS(SELECT 1 FROM tll_bridge_private.account_generations) OR EXISTS(SELECT 1 FROM tll_bridge_private.account_operations) OR EXISTS(SELECT 1 FROM tll_bridge_private.account_logouts)
+   OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid='tll_customer_private.shopify_proofs'::regclass) OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid='tll_bridge_private.finalizations'::regclass) OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid='tll_cart_private.transitions'::regclass) OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid='tll_bridge_private.account_generations'::regclass) OR NOT (SELECT relrowsecurity FROM pg_class WHERE oid='tll_bridge_private.account_logouts'::regclass)
+   OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid JOIN pg_roles member ON member.oid=e.member WHERE granted.rolname IN ('tll_customer_owner','tll_cart_owner','tll_broker_owner','tll_provisional_owner','tll_bridge_owner') AND member.rolname=current_user AND (NOT e.admin_option OR e.inherit_option OR e.set_option)) THEN RAISE EXCEPTION 'Disabled migration postflight mismatch'; END IF;
 END $tll_install_postflight$;
 SELECT jsonb_build_object('installId','tll-staging-disabled-migrations-012-016/v1','projectRef','qdmvngjwkcsilzmqksme','status','PASS','migrationCount',5,'controlsDisabled',true,'objectsPresent',true) AS tll_disabled_migration_postflight;
 COMMIT;

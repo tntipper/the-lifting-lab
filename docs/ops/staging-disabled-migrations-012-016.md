@@ -34,6 +34,20 @@ transport as part of ordinary development. A future hosted change requires the
 lead's fresh approval, a security review, a PASS staging read-only preflight,
 and a recovery path tested for the same installed revision.
 
+The generator reads both flags and writes their shared value into the manifest.
+The launcher verifies both source hashes, both flags and the manifest before it
+can read Keychain. A temporary reviewed enablement changes both flags together,
+regenerates the artifacts, and runs `--check`; restoring the disabled state
+uses the same sequence. Committed source must remain false.
+
+`PRE_DISPATCH_UNAVAILABLE` proves no token was obtained and no request was
+sent. `UNCERTAIN_POST_DISPATCH` means a request may have reached Supabase but a
+validated receipt was not obtained; it must never be retried. Stop and use the
+separate read-only reconciliation and recovery path. Hosted execution remains
+held until the Management API's expected success status and result envelope are
+confirmed by a successful reviewed read-only exchange. The HTTP 201 and
+single-row envelope here are fail-closed assumptions, not that evidence.
+
 The only acceptable successful output is a redacted receipt containing the
 install identifier, staging project reference, PASS status, five migrations,
 disabled controls, present objects and transaction SHA-256. It must not include
