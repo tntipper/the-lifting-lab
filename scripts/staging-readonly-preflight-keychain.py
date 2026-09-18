@@ -1,4 +1,5 @@
 """Disabled exact Keychain reader for one Supabase CLI token item only."""
+import base64
 import ctypes
 import os
 import re
@@ -10,6 +11,18 @@ ACCOUNT = "supabase"
 
 def unavailable():
     raise RuntimeError("Staging read-only preflight unavailable")
+
+def normalize_token(value):
+    if not isinstance(value, str) or len(value) > 256:
+        unavailable()
+    if value.startswith("go-keyring-base64:"):
+        try:
+            value = base64.b64decode(value[len("go-keyring-base64:"):], validate=True).decode("utf-8")
+        except Exception:
+            unavailable()
+    if not re.fullmatch(r"sbp_(?:oauth_|v0_)?[a-f0-9]{40}", value):
+        unavailable()
+    return value
 
 def read_exact_native_token():
     # No service/account fallback, enumeration, update, deletion, argv input or
@@ -50,10 +63,7 @@ def read_exact_native_token():
         if length < 1 or length > 256:
             unavailable()
         token_bytes = bytearray(ctypes.string_at(cf.CFDataGetBytePtr(result), length))
-        token = token_bytes.decode("utf-8")
-        if not re.fullmatch(r"(?:go-keyring-base64:)?sbp_(?:oauth_|v0_)?[a-f0-9]{40}", token):
-            unavailable()
-        return token
+        return normalize_token(token_bytes.decode("utf-8"))
     finally:
         if token_bytes is not None:
             token_bytes[:] = b"\0" * len(token_bytes)
@@ -74,6 +84,7 @@ def main():
     try:
         while output:
             written = os.write(1, output)
+            output[:written] = b"\0" * written
             del output[:written]
     finally:
         output[:] = b"\0" * len(output)

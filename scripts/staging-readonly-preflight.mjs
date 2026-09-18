@@ -69,12 +69,25 @@ export function nativeDesignReference () {
   return Object.freeze({ path: legacyNativeAdapter, sha256: sha256(readFileSync(path)), service: KEYCHAIN_SERVICE, account: KEYCHAIN_ACCOUNT })
 }
 
+export function normalizeKeychainToken (value) {
+  if (typeof value !== 'string' || value.length > 256) unavailable()
+  if (value.startsWith('go-keyring-base64:')) {
+    const payload = value.slice('go-keyring-base64:'.length)
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(payload) || payload.length === 0 || payload.length % 4 !== 0) unavailable()
+    const decoded = Buffer.from(payload, 'base64')
+    try {
+      if (decoded.length === 0 || decoded.toString('base64') !== payload) unavailable()
+      value = decoded.toString('utf8')
+    } finally { decoded.fill(0) }
+  }
+  if (!/^sbp_(?:oauth_|v0_)?[a-f0-9]{40}$/.test(value)) unavailable()
+  return value
+}
+
 export function consumeNativeTokenOutput ({ status, stdout, stderr }) {
   try {
     if (status !== 0 || !Buffer.isBuffer(stdout) || (stderr?.length ?? 0) !== 0) unavailable()
-    const token = stdout.toString('utf8').trim()
-    if (!/^(?:go-keyring-base64:)?sbp_(?:oauth_|v0_)?[a-f0-9]{40}$/.test(token)) unavailable()
-    return token
+    return normalizeKeychainToken(stdout.toString('utf8').trim())
   } finally {
     if (Buffer.isBuffer(stdout)) stdout.fill(0)
     if (Buffer.isBuffer(stderr)) stderr.fill(0)
@@ -125,4 +138,21 @@ export async function postExactlyOnce (token, deadline = Date.now() + MAX_AGE_MS
   } finally { body.fill(0) }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) process.stdout.write(JSON.stringify({ status: 'NATIVE_ACCESS_DISABLED', target: PROJECT_REF, queryId: QUERY_ID, nativeDesign: nativeDesignReference() }) + '\n')
+export async function runPreflightOnce ({ readToken = readTokenFromExactKeychain, post = postExactlyOnce, now = Date.now } = {}) {
+  if (!NATIVE_ACCESS_APPROVED) return Object.freeze({ status: 'NATIVE_ACCESS_DISABLED', target: PROJECT_REF, queryId: QUERY_ID })
+  const deadline = now() + MAX_AGE_MS
+  const token = readToken()
+  try { return await post(token, deadline) } finally { /* token is never logged or persisted */ }
+}
+
+async function main () {
+  if (process.argv.length !== 2) unavailable()
+  return runPreflightOnce()
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().then(result => process.stdout.write(JSON.stringify(result) + '\n')).catch(() => {
+    process.stdout.write(JSON.stringify({ status: 'UNAVAILABLE', target: PROJECT_REF, queryId: QUERY_ID }) + '\n')
+    process.exitCode = 1
+  })
+}
