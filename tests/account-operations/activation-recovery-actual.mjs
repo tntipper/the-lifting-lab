@@ -15,7 +15,7 @@ const aliases = {
   tll_customer_runtime: 'tll_ao1_customer_runtime', tll_cart_runtime: 'tll_ao1_cart_runtime', tll_broker_runtime: 'tll_ao1_broker_runtime',
   tll_provisional_runtime: 'tll_ao1_provisional_runtime', tll_bridge_runtime: 'tll_ao1_bridge_runtime',
 }
-const OPERATOR = 'tll_ao1_recovery_operator', WINDOW = '83888906-23fa-4653-a886-fe2733ed76a0', EXPIRES = '2030-01-02T03:04:05Z', marker = state => `tll-runtime-window/v1 {\"expiresAt\":\"${EXPIRES}\",\"generation\":6,\"projectRef\":\"qdmvngjwkcsilzmqksme\",\"state\":\"${state}\",\"windowId\":\"${WINDOW}\"}`
+const OPERATOR = 'tll_ao1_recovery_operator', WINDOW = '83888906-23fa-4653-a886-fe2733ed76a0', EXPIRES = '2030-01-02T03:04:05Z', marker = (state, expires = EXPIRES) => `tll-runtime-window/v1 {\"expiresAt\":\"${expires}\",\"generation\":6,\"projectRef\":\"qdmvngjwkcsilzmqksme\",\"state\":\"${state}\",\"windowId\":\"${WINDOW}\"}`
 const runtimes = ['customer','cart','broker','provisional','bridge'].map(purpose => `tll_ao1_${purpose}_runtime`)
 const q = value => `'${value.replaceAll("'", "''")}'`
 const adapt = source => Object.entries(aliases).reduce((text, [from, to]) => text.replace(new RegExp(`(?<![A-Za-z0-9_$])${from}(?![A-Za-z0-9_$])`, 'g'), to), source)
@@ -82,7 +82,9 @@ try {
   assert.throws(runRecovery, /generation or window mismatch/)
   admin(`COMMENT ON ROLE tll_ao1_customer_runtime IS ${q(marker('retired'))}`)
   assert.throws(runRecovery, /partial or mixed/)
-  admin(`COMMENT ON ROLE tll_ao1_customer_runtime IS ${q(marker('active'))}`)
+  // Credential expiry prevents a new login; it cannot block retirement of work
+  // that may still exist after a delayed or uncertain acknowledgement.
+  for (const runtime of runtimes) admin(`COMMENT ON ROLE ${runtime} IS ${q(marker('active', '2020-01-02T03:04:05Z'))}`)
   runRecovery()
   managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${postCommit}`)
   // Exact retired markers are idempotent only while all controls/work remain terminal.

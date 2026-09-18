@@ -119,7 +119,6 @@ BEGIN
     IF parsed->>'state'='active' THEN active_count:=active_count+1; ELSE retired_count:=retired_count+1; END IF;
   END LOOP;
   IF active_count=5 THEN
-    IF expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'Runtime activation window is expired'; END IF;
     idempotent:=false;
   ELSIF retired_count=5 THEN
     idempotent:=true;
