@@ -52,8 +52,41 @@ can read Keychain. A temporary reviewed enablement changes both flags together,
 regenerates the artifacts, and runs `--check`; restoring the disabled state
 uses the same sequence. Committed source must remain false.
 
+## Dispatch journal and reconciliation
+
+Before the transport can issue its one Management API request, it writes a
+durable nonsecret intent journal at:
+
+```text
+../implementation-state/staging/tll-disabled-migrations-012-016-dispatch.json
+```
+
+The intent is written to a same-directory temporary file, fsynced, atomically
+renamed, and followed by a directory fsync. It binds the fixed staging target,
+install ID, transaction SHA-256, reviewed migration and transport source-pin
+SHA-256 values, timestamp and per-run ID. Its initial state is
+`INTENT_RECORDED`. It never contains SQL, access tokens, provider responses,
+role details, customer data or passwords.
+
+On an exact validated PASS receipt, the same record becomes
+`RECEIPT_VALIDATED` and adds only a SHA-256 of the redacted receipt. Any
+timeout, malformed receipt, lost acknowledgement, or failure after dispatch
+changes it to `RECONCILIATION_REQUIRED`; if that final write itself cannot
+finish, the prior durable `INTENT_RECORDED` still prevents another request.
+There is no retry path.
+
+Do not run the installer when a journal for this install is
+`INTENT_RECORDED` or `RECONCILIATION_REQUIRED`. Stop and use a separately
+reviewed, read-only reconciliation process to establish whether the transaction
+committed. That process may mark a terminal reconciled state only after its
+own evidence is retained; it is intentionally not implemented by this
+installer and it must not issue a migration request. Existing completed or
+reconciled journal records also require review before any future package can be
+considered.
+
 `PRE_DISPATCH_UNAVAILABLE` proves no token was obtained and no request was
-sent. `UNCERTAIN_POST_DISPATCH` means a request may have reached Supabase but a
+sent, including when the durable intent cannot be recorded.
+`UNCERTAIN_POST_DISPATCH` means a request may have reached Supabase but a
 validated receipt was not obtained; it must never be retried. Stop and use the
 separate read-only reconciliation and recovery path. Hosted execution remains
 held until the Management API's expected success status and result envelope are

@@ -3,8 +3,9 @@
  * It has no caller-supplied SQL, URL, headers, retry path, or production path.
  */
 import https from 'node:https'
-import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { createHash, randomUUID } from 'node:crypto'
+import * as fs from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { INSTALL_ID, PROJECT_REF, PRODUCTION_PROJECT_REF, buildPackage } from './staging-disabled-migrations-012-016.prepare.mjs'
@@ -23,6 +24,87 @@ const sha256 = value => createHash('sha256').update(value).digest('hex')
 const unavailable = () => { throw new Error('Disabled staging migration install unavailable') }
 const packageSpec = buildPackage()
 export const FIXED_QUERY = packageSpec.sql
+export const DEFAULT_JOURNAL_PATH = fileURLToPath(new URL('../../implementation-state/staging/tll-disabled-migrations-012-016-dispatch.json', import.meta.url))
+
+function fsyncDirectory (directory, fileSystem) {
+  let descriptor
+  try { descriptor = fileSystem.openSync(directory, 'r'); fileSystem.fsyncSync(descriptor) } finally { if (descriptor !== undefined) fileSystem.closeSync(descriptor) }
+}
+
+function durableReplace (path, record, { fileSystem = fs, runId = randomUUID() } = {}) {
+  const directory = dirname(path)
+  const temporary = resolve(directory, `.${INSTALL_ID.replace(/[^a-z0-9]/gi, '_')}.${runId}.tmp`)
+  const data = Buffer.from(JSON.stringify(record) + '\n', 'utf8')
+  let descriptor
+  try {
+    fileSystem.mkdirSync(directory, { recursive: true, mode: 0o700 })
+    descriptor = fileSystem.openSync(temporary, 'wx', 0o600)
+    fileSystem.writeSync(descriptor, data)
+    fileSystem.fsyncSync(descriptor)
+    fileSystem.closeSync(descriptor); descriptor = undefined
+    fileSystem.renameSync(temporary, path)
+    fsyncDirectory(directory, fileSystem)
+  } finally {
+    if (descriptor !== undefined) fileSystem.closeSync(descriptor)
+    data.fill(0)
+  }
+}
+
+function readJournal (path, fileSystem) {
+  try {
+    const parsed = JSON.parse(fileSystem.readFileSync(path, 'utf8'))
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || parsed.installId !== INSTALL_ID || parsed.target !== PROJECT_REF || typeof parsed.state !== 'string') unavailable()
+    return parsed
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null
+    unavailable()
+  }
+}
+
+function journalSourcePins (manifest) {
+  const pins = [...manifest.sourcePins, ...manifest.sourcePinsForTransport].map(({ path, version, sha256: hash }) => Object.freeze({ ...(path ? { path } : {}), ...(version ? { version } : {}), sha256: hash }))
+  if (pins.length !== 7 || pins.some(pin => !/^[a-f0-9]{64}$/.test(pin.sha256))) unavailable()
+  return Object.freeze(pins)
+}
+
+function validateJournalReceipt (receipt) {
+  const expected = { status: 'PASS', target: PROJECT_REF, installId: INSTALL_ID, migrationCount: 5, transactionSha256: sha256(FIXED_QUERY) }
+  if (!receipt || typeof receipt !== 'object' || Array.isArray(receipt) || Object.keys(receipt).sort().join('|') !== Object.keys(expected).sort().join('|')) unavailable()
+  for (const [key, value] of Object.entries(expected)) if (receipt[key] !== value) unavailable()
+  return Object.freeze(expected)
+}
+
+/**
+ * A nonsecret, durable dispatch ledger. It deliberately contains no query,
+ * provider response, token, role or customer data. The journal is local
+ * evidence, not a substitute for the separate read-only reconciliation path.
+ */
+export function createDispatchJournal ({ path = DEFAULT_JOURNAL_PATH, fileSystem = fs, makeRunId = randomUUID } = {}) {
+  const existing = () => readJournal(path, fileSystem)
+  return Object.freeze({
+    path,
+    refusePriorDispatch () {
+      const record = existing()
+      if (!record) return null
+      if (['INTENT_RECORDED', 'RECONCILIATION_REQUIRED'].includes(record.state)) return Object.freeze({ status: 'RECONCILIATION_REQUIRED', target: PROJECT_REF, installId: INSTALL_ID, nextAction: 'READ_ONLY_RECONCILIATION_REQUIRED' })
+      return Object.freeze({ status: 'INSTALL_ALREADY_RECORDED', target: PROJECT_REF, installId: INSTALL_ID, nextAction: 'READ_ONLY_RECONCILIATION_REQUIRED' })
+    },
+    recordIntent ({ manifest, timestamp }) {
+      const runId = makeRunId()
+      if (typeof runId !== 'string' || runId.length < 8) unavailable()
+      const record = Object.freeze({ schema: `${INSTALL_ID}/dispatch-journal/v1`, state: 'INTENT_RECORDED', installId: INSTALL_ID, target: PROJECT_REF, transactionSha256: manifest.transactionSha256, sourcePinSha256: journalSourcePins(manifest), timestamp, runId })
+      durableReplace(path, record, { fileSystem, runId })
+      return record
+    },
+    transition (intent, state, additions = {}) {
+      if (!intent || intent.state !== 'INTENT_RECORDED' || !['RECEIPT_VALIDATED', 'RECONCILIATION_REQUIRED'].includes(state)) unavailable()
+      const record = Object.freeze({ ...intent, ...additions, state })
+      durableReplace(path, record, { fileSystem, runId: intent.runId })
+      return record
+    },
+    read: existing,
+  })
+}
 
 function noAmbientOverrides () {
   for (const name of Object.keys(process.env)) {
@@ -88,20 +170,53 @@ export async function postExactlyOnce (token, deadline = Date.now() + MAX_AGE_MS
   } finally { body.fill(0) }
 }
 
-export async function runInstallOnce ({ readToken = readTokenFromExactKeychain, post = postExactlyOnce, now = Date.now } = {}) {
+/**
+ * Dispatches once after an intent is on durable local storage. This is kept
+ * independent of native access so its crash boundaries can be tested without
+ * enabling the transport. Callers must never invoke it after a prior record.
+ */
+export async function dispatchWithJournal ({ token, post, manifest, journal = createDispatchJournal(), now = Date.now } = {}) {
+  const prior = journal.refusePriorDispatch()
+  if (prior) return prior
+  let intent
+  try {
+    intent = journal.recordIntent({ manifest, timestamp: new Date(now()).toISOString() })
+  } catch {
+    return Object.freeze({ status: 'PRE_DISPATCH_UNAVAILABLE', target: PROJECT_REF, installId: INSTALL_ID })
+  }
+  try {
+    const receipt = validateJournalReceipt(await post(token, now() + MAX_AGE_MS))
+    const receiptHash = sha256(JSON.stringify(receipt))
+    try {
+      journal.transition(intent, 'RECEIPT_VALIDATED', { receiptSha256: receiptHash })
+    } catch {
+      // The durable intent remains, which blocks a second request until the
+      // read-only reconciliation process establishes the database state.
+      return Object.freeze({ status: 'UNCERTAIN_POST_DISPATCH', target: PROJECT_REF, installId: INSTALL_ID, nextAction: 'READ_ONLY_RECONCILIATION_REQUIRED' })
+    }
+    return receipt
+  } catch {
+    try { journal.transition(intent, 'RECONCILIATION_REQUIRED') } catch { /* retained INTENT_RECORDED also blocks retry */ }
+    return Object.freeze({ status: 'UNCERTAIN_POST_DISPATCH', target: PROJECT_REF, installId: INSTALL_ID, nextAction: 'READ_ONLY_RECONCILIATION_REQUIRED' })
+  }
+}
+
+export async function runInstallOnce ({ readToken = readTokenFromExactKeychain, post = postExactlyOnce, now = Date.now, journal = createDispatchJournal() } = {}) {
   if (!NATIVE_ACCESS_APPROVED) return Object.freeze({ status: 'NATIVE_ACCESS_DISABLED', target: PROJECT_REF, installId: INSTALL_ID })
-  try { assertGeneratedArtifacts(); } catch { return Object.freeze({ status: 'PRE_DISPATCH_UNAVAILABLE', target: PROJECT_REF, installId: INSTALL_ID }) }
+  let manifest
+  try { manifest = assertGeneratedArtifacts() } catch { return Object.freeze({ status: 'PRE_DISPATCH_UNAVAILABLE', target: PROJECT_REF, installId: INSTALL_ID }) }
   let token
   try { token = readToken() } catch { return Object.freeze({ status: 'PRE_DISPATCH_UNAVAILABLE', target: PROJECT_REF, installId: INSTALL_ID }) }
-  try { return await post(token, now() + MAX_AGE_MS) } catch { return Object.freeze({ status: 'UNCERTAIN_POST_DISPATCH', target: PROJECT_REF, installId: INSTALL_ID, nextAction: 'READ_ONLY_RECONCILIATION_REQUIRED' }) }
+  return dispatchWithJournal({ token, post, manifest, journal, now })
 }
 
 function assertGeneratedArtifacts () {
-  const manifest = JSON.parse(readFileSync(new URL('../config/staging-disabled-migrations-012-016.json', import.meta.url), 'utf8'))
-  const helper = readFileSync(new URL('./staging-disabled-migrations-012-016-keychain.py', import.meta.url), 'utf8')
-  const ownSource = readFileSync(fileURLToPath(import.meta.url), 'utf8')
+  const manifest = JSON.parse(fs.readFileSync(new URL('../config/staging-disabled-migrations-012-016.json', import.meta.url), 'utf8'))
+  const helper = fs.readFileSync(new URL('./staging-disabled-migrations-012-016-keychain.py', import.meta.url), 'utf8')
+  const ownSource = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8')
   const pins = manifest.sourcePinsForTransport
   if (manifest.target !== PROJECT_REF || manifest.productionExcluded !== PRODUCTION_PROJECT_REF || manifest.nativeAccessApproved !== NATIVE_ACCESS_APPROVED || manifest.transport?.maxRequests !== MAX_REQUESTS || manifest.transactionSha256 !== sha256(FIXED_QUERY) || !Array.isArray(pins) || pins.length !== 2 || pins[0]?.sha256 !== sha256(ownSource) || pins[1]?.sha256 !== sha256(helper) || !new RegExp(`^APPROVED_NATIVE_READ = ${NATIVE_ACCESS_APPROVED ? 'True' : 'False'}$`, 'm').test(helper)) unavailable()
+  return manifest
 }
 
 async function main () {

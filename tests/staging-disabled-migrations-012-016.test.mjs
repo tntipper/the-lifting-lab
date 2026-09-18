@@ -1,11 +1,20 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import { ENDPOINT, FIXED_QUERY, INSTALL_ID, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, PROJECT_REF, PRODUCTION_PROJECT_REF, consumeNativeTokenOutput, runInstallOnce, validateResult } from '../scripts/staging-disabled-migrations-012-016.mjs'
+import * as nativeFs from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { ENDPOINT, FIXED_QUERY, INSTALL_ID, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, PROJECT_REF, PRODUCTION_PROJECT_REF, consumeNativeTokenOutput, createDispatchJournal, dispatchWithJournal, runInstallOnce, validateResult } from '../scripts/staging-disabled-migrations-012-016.mjs'
 import { MIGRATIONS, buildPackage } from '../scripts/staging-disabled-migrations-012-016.prepare.mjs'
 
 const receipt = { installId: INSTALL_ID, projectRef: PROJECT_REF, status: 'PASS', migrationCount: 5, controlsDisabled: true, objectsPresent: true }
+const manifest = JSON.parse(readFileSync('config/staging-disabled-migrations-012-016.json', 'utf8'))
+const temporaryJournal = () => {
+  const directory = mkdtempSync(join(tmpdir(), 'tll-disabled-migrations-'))
+  const path = join(directory, 'dispatch.json')
+  return { directory, path, journal: createDispatchJournal({ path, makeRunId: () => 'test-run-0001' }) }
+}
 
 test('migration package is fixed to staging, disabled, and has no caller dispatch surface', () => {
   assert.equal(NATIVE_ACCESS_APPROVED, false)
@@ -66,7 +75,62 @@ test('the executable distinguishes no-dispatch from an uncertain dispatched outc
   assert.match(source, /status: 'PRE_DISPATCH_UNAVAILABLE'/)
   assert.match(source, /status: 'UNCERTAIN_POST_DISPATCH'/)
   assert.match(source, /READ_ONLY_RECONCILIATION_REQUIRED/)
-  assert.match(source, /try \{ return await post\(token, now\(\) \+ MAX_AGE_MS\) \} catch/)
+  assert.match(source, /journal\.recordIntent/)
+  assert.match(source, /return dispatchWithJournal\(\{ token, post, manifest, journal, now \}\)/)
+})
+
+test('the durable nonsecret intent is fsynced and renamed before the only post', async () => {
+  const { directory, path } = temporaryJournal()
+  const events = []
+  const descriptors = new Map()
+  const spyFs = {
+    mkdirSync (...args) { events.push('mkdir'); return nativeFs.mkdirSync(...args) },
+    openSync (file, ...args) { const fd = nativeFs.openSync(file, ...args); descriptors.set(fd, file); events.push(`open:${file === directory ? 'directory' : 'temporary'}`); return fd },
+    writeSync (...args) { events.push('write'); return nativeFs.writeSync(...args) },
+    fsyncSync (fd) { events.push(`fsync:${descriptors.get(fd) === directory ? 'directory' : 'temporary'}`); return nativeFs.fsyncSync(fd) },
+    closeSync (fd) { events.push('close'); return nativeFs.closeSync(fd) },
+    renameSync (...args) { events.push('rename'); return nativeFs.renameSync(...args) },
+    readFileSync: nativeFs.readFileSync,
+  }
+  const journal = createDispatchJournal({ path, fileSystem: spyFs, makeRunId: () => 'test-run-0001' })
+  try {
+    const result = await dispatchWithJournal({ token: 'opaque', manifest, journal, now: () => 0, post: async () => { events.push('post'); return validateResult([{ tll_disabled_migration_postflight: receipt }]) } })
+    assert.equal(result.status, 'PASS')
+    assert.ok(events.indexOf('rename') < events.indexOf('post'))
+    assert.ok(events.indexOf('fsync:temporary') < events.indexOf('rename'))
+    assert.ok(events.lastIndexOf('fsync:directory') > events.lastIndexOf('rename'))
+    const record = JSON.parse(readFileSync(path, 'utf8'))
+    assert.equal(record.state, 'RECEIPT_VALIDATED'); assert.equal(record.target, PROJECT_REF)
+    assert.equal(record.transactionSha256, manifest.transactionSha256); assert.equal(record.sourcePinSha256.length, 7)
+    assert.match(record.receiptSha256, /^[a-f0-9]{64}$/)
+    assert.doesNotMatch(JSON.stringify(record), /opaque|SELECT|Bearer|tll_disabled_migration_postflight/)
+    assert.deepEqual(readdirSync(directory).sort(), ['dispatch.json'])
+  } finally { rmSync(directory, { recursive: true, force: true }) }
+})
+
+test('lost acknowledgements, malformed receipts and timeouts preserve the intent and demand reconciliation', async () => {
+  for (const post of [async () => { throw new Error('timeout') }, async () => ({ status: 'PASS' }), async () => { throw new Error('lost acknowledgement') }]) {
+    const { directory, path, journal } = temporaryJournal()
+    try {
+      const result = await dispatchWithJournal({ token: 'opaque', manifest, journal, now: () => 0, post })
+      assert.equal(result.status, 'UNCERTAIN_POST_DISPATCH')
+      assert.equal(JSON.parse(readFileSync(path, 'utf8')).state, 'RECONCILIATION_REQUIRED')
+    } finally { rmSync(directory, { recursive: true, force: true }) }
+  }
+})
+
+test('a journal write failure proves no dispatch and a recorded uncertainty blocks every retry', async () => {
+  let requests = 0
+  const unavailableJournal = { refusePriorDispatch: () => null, recordIntent: () => { throw new Error('disk unavailable') } }
+  const noDispatch = await dispatchWithJournal({ token: 'opaque', manifest, journal: unavailableJournal, now: () => 0, post: async () => { requests += 1; return receipt } })
+  assert.equal(noDispatch.status, 'PRE_DISPATCH_UNAVAILABLE'); assert.equal(requests, 0)
+
+  const { directory, journal } = temporaryJournal()
+  try {
+    const first = await dispatchWithJournal({ token: 'opaque', manifest, journal, now: () => 0, post: async () => { requests += 1; throw new Error('timeout') } })
+    const second = await dispatchWithJournal({ token: 'opaque', manifest, journal, now: () => 0, post: async () => { requests += 1; return receipt } })
+    assert.equal(first.status, 'UNCERTAIN_POST_DISPATCH'); assert.equal(second.status, 'RECONCILIATION_REQUIRED'); assert.equal(requests, 1)
+  } finally { rmSync(directory, { recursive: true, force: true }) }
 })
 
 test('actual PostgreSQL acceptance is isolated and executes the generated package', () => {
