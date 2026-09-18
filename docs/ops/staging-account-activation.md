@@ -20,6 +20,8 @@ Before creating runtime logins, verify exact owners, RLS, ACLs, function source 
 
 ## 3. Create isolated runtime credentials
 
+Before creating any LOGIN or secret, require `node scripts/staging-account-activation-recovery.mjs --check` and compare both recovery source hashes with `manifest.recovery.sources`. The recovery contract is [Staging account activation recovery](staging-account-activation-recovery.md). If the package is stale, incompatible with the installed 012–016 surface, or cannot execute through the same bounded operator transport, do not provision credentials.
+
 Create fresh passwords for the five existing NOLOGIN purpose roles through separate runtime LOGIN roles. Each LOGIN receives only the membership in the manifest: customer executor, cart gateway, broker executor, provisional executor or bridge executor. The bridge LOGIN must not inherit broker or provisional executor membership. Verify zero cross-purpose access with fresh connections, then store each password only in its named Vercel/Edge secret destination. Never paste a password into source, logs, the manifest or this runbook.
 
 Create four distinct customer vault keys plus the separate cart vault and HMAC keys. Key IDs and key material must be unique. Configure the pinned public CA and fingerprint, Shopify confidential secret, broker secret and storefront token only in their required server environments. Keep every activation flag false or absent.
@@ -46,4 +48,4 @@ Repeat only idempotent reads needed to prove no replay. Do not retry a provider 
 
 ## 8. Closeout and recovery
 
-Capture the final database authority/data fingerprint, deployed function/version hashes, Vercel deployment ID, provider configuration readback and acceptance results without secret values. Retire temporary operator access and any Vercel test bypass. Runtime credentials remain only if every gate passed; otherwise disable all controls and flags, revoke the new runtime passwords/secrets, drain bounded staging sessions, and preserve the failed journal for diagnosis. Never roll a failed window forward by changing an assertion in place.
+Capture the final database authority/data fingerprint, deployed function/version hashes, Vercel deployment ID, provider configuration readback and acceptance results without secret values. Retire temporary operator access and any Vercel test bypass. Runtime credentials remain only if every gate passed. On any failed or uncertain activation, keep application and Edge flags closed, execute only the manifest-pinned [post-016 recovery package](staging-account-activation-recovery.md) through the reviewed staging operator transport, retire the corresponding host secrets, and preserve its preflight/postflight evidence and failed journal. Never use the older migrations-002–011 retirement script after this window, and never roll a failed window forward by changing an assertion in place.

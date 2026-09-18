@@ -36,6 +36,10 @@ const runtimeSources = [
   'lib/identity/customer-account-logout.ts', 'lib/identity/customer-account-logout-repository.ts',
   'lib/identity/customer-orders.ts', 'app/api/account/orders/route.ts', 'app/auth/customer/logout/route.ts',
 ]
+const recoverySources = [
+  'scripts/staging-account-activation-recovery.mjs',
+  'config/staging-account-activation-recovery.sql',
+]
 const databasePasswords = ['CUSTOMER','CART','BROKER','PROVISIONAL','BRIDGE'].map(purpose => `TLL_STAGING_${purpose}_DATABASE_PASSWORD`)
 const vaults = ['TOKEN','PROVISIONAL','COOKIE','FINAL'].flatMap(purpose =>
   [`TLL_STAGING_CUSTOMER_${purpose}_VAULT_KEY_ID`, `TLL_STAGING_CUSTOMER_${purpose}_VAULT_KEY_HEX`])
@@ -107,14 +111,23 @@ const manifest = {
     callbackPath: '/auth/customer/shopify/callback', logoutPath: '/auth',
     subjectBrokerClientId: 'tll-staging-subject-broker-v1', subjectBrokerCallback: 'https://qdmvngjwkcsilzmqksme.supabase.co/auth/v1/callback',
     subjectBrokerTokenPath: '/functions/v1/tll-broker-token', subjectBrokerUserinfoPath: '/functions/v1/tll-broker-userinfo' },
+  recovery: {
+    sources: await Promise.all(recoverySources.map(pin)),
+    requiredInstalledMigrations: ['012','013','014','015','016'],
+    disablesControls: ['customer','cart','broker','provisional','bridge'],
+    retiresRuntimeLogins: ['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'],
+    preservesEvidenceRows: true,
+    requiredBeforeCredentialProvisioning: true,
+  },
   gates: [
     'verify_exact_target_and_production_exclusion', 'verify_hosted_002_through_011_and_all_controls_disabled',
     'verify_pins_and_operator_authority', 'install_012_through_016_in_one_disabled_window',
-    'verify_roles_rls_acls_function_sources_and_empty_new_stores', 'deploy_edge_disabled_and_verify_fixed_503',
+    'verify_roles_rls_acls_function_sources_and_empty_new_stores', 'verify_post_016_recovery_package_before_credentials',
+    'deploy_edge_disabled_and_verify_fixed_503',
     'install_distinct_runtime_credentials_and_secret_configuration', 'verify_provider_endpoints_callbacks_permissions_and_logout_uri',
     'deploy_immutable_preview_with_public_feature_flags_disabled', 'run_unavailable_route_and_cross_role_denial_checks',
     'enable_database_controls_then_edge_then_server_feature_flags', 'run_one_authenticated_account_orders_logout_journey',
-    'retire_temporary_operator_access_and_preserve_postflight_evidence',
+    'retire_temporary_operator_access_and_preserve_postflight_evidence', 'run_pinned_recovery_on_failed_or_uncertain_activation',
   ],
 }
 const serialized = JSON.stringify(manifest, null, 2) + '\n'

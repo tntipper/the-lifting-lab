@@ -20,6 +20,13 @@ test('staging account activation manifest pins reviewed sources and contains no 
     ['deploymentId', 'immutableUrl', 'sourceCommit', 'manifestSha256'])
   assert.equal(manifest.runtime.reviewedPreview.immutableDeploymentEvidence.aliasMustResolveToRecordedDeployment, true)
   assert.equal('previewOriginPattern' in manifest.provider, false)
+  assert.deepEqual(manifest.recovery.requiredInstalledMigrations, ['012','013','014','015','016'])
+  assert.deepEqual(manifest.recovery.disablesControls, ['customer','cart','broker','provisional','bridge'])
+  assert.equal(manifest.recovery.retiresRuntimeLogins.length, 5)
+  assert.equal(manifest.recovery.preservesEvidenceRows, true)
+  assert.equal(manifest.recovery.requiredBeforeCredentialProvisioning, true)
+  assert.ok(manifest.gates.indexOf('verify_post_016_recovery_package_before_credentials')
+    < manifest.gates.indexOf('install_distinct_runtime_credentials_and_secret_configuration'))
   assert.ok(manifest.sourceTree.fileCount > 40); assert.match(manifest.sourceTree.sha256, /^[a-f0-9]{64}$/)
   assert.ok(manifest.gates.indexOf('enable_database_controls_then_edge_then_server_feature_flags')
     > manifest.gates.indexOf('run_unavailable_route_and_cross_role_denial_checks'))
@@ -27,7 +34,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(JSON.stringify(manifest).includes('secretValue'), false)
   assert.equal(JSON.stringify(manifest).includes('passwordValue'), false)
   assert.equal(JSON.stringify(manifest).includes('keyHexValue'), false)
-  for (const pin of [...manifest.migrations,...manifest.edge.sources,...manifest.runtime.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
+  for (const pin of [...manifest.migrations,...manifest.edge.sources,...manifest.runtime.sources,...manifest.recovery.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
 
   const classified = new Set([...manifest.runtime.vercelSecrets,...manifest.runtime.vercelConfiguration])
   const runtimeSource = ['lib/server/staging-customer.ts','lib/commerce/staging-cart-server.ts','app/auth/customer/logout/route.ts']
