@@ -43,6 +43,8 @@ SQL
 node tests/customer-repository/setup.mjs --create-once
 node tests/customer-repository/migration-regression.mjs
 node --experimental-strip-types --test tests/customer-repository/acceptance.test.mjs
+node tests/customer-repository/shopify-proof-migration-regression.mjs
+node --experimental-strip-types --test tests/customer-repository/shopify-proof-acceptance.test.mjs
 node tests/staging-postgres/local-acceptance.mjs
 python3 tests/staging-cart/acceptance.py
 node tests/subject-broker-repository/setup.mjs --create-once
