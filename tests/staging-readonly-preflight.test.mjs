@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
-import { ENDPOINT, FIXED_QUERY, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, NATIVE_HELPER_TIMEOUT_MS, PROJECT_REF, QUERY_ID, consumeNativeTokenOutput, nativeDesignReference, normalizeKeychainToken, runPreflightOnce, validateResult, validateSupabaseProfile } from '../scripts/staging-readonly-preflight.mjs'
+import { ENDPOINT, FIXED_QUERY, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, NATIVE_HELPER_TIMEOUT_MS, PROJECT_REF, QUERY_ID, RECEIPT_SELECT, consumeNativeTokenOutput, nativeDesignReference, normalizeKeychainToken, runPreflightOnce, validateResult, validateSupabaseProfile } from '../scripts/staging-readonly-preflight.mjs'
 
 const receipt = { queryId: QUERY_ID, projectRef: PROJECT_REF, environmentMarker: true, operator: { current: true, session: true, database: true, notSuperuser: true, createrole: true, readAll: true, writeAll: true, maintain: true }, migrations: { totalCount: 10, baselinePairCount: 10, forbiddenCount: 0 }, controls: { customer: true, cart: true, broker: true, provisional: true, bridge: true }, runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, edgeCount: 5, retiredOperatorEdgeCount: 5, sessionCount: 0, retiredMarkerCount: 5 }, absentObjects: { shopifyProofs: true, finalizations: true, cartTransitions: true, accountGenerations: true, accountLogouts: true } }
 
@@ -12,7 +12,12 @@ test('preflight is fixed to the intended staging project and remains disabled', 
   assert.equal(PROJECT_REF, 'qdmvngjwkcsilzmqksme')
   assert.deepEqual(ENDPOINT, { hostname: 'api.supabase.com', path: '/v1/projects/qdmvngjwkcsilzmqksme/database/query', method: 'POST' })
   assert.equal(KEYCHAIN_SERVICE, 'Supabase CLI'); assert.equal(KEYCHAIN_ACCOUNT, 'supabase')
-  assert.ok(FIXED_QUERY.startsWith('BEGIN READ ONLY;\n')); assert.ok(FIXED_QUERY.endsWith('COMMIT;\n'))
+  assert.ok(FIXED_QUERY.startsWith('BEGIN READ ONLY;\n')); assert.ok(FIXED_QUERY.endsWith(RECEIPT_SELECT))
+  assert.equal((FIXED_QUERY.match(/BEGIN READ ONLY;/g) ?? []).length, 1)
+  assert.equal((FIXED_QUERY.match(/COMMIT;/g) ?? []).length, 1)
+  assert.equal((FIXED_QUERY.match(/AS tll_staging_preflight;/g) ?? []).length, 2)
+  assert.equal(FIXED_QUERY, `BEGIN READ ONLY;\nSET LOCAL statement_timeout='15s';\nSET LOCAL lock_timeout='5s';\n${RECEIPT_SELECT}COMMIT;\n${RECEIPT_SELECT}`)
+  assert.ok(FIXED_QUERY.lastIndexOf('COMMIT;') < FIXED_QUERY.lastIndexOf('AS tll_staging_preflight;'))
   assert.match(FIXED_QUERY, /"generation":5/); assert.match(FIXED_QUERY, /forbiddenCount/)
   assert.match(FIXED_QUERY, /'notSuperuser',NOT coalesce/)
   assert.match(FIXED_QUERY, /baselinePairCount/); assert.match(FIXED_QUERY, /retiredOperatorEdgeCount/)
@@ -47,10 +52,12 @@ test('reviewed native Keychain design is hash-pinned without enabling it', () =>
   assert.match(reference.sha256, /^[a-f0-9]{64}$/)
   assert.equal(manifest.nativeAccessApproved, false)
   assert.equal(manifest.target, PROJECT_REF)
-  assert.equal(manifest.schema, 'tll-staging-readonly-preflight/v2')
+  assert.equal(manifest.schema, 'tll-staging-readonly-preflight/v3')
   assert.equal(manifest.keychain.reviewedDesignSha256, reference.sha256)
   assert.equal(manifest.transport.maxRequests, 1)
   assert.equal(manifest.query.id, QUERY_ID)
+  assert.equal(manifest.query.receiptExecutions, 2)
+  assert.equal(manifest.query.finalStatementIsReceipt, true)
   assert.match(manifest.query.sha256, /^[a-f0-9]{64}$/)
   assert.deepEqual(manifest.sourcePins.map(pin => pin.path), ['scripts/staging-readonly-preflight.mjs', 'scripts/staging-readonly-preflight-keychain.py'])
   assert.match(readFileSync('scripts/staging-readonly-preflight-manifest.mjs', 'utf8'), /native access flags disagree/)
@@ -92,10 +99,41 @@ test('disabled run path performs zero native reads and zero management requests'
   assert.equal(reads, 0); assert.equal(requests, 0)
   const source = readFileSync('scripts/staging-readonly-preflight.mjs', 'utf8')
   assert.match(source, /if \(!NATIVE_ACCESS_APPROVED\) return Object\.freeze/)
-  assert.match(source, /const deadline = now\(\) \+ MAX_AGE_MS\n  const token = readToken\(\)\n  try \{ return await post\(token, deadline\)/)
-  assert.match(source, /status: 'UNAVAILABLE', target: PROJECT_REF, queryId: QUERY_ID/)
+  assert.match(source, /const deadline = now\(\) \+ MAX_AGE_MS\n  let token\n  try \{ token = readToken\(\) \}/)
+  assert.match(source, /status: 'PRE_DISPATCH_UNAVAILABLE', target: PROJECT_REF, queryId: QUERY_ID/)
   assert.match(source, /request\?\.destroy\(\); finish\(new Error\('timeout'\)\)/)
   assert.match(source, /response\.on\('aborted'/)
   assert.match(source, /const wipeChunks = \(\) =>/)
   for (const key of ['NODE_DEBUG', 'NODE_DEBUG_NATIVE', 'NODE_OPTIONS', 'SSLKEYLOGFILE', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'OPENSSL_CONF', 'OPENSSL_MODULES']) assert.match(source, new RegExp(`'${key}'`))
+})
+
+test('enabled-path outcome handling distinguishes pre-dispatch token failure from uncertain post-dispatch failures without retrying', async () => {
+  // Native access remains disabled on disk. This in-memory module copy covers
+  // the enabled-path boundary with injected ports only: it opens neither
+  // Keychain nor a network socket.
+  const source = readFileSync('scripts/staging-readonly-preflight.mjs', 'utf8')
+  const enabledSource = source
+    .replace('export const NATIVE_ACCESS_APPROVED = false', 'export const NATIVE_ACCESS_APPROVED = true')
+    .replace('if (process.argv[1] === fileURLToPath(import.meta.url)) {', 'if (false) {')
+  const enabled = await import(`data:text/javascript;base64,${Buffer.from(enabledSource).toString('base64')}`)
+  assert.match(source, /try \{ token = readToken\(\) \} catch \{ return Object\.freeze\(\{ status: 'PRE_DISPATCH_UNAVAILABLE'/)
+  assert.match(source, /status: 'UNCERTAIN_POST_DISPATCH'.*nextAction: 'MANUAL_REVIEW_REQUIRED'/s)
+  let posts = 0
+  const keychainFailure = await enabled.runPreflightOnce({
+    readToken: () => { throw new Error('Keychain denied') },
+    post: async () => { posts += 1 },
+    now: () => 1,
+  })
+  assert.deepEqual(keychainFailure, { status: 'PRE_DISPATCH_UNAVAILABLE', target: PROJECT_REF, queryId: QUERY_ID })
+  assert.equal(posts, 0)
+
+  for (const kind of ['response-status', 'response-body', 'timeout']) {
+    const result = await enabled.runPreflightOnce({
+      readToken: () => 'opaque',
+      post: async () => { posts += 1; throw new Error(kind) },
+      now: () => 1,
+    })
+    assert.deepEqual(result, { status: 'UNCERTAIN_POST_DISPATCH', target: PROJECT_REF, queryId: QUERY_ID, nextAction: 'MANUAL_REVIEW_REQUIRED' })
+  }
+  assert.equal(posts, 3)
 })
