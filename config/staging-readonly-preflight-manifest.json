@@ -5,7 +5,7 @@
   "nativeAccessApproved": false,
   "query": {
     "id": "tll-staging-readonly-preflight/v1",
-    "sha256": "58b500f4e4069d21c4f7dd5ef5f9b238cccdbea32f313dd2761a3a4d05af8982",
+    "sha256": "3fe0e1b3d0fbe0e9a73dfedf0ab2680fb0e1391213fe13f69a64f7bc425cc221",
     "beginsReadOnly": true,
     "assertionsInReadOnlyTransaction": true,
     "finalStatementLiteralReceipt": true
@@ -13,7 +13,7 @@
   "sourcePins": [
     {
       "path": "scripts/staging-readonly-preflight.mjs",
-      "sha256": "0f470d3854838465a7c5c391ae297b38a29c18aed31f0658977ddfc003d4bf93"
+      "sha256": "e2e7c1e2cb0cbeba198baf9010bf8e5fa96d7ebb1ec3f9749af8c03f22d52756"
     },
     {
       "path": "scripts/staging-readonly-preflight-keychain.py",

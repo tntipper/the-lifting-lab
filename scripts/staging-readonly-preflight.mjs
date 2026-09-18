@@ -33,6 +33,11 @@ const migrationPairs = BASELINE_MIGRATIONS.map(([version, hash]) => `('${version
 // The transaction checks catalog and application state, but never returns that
 // state. The API receives only the literal receipt after the assertion commits.
 // Any mismatch raises in the read-only transaction and therefore has no receipt.
+// PostgreSQL records the grantor separately from a membership's role/member
+// edge. A CREATEROLE operator cannot be both grantor and member with ADMIN on
+// the same edge, so retirement asserts the five exact ADMIN-only runtime-to-
+// operator edges and rejects every additional runtime edge; it intentionally
+// does not constrain the bootstrap grantor identity.
 export const EXPECTED_RECEIPT = Object.freeze({
   queryId: QUERY_ID,
   projectRef: PROJECT_REF,
@@ -57,7 +62,7 @@ export const RECEIPT_ASSERTION_SELECT = `SELECT jsonb_build_object(
    'broker',coalesce((tll_broker_private.operator_status()->>'enabled')='false',false),
    'provisional',coalesce((tll_provisional_private.operator_status()->>'enabled')='false',false),
    'bridge',coalesce((tll_bridge_private.operator_status()->>'enabled')='false',false)),
- 'runtime',jsonb_build_object('roleCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)})),'loginCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND rolcanlogin),'passwordCount',(SELECT count(*) FROM pg_authid WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND rolpassword IS NOT NULL),'edgeCount',(SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${sqlList(RUNTIME_ROLES)}) OR member.rolname IN (${sqlList(RUNTIME_ROLES)})),'retiredOperatorEdgeCount',(SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member JOIN pg_roles grantor ON grantor.oid=m.grantor WHERE granted.rolname IN (${sqlList(RUNTIME_ROLES)}) AND member.rolname='postgres' AND grantor.rolname='postgres' AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option),'sessionCount',(SELECT count(*) FROM pg_stat_activity WHERE usename IN (${sqlList(RUNTIME_ROLES)})),'retiredMarkerCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND shobj_description(oid,'pg_authid')='${RETIRED_MARKER}')),
+ 'runtime',jsonb_build_object('roleCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)})),'loginCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND rolcanlogin),'passwordCount',(SELECT count(*) FROM pg_authid WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND rolpassword IS NOT NULL),'edgeCount',(SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${sqlList(RUNTIME_ROLES)}) OR member.rolname IN (${sqlList(RUNTIME_ROLES)})),'retiredOperatorEdgeCount',(SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${sqlList(RUNTIME_ROLES)}) AND member.rolname='postgres' AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option),'sessionCount',(SELECT count(*) FROM pg_stat_activity WHERE usename IN (${sqlList(RUNTIME_ROLES)})),'retiredMarkerCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND shobj_description(oid,'pg_authid')='${RETIRED_MARKER}')),
  'absentObjects',jsonb_build_object('shopifyProofs',to_regclass('tll_customer_private.shopify_proofs') IS NULL,'finalizations',to_regclass('tll_bridge_private.finalizations') IS NULL,'cartTransitions',to_regclass('tll_cart_private.transitions') IS NULL,'accountGenerations',to_regclass('tll_bridge_private.account_generations') IS NULL,'accountLogouts',to_regclass('tll_bridge_private.account_logouts') IS NULL)
 ) AS tll_staging_preflight;
 `

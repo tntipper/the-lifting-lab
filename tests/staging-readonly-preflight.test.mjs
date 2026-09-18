@@ -30,6 +30,7 @@ test('preflight is fixed to the intended staging project and remains disabled', 
   assert.match(FIXED_QUERY, /"generation":5/); assert.match(FIXED_QUERY, /forbiddenCount/)
   assert.match(FIXED_QUERY, /'notSuperuser',NOT coalesce/)
   assert.match(FIXED_QUERY, /baselinePairCount/); assert.match(FIXED_QUERY, /retiredOperatorEdgeCount/)
+  assert.doesNotMatch(FIXED_QUERY, /grantor\.rolname='postgres'/, 'the retirement edge is role-to-operator; PostgreSQL cannot grant ADMIN back to the same grantor/member')
   assert.doesNotMatch(FIXED_QUERY, /\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|GRANT|REVOKE|COMMENT)\b/i)
 })
 
