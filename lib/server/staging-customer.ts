@@ -7,6 +7,11 @@ import { createCustomerShopifyProofRepository } from '@/lib/identity/customer-sh
 import { createCustomerFinalReconciliation } from '@/lib/identity/customer-final-reconciliation'
 import { createCustomerFinalReconciliationRepository } from '@/lib/identity/customer-final-reconciliation-repository'
 import { createSupabaseFinalExchange } from '@/lib/identity/supabase-final-exchange'
+import { createCustomerAccountOperations } from '@/lib/identity/customer-account-operations'
+import { createCustomerAccountOperationsRepository } from '@/lib/identity/customer-account-operations-repository'
+import { createCustomerAccountLogoutRepository } from '@/lib/identity/customer-account-logout-repository'
+import { createCustomerOrdersReader } from '@/lib/identity/customer-orders'
+import { createStagingSupabaseSessionReader } from '@/lib/identity/supabase-session-proof'
 import { createAesGcmEnvelopeVault, type EnvelopeVault } from '@/lib/identity/customer-token-vault'
 import { createStagingPostgresRuntime, STAGING_POSTGRES_PROJECT_REF,
   type StagingPostgresPool, type StagingPostgresRuntime } from '@/lib/server/staging-postgres'
@@ -25,11 +30,18 @@ type JwksLoaderFactory = typeof createShopifyCustomerJwksLoader
 type FinalRepositoryFactory = typeof createCustomerFinalReconciliationRepository
 type FinalExchangeFactory = typeof createSupabaseFinalExchange
 type FinalReconciliationFactory = typeof createCustomerFinalReconciliation
+type AccountOperationsFactory = typeof createCustomerAccountOperations
+type AccountRepositoryFactory = typeof createCustomerAccountOperationsRepository
+type AccountLogoutRepositoryFactory = typeof createCustomerAccountLogoutRepository
+type OrdersReaderFactory = typeof createCustomerOrdersReader
+type SessionReaderFactory = typeof createStagingSupabaseSessionReader
 type Dependencies = { runtimeFactory?: RuntimeFactory; vaultFactory?: VaultFactory; deliveryFactory?: DeliveryFactory
   proofRepositoryFactory?: ProofRepositoryFactory; proofFlowFactory?: ProofFlowFactory
   tokenAdapterFactory?: TokenAdapterFactory; jwksLoaderFactory?: JwksLoaderFactory
   finalRepositoryFactory?: FinalRepositoryFactory; finalExchangeFactory?: FinalExchangeFactory
-  finalReconciliationFactory?: FinalReconciliationFactory }
+  finalReconciliationFactory?: FinalReconciliationFactory; accountOperationsFactory?: AccountOperationsFactory
+  accountRepositoryFactory?: AccountRepositoryFactory; accountLogoutRepositoryFactory?: AccountLogoutRepositoryFactory
+  ordersReaderFactory?: OrdersReaderFactory; sessionReaderFactory?: SessionReaderFactory }
 type Environment = Readonly<Record<string, string | undefined>>
 type Delivery = ReturnType<DeliveryFactory>
 
@@ -38,6 +50,8 @@ export type StagingCustomerRuntime = Readonly<{
   delivery: Delivery
   shopifyProof: ReturnType<ProofFlowFactory>
   finalReconciliation: ReturnType<FinalReconciliationFactory>
+  accountOperations: ReturnType<AccountOperationsFactory>
+  accountLogoutRepository: ReturnType<AccountLogoutRepositoryFactory>
   customerPool: StagingPostgresPool
   tokenVault: EnvelopeVault
   connection: Readonly<{
@@ -126,6 +140,11 @@ export function createStagingCustomerRuntime(input: {
   const finalRepositoryFactory = dependencies.finalRepositoryFactory ?? createCustomerFinalReconciliationRepository
   const finalExchangeFactory = dependencies.finalExchangeFactory ?? createSupabaseFinalExchange
   const finalReconciliationFactory = dependencies.finalReconciliationFactory ?? createCustomerFinalReconciliation
+  const accountOperationsFactory = dependencies.accountOperationsFactory ?? createCustomerAccountOperations
+  const accountRepositoryFactory = dependencies.accountRepositoryFactory ?? createCustomerAccountOperationsRepository
+  const accountLogoutRepositoryFactory = dependencies.accountLogoutRepositoryFactory ?? createCustomerAccountLogoutRepository
+  const ordersReaderFactory = dependencies.ordersReaderFactory ?? createCustomerOrdersReader
+  const sessionReaderFactory = dependencies.sessionReaderFactory ?? createStagingSupabaseSessionReader
   const runtimes: StagingPostgresRuntime[] = [], keyrings: EnvelopeVault[] = [], keyBytes: Buffer[] = []
   let closed = false
   const close = async () => {
@@ -164,8 +183,16 @@ export function createStagingCustomerRuntime(input: {
     const finalExchange = finalExchangeFactory({ enabled: true, publishableKey })
     const finalReconciliation = finalReconciliationFactory({ repository: finalRepository,
       exchange: finalExchange, syntheticExecution: true, liveEnabled: false })
+    const sessionReader = sessionReaderFactory({ enabled: true, publishableKey, readAccessToken: input.readAccessToken })
+    const accountRepository = accountRepositoryFactory({ pool: bridge.pool, vault: tokenVault,
+      syntheticExecution: true, liveEnabled: false })
+    const accountOperations = accountOperationsFactory({ repository: accountRepository,
+      orders: ordersReaderFactory({ enabled: true }), currentSession: sessionReader.currentSession,
+      syntheticExecution: true, liveEnabled: false })
+    const accountLogoutRepository = accountLogoutRepositoryFactory({ pool: bridge.pool, vault: tokenVault,
+      syntheticExecution: true, liveEnabled: false })
     return Object.freeze({ enabled: true as const, delivery, shopifyProof, finalReconciliation,
-      customerPool: customer.pool, tokenVault,
+      accountOperations, accountLogoutRepository, customerPool: customer.pool, tokenVault,
       connection: Object.freeze({ projectRef: STAGING_POSTGRES_PROJECT_REF, shopId: STAGING_SHOP_ID,
         clientId: STAGING_CUSTOMER_CLIENT_ID, issuer: STAGING_ISSUER, discovery: STAGING_DISCOVERY }), close })
   } catch {

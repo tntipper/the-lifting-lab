@@ -57,12 +57,24 @@ function fixture(env = base, changes = {}) {
   const finalExchangeFactory = options => { calls.push(['final-exchange', options]); return finalExchange }
   const finalReconciliation = Object.freeze({ marker:'final-reconciliation' })
   const finalReconciliationFactory = options => { calls.push(['final-reconciliation', options]); return finalReconciliation }
+  const sessionReader = Object.freeze({ currentSession: async () => null })
+  const sessionReaderFactory = options => { calls.push(['session-reader', options]); return sessionReader }
+  const accountRepository = Object.freeze({ marker: 'account-repository' })
+  const accountRepositoryFactory = options => { calls.push(['account-repository', options]); return accountRepository }
+  const ordersReader = Object.freeze({ marker: 'orders-reader' })
+  const ordersReaderFactory = options => { calls.push(['orders-reader', options]); return ordersReader }
+  const accountOperations = Object.freeze({ marker: 'account-operations' })
+  const accountOperationsFactory = options => { calls.push(['account-operations', options]); return accountOperations }
+  const accountLogoutRepository = Object.freeze({ marker: 'account-logout-repository' })
+  const accountLogoutRepositoryFactory = options => { calls.push(['account-logout-repository', options]); return accountLogoutRepository }
   const readAccessToken = async () => null
   return { runtime: createStagingCustomerRuntime({ env, readAccessToken }, { runtimeFactory, vaultFactory, deliveryFactory,
       proofRepositoryFactory, tokenAdapterFactory, jwksLoaderFactory, proofFlowFactory, finalRepositoryFactory,
-      finalExchangeFactory, finalReconciliationFactory, ...changes }),
+      finalExchangeFactory, finalReconciliationFactory, sessionReaderFactory, accountRepositoryFactory,
+      ordersReaderFactory, accountOperationsFactory, accountLogoutRepositoryFactory, ...changes }),
     calls, closed, destroyed, pools, delivery, proofRepository, tokenAdapter, jwks, finalRepository,
-    finalExchange, finalReconciliation, readAccessToken }
+    finalExchange, finalReconciliation, sessionReader, accountRepository, ordersReader, accountOperations,
+    accountLogoutRepository, readAccessToken }
 }
 
 test('valid preview composition owns four distinct purpose pools and four isolated keyrings', async () => {
@@ -99,6 +111,19 @@ test('valid preview composition owns four distinct purpose pools and four isolat
   const final=f.calls.find(([kind])=>kind==='final-reconciliation')[1]
   assert.equal(final.repository,f.finalRepository);assert.equal(final.exchange,f.finalExchange);assert.equal(final.syntheticExecution,true);assert.equal(final.liveEnabled,false)
   assert.equal(f.runtime.finalReconciliation,f.finalReconciliation)
+  const session=f.calls.find(([kind])=>kind==='session-reader')[1]
+  assert.deepEqual(session,{enabled:true,publishableKey:base.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,readAccessToken:f.readAccessToken})
+  const accountRepo=f.calls.find(([kind])=>kind==='account-repository')[1]
+  assert.equal(accountRepo.pool,f.pools.get('bridge'));assert.equal(accountRepo.vault,f.runtime.tokenVault)
+  assert.equal(accountRepo.syntheticExecution,true);assert.equal(accountRepo.liveEnabled,false)
+  assert.deepEqual(f.calls.find(([kind])=>kind==='orders-reader')[1],{enabled:true})
+  const account=f.calls.find(([kind])=>kind==='account-operations')[1]
+  assert.equal(account.repository,f.accountRepository);assert.equal(account.orders,f.ordersReader)
+  assert.equal(account.currentSession,f.sessionReader.currentSession);assert.equal(account.syntheticExecution,true);assert.equal(account.liveEnabled,false)
+  const logout=f.calls.find(([kind])=>kind==='account-logout-repository')[1]
+  assert.equal(logout.pool,f.pools.get('bridge'));assert.equal(logout.vault,f.runtime.tokenVault)
+  assert.equal(logout.syntheticExecution,true);assert.equal(logout.liveEnabled,false)
+  assert.equal(f.runtime.accountOperations,f.accountOperations);assert.equal(f.runtime.accountLogoutRepository,f.accountLogoutRepository)
   assert.deepEqual(f.runtime.connection, { projectRef:'qdmvngjwkcsilzmqksme', shopId:'107532616020', clientId:'c8f7b926-9073-416c-9949-0d99e89a99c0',
     issuer:'https://shopify.com/authentication/107532616020', discovery:'https://tll-integration-staging.myshopify.com/.well-known/openid-configuration' })
   await f.runtime.close(); await f.runtime.close(); assert.deepEqual(f.closed.sort(), ['bridge','broker','customer','provisional']); assert.deepEqual(f.destroyed, ['customer-token-v1','customer-provisional-v1','customer-cookie-v1','customer-final-v1'])
