@@ -15,7 +15,8 @@ const aliases = {
   tll_customer_runtime: 'tll_ao1_customer_runtime', tll_cart_runtime: 'tll_ao1_cart_runtime', tll_broker_runtime: 'tll_ao1_broker_runtime',
   tll_provisional_runtime: 'tll_ao1_provisional_runtime', tll_bridge_runtime: 'tll_ao1_bridge_runtime',
 }
-const OPERATOR = 'tll_ao1_recovery_operator', runtimes = ['customer','cart','broker','provisional','bridge'].map(purpose => `tll_ao1_${purpose}_runtime`)
+const OPERATOR = 'tll_ao1_recovery_operator', WINDOW = '83888906-23fa-4653-a886-fe2733ed76a0', EXPIRES = '2030-01-02T03:04:05Z', marker = state => `tll-runtime-window/v1 {\"expiresAt\":\"${EXPIRES}\",\"generation\":6,\"projectRef\":\"qdmvngjwkcsilzmqksme\",\"state\":\"${state}\",\"windowId\":\"${WINDOW}\"}`
+const runtimes = ['customer','cart','broker','provisional','bridge'].map(purpose => `tll_ao1_${purpose}_runtime`)
 const q = value => `'${value.replaceAll("'", "''")}'`
 const adapt = source => Object.entries(aliases).reduce((text, [from, to]) => text.replace(new RegExp(`(?<![A-Za-z0-9_$])${from}(?![A-Za-z0-9_$])`, 'g'), to), source)
 function managed(sql) {
@@ -39,6 +40,10 @@ try {
     INSERT INTO tll_cart_private.transitions VALUES('cart-recovery-fixture','claimed',clock_timestamp()+interval '5 minutes');
     ALTER TABLE tll_cart_private.control OWNER TO ${OPERATOR}; ALTER TABLE tll_cart_private.sessions OWNER TO ${OPERATOR};
     ALTER TABLE tll_cart_private.operations OWNER TO ${OPERATOR}; ALTER TABLE tll_cart_private.transitions OWNER TO ${OPERATOR};
+    CREATE SCHEMA tll_staging_private;
+    CREATE TABLE tll_staging_private.environment(singleton boolean PRIMARY KEY,environment text NOT NULL,operator_project_ref text NOT NULL,operator_context text NOT NULL,identity_basis text NOT NULL,source_commit text NOT NULL,integrity_sha256 text NOT NULL,bootstrap_version text NOT NULL);
+    INSERT INTO tll_staging_private.environment VALUES(true,'tll-hosted-staging-v1','qdmvngjwkcsilzmqksme','supabase-dashboard:qdmvngjwkcsilzmqksme:staging-bootstrap:reviewed','explicit-operator-dashboard-binding','a50e37ff05d8e731dc8ffceea1e96492079e5ff3','2d5175eb47a891ca626d635281fbb28237b16bec0d89eebe168455935117922c','2026-09-15-v2');
+    GRANT USAGE ON SCHEMA tll_staging_private TO ${OPERATOR}; GRANT SELECT ON tll_staging_private.environment TO ${OPERATOR};
     CREATE ROLE tll_ao1_customer_runtime LOGIN PASSWORD 'fixture-customer' NOINHERIT;
     CREATE ROLE tll_ao1_cart_runtime LOGIN PASSWORD 'fixture-cart' NOINHERIT;
     CREATE ROLE tll_ao1_broker_runtime LOGIN PASSWORD 'fixture-broker' NOINHERIT;
@@ -56,19 +61,37 @@ try {
     GRANT tll_ao1_bridge_executor TO tll_ao1_bridge_runtime;
     RESET SESSION AUTHORIZATION;
     UPDATE tll_customer_private.control SET enabled=true; UPDATE tll_broker_private.control SET enabled=true;
-    UPDATE tll_provisional_private.control SET enabled=true; UPDATE tll_bridge_private.control SET enabled=true;`)
+    UPDATE tll_provisional_private.control SET enabled=true; UPDATE tll_bridge_private.control SET enabled=true;
+    COMMENT ON ROLE tll_ao1_customer_runtime IS ${q(marker('active'))}; COMMENT ON ROLE tll_ao1_cart_runtime IS ${q(marker('active'))};
+    COMMENT ON ROLE tll_ao1_broker_runtime IS ${q(marker('active'))}; COMMENT ON ROLE tll_ao1_provisional_runtime IS ${q(marker('active'))}; COMMENT ON ROLE tll_ao1_bridge_runtime IS ${q(marker('active'))};` )
   installed = true
   // The recovery operator cannot write the private customer control directly.
   assert.throws(() => admin(`SET SESSION AUTHORIZATION ${OPERATOR}; UPDATE tll_customer_private.control SET enabled=false;`), /Synthetic account SQL failed/)
-  let recovery = adapt(readFileSync(new URL('../../config/staging-account-activation-recovery.sql', import.meta.url), 'utf8'))
-  let postCommit = adapt(readFileSync(new URL('../../config/staging-account-activation-recovery-postcommit.sql', import.meta.url), 'utf8'))
-  recovery = recovery.replaceAll('session_user', `'${OPERATOR}'::name`).replaceAll('current_user', `'${OPERATOR}'::name`)
-  postCommit = postCommit.replaceAll('session_user', `'${OPERATOR}'::name`).replaceAll('current_user', `'${OPERATOR}'::name`)
-  // `SET SESSION AUTHORIZATION` retains the real superuser session_user in a
-  // fixture. Replacing those two identity expressions simulates the managed
-  // direct connection without granting the synthetic operator superuser access.
-  managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${recovery}`)
+  const rawRecovery = adapt(readFileSync(new URL('../../config/staging-account-activation-recovery.sql', import.meta.url), 'utf8'))
+  const rawPostCommit = adapt(readFileSync(new URL('../../config/staging-account-activation-recovery-postcommit.sql', import.meta.url), 'utf8'))
+  // Source must fail closed on this deliberately wrong database before any mutation.
+  assert.throws(() => managed(rawRecovery), /exact managed non-superuser staging postgres operator session/)
+  const managedTarget = source => source
+    .replaceAll("current_database()<>'postgres'", 'false')
+    .replaceAll("current_user<>'postgres'", 'false')
+    .replaceAll("session_user<>'postgres'", 'false')
+  const recovery = managedTarget(rawRecovery), postCommit = managedTarget(rawPostCommit)
+  const runRecovery = () => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${recovery}`)
+  // A stale generation/window or mixed markers cannot reach any write path.
+  admin(`COMMENT ON ROLE tll_ao1_customer_runtime IS ${q(marker('active').replace('\"generation\":6','\"generation\":5'))}`)
+  assert.throws(runRecovery, /generation or window mismatch/)
+  admin(`COMMENT ON ROLE tll_ao1_customer_runtime IS ${q(marker('retired'))}`)
+  assert.throws(runRecovery, /partial or mixed/)
+  admin(`COMMENT ON ROLE tll_ao1_customer_runtime IS ${q(marker('active'))}`)
+  runRecovery()
   managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${postCommit}`)
+  // Exact retired markers are idempotent only while all controls/work remain terminal.
+  admin(`UPDATE tll_customer_private.control SET enabled=true`)
+  assert.throws(runRecovery, /Customer recovery drain failed/)
+  admin(`UPDATE tll_customer_private.control SET enabled=false`)
+  runRecovery()
+  assert.equal(admin(`SELECT count(DISTINCT shobj_description(oid,'pg_authid')) FROM pg_roles WHERE rolname IN (${runtimes.map(q).join(',')})`), '1')
+  assert.match(admin(`SELECT shobj_description(oid,'pg_authid') FROM pg_roles WHERE rolname='tll_ao1_customer_runtime'`), /(?=.*\"generation\": 6)(?=.*\"state\": \"retired\")/)
   admin(`REVOKE pg_read_all_stats FROM ${OPERATOR}`)
   assert.throws(() => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${postCommit}`), /pg_read_all_stats/)
   assert.equal(admin(`SELECT string_agg(enabled::text,',') FROM (SELECT enabled FROM tll_customer_private.control UNION ALL SELECT enabled FROM tll_cart_private.control UNION ALL SELECT enabled FROM tll_broker_private.control UNION ALL SELECT enabled FROM tll_provisional_private.control UNION ALL SELECT enabled FROM tll_bridge_private.control)x`), 'false,false,false,false,false')
@@ -79,7 +102,7 @@ try {
     assert.equal(admin(`SELECT count(*) FROM pg_auth_members WHERE roleid='${role}'::regrole AND member='${OPERATOR}'::regrole AND (inherit_option OR set_option OR NOT admin_option)`), '0')
   console.log('PASS: non-superuser managed-style operator required temporary exact SET edges, restored ADMIN-only authority, drained work and passed zero-runtime-session proof')
 } finally {
-  if (installed) admin(`DROP SCHEMA IF EXISTS tll_cart_private CASCADE;
+  if (installed) admin(`DROP SCHEMA IF EXISTS tll_cart_private CASCADE; DROP SCHEMA IF EXISTS tll_staging_private CASCADE;
     DROP ROLE IF EXISTS tll_ao1_customer_runtime; DROP ROLE IF EXISTS tll_ao1_cart_runtime; DROP ROLE IF EXISTS tll_ao1_broker_runtime;
     DROP ROLE IF EXISTS tll_ao1_provisional_runtime; DROP ROLE IF EXISTS tll_ao1_bridge_runtime; DROP ROLE IF EXISTS tll_ao1_cart_gateway; DROP ROLE IF EXISTS tll_ao1_cart_owner;
     REVOKE pg_read_all_stats FROM ${OPERATOR}; DROP ROLE IF EXISTS ${OPERATOR};

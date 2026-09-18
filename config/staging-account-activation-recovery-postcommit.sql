@@ -6,10 +6,19 @@ BEGIN;
 SET LOCAL lock_timeout='5s';
 SET LOCAL statement_timeout='25s';
 DO $zero_runtime_sessions$
-DECLARE deadline timestamptz:=clock_timestamp()+interval '20 seconds'; remaining integer; r text;
+DECLARE deadline timestamptz:=clock_timestamp()+interval '20 seconds'; remaining integer; r text; marker text; parsed jsonb; first_marker text;
 BEGIN
-  IF current_user<>session_user OR NOT pg_has_role(session_user,'pg_read_all_stats','MEMBER') THEN
-    RAISE EXCEPTION 'Post-commit runtime-session proof requires existing pg_read_all_stats authority';
+  IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres' OR current_user<>session_user
+    OR NOT pg_has_role(session_user,'pg_read_all_stats','MEMBER') THEN
+    RAISE EXCEPTION 'Post-commit runtime-session proof requires exact staged postgres operator with existing pg_read_all_stats authority';
+  END IF;
+  IF to_regclass('tll_staging_private.environment') IS NULL OR (SELECT count(*) FROM tll_staging_private.environment)<>1
+    OR NOT EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE singleton AND environment='tll-hosted-staging-v1'
+      AND operator_project_ref='qdmvngjwkcsilzmqksme' AND operator_context='supabase-dashboard:qdmvngjwkcsilzmqksme:staging-bootstrap:reviewed'
+      AND identity_basis='explicit-operator-dashboard-binding' AND bootstrap_version='2026-09-15-v2'
+      AND source_commit='a50e37ff05d8e731dc8ffceea1e96492079e5ff3' AND integrity_sha256='2d5175eb47a891ca626d635281fbb28237b16bec0d89eebe168455935117922c')
+    OR EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE operator_project_ref='wrhgscovsgsudtedbljr') THEN
+    RAISE EXCEPTION 'Post-commit staging binding or reviewed bootstrap v2 mismatch';
   END IF;
   LOOP
     SELECT count(*) INTO remaining FROM pg_stat_activity WHERE backend_type='client backend'
@@ -19,6 +28,15 @@ BEGIN
     PERFORM pg_sleep(1);
   END LOOP;
   FOREACH r IN ARRAY ARRAY['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'] LOOP
+    SELECT shobj_description(oid,'pg_authid') INTO marker FROM pg_roles WHERE rolname=r;
+    IF marker IS NULL OR marker !~ '^tll-runtime-window/v1 [{].*[}]$' THEN RAISE EXCEPTION 'Retired runtime marker is absent or malformed: %',r; END IF;
+    BEGIN parsed:=substring(marker FROM '^tll-runtime-window/v1 ([{].*[}])$')::jsonb; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker JSON invalid: %',r; END;
+    IF jsonb_typeof(parsed)<>'object' OR parsed-ARRAY['projectRef','generation','windowId','expiresAt','state']<>'{}'::jsonb
+      OR parsed->>'projectRef'<>'qdmvngjwkcsilzmqksme' OR parsed->>'generation'<>'6'
+      OR parsed->>'windowId'<>'83888906-23fa-4653-a886-fe2733ed76a0' OR parsed->>'state'<>'retired'
+      OR jsonb_typeof(parsed->'expiresAt')<>'string' THEN RAISE EXCEPTION 'Retired runtime marker target, generation or window mismatch: %',r; END IF;
+    BEGIN PERFORM (parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker expiry invalid: %',r; END;
+    IF first_marker IS NULL THEN first_marker:=marker; ELSIF marker<>first_marker THEN RAISE EXCEPTION 'Retired runtime markers are partial or mixed'; END IF;
     IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin) OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid
       JOIN pg_roles member ON member.oid=e.member WHERE (granted.rolname=r OR member.rolname=r)
         AND NOT (granted.rolname=r AND member.rolname=session_user AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)) THEN

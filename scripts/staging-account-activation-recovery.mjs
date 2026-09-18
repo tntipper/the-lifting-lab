@@ -21,9 +21,23 @@ SET LOCAL statement_timeout='30s';
 DO $preflight$
 DECLARE r text; operator_name name:=session_user;
 BEGIN
-  IF current_user<>session_user OR current_setting('server_version_num')::int<170000
+  IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres'
+    OR current_user<>session_user OR current_setting('server_version_num')::int<170000
     OR (SELECT rolsuper OR rolbypassrls OR NOT rolcreaterole FROM pg_roles WHERE rolname=operator_name) THEN
-    RAISE EXCEPTION 'Recovery requires the reviewed non-superuser operator with CREATEROLE';
+    RAISE EXCEPTION 'Recovery requires exact managed non-superuser staging postgres operator session';
+  END IF;
+  IF to_regclass('tll_staging_private.environment') IS NULL
+    OR (SELECT count(*) FROM tll_staging_private.environment)<>1
+    OR NOT EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE singleton
+      AND environment='tll-hosted-staging-v1'
+      AND operator_project_ref='qdmvngjwkcsilzmqksme'
+      AND operator_context='supabase-dashboard:qdmvngjwkcsilzmqksme:staging-bootstrap:reviewed'
+      AND identity_basis='explicit-operator-dashboard-binding'
+      AND bootstrap_version='2026-09-15-v2'
+      AND source_commit='a50e37ff05d8e731dc8ffceea1e96492079e5ff3'
+      AND integrity_sha256='2d5175eb47a891ca626d635281fbb28237b16bec0d89eebe168455935117922c')
+    OR EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE operator_project_ref='wrhgscovsgsudtedbljr') THEN
+    RAISE EXCEPTION 'Staging binding or reviewed bootstrap v2 mismatch';
   END IF;
   FOREACH r IN ARRAY ARRAY[
     'tll_customer_private.control','tll_cart_private.control','tll_broker_private.control','tll_provisional_private.control','tll_bridge_private.control',
@@ -79,8 +93,47 @@ BEGIN
   END IF;
 END $preflight$;
 
+DO $runtime_window_preflight$
+DECLARE r text; marker text; parsed jsonb; first_marker text; expires_text text; expires_at timestamptz;
+  active_count integer:=0; retired_count integer:=0; operator_name name:=session_user; idempotent boolean;
+BEGIN
+  FOREACH r IN ARRAY ARRAY['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'] LOOP
+    SELECT shobj_description(oid,'pg_authid') INTO marker FROM pg_roles WHERE rolname=r;
+    IF marker IS NULL OR marker !~ '^tll-runtime-window/v1 [\{].*[\}]$' THEN
+      RAISE EXCEPTION 'Runtime role lacks parseable tll-runtime-window/v1 marker: %',r;
+    END IF;
+    BEGIN parsed:=substring(marker FROM '^tll-runtime-window/v1 ([\{].*[\}])$')::jsonb; EXCEPTION WHEN others THEN
+      RAISE EXCEPTION 'Runtime marker JSON is invalid: %',r;
+    END;
+    IF jsonb_typeof(parsed)<>'object' OR parsed-ARRAY['projectRef','generation','windowId','expiresAt','state']<>'{}'::jsonb
+      OR parsed->>'projectRef'<>'qdmvngjwkcsilzmqksme' OR parsed->>'generation'<>'6'
+      OR parsed->>'windowId'<>'83888906-23fa-4653-a886-fe2733ed76a0'
+      OR jsonb_typeof(parsed->'expiresAt')<>'string' OR parsed->>'state' NOT IN ('active','retired') THEN
+      RAISE EXCEPTION 'Runtime marker target, generation or window mismatch: %',r;
+    END IF;
+    BEGIN expires_at:=(parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN
+      RAISE EXCEPTION 'Runtime marker expiry is invalid: %',r;
+    END;
+    IF first_marker IS NULL THEN first_marker:=marker; expires_text:=parsed->>'expiresAt';
+    ELSIF marker<>first_marker OR parsed->>'expiresAt'<>expires_text THEN RAISE EXCEPTION 'Runtime markers are partial or mixed'; END IF;
+    IF parsed->>'state'='active' THEN active_count:=active_count+1; ELSE retired_count:=retired_count+1; END IF;
+  END LOOP;
+  IF active_count=5 THEN
+    IF expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'Runtime activation window is expired'; END IF;
+    idempotent:=false;
+  ELSIF retired_count=5 THEN
+    idempotent:=true;
+    IF NOT pg_has_role(operator_name,'pg_read_all_stats','MEMBER') THEN RAISE EXCEPTION 'Already-retired recovery requires existing pg_read_all_stats session visibility'; END IF;
+    IF EXISTS(SELECT 1 FROM pg_stat_activity WHERE backend_type='client backend' AND usename IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime')) THEN
+      RAISE EXCEPTION 'Already-retired recovery refuses remaining runtime sessions';
+    END IF;
+  ELSE RAISE EXCEPTION 'Runtime markers are partial or mixed'; END IF;
+  PERFORM set_config('tll.recovery_idempotent',CASE WHEN idempotent THEN 'true' ELSE 'false' END,true);
+  PERFORM set_config('tll.recovery_expires_at',expires_text,true);
+END $runtime_window_preflight$;
+
 DO $acquire_set_edges$
-DECLARE operator_name name:=session_user; r text;
+DECLARE operator_name name:=session_user; r text; marker text; parsed jsonb; first_marker text;
 BEGIN
   FOREACH r IN ARRAY ARRAY['tll_customer_owner','tll_cart_owner','tll_broker_owner','tll_provisional_owner','tll_bridge_owner'] LOOP
     EXECUTE format('GRANT %I TO %I WITH INHERIT TRUE, SET TRUE',r,operator_name);
@@ -89,9 +142,9 @@ END $acquire_set_edges$;
 
 SET LOCAL ROLE tll_customer_owner;
 LOCK TABLE tll_customer_private.control,tll_customer_private.shopify_proofs IN SHARE ROW EXCLUSIVE MODE;
-UPDATE tll_customer_private.control SET enabled=false,changed_at=clock_timestamp(),reason_code='recovery_retired';
+UPDATE tll_customer_private.control SET enabled=false,changed_at=clock_timestamp(),reason_code='recovery_retired' WHERE current_setting('tll.recovery_idempotent',true)<>'true';
 UPDATE tll_customer_private.shopify_proofs SET state='held',fence=nextval('tll_customer_private.shopify_proof_fences'),attempt_material=NULL,
-  receipt_id=NULL,shop_id=NULL,issuer=NULL,subject=NULL,verified_at=NULL,proof_expires_at=NULL,access_expires_at=NULL,tokens=NULL WHERE state<>'held';
+  receipt_id=NULL,shop_id=NULL,issuer=NULL,subject=NULL,verified_at=NULL,proof_expires_at=NULL,access_expires_at=NULL,tokens=NULL WHERE state<>'held' AND current_setting('tll.recovery_idempotent',true)<>'true';
 DO $verify_customer_drain$ BEGIN
   IF EXISTS(SELECT 1 FROM tll_customer_private.control WHERE enabled) OR EXISTS(SELECT 1 FROM tll_customer_private.shopify_proofs WHERE state<>'held') THEN
     RAISE EXCEPTION 'Customer recovery drain failed';
@@ -100,10 +153,10 @@ END $verify_customer_drain$;
 RESET ROLE;
 
 LOCK TABLE tll_cart_private.control,tll_cart_private.sessions,tll_cart_private.operations,tll_cart_private.transitions IN SHARE ROW EXCLUSIVE MODE;
-UPDATE tll_cart_private.control SET enabled=false;
-UPDATE tll_cart_private.sessions SET phase='held',lease_until=NULL WHERE phase='working';
-UPDATE tll_cart_private.operations SET state='held' WHERE state='working';
-UPDATE tll_cart_private.transitions SET state='held',lease_until=NULL WHERE state='claimed';
+UPDATE tll_cart_private.control SET enabled=false WHERE current_setting('tll.recovery_idempotent',true)<>'true';
+UPDATE tll_cart_private.sessions SET phase='held',lease_until=NULL WHERE phase='working' AND current_setting('tll.recovery_idempotent',true)<>'true';
+UPDATE tll_cart_private.operations SET state='held' WHERE state='working' AND current_setting('tll.recovery_idempotent',true)<>'true';
+UPDATE tll_cart_private.transitions SET state='held',lease_until=NULL WHERE state='claimed' AND current_setting('tll.recovery_idempotent',true)<>'true';
 DO $verify_cart_drain$ BEGIN
   IF EXISTS(SELECT 1 FROM tll_cart_private.control WHERE enabled) OR EXISTS(SELECT 1 FROM tll_cart_private.sessions WHERE phase='working')
     OR EXISTS(SELECT 1 FROM tll_cart_private.operations WHERE state='working') OR EXISTS(SELECT 1 FROM tll_cart_private.transitions WHERE state='claimed') THEN
@@ -113,8 +166,8 @@ END $verify_cart_drain$;
 
 SET LOCAL ROLE tll_broker_owner;
 LOCK TABLE tll_broker_private.control,tll_broker_private.flows IN SHARE ROW EXCLUSIVE MODE;
-UPDATE tll_broker_private.control SET enabled=false,changed_at=clock_timestamp(),reason_code='recovery_retired';
-UPDATE tll_broker_private.flows SET status='cancelled',generation=generation+1,fence=nextval('tll_broker_private.fences') WHERE status NOT IN ('held','cancelled');
+UPDATE tll_broker_private.control SET enabled=false,changed_at=clock_timestamp(),reason_code='recovery_retired' WHERE current_setting('tll.recovery_idempotent',true)<>'true';
+UPDATE tll_broker_private.flows SET status='cancelled',generation=generation+1,fence=nextval('tll_broker_private.fences') WHERE status NOT IN ('held','cancelled') AND current_setting('tll.recovery_idempotent',true)<>'true';
 DO $verify_broker_drain$ BEGIN
   IF EXISTS(SELECT 1 FROM tll_broker_private.control WHERE enabled) OR EXISTS(SELECT 1 FROM tll_broker_private.flows WHERE status NOT IN ('held','cancelled')) THEN
     RAISE EXCEPTION 'Broker recovery drain failed';
@@ -124,8 +177,8 @@ RESET ROLE;
 
 SET LOCAL ROLE tll_provisional_owner;
 LOCK TABLE tll_provisional_private.control,tll_provisional_private.intents IN SHARE ROW EXCLUSIVE MODE;
-UPDATE tll_provisional_private.control SET enabled=false,changed_at=clock_timestamp(),reason_code='recovery_retired';
-UPDATE tll_provisional_private.intents SET state='cancelled',material=NULL,generation=generation+1,fence=nextval('tll_provisional_private.fences') WHERE state NOT IN ('held','cancelled');
+UPDATE tll_provisional_private.control SET enabled=false,changed_at=clock_timestamp(),reason_code='recovery_retired' WHERE current_setting('tll.recovery_idempotent',true)<>'true';
+UPDATE tll_provisional_private.intents SET state='cancelled',material=NULL,generation=generation+1,fence=nextval('tll_provisional_private.fences') WHERE state NOT IN ('held','cancelled') AND current_setting('tll.recovery_idempotent',true)<>'true';
 DO $verify_provisional_drain$ BEGIN
   IF EXISTS(SELECT 1 FROM tll_provisional_private.control WHERE enabled) OR EXISTS(SELECT 1 FROM tll_provisional_private.intents WHERE state NOT IN ('held','cancelled')) THEN
     RAISE EXCEPTION 'Provisional recovery drain failed';
@@ -135,12 +188,12 @@ RESET ROLE;
 
 SET LOCAL ROLE tll_bridge_owner;
 LOCK TABLE tll_bridge_private.control,tll_bridge_private.grants,tll_bridge_private.finalizations,tll_bridge_private.account_generations,tll_bridge_private.account_operations IN SHARE ROW EXCLUSIVE MODE;
-UPDATE tll_bridge_private.control SET enabled=false,epoch=epoch+1,changed_at=clock_timestamp(),reason_code='recovery_retired';
-UPDATE tll_bridge_private.grants SET state='cancelled',release_hash=NULL WHERE state NOT IN ('held','cancelled');
+UPDATE tll_bridge_private.control SET enabled=false,epoch=epoch+1,changed_at=clock_timestamp(),reason_code='recovery_retired' WHERE current_setting('tll.recovery_idempotent',true)<>'true';
+UPDATE tll_bridge_private.grants SET state='cancelled',release_hash=NULL WHERE state NOT IN ('held','cancelled') AND current_setting('tll.recovery_idempotent',true)<>'true';
 UPDATE tll_bridge_private.finalizations SET state='held',generation=generation+1,fence=nextval('tll_bridge_private.final_fences'),callback_material=NULL,
-  provisional_material=NULL,user_id=NULL,identity_id=NULL,authenticated_at=NULL,checked_at=NULL,session_expires_at=NULL,session_material=NULL,reconciled_at=NULL WHERE state<>'held';
-UPDATE tll_bridge_private.account_operations SET state='held',completed_at=COALESCE(completed_at,clock_timestamp()) WHERE state IN ('claimed','completed');
-UPDATE tll_bridge_private.account_generations SET generation=generation+1,logout_session_id=NULL,updated_at=clock_timestamp();
+  provisional_material=NULL,user_id=NULL,identity_id=NULL,authenticated_at=NULL,checked_at=NULL,session_expires_at=NULL,session_material=NULL,reconciled_at=NULL WHERE state<>'held' AND current_setting('tll.recovery_idempotent',true)<>'true';
+UPDATE tll_bridge_private.account_operations SET state='held',completed_at=COALESCE(completed_at,clock_timestamp()) WHERE state IN ('claimed','completed') AND current_setting('tll.recovery_idempotent',true)<>'true';
+UPDATE tll_bridge_private.account_generations SET generation=generation+1,logout_session_id=NULL,updated_at=clock_timestamp() WHERE current_setting('tll.recovery_idempotent',true)<>'true';
 DO $verify_bridge_drain$ BEGIN
   IF EXISTS(SELECT 1 FROM tll_bridge_private.control WHERE enabled) OR EXISTS(SELECT 1 FROM tll_bridge_private.grants WHERE state NOT IN ('held','cancelled'))
     OR EXISTS(SELECT 1 FROM tll_bridge_private.finalizations WHERE state<>'held') OR EXISTS(SELECT 1 FROM tll_bridge_private.account_operations WHERE state IN ('claimed','completed')) THEN
@@ -150,20 +203,26 @@ END $verify_bridge_drain$;
 RESET ROLE;
 
 DO $retire_runtime_roles$
-DECLARE r text;
+DECLARE r text; marker text;
 BEGIN
-  FOREACH r IN ARRAY ARRAY['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'] LOOP
-    EXECUTE format('ALTER ROLE %I NOLOGIN PASSWORD NULL',r);
-  END LOOP;
-  REVOKE tll_customer_executor FROM tll_customer_runtime;
-  REVOKE tll_cart_gateway FROM tll_cart_runtime;
-  REVOKE tll_broker_executor FROM tll_broker_runtime;
-  REVOKE tll_provisional_executor FROM tll_provisional_runtime;
-  REVOKE tll_bridge_executor FROM tll_bridge_runtime;
+  IF current_setting('tll.recovery_idempotent',true)<>'true' THEN
+    FOREACH r IN ARRAY ARRAY['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'] LOOP
+      EXECUTE format('ALTER ROLE %I NOLOGIN PASSWORD NULL',r);
+    END LOOP;
+    REVOKE tll_customer_executor FROM tll_customer_runtime;
+    REVOKE tll_cart_gateway FROM tll_cart_runtime;
+    REVOKE tll_broker_executor FROM tll_broker_runtime;
+    REVOKE tll_provisional_executor FROM tll_provisional_runtime;
+    REVOKE tll_bridge_executor FROM tll_bridge_runtime;
+    marker:='tll-runtime-window/v1 '||jsonb_build_object('expiresAt',current_setting('tll.recovery_expires_at',true),'generation',6,'projectRef','qdmvngjwkcsilzmqksme','state','retired','windowId','83888906-23fa-4653-a886-fe2733ed76a0')::text;
+    FOREACH r IN ARRAY ARRAY['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'] LOOP
+      EXECUTE format('COMMENT ON ROLE %I IS %L',r,marker);
+    END LOOP;
+  END IF;
 END $retire_runtime_roles$;
 
 DO $restore_edges_and_postflight$
-DECLARE operator_name name:=session_user; r text;
+DECLARE operator_name name:=session_user; r text; marker text; parsed jsonb; first_marker text;
 BEGIN
   FOREACH r IN ARRAY ARRAY['tll_customer_owner','tll_cart_owner','tll_broker_owner','tll_provisional_owner','tll_bridge_owner'] LOOP
     EXECUTE format('REVOKE %I FROM %I GRANTED BY %I',r,operator_name,operator_name);
@@ -172,6 +231,15 @@ BEGIN
       OR pg_has_role(operator_name,r,'USAGE') OR pg_has_role(operator_name,r,'SET') THEN RAISE EXCEPTION 'Owner edge was not restored to ADMIN-only: %',r; END IF;
   END LOOP;
   FOREACH r IN ARRAY ARRAY['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'] LOOP
+    SELECT shobj_description(oid,'pg_authid') INTO marker FROM pg_roles WHERE rolname=r;
+    IF marker IS NULL OR marker !~ '^tll-runtime-window/v1 [\{].*[\}]$' THEN RAISE EXCEPTION 'Retired runtime marker is absent or malformed: %',r; END IF;
+    BEGIN parsed:=substring(marker FROM '^tll-runtime-window/v1 ([\{].*[\}])$')::jsonb; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker JSON invalid: %',r; END;
+    IF jsonb_typeof(parsed)<>'object' OR parsed-ARRAY['projectRef','generation','windowId','expiresAt','state']<>'{}'::jsonb
+      OR parsed->>'projectRef'<>'qdmvngjwkcsilzmqksme' OR parsed->>'generation'<>'6'
+      OR parsed->>'windowId'<>'83888906-23fa-4653-a886-fe2733ed76a0' OR parsed->>'state'<>'retired'
+      OR jsonb_typeof(parsed->'expiresAt')<>'string' THEN RAISE EXCEPTION 'Retired runtime marker target, generation or window mismatch: %',r; END IF;
+    BEGIN PERFORM (parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker expiry invalid: %',r; END;
+    IF first_marker IS NULL THEN first_marker:=marker; ELSIF marker<>first_marker THEN RAISE EXCEPTION 'Retired runtime markers are partial or mixed'; END IF;
     IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin) OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid
       JOIN pg_roles member ON member.oid=e.member WHERE (granted.rolname=r OR member.rolname=r)
         AND NOT (granted.rolname=r AND member.rolname=operator_name AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)) THEN
@@ -190,10 +258,19 @@ BEGIN;
 SET LOCAL lock_timeout='5s';
 SET LOCAL statement_timeout='25s';
 DO $zero_runtime_sessions$
-DECLARE deadline timestamptz:=clock_timestamp()+interval '20 seconds'; remaining integer; r text;
+DECLARE deadline timestamptz:=clock_timestamp()+interval '20 seconds'; remaining integer; r text; marker text; parsed jsonb; first_marker text;
 BEGIN
-  IF current_user<>session_user OR NOT pg_has_role(session_user,'pg_read_all_stats','MEMBER') THEN
-    RAISE EXCEPTION 'Post-commit runtime-session proof requires existing pg_read_all_stats authority';
+  IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres' OR current_user<>session_user
+    OR NOT pg_has_role(session_user,'pg_read_all_stats','MEMBER') THEN
+    RAISE EXCEPTION 'Post-commit runtime-session proof requires exact staged postgres operator with existing pg_read_all_stats authority';
+  END IF;
+  IF to_regclass('tll_staging_private.environment') IS NULL OR (SELECT count(*) FROM tll_staging_private.environment)<>1
+    OR NOT EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE singleton AND environment='tll-hosted-staging-v1'
+      AND operator_project_ref='qdmvngjwkcsilzmqksme' AND operator_context='supabase-dashboard:qdmvngjwkcsilzmqksme:staging-bootstrap:reviewed'
+      AND identity_basis='explicit-operator-dashboard-binding' AND bootstrap_version='2026-09-15-v2'
+      AND source_commit='a50e37ff05d8e731dc8ffceea1e96492079e5ff3' AND integrity_sha256='2d5175eb47a891ca626d635281fbb28237b16bec0d89eebe168455935117922c')
+    OR EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE operator_project_ref='wrhgscovsgsudtedbljr') THEN
+    RAISE EXCEPTION 'Post-commit staging binding or reviewed bootstrap v2 mismatch';
   END IF;
   LOOP
     SELECT count(*) INTO remaining FROM pg_stat_activity WHERE backend_type='client backend'
@@ -203,6 +280,15 @@ BEGIN
     PERFORM pg_sleep(1);
   END LOOP;
   FOREACH r IN ARRAY ARRAY['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'] LOOP
+    SELECT shobj_description(oid,'pg_authid') INTO marker FROM pg_roles WHERE rolname=r;
+    IF marker IS NULL OR marker !~ '^tll-runtime-window/v1 [\{].*[\}]$' THEN RAISE EXCEPTION 'Retired runtime marker is absent or malformed: %',r; END IF;
+    BEGIN parsed:=substring(marker FROM '^tll-runtime-window/v1 ([\{].*[\}])$')::jsonb; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker JSON invalid: %',r; END;
+    IF jsonb_typeof(parsed)<>'object' OR parsed-ARRAY['projectRef','generation','windowId','expiresAt','state']<>'{}'::jsonb
+      OR parsed->>'projectRef'<>'qdmvngjwkcsilzmqksme' OR parsed->>'generation'<>'6'
+      OR parsed->>'windowId'<>'83888906-23fa-4653-a886-fe2733ed76a0' OR parsed->>'state'<>'retired'
+      OR jsonb_typeof(parsed->'expiresAt')<>'string' THEN RAISE EXCEPTION 'Retired runtime marker target, generation or window mismatch: %',r; END IF;
+    BEGIN PERFORM (parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker expiry invalid: %',r; END;
+    IF first_marker IS NULL THEN first_marker:=marker; ELSIF marker<>first_marker THEN RAISE EXCEPTION 'Retired runtime markers are partial or mixed'; END IF;
     IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin) OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid
       JOIN pg_roles member ON member.oid=e.member WHERE (granted.rolname=r OR member.rolname=r)
         AND NOT (granted.rolname=r AND member.rolname=session_user AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)) THEN
