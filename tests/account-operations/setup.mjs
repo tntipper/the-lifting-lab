@@ -21,7 +21,8 @@ if (sql('postgres', `SELECT count(*) FROM pg_roles WHERE rolname IN (${roles.map
 const names = ['202609150005_customer_connection_repository.sql', '202609150007_customer_subject_broker_repository.sql',
   '202609170008_customer_provisional_admission_repository.sql', '202609170010_customer_admission_bridge.sql',
   '202609170011_customer_browser_admission_once.sql', '202609180012_customer_shopify_proof_repository.sql',
-  '202609180013_customer_final_reconciliation.sql', '202609180015_customer_account_operations.sql']
+  '202609180013_customer_final_reconciliation.sql', '202609180015_customer_account_operations.sql',
+  '202609180016_customer_account_logout.sql']
 const adapt = text => { for (const [a, b] of Object.entries(map)) text = text.replace(new RegExp(`(?<![A-Za-z0-9_$])${a}(?![A-Za-z0-9_$])`, 'g'), b); return text }
 const body = text => { if (!text.startsWith('--') || !text.includes('BEGIN;') || !text.endsWith('COMMIT;\n')) throw Error('Migration shape'); return text.slice(text.indexOf('BEGIN;') + 6).replace(/COMMIT;\n$/, '') }
 const sources = names.map(name => { const original = readFileSync(new URL('../../supabase/migrations/' + name, import.meta.url), 'utf8'); return { name, sha: createHash('sha256').update(original).digest('hex'), text: adapt(original) } })
