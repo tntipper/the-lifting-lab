@@ -20,4 +20,14 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(JSON.stringify(manifest).includes('passwordValue'), false)
   assert.equal(JSON.stringify(manifest).includes('keyHexValue'), false)
   for (const pin of [...manifest.migrations,...manifest.edge.sources,...manifest.runtime.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
+
+  const classified = new Set([...manifest.runtime.vercelSecrets,...manifest.runtime.vercelConfiguration])
+  const runtimeSource = ['lib/server/staging-customer.ts','lib/commerce/staging-cart-server.ts','app/auth/customer/logout/route.ts']
+    .map(path => readFileSync(path,'utf8')).join('\n')
+  const runtimeKeys = [...runtimeSource.matchAll(/(?:process\.env\.)?((?:NEXT_PUBLIC_)?TLL_STAGING_[A-Z0-9_]+|NEXT_PUBLIC_SUPABASE_[A-Z0-9_]+)/g)].map(match => match[1])
+  assert.deepEqual([...new Set(runtimeKeys)].filter(key => !classified.has(key)), [])
+  const edgeClassified = new Set([...manifest.edge.requiredSecrets,manifest.edge.enableLast,'SUPABASE_URL'])
+  const edgeSource = readFileSync('lib/identity/customer-subject-broker-edge.ts','utf8')
+  const edgeKeys = [...edgeSource.matchAll(/get\('([A-Z][A-Z0-9_]+)'\)/g)].map(match => match[1])
+  assert.deepEqual([...new Set(edgeKeys)].filter(key => !edgeClassified.has(key)), [])
 })
