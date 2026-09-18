@@ -1,0 +1,115 @@
+// Node-only staging composition. Importing performs no credential, database or provider work.
+import { createCustomerAdmissionBrowserDelivery } from '@/lib/identity/customer-admission-browser-delivery'
+import { STAGING_CUSTOMER_CLIENT_ID, STAGING_DISCOVERY, STAGING_ISSUER, STAGING_SHOP_ID } from '@/lib/identity/customer-connection'
+import { createAesGcmEnvelopeVault, type EnvelopeVault } from '@/lib/identity/customer-token-vault'
+import { createStagingPostgresRuntime, STAGING_POSTGRES_PROJECT_REF,
+  type StagingPostgresPool, type StagingPostgresRuntime } from '@/lib/server/staging-postgres'
+
+const PURPOSES = ['customer', 'broker', 'provisional', 'bridge'] as const
+const originPattern = /^https:\/\/the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\.vercel\.app$/
+const unavailable = () => new Error('Staging customer runtime unavailable')
+
+type RuntimeFactory = typeof createStagingPostgresRuntime
+type VaultFactory = typeof createAesGcmEnvelopeVault
+type DeliveryFactory = typeof createCustomerAdmissionBrowserDelivery
+type Dependencies = { runtimeFactory?: RuntimeFactory; vaultFactory?: VaultFactory; deliveryFactory?: DeliveryFactory }
+type Environment = Readonly<Record<string, string | undefined>>
+type Delivery = ReturnType<DeliveryFactory>
+
+export type StagingCustomerRuntime = Readonly<{
+  enabled: true
+  delivery: Delivery
+  customerPool: StagingPostgresPool
+  tokenVault: EnvelopeVault
+  connection: Readonly<{
+    projectRef: typeof STAGING_POSTGRES_PROJECT_REF
+    shopId: typeof STAGING_SHOP_ID
+    clientId: typeof STAGING_CUSTOMER_CLIENT_ID
+    issuer: typeof STAGING_ISSUER
+    discovery: typeof STAGING_DISCOVERY
+  }>
+  close(): Promise<void>
+}>
+
+function hexKey(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
+}
+function keyId(value: unknown): value is string {
+  return typeof value === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(value)
+}
+function password(value: unknown): value is string {
+  return typeof value === 'string' && value.length >= 32 && value.length <= 1024 && !/[\x00-\x1f\x7f]/.test(value)
+}
+
+/**
+ * Build one request-scoped staging customer runtime from server-owned configuration.
+ * The optional dependencies are an offline-test seam, not a route or browser API.
+ * The returned runtime still exposes no login-completion route; mounting remains a
+ * separate reviewed work unit.
+ */
+export function createStagingCustomerRuntime(input: {
+  readAccessToken(): Promise<string | null>
+  env?: Environment
+}, dependencies: Dependencies = {}): StagingCustomerRuntime | null {
+  const env = input.env ?? process.env
+  if (typeof window !== 'undefined' || typeof input.readAccessToken !== 'function'
+    || env.NEXT_PUBLIC_TLL_ENVIRONMENT !== 'staging' || env.NEXT_PUBLIC_TLL_STAGING_CUSTOMER !== 'enabled'
+    || env.TLL_STAGING_CUSTOMER_ENABLED !== 'true' || env.VERCEL !== '1' || env.VERCEL_ENV !== 'preview') return null
+
+  const origin = env.TLL_STAGING_CUSTOMER_ORIGIN ?? ''
+  const projectRef = env.TLL_STAGING_SUPABASE_PROJECT_REF ?? ''
+  const publishableKey = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? ''
+  const caPem = env.TLL_STAGING_POSTGRES_CA_PEM ?? '', caSha = env.TLL_STAGING_POSTGRES_CA_SHA256 ?? ''
+  const passwords = PURPOSES.map(purpose => env[`TLL_STAGING_${purpose.toUpperCase()}_DATABASE_PASSWORD`])
+  const vaults = [
+    ['token', env.TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_ID, env.TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_HEX],
+    ['provisional', env.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_ID, env.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_HEX],
+    ['cookie', env.TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_ID, env.TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_HEX],
+  ] as const
+
+  if (!originPattern.test(origin) || new URL(origin).origin !== origin || origin.length > 253
+    || projectRef !== STAGING_POSTGRES_PROJECT_REF || env.NEXT_PUBLIC_SUPABASE_URL !== `https://${projectRef}.supabase.co`
+    || !/^sb_publishable_[A-Za-z0-9_-]{16,256}$/.test(publishableKey)
+    || !caPem || !/^[a-f0-9]{64}$/.test(caSha)
+    || passwords.some(value => !password(value)) || new Set(passwords).size !== PURPOSES.length
+    || vaults.some(([, id, key]) => !keyId(id) || !hexKey(key))
+    || new Set(vaults.map(([, id]) => id)).size !== vaults.length
+    || new Set(vaults.map(([, , key]) => key)).size !== vaults.length) return null
+
+  const runtimeFactory = dependencies.runtimeFactory ?? createStagingPostgresRuntime
+  const vaultFactory = dependencies.vaultFactory ?? createAesGcmEnvelopeVault
+  const deliveryFactory = dependencies.deliveryFactory ?? createCustomerAdmissionBrowserDelivery
+  const runtimes: StagingPostgresRuntime[] = [], keyrings: EnvelopeVault[] = [], keyBytes: Buffer[] = []
+  let closed = false
+  const close = async () => {
+    if (closed) return
+    closed = true
+    for (const vault of keyrings.splice(0)) try { vault.destroy() } catch { /* remaining resources must still close */ }
+    await Promise.allSettled(runtimes.splice(0).map(runtime => runtime.close()))
+  }
+  try {
+    for (const [index, purpose] of PURPOSES.entries()) {
+      const runtime = runtimeFactory({ purpose, enabled: true, password: passwords[index], tlsCa: { pem: caPem, sha256: caSha } })
+      if (!runtime.enabled) throw unavailable()
+      runtimes.push(runtime)
+    }
+    for (const [, id, key] of vaults) {
+      const bytes = Buffer.from(key!, 'hex'); keyBytes.push(bytes)
+      const vault = vaultFactory({ activeKeyId: id!, keys: new Map([[id!, bytes]]) })
+      keyrings.push(vault)
+    }
+    const [customer, broker, provisional, bridge] = runtimes
+    const [tokenVault, provisionalVault, cookieVault] = keyrings
+    const delivery = deliveryFactory({ provisionalPool: provisional.pool, bridgePool: bridge.pool, brokerPool: broker.pool,
+      vault: provisionalVault, cookieVault, applicationOrigin: origin, publishableKey,
+      readAccessToken: input.readAccessToken, syntheticExecution: true, liveEnabled: false })
+    return Object.freeze({ enabled: true as const, delivery, customerPool: customer.pool, tokenVault,
+      connection: Object.freeze({ projectRef: STAGING_POSTGRES_PROJECT_REF, shopId: STAGING_SHOP_ID,
+        clientId: STAGING_CUSTOMER_CLIENT_ID, issuer: STAGING_ISSUER, discovery: STAGING_DISCOVERY }), close })
+  } catch {
+    void close()
+    return null
+  } finally {
+    for (const bytes of keyBytes) bytes.fill(0)
+  }
+}
