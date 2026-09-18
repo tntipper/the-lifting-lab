@@ -133,6 +133,18 @@ test('exact completed callback replays only its sealed final redirect; substitut
   const replay=await f.callbackRequest(providerCallback,readyCookie);assert.equal(replay.status,303);assert.equal(replay.headers.get('location'),final)
   await held(await f.callbackRequest(providerCallback.replace('synthetic-provider-code','substituted'),readyCookie));assert.deepEqual(f.proofCalls,before)
 })
+test('final application callback opens only the exact sealed ready transaction and browser binding',async()=>{
+  const f=await fixture(),started=await f.start(),admitted=await f.authorize(started),completed=await f.callback(admitted)
+  const readyCookie=f.bootstrapCookie+'; '+jar(completed),capsule=f.open(jar(completed)),code=randomUUID()
+  const callback=visit(`${ORIGIN}/auth/customer/callback?code=${code}`,readyCookie)
+  const binding=f.api().finalBinding(callback)
+  assert.deepEqual(binding,{transactionId:capsule.recovery.binding.transactionId,browserHash:capsule.recovery.binding.browserHash,callbackUrl:callback.url})
+  for(const request of [visit(`${ORIGIN}/auth/customer/callback?code=${code}&extra=1`,readyCookie),
+    visit(`${ORIGIN}/auth/customer/callback?code=${code}`,f.bootstrapCookie+'; '+jar(admitted)),
+    new Request(callback.url,{headers:{cookie:readyCookie}})]) {
+    assert.throws(()=>f.api().finalBinding(request),/^Error: Customer final callback unavailable$/)
+  }
+})
 test('proof start, completion or durable subject-read failure yields no redirect and holds the admitted transaction',async t=>{
   for(const issue of ['start','complete','read'])await t.test(issue,async()=>{const f=await fixture({proofIssue:issue}),started=await f.start(),id=f.open(jar(started)).recovery.binding.transactionId
     const admitted=await f.authorize(started)

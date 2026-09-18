@@ -25,7 +25,8 @@ const base = Object.freeze({ NEXT_PUBLIC_TLL_ENVIRONMENT: 'staging', NEXT_PUBLIC
   TLL_STAGING_BRIDGE_DATABASE_PASSWORD: 'bridge-' + '4'.repeat(40), TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_ID: 'customer-token-v1',
   TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_HEX: 'b'.repeat(64), TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_ID: 'customer-provisional-v1',
   TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_HEX: 'c'.repeat(64), TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_ID: 'customer-cookie-v1',
-  TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_HEX: 'd'.repeat(64) })
+  TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_HEX: 'd'.repeat(64), TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_ID: 'customer-final-v1',
+  TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_HEX: 'e'.repeat(64) })
 
 function fixture(env = base, changes = {}) {
   const calls = [], closed = [], destroyed = []
@@ -50,20 +51,28 @@ function fixture(env = base, changes = {}) {
   const jwksLoaderFactory = options => { calls.push(['jwks', options]); return jwks }
   const shopifyProof = Object.freeze({ marker: 'shopify-proof' })
   const proofFlowFactory = options => { calls.push(['proof-flow', options]); return shopifyProof }
+  const finalRepository = Object.freeze({ marker:'final-repository' })
+  const finalRepositoryFactory = options => { calls.push(['final-repository', options]); return finalRepository }
+  const finalExchange = Object.freeze({ marker:'final-exchange' })
+  const finalExchangeFactory = options => { calls.push(['final-exchange', options]); return finalExchange }
+  const finalReconciliation = Object.freeze({ marker:'final-reconciliation' })
+  const finalReconciliationFactory = options => { calls.push(['final-reconciliation', options]); return finalReconciliation }
   const readAccessToken = async () => null
   return { runtime: createStagingCustomerRuntime({ env, readAccessToken }, { runtimeFactory, vaultFactory, deliveryFactory,
-      proofRepositoryFactory, tokenAdapterFactory, jwksLoaderFactory, proofFlowFactory, ...changes }),
-    calls, closed, destroyed, pools, delivery, proofRepository, tokenAdapter, jwks, readAccessToken }
+      proofRepositoryFactory, tokenAdapterFactory, jwksLoaderFactory, proofFlowFactory, finalRepositoryFactory,
+      finalExchangeFactory, finalReconciliationFactory, ...changes }),
+    calls, closed, destroyed, pools, delivery, proofRepository, tokenAdapter, jwks, finalRepository,
+    finalExchange, finalReconciliation, readAccessToken }
 }
 
-test('valid preview composition owns four distinct purpose pools and three isolated keyrings', async () => {
+test('valid preview composition owns four distinct purpose pools and four isolated keyrings', async () => {
   const f = fixture(); assert.ok(f.runtime); assert.equal(f.runtime.enabled, true); assert.equal(f.runtime.delivery, f.delivery)
   assert.equal(f.runtime.shopifyProof.marker, 'shopify-proof')
   const runtimeCalls = f.calls.filter(([kind]) => kind === 'runtime'); assert.deepEqual(runtimeCalls.map(([, x]) => x.purpose), ['customer','broker','provisional','bridge'])
   assert.equal(new Set(runtimeCalls.map(([, x]) => x.password)).size, 4)
   for (const [, options] of runtimeCalls) { assert.equal(options.enabled, true); assert.equal(options.tlsCa.pem, base.TLL_STAGING_POSTGRES_CA_PEM); assert.equal(options.tlsCa.sha256, base.TLL_STAGING_POSTGRES_CA_SHA256) }
-  const vaultCalls = f.calls.filter(([kind]) => kind === 'vault'); assert.deepEqual(vaultCalls.map(([, id]) => id), ['customer-token-v1','customer-provisional-v1','customer-cookie-v1'])
-  assert.equal(new Set(vaultCalls.map(([, , key]) => key.toString('hex'))).size, 3)
+  const vaultCalls = f.calls.filter(([kind]) => kind === 'vault'); assert.deepEqual(vaultCalls.map(([, id]) => id), ['customer-token-v1','customer-provisional-v1','customer-cookie-v1','customer-final-v1'])
+  assert.equal(new Set(vaultCalls.map(([, , key]) => key.toString('hex'))).size, 4)
   const options = f.calls.find(([kind]) => kind === 'delivery')[1]
   assert.equal(options.provisionalPool, f.pools.get('provisional')); assert.equal(options.bridgePool, f.pools.get('bridge')); assert.equal(options.brokerPool, f.pools.get('broker'))
   assert.notEqual(options.vault, options.cookieVault); assert.equal(options.applicationOrigin, ORIGIN); assert.equal(options.publishableKey, base.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
@@ -83,9 +92,16 @@ test('valid preview composition owns four distinct purpose pools and three isola
   assert.equal(flow.config.applicationOrigin, ORIGIN); assert.equal(flow.config.verification.configHash, proofHash)
   assert.equal(flow.ports.repository, f.proofRepository); assert.equal(flow.ports.exchangeCode, f.tokenAdapter.exchangeCode)
   assert.equal(flow.ports.verifyIdToken, f.jwks.verifyIdToken); assert.equal(flow.syntheticExecution, true); assert.equal(flow.liveEnabled, false)
+  const finalRepo=f.calls.find(([kind])=>kind==='final-repository')[1]
+  assert.equal(finalRepo.pool,f.pools.get('bridge'));assert.notEqual(finalRepo.provisionalVault,finalRepo.finalVault)
+  assert.equal(finalRepo.syntheticExecution,true);assert.equal(finalRepo.liveEnabled,false)
+  assert.deepEqual(f.calls.find(([kind])=>kind==='final-exchange')[1],{enabled:true,publishableKey:base.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY})
+  const final=f.calls.find(([kind])=>kind==='final-reconciliation')[1]
+  assert.equal(final.repository,f.finalRepository);assert.equal(final.exchange,f.finalExchange);assert.equal(final.syntheticExecution,true);assert.equal(final.liveEnabled,false)
+  assert.equal(f.runtime.finalReconciliation,f.finalReconciliation)
   assert.deepEqual(f.runtime.connection, { projectRef:'qdmvngjwkcsilzmqksme', shopId:'107532616020', clientId:'c8f7b926-9073-416c-9949-0d99e89a99c0',
     issuer:'https://shopify.com/authentication/107532616020', discovery:'https://tll-integration-staging.myshopify.com/.well-known/openid-configuration' })
-  await f.runtime.close(); await f.runtime.close(); assert.deepEqual(f.closed.sort(), ['bridge','broker','customer','provisional']); assert.deepEqual(f.destroyed, ['customer-token-v1','customer-provisional-v1','customer-cookie-v1'])
+  await f.runtime.close(); await f.runtime.close(); assert.deepEqual(f.closed.sort(), ['bridge','broker','customer','provisional']); assert.deepEqual(f.destroyed, ['customer-token-v1','customer-provisional-v1','customer-cookie-v1','customer-final-v1'])
 })
 
 test('missing, production, malformed and overlapping configuration fails before resources', () => {
@@ -101,6 +117,8 @@ test('missing, production, malformed and overlapping configuration fails before 
     ['TLL_STAGING_BROKER_DATABASE_PASSWORD',base.TLL_STAGING_CUSTOMER_DATABASE_PASSWORD], ['TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_HEX','bad'],
     ['TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_HEX',base.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_HEX],
     ['TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_ID',base.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_ID],
+    ['TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_HEX',base.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_HEX],
+    ['TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_ID',base.TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_ID],
   ]
   for (const [name, value] of changes) { const env = { ...base, [name]: value }; const f = fixture(env); assert.equal(f.runtime, null, name); assert.equal(f.calls.length, 0, name) }
 })

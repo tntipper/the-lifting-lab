@@ -270,6 +270,23 @@ export function createCustomerAdmissionBrowserDelivery(input: Options) {
         return denied()
       }
     },
+    /** Opens the already sealed ready capsule for the final application callback.
+     * It returns only the durable transaction/browser binding; the auth code stays
+     * in the callback URL and is claimed by the final reconciliation repository. */
+    finalBinding(request: Request) {
+      try {
+        ensure(active() && request.method === 'GET' && !request.signal.aborted)
+        const url = new URL(request.url)
+        ensure(url.origin === origin && url.pathname === PATH + 'callback' && !url.hash && !url.username && !url.password
+          && url.searchParams.getAll('code').length === 1 && [...url.searchParams.keys()].join(',') === 'code'
+          && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(url.searchParams.get('code') ?? '')
+          && request.headers.get('sec-fetch-mode') === 'navigate' && request.headers.get('sec-fetch-dest') === 'document'
+          && ['cross-site', 'same-origin'].includes(request.headers.get('sec-fetch-site') ?? ''))
+        const c = readCapsule(cookies(request)); ensure(c.phase === 'ready')
+        return Object.freeze({ transactionId: c.recovery.binding.transactionId,
+          browserHash: c.recovery.binding.browserHash, callbackUrl: url.href })
+      } catch { throw new Error('Customer final callback unavailable') }
+    },
     /** Inspection has no release URL/secret, registration or retry authority. */
     async recover(request: Request): Promise<Response> {
       try {

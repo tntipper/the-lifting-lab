@@ -1,10 +1,11 @@
 // Node-only mounted boundary for the staging customer admission delivery.
 import { createStagingCustomerRuntime, type StagingCustomerRuntime } from '@/lib/server/staging-customer'
 import { STAGING_POSTGRES_PROJECT_REF } from '@/lib/server/staging-postgres'
+import { stagingCustomerSessionResponse } from '@/lib/server/staging-customer-session'
 
 const STORAGE = `sb-${STAGING_POSTGRES_PROJECT_REF}-auth-token`
 const MAX_COOKIE_BYTES = 32_768, MAX_SESSION_BYTES = 32_768, MAX_CHUNKS = 12, MAX_TOKEN_BYTES = 16_384
-type Action = 'prepare' | 'start' | 'authorize' | 'shopify-callback' | 'recover'
+type Action = 'prepare' | 'start' | 'authorize' | 'shopify-callback' | 'callback' | 'recover'
 type RuntimeFactory = typeof createStagingCustomerRuntime
 
 function held() {
@@ -61,6 +62,23 @@ export async function stagingCustomerRoute(request: Request, action: Action,
   try {
     runtime = runtimeFactory({ readAccessToken: async () => stagingSupabaseAccessToken(request) })
     if (!runtime) return held()
+    if (action === 'callback') {
+      const reconciliation = runtime.finalReconciliation
+      const binding = runtime.delivery.finalBinding(request)
+      const release = await reconciliation.complete(binding)
+      let response: Response
+      try { response = stagingCustomerSessionResponse(release) }
+      catch {
+        try { await reconciliation.hold(binding) } catch { /* no browser release after failed quarantine */ }
+        throw new Error('Staging customer session unavailable')
+      }
+      try { await runtime.close(); runtime = null }
+      catch {
+        try { await reconciliation.hold(binding) } catch { /* no browser release after failed quarantine */ }
+        throw new Error('Staging customer cleanup unavailable')
+      }
+      return response
+    }
     const method = action === 'authorize' ? 'admit' : action === 'shopify-callback' ? 'shopifyCallback' : action
     const response = await runtime.delivery[method](request)
     await runtime.close(); runtime = null

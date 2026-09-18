@@ -10,7 +10,7 @@ A successful exchange remains private provisional material. The coordinator vali
 
 Any invalid callback, rejected/malformed claim, uncertain exchange, rejected or lost finish acknowledgement, substituted subject/owner, failed exact release read, or quarantine error returns only `Customer final reconciliation unavailable`. After a callback has a safe durable binding, failure attempts a new one-use hold operation. A lost finish acknowledgement is never treated as success, even when the database may have committed; the eventual repository must make the exact fenced hold revoke release authority while preserving evidence for operator recovery.
 
-The repository atomically joins the admitted provisional intent, consumed broker flow/reservation, matching Shopify proof receipt and final authoritative Supabase UUID. It keeps PKCE and session material encrypted, supports one-use callback claim/finish/release/hold, promotes `provisional` or `pending_migration` only on exact evidence, and exposes no email-based merge path. The protected Next callback and SSR cookie writer remain unmounted until the next reviewed implementation unit.
+The repository atomically joins the admitted provisional intent, consumed broker flow/reservation, matching Shopify proof receipt and final authoritative Supabase UUID. It keeps PKCE and session material encrypted, supports one-use callback claim/finish/release/hold, promotes `provisional` or `pending_migration` only on exact evidence, and exposes no email-based merge path.
 
 Run `node --experimental-strip-types --test tests/customer-final-reconciliation.test.mjs` plus typecheck and focused lint. The tests cover sign-in and migration sequencing, callback/claim rejection, exchange uncertainty, rejected and lost finish acknowledgements, substituted subject/UUID, exact release mismatch and disabled composition. They use synthetic ports and make no network or database connection.
 
@@ -25,6 +25,14 @@ Migration `202609180013_customer_final_reconciliation.sql` supplies the default-
 The final exchange authenticates the exact access token against Supabase `/user` and validates the returned identity row before finish. `identity_id` is retained as evidence from that authenticated response; migration 013 does not write to or require DDL authority over `auth.identities`.
 
 `tests/customer-final-reconciliation-repository.test.mjs` verifies encrypted wire projection, transaction acknowledgement, disabled behavior, uncertainty without retry and substituted response rejection using synthetic pool/vault boundaries. `tests/final-reconciliation/acceptance.test.mjs` exercises the canonical migration in actual PostgreSQL 17, including sign-in, migration UUID continuity, one-use claim, concurrency, proof mismatch, lost claim/finish acknowledgements, fenced hold, control disablement and ciphertext denial. `tests/final-reconciliation/migration-regression.mjs` independently verifies ownership, RLS, exact ACLs, foreign keys and nine rollback-only authority mutations. The local fixture is isolated and marked; migrations 012 and 013 remain uninstalled on hosted staging.
+
+## Protected callback and browser release
+
+The preview-only staging runtime composes the final repository and exchange under a fourth vault that is distinct from the Shopify-token, provisional-PKCE and sealed-browser-cookie vaults. `GET /auth/customer/callback` opens only a sealed `ready` browser capsule and recovers the transaction UUID plus browser-binding hash. The auth code remains in the exact callback URL and enters only the repository claim. The route returns success only after claim, authoritative exchange, acknowledged finish and the exact independent release reread.
+
+The session writer validates the released UUID, identity row, broker subject, access-token issuer/audience/subject/expiry and a strict size bound. It writes a Supabase-compatible tokens-only value containing `access_token`, `refresh_token`, `token_type`, `expires_at` and `expires_in`; no email, user object, identity metadata, proof or broker evidence is copied into browser storage. It clears the sealed admission cookies and stale Supabase chunks in the same `303 /dashboard` response. If construction fails after reconciliation, the route asks the repository to terminally hold that exact callback and emits the fixed held response without a session cookie.
+
+The runtime additionally requires `TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_ID` and `TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_HEX`; all four vault key IDs and key values must be distinct. The route remains unavailable outside the exact protected Vercel preview configuration. Hosted migrations, credentials, provider configuration and activation remain separate.
 
 Run:
 

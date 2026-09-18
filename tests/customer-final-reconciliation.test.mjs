@@ -94,3 +94,12 @@ test('disabled composition and repository failure remain fixed and secret-free',
   })
   assert.equal(f.calls.length, 0)
 })
+
+test('post-release browser failure can terminally hold only the exact callback binding', async () => {
+  const f = fixture(); await f.api.hold(callback())
+  assert.deepEqual(f.calls.map(([name]) => name), ['hold'])
+  assert.deepEqual({ ...f.calls[0][1], operationId: undefined }, { ...callback(), operationId: undefined })
+  assert.match(f.calls[0][1].operationId, /^[0-9a-f-]{36}$/)
+  const disabled = createCustomerFinalReconciliation({ repository: {}, exchange: {} })
+  await rejected(() => disabled.hold(callback()))
+})

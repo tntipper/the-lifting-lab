@@ -4,6 +4,9 @@ import { STAGING_CUSTOMER_CLIENT_ID, STAGING_DISCOVERY, STAGING_ISSUER, STAGING_
 import { createShopifyCustomerJwksLoader, createShopifyCustomerTokenAdapter } from '@/lib/identity/customer-http'
 import { createCustomerShopifyProofFlow, shopifyProofConfigHash } from '@/lib/identity/customer-shopify-proof'
 import { createCustomerShopifyProofRepository } from '@/lib/identity/customer-shopify-proof-repository'
+import { createCustomerFinalReconciliation } from '@/lib/identity/customer-final-reconciliation'
+import { createCustomerFinalReconciliationRepository } from '@/lib/identity/customer-final-reconciliation-repository'
+import { createSupabaseFinalExchange } from '@/lib/identity/supabase-final-exchange'
 import { createAesGcmEnvelopeVault, type EnvelopeVault } from '@/lib/identity/customer-token-vault'
 import { createStagingPostgresRuntime, STAGING_POSTGRES_PROJECT_REF,
   type StagingPostgresPool, type StagingPostgresRuntime } from '@/lib/server/staging-postgres'
@@ -19,9 +22,14 @@ type ProofRepositoryFactory = typeof createCustomerShopifyProofRepository
 type ProofFlowFactory = typeof createCustomerShopifyProofFlow
 type TokenAdapterFactory = typeof createShopifyCustomerTokenAdapter
 type JwksLoaderFactory = typeof createShopifyCustomerJwksLoader
+type FinalRepositoryFactory = typeof createCustomerFinalReconciliationRepository
+type FinalExchangeFactory = typeof createSupabaseFinalExchange
+type FinalReconciliationFactory = typeof createCustomerFinalReconciliation
 type Dependencies = { runtimeFactory?: RuntimeFactory; vaultFactory?: VaultFactory; deliveryFactory?: DeliveryFactory
   proofRepositoryFactory?: ProofRepositoryFactory; proofFlowFactory?: ProofFlowFactory
-  tokenAdapterFactory?: TokenAdapterFactory; jwksLoaderFactory?: JwksLoaderFactory }
+  tokenAdapterFactory?: TokenAdapterFactory; jwksLoaderFactory?: JwksLoaderFactory
+  finalRepositoryFactory?: FinalRepositoryFactory; finalExchangeFactory?: FinalExchangeFactory
+  finalReconciliationFactory?: FinalReconciliationFactory }
 type Environment = Readonly<Record<string, string | undefined>>
 type Delivery = ReturnType<DeliveryFactory>
 
@@ -29,6 +37,7 @@ export type StagingCustomerRuntime = Readonly<{
   enabled: true
   delivery: Delivery
   shopifyProof: ReturnType<ProofFlowFactory>
+  finalReconciliation: ReturnType<FinalReconciliationFactory>
   customerPool: StagingPostgresPool
   tokenVault: EnvelopeVault
   connection: Readonly<{
@@ -60,8 +69,8 @@ function evidenceId(value: unknown): value is string {
 /**
  * Build one request-scoped staging customer runtime from server-owned configuration.
  * The optional dependencies are an offline-test seam, not a route or browser API.
- * The returned runtime still exposes no login-completion route; mounting remains a
- * separate reviewed work unit.
+ * The returned runtime owns final reconciliation as well as admission delivery;
+ * hosted configuration and activation remain separate reviewed work units.
  */
 export function createStagingCustomerRuntime(input: {
   readAccessToken(): Promise<string | null>
@@ -87,6 +96,7 @@ export function createStagingCustomerRuntime(input: {
     ['token', env.TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_ID, env.TLL_STAGING_CUSTOMER_TOKEN_VAULT_KEY_HEX],
     ['provisional', env.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_ID, env.TLL_STAGING_CUSTOMER_PROVISIONAL_VAULT_KEY_HEX],
     ['cookie', env.TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_ID, env.TLL_STAGING_CUSTOMER_COOKIE_VAULT_KEY_HEX],
+    ['final', env.TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_ID, env.TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_HEX],
   ] as const
 
   if (!originPattern.test(origin) || new URL(origin).origin !== origin || origin.length > 253
@@ -113,6 +123,9 @@ export function createStagingCustomerRuntime(input: {
   const proofFlowFactory = dependencies.proofFlowFactory ?? createCustomerShopifyProofFlow
   const tokenAdapterFactory = dependencies.tokenAdapterFactory ?? createShopifyCustomerTokenAdapter
   const jwksLoaderFactory = dependencies.jwksLoaderFactory ?? createShopifyCustomerJwksLoader
+  const finalRepositoryFactory = dependencies.finalRepositoryFactory ?? createCustomerFinalReconciliationRepository
+  const finalExchangeFactory = dependencies.finalExchangeFactory ?? createSupabaseFinalExchange
+  const finalReconciliationFactory = dependencies.finalReconciliationFactory ?? createCustomerFinalReconciliation
   const runtimes: StagingPostgresRuntime[] = [], keyrings: EnvelopeVault[] = [], keyBytes: Buffer[] = []
   let closed = false
   const close = async () => {
@@ -133,7 +146,7 @@ export function createStagingCustomerRuntime(input: {
       keyrings.push(vault)
     }
     const [customer, broker, provisional, bridge] = runtimes
-    const [tokenVault, provisionalVault, cookieVault] = keyrings
+    const [tokenVault, provisionalVault, cookieVault, finalVault] = keyrings
     const proofRepository = proofRepositoryFactory({ pool: customer.pool, vault: tokenVault,
       syntheticExecution: true, liveEnabled: false })
     const tokenAdapter = tokenAdapterFactory({ enabled: true, clientSecret: customerClientSecret,
@@ -146,7 +159,13 @@ export function createStagingCustomerRuntime(input: {
       vault: provisionalVault, cookieVault, applicationOrigin: origin, publishableKey,
       readAccessToken: input.readAccessToken, shopifyProof, shopifyProofRepository: proofRepository,
       subjectBrokerClientSecret, syntheticExecution: true, liveEnabled: false })
-    return Object.freeze({ enabled: true as const, delivery, shopifyProof, customerPool: customer.pool, tokenVault,
+    const finalRepository = finalRepositoryFactory({ pool: bridge.pool, provisionalVault, finalVault,
+      syntheticExecution: true, liveEnabled: false })
+    const finalExchange = finalExchangeFactory({ enabled: true, publishableKey })
+    const finalReconciliation = finalReconciliationFactory({ repository: finalRepository,
+      exchange: finalExchange, syntheticExecution: true, liveEnabled: false })
+    return Object.freeze({ enabled: true as const, delivery, shopifyProof, finalReconciliation,
+      customerPool: customer.pool, tokenVault,
       connection: Object.freeze({ projectRef: STAGING_POSTGRES_PROJECT_REF, shopId: STAGING_SHOP_ID,
         clientId: STAGING_CUSTOMER_CLIENT_ID, issuer: STAGING_ISSUER, discovery: STAGING_DISCOVERY }), close })
   } catch {

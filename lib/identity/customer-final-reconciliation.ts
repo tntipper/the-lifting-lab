@@ -180,5 +180,14 @@ export function createCustomerFinalReconciliation(input: {
         throw unavailable()
       }
     },
+    /** Terminally revoke release authority when browser persistence fails after
+     * reconciliation. This operation is intentionally idempotence-free. */
+    async hold(value: CustomerFinalCallback): Promise<void> {
+      try {
+        ensure(active())
+        const bound = callback(value)
+        await repository.hold({ ...bound, operationId: randomUUID() })
+      } catch { throw unavailable() }
+    },
   })
 }
