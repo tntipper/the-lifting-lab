@@ -1,0 +1,51 @@
+{
+  "schema": "tll-staging-readonly-reconcile/v1",
+  "target": "qdmvngjwkcsilzmqksme",
+  "productionExcluded": "wrhgscovsgsudtedbljr",
+  "priorAttempt": "UNCERTAIN_POST_DISPATCH",
+  "nativeAccessApproved": false,
+  "query": {
+    "id": "tll-staging-readonly-reconcile/v1",
+    "sha256": "9c46ac4b710db6a59b8f17c66e2c1f38e9b790dcda3abe0a606887ed81f3841b",
+    "statementCount": 1,
+    "observationOnly": true,
+    "applicationSecurityDefinerFunctions": false
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/staging-readonly-reconcile.mjs",
+      "sha256": "a83f99b4adaffaf3dd5ac0a8fa8a8eab043e6316446dc734a675a1b48eb4dcd0"
+    },
+    {
+      "path": "scripts/staging-readonly-reconcile-keychain.py",
+      "sha256": "3ace2ccd05f11fd2d61efc175877bc52c10b3909e31e613087929c6f20d198f9"
+    }
+  ],
+  "keychain": {
+    "service": "Supabase CLI",
+    "account": "supabase"
+  },
+  "transport": {
+    "hostname": "api.supabase.com",
+    "path": "/v1/projects/qdmvngjwkcsilzmqksme/database/query",
+    "method": "POST",
+    "redirects": false,
+    "maxAgeMs": 60000,
+    "nativeHelperTimeoutMs": 15000,
+    "maxRequests": 1,
+    "maxResponseBytes": 16384
+  },
+  "journal": {
+    "path": "../implementation-state/staging/tll-staging-readonly-reconcile-observation.json",
+    "exclusive": true
+  },
+  "output": [
+    "status",
+    "target",
+    "queryId",
+    "priorAttempt",
+    "observed",
+    "differences",
+    "observationHash"
+  ]
+}
