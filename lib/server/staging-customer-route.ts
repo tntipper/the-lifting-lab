@@ -5,7 +5,7 @@ import { stagingCustomerSessionResponse } from '@/lib/server/staging-customer-se
 
 const STORAGE = `sb-${STAGING_POSTGRES_PROJECT_REF}-auth-token`
 const MAX_COOKIE_BYTES = 32_768, MAX_SESSION_BYTES = 32_768, MAX_CHUNKS = 12, MAX_TOKEN_BYTES = 16_384
-type Action = 'prepare' | 'start' | 'authorize' | 'shopify-callback' | 'callback' | 'recover'
+type Action = 'prepare' | 'start' | 'authorize' | 'shopify-callback' | 'callback' | 'recover' | 'orders' | 'logout'
 type RuntimeFactory = typeof createStagingCustomerRuntime
 
 function held() {
@@ -13,6 +13,36 @@ function held() {
     'cache-control': 'no-store, private', pragma: 'no-cache', 'referrer-policy': 'no-referrer',
     'x-content-type-options': 'nosniff',
   } })
+}
+
+function privateHeaders() {
+  return { 'cache-control': 'no-store, private', pragma: 'no-cache', 'referrer-policy': 'no-referrer',
+    'x-content-type-options': 'nosniff', vary: 'Cookie' }
+}
+
+function expireStagingSession(response: Response) {
+  const expired = 'Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+  response.headers.append('set-cookie', `${STORAGE}=; ${expired}`)
+  for (let index = 0; index < MAX_CHUNKS; index++) response.headers.append('set-cookie', `${STORAGE}.${index}=; ${expired}`)
+}
+
+function logoutResponse(outcome: Awaited<ReturnType<StagingCustomerRuntime['accountLogout']['logout']>>) {
+  let location = '/auth?error=signout_failed'
+  const providerRedirect = outcome.status === 'logged_out' ? outcome.providerRedirect : null
+  if (outcome.status === 'logged_out' && providerRedirect === null) location = '/auth'
+  else if (providerRedirect !== null) {
+    const url = new URL(providerRedirect)
+    const params = [...url.searchParams.keys()]
+    const post = url.searchParams.get('post_logout_redirect_uri')
+    if (url.origin + url.pathname !== 'https://shopify.com/authentication/107532616020/logout'
+      || params.length !== 2 || params[0] !== 'id_token_hint' || params[1] !== 'post_logout_redirect_uri'
+      || !url.searchParams.get('id_token_hint') || !post
+      || !/^https:\/\/the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\.vercel\.app\/auth$/.test(post)) throw new Error('Invalid logout redirect')
+    location = url.href
+  }
+  const response = new Response(null, { status: 303, headers: { ...privateHeaders(), location } })
+  expireStagingSession(response)
+  return response
 }
 
 /** Read only the fixed Supabase SSR cookie for this staging project. The value
@@ -57,11 +87,23 @@ export function stagingSupabaseAccessToken(request: Request): string | null {
 
 /** One runtime per request; no pool, vault or token accessor is shared globally. */
 export async function stagingCustomerRoute(request: Request, action: Action,
-  runtimeFactory: RuntimeFactory = createStagingCustomerRuntime): Promise<Response> {
+  runtimeFactory: RuntimeFactory = createStagingCustomerRuntime,
+  invalidateSupabaseSession: () => Promise<boolean> = async () => false): Promise<Response> {
   let runtime: StagingCustomerRuntime | null = null
   try {
-    runtime = runtimeFactory({ readAccessToken: async () => stagingSupabaseAccessToken(request) })
+    runtime = runtimeFactory({ readAccessToken: async () => stagingSupabaseAccessToken(request), invalidateSupabaseSession })
     if (!runtime) return held()
+    if (action === 'orders') {
+      const projection = await runtime.accountOperations.readOrders()
+      await runtime.close(); runtime = null
+      return Response.json(projection, { status: 200, headers: privateHeaders() })
+    }
+    if (action === 'logout') {
+      const outcome = await runtime.accountLogout.logout()
+      try { await runtime.close() } catch { /* local and Supabase revocation already ran */ }
+      runtime = null
+      return logoutResponse(outcome)
+    }
     if (action === 'callback') {
       const reconciliation = runtime.finalReconciliation
       const binding = runtime.delivery.finalBinding(request)
@@ -88,3 +130,6 @@ export async function stagingCustomerRoute(request: Request, action: Action,
     return held()
   }
 }
+
+export const stagingCustomerLogoutRoute = (request: Request, invalidateSupabaseSession: () => Promise<boolean>) =>
+  stagingCustomerRoute(request, 'logout', createStagingCustomerRuntime, invalidateSupabaseSession)

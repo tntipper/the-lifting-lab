@@ -31,6 +31,34 @@ test('route dispatches only the fixed action, uses a request-bound token accesso
   const response = await stagingCustomerRoute(request(cookie),'prepare',runtimeFactory)
   assert.equal(response.status,200); assert.equal(await response.text(),'prepared'); assert.equal(called,1); assert.equal(closed,1)
   assert.equal(await captured.readAccessToken(),TOKEN)
+  assert.equal(await captured.invalidateSupabaseSession(),false)
+})
+
+test('orders route closes custody before returning only the bounded projection', async () => {
+  const projection={orders:[{reference:'#1001',createdAt:'2026-09-18T10:00:00Z',financialStatus:'PAID',fulfillmentStatus:'UNFULFILLED',totalPence:1500,currency:'GBP',items:[],hasMoreItems:false}],hasMoreOrders:false}
+  let read=0,closed=0
+  const runtimeFactory=()=>({enabled:true,close:async()=>{closed++},accountOperations:{async readOrders(){read++;return projection}}})
+  const response=await stagingCustomerRoute(new Request('https://fixture.invalid/api/account/orders'),'orders',runtimeFactory)
+  assert.equal(response.status,200);assert.deepEqual(await response.json(),projection);assert.equal(read,1);assert.equal(closed,1)
+  assert.equal(response.headers.get('cache-control'),'no-store, private');assert.equal(response.headers.get('vary'),'Cookie')
+})
+
+test('logout invalidates through the request port, closes custody and expires every staging session cookie', async () => {
+  let invalidated=0,closed=0
+  const runtimeFactory=input=>({enabled:true,close:async()=>{closed++},accountLogout:{async logout(){
+    assert.equal(await input.invalidateSupabaseSession(),true)
+    return {status:'logged_out',providerRedirect:'https://shopify.com/authentication/107532616020/logout?id_token_hint=header.payload.signature&post_logout_redirect_uri=https%3A%2F%2Fthe-lifting-route-my-lifting-lab-s-projects.vercel.app%2Fauth'}
+  }}})
+  const response=await stagingCustomerRoute(new Request('https://fixture.invalid/auth/customer/logout',{method:'POST'}),'logout',runtimeFactory,async()=>{invalidated++;return true})
+  assert.equal(response.status,303);assert.match(response.headers.get('location'),/^https:\/\/shopify\.com\/authentication\/107532616020\/logout\?/)
+  assert.equal(invalidated,1);assert.equal(closed,1);assert.equal(response.headers.getSetCookie().length,13)
+  assert.ok(response.headers.getSetCookie().every(value=>value.includes('Max-Age=0')&&value.includes('HttpOnly')))
+})
+
+test('uncertain logout clears browser cookies but never releases a provider redirect', async () => {
+  const runtimeFactory=()=>({enabled:true,close:async()=>{throw Error('cleanup')},accountLogout:{async logout(){return{status:'held',code:'LOGOUT_UNCERTAIN'}}}})
+  const response=await stagingCustomerRoute(new Request('https://fixture.invalid/auth/customer/logout',{method:'POST'}),'logout',runtimeFactory,async()=>true)
+  assert.equal(response.status,303);assert.equal(response.headers.get('location'),'/auth?error=signout_failed');assert.equal(response.headers.getSetCookie().length,13)
 })
 
 test('Shopify callback action dispatches only the sealed callback handler and closes once', async () => {
@@ -80,4 +108,11 @@ test('actual route files export only their intended Next method and remain unava
     assert.equal(typeof route[method],'function'); assert.equal(route.dynamic,'force-dynamic')
     const response = await route[method](new Request(`https://fixture.invalid/auth/customer/${path}`,{method})); assert.equal(response.status,409); assert.deepEqual(await response.json(),{status:'held'})
   }
+  const orders=await build({entryPoints:['app/api/account/orders/route.ts'],bundle:true,format:'esm',platform:'node',write:false,logLevel:'silent'})
+  const ordersRoute=await import('data:text/javascript;base64,'+Buffer.from(orders.outputFiles[0].text).toString('base64')+'#orders')
+  assert.equal(typeof ordersRoute.GET,'function');assert.equal(ordersRoute.dynamic,'force-dynamic')
+  const response=await ordersRoute.GET(new Request('https://fixture.invalid/api/account/orders'));assert.equal(response.status,409)
+  const logout=await build({entryPoints:['app/auth/customer/logout/route.ts'],bundle:true,format:'esm',platform:'node',write:false,logLevel:'silent'})
+  const logoutRoute=await import('data:text/javascript;base64,'+Buffer.from(logout.outputFiles[0].text).toString('base64')+'#logout')
+  assert.equal(typeof logoutRoute.POST,'function');assert.equal(logoutRoute.dynamic,'force-dynamic')
 })

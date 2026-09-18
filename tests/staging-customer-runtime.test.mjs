@@ -67,14 +67,17 @@ function fixture(env = base, changes = {}) {
   const accountOperationsFactory = options => { calls.push(['account-operations', options]); return accountOperations }
   const accountLogoutRepository = Object.freeze({ marker: 'account-logout-repository' })
   const accountLogoutRepositoryFactory = options => { calls.push(['account-logout-repository', options]); return accountLogoutRepository }
+  const accountLogout = Object.freeze({ marker: 'account-logout' })
+  const accountLogoutFactory = options => { calls.push(['account-logout', options]); return accountLogout }
   const readAccessToken = async () => null
-  return { runtime: createStagingCustomerRuntime({ env, readAccessToken }, { runtimeFactory, vaultFactory, deliveryFactory,
+  const invalidateSupabaseSession = async () => false
+  return { runtime: createStagingCustomerRuntime({ env, readAccessToken, invalidateSupabaseSession }, { runtimeFactory, vaultFactory, deliveryFactory,
       proofRepositoryFactory, tokenAdapterFactory, jwksLoaderFactory, proofFlowFactory, finalRepositoryFactory,
       finalExchangeFactory, finalReconciliationFactory, sessionReaderFactory, accountRepositoryFactory,
-      ordersReaderFactory, accountOperationsFactory, accountLogoutRepositoryFactory, ...changes }),
+      ordersReaderFactory, accountOperationsFactory, accountLogoutRepositoryFactory, accountLogoutFactory, ...changes }),
     calls, closed, destroyed, pools, delivery, proofRepository, tokenAdapter, jwks, finalRepository,
     finalExchange, finalReconciliation, sessionReader, accountRepository, ordersReader, accountOperations,
-    accountLogoutRepository, readAccessToken }
+    accountLogoutRepository, accountLogout, readAccessToken, invalidateSupabaseSession }
 }
 
 test('valid preview composition owns four distinct purpose pools and four isolated keyrings', async () => {
@@ -123,7 +126,11 @@ test('valid preview composition owns four distinct purpose pools and four isolat
   const logout=f.calls.find(([kind])=>kind==='account-logout-repository')[1]
   assert.equal(logout.pool,f.pools.get('bridge'));assert.equal(logout.vault,f.runtime.tokenVault)
   assert.equal(logout.syntheticExecution,true);assert.equal(logout.liveEnabled,false)
-  assert.equal(f.runtime.accountOperations,f.accountOperations);assert.equal(f.runtime.accountLogoutRepository,f.accountLogoutRepository)
+  const coordinated=f.calls.find(([kind])=>kind==='account-logout')[1]
+  assert.equal(coordinated.repository,f.accountLogoutRepository);assert.equal(coordinated.currentSession,f.sessionReader.currentSession)
+  assert.equal(coordinated.invalidateSupabaseSession,f.invalidateSupabaseSession);assert.equal(coordinated.applicationOrigin,ORIGIN)
+  assert.equal(coordinated.syntheticExecution,true);assert.equal(coordinated.liveEnabled,false)
+  assert.equal(f.runtime.accountOperations,f.accountOperations);assert.equal(f.runtime.accountLogout,f.accountLogout)
   assert.deepEqual(f.runtime.connection, { projectRef:'qdmvngjwkcsilzmqksme', shopId:'107532616020', clientId:'c8f7b926-9073-416c-9949-0d99e89a99c0',
     issuer:'https://shopify.com/authentication/107532616020', discovery:'https://tll-integration-staging.myshopify.com/.well-known/openid-configuration' })
   await f.runtime.close(); await f.runtime.close(); assert.deepEqual(f.closed.sort(), ['bridge','broker','customer','provisional']); assert.deepEqual(f.destroyed, ['customer-token-v1','customer-provisional-v1','customer-cookie-v1','customer-final-v1'])
