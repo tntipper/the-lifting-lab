@@ -39,6 +39,13 @@ const runtimeSources = [
 const recoverySources = [
   'scripts/staging-account-activation-recovery.mjs',
   'config/staging-account-activation-recovery.sql',
+  'config/staging-account-activation-recovery-postcommit.sql',
+]
+const preflightSources = [
+  'scripts/staging-readonly-preflight.mjs',
+  'scripts/staging-readonly-preflight-keychain.py',
+  'scripts/staging-readonly-preflight-manifest.mjs',
+  'config/staging-readonly-preflight-manifest.json',
 ]
 const databasePasswords = ['CUSTOMER','CART','BROKER','PROVISIONAL','BRIDGE'].map(purpose => `TLL_STAGING_${purpose}_DATABASE_PASSWORD`)
 const vaults = ['TOKEN','PROVISIONAL','COOKIE','FINAL'].flatMap(purpose =>
@@ -111,16 +118,26 @@ const manifest = {
     callbackPath: '/auth/customer/shopify/callback', logoutPath: '/auth',
     subjectBrokerClientId: 'tll-staging-subject-broker-v1', subjectBrokerCallback: 'https://qdmvngjwkcsilzmqksme.supabase.co/auth/v1/callback',
     subjectBrokerTokenPath: '/functions/v1/tll-broker-token', subjectBrokerUserinfoPath: '/functions/v1/tll-broker-userinfo' },
+  preflight: {
+    sources: await Promise.all(preflightSources.map(pin)),
+    queryId: 'tll-staging-readonly-preflight/v1',
+    maximumRequests: 1,
+    productionExcluded: true,
+  },
   recovery: {
     sources: await Promise.all(recoverySources.map(pin)),
     requiredInstalledMigrations: ['012','013','014','015','016'],
+    activationWindow: { generation: 6, windowId: '83888906-23fa-4653-a886-fe2733ed76a0' },
     disablesControls: ['customer','cart','broker','provisional','bridge'],
     retiresRuntimeLogins: ['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'],
     preservesEvidenceRows: true,
+    postCommitZeroSessionProof: true,
+    requiresExistingOperatorAuthority: ['CREATEROLE','pg_read_all_data','pg_read_all_stats'],
     requiredBeforeCredentialProvisioning: true,
   },
   gates: [
-    'verify_exact_target_and_production_exclusion', 'verify_hosted_002_through_011_and_all_controls_disabled',
+    'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
+    'verify_hosted_002_through_011_and_all_controls_disabled',
     'verify_pins_and_operator_authority', 'install_012_through_016_in_one_disabled_window',
     'verify_roles_rls_acls_function_sources_and_empty_new_stores', 'verify_post_016_recovery_package_before_credentials',
     'deploy_edge_disabled_and_verify_fixed_503',
