@@ -26,7 +26,7 @@ function modules({ env = {}, fetch = async () => { throw new Error('Unexpected n
 const load = modules(), sf = load('lib/commerce/staging-cart-storefront.ts'), svc = load('lib/commerce/staging-cart-service.ts'), http = load('lib/commerce/staging-cart-http.ts')
 const transitions = load('lib/commerce/staging-cart-transition.ts')
 const { createAesGcmEnvelopeVault } = load('lib/identity/customer-token-vault.ts')
-const ORIGIN = 'https://the-lifting-cart-test-my-lifting-lab-s-projects.vercel.app'
+const ORIGIN = 'https://the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app'
 const RAW_CART = 'gid://shopify/Cart/synthetic-cart?key=PRIVATE-CART-KEY-NEVER-RETURN'
 const LINE = 'gid://shopify/CartLine/synthetic'
 const HMAC = 'a'.repeat(64), ACTOR = '70000000-0000-4000-8000-000000000001'

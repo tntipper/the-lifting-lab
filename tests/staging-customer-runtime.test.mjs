@@ -6,7 +6,7 @@ import { build } from 'esbuild'
 const bundle = await build({ stdin: { contents: "export * from './lib/server/staging-customer.ts'", resolveDir: process.cwd() },
   bundle: true, format: 'esm', platform: 'node', write: false, logLevel: 'silent' })
 const { createStagingCustomerRuntime } = await import('data:text/javascript;base64,' + Buffer.from(bundle.outputFiles[0].text).toString('base64'))
-const ORIGIN = 'https://the-lifting-customer-test-my-lifting-lab-s-projects.vercel.app'
+const ORIGIN = 'https://the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app'
 const proofHash = createHash('sha256').update(JSON.stringify(['tll-shopify-proof/v1','107532616020','https://shopify.com/authentication/107532616020',
   'c8f7b926-9073-416c-9949-0d99e89a99c0','https://shopify.com/authentication/107532616020/oauth/authorize',
   'https://shopify.com/authentication/107532616020/oauth/token','https://shopify.com/authentication/107532616020/.well-known/jwks.json',
@@ -139,7 +139,7 @@ test('valid preview composition owns four distinct purpose pools and four isolat
 test('missing, production, malformed and overlapping configuration fails before resources', () => {
   const changes = [
     ['NEXT_PUBLIC_TLL_ENVIRONMENT','production'], ['NEXT_PUBLIC_TLL_STAGING_CUSTOMER',undefined], ['TLL_STAGING_CUSTOMER_ENABLED','false'],
-    ['VERCEL_ENV','production'], ['TLL_STAGING_CUSTOMER_ORIGIN','https://example.com'], ['TLL_STAGING_SUPABASE_PROJECT_REF','wrhgscovsgsudtedbljr'],
+    ['VERCEL_ENV','production'], ['TLL_STAGING_CUSTOMER_ORIGIN','https://the-lifting-other-my-lifting-lab-s-projects.vercel.app'], ['TLL_STAGING_SUPABASE_PROJECT_REF','wrhgscovsgsudtedbljr'],
     ['NEXT_PUBLIC_SUPABASE_URL','https://wrhgscovsgsudtedbljr.supabase.co'], ['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY','bad'],
     ['TLL_STAGING_POSTGRES_CA_PEM',''], ['TLL_STAGING_POSTGRES_CA_SHA256','bad'], ['TLL_STAGING_CUSTOMER_DATABASE_PASSWORD','short'],
     ['TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET','short'], ['TLL_STAGING_SHOPIFY_PROOF_EVIDENCE_ID','bad evidence'],

@@ -6,6 +6,10 @@ This runbook activates the already reviewed source journey on `qdmvngjwkcsilzmqk
 
 Record the exact Git commit, manifest SHA256 and immutable preview URL. Confirm the Supabase project ref, Vercel project ID and Shopify development-store domain match the manifest. Confirm credential generations 1–5 remain retired, hosted migrations are exactly 002–011, all five repository controls are disabled, new 012–016 relations/functions are absent, and production identifiers do not appear in any target command or configuration value. Stop on any drift.
 
+The provider and both `TLL_STAGING_*_ORIGIN` settings use only `runtime.reviewedPreview.stableOrigin`: the protected Vercel Git-branch alias for `codex/tll-integration`. It is supported by recorded Vercel evidence showing two distinct immutable preview deployments behind that alias. Do not register or configure an immutable deployment URL as a callback or runtime origin.
+
+For both the disabled and enabled phases, record an immutable deployment evidence tuple containing `deploymentId`, `immutableUrl`, `sourceCommit` and `manifestSha256`, then prove the stable alias resolves to that deployment before running checks. The immutable URL is the source-evidence identifier; the stable alias is the only browser return origin. If the alias is absent, points to a different deployment, or is no longer a protected `codex/tll-integration` branch alias, hold the window and do not substitute a unique deployment URL.
+
 Verify Shopify discovery still returns the pinned issuer, authorization, token, JWKS and end-session endpoints. Confirm the existing confidential client ID, exact preview callback URI, preview `/auth` logout URI, scopes and Customer Account order permission. Confirm the custom Supabase broker configuration is still absent or disabled. This is inspection only.
 
 ## 2. Install the disabled database layer
@@ -24,15 +28,15 @@ Create four distinct customer vault keys plus the separate cart vault and HMAC k
 
 Deploy the two pinned Edge functions with platform JWT verification disabled because their protocol authentication is Confidential Basic or the one-use broker bearer. Keep `TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED` false and prove both functions return the fixed unavailable response without opening a database session.
 
-Deploy the exact immutable Vercel preview with server configuration present but customer/cart feature flags disabled. Prove `/api/account/orders` and `/auth/customer/logout` remain unavailable, no account UI link appears, no provider redirect is emitted and cross-purpose database calls are denied. A Vercel protection bypass, if separately approved for automated checks, must be temporary and revoked after the run.
+Deploy an immutable Vercel preview with server configuration present but customer/cart feature flags disabled. First record its disabled-phase immutable evidence tuple and prove the stable alias resolves to it. Set both `TLL_STAGING_*_ORIGIN` values to the stable alias, then prove `/api/account/orders` and `/auth/customer/logout` remain unavailable, no account UI link appears, no provider redirect is emitted and cross-purpose database calls are denied. A Vercel protection bypass, if separately approved for automated checks, must be temporary and revoked after the run.
 
 ## 5. Configure providers while application gates stay closed
 
-Configure the existing Shopify confidential client with only the exact preview callback and logout URI from the frozen preview. Configure the Supabase custom broker with the manifest client ID, token endpoint, userinfo endpoint, callback, `subject` scope, PKCE and email-optional behavior. Do not recreate either client. Read back and compare every setting before enabling a database or application control.
+Configure the existing Shopify confidential client with only the stable-alias callback and logout URI from the manifest. Configure the Supabase custom broker with the manifest client ID, token endpoint, userinfo endpoint, callback, `subject` scope, PKCE and email-optional behavior. Do not recreate either client. Read back and compare every setting before enabling a database or application control.
 
 ## 6. Activate in dependency order
 
-Enable the customer, cart, broker, provisional and bridge database controls only after the disabled denial checks pass. Enable the Edge broker next and run fixed protocol smoke checks. Enable the server customer/cart flags last, producing a new immutable preview. Stop and retire the window if any expected hash, role, permission, endpoint, origin or response differs.
+Enable the customer, cart, broker, provisional and bridge database controls only after the disabled denial checks pass. Enable the Edge broker next and run fixed protocol smoke checks. Enable the server customer/cart flags last, producing a new immutable preview. Record the enabled-phase immutable evidence tuple and prove the same stable alias resolves to it before the authenticated journey. Stop and retire the window if any expected hash, role, permission, endpoint, origin or response differs.
 
 ## 7. Acceptance without purchase
 

@@ -16,9 +16,9 @@ import { createStagingSupabaseSessionReader } from '@/lib/identity/supabase-sess
 import { createAesGcmEnvelopeVault, type EnvelopeVault } from '@/lib/identity/customer-token-vault'
 import { createStagingPostgresRuntime, STAGING_POSTGRES_PROJECT_REF,
   type StagingPostgresPool, type StagingPostgresRuntime } from '@/lib/server/staging-postgres'
+import { isStagingReviewedPreviewOrigin } from '@/lib/server/staging-preview-origin'
 
 const PURPOSES = ['customer', 'broker', 'provisional', 'bridge'] as const
-const originPattern = /^https:\/\/the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\.vercel\.app$/
 const unavailable = () => new Error('Staging customer runtime unavailable')
 
 type RuntimeFactory = typeof createStagingPostgresRuntime
@@ -117,7 +117,7 @@ export function createStagingCustomerRuntime(input: {
     ['final', env.TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_ID, env.TLL_STAGING_CUSTOMER_FINAL_VAULT_KEY_HEX],
   ] as const
 
-  if (!originPattern.test(origin) || new URL(origin).origin !== origin || origin.length > 253
+  if (!isStagingReviewedPreviewOrigin(origin)
     || projectRef !== STAGING_POSTGRES_PROJECT_REF || env.NEXT_PUBLIC_SUPABASE_URL !== `https://${projectRef}.supabase.co`
     || !/^sb_publishable_[A-Za-z0-9_-]{16,256}$/.test(publishableKey)
     || !caPem || !/^[a-f0-9]{64}$/.test(caSha)

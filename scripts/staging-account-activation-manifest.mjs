@@ -53,6 +53,17 @@ const vercelConfiguration = [
   'TLL_STAGING_SHOPIFY_PROOF_CONFIG_SHA256', 'TLL_STAGING_SHOPIFY_PROOF_VERIFIED_AT_MS',
   'TLL_STAGING_SHOPIFY_PROOF_EXPIRES_AT_MS',
 ]
+const reviewedPreview = {
+  stableOrigin: 'https://the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app',
+  branch: 'codex/tll-integration',
+  originConfiguration: ['TLL_STAGING_CUSTOMER_ORIGIN', 'TLL_STAGING_CART_ORIGIN'],
+  providerUris: ['/auth/customer/shopify/callback', '/auth'],
+  immutableDeploymentEvidence: {
+    requiredForEachPhase: ['disabled', 'enabled'],
+    requiredFields: ['deploymentId', 'immutableUrl', 'sourceCommit', 'manifestSha256'],
+    aliasMustResolveToRecordedDeployment: true,
+  },
+}
 const sourceTreePaths = [...new Set([...migrations, ...edgeSources, ...runtimeSources,
   ...await walk('lib/identity'), ...await walk('lib/server'), ...await walk('lib/commerce'),
   ...await walk('app/auth/customer'), ...await walk('app/account/orders'), ...await walk('app/api/account'),
@@ -77,7 +88,7 @@ const manifest = {
     'TLL_STAGING_BROKER_DATABASE_PASSWORD', 'TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET',
     'TLL_STAGING_POSTGRES_CA_PEM', 'TLL_STAGING_POSTGRES_CA_SHA256',
   ], enableLast: 'TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED' },
-  runtime: { sources: await Promise.all(runtimeSources.map(pin)),
+  runtime: { sources: await Promise.all(runtimeSources.map(pin)), reviewedPreview,
     databaseIdentities: {
       customer: { login: 'tll_customer_runtime', membership: 'tll_customer_executor' },
       cart: { login: 'tll_cart_runtime', membership: 'tll_cart_gateway' },
@@ -92,7 +103,7 @@ const manifest = {
     tokenEndpoint: 'https://shopify.com/authentication/107532616020/oauth/token',
     endSessionEndpoint: 'https://shopify.com/authentication/107532616020/logout',
     scopes: ['openid','email','customer-account-api:full'],
-    previewOriginPattern: '^https://the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\\.vercel\\.app$',
+    reviewedPreviewOrigin: reviewedPreview.stableOrigin,
     callbackPath: '/auth/customer/shopify/callback', logoutPath: '/auth',
     subjectBrokerClientId: 'tll-staging-subject-broker-v1', subjectBrokerCallback: 'https://qdmvngjwkcsilzmqksme.supabase.co/auth/v1/callback',
     subjectBrokerTokenPath: '/functions/v1/tll-broker-token', subjectBrokerUserinfoPath: '/functions/v1/tll-broker-userinfo' },

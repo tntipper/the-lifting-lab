@@ -1,4 +1,5 @@
 import { createStagingPostgresRuntime, STAGING_POSTGRES_PROJECT_REF } from '@/lib/server/staging-postgres'
+import { isStagingReviewedPreviewOrigin } from '@/lib/server/staging-preview-origin'
 import { createAesGcmEnvelopeVault } from '@/lib/identity/customer-token-vault'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { vercelClientIdentity } from '@/lib/submissions/gateway'
@@ -16,7 +17,7 @@ export async function stagingCartRoute(request: Request): Promise<Response> {
   const origin = process.env.TLL_STAGING_CART_ORIGIN ?? '', projectRef = process.env.TLL_STAGING_SUPABASE_PROJECT_REF ?? ''
   const caPem = process.env.TLL_STAGING_POSTGRES_CA_PEM ?? '', caSha = process.env.TLL_STAGING_POSTGRES_CA_SHA256 ?? ''
   const keyHex = process.env.TLL_STAGING_CART_VAULT_KEY_HEX ?? '', hmacKeyHex = process.env.TLL_STAGING_CART_HMAC_KEY_HEX ?? ''
-  if (!/^https:\/\/the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\.vercel\.app$/.test(origin)
+  if (!isStagingReviewedPreviewOrigin(origin)
     || projectRef !== STAGING_POSTGRES_PROJECT_REF || process.env.NEXT_PUBLIC_SUPABASE_URL !== `https://${projectRef}.supabase.co`
     || !caPem || !/^[a-f0-9]{64}$/.test(caSha)
     || process.env.TLL_STAGING_CART_SHOP !== STAGING_CART_SHOP || !/^[a-f0-9]{64}$/.test(keyHex)

@@ -47,8 +47,8 @@
       "app/api/account",
       "supabase/functions"
     ],
-    "fileCount": 60,
-    "sha256": "029a5466a1eb4bff3c0ee8058427ce4edeadfc09259265920ec42686cacabec6"
+    "fileCount": 61,
+    "sha256": "cbc4720618d77e4566e6ffa98c4e73933aefef81e33c2c1b5ffeae0dc3d12229"
   },
   "migrations": [
     {
@@ -131,7 +131,7 @@
     "sources": [
       {
         "path": "lib/server/staging-customer.ts",
-        "sha256": "89ee525b90a58e46ee083b209c867ef6d430ba224bc674986af14d57cb1f9f0c"
+        "sha256": "ad8f2150df2fccb377ecba85bb2561ded889a3cd7f7743971c31128113faba8f"
       },
       {
         "path": "lib/server/staging-customer-route.ts",
@@ -166,6 +166,31 @@
         "sha256": "63c91e80663b757292252e83f4b9e3d864eb14d4e5d791b12c29e6f7d632f705"
       }
     ],
+    "reviewedPreview": {
+      "stableOrigin": "https://the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app",
+      "branch": "codex/tll-integration",
+      "originConfiguration": [
+        "TLL_STAGING_CUSTOMER_ORIGIN",
+        "TLL_STAGING_CART_ORIGIN"
+      ],
+      "providerUris": [
+        "/auth/customer/shopify/callback",
+        "/auth"
+      ],
+      "immutableDeploymentEvidence": {
+        "requiredForEachPhase": [
+          "disabled",
+          "enabled"
+        ],
+        "requiredFields": [
+          "deploymentId",
+          "immutableUrl",
+          "sourceCommit",
+          "manifestSha256"
+        ],
+        "aliasMustResolveToRecordedDeployment": true
+      }
+    },
     "databaseIdentities": {
       "customer": {
         "login": "tll_customer_runtime",
@@ -249,7 +274,7 @@
       "email",
       "customer-account-api:full"
     ],
-    "previewOriginPattern": "^https://the-lifting-[a-z0-9-]+-my-lifting-lab-s-projects\\.vercel\\.app$",
+    "reviewedPreviewOrigin": "https://the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app",
     "callbackPath": "/auth/customer/shopify/callback",
     "logoutPath": "/auth",
     "subjectBrokerClientId": "tll-staging-subject-broker-v1",
