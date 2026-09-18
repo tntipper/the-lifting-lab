@@ -36,8 +36,8 @@ const migrationPairs = BASELINE_MIGRATIONS.map(([version, hash]) => `('${version
 // PostgreSQL records the grantor separately from a membership's role/member
 // edge. A CREATEROLE operator cannot be both grantor and member with ADMIN on
 // the same edge, so retirement asserts the five exact ADMIN-only runtime-to-
-// operator edges and rejects every additional runtime edge; it intentionally
-// does not constrain the bootstrap grantor identity.
+// operator edges (one per runtime role) and rejects every additional runtime
+// edge; it intentionally does not constrain the bootstrap grantor identity.
 export const EXPECTED_RECEIPT = Object.freeze({
   queryId: QUERY_ID,
   projectRef: PROJECT_REF,
@@ -45,7 +45,7 @@ export const EXPECTED_RECEIPT = Object.freeze({
   operator: { current: true, session: true, database: true, notSuperuser: true, createrole: true, readAll: true, writeAll: true, maintain: true },
   migrations: { totalCount: 10, baselinePairCount: 10, forbiddenCount: 0 },
   controls: { customer: true, cart: true, broker: true, provisional: true, bridge: true },
-  runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, edgeCount: 5, retiredOperatorEdgeCount: 5, sessionCount: 0, retiredMarkerCount: 5 },
+  runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, edgeCount: 5, retiredOperatorEdgeCount: 5, qualifyingDistinctRoleCount: 5, sessionCount: 0, retiredMarkerCount: 5 },
   absentObjects: { shopifyProofs: true, finalizations: true, cartTransitions: true, accountGenerations: true, accountLogouts: true },
 })
 const EXPECTED_RECEIPT_LITERAL = JSON.stringify(EXPECTED_RECEIPT)
@@ -62,7 +62,7 @@ export const RECEIPT_ASSERTION_SELECT = `SELECT jsonb_build_object(
    'broker',coalesce((tll_broker_private.operator_status()->>'enabled')='false',false),
    'provisional',coalesce((tll_provisional_private.operator_status()->>'enabled')='false',false),
    'bridge',coalesce((tll_bridge_private.operator_status()->>'enabled')='false',false)),
- 'runtime',jsonb_build_object('roleCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)})),'loginCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND rolcanlogin),'passwordCount',(SELECT count(*) FROM pg_authid WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND rolpassword IS NOT NULL),'edgeCount',(SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${sqlList(RUNTIME_ROLES)}) OR member.rolname IN (${sqlList(RUNTIME_ROLES)})),'retiredOperatorEdgeCount',(SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${sqlList(RUNTIME_ROLES)}) AND member.rolname='postgres' AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option),'sessionCount',(SELECT count(*) FROM pg_stat_activity WHERE usename IN (${sqlList(RUNTIME_ROLES)})),'retiredMarkerCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND shobj_description(oid,'pg_authid')='${RETIRED_MARKER}')),
+ 'runtime',jsonb_build_object('roleCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)})),'loginCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND rolcanlogin),'passwordCount',(SELECT count(*) FROM pg_authid WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND rolpassword IS NOT NULL),'edgeCount',(SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${sqlList(RUNTIME_ROLES)}) OR member.rolname IN (${sqlList(RUNTIME_ROLES)})),'retiredOperatorEdgeCount',(SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${sqlList(RUNTIME_ROLES)}) AND member.rolname='postgres' AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option),'qualifyingDistinctRoleCount',(SELECT count(DISTINCT granted.oid) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${sqlList(RUNTIME_ROLES)}) AND member.rolname='postgres' AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option),'sessionCount',(SELECT count(*) FROM pg_stat_activity WHERE usename IN (${sqlList(RUNTIME_ROLES)})),'retiredMarkerCount',(SELECT count(*) FROM pg_roles WHERE rolname IN (${sqlList(RUNTIME_ROLES)}) AND shobj_description(oid,'pg_authid')='${RETIRED_MARKER}')),
  'absentObjects',jsonb_build_object('shopifyProofs',to_regclass('tll_customer_private.shopify_proofs') IS NULL,'finalizations',to_regclass('tll_bridge_private.finalizations') IS NULL,'cartTransitions',to_regclass('tll_cart_private.transitions') IS NULL,'accountGenerations',to_regclass('tll_bridge_private.account_generations') IS NULL,'accountLogouts',to_regclass('tll_bridge_private.account_logouts') IS NULL)
 ) AS tll_staging_preflight;
 `
@@ -145,8 +145,8 @@ export function validateResult (rows) {
   const operatorKeys = ['createrole', 'current', 'database', 'maintain', 'notSuperuser', 'readAll', 'session', 'writeAll']
   if (!receipt.environmentMarker || Object.keys(receipt.operator ?? {}).sort().join('|') !== operatorKeys.join('|') || !receipt.operator.current || !receipt.operator.session || !receipt.operator.database || !receipt.operator.notSuperuser || !receipt.operator.createrole || !receipt.operator.readAll || !receipt.operator.writeAll || !receipt.operator.maintain) unavailable()
   if (receipt.migrations?.totalCount !== BASELINE_MIGRATIONS.length || receipt.migrations?.baselinePairCount !== BASELINE_MIGRATIONS.length || receipt.migrations?.forbiddenCount !== 0) unavailable()
-  const runtimeKeys = ['edgeCount', 'loginCount', 'passwordCount', 'retiredMarkerCount', 'retiredOperatorEdgeCount', 'roleCount', 'sessionCount']
-  if (Object.keys(receipt.runtime ?? {}).sort().join('|') !== runtimeKeys.join('|') || receipt.runtime.roleCount !== RUNTIME_ROLES.length || receipt.runtime.loginCount !== 0 || receipt.runtime.passwordCount !== 0 || receipt.runtime.edgeCount !== RUNTIME_ROLES.length || receipt.runtime.retiredOperatorEdgeCount !== RUNTIME_ROLES.length || receipt.runtime.sessionCount !== 0 || receipt.runtime.retiredMarkerCount !== RUNTIME_ROLES.length) unavailable()
+  const runtimeKeys = ['edgeCount', 'loginCount', 'passwordCount', 'qualifyingDistinctRoleCount', 'retiredMarkerCount', 'retiredOperatorEdgeCount', 'roleCount', 'sessionCount']
+  if (Object.keys(receipt.runtime ?? {}).sort().join('|') !== runtimeKeys.join('|') || receipt.runtime.roleCount !== RUNTIME_ROLES.length || receipt.runtime.loginCount !== 0 || receipt.runtime.passwordCount !== 0 || receipt.runtime.edgeCount !== RUNTIME_ROLES.length || receipt.runtime.retiredOperatorEdgeCount !== RUNTIME_ROLES.length || receipt.runtime.qualifyingDistinctRoleCount !== RUNTIME_ROLES.length || receipt.runtime.sessionCount !== 0 || receipt.runtime.retiredMarkerCount !== RUNTIME_ROLES.length) unavailable()
   if (!receipt.absentObjects || Object.keys(receipt.absentObjects).length !== 5 || !Object.values(receipt.absentObjects).every(value => value === true)) unavailable()
   return Object.freeze({ target: PROJECT_REF, queryId: QUERY_ID, timestamp: new Date().toISOString(), status: 'PASS', counts: Object.freeze({ baselineMigrations: receipt.migrations.baselinePairCount, forbiddenMigrations: receipt.migrations.forbiddenCount, runtimeRoles: receipt.runtime.roleCount, runtimeSessions: receipt.runtime.sessionCount, absentObjects: Object.keys(receipt.absentObjects).length }), receiptHash: sha256(JSON.stringify({ queryId: QUERY_ID, projectRef: PROJECT_REF, controls, migrations: receipt.migrations, runtime: receipt.runtime, absentObjects: receipt.absentObjects })) })
 }

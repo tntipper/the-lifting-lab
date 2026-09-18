@@ -166,6 +166,23 @@ await withFixture('password mismatch', container => {
 await withFixture('membership mismatch', container => {
   psql(container, 'tll_fixture_admin', 'GRANT anon TO tll_customer_runtime;')
 }, container => assertAssertionFailure(container, 'edge'))
+await withFixture('duplicated qualifying role edge', container => {
+  // Keep the total runtime edge count and qualifying row count at five, while
+  // moving one qualifying edge from bridge to customer. A second grantor is a
+  // disposable fixture-only superuser, allowing PostgreSQL to record a second
+  // membership row for the same role/member pair without adding a runtime edge
+  // to that grantor.
+  psql(container, 'tll_fixture_admin', `
+    CREATE ROLE tll_fixture_second_grantor SUPERUSER NOLOGIN;
+    SET ROLE tll_fixture_second_grantor;
+    GRANT tll_customer_runtime TO postgres WITH ADMIN TRUE, INHERIT FALSE, SET FALSE;
+    RESET ROLE;
+    REVOKE tll_bridge_runtime FROM postgres;
+  `)
+  check('duplicate case retains five runtime edges', psql(container, 'tll_fixture_admin', `SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${RUNTIME.map(q).join(',')}) OR member.rolname IN (${RUNTIME.map(q).join(',')});`), '5')
+  check('duplicate case retains five qualifying rows', psql(container, 'tll_fixture_admin', `SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${RUNTIME.map(q).join(',')}) AND member.rolname='postgres' AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option;`), '5')
+  check('duplicate case has four distinct qualifying roles', psql(container, 'tll_fixture_admin', `SELECT count(DISTINCT granted.oid) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN (${RUNTIME.map(q).join(',')}) AND member.rolname='postgres' AND m.admin_option AND NOT m.inherit_option AND NOT m.set_option;`), '4')
+}, container => assertAssertionFailure(container, 'duplicate qualifying role edge'))
 await withFixture('comment mismatch', container => {
   psql(container, 'tll_fixture_admin', "COMMENT ON ROLE tll_customer_runtime IS 'wrong-marker';")
 }, container => assertAssertionFailure(container, 'comment'))

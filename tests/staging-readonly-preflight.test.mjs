@@ -29,7 +29,8 @@ test('preflight is fixed to the intended staging project and remains disabled', 
   assert.doesNotMatch(finalReceipt, /\b(?:FROM|SELECT\s+\w+\s*\(|jsonb_build_object|to_regclass|pg_)\b/i)
   assert.match(FIXED_QUERY, /"generation":5/); assert.match(FIXED_QUERY, /forbiddenCount/)
   assert.match(FIXED_QUERY, /'notSuperuser',NOT coalesce/)
-  assert.match(FIXED_QUERY, /baselinePairCount/); assert.match(FIXED_QUERY, /retiredOperatorEdgeCount/)
+  assert.match(FIXED_QUERY, /baselinePairCount/); assert.match(FIXED_QUERY, /retiredOperatorEdgeCount/); assert.match(FIXED_QUERY, /qualifyingDistinctRoleCount/)
+  assert.match(FIXED_QUERY, /count\(DISTINCT granted\.oid\)/)
   assert.doesNotMatch(FIXED_QUERY, /grantor\.rolname='postgres'/, 'the retirement edge is role-to-operator; PostgreSQL cannot grant ADMIN back to the same grantor/member')
   assert.doesNotMatch(FIXED_QUERY, /\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|GRANT|REVOKE|COMMENT)\b/i)
 })
@@ -42,6 +43,7 @@ test('only the exact compact receipt is accepted and redacted', () => {
   assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, runtime: { ...receipt.runtime, sessionCount: 1 } } }]))
   assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, migrations: { ...receipt.migrations, totalCount: 11 } } }]))
   assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, runtime: { ...receipt.runtime, edgeCount: 6 } } }]))
+  assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, runtime: { ...receipt.runtime, qualifyingDistinctRoleCount: 4 } } }]))
   assert.throws(() => validateResult([{ tll_staging_preflight: { ...receipt, unexpected: true } }]))
 })
 
