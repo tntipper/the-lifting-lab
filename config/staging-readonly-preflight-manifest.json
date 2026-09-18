@@ -1,0 +1,22 @@
+{
+  "schema": "tll-staging-readonly-preflight/v1",
+  "target": "qdmvngjwkcsilzmqksme",
+  "productionExcluded": "wrhgscovsgsudtedbljr",
+  "queryId": "tll-staging-readonly-preflight/v1",
+  "nativeAccessApproved": false,
+  "keychain": {
+    "service": "Supabase CLI",
+    "account": "supabase",
+    "reviewedDesignPath": "../../implementation-state/staging/generation-launcher-2026-09-18/native_adapter.py",
+    "reviewedDesignSha256": "835cc3394a3f01e18df91d2e111d384aa48592f10e8a239c603b59cd56627bed"
+  },
+  "transport": {
+    "hostname": "api.supabase.com",
+    "path": "/v1/projects/qdmvngjwkcsilzmqksme/database/query",
+    "method": "POST",
+    "redirects": false,
+    "maxAgeMs": 60000,
+    "maxRequests": 1
+  },
+  "output": ["target", "queryId", "timestamp", "status", "counts", "receiptHash"]
+}
