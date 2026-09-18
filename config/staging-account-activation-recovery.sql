@@ -95,17 +95,21 @@ BEGIN
     BEGIN parsed:=substring(marker FROM '^tll-runtime-window/v1 ([{].*[}])$')::jsonb; EXCEPTION WHEN others THEN
       RAISE EXCEPTION 'Runtime marker JSON is invalid: %',r;
     END;
-    IF jsonb_typeof(parsed)<>'object' OR parsed-ARRAY['projectRef','generation','windowId','expiresAt','state']<>'{}'::jsonb
-      OR parsed->>'projectRef'<>'qdmvngjwkcsilzmqksme' OR parsed->>'generation'<>'6'
-      OR parsed->>'windowId'<>'83888906-23fa-4653-a886-fe2733ed76a0'
-      OR jsonb_typeof(parsed->'expiresAt')<>'string' OR parsed->>'state' NOT IN ('active','retired') THEN
+    IF jsonb_typeof(parsed) IS DISTINCT FROM 'object' OR (SELECT count(*) FROM jsonb_object_keys(parsed)) IS DISTINCT FROM 5
+      OR NOT (parsed ?& ARRAY['projectRef','generation','windowId','expiresAt','state'])
+      OR jsonb_typeof(parsed->'projectRef') IS DISTINCT FROM 'string' OR parsed->>'projectRef' IS DISTINCT FROM 'qdmvngjwkcsilzmqksme'
+      OR jsonb_typeof(parsed->'generation') IS DISTINCT FROM 'number' OR parsed->>'generation' IS DISTINCT FROM '6'
+      OR jsonb_typeof(parsed->'windowId') IS DISTINCT FROM 'string' OR parsed->>'windowId' IS DISTINCT FROM '83888906-23fa-4653-a886-fe2733ed76a0'
+      OR jsonb_typeof(parsed->'expiresAt') IS DISTINCT FROM 'string'
+      OR jsonb_typeof(parsed->'state') IS DISTINCT FROM 'string'
+      OR (parsed->>'state' IS DISTINCT FROM 'active' AND parsed->>'state' IS DISTINCT FROM 'retired') THEN
       RAISE EXCEPTION 'Runtime marker target, generation or window mismatch: %',r;
     END IF;
     BEGIN expires_at:=(parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN
       RAISE EXCEPTION 'Runtime marker expiry is invalid: %',r;
     END;
     IF first_marker IS NULL THEN first_marker:=marker; expires_text:=parsed->>'expiresAt';
-    ELSIF marker<>first_marker OR parsed->>'expiresAt'<>expires_text THEN RAISE EXCEPTION 'Runtime markers are partial or mixed'; END IF;
+    ELSIF marker IS DISTINCT FROM first_marker OR parsed->>'expiresAt' IS DISTINCT FROM expires_text THEN RAISE EXCEPTION 'Runtime markers are partial or mixed'; END IF;
     IF parsed->>'state'='active' THEN active_count:=active_count+1; ELSE retired_count:=retired_count+1; END IF;
   END LOOP;
   IF active_count=5 THEN
@@ -223,12 +227,15 @@ BEGIN
     SELECT shobj_description(oid,'pg_authid') INTO marker FROM pg_roles WHERE rolname=r;
     IF marker IS NULL OR marker !~ '^tll-runtime-window/v1 [{].*[}]$' THEN RAISE EXCEPTION 'Retired runtime marker is absent or malformed: %',r; END IF;
     BEGIN parsed:=substring(marker FROM '^tll-runtime-window/v1 ([{].*[}])$')::jsonb; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker JSON invalid: %',r; END;
-    IF jsonb_typeof(parsed)<>'object' OR parsed-ARRAY['projectRef','generation','windowId','expiresAt','state']<>'{}'::jsonb
-      OR parsed->>'projectRef'<>'qdmvngjwkcsilzmqksme' OR parsed->>'generation'<>'6'
-      OR parsed->>'windowId'<>'83888906-23fa-4653-a886-fe2733ed76a0' OR parsed->>'state'<>'retired'
-      OR jsonb_typeof(parsed->'expiresAt')<>'string' THEN RAISE EXCEPTION 'Retired runtime marker target, generation or window mismatch: %',r; END IF;
+    IF jsonb_typeof(parsed) IS DISTINCT FROM 'object' OR (SELECT count(*) FROM jsonb_object_keys(parsed)) IS DISTINCT FROM 5
+      OR NOT (parsed ?& ARRAY['projectRef','generation','windowId','expiresAt','state'])
+      OR jsonb_typeof(parsed->'projectRef') IS DISTINCT FROM 'string' OR parsed->>'projectRef' IS DISTINCT FROM 'qdmvngjwkcsilzmqksme'
+      OR jsonb_typeof(parsed->'generation') IS DISTINCT FROM 'number' OR parsed->>'generation' IS DISTINCT FROM '6'
+      OR jsonb_typeof(parsed->'windowId') IS DISTINCT FROM 'string' OR parsed->>'windowId' IS DISTINCT FROM '83888906-23fa-4653-a886-fe2733ed76a0'
+      OR jsonb_typeof(parsed->'expiresAt') IS DISTINCT FROM 'string'
+      OR jsonb_typeof(parsed->'state') IS DISTINCT FROM 'string' OR parsed->>'state' IS DISTINCT FROM 'retired' THEN RAISE EXCEPTION 'Retired runtime marker target, generation or window mismatch: %',r; END IF;
     BEGIN PERFORM (parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker expiry invalid: %',r; END;
-    IF first_marker IS NULL THEN first_marker:=marker; ELSIF marker<>first_marker THEN RAISE EXCEPTION 'Retired runtime markers are partial or mixed'; END IF;
+    IF first_marker IS NULL THEN first_marker:=marker; ELSIF marker IS DISTINCT FROM first_marker THEN RAISE EXCEPTION 'Retired runtime markers are partial or mixed'; END IF;
     IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin) OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid
       JOIN pg_roles member ON member.oid=e.member WHERE (granted.rolname=r OR member.rolname=r)
         AND NOT (granted.rolname=r AND member.rolname=operator_name AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)) THEN

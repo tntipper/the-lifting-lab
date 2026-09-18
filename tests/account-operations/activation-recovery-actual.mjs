@@ -15,10 +15,14 @@ const aliases = {
   tll_customer_runtime: 'tll_ao1_customer_runtime', tll_cart_runtime: 'tll_ao1_cart_runtime', tll_broker_runtime: 'tll_ao1_broker_runtime',
   tll_provisional_runtime: 'tll_ao1_provisional_runtime', tll_bridge_runtime: 'tll_ao1_bridge_runtime',
 }
-const OPERATOR = 'tll_ao1_recovery_operator', WINDOW = '83888906-23fa-4653-a886-fe2733ed76a0', EXPIRES = '2030-01-02T03:04:05Z', marker = (state, expires = EXPIRES) => `tll-runtime-window/v1 {\"expiresAt\":\"${expires}\",\"generation\":6,\"projectRef\":\"qdmvngjwkcsilzmqksme\",\"state\":\"${state}\",\"windowId\":\"${WINDOW}\"}`
+const OPERATOR = 'tll_ao1_recovery_operator', WINDOW = '83888906-23fa-4653-a886-fe2733ed76a0', EXPIRES = '2030-01-02T03:04:05Z'
+const markerPayload = (state, expires = EXPIRES) => ({ expiresAt: expires, generation: 6, projectRef: 'qdmvngjwkcsilzmqksme', state, windowId: WINDOW })
+const marker = (state, expires = EXPIRES) => `tll-runtime-window/v1 ${JSON.stringify(markerPayload(state, expires))}`
+const mutatedMarker = (state, mutate) => { const payload = markerPayload(state); mutate(payload); return `tll-runtime-window/v1 ${JSON.stringify(payload)}` }
 const runtimes = ['customer','cart','broker','provisional','bridge'].map(purpose => `tll_ao1_${purpose}_runtime`)
 const q = value => `'${value.replaceAll("'", "''")}'`
 const adapt = source => Object.entries(aliases).reduce((text, [from, to]) => text.replace(new RegExp(`(?<![A-Za-z0-9_$])${from}(?![A-Za-z0-9_$])`, 'g'), to), source)
+const setMarker = (role, value) => admin(`COMMENT ON ROLE ${role} IS ${q(value)}`)
 function managed(sql) {
   try { return execFileSync('docker', ['exec','-i','tll-stage0-postgres','psql','-XqAt','-U','postgres','-d','tll_account_operations_v1','-v','ON_ERROR_STOP=1'], { input: sql, encoding: 'utf8', stdio: ['pipe','pipe','pipe'] }) }
   catch (error) { throw Error(String(error.stderr || error.message)) }
@@ -77,16 +81,38 @@ try {
     .replaceAll("session_user<>'postgres'", 'false')
   const recovery = managedTarget(rawRecovery), postCommit = managedTarget(rawPostCommit)
   const runRecovery = () => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${recovery}`)
+  // Every marker key must occur once, have the expected non-null JSON type and
+  // match the staged recovery window before any write path is reachable.
+  for (const key of ['projectRef', 'generation', 'windowId', 'expiresAt', 'state']) {
+    for (const mode of ['missing', 'null']) {
+      setMarker('tll_ao1_customer_runtime', mutatedMarker('active', payload => { if (mode === 'missing') delete payload[key]; else payload[key] = null }))
+      assert.throws(runRecovery, /target, generation or window mismatch/)
+    }
+  }
+  setMarker('tll_ao1_customer_runtime', mutatedMarker('active', payload => { payload.unexpected = true }))
+  assert.throws(runRecovery, /target, generation or window mismatch/)
+  setMarker('tll_ao1_customer_runtime', marker('active'))
   // A stale generation/window or mixed markers cannot reach any write path.
-  admin(`COMMENT ON ROLE tll_ao1_customer_runtime IS ${q(marker('active').replace('\"generation\":6','\"generation\":5'))}`)
+  setMarker('tll_ao1_customer_runtime', marker('active').replace('\"generation\":6','\"generation\":5'))
   assert.throws(runRecovery, /generation or window mismatch/)
-  admin(`COMMENT ON ROLE tll_ao1_customer_runtime IS ${q(marker('retired'))}`)
+  setMarker('tll_ao1_customer_runtime', marker('retired'))
   assert.throws(runRecovery, /partial or mixed/)
   // Credential expiry prevents a new login; it cannot block retirement of work
   // that may still exist after a delayed or uncertain acknowledgement.
   for (const runtime of runtimes) admin(`COMMENT ON ROLE ${runtime} IS ${q(marker('active', '2020-01-02T03:04:05Z'))}`)
   runRecovery()
   managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${postCommit}`)
+  const retiredMarker = admin(`SELECT shobj_description(oid,'pg_authid') FROM pg_roles WHERE rolname='tll_ao1_customer_runtime'`)
+  // The post-commit proof repeats the same closed-world marker contract.
+  for (const key of ['projectRef', 'generation', 'windowId', 'expiresAt', 'state']) {
+    for (const mode of ['missing', 'null']) {
+      setMarker('tll_ao1_customer_runtime', mutatedMarker('retired', payload => { if (mode === 'missing') delete payload[key]; else payload[key] = null }))
+      assert.throws(() => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${postCommit}`), /target, generation or window mismatch/)
+    }
+  }
+  setMarker('tll_ao1_customer_runtime', mutatedMarker('retired', payload => { payload.unexpected = true }))
+  assert.throws(() => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${postCommit}`), /target, generation or window mismatch/)
+  setMarker('tll_ao1_customer_runtime', retiredMarker)
   // Exact retired markers are idempotent only while all controls/work remain terminal.
   admin(`UPDATE tll_customer_private.control SET enabled=true`)
   assert.throws(runRecovery, /Customer recovery drain failed/)
