@@ -16,12 +16,12 @@ export const GENERATION = 8
 export const WINDOW_ID = 'c790120a-9d62-49f1-9fe4-0a10983fd114'
 export const MAX_WINDOW_MS = 60 * 60 * 1000
 export const PACKAGE_ID = 'tll-staging-generation-8-credentials/v1'
-export const INERT_VALID_UNTIL = '1970-01-01T00:00:00.000Z'
 export const PREDECESSOR = Object.freeze({
   generation: 6,
   windowId: '83888906-23fa-4653-a886-fe2733ed76a0',
   expiresAt: '2026-09-20T19:50:41.000Z',
 })
+export const PREDECESSOR_VALID_UNTIL = PREDECESSOR.expiresAt
 export const IDENTITIES = Object.freeze({
   customer: Object.freeze({ login: 'tll_customer_runtime', membership: 'tll_customer_executor' }),
   cart: Object.freeze({ login: 'tll_cart_runtime', membership: 'tll_cart_gateway' }),
@@ -60,7 +60,7 @@ function marker({ generation, windowId, expiresAt }, state) {
 /** Build the only secret-bearing SQL used by the credential installer. */
 export function buildGeneration8CredentialSql({ expiresAt, verifiers, nowMs = Date.now() }) {
   validateExpiry(expiresAt, nowMs); validateVerifiers(verifiers)
-  const inertValidUntil = sqlLiteral(INERT_VALID_UNTIL)
+  const predecessorValidUntil = sqlLiteral(PREDECESSOR_VALID_UNTIL)
   const active = marker({ generation: GENERATION, windowId: WINDOW_ID, expiresAt }, 'active')
   const logins = purposes.map(purpose => IDENTITIES[purpose].login)
   const memberships = purposes.map(purpose => IDENTITIES[purpose].membership)
@@ -91,7 +91,7 @@ BEGIN
   OR EXISTS(SELECT FROM tll_staging_private.environment WHERE operator_project_ref='${PRODUCTION_PROJECT_REF}') THEN
   RAISE EXCEPTION 'Generation 8 staging binding mismatch'; END IF;
  IF (SELECT count(*) FROM pg_roles WHERE rolname IN(${roleList}))<>5
-  OR EXISTS(SELECT FROM pg_roles WHERE rolname IN(${roleList}) AND (rolcanlogin OR rolvaliduntil IS DISTINCT FROM ${inertValidUntil}::timestamptz))
+  OR EXISTS(SELECT FROM pg_roles WHERE rolname IN(${roleList}) AND (rolcanlogin OR rolvaliduntil IS DISTINCT FROM ${predecessorValidUntil}::timestamptz))
   OR EXISTS(SELECT FROM pg_authid WHERE rolname IN(${roleList}) AND rolpassword IS NOT NULL) THEN
   RAISE EXCEPTION 'Generation 8 retired predecessor mismatch'; END IF;
  FOREACH r IN ARRAY ARRAY[${logins.map(sqlLiteral).join(',')}] LOOP

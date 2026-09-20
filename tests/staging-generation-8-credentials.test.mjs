@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { buildGeneration8CredentialSql, createGeneration8DispatchJournal, GENERATION, IDENTITIES, INERT_VALID_UNTIL, PACKAGE_ID, PREDECESSOR, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-8-credentials.mjs'
+import { buildGeneration8CredentialSql, createGeneration8DispatchJournal, GENERATION, IDENTITIES, PACKAGE_ID, PREDECESSOR, PREDECESSOR_VALID_UNTIL, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-8-credentials.mjs'
 
 const NOW = Date.parse('2026-09-20T20:00:00.000Z')
 const EXPIRES = '2026-09-20T20:59:00.000Z'
@@ -17,7 +17,7 @@ test('generation 8 SQL requires exact retired generation 6 and remains one disab
   assert.match(sql,new RegExp(PROJECT_REF));assert.match(sql,new RegExp(WINDOW_ID));assert.match(sql,/Generation 8 retired predecessor mismatch/)
   assert.ok(sql.includes(`"expiresAt":"${PREDECESSOR.expiresAt}","generation":6,"projectRef":"${PROJECT_REF}","state":"retired","windowId":"${PREDECESSOR.windowId}"`))
   assert.match(sql,/substring\(role_marker FROM/);assert.match(sql,/parsed_marker IS DISTINCT FROM/);assert.doesNotMatch(sql,/shobj_description\(oid,'pg_authid'\) IS DISTINCT FROM/)
-  assert.ok(sql.includes(`rolvaliduntil IS DISTINCT FROM '${INERT_VALID_UNTIL}'::timestamptz`));assert.match(sql,/Generation 8 control changed during install/)
+  assert.equal(PREDECESSOR_VALID_UNTIL,PREDECESSOR.expiresAt);assert.ok(sql.includes(`rolvaliduntil IS DISTINCT FROM '${PREDECESSOR.expiresAt}'::timestamptz`));assert.match(sql,/Generation 8 control changed during install/)
   assert.match(sql,/tll_generation_8_credential_receipt/);assert.doesNotMatch(sql,/tll_generation_6_credential_receipt/)
   for(const [purpose,identity] of Object.entries(IDENTITIES)){assert.match(sql,new RegExp(`GRANT ${identity.membership} TO ${identity.login}`));assert.ok(sql.includes(values[purpose]))}
 })
