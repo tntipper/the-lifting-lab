@@ -80,6 +80,17 @@ for(const phase of ['vercel','supabase','readback']) test(`provider failure ${ph
   assert.equal(result.phase,{vercel:'VERCEL_STAGE',supabase:'SUPABASE_STAGE',readback:'PROVIDER_READBACK'}[phase])
 })
 
+test('provider failure result exposes only an allow-listed fixed classification',async()=>{
+  const f=fixture();f.ports.stageSupabase=async()=>{f.events.push('stageSupabase');const error=Error('secret provider response');error.code='TRANSIENT';throw error}
+  deterministicRandom.calls=0;deterministicUuid.calls=0
+  const classified=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
+  assert.equal(classified.failureClassification,'TRANSIENT');assert.doesNotMatch(JSON.stringify(classified),/secret provider response/)
+  const g=fixture();g.ports.stageSupabase=async()=>{g.events.push('stageSupabase');const error=Error('private');error.code='PRIVATE_RAW_CODE';throw error}
+  deterministicRandom.calls=0;deterministicUuid.calls=0
+  const rejected=await executeGeneration6CredentialWindow({ports:g.ports,journal:journal(g.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
+  assert.equal('failureClassification' in rejected,false)
+})
+
 for(const phase of ['dispatch','verify']) test(`database failure ${phase} invokes recovery once and forbids retry`,async()=>{
   const f=fixture(phase);deterministicRandom.calls=0;deterministicUuid.calls=0
   const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})

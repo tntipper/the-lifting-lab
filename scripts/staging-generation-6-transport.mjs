@@ -30,6 +30,8 @@ export const DISABLED_VERCEL_CONFIGURATION = Object.freeze({
 export const STAGED_VERCEL_NAMES = Object.freeze([...GENERATED_VERCEL_SECRET_NAMES, ...Object.keys(DISABLED_VERCEL_CONFIGURATION)].sort())
 
 const purposes = Object.keys(IDENTITIES)
+const providerFailurePhases = new Set(['VERCEL_STAGE','SUPABASE_STAGE','PROVIDER_READBACK'])
+const providerFailureCodes = new Set(['AUTH','TRANSIENT','VALIDATION','API','CLI_EXIT','TIMEOUT','SPAWN','STREAM','OUTPUT_LIMIT','INPUT_STREAM','READBACK','CLEANUP','PROBE','PROVIDER_VALIDATION'])
 const unavailable = () => { throw new Error('Generation-6 transport unavailable') }
 const exactKeys = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
@@ -151,7 +153,8 @@ export async function executeGeneration6CredentialWindow({ ports, journal = crea
     journal.transition(intent, 'RECEIPT_VALIDATED')
     return Object.freeze({ status: 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED', target: PROJECT_REF, generation: GENERATION,
       windowId: WINDOW_ID, expiresAt, receipt, missingProviderCredentials: SHOPIFY_CREDENTIAL_DEPENDENCIES })
-  } catch {
+  } catch (error) {
+    const failureClassification=providerFailurePhases.has(phase)&&providerFailureCodes.has(error?.code)?error.code:undefined
     let recovery = 'NOT_REQUIRED'
     if (dispatchAttempted) {
       try { await ports.recoverDatabase(); recovery = 'RECOVERY_VERIFIED' } catch { recovery = 'RECOVERY_REQUIRED' }
@@ -162,7 +165,8 @@ export async function executeGeneration6CredentialWindow({ ports, journal = crea
       try { await ports.removeSupabase(GENERATED_SUPABASE_SECRET_NAMES) } catch { /* fixed failure result below */ }
     }
     return Object.freeze({ status: dispatchAttempted ? recovery : preflightPassed ? 'STOPPED_BEFORE_DATABASE' : 'ENTRY_BASELINE_FAILED', phase, target: PROJECT_REF,
-      generation: GENERATION, windowId: WINDOW_ID, nextAction: dispatchAttempted ? 'NO_RETRY_RECONCILE' : preflightPassed ? 'REVIEW_PROVIDER_STAGING' : 'REVIEW_ENTRY_BASELINE' })
+      generation: GENERATION, windowId: WINDOW_ID, ...(failureClassification?{failureClassification}:{}),
+      nextAction: dispatchAttempted ? 'NO_RETRY_RECONCILE' : preflightPassed ? 'REVIEW_PROVIDER_STAGING' : 'REVIEW_ENTRY_BASELINE' })
   } finally { eraseProjection(projection); eraseGeneration6Material(material) }
 }
 
