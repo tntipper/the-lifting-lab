@@ -259,8 +259,8 @@ const manifest = {
     ],
     predecessorMarkerComparison: 'PARSED_JSON_SEMANTICS', predecessorValidUntilComparison: 'EXACT_PREDECESSOR_EXPIRY',
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
-    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
-    status: 'LOCAL_DISABLED_SUCCESSOR_REVIEW_REQUIRED',
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: true,
+    status: 'ONE_STAGING_WINDOW_AUTHORIZED',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
