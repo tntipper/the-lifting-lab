@@ -4,7 +4,6 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
 test('generation 9 recovery is derived from exact pinned generation 6 recovery and checks clean',()=>{
-  execFileSync(process.execPath,['scripts/staging-generation-9-recovery.mjs'],{stdio:'pipe'})
   execFileSync(process.execPath,['scripts/staging-generation-9-recovery.mjs','--check'],{stdio:'pipe'})
   for(const path of ['config/staging-generation-9-recovery.sql','config/staging-generation-9-recovery-postcommit.sql']){
     const sql=readFileSync(path,'utf8')

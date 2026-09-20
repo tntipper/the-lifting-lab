@@ -50,6 +50,41 @@
     "fileCount": 61,
     "sha256": "85aa785af21d788039bf71c7d90c7c4298564cae3eb7f613fb47313ed1d216c1"
   },
+  "stageSafety": {
+    "sources": [
+      {
+        "path": "config/project-stage-gate-policy.json",
+        "sha256": "f7e67558704e1a4a8bfb9ee4a1d2b65414e937806ac10510929cc14af3f2cfa8"
+      },
+      {
+        "path": "scripts/staging-live-boundary-check.mjs",
+        "sha256": "dd51a98415c9ec25a862c99091a312073422b3a1fd27926038412c8796d8b775"
+      },
+      {
+        "path": "tests/staging-live-boundary.test.mjs",
+        "sha256": "17f0cb582530f224d4653be69e4d0964ab8ae6cdb0f62db1dddae23c88f93195"
+      },
+      {
+        "path": "docs/ops/project-stage-execution-protocol.md",
+        "sha256": "c598256c10f582a1a3257d1f90f346a696f31da23c90e459ef79a1a33959be24"
+      },
+      {
+        "path": "docs/ops/incidents/2026-09-20-generation-10-native-test.md",
+        "sha256": "e695ec79adec5b1f9938b6021712fb9b666c78ccc4563de132481f123676deca"
+      },
+      {
+        "path": "docs/ops/stage-plans/2026-09-20-activation-safety-boundary.md",
+        "sha256": "6e26b22aa452eef04d79bf4899a65f708946622791617ae52fda004c7aecadd9"
+      }
+    ],
+    "policy": "tll-project-stage-gate-policy/v1",
+    "ordinaryTestsRequireAllNativeGatesDisabled": true,
+    "ordinaryTestsMayInvokeNativeLaunchers": false,
+    "ordinaryTestsMayRewriteGeneratedArtifacts": false,
+    "independentReviewRequiredBeforeArming": true,
+    "generation10ReplayPermitted": false,
+    "successorHeldPendingBoundaryReview": true
+  },
   "migrations": [
     {
       "path": "supabase/migrations/202609180012_customer_shopify_proof_repository.sql",
@@ -480,7 +515,7 @@
       },
       {
         "path": "tests/staging-generation-6-transport.test.mjs",
-        "sha256": "4d55f4d44462cfd6dd3738d028f85b8ef657457d6f3c815847c5f4c0e9670a46"
+        "sha256": "881267c745f70bbc6c4201cd168cbdb3b8620eff3d67aeae2f27d04e67b2ca1a"
       },
       {
         "path": "tests/staging-generation-6-provider-transport.test.mjs",
@@ -565,7 +600,7 @@
       },
       {
         "path": "tests/staging-generation-7-recovery.test.mjs",
-        "sha256": "777030053719f727b801031784c1878de58a362e6a5114d43a6e2c2e663e6e03"
+        "sha256": "f1f03462dd5ca9c42f390ee4e12abeca24e1e8f73f1349d93b9bba3a8504be00"
       }
     ],
     "target": "qdmvngjwkcsilzmqksme",
@@ -640,7 +675,7 @@
       },
       {
         "path": "tests/staging-generation-8-recovery.test.mjs",
-        "sha256": "d0f0e4e36e830f805c4d47f0d707df824c7641ef2e59bbc05b247c85fb3c4e90"
+        "sha256": "8e8d586ea8fd8acf7238d357bedb45b2dabcea9d7573d26e369d43feee01c4b5"
       }
     ],
     "target": "qdmvngjwkcsilzmqksme",
@@ -722,7 +757,7 @@
       },
       {
         "path": "tests/staging-generation-9-recovery.test.mjs",
-        "sha256": "8425242cecdd7b13bf94558f0df086ed1d7e08b957af63b5c7dacf1d6c7a8918"
+        "sha256": "9b140e5caef7c61f1c01aa0a67dd963242783f4a652de12c093ce59165f7ac58"
       }
     ],
     "target": "qdmvngjwkcsilzmqksme",
@@ -818,7 +853,7 @@
       },
       {
         "path": "tests/staging-generation-10-recovery.test.mjs",
-        "sha256": "15f43643e5825562a526cdd7905fbd7cd75f33e319f155b98e595cc194c30b97"
+        "sha256": "87a80cc5620b89d847974a59995c83f7fbe166e8af3bd83d2ba4d201d11217a1"
       }
     ],
     "target": "qdmvngjwkcsilzmqksme",

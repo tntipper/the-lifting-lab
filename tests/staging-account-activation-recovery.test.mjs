@@ -4,7 +4,6 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
 test('post-016 recovery artifact is deterministic, secret-free and retirement-only', () => {
-  execFileSync(process.execPath, ['scripts/staging-account-activation-recovery.mjs'], { stdio: 'pipe' })
   execFileSync(process.execPath, ['scripts/staging-account-activation-recovery.mjs', '--check'], { stdio: 'pipe' })
   const sql = readFileSync('config/staging-account-activation-recovery.sql', 'utf8')
   const postCommit = readFileSync('config/staging-account-activation-recovery-postcommit.sql', 'utf8')

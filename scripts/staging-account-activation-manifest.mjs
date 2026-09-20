@@ -120,6 +120,14 @@ const generation10SuccessorSources = [
   'tests/staging-generation-10-database-transport.test.mjs',
   'tests/staging-generation-10-recovery.test.mjs',
 ]
+const stageSafetySources = [
+  'config/project-stage-gate-policy.json',
+  'scripts/staging-live-boundary-check.mjs',
+  'tests/staging-live-boundary.test.mjs',
+  'docs/ops/project-stage-execution-protocol.md',
+  'docs/ops/incidents/2026-09-20-generation-10-native-test.md',
+  'docs/ops/stage-plans/2026-09-20-activation-safety-boundary.md',
+]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
   'scripts/staging-readonly-preflight-keychain.py',
@@ -180,6 +188,12 @@ const manifest = {
     noLoginCredentialsInSource: true, noPurchaseJourney: true },
   sourceTree: { roots: ['lib/identity','lib/server','lib/commerce','app/auth/customer','app/account/orders','app/api/account','supabase/functions'],
     fileCount: sourceTreePins.length, sha256: sourceTreeSha256 },
+  stageSafety: {
+    sources: await Promise.all(stageSafetySources.map(pin)),
+    policy: 'tll-project-stage-gate-policy/v1', ordinaryTestsRequireAllNativeGatesDisabled: true,
+    ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true,
+    generation10ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
+  },
   migrations: await Promise.all(migrations.map(pin)),
   edge: { functions: [
     { name: 'tll-broker-token', verifyJwt: false, protocolAuthentication: 'confidential_basic' },

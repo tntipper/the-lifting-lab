@@ -1,0 +1,19 @@
+{
+  "schema": "tll-project-stage-gate-policy/v1",
+  "planningRequiredBeforeExecution": true,
+  "independentReviewRequiredBeforeArming": true,
+  "ordinaryTestsRequireAllNativeGatesDisabled": true,
+  "ordinaryTestsMayInvokeNativeLaunchers": false,
+  "ordinaryTestsMayRewriteGeneratedArtifacts": false,
+  "armingAndTestExecutionMustBeSeparateProcesses": true,
+  "liveExecutionRequiresDirectReviewedLauncher": true,
+  "incidentRootCauseRequiredBeforeSuccessor": true,
+  "preventiveControlVerificationRequiredBeforeSuccessor": true,
+  "failedOrUncertainWindowReplayPermitted": false,
+  "currentHold": {
+    "scope": "staging-runtime-credential-window",
+    "reason": "generation-10-interrupted-native-test-recovered",
+    "generation10ReplayPermitted": false,
+    "nextGenerationPermittedBeforeBoundaryReview": false
+  }
+}

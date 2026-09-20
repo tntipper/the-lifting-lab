@@ -12,7 +12,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "check:live-boundaries": "node scripts/staging-live-boundary-check.mjs",
+    "test": "npm run check:live-boundaries && node --experimental-strip-types --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "test:integration": "node --test tests/integration/*.test.mjs",
     "test:accessibility": "node tests/browser/accessibility.mjs"

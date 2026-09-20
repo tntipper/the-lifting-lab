@@ -1,10 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { buildGeneration6CredentialSql, PACKAGE_ID, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-6-credentials.mjs'
 import { deriveScramVerifier, DISABLED_VERCEL_CONFIGURATION, eraseGeneration6Material, executeGeneration6CredentialWindow,
   generateGeneration6Material, GENERATED_SUPABASE_SECRET_NAMES, GENERATED_VERCEL_SECRET_NAMES, NATIVE_TRANSPORT_ENABLED,
-  projectGeneration6Secrets, runNativeGeneration6CredentialWindow, SHOPIFY_CREDENTIAL_DEPENDENCIES, STAGED_VERCEL_NAMES } from '../scripts/staging-generation-6-transport.mjs'
+  projectGeneration6Secrets, SHOPIFY_CREDENTIAL_DEPENDENCIES, STAGED_VERCEL_NAMES } from '../scripts/staging-generation-6-transport.mjs'
 
 const NOW = Date.parse('2026-09-20T18:00:00.000Z'), EXPIRES = '2026-09-20T18:55:00.000Z'
 const deterministicRandom = size => Buffer.alloc(size, deterministicRandom.calls++ + 1); deterministicRandom.calls = 0
@@ -103,7 +104,11 @@ test('failed recovery returns a fixed reconciliation result and native entry rem
   deterministicRandom.calls=0;deterministicUuid.calls=0
   const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
   assert.deepEqual(result,{status:'RECOVERY_REQUIRED',phase:'CONNECTION_VERIFICATION',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'NO_RETRY_RECONCILE'})
-  assert.equal(NATIVE_TRANSPORT_ENABLED,false);assert.equal((await runNativeGeneration6CredentialWindow()).status,'NATIVE_TRANSPORT_DISABLED')
+  assert.equal(NATIVE_TRANSPORT_ENABLED,false)
+  const source=readFileSync('scripts/staging-generation-6-transport.mjs','utf8')
+  const gate=source.indexOf("if (!NATIVE_TRANSPORT_ENABLED) return Object.freeze({ status: 'NATIVE_TRANSPORT_DISABLED'")
+  const providerImport=source.indexOf("import('./staging-generation-6-provider-transport.mjs')")
+  assert.ok(gate>=0);assert.ok(providerImport>gate)
 })
 
 test('connection failure result projects only an exact fixed diagnostic',async()=>{

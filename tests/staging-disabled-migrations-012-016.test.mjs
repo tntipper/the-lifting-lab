@@ -31,7 +31,6 @@ test('migration package is fixed to staging, disabled, and has no caller dispatc
 })
 
 test('the generated transaction pins every source and only removes their outer wrappers', () => {
-  execFileSync(process.execPath, ['scripts/staging-disabled-migrations-012-016.prepare.mjs'], { stdio: 'pipe' })
   const pkg = buildPackage(), artifact = readFileSync('config/staging-disabled-migrations-012-016.sql', 'utf8')
   const manifest = JSON.parse(readFileSync('config/staging-disabled-migrations-012-016.json', 'utf8'))
   assert.equal(artifact, pkg.sql); assert.equal(manifest.transactionSha256, pkg.sqlSha256)

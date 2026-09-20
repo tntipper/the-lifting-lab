@@ -12,6 +12,13 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(Object.keys(manifest.runtime.databaseIdentities).length, 5)
   assert.equal(new Set(Object.values(manifest.runtime.databaseIdentities).map(item => item.login)).size, 5)
   assert.equal(manifest.target.productionProjectRefExcluded, 'wrhgscovsgsudtedbljr')
+  assert.equal(manifest.stageSafety.policy, 'tll-project-stage-gate-policy/v1')
+  assert.equal(manifest.stageSafety.ordinaryTestsRequireAllNativeGatesDisabled, true)
+  assert.equal(manifest.stageSafety.ordinaryTestsMayInvokeNativeLaunchers, false)
+  assert.equal(manifest.stageSafety.ordinaryTestsMayRewriteGeneratedArtifacts, false)
+  assert.equal(manifest.stageSafety.independentReviewRequiredBeforeArming, true)
+  assert.equal(manifest.stageSafety.generation10ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.successorHeldPendingBoundaryReview, true)
   assert.equal(manifest.runtime.reviewedPreview.stableOrigin, manifest.provider.reviewedPreviewOrigin)
   assert.equal(manifest.runtime.reviewedPreview.branch, 'codex/tll-integration')
   assert.deepEqual(manifest.runtime.reviewedPreview.originConfiguration, ['TLL_STAGING_CUSTOMER_ORIGIN', 'TLL_STAGING_CART_ORIGIN'])
@@ -114,7 +121,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(JSON.stringify(manifest).includes('secretValue'), false)
   assert.equal(JSON.stringify(manifest).includes('passwordValue'), false)
   assert.equal(JSON.stringify(manifest).includes('keyHexValue'), false)
-  for (const pin of [...manifest.migrations,...manifest.edge.sources,...manifest.runtime.sources,...manifest.preflight.sources,...manifest.disabledMigrationInstall.sources,...manifest.recovery.sources,...manifest.generation6Credentials.sources,...manifest.generation7Successor.sources,...manifest.generation8Successor.sources,...manifest.generation9Successor.sources,...manifest.generation10Successor.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
+  for (const pin of [...manifest.migrations,...manifest.stageSafety.sources,...manifest.edge.sources,...manifest.runtime.sources,...manifest.preflight.sources,...manifest.disabledMigrationInstall.sources,...manifest.recovery.sources,...manifest.generation6Credentials.sources,...manifest.generation7Successor.sources,...manifest.generation8Successor.sources,...manifest.generation9Successor.sources,...manifest.generation10Successor.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
 
   const classified = new Set([...manifest.runtime.vercelSecrets,...manifest.runtime.vercelConfiguration])
   const runtimeSource = ['lib/server/staging-customer.ts','lib/commerce/staging-cart-server.ts','app/auth/customer/logout/route.ts']
