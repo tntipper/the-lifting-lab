@@ -54,7 +54,7 @@
     "sources": [
       {
         "path": "config/project-stage-gate-policy.json",
-        "sha256": "789b2f391933b624c15d0e62a6d8bb12196fbad30c5437839a18debb43c13df2"
+        "sha256": "6e4b3c75d211ea6a45d5ef7590f58ea4c06b7eb31f5ad95cf791511922214211"
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
@@ -109,7 +109,7 @@
     "independentReviewRequiredBeforeArming": true,
     "liveExecutionRequiresPhaseJournal": true,
     "generation10ReplayPermitted": false,
-    "generation11Armed": true,
+    "generation11Armed": false,
     "successorHeldPendingBoundaryReview": true
   },
   "migrations": [
@@ -959,15 +959,15 @@
       },
       {
         "path": "scripts/staging-generation-11-transport.mjs",
-        "sha256": "47fe61d9ab492b724bca0a6461958ddd079ce5b2b1f03fa1cbdd1665f48af0cf"
+        "sha256": "da49ed259e156a89b3817a0772364e1ba5588c72ffd1a53428de5a1415891f43"
       },
       {
         "path": "scripts/staging-generation-11-database-transport.mjs",
-        "sha256": "4ef2b916d2dc11b63b6df97d8005745b1c01dac16cb64c0acf48b32287bdfea1"
+        "sha256": "fdf4becd122bba56fcfc3b0b4a588c414439f017fb955c392df3a8d0419634cc"
       },
       {
         "path": "scripts/staging-generation-11-keychain.py",
-        "sha256": "3c7ea693e73a3207c59c0a886bbd557a397b68c2e5f1745faec47681a704b5a7"
+        "sha256": "f450f966485d24760bf9a348b601e0f524f2f130f67ab1107cb7c4f295a11f8d"
       },
       {
         "path": "scripts/staging-generation-11-recovery.mjs",
@@ -995,11 +995,11 @@
       },
       {
         "path": "tests/staging-generation-11-transport.test.mjs",
-        "sha256": "3434e6e5845ca90f7d6e8a9e7464d95c791c71857cb24a237fd36cfc55e04ff0"
+        "sha256": "930b070274dad48742e3283552f57d62f6ebb7e466a1481cc28a3b6b277edc98"
       },
       {
         "path": "tests/staging-generation-11-database-transport.test.mjs",
-        "sha256": "e22e57ccdb5b23415bfce857586c0df2da11a4e7f3eea80fb5ca508a0fb401a2"
+        "sha256": "e9b9fa6f72d4011f7af08f86b5fccce6e4916464651ce86b4612e93ab0bbafd4"
       },
       {
         "path": "tests/staging-generation-11-recovery.test.mjs",
@@ -1060,8 +1060,8 @@
     "thirdAttemptPermitted": false,
     "secretBearingSqlMustRemainInMemory": true,
     "exclusiveNonsecretJournal": true,
-    "nativeTransportEnabled": true,
-    "status": "ONE_STAGING_WINDOW_AUTHORIZED"
+    "nativeTransportEnabled": false,
+    "status": "INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY"
   },
   "gates": [
     "verify_exact_target_and_production_exclusion",

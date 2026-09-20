@@ -216,7 +216,7 @@ const manifest = {
     policy: 'tll-project-stage-gate-policy/v1', ordinaryTestsRequireAllNativeGatesDisabled: true,
     ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
     ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true, liveExecutionRequiresPhaseJournal: true,
-    generation10ReplayPermitted: false, generation11Armed: true, successorHeldPendingBoundaryReview: true,
+    generation10ReplayPermitted: false, generation11Armed: false, successorHeldPendingBoundaryReview: true,
   },
   migrations: await Promise.all(migrations.map(pin)),
   edge: { functions: [
@@ -365,8 +365,8 @@ const manifest = {
       ordinaryTestsMayImportOrInvoke: false,
     },
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
-    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: true,
-    status: 'ONE_STAGING_WINDOW_AUTHORIZED',
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
+    status: 'INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
