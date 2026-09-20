@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { assertStagingLiveBoundary, inspectStagingLiveBoundary } from '../scripts/staging-live-boundary-check.mjs'
@@ -14,7 +14,7 @@ const policy = {
   liveExecutionRequiresDirectReviewedLauncher: true, liveExecutionRequiresPhaseJournal: true,
   incidentRootCauseRequiredBeforeSuccessor: true,
   preventiveControlVerificationRequiredBeforeSuccessor: true, failedOrUncertainWindowReplayPermitted: false,
-  currentHold: { generation10ReplayPermitted: false, nextGenerationPermittedBeforeBoundaryReview: false },
+  currentHold: { generation10ReplayPermitted: false, generation11Armed: false, nextGenerationPermittedBeforeBoundaryReview: false },
 }
 
 function fixture({ testSource = '', scriptSource = '' } = {}) {
@@ -52,10 +52,29 @@ test('boundary rejects an embedded native launcher outside a dedicated live-laun
 
 test('boundary rejects a dedicated live launcher without the required phase journal', () => {
   const root = fixture()
-  writeFileSync(join(root, 'scripts/generation-11-live-launcher.mjs'), 'export async function launch() {}\n')
+  writeFileSync(join(root, 'scripts/staging-generation-11-live-launcher.mjs'), 'export async function launch() {}\n')
   assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
-    'live-launcher-missing-phase-journal:scripts/generation-11-live-launcher.mjs',
+    'live-launcher-missing-phase-journal:scripts/staging-generation-11-live-launcher.mjs',
   ])
+})
+
+test('boundary rejects an ordinary test that imports the Gen 11 live launcher', () => {
+  const importLine = [
+    'import { x } ',
+    "from '../scripts/staging-generation-11-",
+    "live-launcher.mjs'\n",
+  ].join('')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: fixture({ testSource: importLine }) }), [
+    'test-live-launcher-import:tests/example.test.mjs',
+  ])
+})
+
+test('repository Gen 11 live launcher is accepted because it uses the phase journal', () => {
+  const source = readFileSync('scripts/staging-generation-11-live-launcher.mjs', 'utf8')
+  assert.match(source, /createStagingWindowPhaseJournal/)
+  assert.match(source, /export async function runNativeGeneration11CredentialWindow/)
+  assert.doesNotMatch(readFileSync('scripts/staging-generation-11-transport.mjs', 'utf8'), /runNativeGeneration11CredentialWindow/)
+  assert.deepEqual(assertStagingLiveBoundary(), { status: 'PASS', policy: 'tll-project-stage-gate-policy/v1', violations: 0 })
 })
 
 test('boundary rejects an ordinary test that rewrites a generated artifact', () => {

@@ -120,16 +120,35 @@ const generation10SuccessorSources = [
   'tests/staging-generation-10-database-transport.test.mjs',
   'tests/staging-generation-10-recovery.test.mjs',
 ]
+const generation11SuccessorSources = [
+  ...stagingSupabaseCaSources,
+  'scripts/staging-generation-6-connection-verifier.mjs',
+  'scripts/staging-generation-11-credentials.mjs',
+  'scripts/staging-generation-11-transport.mjs',
+  'scripts/staging-generation-11-database-transport.mjs',
+  'scripts/staging-generation-11-keychain.py',
+  'scripts/staging-generation-11-recovery.mjs',
+  'scripts/staging-generation-11-live-launcher.mjs',
+  'scripts/staging-window-phase-journal.mjs',
+  'config/staging-generation-11-recovery.sql',
+  'config/staging-generation-11-recovery-postcommit.sql',
+  'tests/staging-generation-11-credentials.test.mjs',
+  'tests/staging-generation-11-transport.test.mjs',
+  'tests/staging-generation-11-database-transport.test.mjs',
+  'tests/staging-generation-11-recovery.test.mjs',
+]
 const stageSafetySources = [
   'config/project-stage-gate-policy.json',
   'scripts/staging-live-boundary-check.mjs',
   'scripts/staging-window-phase-journal.mjs',
+  'scripts/staging-generation-11-live-launcher.mjs',
   'tests/staging-live-boundary.test.mjs',
   'tests/staging-window-phase-journal.test.mjs',
   'docs/ops/project-stage-execution-protocol.md',
   'docs/ops/incidents/2026-09-20-generation-10-native-test.md',
   'docs/ops/stage-plans/2026-09-20-activation-safety-boundary.md',
   'docs/ops/stage-plans/2026-09-20-generation-10-runtime-diagnosis.md',
+  'docs/ops/stage-plans/2026-09-20-generation-11-disabled-successor.md',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
@@ -196,7 +215,7 @@ const manifest = {
     policy: 'tll-project-stage-gate-policy/v1', ordinaryTestsRequireAllNativeGatesDisabled: true,
     ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
     ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true, liveExecutionRequiresPhaseJournal: true,
-    generation10ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
+    generation10ReplayPermitted: false, generation11Armed: false, successorHeldPendingBoundaryReview: true,
   },
   migrations: await Promise.all(migrations.map(pin)),
   edge: { functions: [
@@ -321,6 +340,32 @@ const manifest = {
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
     secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
     status: 'INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY',
+  },
+  generation11Successor: {
+    packageId: 'tll-staging-generation-11-credentials/v1',
+    sources: await Promise.all(generation11SuccessorSources.map(pin)),
+    target: 'qdmvngjwkcsilzmqksme', generation: 11, windowId: '56ff2757-3e34-4cf0-a1dc-40999a713874',
+    predecessor: {
+      generation: 10, windowId: '04e1b5da-b3e1-430b-8247-caf1d46faa5a', expiresAt: '2026-09-20T21:08:17.000Z',
+      journalState: 'INTENT_RECORDED', journalLocksReplay: true, recoveryVerified: true,
+      validUntil: '2026-09-20T21:08:17.000Z', liveReadOnlyConfirmed: true, replayPermitted: false,
+    },
+    supersedesAttempts: [
+      { generation: 7, windowId: '753c2188-ae64-4f40-90ab-1ec26f8569d3', outcome: 'ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION', journalExists: false },
+      { generation: 8, windowId: 'c790120a-9d62-49f1-9fe4-0a10983fd114', outcome: 'ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION', journalExists: false },
+      { generation: 10, windowId: '04e1b5da-b3e1-430b-8247-caf1d46faa5a', outcome: 'INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY', journalExists: true, replayPermitted: false },
+    ],
+    predecessorMarkerComparison: 'PARSED_JSON_SEMANTICS', predecessorValidUntilComparison: 'EXACT_PREDECESSOR_EXPIRY',
+    connectionVerifier: { usesPinnedSupabaseCa: true, source: 'scripts/staging-supabase-ca.mjs', runtimeFactory: 'lib/server/staging-postgres.ts' },
+    liveLauncher: {
+      path: 'scripts/staging-generation-11-live-launcher.mjs',
+      phaseJournal: 'scripts/staging-window-phase-journal.mjs',
+      phaseJournalPath: '../implementation-state/staging/tll-generation-11-window-phase.json',
+      ordinaryTestsMayImportOrInvoke: false,
+    },
+    maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
+    status: 'DISABLED_SUCCESSOR_PENDING_ARMING_REVIEW',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',

@@ -14,8 +14,9 @@
   "failedOrUncertainWindowReplayPermitted": false,
   "currentHold": {
     "scope": "staging-runtime-credential-window",
-    "reason": "generation-10-interrupted-native-test-recovered",
+    "reason": "generation-11-disabled-package-pending-arming-review",
     "generation10ReplayPermitted": false,
+    "generation11Armed": false,
     "nextGenerationPermittedBeforeBoundaryReview": false
   }
 }
