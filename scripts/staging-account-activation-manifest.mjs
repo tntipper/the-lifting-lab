@@ -187,7 +187,7 @@ const manifest = {
     target: 'qdmvngjwkcsilzmqksme', generation: 6, windowId: '83888906-23fa-4653-a886-fe2733ed76a0',
     predecessor: { generation: 5, windowId: 'e8aeb142-d2f8-4a58-b0a5-8931d90a6952', expiresAt: '2026-09-18T14:24:02.000Z' },
     maximumWindowMinutes: 60, secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true,
-    nativeTransportEnabled: true,
+    nativeTransportEnabled: false,
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
