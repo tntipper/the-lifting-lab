@@ -36,7 +36,7 @@ try {
     GRANT SELECT ON pg_authid TO ${OPERATOR};
     GRANT USAGE ON SCHEMA tll_customer_private,tll_broker_private,tll_provisional_private,tll_bridge_private TO ${OPERATOR};
     ${executors.map(role => `CREATE ROLE ${role} NOLOGIN NOINHERIT;`).join('\n')}
-    ${runtimes.map(role => `CREATE ROLE ${role} NOLOGIN NOINHERIT;`).join('\n')}
+    ${runtimes.map(role => `CREATE ROLE ${role} NOLOGIN NOINHERIT VALID UNTIL ${q(PREDECESSOR.expiresAt)};`).join('\n')}
     GRANT ${[...executors, ...runtimes].join(',')} TO ${OPERATOR} WITH ADMIN TRUE,INHERIT FALSE,SET FALSE;
     CREATE SCHEMA tll_g6_staging_private;
     CREATE TABLE tll_g6_staging_private.environment(singleton boolean PRIMARY KEY,environment text NOT NULL,operator_project_ref text NOT NULL,
@@ -56,7 +56,9 @@ try {
   const sql = adapt(buildGeneration6CredentialSql({ expiresAt, verifiers }))
   admin(`COMMENT ON ROLE ${runtimes[0]} IS 'wrong-predecessor';`)
   assert.throws(() => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${sql}`), /retired predecessor mismatch/)
-  admin(`COMMENT ON ROLE ${runtimes[0]} IS ${q(predecessor)}; UPDATE tll_g6_cart_private.control SET enabled=true;`)
+  admin(`COMMENT ON ROLE ${runtimes[0]} IS ${q(predecessor)}; ALTER ROLE ${runtimes[0]} VALID UNTIL 'infinity';`)
+  assert.throws(() => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${sql}`), /retired predecessor mismatch/)
+  admin(`ALTER ROLE ${runtimes[0]} VALID UNTIL ${q(PREDECESSOR.expiresAt)}; UPDATE tll_g6_cart_private.control SET enabled=true;`)
   assert.throws(() => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${sql}`), /requires disabled controls/)
   admin('UPDATE tll_g6_cart_private.control SET enabled=false;')
   const output = managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${sql}`)

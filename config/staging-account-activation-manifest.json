@@ -440,7 +440,7 @@
     "sources": [
       {
         "path": "scripts/staging-generation-6-credentials.mjs",
-        "sha256": "4cd1706e04b9e8b4d7603615c07af9d67d98d5b1548bab8ddd0f8f40c3f55a9b"
+        "sha256": "f505154480db2083ab145cc114076b79d1d05c7237d8d990a5c18438fd917cd5"
       },
       {
         "path": "scripts/staging-generation-6-transport.mjs",
@@ -452,7 +452,7 @@
       },
       {
         "path": "scripts/staging-generation-6-database-transport.mjs",
-        "sha256": "bf1d1aaea204218376fb75fd700c3cb7f664afbdc63a43000d55c5bd0c03d7e8"
+        "sha256": "4659da0534cf7d4ab84e78ca364465ad1f00d7d061905caa77532eec304783a6"
       },
       {
         "path": "scripts/staging-generation-6-keychain.py",
@@ -464,11 +464,11 @@
       },
       {
         "path": "tests/staging-generation-6-credentials.test.mjs",
-        "sha256": "bb0e376967ca5296bb6d94c85e2c26e3f599627b070b8ac8326e123f931d1ca5"
+        "sha256": "a2fab4f81158801e0ba2310729e2096aa31b07fa6fb2d185a9b65178d907be47"
       },
       {
         "path": "tests/staging-generation-6-credentials-actual.mjs",
-        "sha256": "7479c0bd80f8b822eaa2e571e835d4e8b21e944b79b19277d407a0b680834e8a"
+        "sha256": "d599fb4874e73f2af214e1a83dead1395748c8c0058b483c5a5fab8c8ff55839"
       },
       {
         "path": "tests/staging-generation-6-transport.test.mjs",
@@ -480,7 +480,7 @@
       },
       {
         "path": "tests/staging-generation-6-database-transport.test.mjs",
-        "sha256": "73c52f154f19b03849c0bc38c1a722a95d5fca9e919ff6dde788cc070858021d"
+        "sha256": "29b3cf4b770c841fe59922ba22dee363d39d9a9f90931a4b178caabe172b8e35"
       },
       {
         "path": "tests/staging-generation-6-connection-verifier.test.mjs",

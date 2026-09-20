@@ -61,6 +61,7 @@ export function buildGeneration6CredentialSql({ expiresAt, verifiers, nowMs = Da
   validateExpiry(expiresAt, nowMs); validateVerifiers(verifiers)
   const predecessor = `tll-runtime-window/v1:${JSON.stringify({ projectRef: PROJECT_REF, generation: PREDECESSOR.generation,
     windowId: PREDECESSOR.windowId, expiresAt: PREDECESSOR.expiresAt, state: 'retired' })}`
+  const predecessorExpiry = sqlLiteral(PREDECESSOR.expiresAt)
   const active = marker({ generation: GENERATION, windowId: WINDOW_ID, expiresAt }, 'active')
   const logins = purposes.map(purpose => IDENTITIES[purpose].login)
   const memberships = purposes.map(purpose => IDENTITIES[purpose].membership)
@@ -91,7 +92,7 @@ BEGIN
   OR EXISTS(SELECT FROM tll_staging_private.environment WHERE operator_project_ref='${PRODUCTION_PROJECT_REF}') THEN
   RAISE EXCEPTION 'Generation 6 staging binding mismatch'; END IF;
  IF (SELECT count(*) FROM pg_roles WHERE rolname IN(${roleList}))<>5
-  OR EXISTS(SELECT FROM pg_roles WHERE rolname IN(${roleList}) AND (rolcanlogin OR rolvaliduntil IS NOT NULL))
+  OR EXISTS(SELECT FROM pg_roles WHERE rolname IN(${roleList}) AND (rolcanlogin OR rolvaliduntil IS DISTINCT FROM ${predecessorExpiry}::timestamptz))
   OR EXISTS(SELECT FROM pg_authid WHERE rolname IN(${roleList}) AND rolpassword IS NOT NULL)
   OR EXISTS(SELECT FROM pg_roles WHERE rolname IN(${roleList}) AND shobj_description(oid,'pg_authid') IS DISTINCT FROM ${sqlLiteral(predecessor)}) THEN
   RAISE EXCEPTION 'Generation 6 retired predecessor mismatch'; END IF;

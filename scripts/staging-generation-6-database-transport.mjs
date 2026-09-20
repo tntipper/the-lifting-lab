@@ -3,7 +3,7 @@ import https from 'node:https'
 import { readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { PROJECT_REF, PACKAGE_ID, WINDOW_ID } from './staging-generation-6-credentials.mjs'
+import { PREDECESSOR, PROJECT_REF, PACKAGE_ID, WINDOW_ID } from './staging-generation-6-credentials.mjs'
 
 export const NATIVE_DATABASE_TRANSPORT_ENABLED = false
 export const MANAGEMENT_ENDPOINT = Object.freeze({ hostname:'api.supabase.com',path:`/v1/projects/${PROJECT_REF}/database/query`,method:'POST' })
@@ -58,7 +58,7 @@ DO $preflight$ BEGIN
  IF NOT EXISTS(SELECT FROM tll_staging_private.environment WHERE singleton AND environment='tll-hosted-staging-v1'
   AND operator_project_ref='${PROJECT_REF}') THEN RAISE EXCEPTION 'Generation 6 entry environment mismatch'; END IF;
  IF (SELECT count(*) FROM pg_roles WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'))<>5
-  OR EXISTS(SELECT FROM pg_roles WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') AND (rolcanlogin OR rolvaliduntil IS NOT NULL))
+  OR EXISTS(SELECT FROM pg_roles WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') AND (rolcanlogin OR rolvaliduntil IS DISTINCT FROM '${PREDECESSOR.expiresAt}'::timestamptz))
   OR EXISTS(SELECT FROM pg_authid WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') AND rolpassword IS NOT NULL)
   OR (SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') OR member.rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'))<>5
   OR (SELECT count(*) FROM pg_stat_activity WHERE backend_type='client backend' AND usename IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'))<>0
