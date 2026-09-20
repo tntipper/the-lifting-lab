@@ -173,6 +173,7 @@ const stageSafetySources = [
   'docs/ops/stage-plans/2026-09-20-generation-11-interrupted-live-attempt.md',
   'docs/ops/stage-plans/2026-09-20-generation-12-disabled-successor.md',
   'docs/ops/stage-plans/2026-09-20-generation-12-arming-diff.md',
+  'docs/ops/stage-plans/2026-09-20-generation-12-interrupted-live-attempt.md',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
@@ -240,7 +241,7 @@ const manifest = {
     ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
     ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true, liveExecutionRequiresPhaseJournal: true,
     generation10ReplayPermitted: false, generation11ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: true, successorHeldPendingBoundaryReview: true,
+    generation11Armed: false, generation12Armed: false, successorHeldPendingBoundaryReview: true,
   },
   migrations: await Promise.all(migrations.map(pin)),
   edge: { functions: [
@@ -426,8 +427,8 @@ const manifest = {
       approximateWallBudgetMinutes: 45,
     },
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
-    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: true,
-    status: 'ONE_STAGING_WINDOW_AUTHORIZED',
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
+    status: 'INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
