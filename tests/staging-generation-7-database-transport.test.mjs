@@ -12,6 +12,7 @@ test('generation 7 native database transport and keychain access remain disabled
   const helper=readFileSync('scripts/staging-generation-7-keychain.py','utf8')
   assert.equal(normalizeSupabaseToken(token),token);assert.equal(NATIVE_GENERATION_7_DATABASE_TRANSPORT_ENABLED,false);assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000)
   assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'False');assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
+  assert.match(helper,/Generation-7 native credential transport unavailable/);assert.doesNotMatch(helper,/Generation-6 native credential transport unavailable/)
 })
 
 test('generation 7 dispatch accepts only its new package and window',async()=>{

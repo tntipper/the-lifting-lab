@@ -517,7 +517,7 @@
       },
       {
         "path": "scripts/staging-generation-7-keychain.py",
-        "sha256": "f9b4f12a78bb517729351305fafdeb80aa3b4a38eee454a885d43d8fc7b7d6f8"
+        "sha256": "82c7d1475ed10d4bd4077102918f5681ac710a346a43eb6468203acfaf9d222f"
       },
       {
         "path": "scripts/staging-generation-7-recovery.mjs",
@@ -541,7 +541,7 @@
       },
       {
         "path": "tests/staging-generation-7-database-transport.test.mjs",
-        "sha256": "c75bdde3f480d9ec307d8eb1ce86b1f0b1a163a0f543b12b95bbc2886c6d16db"
+        "sha256": "96c0031bc568713e2c06081890b2e8dff2c9bb8e2102bcc055e256e0d760a2df"
       },
       {
         "path": "tests/staging-generation-7-recovery.test.mjs",

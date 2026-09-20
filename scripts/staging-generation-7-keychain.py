@@ -10,7 +10,7 @@ SERVICE = "Supabase CLI"
 ACCOUNT = "supabase"
 
 def unavailable():
-    raise RuntimeError("Generation-6 native credential transport unavailable")
+    raise RuntimeError("Generation-7 native credential transport unavailable")
 
 def normalize(value):
     if not isinstance(value, str) or len(value) > 256:
