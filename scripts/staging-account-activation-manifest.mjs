@@ -232,8 +232,8 @@ const manifest = {
     supersedesAttempt: { generation: 7, windowId: '753c2188-ae64-4f40-90ab-1ec26f8569d3', outcome: 'ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION', journalExists: false },
     predecessorMarkerComparison: 'PARSED_JSON_SEMANTICS',
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
-    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
-    status: 'LOCAL_DISABLED_SUCCESSOR_REVIEW_REQUIRED',
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: true,
+    status: 'ONE_STAGING_WINDOW_AUTHORIZED',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',

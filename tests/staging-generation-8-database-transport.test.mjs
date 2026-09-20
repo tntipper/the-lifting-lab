@@ -8,10 +8,10 @@ const token='sbp_'+('a'.repeat(40)),expiresAt='2026-09-20T20:55:00.000Z',nowMs=D
 const verifier=index=>`SCRAM-SHA-256$4096:${Buffer.alloc(18,index+1).toString('base64')}$${Buffer.alloc(32,index+2).toString('base64')}:${Buffer.alloc(32,index+3).toString('base64')}`
 const sql=buildGeneration8CredentialSql({expiresAt,nowMs,verifiers:Object.fromEntries(['customer','cart','broker','provisional','bridge'].map((purpose,index)=>[purpose,verifier(index)]))})
 
-test('generation 8 native database transport and keychain access remain disabled',()=>{
+test('generation 8 native database transport and keychain access are armed for one reviewed window',()=>{
   const helper=readFileSync('scripts/staging-generation-8-keychain.py','utf8')
-  assert.equal(normalizeSupabaseToken(token),token);assert.equal(NATIVE_GENERATION_8_DATABASE_TRANSPORT_ENABLED,false);assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000)
-  assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'False');assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
+  assert.equal(normalizeSupabaseToken(token),token);assert.equal(NATIVE_GENERATION_8_DATABASE_TRANSPORT_ENABLED,true);assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000)
+  assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'True');assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
   assert.match(helper,/Generation-8 native credential transport unavailable/);assert.doesNotMatch(helper,/Generation-6 native credential transport unavailable/)
 })
 
