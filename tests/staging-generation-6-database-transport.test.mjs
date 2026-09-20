@@ -8,9 +8,12 @@ const token='sbp_'+('a'.repeat(40)),expiresAt='2026-09-20T18:55:00.000Z',verifie
 const sql=buildGeneration6CredentialSql({expiresAt,nowMs:Date.parse('2026-09-20T18:00:00.000Z'),verifiers:Object.fromEntries(['customer','cart','broker','provisional','bridge'].map((p,i)=>[p,verifier(i)]))})
 
 test('token normalization accepts only the exact CLI formats and native transport is disabled',()=>{
+  const helper=readFileSync('scripts/staging-generation-6-keychain.py','utf8')
   assert.equal(normalizeSupabaseToken(token),token);assert.equal(normalizeSupabaseToken('go-keyring-base64:'+Buffer.from(token).toString('base64')),token)
   for(const value of ['secret','sbp_'+('g'.repeat(40)),'go-keyring-base64:%%%%'])assert.throws(()=>normalizeSupabaseToken(value),/unavailable/)
-  assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000);assert.equal(NATIVE_DATABASE_TRANSPORT_ENABLED,false);assert.equal(readFileSync('scripts/staging-generation-6-keychain.py','utf8').match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'False')
+  assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000);assert.equal(NATIVE_DATABASE_TRANSPORT_ENABLED,false);assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'False')
+  assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
+  assert.match(helper,/stdin=subprocess\.DEVNULL/);assert.doesNotMatch(helper,/shell\s*=\s*True/)
 })
 
 test('database dispatch accepts only the fixed generated package and forwards once',async()=>{
