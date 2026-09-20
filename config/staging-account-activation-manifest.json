@@ -318,7 +318,7 @@
       },
       {
         "path": "scripts/staging-disabled-migrations-012-016.mjs",
-        "sha256": "c7ceb4693264a67a955d90f7b017f453da46cb149236815215820ebf9a99ead5"
+        "sha256": "461ad2a582c805694bc9bb157ea982d13abe24d8a25016b694d6caa830e90fe5"
       },
       {
         "path": "scripts/staging-disabled-migrations-012-016-keychain.py",
@@ -326,7 +326,7 @@
       },
       {
         "path": "config/staging-disabled-migrations-012-016.json",
-        "sha256": "7e436af79728c494884f37a0644bbf70ee40b411c36b4bf64eccd7109a153015"
+        "sha256": "0cde03c53b953446f6122c9f465fe9aa5b70b5f2ad3302f173f7bacbba8881d8"
       },
       {
         "path": "config/staging-disabled-migrations-012-016.sql",

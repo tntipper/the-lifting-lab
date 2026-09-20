@@ -19,6 +19,7 @@ export const KEYCHAIN_ACCOUNT = 'supabase'
 export const ENDPOINT = Object.freeze({ hostname: 'api.supabase.com', path: `/v1/projects/${PROJECT_REF}/database/query`, method: 'POST' })
 export const MAX_AGE_MS = 60_000
 export const MAX_REQUESTS = 1
+export const NATIVE_HELPER_TIMEOUT_MS = 15_000
 const MAX_RESPONSE_BYTES = 16_384
 const sha256 = value => createHash('sha256').update(value).digest('hex')
 const unavailable = () => { throw new Error('Disabled staging migration install unavailable') }
@@ -163,7 +164,7 @@ export function readTokenFromExactKeychain () {
   if (!NATIVE_ACCESS_APPROVED || process.platform !== 'darwin') unavailable()
   noAmbientOverrides()
   const helper = fileURLToPath(new URL('./staging-disabled-migrations-012-016-keychain.py', import.meta.url))
-  const result = spawnSync('/usr/bin/python3', ['-I', '-S', helper], { env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, timeout: 2_000, maxBuffer: 512 })
+  const result = spawnSync('/usr/bin/python3', ['-I', '-S', helper], { env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, timeout: NATIVE_HELPER_TIMEOUT_MS, maxBuffer: 512 })
   return consumeNativeTokenOutput(result)
 }
 

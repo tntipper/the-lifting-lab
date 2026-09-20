@@ -34,7 +34,7 @@
   "sourcePinsForTransport": [
     {
       "path": "scripts/staging-disabled-migrations-012-016.mjs",
-      "sha256": "c7ceb4693264a67a955d90f7b017f453da46cb149236815215820ebf9a99ead5"
+      "sha256": "461ad2a582c805694bc9bb157ea982d13abe24d8a25016b694d6caa830e90fe5"
     },
     {
       "path": "scripts/staging-disabled-migrations-012-016-keychain.py",
