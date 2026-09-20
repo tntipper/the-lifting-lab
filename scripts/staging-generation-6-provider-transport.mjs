@@ -72,10 +72,20 @@ export async function readbackProviderNames({run=runPrivateCli}={}) {
 
 export async function removeSupabaseSecrets(names,{run=runPrivateCli}={}) {
   if(JSON.stringify([...names].sort())!==JSON.stringify([...GENERATED_SUPABASE_SECRET_NAMES])) unavailable()
-  await run(['--yes','supabase','secrets','unset',...GENERATED_SUPABASE_SECRET_NAMES,'--project-ref',PROJECT_REF,'--output','json'],Buffer.alloc(0),0)
+  let failed=false
+  for(const name of GENERATED_SUPABASE_SECRET_NAMES) {
+    try { await run(['--yes','supabase','secrets','unset',name,'--project-ref',PROJECT_REF,'--output','json'],Buffer.alloc(0),0) }
+    catch { failed=true }
+  }
+  if(failed)unavailable()
 }
 
 export async function removeVercelSecrets(names,{run=runPrivateCli}={}) {
   if(JSON.stringify([...names].sort())!==JSON.stringify([...STAGED_VERCEL_NAMES])) unavailable()
-  for(const name of STAGED_VERCEL_NAMES) await run(['--yes','vercel','env','rm',name,'preview',VERCEL_BRANCH,...vercelBase,'--yes'],Buffer.alloc(0),0)
+  let failed=false
+  for(const name of STAGED_VERCEL_NAMES) {
+    try { await run(['--yes','vercel','env','rm',name,'preview',VERCEL_BRANCH,...vercelBase,'--yes'],Buffer.alloc(0),0) }
+    catch { failed=true }
+  }
+  if(failed)unavailable()
 }

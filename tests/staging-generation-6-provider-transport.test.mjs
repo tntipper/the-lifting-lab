@@ -33,6 +33,15 @@ test('provider readback projects names only for the fixed branch and environment
 
 test('cleanup accepts only the exact generated-name sets and sends no values',async()=>{
   const f=runner();await removeSupabaseSecrets(GENERATED_SUPABASE_SECRET_NAMES,{run:f.run});await removeVercelSecrets(STAGED_VERCEL_NAMES,{run:f.run})
-  assert.equal(f.calls.length,1+STAGED_VERCEL_NAMES.length);assert.ok(f.calls.every(call=>call.input===''))
+  assert.equal(f.calls.length,GENERATED_SUPABASE_SECRET_NAMES.length+STAGED_VERCEL_NAMES.length);assert.ok(f.calls.every(call=>call.input===''))
   await assert.rejects(()=>removeSupabaseSecrets(['WRONG'],{run:f.run}),/unavailable/);await assert.rejects(()=>removeVercelSecrets(['WRONG'],{run:f.run}),/unavailable/)
+})
+
+test('cleanup attempts every exact name even when individual removals fail',async()=>{
+  for(const [remove,names] of [[removeSupabaseSecrets,GENERATED_SUPABASE_SECRET_NAMES],[removeVercelSecrets,STAGED_VERCEL_NAMES]]){
+    const calls=[];let index=0
+    await assert.rejects(()=>remove(names,{run:async(args)=>{calls.push(args);if(index++%2===0)throw Error('private')}}),/unavailable/)
+    assert.equal(calls.length,names.length)
+    assert.deepEqual(calls.map(args=>args[(args.includes('unset')?args.indexOf('unset'):args.indexOf('rm'))+1]),[...names])
+  }
 })
