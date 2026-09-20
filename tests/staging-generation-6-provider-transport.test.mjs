@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { DISABLED_VERCEL_CONFIGURATION, GENERATED_SUPABASE_SECRET_NAMES, GENERATED_VERCEL_SECRET_NAMES, STAGED_VERCEL_NAMES } from '../scripts/staging-generation-6-transport.mjs'
-import { readbackProviderNames, removeSupabaseSecrets, removeVercelSecrets, resolveSupabaseCli, stageSupabaseSecrets, stageVercelSecrets, VERCEL_BRANCH } from '../scripts/staging-generation-6-provider-transport.mjs'
+import { classifyProviderFailure, probeSupabaseSecretTransport, ProviderTransportError, readbackProviderNames, removeSupabaseSecrets, removeVercelSecrets, resolveSupabaseCli, stageSupabaseSecrets, stageVercelSecrets, SUPABASE_TRANSPORT_PROBE_NAMES, VERCEL_BRANCH } from '../scripts/staging-generation-6-provider-transport.mjs'
 
 const secretValues=names=>Object.fromEntries(names.map((name,index)=>[name,`private-value-${index}-$()\`never-execute\``]))
 function runner(outputs=[]) { const calls=[];return {calls,run:async(args,input,fd)=>{calls.push({args:[...args],input:Buffer.from(input).toString('utf8'),fd});return outputs.shift()??''}} }
@@ -21,6 +21,32 @@ test('Supabase resolver accepts only an owned non-writable exact-path hash-pinne
   assert.equal(resolveSupabaseCli({home,glob:()=>[path],lstat:()=>stat,read:()=>Buffer.from(bytes),uid:501,expectedHash:hash}),path)
   assert.throws(()=>resolveSupabaseCli({home,glob:()=>[path],lstat:()=>({...stat,mode:0o100722}),read:()=>Buffer.from(bytes),uid:501,expectedHash:hash}),/unavailable/)
   assert.throws(()=>resolveSupabaseCli({home,glob:()=>[path],lstat:()=>stat,read:()=>Buffer.from(bytes),uid:501,expectedHash:'0'.repeat(64)}),/unavailable/)
+})
+
+test('provider failures expose only fixed classifications',()=>{
+  assert.equal(classifyProviderFailure(Buffer.from('request failed: Unauthorized')),'AUTH')
+  assert.equal(classifyProviderFailure(Buffer.from('network connection timeout')),'TRANSIENT')
+  assert.equal(classifyProviderFailure(Buffer.from('invalid env file')),'VALIDATION')
+  assert.equal(classifyProviderFailure(Buffer.from('unexpected provider output')),'CLI_EXIT')
+  const error=new ProviderTransportError('AUTH');assert.equal(error.message,'Generation-6 provider transport unavailable');assert.equal(error.code,'AUTH')
+})
+
+test('Supabase probe uses two disposable fd-streamed values and verifies cleanup',async()=>{
+  const names=new Set(),calls=[]
+  const run=async(args,input,fd)=>{calls.push({args:[...args],input:Buffer.from(input).toString('utf8'),fd})
+    if(args[1]==='set')for(const name of SUPABASE_TRANSPORT_PROBE_NAMES)names.add(name)
+    if(args[1]==='unset')names.delete(args[2])
+    if(args[1]==='list')return JSON.stringify([...names].map(name=>({name})))
+    return '{}'
+  }
+  const result=await probeSupabaseSecretTransport({run,random:size=>Buffer.alloc(size,9)})
+  assert.deepEqual(result,{status:'SUPABASE_SECRET_TRANSPORT_OK',probeSecretCount:2,cleanupVerified:true});assert.equal(names.size,0)
+  assert.equal(calls[0].fd,3);assert.ok(calls[0].args.includes('/dev/fd/3'));assert.ok(!calls[0].args.join(' ').includes(calls[0].input))
+})
+
+test('Supabase probe preserves a fixed failure class after verified cleanup',async()=>{
+  const run=async(args)=>{if(args[1]==='set')throw new ProviderTransportError('AUTH');if(args[1]==='list')return '[]';return '{}'}
+  await assert.rejects(()=>probeSupabaseSecretTransport({run,random:size=>Buffer.alloc(size,8)}),error=>error instanceof ProviderTransportError&&error.code==='AUTH')
 })
 
 test('Vercel staging is branch-scoped, sensitive for secrets, disabled for all feature flags and stdin-only',async()=>{

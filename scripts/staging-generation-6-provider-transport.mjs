@@ -1,6 +1,6 @@
 /** Fixed staging provider adapters. No function in this module reads a value. */
 import { spawn } from 'node:child_process'
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { globSync, lstatSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, sep } from 'node:path'
@@ -13,9 +13,33 @@ export const VERCEL_PROJECT = 'the-lifting-lab'
 export const VERCEL_SCOPE = 'my-lifting-lab-s-projects'
 export const VERCEL_BRANCH = 'codex/tll-integration'
 const MAX_OUTPUT = 1024 * 1024
-const unavailable = () => { throw new Error('Generation-6 provider transport unavailable') }
+export const SUPABASE_TRANSPORT_PROBE_NAMES = Object.freeze(['TLL_STAGING_TRANSPORT_PROBE_A','TLL_STAGING_TRANSPORT_PROBE_B'])
+export class ProviderTransportError extends Error {
+  constructor(code='PROVIDER_VALIDATION') { super('Generation-6 provider transport unavailable');this.name='ProviderTransportError';this.code=code }
+}
+const unavailable = code => { throw new ProviderTransportError(code) }
 const safeEnvironment = () => Object.freeze({ PATH: '/usr/local/bin:/usr/bin:/bin', HOME: homedir(), LANG: 'C.UTF-8',
   NO_UPDATE_NOTIFIER: '1', npm_config_update_notifier: 'false' })
+
+function containsAsciiFolded(buffer,pattern) {
+  const needle=Buffer.from(pattern,'ascii')
+  outer: for(let offset=0;offset<=buffer.length-needle.length;offset++) {
+    for(let index=0;index<needle.length;index++) {
+      const byte=buffer[offset+index],folded=byte>=65&&byte<=90?byte+32:byte
+      if(folded!==needle[index])continue outer
+    }
+    return true
+  }
+  return false
+}
+export function classifyProviderFailure(buffer) {
+  if(!Buffer.isBuffer(buffer))return 'CLI_EXIT'
+  if(['unauthorized','forbidden','access token','not logged in',' 401',' 403'].some(value=>containsAsciiFolded(buffer,value)))return 'AUTH'
+  if(['timeout','timed out','connection','network',' tls','socket',' 429',' 502',' 503',' 504'].some(value=>containsAsciiFolded(buffer,value)))return 'TRANSIENT'
+  if(['invalid','reserved','env file','dotenv','secret name','must not'].some(value=>containsAsciiFolded(buffer,value)))return 'VALIDATION'
+  if(['api',' 400',' 404',' 409',' 422',' 500'].some(value=>containsAsciiFolded(buffer,value)))return 'API'
+  return 'CLI_EXIT'
+}
 
 function runBounded(executable,args,input,inputFd) {
   if (!Array.isArray(args) || args.some(value => typeof value !== 'string') || !Buffer.isBuffer(input) || ![0,3].includes(inputFd)) unavailable()
@@ -23,11 +47,11 @@ function runBounded(executable,args,input,inputFd) {
     const stdio = ['ignore','pipe','pipe',inputFd === 3 ? 'pipe' : 'ignore']; if (inputFd === 0) stdio[0] = 'pipe'
     const child = spawn(executable, args, { stdio, env: safeEnvironment() }); const outputChunks=[],errorChunks=[]; let size=0, done=false
     const finish=(error,value)=>{if(done)return;done=true;clearTimeout(timer);for(const chunk of [...outputChunks,...errorChunks])chunk.fill(0);if(error)reject(error);else resolve(value)}
-    const fail=()=>{try{child.kill('SIGKILL')}catch{};finish(new Error('Generation-6 provider transport unavailable'))}
-    const timer=setTimeout(fail,30_000);child.on('error',fail)
-    for(const [stream,chunks] of [[child.stdout,outputChunks],[child.stderr,errorChunks]]) { stream.on('error',fail);stream.on('data',chunk=>{size+=chunk.length;if(size>MAX_OUTPUT){chunk.fill(0);fail()}else chunks.push(chunk)}) }
-    child.on('close',code=>{if(code!==0)return fail();const output=Buffer.concat(outputChunks);try{finish(null,output.toString('utf8'))}finally{output.fill(0)}})
-    const destination=inputFd===3?child.stdio[3]:child.stdin;destination.on('error',fail);destination.end(input)
+    const fail=code=>{try{child.kill('SIGKILL')}catch{};finish(new ProviderTransportError(code))}
+    const timer=setTimeout(()=>fail('TIMEOUT'),30_000);child.on('error',()=>fail('SPAWN'))
+    for(const [stream,chunks] of [[child.stdout,outputChunks],[child.stderr,errorChunks]]) { stream.on('error',()=>fail('STREAM'));stream.on('data',chunk=>{size+=chunk.length;if(size>MAX_OUTPUT){chunk.fill(0);fail('OUTPUT_LIMIT')}else chunks.push(chunk)}) }
+    child.on('close',code=>{if(code!==0){const diagnostic=Buffer.concat([...outputChunks,...errorChunks]);try{return fail(classifyProviderFailure(diagnostic))}finally{diagnostic.fill(0)}}const output=Buffer.concat(outputChunks);try{finish(null,output.toString('utf8'))}finally{output.fill(0)}})
+    const destination=inputFd===3?child.stdio[3]:child.stdin;destination.on('error',()=>fail('INPUT_STREAM'));destination.end(input)
   })
 }
 export const runPrivateCli=(args,input,inputFd=0)=>runBounded(NPX,args,input,inputFd)
@@ -58,6 +82,31 @@ export async function stageSupabaseSecrets(secrets,{run=runSupabasePrivateCli}={
   validateMap(secrets,GENERATED_SUPABASE_SECRET_NAMES);const input=encodeDotenv(secrets)
   try { await run(['secrets','set','--env-file','/dev/fd/3','--project-ref',PROJECT_REF,'--output','json'],input,3) }
   finally { input.fill(0) }
+}
+
+async function listSupabaseSecretNames(run) {
+  const raw=await run(['secrets','list','--project-ref',PROJECT_REF,'--output','json'],Buffer.alloc(0),0)
+  try {const values=JSON.parse(raw);if(!Array.isArray(values))unavailable('READBACK');return values.map(value=>value?.name).filter(value=>typeof value==='string')}
+  catch(error){if(error instanceof ProviderTransportError)throw error;unavailable('READBACK')}
+}
+
+export async function probeSupabaseSecretTransport({run=runSupabasePrivateCli,random=randomBytes}={}) {
+  const bytes=random(24);if(!Buffer.isBuffer(bytes)||bytes.length!==24)unavailable()
+  const values=Object.fromEntries(SUPABASE_TRANSPORT_PROBE_NAMES.map((name,index)=>[name,`${index}_${bytes.toString('base64url')}`]))
+  const input=encodeDotenv(values);let failure
+  try {
+    await run(['secrets','set','--env-file','/dev/fd/3','--project-ref',PROJECT_REF,'--output','json'],input,3)
+    const names=await listSupabaseSecretNames(run)
+    if(SUPABASE_TRANSPORT_PROBE_NAMES.some(name=>!names.includes(name)))unavailable('READBACK')
+  } catch(error) { failure=error instanceof ProviderTransportError?error:new ProviderTransportError('PROBE') }
+  finally {
+    input.fill(0);bytes.fill(0)
+    for(const name of SUPABASE_TRANSPORT_PROBE_NAMES)try{await run(['secrets','unset',name,'--project-ref',PROJECT_REF,'--output','json'],Buffer.alloc(0),0)}catch{}
+    const remaining=await listSupabaseSecretNames(run)
+    if(SUPABASE_TRANSPORT_PROBE_NAMES.some(name=>remaining.includes(name)))unavailable('CLEANUP')
+  }
+  if(failure)throw failure
+  return Object.freeze({status:'SUPABASE_SECRET_TRANSPORT_OK',probeSecretCount:SUPABASE_TRANSPORT_PROBE_NAMES.length,cleanupVerified:true})
 }
 
 async function putVercel(name,value,sensitive,run) {
