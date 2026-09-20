@@ -448,7 +448,7 @@
       },
       {
         "path": "scripts/staging-generation-6-provider-transport.mjs",
-        "sha256": "5ca8eedacd899c2dd58e24c9d86114323abbf2de9e8db248dd0c918ff4594e3b"
+        "sha256": "20b938a81eeb552ee619d0fe1c893b445e45cd1ebbf5683b6fc7eba4c9b73edd"
       },
       {
         "path": "scripts/staging-generation-6-database-transport.mjs",
@@ -476,7 +476,7 @@
       },
       {
         "path": "tests/staging-generation-6-provider-transport.test.mjs",
-        "sha256": "9fac495e60aef460086514d1e160db5d2a27d5573bf2e74cf0083b214721893f"
+        "sha256": "ce5dba69dd6f40c0e4e021f2c38c6f4e613cd37e3108b9ecb6ea54782507897f"
       },
       {
         "path": "tests/staging-generation-6-database-transport.test.mjs",

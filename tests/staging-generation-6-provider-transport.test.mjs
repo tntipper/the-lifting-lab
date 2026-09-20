@@ -1,7 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { DISABLED_VERCEL_CONFIGURATION, GENERATED_SUPABASE_SECRET_NAMES, GENERATED_VERCEL_SECRET_NAMES, STAGED_VERCEL_NAMES } from '../scripts/staging-generation-6-transport.mjs'
-import { readbackProviderNames, removeSupabaseSecrets, removeVercelSecrets, stageSupabaseSecrets, stageVercelSecrets, VERCEL_BRANCH } from '../scripts/staging-generation-6-provider-transport.mjs'
+import { readbackProviderNames, removeSupabaseSecrets, removeVercelSecrets, resolveSupabaseCli, stageSupabaseSecrets, stageVercelSecrets, VERCEL_BRANCH } from '../scripts/staging-generation-6-provider-transport.mjs'
 
 const secretValues=names=>Object.fromEntries(names.map((name,index)=>[name,`private-value-${index}-$()\`never-execute\``]))
 function runner(outputs=[]) { const calls=[];return {calls,run:async(args,input,fd)=>{calls.push({args:[...args],input:Buffer.from(input).toString('utf8'),fd});return outputs.shift()??''}} }
@@ -11,6 +12,15 @@ test('Supabase staging uses an anonymous fd dotenv stream and never argv or envi
   assert.equal(f.calls.length,1);assert.equal(f.calls[0].fd,3);assert.ok(f.calls[0].args.includes('/dev/fd/3'))
   for(const value of Object.values(values))assert.ok(!f.calls[0].args.join(' ').includes(value))
   assert.match(f.calls[0].input,/TLL_STAGING_BROKER_DATABASE_PASSWORD=/);assert.ok(!f.calls[0].args.includes('wrhgscovsgsudtedbljr'))
+  assert.deepEqual(f.calls[0].args.slice(0,2),['secrets','set'])
+})
+
+test('Supabase resolver accepts only an owned non-writable exact-path hash-pinned native binary',()=>{
+  const home='/safe/home',path=home+'/.npm/_npx/exact/node_modules/@supabase/cli-darwin-arm64/bin/supabase',bytes=Buffer.alloc(10_000_000,7)
+  const hash=createHash('sha256').update(bytes).digest('hex'),stat={isFile:()=>true,isSymbolicLink:()=>false,uid:501,mode:0o100700,size:bytes.length}
+  assert.equal(resolveSupabaseCli({home,glob:()=>[path],lstat:()=>stat,read:()=>Buffer.from(bytes),uid:501,expectedHash:hash}),path)
+  assert.throws(()=>resolveSupabaseCli({home,glob:()=>[path],lstat:()=>({...stat,mode:0o100722}),read:()=>Buffer.from(bytes),uid:501,expectedHash:hash}),/unavailable/)
+  assert.throws(()=>resolveSupabaseCli({home,glob:()=>[path],lstat:()=>stat,read:()=>Buffer.from(bytes),uid:501,expectedHash:'0'.repeat(64)}),/unavailable/)
 })
 
 test('Vercel staging is branch-scoped, sensitive for secrets, disabled for all feature flags and stdin-only',async()=>{
@@ -27,7 +37,7 @@ test('provider readback projects names only for the fixed branch and environment
     ...STAGED_VERCEL_NAMES.map(key=>({key,gitBranch:VERCEL_BRANCH,target:['preview'],value:'must-not-project'})),
     {key:'WRONG_BRANCH',gitBranch:'main',target:['preview']},{key:'WRONG_TARGET',gitBranch:VERCEL_BRANCH,target:['production']},
   ]})])
-  const result=await readbackProviderNames({run:f.run});assert.deepEqual(result.supabase,[...GENERATED_SUPABASE_SECRET_NAMES].sort());assert.deepEqual(result.vercel,[...STAGED_VERCEL_NAMES].sort())
+  const result=await readbackProviderNames({run:f.run,runSupabase:f.run});assert.deepEqual(result.supabase,[...GENERATED_SUPABASE_SECRET_NAMES].sort());assert.deepEqual(result.vercel,[...STAGED_VERCEL_NAMES].sort())
   assert.doesNotMatch(JSON.stringify(result),/must-not-project/)
 })
 
