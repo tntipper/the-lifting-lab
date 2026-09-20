@@ -40,6 +40,7 @@ const recoverySources = [
   'scripts/staging-account-activation-recovery.mjs',
   'config/staging-account-activation-recovery.sql',
   'config/staging-account-activation-recovery-postcommit.sql',
+  'docs/identity/staging-generation-6-activation.md',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
@@ -162,6 +163,9 @@ const manifest = {
     postCommitZeroSessionProof: true,
     requiresExistingOperatorAuthority: ['CREATEROLE','pg_read_all_data','pg_read_all_stats'],
     requiredBeforeCredentialProvisioning: true,
+    maximumCredentialWindowMinutes: 60,
+    activationPhases: ['deploy_edge_disabled','stage_secrets_flags_disabled','install_generation_6_once','verify_restricted_connections','verify_provider_readback','deploy_immutable_preview_disabled','enable_database_controls','enable_edge_then_server_then_public','run_one_no-purchase_journey','retire_generation_6'],
+    recoveryTriggers: ['uncertain_database_acknowledgement','partial_credentials_or_mixed_markers','unexpected_membership_or_acl','cross_role_denial_failure','control_state_mismatch','provider_readback_mismatch','immutable_deployment_mismatch','premature_route_availability','runtime_session_not_closed','window_expired','activation_interrupted'],
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
