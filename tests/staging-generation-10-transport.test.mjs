@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { PACKAGE_ID, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-10-credentials.mjs'
 import { GENERATED_SUPABASE_SECRET_NAMES, STAGED_VERCEL_NAMES } from '../scripts/staging-generation-6-transport.mjs'
-import { executeGeneration10CredentialWindow, GENERATION_10_SOURCE_FINGERPRINT, NATIVE_GENERATION_10_TRANSPORT_ENABLED, runNativeGeneration10CredentialWindow } from '../scripts/staging-generation-10-transport.mjs'
+import { executeGeneration10CredentialWindow, GENERATION_10_SOURCE_FINGERPRINT, NATIVE_GENERATION_10_TRANSPORT_ENABLED } from '../scripts/staging-generation-10-transport.mjs'
 
 const NOW=Date.parse('2026-09-20T20:00:00.000Z'),EXPIRES='2026-09-20T20:55:00.000Z'
 const randomBytes=(()=>{let n=0;return size=>Buffer.alloc(size,++n)})(),randomUUID=(()=>{let n=0;return()=>`00000000-0000-4000-8000-${String(++n).padStart(12,'0')}`})()
@@ -17,12 +17,16 @@ function fixture(fail){const events=[],ports={
 const journal=events=>({recordIntent(value){events.push('intent');return{...value,state:'INTENT_RECORDED',runId:'generation-10-test'}},transition(_intent,state){events.push(state);return{state}}})
 const rejectedJournal=events=>({recordIntent(){events.push('journalRejected');throw Error('consumed')},transition(){events.push('journalTransition')}})
 
-test('generation 10 is disarmed after recovery with a fixed nonsecret fingerprint',()=>{
+test('generation 10 is disarmed after verified recovery with a fixed nonsecret fingerprint',()=>{
   assert.equal(NATIVE_GENERATION_10_TRANSPORT_ENABLED,false);assert.match(GENERATION_10_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/)
 })
 
-test('generation 10 native entrypoint returns disabled without loading credentials or providers',async()=>{
-  assert.deepEqual(await runNativeGeneration10CredentialWindow(),{status:'NATIVE_TRANSPORT_DISABLED',target:PROJECT_REF,generation:10,windowId:WINDOW_ID})
+test('generation 10 native entrypoint is statically gated before provider imports',()=>{
+  assert.equal(NATIVE_GENERATION_10_TRANSPORT_ENABLED,false)
+  const source=readFileSync('scripts/staging-generation-10-transport.mjs','utf8')
+  const gate=source.indexOf("if(!NATIVE_GENERATION_10_TRANSPORT_ENABLED)return Object.freeze({status:'NATIVE_TRANSPORT_DISABLED'")
+  const providerImport=source.indexOf("import('./staging-generation-6-provider-transport.mjs')")
+  assert.ok(gate>=0);assert.ok(providerImport>gate)
 })
 
 test('generation 10 verification loads the pinned Supabase CA before creating the staged runtime',()=>{

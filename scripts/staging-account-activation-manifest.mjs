@@ -298,10 +298,11 @@ const manifest = {
     ],
     predecessorMarkerComparison: 'PARSED_JSON_SEMANTICS', predecessorValidUntilComparison: 'EXACT_PREDECESSOR_EXPIRY',
     connectionVerifier: { usesPinnedSupabaseCa: true, source: 'scripts/staging-supabase-ca.mjs', runtimeFactory: 'lib/server/staging-postgres.ts' },
-    recoveryPostcondition: { independentProviderZeroReadbackRequired: true },
+    recoveryPostcondition: { independentProviderZeroReadbackRequired: true, verified: true, generatedVercelValuesPresent: 0, generatedSupabaseSecretsPresent: 0 },
+    execution: { outcome: 'RECOVERY_VERIFIED_AFTER_INTERRUPTED_NATIVE_TEST', journalState: 'INTENT_RECORDED', journalLocksReplay: true, replayPermitted: false, connectionJourneyCompleted: false },
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
     secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
-    status: 'DISABLED_REVIEWED_READY_FOR_ARMING_GATE',
+    status: 'INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',

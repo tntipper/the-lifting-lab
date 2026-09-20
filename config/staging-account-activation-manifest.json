@@ -810,7 +810,7 @@
       },
       {
         "path": "tests/staging-generation-10-transport.test.mjs",
-        "sha256": "d64881d829da8065ee712418f6045d4973a0b4e522c3ce12c718ff705c1229bc"
+        "sha256": "3357588c278a6253d468956764e546a1805e3f96ed1b362acd2a0286f2300d54"
       },
       {
         "path": "tests/staging-generation-10-database-transport.test.mjs",
@@ -855,7 +855,17 @@
       "runtimeFactory": "lib/server/staging-postgres.ts"
     },
     "recoveryPostcondition": {
-      "independentProviderZeroReadbackRequired": true
+      "independentProviderZeroReadbackRequired": true,
+      "verified": true,
+      "generatedVercelValuesPresent": 0,
+      "generatedSupabaseSecretsPresent": 0
+    },
+    "execution": {
+      "outcome": "RECOVERY_VERIFIED_AFTER_INTERRUPTED_NATIVE_TEST",
+      "journalState": "INTENT_RECORDED",
+      "journalLocksReplay": true,
+      "replayPermitted": false,
+      "connectionJourneyCompleted": false
     },
     "maximumWindowMinutes": 60,
     "poolerConvergenceWaitMs": 16000,
@@ -864,7 +874,7 @@
     "secretBearingSqlMustRemainInMemory": true,
     "exclusiveNonsecretJournal": true,
     "nativeTransportEnabled": false,
-    "status": "DISABLED_REVIEWED_READY_FOR_ARMING_GATE"
+    "status": "INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY"
   },
   "gates": [
     "verify_exact_target_and_production_exclusion",
