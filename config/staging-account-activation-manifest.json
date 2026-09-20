@@ -54,7 +54,7 @@
     "sources": [
       {
         "path": "config/project-stage-gate-policy.json",
-        "sha256": "0ce927e66f8ec30c7d51952ef592eb7af3569255941b0454fdf8d7499ad8e907"
+        "sha256": "0ab29bd78239fd377e554e3eb071862b7e9940f9618ccfdd16d4cbb3355d3b62"
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
@@ -102,7 +102,7 @@
       },
       {
         "path": "tests/staging-generation-13-long-session.test.mjs",
-        "sha256": "939ca211dfde79dc3c762d1059be1485c6c44458757a49543fb51a8826c9cf26"
+        "sha256": "f644efb8424efc85100e65a951f8c4b03a69b777c22951262689ae12a7ce4068"
       },
       {
         "path": "docs/ops/project-stage-execution-protocol.md",
@@ -151,6 +151,10 @@
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-13-disabled-successor.md",
         "sha256": "f3a4e6575131824f8ad60d128ec4474c6e5f882a72f934eb04cf1b8b668a59dd"
+      },
+      {
+        "path": "docs/ops/stage-plans/2026-09-21-generation-13-arming-diff.md",
+        "sha256": "894c6aad8d4c87acff38f66d850564687c6bf2dc1ac903d1494c73b561b3ba8b"
       }
     ],
     "policy": "tll-project-stage-gate-policy/v1",
@@ -164,7 +168,7 @@
     "generation11ReplayPermitted": false,
     "generation11Armed": false,
     "generation12Armed": false,
-    "generation13Armed": false,
+    "generation13Armed": true,
     "generation12ReplayPermitted": false,
     "successorHeldPendingBoundaryReview": true
   },
@@ -1305,15 +1309,15 @@
       },
       {
         "path": "scripts/staging-generation-13-transport.mjs",
-        "sha256": "b80f532d5144949f3a2c069925174d73615509e83c6439aa884177431ecda2c6"
+        "sha256": "74e9b793326d5b343d27598a5092df2932cd1c22bc3a12c11cd9a1654ef7be8a"
       },
       {
         "path": "scripts/staging-generation-13-database-transport.mjs",
-        "sha256": "8b7ef0eb3337228c6437dfa1216a61c8cd4e29c5f3956a000ee47e3b65d01957"
+        "sha256": "4aaa47b305e7aca2ad5ed923b56e4d6443b4d8ee79a5d613b66cb7dd09f15d0e"
       },
       {
         "path": "scripts/staging-generation-13-keychain.py",
-        "sha256": "ae1e95106ad43f3b39d6974e8c4658c96968f59644fa7a3a1f5d8fb5c4331e5e"
+        "sha256": "a4eb5a8863f4dd54ea81ccaafa4323cc566164ddd452b13c2a72c81f0c9b2f41"
       },
       {
         "path": "scripts/staging-generation-13-recovery.mjs",
@@ -1353,11 +1357,11 @@
       },
       {
         "path": "tests/staging-generation-13-transport.test.mjs",
-        "sha256": "22b5de31371d031c4476b8ac6855733ce75edf90909ebb8b836aa9c821524cb8"
+        "sha256": "8d71a12d37695f72fa956f7316547a5018e1beada85e5ded28bb332c03b63ee1"
       },
       {
         "path": "tests/staging-generation-13-database-transport.test.mjs",
-        "sha256": "7177f58033cb11696590437af6e3171ac49ba127264aa1558e8a48278f38a381"
+        "sha256": "68d50c7aa6614a062359bc0113f38ac78cc8f4ef2433635459ec5da01fa6f6bc"
       },
       {
         "path": "tests/staging-generation-13-recovery.test.mjs",
@@ -1365,7 +1369,7 @@
       },
       {
         "path": "tests/staging-generation-13-long-session.test.mjs",
-        "sha256": "939ca211dfde79dc3c762d1059be1485c6c44458757a49543fb51a8826c9cf26"
+        "sha256": "f644efb8424efc85100e65a951f8c4b03a69b777c22951262689ae12a7ce4068"
       }
     ],
     "target": "qdmvngjwkcsilzmqksme",
@@ -1443,8 +1447,8 @@
     "thirdAttemptPermitted": false,
     "secretBearingSqlMustRemainInMemory": true,
     "exclusiveNonsecretJournal": true,
-    "nativeTransportEnabled": false,
-    "status": "DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW"
+    "nativeTransportEnabled": true,
+    "status": "ONE_STAGING_WINDOW_AUTHORIZED"
   },
   "gates": [
     "verify_exact_target_and_production_exclusion",
