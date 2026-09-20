@@ -16,7 +16,8 @@ const policy = {
   preventiveControlVerificationRequiredBeforeSuccessor: true, failedOrUncertainWindowReplayPermitted: false,
   currentHold: {
     generation10ReplayPermitted: false, generation11ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: false,
+    generation12ReplayPermitted: false,
+    generation11Armed: false, generation12Armed: false, generation13Armed: false,
     nextGenerationPermittedBeforeBoundaryReview: false,
   },
 }
@@ -35,12 +36,12 @@ test('repository ordinary-test boundary passes only while every native gate is d
 })
 
 test('boundary rejects a native invocation from an ordinary test', () => {
-  const call = ['runNative', 'Generation12CredentialWindow()'].join('')
+  const call = ['runNative', 'Generation13CredentialWindow()'].join('')
   assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: fixture({ testSource: call }) }), ['test-native-call:tests/example.test.mjs'])
 })
 
 test('boundary rejects enabled JavaScript and Keychain gates', () => {
-  const root = fixture({ scriptSource: 'export const NATIVE_GENERATION_12_TRANSPORT_ENABLED=true\nexport const NATIVE_ACCESS_APPROVED = true\n' })
+  const root = fixture({ scriptSource: 'export const NATIVE_GENERATION_13_TRANSPORT_ENABLED=true\nexport const NATIVE_ACCESS_APPROVED = true\n' })
   writeFileSync(join(root, 'scripts/helper.py'), 'APPROVED_NATIVE_READ = True\n')
   assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
     'enabled-keychain-read:scripts/helper.py', 'enabled-native-gate:scripts/example.mjs',
@@ -48,7 +49,7 @@ test('boundary rejects enabled JavaScript and Keychain gates', () => {
 })
 
 test('boundary rejects an embedded native launcher outside a dedicated live-launcher module', () => {
-  const definition = ['export async function runNative', 'Generation12CredentialWindow() {}'].join('')
+  const definition = ['export async function runNative', 'Generation13CredentialWindow() {}'].join('')
   assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: fixture({ scriptSource: definition }) }), [
     'embedded-live-launcher:scripts/example.mjs',
   ])
@@ -56,16 +57,16 @@ test('boundary rejects an embedded native launcher outside a dedicated live-laun
 
 test('boundary rejects a dedicated live launcher without the required phase journal', () => {
   const root = fixture()
-  writeFileSync(join(root, 'scripts/staging-generation-12-live-launcher.mjs'), 'export async function launch() {}\n')
+  writeFileSync(join(root, 'scripts/staging-generation-13-live-launcher.mjs'), 'export async function launch() {}\n')
   assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
-    'live-launcher-missing-phase-journal:scripts/staging-generation-12-live-launcher.mjs',
+    'live-launcher-missing-phase-journal:scripts/staging-generation-13-live-launcher.mjs',
   ])
 })
 
-test('boundary rejects an ordinary test that imports the Gen 12 live launcher', () => {
+test('boundary rejects an ordinary test that imports the Gen 13 live launcher', () => {
   const importLine = [
     'import { x } ',
-    "from '../scripts/staging-generation-12-",
+    "from '../scripts/staging-generation-13-",
     "live-launcher.mjs'\n",
   ].join('')
   assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: fixture({ testSource: importLine }) }), [
@@ -73,14 +74,14 @@ test('boundary rejects an ordinary test that imports the Gen 12 live launcher', 
   ])
 })
 
-test('repository Gen 12 live launcher is accepted because it uses the phase journal', () => {
-  const source = readFileSync('scripts/staging-generation-12-live-launcher.mjs', 'utf8')
+test('repository Gen 13 live launcher is accepted because it uses the phase journal', () => {
+  const source = readFileSync('scripts/staging-generation-13-live-launcher.mjs', 'utf8')
   assert.match(source, /createStagingWindowPhaseJournal/)
-  assert.match(source, /export async function runNativeGeneration12CredentialWindow/)
+  assert.match(source, /export async function runNativeGeneration13CredentialWindow/)
   assert.match(source, /ACTIVE_WITHIN_PHASE_BOUND/)
   assert.match(source, /long-lived process/)
-  assert.doesNotMatch(readFileSync('scripts/staging-generation-12-transport.mjs', 'utf8'), /runNativeGeneration12CredentialWindow/)
-  assert.doesNotMatch(readFileSync('scripts/staging-generation-12-journal-watch.mjs', 'utf8'), /runNativeGeneration12CredentialWindow|readSupabaseTokenFromKeychain/)
+  assert.doesNotMatch(readFileSync('scripts/staging-generation-13-transport.mjs', 'utf8'), /runNativeGeneration13CredentialWindow/)
+  assert.doesNotMatch(readFileSync('scripts/staging-generation-13-journal-watch.mjs', 'utf8'), /runNativeGeneration13CredentialWindow|readSupabaseTokenFromKeychain/)
   assert.deepEqual(assertStagingLiveBoundary(), { status: 'PASS', policy: 'tll-project-stage-gate-policy/v1', violations: 0 })
 })
 
