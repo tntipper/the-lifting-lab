@@ -439,12 +439,20 @@
     "packageId": "tll-staging-generation-6-credentials/v1",
     "sources": [
       {
+        "path": "config/certs/supabase-prod-ca-2021.crt",
+        "sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7"
+      },
+      {
+        "path": "scripts/staging-supabase-ca.mjs",
+        "sha256": "700249b6bc4c5b126f8733f015f0fd836d17df49316165b246475011ffdd46f9"
+      },
+      {
         "path": "scripts/staging-generation-6-credentials.mjs",
         "sha256": "8e4458e3c4eb129511952b81483d13a8d7e7f25bbd1add31ebafdf831df91da0"
       },
       {
         "path": "scripts/staging-generation-6-transport.mjs",
-        "sha256": "59f42c1975595528554a9c261cf6c1eff24f7fd7149426de504407a2d50ebb09"
+        "sha256": "5fe4c0ff58abccbbbb117912fb6439059ef2d638fed3de5fa1441c69bf6bb746"
       },
       {
         "path": "scripts/staging-generation-6-provider-transport.mjs",
@@ -460,7 +468,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "370a7d2a9a8736b8efa7074fc1e53363a2c43a3d4feb16a1f028008069061efa"
+        "sha256": "1cd541bc43f1b19f96879c77b04cbd229bedb9687c8af18eaeabf747e09328e5"
       },
       {
         "path": "tests/staging-generation-6-credentials.test.mjs",
@@ -484,7 +492,11 @@
       },
       {
         "path": "tests/staging-generation-6-connection-verifier.test.mjs",
-        "sha256": "4a7e60139d1b5ed37e0121d31b5b0c2ebf27a03005f4db8818172443b89908e8"
+        "sha256": "9abdfc0e4f2a7793593220d879863d01683b7969e2cfa0390d010a74004e2ac3"
+      },
+      {
+        "path": "tests/staging-supabase-ca.test.mjs",
+        "sha256": "650abbd6ca78612a46eebdad9842ccfe653f7c101758c859530a2402e60cd462"
       }
     ],
     "target": "qdmvngjwkcsilzmqksme",
@@ -504,12 +516,20 @@
     "packageId": "tll-staging-generation-7-credentials/v1",
     "sources": [
       {
+        "path": "config/certs/supabase-prod-ca-2021.crt",
+        "sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7"
+      },
+      {
+        "path": "scripts/staging-supabase-ca.mjs",
+        "sha256": "700249b6bc4c5b126f8733f015f0fd836d17df49316165b246475011ffdd46f9"
+      },
+      {
         "path": "scripts/staging-generation-7-credentials.mjs",
         "sha256": "fb6b3dc985e07453a7475da01e65084acb8366a816ad10c147f1c9bfdd886b54"
       },
       {
         "path": "scripts/staging-generation-7-transport.mjs",
-        "sha256": "93d118c630eb3bf05de6b2ba44457e9ba647d82825b7e1868e71d3ae4d8b7b2a"
+        "sha256": "d073e79394fcdbf5aa5d12c3bc882d777a7771034b7e2f32f104491a312f9345"
       },
       {
         "path": "scripts/staging-generation-7-database-transport.mjs",
@@ -571,12 +591,20 @@
     "packageId": "tll-staging-generation-8-credentials/v1",
     "sources": [
       {
+        "path": "config/certs/supabase-prod-ca-2021.crt",
+        "sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7"
+      },
+      {
+        "path": "scripts/staging-supabase-ca.mjs",
+        "sha256": "700249b6bc4c5b126f8733f015f0fd836d17df49316165b246475011ffdd46f9"
+      },
+      {
         "path": "scripts/staging-generation-8-credentials.mjs",
         "sha256": "0583135dfa1b980376838dc72151e39f01e151732e24ab5a89d0b898009d0d1e"
       },
       {
         "path": "scripts/staging-generation-8-transport.mjs",
-        "sha256": "e1ad8b4e8c56b77b1ffec44cd35e2efb941d0150845e3e98a5ebea77a7044212"
+        "sha256": "df4f2b0527a97a4e5dbf55e7512edf1efdfe34ca0148e7b42cf287607aee3ab8"
       },
       {
         "path": "scripts/staging-generation-8-database-transport.mjs",
@@ -645,12 +673,20 @@
     "packageId": "tll-staging-generation-9-credentials/v1",
     "sources": [
       {
+        "path": "config/certs/supabase-prod-ca-2021.crt",
+        "sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7"
+      },
+      {
+        "path": "scripts/staging-supabase-ca.mjs",
+        "sha256": "700249b6bc4c5b126f8733f015f0fd836d17df49316165b246475011ffdd46f9"
+      },
+      {
         "path": "scripts/staging-generation-9-credentials.mjs",
         "sha256": "4a743aaf7419a73a84942d60c424412df4bc0611b9765f0538c2110f60770671"
       },
       {
         "path": "scripts/staging-generation-9-transport.mjs",
-        "sha256": "fc02979c4f23c3398816c32a0ef909e0ace8c190a16a0a23bbb771084046e5f3"
+        "sha256": "c7d62e37f153e98f86fffd0355e9d9a61f3dd53095b5e346ebf62aa3da6db124"
       },
       {
         "path": "scripts/staging-generation-9-database-transport.mjs",

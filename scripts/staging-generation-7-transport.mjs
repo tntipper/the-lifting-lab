@@ -46,11 +46,11 @@ export async function executeGeneration7CredentialWindow({ports,journal=createGe
 
 export async function runNativeGeneration7CredentialWindow(){
   if(!NATIVE_GENERATION_7_TRANSPORT_ENABLED)return Object.freeze({status:'NATIVE_TRANSPORT_DISABLED',target:PROJECT_REF,generation:GENERATION,windowId:WINDOW_ID})
-  const [{stageVercelSecrets,stageSupabaseSecrets,readbackProviderNames,removeVercelSecrets,removeSupabaseSecrets},{readSupabaseTokenFromKeychain,dispatchGeneration7Database,recoverGeneration7Database,verifyGeneration7EntryBaseline,verifyGeneration7ZeroSessions},{verifyGeneration6Connections,connectionFailureReport},{createStagingPostgresRuntime}]=await Promise.all([
-    import('./staging-generation-6-provider-transport.mjs'),import('./staging-generation-7-database-transport.mjs'),import('./staging-generation-6-connection-verifier.mjs'),import('../lib/server/staging-postgres.ts')])
-  const token=readSupabaseTokenFromKeychain()
+  const [{stageVercelSecrets,stageSupabaseSecrets,readbackProviderNames,removeVercelSecrets,removeSupabaseSecrets},{readSupabaseTokenFromKeychain,dispatchGeneration7Database,recoverGeneration7Database,verifyGeneration7EntryBaseline,verifyGeneration7ZeroSessions},{verifyGeneration6Connections,connectionFailureReport},{createStagingPostgresRuntime},{readPinnedSupabaseCa}]=await Promise.all([
+    import('./staging-generation-6-provider-transport.mjs'),import('./staging-generation-7-database-transport.mjs'),import('./staging-generation-6-connection-verifier.mjs'),import('../lib/server/staging-postgres.ts'),import('./staging-supabase-ca.mjs')])
+  const token=readSupabaseTokenFromKeychain(),tlsCa=readPinnedSupabaseCa()
   return executeGeneration7CredentialWindow({ports:{preflightDatabase:()=>verifyGeneration7EntryBaseline({token}),stageVercel:stageVercelSecrets,stageSupabase:stageSupabaseSecrets,readbackNames:readbackProviderNames,
-    dispatchDatabase:sql=>dispatchGeneration7Database(sql,{token}),verifyConnections:async input=>{try{await verifyGeneration6Connections({...input,createRuntime:createStagingPostgresRuntime})}catch(error){const projected=Error('Generation-7 connection verification unavailable');projected.connectionFailure=connectionFailureReport(error);throw projected}await verifyGeneration7ZeroSessions({token})},
+    dispatchDatabase:sql=>dispatchGeneration7Database(sql,{token}),verifyConnections:async input=>{try{await verifyGeneration6Connections({...input,tlsCa,createRuntime:createStagingPostgresRuntime})}catch(error){const projected=Error('Generation-7 connection verification unavailable');projected.connectionFailure=connectionFailureReport(error);throw projected}await verifyGeneration7ZeroSessions({token})},
     recoverDatabase:()=>recoverGeneration7Database({token}),removeVercel:removeVercelSecrets,removeSupabase:removeSupabaseSecrets}})
 }
 

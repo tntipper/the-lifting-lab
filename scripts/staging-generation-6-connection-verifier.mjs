@@ -40,11 +40,12 @@ function exactMembership(rows,purpose){const expected=IDENTITIES[purpose]
 function exactMatrix(rows,purpose){if(!Array.isArray(rows)||rows.length!==Object.values(ENTRYPOINTS).reduce((n,list)=>n+list.length,0))throw unavailable(purpose,'matrix')
   for(const row of rows)if(!row.present||row.allowed!==(row.purpose===purpose)||!ENTRYPOINTS[row.purpose]?.includes(row.signature))throw unavailable(purpose,'matrix')}
 
-export async function verifyGeneration6Connections({passwords,expiresAt,createRuntime,pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))}){
-  if(!passwords||Object.keys(passwords).sort().join('|')!==[...purposes].sort().join('|')||typeof createRuntime!=='function'||typeof pause!=='function')throw unavailable()
+export async function verifyGeneration6Connections({passwords,expiresAt,tlsCa,createRuntime,pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))}){
+  if(!passwords||Object.keys(passwords).sort().join('|')!==[...purposes].sort().join('|')||!tlsCa||Object.keys(tlsCa).sort().join('|')!=='pem|sha256'
+    ||typeof tlsCa.pem!=='string'||!tlsCa.pem||!/^[a-f0-9]{64}$/.test(tlsCa.sha256)||typeof createRuntime!=='function'||typeof pause!=='function')throw unavailable()
   for(const purpose of purposes){let runtime,client,primary,check='factory'
     try{
-      const create=()=>createRuntime({purpose,enabled:true,password:passwords[purpose]})
+      const create=()=>createRuntime({purpose,enabled:true,password:passwords[purpose],tlsCa})
       runtime=create();check='connect'
       try{client=await runtime.pool.connect()}
       catch{check='connect_wait';await runtime.close();runtime=undefined;await pause(POOLER_CONVERGENCE_MS);check='factory_retry';runtime=create();check='connect_retry';client=await runtime.pool.connect()}

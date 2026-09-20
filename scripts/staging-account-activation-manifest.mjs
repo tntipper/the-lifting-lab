@@ -42,7 +42,12 @@ const recoverySources = [
   'config/staging-account-activation-recovery-postcommit.sql',
   'docs/identity/staging-generation-6-activation.md',
 ]
+const stagingSupabaseCaSources = [
+  'config/certs/supabase-prod-ca-2021.crt',
+  'scripts/staging-supabase-ca.mjs',
+]
 const generation6CredentialSources = [
+  ...stagingSupabaseCaSources,
   'scripts/staging-generation-6-credentials.mjs',
   'scripts/staging-generation-6-transport.mjs',
   'scripts/staging-generation-6-provider-transport.mjs',
@@ -55,8 +60,10 @@ const generation6CredentialSources = [
   'tests/staging-generation-6-provider-transport.test.mjs',
   'tests/staging-generation-6-database-transport.test.mjs',
   'tests/staging-generation-6-connection-verifier.test.mjs',
+  'tests/staging-supabase-ca.test.mjs',
 ]
 const generation7SuccessorSources = [
+  ...stagingSupabaseCaSources,
   'scripts/staging-generation-7-credentials.mjs',
   'scripts/staging-generation-7-transport.mjs',
   'scripts/staging-generation-7-database-transport.mjs',
@@ -70,6 +77,7 @@ const generation7SuccessorSources = [
   'tests/staging-generation-7-recovery.test.mjs',
 ]
 const generation8SuccessorSources = [
+  ...stagingSupabaseCaSources,
   'scripts/staging-generation-8-credentials.mjs',
   'scripts/staging-generation-8-transport.mjs',
   'scripts/staging-generation-8-database-transport.mjs',
@@ -83,6 +91,7 @@ const generation8SuccessorSources = [
   'tests/staging-generation-8-recovery.test.mjs',
 ]
 const generation9SuccessorSources = [
+  ...stagingSupabaseCaSources,
   'scripts/staging-generation-9-credentials.mjs',
   'scripts/staging-generation-9-transport.mjs',
   'scripts/staging-generation-9-database-transport.mjs',
