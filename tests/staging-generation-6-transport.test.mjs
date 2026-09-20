@@ -61,7 +61,7 @@ test('successful flow stages disabled providers, journals before one dispatch an
 test('entry baseline failure creates no material, provider change or dispatch',async()=>{
   const f=fixture('preflight');let generated=false
   const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:size=>{generated=true;return Buffer.alloc(size,1)},randomUUID:deterministicUuid})
-  assert.deepEqual(result,{status:'ENTRY_BASELINE_FAILED',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'REVIEW_ENTRY_BASELINE'})
+  assert.deepEqual(result,{status:'ENTRY_BASELINE_FAILED',phase:'ENTRY_PREFLIGHT',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'REVIEW_ENTRY_BASELINE'})
   assert.equal(generated,false);assert.deepEqual(f.events,['preflight'])
 })
 
@@ -69,6 +69,7 @@ for(const phase of ['vercel','supabase','readback']) test(`provider failure ${ph
   const f=fixture(phase);deterministicRandom.calls=0;deterministicUuid.calls=0
   const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
   assert.equal(result.status,'STOPPED_BEFORE_DATABASE');assert.ok(!f.events.includes('dispatch'));assert.deepEqual(f.events.slice(-2),['removeVercel','removeSupabase'])
+  assert.equal(result.phase,{vercel:'VERCEL_STAGE',supabase:'SUPABASE_STAGE',readback:'PROVIDER_READBACK'}[phase])
 })
 
 for(const phase of ['dispatch','verify']) test(`database failure ${phase} invokes recovery once and forbids retry`,async()=>{
@@ -82,6 +83,6 @@ test('failed recovery returns a fixed reconciliation result and native entry rem
   const f=fixture('recover');f.ports.verifyConnections=async()=>{f.events.push('verify');throw Error('secret raw provider failure')}
   deterministicRandom.calls=0;deterministicUuid.calls=0
   const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
-  assert.deepEqual(result,{status:'RECOVERY_REQUIRED',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'NO_RETRY_RECONCILE'})
+  assert.deepEqual(result,{status:'RECOVERY_REQUIRED',phase:'CONNECTION_VERIFICATION',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'NO_RETRY_RECONCILE'})
   assert.equal(NATIVE_TRANSPORT_ENABLED,false);assert.equal((await runNativeGeneration6CredentialWindow()).status,'NATIVE_TRANSPORT_DISABLED')
 })

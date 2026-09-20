@@ -123,21 +123,28 @@ export async function executeGeneration6CredentialWindow({ ports, journal = crea
   if (!ports || required.some(name => typeof ports[name] !== 'function')) unavailable()
   const nowMs = now(), expiryMs = Math.floor((nowMs + MAX_WINDOW_MS - 5 * 60 * 1000) / 1000) * 1000
   const expiresAt = new Date(expiryMs).toISOString()
-  let material; let projection; let intent; let dispatchAttempted = false; let providerAttempted = false; let preflightPassed = false
+  let material; let projection; let intent; let dispatchAttempted = false; let providerAttempted = false; let preflightPassed = false; let phase='ENTRY_PREFLIGHT'
   try {
     await ports.preflightDatabase(); preflightPassed = true
+    phase='MATERIAL_GENERATION'
     material = generateGeneration6Material({ randomBytes, randomUUID }); projection = projectGeneration6Secrets(material)
-    providerAttempted = true
+    providerAttempted = true;phase='VERCEL_STAGE'
     await ports.stageVercel({ secrets: projection.vercel, configuration: DISABLED_VERCEL_CONFIGURATION })
+    phase='SUPABASE_STAGE'
     await ports.stageSupabase({ secrets: projection.supabase })
+    phase='PROVIDER_READBACK'
     const names = await ports.readbackNames()
     if (!names || !Array.isArray(names.vercel) || !Array.isArray(names.supabase)
       || STAGED_VERCEL_NAMES.some(name => !names.vercel.includes(name))
       || GENERATED_SUPABASE_SECRET_NAMES.some(name => !names.supabase.includes(name))) unavailable()
+    phase='DATABASE_PACKAGE'
     const verifiers = Object.fromEntries(purposes.map((purpose, index) => [purpose, deriveScramVerifier(material.passwords[purpose], Buffer.alloc(18, index + 1))]))
     const sql = buildGeneration6CredentialSql({ expiresAt, verifiers, nowMs })
+    phase='JOURNAL_INTENT'
     intent = journal.recordIntent({ expiresAt, nowMs }); dispatchAttempted = true
+    phase='DATABASE_DISPATCH'
     const receipt = validateGeneration6Receipt(await ports.dispatchDatabase(sql), expiresAt)
+    phase='CONNECTION_VERIFICATION'
     await ports.verifyConnections({ passwords: projection.passwords, expiresAt })
     journal.transition(intent, 'RECEIPT_VALIDATED')
     return Object.freeze({ status: 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED', target: PROJECT_REF, generation: GENERATION,
@@ -152,7 +159,7 @@ export async function executeGeneration6CredentialWindow({ ports, journal = crea
       try { await ports.removeVercel(STAGED_VERCEL_NAMES) } catch { /* fixed failure result below */ }
       try { await ports.removeSupabase(GENERATED_SUPABASE_SECRET_NAMES) } catch { /* fixed failure result below */ }
     }
-    return Object.freeze({ status: dispatchAttempted ? recovery : preflightPassed ? 'STOPPED_BEFORE_DATABASE' : 'ENTRY_BASELINE_FAILED', target: PROJECT_REF,
+    return Object.freeze({ status: dispatchAttempted ? recovery : preflightPassed ? 'STOPPED_BEFORE_DATABASE' : 'ENTRY_BASELINE_FAILED', phase, target: PROJECT_REF,
       generation: GENERATION, windowId: WINDOW_ID, nextAction: dispatchAttempted ? 'NO_RETRY_RECONCILE' : preflightPassed ? 'REVIEW_PROVIDER_STAGING' : 'REVIEW_ENTRY_BASELINE' })
   } finally { eraseProjection(projection); eraseGeneration6Material(material) }
 }
