@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { buildGeneration6CredentialSql, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-6-credentials.mjs'
-import { dispatchGeneration6Database, NATIVE_DATABASE_TRANSPORT_ENABLED, normalizeSupabaseToken, recoverGeneration6Database, verifyGeneration6EntryBaseline, verifyGeneration6ZeroSessions } from '../scripts/staging-generation-6-database-transport.mjs'
+import { dispatchGeneration6Database, KEYCHAIN_HELPER_TIMEOUT_MS, NATIVE_DATABASE_TRANSPORT_ENABLED, normalizeSupabaseToken, recoverGeneration6Database, verifyGeneration6EntryBaseline, verifyGeneration6ZeroSessions } from '../scripts/staging-generation-6-database-transport.mjs'
 
 const token='sbp_'+('a'.repeat(40)),expiresAt='2026-09-20T18:55:00.000Z',verifier=index=>`SCRAM-SHA-256$4096:${Buffer.alloc(18,index+1).toString('base64')}$${Buffer.alloc(32,index+2).toString('base64')}:${Buffer.alloc(32,index+3).toString('base64')}`
 const sql=buildGeneration6CredentialSql({expiresAt,nowMs:Date.parse('2026-09-20T18:00:00.000Z'),verifiers:Object.fromEntries(['customer','cart','broker','provisional','bridge'].map((p,i)=>[p,verifier(i)]))})
@@ -10,7 +10,7 @@ const sql=buildGeneration6CredentialSql({expiresAt,nowMs:Date.parse('2026-09-20T
 test('token normalization accepts only the exact CLI formats and native transport is disabled',()=>{
   assert.equal(normalizeSupabaseToken(token),token);assert.equal(normalizeSupabaseToken('go-keyring-base64:'+Buffer.from(token).toString('base64')),token)
   for(const value of ['secret','sbp_'+('g'.repeat(40)),'go-keyring-base64:%%%%'])assert.throws(()=>normalizeSupabaseToken(value),/unavailable/)
-  assert.equal(NATIVE_DATABASE_TRANSPORT_ENABLED,false);assert.equal(readFileSync('scripts/staging-generation-6-keychain.py','utf8').match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'False')
+  assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000);assert.equal(NATIVE_DATABASE_TRANSPORT_ENABLED,false);assert.equal(readFileSync('scripts/staging-generation-6-keychain.py','utf8').match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'False')
 })
 
 test('database dispatch accepts only the fixed generated package and forwards once',async()=>{

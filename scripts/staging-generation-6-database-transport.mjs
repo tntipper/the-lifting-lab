@@ -7,6 +7,7 @@ import { PROJECT_REF, PACKAGE_ID, WINDOW_ID } from './staging-generation-6-crede
 
 export const NATIVE_DATABASE_TRANSPORT_ENABLED = false
 export const MANAGEMENT_ENDPOINT = Object.freeze({ hostname:'api.supabase.com',path:`/v1/projects/${PROJECT_REF}/database/query`,method:'POST' })
+export const KEYCHAIN_HELPER_TIMEOUT_MS=45_000
 const MAX_RESPONSE_BYTES=65_536, TIMEOUT_MS=35_000
 const unavailable=()=>{throw new Error('Generation-6 database transport unavailable')}
 
@@ -19,7 +20,7 @@ export function normalizeSupabaseToken(value){
 export function readSupabaseTokenFromKeychain(){
   if(!NATIVE_DATABASE_TRANSPORT_ENABLED||process.platform!=='darwin')unavailable()
   const helper=fileURLToPath(new URL('./staging-generation-6-keychain.py',import.meta.url))
-  const result=spawnSync('/usr/bin/python3',['-I','-S',helper],{env:{PATH:'/usr/bin:/bin',LANG:'C.UTF-8'},timeout:15_000,maxBuffer:512,encoding:null})
+  const result=spawnSync('/usr/bin/python3',['-I','-S',helper],{env:{PATH:'/usr/bin:/bin',LANG:'C.UTF-8'},timeout:KEYCHAIN_HELPER_TIMEOUT_MS,maxBuffer:512,encoding:null})
   try{if(result.status!==0||!Buffer.isBuffer(result.stdout)||result.stderr?.length)unavailable();return normalizeSupabaseToken(result.stdout.toString('utf8').trim())}
   finally{result.stdout?.fill(0);result.stderr?.fill(0)}
 }
