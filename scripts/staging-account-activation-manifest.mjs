@@ -56,6 +56,19 @@ const generation6CredentialSources = [
   'tests/staging-generation-6-database-transport.test.mjs',
   'tests/staging-generation-6-connection-verifier.test.mjs',
 ]
+const generation7SuccessorSources = [
+  'scripts/staging-generation-7-credentials.mjs',
+  'scripts/staging-generation-7-transport.mjs',
+  'scripts/staging-generation-7-database-transport.mjs',
+  'scripts/staging-generation-7-keychain.py',
+  'scripts/staging-generation-7-recovery.mjs',
+  'config/staging-generation-7-recovery.sql',
+  'config/staging-generation-7-recovery-postcommit.sql',
+  'tests/staging-generation-7-credentials.test.mjs',
+  'tests/staging-generation-7-transport.test.mjs',
+  'tests/staging-generation-7-database-transport.test.mjs',
+  'tests/staging-generation-7-recovery.test.mjs',
+]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
   'scripts/staging-readonly-preflight-keychain.py',
@@ -188,6 +201,15 @@ const manifest = {
     predecessor: { generation: 5, windowId: 'e8aeb142-d2f8-4a58-b0a5-8931d90a6952', expiresAt: '2026-09-18T14:24:02.000Z' },
     maximumWindowMinutes: 60, secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true,
     nativeTransportEnabled: false,
+  },
+  generation7Successor: {
+    packageId: 'tll-staging-generation-7-credentials/v1',
+    sources: await Promise.all(generation7SuccessorSources.map(pin)),
+    target: 'qdmvngjwkcsilzmqksme', generation: 7, windowId: '753c2188-ae64-4f40-90ab-1ec26f8569d3',
+    predecessor: { generation: 6, windowId: '83888906-23fa-4653-a886-fe2733ed76a0', expiresAt: '2026-09-20T19:50:41.000Z', journalState: 'RECONCILIATION_REQUIRED', recoveryVerified: true },
+    maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
+    status: 'LOCAL_DISABLED_SUCCESSOR_REVIEW_REQUIRED',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
