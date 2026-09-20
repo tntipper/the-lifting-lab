@@ -444,7 +444,7 @@
       },
       {
         "path": "scripts/staging-generation-6-transport.mjs",
-        "sha256": "23292f0d0eb3739c4d70f33ead23a4fcb35037ac9ac526f980b3ccdde7612671"
+        "sha256": "5a0334d64983646d9012af924e838c6e8978dee35f5e6d664b25452cc18fd330"
       },
       {
         "path": "scripts/staging-generation-6-provider-transport.mjs",
@@ -452,11 +452,11 @@
       },
       {
         "path": "scripts/staging-generation-6-database-transport.mjs",
-        "sha256": "3263a986de1fb52e694dee7533fae03ab353d643448628a8d828ab020ea4c846"
+        "sha256": "19b842c166af4582879af2f5348e9939062433f07a37b606834db503a521b86d"
       },
       {
         "path": "scripts/staging-generation-6-keychain.py",
-        "sha256": "b2d7274fb54131479f3079a1a63a4ebad95a25dc8a60277677611bf57bdffb48"
+        "sha256": "f9b4f12a78bb517729351305fafdeb80aa3b4a38eee454a885d43d8fc7b7d6f8"
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
@@ -472,7 +472,7 @@
       },
       {
         "path": "tests/staging-generation-6-transport.test.mjs",
-        "sha256": "c66d88cf83fe90f7f5ac7d74c6ade36c2623f29ffd47747d4ca0008fcb2491c3"
+        "sha256": "3ba7b4f39ba5871c1988eac11eb06f3bc60ced99ca9a9176c3bd6b0d9508e6a6"
       },
       {
         "path": "tests/staging-generation-6-provider-transport.test.mjs",
@@ -480,7 +480,7 @@
       },
       {
         "path": "tests/staging-generation-6-database-transport.test.mjs",
-        "sha256": "e072a74f2cf1c062b9d025ac4a3380e90324d10ae767e1e6da90b3cd2b376a74"
+        "sha256": "91e8b1b419a87ba4ba8c5b59ec70a6f5f5d59691341358f0fa9e548dfc5aff15"
       },
       {
         "path": "tests/staging-generation-6-connection-verifier.test.mjs",
@@ -498,7 +498,7 @@
     "maximumWindowMinutes": 60,
     "secretBearingSqlMustRemainInMemory": true,
     "exclusiveNonsecretJournal": true,
-    "nativeTransportEnabled": true
+    "nativeTransportEnabled": false
   },
   "gates": [
     "verify_exact_target_and_production_exclusion",
