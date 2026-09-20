@@ -1,6 +1,6 @@
 // Server-only, unmounted adapter. Never install with a browser/service-role client.
-import type { CustomerConnectionRepository, ConnectAttempt, AttemptClaim, RefreshClaim, Owner, SubjectBinding, VaultTokens } from './customer-connection'
-import type { EnvelopeVault } from './customer-token-vault'
+import type { CustomerConnectionRepository, ConnectAttempt, AttemptClaim, RefreshClaim, Owner, SubjectBinding, VaultTokens } from './customer-connection.ts'
+import type { EnvelopeVault } from './customer-token-vault.ts'
 
 /** Compatible with a dedicated pg Pool. connect must return an exclusively leased,
  * idle client; release(true) discards uncertain/broken sessions. The adapter owns

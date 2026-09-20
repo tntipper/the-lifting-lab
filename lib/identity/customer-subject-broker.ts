@@ -1,7 +1,8 @@
 // Disabled Node/server protocol core. No routes, provider, HTTP or SQL adapter.
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { Buffer } from 'node:buffer'
-import { STAGING_SHOP_ID, STAGING_ISSUER, STAGING_SUPABASE_ISSUER, type Owner, type SupabaseSessionProof } from './customer-connection'
+// @ts-expect-error Deno Edge requires explicit source extensions; the Next/esbuild bundle resolves them.
+import { STAGING_SHOP_ID, STAGING_ISSUER, STAGING_SUPABASE_ISSUER, type Owner, type SupabaseSessionProof } from './customer-connection.ts'
 
 /** Intended public identifiers only: this does not register or approve a client. */
 export const SUBJECT_BROKER_CLIENT_ID = 'tll-staging-subject-broker-v1'

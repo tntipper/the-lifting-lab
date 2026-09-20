@@ -1,7 +1,7 @@
 // Node/server-only, unmounted durable adapter. No network work at import.
 import { createHash } from 'node:crypto'
-import type { CustomerRepositoryPool } from './customer-connection-repository'
-import type { BrokerRegistrationRecord, CustomerSubjectBrokerRepository, BrokerLocator } from './customer-subject-broker'
+import type { CustomerRepositoryPool } from './customer-connection-repository.ts'
+import type { BrokerRegistrationRecord, CustomerSubjectBrokerRepository, BrokerLocator } from './customer-subject-broker.ts'
 
 type Row = Record<string, unknown>
 type Input<M extends keyof CustomerSubjectBrokerRepository> = Parameters<CustomerSubjectBrokerRepository[M]>[0]

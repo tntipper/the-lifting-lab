@@ -1,10 +1,13 @@
 // Source-only Supabase Edge machine boundary for the subject broker. The public
 // OAuth endpoints authenticate with Confidential Basic / one-use Bearer. They
 // never receive browser cookies, Shopify credentials, proof vault keys or users.
-import { createCustomerSubjectBroker, type BrokerProtocolResponse } from './customer-subject-broker'
+// @ts-expect-error Deno Edge requires explicit source extensions; the Next/esbuild bundle resolves them.
+import { createCustomerSubjectBroker, type BrokerProtocolResponse } from './customer-subject-broker.ts'
 import { Buffer } from 'node:buffer'
-import { createCustomerSubjectBrokerRepository } from './customer-subject-broker-repository'
-import { createStagingPostgresRuntime } from '../server/staging-postgres'
+// @ts-expect-error Deno Edge requires explicit source extensions; the Next/esbuild bundle resolves them.
+import { createCustomerSubjectBrokerRepository } from './customer-subject-broker-repository.ts'
+// @ts-expect-error Deno Edge requires explicit source extensions; the Next/esbuild bundle resolves them.
+import { createStagingPostgresRuntime } from '../server/staging-postgres.ts'
 
 const PROJECT_URL = 'https://qdmvngjwkcsilzmqksme.supabase.co'
 const MAX_BODY = 4096, MAX_HEADERS = 8192

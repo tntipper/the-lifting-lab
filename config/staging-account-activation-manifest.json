@@ -48,7 +48,7 @@
       "supabase/functions"
     ],
     "fileCount": 61,
-    "sha256": "cbc4720618d77e4566e6ffa98c4e73933aefef81e33c2c1b5ffeae0dc3d12229"
+    "sha256": "85aa785af21d788039bf71c7d90c7c4298564cae3eb7f613fb47313ed1d216c1"
   },
   "migrations": [
     {
@@ -104,15 +104,15 @@
       },
       {
         "path": "lib/identity/customer-subject-broker-edge.ts",
-        "sha256": "babc2af8d57a60e2f65772c2c00e8883aadba23c0c62c2bc5184442c8addfa93"
+        "sha256": "2d75f51c9d22d2c66d17bacadeb814a115767a5401fe3614182e5831657a5a44"
       },
       {
         "path": "lib/identity/customer-subject-broker.ts",
-        "sha256": "050a3bee769cc1c5bb3d81291dc18cdba44f8dbb0c769de6c59eb7d1fede7ba7"
+        "sha256": "29eed79286a122bc628dc0a757dc00e0b1dfa1e1f41b267b6405274b681b4c26"
       },
       {
         "path": "lib/identity/customer-subject-broker-repository.ts",
-        "sha256": "94e3c8241eddd2adc8fc3ca66b841250978e1f5861bbff6019d4781e82f41fb6"
+        "sha256": "119c2c26e1cd13ad1288b20811172d4317cc14ffc2a061c1978fae4387d358e8"
       },
       {
         "path": "lib/server/staging-postgres.ts",
