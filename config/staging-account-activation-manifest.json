@@ -286,7 +286,7 @@
     "sources": [
       {
         "path": "scripts/staging-readonly-preflight.mjs",
-        "sha256": "e2e7c1e2cb0cbeba198baf9010bf8e5fa96d7ebb1ec3f9749af8c03f22d52756"
+        "sha256": "10dbc0760f89104d9094d1da23fbd076eea79982222e62f788bcb21d3fef1460"
       },
       {
         "path": "scripts/staging-readonly-preflight-keychain.py",
@@ -298,11 +298,11 @@
       },
       {
         "path": "config/staging-readonly-preflight-manifest.json",
-        "sha256": "b4b2cfb17f754390100ba7945ecfe1acd0cc55d0dd742a78d01eea7009e2a23d"
+        "sha256": "22c3e7d75b357897d0526271c9eccc640e59a9fe88d98bca0fbc0dac22c0c46d"
       },
       {
         "path": "tests/staging-readonly-preflight-actual.mjs",
-        "sha256": "03966c8e97ecbde1989ca2a5641125e106ad28f1e17bb37bc8f15d982a2659c3"
+        "sha256": "cc7d75f3fc67d34447ea1c9d8a4d3fa5a5d10f3d6b552460466b0576316ffd34"
       }
     ],
     "queryId": "tll-staging-readonly-preflight/v1",
