@@ -21,12 +21,12 @@ function runBounded(executable,args,input,inputFd) {
   if (!Array.isArray(args) || args.some(value => typeof value !== 'string') || !Buffer.isBuffer(input) || ![0,3].includes(inputFd)) unavailable()
   return new Promise((resolve, reject) => {
     const stdio = ['ignore','pipe','pipe',inputFd === 3 ? 'pipe' : 'ignore']; if (inputFd === 0) stdio[0] = 'pipe'
-    const child = spawn(executable, args, { stdio, env: safeEnvironment() }); const chunks=[]; let size=0, done=false
-    const finish=(error,value)=>{if(done)return;done=true;clearTimeout(timer);for(const chunk of chunks)chunk.fill(0);if(error)reject(error);else resolve(value)}
+    const child = spawn(executable, args, { stdio, env: safeEnvironment() }); const outputChunks=[],errorChunks=[]; let size=0, done=false
+    const finish=(error,value)=>{if(done)return;done=true;clearTimeout(timer);for(const chunk of [...outputChunks,...errorChunks])chunk.fill(0);if(error)reject(error);else resolve(value)}
     const fail=()=>{try{child.kill('SIGKILL')}catch{};finish(new Error('Generation-6 provider transport unavailable'))}
     const timer=setTimeout(fail,30_000);child.on('error',fail)
-    for(const stream of [child.stdout,child.stderr]) { stream.on('error',fail);stream.on('data',chunk=>{size+=chunk.length;if(size>MAX_OUTPUT){chunk.fill(0);fail()}else chunks.push(chunk)}) }
-    child.on('close',code=>{if(code!==0)return fail();const output=Buffer.concat(chunks);try{finish(null,output.toString('utf8'))}finally{output.fill(0)}})
+    for(const [stream,chunks] of [[child.stdout,outputChunks],[child.stderr,errorChunks]]) { stream.on('error',fail);stream.on('data',chunk=>{size+=chunk.length;if(size>MAX_OUTPUT){chunk.fill(0);fail()}else chunks.push(chunk)}) }
+    child.on('close',code=>{if(code!==0)return fail();const output=Buffer.concat(outputChunks);try{finish(null,output.toString('utf8'))}finally{output.fill(0)}})
     const destination=inputFd===3?child.stdio[3]:child.stdin;destination.on('error',fail);destination.end(input)
   })
 }
