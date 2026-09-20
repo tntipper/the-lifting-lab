@@ -14,9 +14,11 @@
   "failedOrUncertainWindowReplayPermitted": false,
   "currentHold": {
     "scope": "staging-runtime-credential-window",
-    "reason": "generation-11-interrupted-recovered-intent-locked-disarmed-no-replay",
+    "reason": "generation-12-disabled-successor-prepared-gen11-intent-locked-no-replay-awaiting-arming-review",
     "generation10ReplayPermitted": false,
+    "generation11ReplayPermitted": false,
     "generation11Armed": false,
+    "generation12Armed": false,
     "nextGenerationPermittedBeforeBoundaryReview": false
   }
 }
