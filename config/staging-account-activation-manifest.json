@@ -435,6 +435,35 @@
       "activation_interrupted"
     ]
   },
+  "generation6Credentials": {
+    "packageId": "tll-staging-generation-6-credentials/v1",
+    "sources": [
+      {
+        "path": "scripts/staging-generation-6-credentials.mjs",
+        "sha256": "4cd1706e04b9e8b4d7603615c07af9d67d98d5b1548bab8ddd0f8f40c3f55a9b"
+      },
+      {
+        "path": "tests/staging-generation-6-credentials.test.mjs",
+        "sha256": "bb0e376967ca5296bb6d94c85e2c26e3f599627b070b8ac8326e123f931d1ca5"
+      },
+      {
+        "path": "tests/staging-generation-6-credentials-actual.mjs",
+        "sha256": "7475fcc7fea4764d728f4327a033b2ef3824e4813d03e0d418e5cd31185f6102"
+      }
+    ],
+    "target": "qdmvngjwkcsilzmqksme",
+    "generation": 6,
+    "windowId": "83888906-23fa-4653-a886-fe2733ed76a0",
+    "predecessor": {
+      "generation": 5,
+      "windowId": "e8aeb142-d2f8-4a58-b0a5-8931d90a6952",
+      "expiresAt": "2026-09-18T14:24:02.000Z"
+    },
+    "maximumWindowMinutes": 60,
+    "secretBearingSqlMustRemainInMemory": true,
+    "exclusiveNonsecretJournal": true,
+    "nativeTransportEnabled": false
+  },
   "gates": [
     "verify_exact_target_and_production_exclusion",
     "run_one_pinned_authenticated_read_only_preflight",

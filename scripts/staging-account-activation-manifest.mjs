@@ -42,6 +42,11 @@ const recoverySources = [
   'config/staging-account-activation-recovery-postcommit.sql',
   'docs/identity/staging-generation-6-activation.md',
 ]
+const generation6CredentialSources = [
+  'scripts/staging-generation-6-credentials.mjs',
+  'tests/staging-generation-6-credentials.test.mjs',
+  'tests/staging-generation-6-credentials-actual.mjs',
+]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
   'scripts/staging-readonly-preflight-keychain.py',
@@ -166,6 +171,14 @@ const manifest = {
     maximumCredentialWindowMinutes: 60,
     activationPhases: ['deploy_edge_disabled','stage_secrets_flags_disabled','install_generation_6_once','verify_restricted_connections','verify_provider_readback','deploy_immutable_preview_disabled','enable_database_controls','enable_edge_then_server_then_public','run_one_no-purchase_journey','retire_generation_6'],
     recoveryTriggers: ['uncertain_database_acknowledgement','partial_credentials_or_mixed_markers','unexpected_membership_or_acl','cross_role_denial_failure','control_state_mismatch','provider_readback_mismatch','immutable_deployment_mismatch','premature_route_availability','runtime_session_not_closed','window_expired','activation_interrupted'],
+  },
+  generation6Credentials: {
+    packageId: 'tll-staging-generation-6-credentials/v1',
+    sources: await Promise.all(generation6CredentialSources.map(pin)),
+    target: 'qdmvngjwkcsilzmqksme', generation: 6, windowId: '83888906-23fa-4653-a886-fe2733ed76a0',
+    predecessor: { generation: 5, windowId: 'e8aeb142-d2f8-4a58-b0a5-8931d90a6952', expiresAt: '2026-09-18T14:24:02.000Z' },
+    maximumWindowMinutes: 60, secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true,
+    nativeTransportEnabled: false,
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
