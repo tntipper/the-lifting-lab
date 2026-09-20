@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs'
 import { admin, assertFixture } from './local-pg.mjs'
 
 // Actual PostgreSQL 17 proof. The synthetic operator is deliberately a
-// non-superuser without BYPASSRLS or direct private-table grants. It receives
-// only the same ADMIN-only role edges used by managed staging.
+// non-superuser with the managed staging BYPASSRLS attribute but no direct
+// private-table grants. It receives only the same ADMIN-only role edges used
+// by managed staging.
 assertFixture()
 const aliases = {
   tll_customer_owner: 'tll_ao1_customer_owner', tll_cart_owner: 'tll_ao1_cart_owner', tll_broker_owner: 'tll_ao1_broker_owner',
@@ -29,7 +30,7 @@ function managed(sql) {
 }
 let installed = false
 try {
-  admin(`CREATE ROLE ${OPERATOR} NOLOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS CREATEROLE;
+  admin(`CREATE ROLE ${OPERATOR} NOLOGIN NOINHERIT NOSUPERUSER BYPASSRLS CREATEROLE;
     GRANT pg_read_all_stats TO ${OPERATOR};
     CREATE ROLE tll_ao1_cart_gateway NOLOGIN NOINHERIT;
     CREATE ROLE tll_ao1_cart_owner NOLOGIN NOINHERIT;

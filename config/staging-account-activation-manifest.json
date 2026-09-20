@@ -360,11 +360,11 @@
     "sources": [
       {
         "path": "scripts/staging-account-activation-recovery.mjs",
-        "sha256": "62039b42ac909009abba2b1d8a0533fbd3b81e856f2201b9cb4c35f15c840b88"
+        "sha256": "eb8c0e8fc4a1195f84d56c8b24d3b393f292787fbab0e37733bb95c0eef1fa74"
       },
       {
         "path": "config/staging-account-activation-recovery.sql",
-        "sha256": "03fb9b6754d5118cb57c119ae569e91789de1786ecc92a6327fa8bdf5e3c3da7"
+        "sha256": "69b6cae3da32c62512008e14c3fb6c68746e9ee533a1dedcaa690ff349fea87c"
       },
       {
         "path": "config/staging-account-activation-recovery-postcommit.sql",

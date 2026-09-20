@@ -23,7 +23,7 @@ DECLARE r text; operator_name name:=session_user;
 BEGIN
   IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres'
     OR current_user<>session_user OR current_setting('server_version_num')::int<170000
-    OR (SELECT rolsuper OR rolbypassrls OR NOT rolcreaterole FROM pg_roles WHERE rolname=operator_name) THEN
+    OR (SELECT rolsuper OR NOT rolcreaterole FROM pg_roles WHERE rolname=operator_name) THEN
     RAISE EXCEPTION 'Recovery requires exact managed non-superuser staging postgres operator session';
   END IF;
   IF to_regclass('tll_staging_private.environment') IS NULL

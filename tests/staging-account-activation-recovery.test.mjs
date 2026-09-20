@@ -14,6 +14,7 @@ test('post-016 recovery artifact is deterministic, secret-free and retirement-on
   assert.match(sql, /current_database\(\)<>'postgres'/)
   assert.match(sql, /current_user<>'postgres'/)
   assert.match(sql, /session_user<>'postgres'/)
+  assert.doesNotMatch(sql, /rolbypassrls/)
   assert.match(sql, /tll-hosted-staging-v1/)
   assert.match(sql, /2026-09-15-v2/)
   assert.match(sql, /tll-runtime-window\/v1/)
