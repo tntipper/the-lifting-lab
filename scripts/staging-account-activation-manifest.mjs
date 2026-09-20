@@ -44,8 +44,17 @@ const recoverySources = [
 ]
 const generation6CredentialSources = [
   'scripts/staging-generation-6-credentials.mjs',
+  'scripts/staging-generation-6-transport.mjs',
+  'scripts/staging-generation-6-provider-transport.mjs',
+  'scripts/staging-generation-6-database-transport.mjs',
+  'scripts/staging-generation-6-keychain.py',
+  'scripts/staging-generation-6-connection-verifier.mjs',
   'tests/staging-generation-6-credentials.test.mjs',
   'tests/staging-generation-6-credentials-actual.mjs',
+  'tests/staging-generation-6-transport.test.mjs',
+  'tests/staging-generation-6-provider-transport.test.mjs',
+  'tests/staging-generation-6-database-transport.test.mjs',
+  'tests/staging-generation-6-connection-verifier.test.mjs',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',

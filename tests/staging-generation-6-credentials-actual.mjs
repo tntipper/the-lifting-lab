@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { admin, assertFixture } from './account-operations/local-pg.mjs'
 import { buildGeneration6CredentialSql, IDENTITIES, PREDECESSOR, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-6-credentials.mjs'
+import { deriveScramVerifier } from '../scripts/staging-generation-6-transport.mjs'
 
 // Actual PostgreSQL 17 syntax/authority proof in the existing isolated fixture.
 // Every created object is uniquely prefixed and removed in finally.
@@ -16,8 +17,8 @@ const predecessor = `tll-runtime-window/v1:${JSON.stringify({ projectRef: PROJEC
   windowId: PREDECESSOR.windowId, expiresAt: PREDECESSOR.expiresAt, state: 'retired' })}`
 const expiry = new Date(Date.now() + 45 * 60 * 1000); expiry.setMilliseconds(0)
 const expiresAt = expiry.toISOString()
-const verifier = index => `SCRAM-SHA-256$4096:${Buffer.from(`g6-salt-${index}`).toString('base64')}$${Buffer.alloc(32, index + 1).toString('base64')}:${Buffer.alloc(32, index + 9).toString('base64')}`
-const verifiers = Object.fromEntries(Object.keys(IDENTITIES).map((purpose, index) => [purpose, verifier(index)]))
+const passwords = Object.fromEntries(Object.keys(IDENTITIES).map((purpose, index) => [purpose, Buffer.alloc(48,index+1).toString('base64url')]))
+const verifiers = Object.fromEntries(Object.keys(IDENTITIES).map((purpose, index) => [purpose, deriveScramVerifier(passwords[purpose],Buffer.alloc(18,index+9))]))
 const adapt = source => Object.entries(aliases).reduce((text, [from, to]) => text.replace(new RegExp(`(?<![A-Za-z0-9_$])${from}(?![A-Za-z0-9_$])`, 'g'), to), source)
   .replaceAll('tll_staging_private', 'tll_g6_staging_private')
   .replaceAll('tll_cart_private', 'tll_g6_cart_private')
@@ -66,6 +67,10 @@ try {
       AND NOT e.admin_option AND e.inherit_option AND NOT e.set_option`), '5')
   assert.equal(admin(`SELECT count(DISTINCT shobj_description(oid,'pg_authid')) FROM pg_roles WHERE rolname IN (${runtimes.map(q).join(',')})`), '1')
   assert.match(admin(`SELECT shobj_description(oid,'pg_authid') FROM pg_roles WHERE rolname=${q(runtimes[0])}`), /"generation":6/)
+  for (const [index,purpose] of Object.keys(IDENTITIES).entries()) {
+    const login=execFileSync('docker',['exec','-e',`PGPASSWORD=${passwords[purpose]}`,'tll-stage0-postgres','psql','-XqAt','-h','127.0.0.1','-U',runtimes[index],'-d','tll_account_operations_v1','-v','ON_ERROR_STOP=1','-c','SELECT current_user'],{encoding:'utf8'}).trim()
+    assert.equal(login,runtimes[index])
+  }
   console.log('PASS: generation-6 credential transaction rejected wrong predecessor/control state, then installed five exact restricted PostgreSQL 17 identities')
 } finally {
   if (installed) admin(`DROP SCHEMA IF EXISTS tll_g6_staging_private CASCADE; DROP SCHEMA IF EXISTS tll_g6_cart_private CASCADE;
