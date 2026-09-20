@@ -25,9 +25,11 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
     independentReviewRequiredBeforeArming: true,
     ordinaryTestsRequireAllNativeGatesDisabled: true,
     ordinaryTestsMayInvokeNativeLaunchers: false,
+    ordinaryTransportModulesMayDefineLiveLaunchers: false,
     ordinaryTestsMayRewriteGeneratedArtifacts: false,
     armingAndTestExecutionMustBeSeparateProcesses: true,
     liveExecutionRequiresDirectReviewedLauncher: true,
+    liveExecutionRequiresPhaseJournal: true,
     incidentRootCauseRequiredBeforeSuccessor: true,
     preventiveControlVerificationRequiredBeforeSuccessor: true,
     failedOrUncertainWindowReplayPermitted: false,
@@ -45,6 +47,13 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
 
   for (const path of filesBelow(join(projectRoot, 'scripts')).filter(path => /\.(?:mjs|js|ts|py)$/.test(path))) {
     const source = read(path)
+    if (!/-live-launcher\.mjs$/.test(path)
+      && /\b(?:export\s+)?async\s+function\s+runNativeGeneration\d+CredentialWindow\s*\(/.test(source)) {
+      violations.push(`embedded-live-launcher:${display(path)}`)
+    }
+    if (/-live-launcher\.mjs$/.test(path) && !/createStagingWindowPhaseJournal/.test(source)) {
+      violations.push(`live-launcher-missing-phase-journal:${display(path)}`)
+    }
     if (/\bNATIVE(?:_[A-Z0-9]+)*_(?:TRANSPORT_)?ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_TRANSPORT_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_DATABASE_TRANSPORT_ENABLED\s*=\s*true\b/.test(source)

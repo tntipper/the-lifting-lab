@@ -8,9 +8,11 @@ import { assertStagingLiveBoundary, inspectStagingLiveBoundary } from '../script
 const policy = {
   schema: 'tll-project-stage-gate-policy/v1', planningRequiredBeforeExecution: true,
   independentReviewRequiredBeforeArming: true, ordinaryTestsRequireAllNativeGatesDisabled: true,
-  ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTestsMayRewriteGeneratedArtifacts: false,
+  ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
+  ordinaryTestsMayRewriteGeneratedArtifacts: false,
   armingAndTestExecutionMustBeSeparateProcesses: true,
-  liveExecutionRequiresDirectReviewedLauncher: true, incidentRootCauseRequiredBeforeSuccessor: true,
+  liveExecutionRequiresDirectReviewedLauncher: true, liveExecutionRequiresPhaseJournal: true,
+  incidentRootCauseRequiredBeforeSuccessor: true,
   preventiveControlVerificationRequiredBeforeSuccessor: true, failedOrUncertainWindowReplayPermitted: false,
   currentHold: { generation10ReplayPermitted: false, nextGenerationPermittedBeforeBoundaryReview: false },
 }
@@ -38,6 +40,21 @@ test('boundary rejects enabled JavaScript and Keychain gates', () => {
   writeFileSync(join(root, 'scripts/helper.py'), 'APPROVED_NATIVE_READ = True\n')
   assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
     'enabled-keychain-read:scripts/helper.py', 'enabled-native-gate:scripts/example.mjs',
+  ])
+})
+
+test('boundary rejects an embedded native launcher outside a dedicated live-launcher module', () => {
+  const definition = ['export async function runNative', 'Generation11CredentialWindow() {}'].join('')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: fixture({ scriptSource: definition }) }), [
+    'embedded-live-launcher:scripts/example.mjs',
+  ])
+})
+
+test('boundary rejects a dedicated live launcher without the required phase journal', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/generation-11-live-launcher.mjs'), 'export async function launch() {}\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'live-launcher-missing-phase-journal:scripts/generation-11-live-launcher.mjs',
   ])
 })
 

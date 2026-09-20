@@ -44,14 +44,4 @@ export async function executeGeneration8CredentialWindow({ports,journal=createGe
   }finally{eraseProjection(projection);eraseGeneration6Material(material)}
 }
 
-export async function runNativeGeneration8CredentialWindow(){
-  if(!NATIVE_GENERATION_8_TRANSPORT_ENABLED)return Object.freeze({status:'NATIVE_TRANSPORT_DISABLED',target:PROJECT_REF,generation:GENERATION,windowId:WINDOW_ID})
-  const [{stageVercelSecrets,stageSupabaseSecrets,readbackProviderNames,removeVercelSecrets,removeSupabaseSecrets},{readSupabaseTokenFromKeychain,dispatchGeneration8Database,recoverGeneration8Database,verifyGeneration8EntryBaseline,verifyGeneration8ZeroSessions},{verifyGeneration6Connections,connectionFailureReport},{createStagingPostgresRuntime},{readPinnedSupabaseCa}]=await Promise.all([
-    import('./staging-generation-6-provider-transport.mjs'),import('./staging-generation-8-database-transport.mjs'),import('./staging-generation-6-connection-verifier.mjs'),import('../lib/server/staging-postgres.ts'),import('./staging-supabase-ca.mjs')])
-  const token=readSupabaseTokenFromKeychain(),tlsCa=readPinnedSupabaseCa()
-  return executeGeneration8CredentialWindow({ports:{preflightDatabase:()=>verifyGeneration8EntryBaseline({token}),stageVercel:stageVercelSecrets,stageSupabase:stageSupabaseSecrets,readbackNames:readbackProviderNames,
-    dispatchDatabase:sql=>dispatchGeneration8Database(sql,{token}),verifyConnections:async input=>{try{await verifyGeneration6Connections({...input,tlsCa,createRuntime:createStagingPostgresRuntime})}catch(error){const projected=Error('Generation-8 connection verification unavailable');projected.connectionFailure=connectionFailureReport(error);throw projected}await verifyGeneration8ZeroSessions({token})},
-    recoverDatabase:()=>recoverGeneration8Database({token}),removeVercel:removeVercelSecrets,removeSupabase:removeSupabaseSecrets}})
-}
-
 export const GENERATION_8_SOURCE_FINGERPRINT=createHash('sha256').update(`${PACKAGE_ID}|${WINDOW_ID}|${GENERATION}`).digest('hex')

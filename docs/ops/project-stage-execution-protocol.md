@@ -29,12 +29,14 @@ Use this order for every externally effective stage:
 4. Prepare the smallest arming or deployment diff without executing it.
 5. Complete independent review of that exact diff.
 6. Commit the reviewed arming diff.
-7. Invoke the reviewed live launcher directly. Never run the ordinary test suite while an arming gate is enabled.
+7. Invoke the reviewed live launcher directly. Never run the ordinary test suite while an arming gate is enabled. The launcher must update its durable phase journal before each externally effective phase.
 8. Stop after the single allowed attempt, whether it succeeds, fails or becomes uncertain.
 9. Reconcile database and provider state from a separate read-only process.
 10. Disarm, verify the disabled boundary, commit the outcome and update `.agent/HANDOVER.md`.
 
-Live launchers must not be imported or called by ordinary tests. Ordinary tests must also be read-only with respect to generated repository artifacts; generation occurs before the suite and tests use `--check`. Tests use injected ports or static source checks. `scripts/staging-live-boundary-check.mjs` enforces these rules and rejects enabled native or Keychain gates.
+Live launchers must exist only in dedicated `*-live-launcher.mjs` modules and must not be imported or called by ordinary tests. Consumed transport modules expose injected orchestration only. Ordinary tests must also be read-only with respect to generated repository artifacts; generation occurs before the suite and tests use `--check`. Tests use injected ports or static source checks. `scripts/staging-live-boundary-check.mjs` enforces these rules and rejects embedded launchers and enabled native or Keychain gates.
+
+Every live launcher must use `scripts/staging-window-phase-journal.mjs` or a reviewed successor to record a secret-free, mode-0600 phase receipt before work starts and at each phase change. Monitoring uses the receipt's phase deadline. Absence of a child process, socket or new console line does not prove a stall. Do not terminate or reconcile an active window before its recorded phase becomes stale unless there is direct evidence of unsafe external state. Once stale, stop the execution attempt and reconcile from a separate read-only process; do not resume or replay it.
 
 ## Incident learning gate
 

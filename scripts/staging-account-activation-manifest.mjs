@@ -123,10 +123,13 @@ const generation10SuccessorSources = [
 const stageSafetySources = [
   'config/project-stage-gate-policy.json',
   'scripts/staging-live-boundary-check.mjs',
+  'scripts/staging-window-phase-journal.mjs',
   'tests/staging-live-boundary.test.mjs',
+  'tests/staging-window-phase-journal.test.mjs',
   'docs/ops/project-stage-execution-protocol.md',
   'docs/ops/incidents/2026-09-20-generation-10-native-test.md',
   'docs/ops/stage-plans/2026-09-20-activation-safety-boundary.md',
+  'docs/ops/stage-plans/2026-09-20-generation-10-runtime-diagnosis.md',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
@@ -191,7 +194,8 @@ const manifest = {
   stageSafety: {
     sources: await Promise.all(stageSafetySources.map(pin)),
     policy: 'tll-project-stage-gate-policy/v1', ordinaryTestsRequireAllNativeGatesDisabled: true,
-    ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true,
+    ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
+    ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true, liveExecutionRequiresPhaseJournal: true,
     generation10ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
   },
   migrations: await Promise.all(migrations.map(pin)),

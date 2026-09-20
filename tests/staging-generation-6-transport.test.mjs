@@ -99,16 +99,15 @@ for(const phase of ['dispatch','verify']) test(`database failure ${phase} invoke
   assert.ok(f.events.includes('recover'));assert.ok(f.events.includes('RECONCILIATION_REQUIRED'));assert.deepEqual(f.events.slice(-2),['removeVercel','removeSupabase'])
 })
 
-test('failed recovery returns a fixed reconciliation result and native entry remains disabled',async()=>{
+test('failed recovery returns a fixed reconciliation result and consumed transport has no native launcher',async()=>{
   const f=fixture('recover');f.ports.verifyConnections=async()=>{f.events.push('verify');throw Error('secret raw provider failure')}
   deterministicRandom.calls=0;deterministicUuid.calls=0
   const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
   assert.deepEqual(result,{status:'RECOVERY_REQUIRED',phase:'CONNECTION_VERIFICATION',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'NO_RETRY_RECONCILE'})
   assert.equal(NATIVE_TRANSPORT_ENABLED,false)
   const source=readFileSync('scripts/staging-generation-6-transport.mjs','utf8')
-  const gate=source.indexOf("if (!NATIVE_TRANSPORT_ENABLED) return Object.freeze({ status: 'NATIVE_TRANSPORT_DISABLED'")
-  const providerImport=source.indexOf("import('./staging-generation-6-provider-transport.mjs')")
-  assert.ok(gate>=0);assert.ok(providerImport>gate)
+  assert.doesNotMatch(source,/runNativeGeneration6CredentialWindow/)
+  assert.doesNotMatch(source,/staging-generation-6-provider-transport|readSupabaseTokenFromKeychain|createStagingPostgresRuntime/)
 })
 
 test('connection failure result projects only an exact fixed diagnostic',async()=>{

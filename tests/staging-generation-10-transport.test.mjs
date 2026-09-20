@@ -21,19 +21,11 @@ test('generation 10 is disarmed after verified recovery with a fixed nonsecret f
   assert.equal(NATIVE_GENERATION_10_TRANSPORT_ENABLED,false);assert.match(GENERATION_10_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/)
 })
 
-test('generation 10 native entrypoint is statically gated before provider imports',()=>{
+test('generation 10 consumed transport contains no native launcher or credential-bearing imports',()=>{
   assert.equal(NATIVE_GENERATION_10_TRANSPORT_ENABLED,false)
   const source=readFileSync('scripts/staging-generation-10-transport.mjs','utf8')
-  const gate=source.indexOf("if(!NATIVE_GENERATION_10_TRANSPORT_ENABLED)return Object.freeze({status:'NATIVE_TRANSPORT_DISABLED'")
-  const providerImport=source.indexOf("import('./staging-generation-6-provider-transport.mjs')")
-  assert.ok(gate>=0);assert.ok(providerImport>gate)
-})
-
-test('generation 10 verification loads the pinned Supabase CA before creating the staged runtime',()=>{
-  const source=readFileSync('scripts/staging-generation-10-transport.mjs','utf8')
-  assert.match(source,/import\('\.\/staging-supabase-ca\.mjs'\)/)
-  assert.match(source,/const token=readSupabaseTokenFromKeychain\(\),tlsCa=readPinnedSupabaseCa\(\)/)
-  assert.match(source,/verifyGeneration6Connections\(\{\.\.\.input,tlsCa,createRuntime:createStagingPostgresRuntime\}\)/)
+  assert.doesNotMatch(source,/runNativeGeneration10CredentialWindow/)
+  assert.doesNotMatch(source,/staging-generation-6-provider-transport|readSupabaseTokenFromKeychain|createStagingPostgresRuntime|readPinnedSupabaseCa/)
 })
 
 test('generation 10 success stages providers, journals once and verifies before receipt',async()=>{
