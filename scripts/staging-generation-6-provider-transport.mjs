@@ -78,7 +78,7 @@ function validateMap(value, names) {
 const encodeDotenv = values => Buffer.from(Object.entries(values).map(([name,value])=>`${name}=${JSON.stringify(value)}`).join('\n')+'\n')
 const vercelBase = ['--project',VERCEL_PROJECT,'--scope',VERCEL_SCOPE,'--non-interactive','--no-color']
 
-export async function stageSupabaseSecrets(secrets,{run=runSupabasePrivateCli}={}) {
+export async function stageSupabaseSecrets({secrets},{run=runSupabasePrivateCli}={}) {
   validateMap(secrets,GENERATED_SUPABASE_SECRET_NAMES);const input=encodeDotenv(secrets)
   try { await run(['secrets','set','--env-file','/dev/fd/3','--project-ref',PROJECT_REF,'--output','json'],input,3) }
   finally { input.fill(0) }

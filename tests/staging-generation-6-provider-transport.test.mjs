@@ -7,12 +7,13 @@ import { classifyProviderFailure, probeSupabaseSecretTransport, ProviderTranspor
 const secretValues=names=>Object.fromEntries(names.map((name,index)=>[name,`private-value-${index}-$()\`never-execute\``]))
 function runner(outputs=[]) { const calls=[];return {calls,run:async(args,input,fd)=>{calls.push({args:[...args],input:Buffer.from(input).toString('utf8'),fd});return outputs.shift()??''}} }
 
-test('Supabase staging uses an anonymous fd dotenv stream and never argv or environment values',async()=>{
-  const f=runner(),values=secretValues(GENERATED_SUPABASE_SECRET_NAMES);await stageSupabaseSecrets(values,{run:f.run})
+test('Supabase staging accepts the orchestration envelope, uses an anonymous fd dotenv stream and never argv or environment values',async()=>{
+  const f=runner(),values=secretValues(GENERATED_SUPABASE_SECRET_NAMES);await stageSupabaseSecrets({secrets:values},{run:f.run})
   assert.equal(f.calls.length,1);assert.equal(f.calls[0].fd,3);assert.ok(f.calls[0].args.includes('/dev/fd/3'))
   for(const value of Object.values(values))assert.ok(!f.calls[0].args.join(' ').includes(value))
   assert.match(f.calls[0].input,/TLL_STAGING_BROKER_DATABASE_PASSWORD=/);assert.ok(!f.calls[0].args.includes('wrhgscovsgsudtedbljr'))
   assert.deepEqual(f.calls[0].args.slice(0,2),['secrets','set'])
+  await assert.rejects(()=>stageSupabaseSecrets(values,{run:f.run}),/unavailable/)
 })
 
 test('Supabase resolver accepts only an owned non-writable exact-path hash-pinned native binary',()=>{
