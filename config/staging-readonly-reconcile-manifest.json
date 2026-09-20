@@ -3,7 +3,7 @@
   "target": "qdmvngjwkcsilzmqksme",
   "productionExcluded": "wrhgscovsgsudtedbljr",
   "priorAttempt": "UNCERTAIN_POST_DISPATCH",
-  "nativeAccessApproved": true,
+  "nativeAccessApproved": false,
   "query": {
     "id": "tll-staging-readonly-reconcile/v1",
     "sha256": "9c46ac4b710db6a59b8f17c66e2c1f38e9b790dcda3abe0a606887ed81f3841b",
@@ -14,11 +14,11 @@
   "sourcePins": [
     {
       "path": "scripts/staging-readonly-reconcile.mjs",
-      "sha256": "6648b4d409b5646e78e68cd9c20cd666da1584ff18054bdefaab0a285df94334"
+      "sha256": "f0afa9e64c23812a98048310e1fa380e4e321cf82026548afb677a9df3ed1b33"
     },
     {
       "path": "scripts/staging-readonly-reconcile-keychain.py",
-      "sha256": "251f35866231047e45f9d9068bcf66fe1c455eba93716faa2b6c06bf0529c933"
+      "sha256": "3ace2ccd05f11fd2d61efc175877bc52c10b3909e31e613087929c6f20d198f9"
     }
   ],
   "keychain": {

@@ -7,8 +7,8 @@ import { ENDPOINT, FIXED_QUERY, NATIVE_ACCESS_APPROVED, PRIOR_ATTEMPT, PROJECT_R
 
 const observed = { queryId: QUERY_ID, projectRef: PROJECT_REF, priorAttempt: PRIOR_ATTEMPT, environmentMarker: true, operator: { current:true,session:true,database:true,notSuperuser:true,createrole:true,readAll:true,writeAll:false,maintain:false }, migrations: { totalCount:15,baselinePairCount:10,forbiddenCount:5 }, controls: { customer:true,cart:true,broker:true,provisional:true,bridge:true }, runtime: { roleCount:5,loginCount:0,passwordCount:0,edgeCount:10,retiredOperatorEdgeCount:5,qualifyingDistinctRoleCount:5,sessionCount:0,retiredMarkerCount:5 }, absentObjects: { shopifyProofs:false,finalizations:false,cartTransitions:false,accountGenerations:false,accountLogouts:false } }
 
-test('reconciliation is armed once and remains a single fixed read-only SELECT', () => {
-  assert.equal(NATIVE_ACCESS_APPROVED, true); assert.equal(PROJECT_REF, 'qdmvngjwkcsilzmqksme'); assert.equal(QUERY_ID, 'tll-staging-readonly-reconcile/v1')
+test('reconciliation is disarmed after one observation and remains a single fixed read-only SELECT', () => {
+  assert.equal(NATIVE_ACCESS_APPROVED, false); assert.equal(PROJECT_REF, 'qdmvngjwkcsilzmqksme'); assert.equal(QUERY_ID, 'tll-staging-readonly-reconcile/v1')
   assert.deepEqual(ENDPOINT, { hostname:'api.supabase.com',path:'/v1/projects/qdmvngjwkcsilzmqksme/database/query',method:'POST' })
   assert.equal((FIXED_QUERY.match(/;/g) ?? []).length, 1); assert.match(FIXED_QUERY, /^SELECT /); assert.match(FIXED_QUERY, /priorAttempt/)
   assert.doesNotMatch(FIXED_QUERY, /\b(?:BEGIN|COMMIT|DO|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|GRANT|REVOKE|SECURITY DEFINER)\b/i)
@@ -22,14 +22,15 @@ test('valid result returns differences rather than rejecting a changed baseline'
   const changed = structuredClone(observed); changed.migrations.totalCount = 10; changed.absentObjects.shopifyProofs = true
   const changedResult = validateResult([{ tll_staging_readonly_reconcile: changed }])
   assert.equal(changedResult.status, 'PASS'); assert.deepEqual(changedResult.differences.sort(), ['absentObjects','migrations'])
+  const reordered = structuredClone(observed); reordered.controls = { cart:true,bridge:true,broker:true,customer:true,provisional:true }
+  assert.deepEqual(validateResult([{tll_staging_readonly_reconcile:reordered}]).differences,[])
   assert.throws(() => validateResult([{ tll_staging_readonly_reconcile: { ...observed, runtime: { ...observed.runtime, roleCount: -1 } } }]))
 })
 
-test('injected armed path claims once and performs one post', async () => {
+test('disabled path reads neither Keychain nor network', async () => {
   let reads=0, posts=0
-  const directory=mkdtempSync(join(tmpdir(),'tll-reconcile-armed-')); const path=join(directory,'claim.json')
-  try { const result = await runReconciliationOnce({ readToken:()=>{reads++;return 'x'},post:async()=>{posts++;return validateResult([{tll_staging_readonly_reconcile:observed}])},journal:createObservationJournal({path,makeRunId:()=> 'run-armed'}),now:()=>1 })
-    assert.equal(result.status,'PASS'); assert.equal(reads,1); assert.equal(posts,1) } finally { rmSync(directory,{recursive:true,force:true}) }
+  const result = await runReconciliationOnce({ readToken:()=>{reads++;return 'x'},post:async()=>{posts++},now:()=>1 })
+  assert.deepEqual(result,{status:'NATIVE_ACCESS_DISABLED',target:PROJECT_REF,queryId:QUERY_ID}); assert.equal(reads,0); assert.equal(posts,0)
 })
 
 test('post-dispatch output exposes only the coarse diagnostic envelope', async () => {
@@ -44,7 +45,7 @@ test('exclusive observation claim blocks another process and stores no raw respo
   try { const a=createObservationJournal({path,makeRunId:()=> 'run-0001'}); const intent=a.claim('2026-09-18T00:00:00.000Z'); assert.throws(()=>createObservationJournal({path,makeRunId:()=> 'run-0002'}).claim('2026-09-18T00:00:00.000Z')); a.finish(intent,'PASS_OBSERVED',{observationHash:'a'.repeat(64),differenceKeys:[]}); const saved=readFileSync(path,'utf8'); assert.match(saved,/PASS_OBSERVED/); assert.doesNotMatch(saved,/Authorization|Bearer|SELECT|token/i) } finally { rmSync(directory,{recursive:true,force:true}) }
 })
 
-test('manifest pins the armed one-shot sources and fixed query', () => {
+test('manifest pins the disarmed sources and fixed query', () => {
   const manifest=JSON.parse(readFileSync('config/staging-readonly-reconcile-manifest.json','utf8'))
-  assert.equal(manifest.nativeAccessApproved,true); assert.equal(manifest.query.id,QUERY_ID); assert.equal(manifest.query.statementCount,1); assert.equal(manifest.transport.maxRequests,1); assert.equal(manifest.transport.maxResponseBytes,16384)
+  assert.equal(manifest.nativeAccessApproved,false); assert.equal(manifest.query.id,QUERY_ID); assert.equal(manifest.query.statementCount,1); assert.equal(manifest.transport.maxRequests,1); assert.equal(manifest.transport.maxResponseBytes,16384)
 })

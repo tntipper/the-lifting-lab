@@ -5,12 +5,13 @@
  */
 import https from 'node:https'
 import { createHash, randomUUID } from 'node:crypto'
+import { isDeepStrictEqual } from 'node:util'
 import * as fs from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 
-export const NATIVE_ACCESS_APPROVED = true
+export const NATIVE_ACCESS_APPROVED = false
 export const PROJECT_REF = 'qdmvngjwkcsilzmqksme'
 export const PRODUCTION_PROJECT_REF = 'wrhgscovsgsudtedbljr'
 export const QUERY_ID = 'tll-staging-readonly-reconcile/v1'
@@ -71,7 +72,7 @@ export function validateResult (rows) {
   if (!o || typeof o !== 'object' || Array.isArray(o) || o.queryId !== QUERY_ID || o.projectRef !== PROJECT_REF || o.priorAttempt !== PRIOR_ATTEMPT || typeof o.environmentMarker !== 'boolean' || !isBooleanMap(o.operator, operatorKeys) || !isBooleanMap(o.controls, CONTROLS.map(([key]) => key)) || !isBooleanMap(o.absentObjects, ABSENT.map(([key]) => key)) || !o.migrations || !['totalCount','baselinePairCount','forbiddenCount'].every(key => isCount(o.migrations[key])) || !o.runtime || !runtimeKeys.every(key => isCount(o.runtime[key]))) unavailable()
   const expected = { environmentMarker: true, migrations: { totalCount: 15, baselinePairCount: 10, forbiddenCount: 5 }, controls: Object.fromEntries(CONTROLS.map(([key]) => [key, true])), runtime: { roleCount: 5, loginCount: 0, passwordCount: 0, edgeCount: 10, retiredOperatorEdgeCount: 5, qualifyingDistinctRoleCount: 5, sessionCount: 0, retiredMarkerCount: 5 }, absentObjects: Object.fromEntries(ABSENT.map(([key]) => [key, false])) }
   const observed = { environmentMarker: o.environmentMarker, migrations: o.migrations, controls: o.controls, runtime: o.runtime, absentObjects: o.absentObjects, operator: o.operator }
-  const differences = Object.keys(expected).filter(key => JSON.stringify(observed[key]) !== JSON.stringify(expected[key]))
+  const differences = Object.keys(expected).filter(key => !isDeepStrictEqual(observed[key], expected[key]))
   return Object.freeze({ status: 'PASS', target: PROJECT_REF, queryId: QUERY_ID, priorAttempt: PRIOR_ATTEMPT, observed, differences, observationHash: sha256(JSON.stringify(observed)) })
 }
 

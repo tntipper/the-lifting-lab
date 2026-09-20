@@ -5,7 +5,7 @@ import os
 import re
 import sys
 
-APPROVED_NATIVE_READ = True
+APPROVED_NATIVE_READ = False
 SERVICE = "Supabase CLI"
 ACCOUNT = "supabase"
 
