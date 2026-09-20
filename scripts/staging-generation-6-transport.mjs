@@ -7,7 +7,7 @@
 import { createHash, createHmac, pbkdf2Sync, randomBytes as systemRandomBytes, randomUUID as systemRandomUUID } from 'node:crypto'
 import { buildGeneration6CredentialSql, createGeneration6DispatchJournal, GENERATION, IDENTITIES, MAX_WINDOW_MS, PACKAGE_ID, PROJECT_REF, WINDOW_ID } from './staging-generation-6-credentials.mjs'
 
-export const NATIVE_TRANSPORT_ENABLED = true
+export const NATIVE_TRANSPORT_ENABLED = false
 export const SHOPIFY_CREDENTIAL_DEPENDENCIES = Object.freeze([
   'TLL_STAGING_CART_STOREFRONT_TOKEN',
   'TLL_STAGING_SHOPIFY_CUSTOMER_CLIENT_SECRET',
