@@ -444,7 +444,7 @@
       },
       {
         "path": "scripts/staging-generation-6-transport.mjs",
-        "sha256": "b395a0bab5550ffa129b61f375e245cb58ba4b872b7d22da501bae6dc7a51f00"
+        "sha256": "59f42c1975595528554a9c261cf6c1eff24f7fd7149426de504407a2d50ebb09"
       },
       {
         "path": "scripts/staging-generation-6-provider-transport.mjs",
@@ -460,7 +460,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "69bfa40b73c1a2391ba6e08b480b1e4a54933e16cc95b457f43051627d0137de"
+        "sha256": "370a7d2a9a8736b8efa7074fc1e53363a2c43a3d4feb16a1f028008069061efa"
       },
       {
         "path": "tests/staging-generation-6-credentials.test.mjs",
@@ -472,7 +472,7 @@
       },
       {
         "path": "tests/staging-generation-6-transport.test.mjs",
-        "sha256": "286b587a5a10832d9eb5c1c7eb954d42d846d3c5e35b9e0cc494585a62295463"
+        "sha256": "4d55f4d44462cfd6dd3738d028f85b8ef657457d6f3c815847c5f4c0e9670a46"
       },
       {
         "path": "tests/staging-generation-6-provider-transport.test.mjs",
@@ -484,7 +484,7 @@
       },
       {
         "path": "tests/staging-generation-6-connection-verifier.test.mjs",
-        "sha256": "4445cd792ee1b068f4c01fc530b6858867c2406b23c228c367bec294848fb968"
+        "sha256": "4a7e60139d1b5ed37e0121d31b5b0c2ebf27a03005f4db8818172443b89908e8"
       }
     ],
     "target": "qdmvngjwkcsilzmqksme",

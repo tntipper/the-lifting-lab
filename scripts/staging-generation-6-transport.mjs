@@ -32,9 +32,12 @@ export const STAGED_VERCEL_NAMES = Object.freeze([...GENERATED_VERCEL_SECRET_NAM
 const purposes = Object.keys(IDENTITIES)
 const providerFailurePhases = new Set(['VERCEL_STAGE','SUPABASE_STAGE','PROVIDER_READBACK'])
 const providerFailureCodes = new Set(['AUTH','TRANSIENT','VALIDATION','API','CLI_EXIT','TIMEOUT','SPAWN','STREAM','OUTPUT_LIMIT','INPUT_STREAM','READBACK','CLEANUP','PROBE','PROVIDER_VALIDATION'])
+const connectionFailureChecks = new Set(['input','factory','connect','connect_wait','factory_retry','connect_retry','identity','membership','matrix','own_probe','table_denial','release','close'])
 const unavailable = () => { throw new Error('Generation-6 transport unavailable') }
 const exactKeys = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
+const projectConnectionFailure = value => exactKeys(value,['status','reason','purpose','check'])&&value.status==='FAIL'&&value.reason==='connection_verification_failed'
+  &&purposes.includes(value.purpose)&&connectionFailureChecks.has(value.check)?Object.freeze({status:value.status,reason:value.reason,purpose:value.purpose,check:value.check}):undefined
 const encode = buffer => buffer.toString('base64url')
 const hex = buffer => buffer.toString('hex')
 
@@ -155,6 +158,7 @@ export async function executeGeneration6CredentialWindow({ ports, journal = crea
       windowId: WINDOW_ID, expiresAt, receipt, missingProviderCredentials: SHOPIFY_CREDENTIAL_DEPENDENCIES })
   } catch (error) {
     const failureClassification=providerFailurePhases.has(phase)&&providerFailureCodes.has(error?.code)?error.code:undefined
+    const connectionFailure=phase==='CONNECTION_VERIFICATION'?projectConnectionFailure(error?.connectionFailure):undefined
     let recovery = 'NOT_REQUIRED'
     if (dispatchAttempted) {
       try { await ports.recoverDatabase(); recovery = 'RECOVERY_VERIFIED' } catch { recovery = 'RECOVERY_REQUIRED' }
@@ -166,6 +170,7 @@ export async function executeGeneration6CredentialWindow({ ports, journal = crea
     }
     return Object.freeze({ status: dispatchAttempted ? recovery : preflightPassed ? 'STOPPED_BEFORE_DATABASE' : 'ENTRY_BASELINE_FAILED', phase, target: PROJECT_REF,
       generation: GENERATION, windowId: WINDOW_ID, ...(failureClassification?{failureClassification}:{}),
+      ...(connectionFailure?{connectionFailure}:{}),
       nextAction: dispatchAttempted ? 'NO_RETRY_RECONCILE' : preflightPassed ? 'REVIEW_PROVIDER_STAGING' : 'REVIEW_ENTRY_BASELINE' })
   } finally { eraseProjection(projection); eraseGeneration6Material(material) }
 }
@@ -174,7 +179,7 @@ export async function runNativeGeneration6CredentialWindow() {
   if (!NATIVE_TRANSPORT_ENABLED) return Object.freeze({ status: 'NATIVE_TRANSPORT_DISABLED', target: PROJECT_REF, generation: GENERATION, windowId: WINDOW_ID })
   const [{ stageVercelSecrets,stageSupabaseSecrets,readbackProviderNames,removeVercelSecrets,removeSupabaseSecrets },
     { readSupabaseTokenFromKeychain,dispatchGeneration6Database,recoverGeneration6Database,verifyGeneration6EntryBaseline,verifyGeneration6ZeroSessions },
-    { verifyGeneration6Connections },{ createStagingPostgresRuntime }]=await Promise.all([
+    { verifyGeneration6Connections,connectionFailureReport },{ createStagingPostgresRuntime }]=await Promise.all([
       import('./staging-generation-6-provider-transport.mjs'),import('./staging-generation-6-database-transport.mjs'),
       import('./staging-generation-6-connection-verifier.mjs'),import('../lib/server/staging-postgres.ts')])
   const token=readSupabaseTokenFromKeychain()
@@ -182,7 +187,7 @@ export async function runNativeGeneration6CredentialWindow() {
     preflightDatabase:()=>verifyGeneration6EntryBaseline({token}),
     stageVercel:stageVercelSecrets,stageSupabase:stageSupabaseSecrets,readbackNames:readbackProviderNames,
     dispatchDatabase:sql=>dispatchGeneration6Database(sql,{token}),
-    verifyConnections:async input=>{await verifyGeneration6Connections({...input,createRuntime:createStagingPostgresRuntime});await verifyGeneration6ZeroSessions({token})},
+    verifyConnections:async input=>{try{await verifyGeneration6Connections({...input,createRuntime:createStagingPostgresRuntime})}catch(error){const projected=Error('Generation-6 connection verification unavailable');projected.connectionFailure=connectionFailureReport(error);throw projected}await verifyGeneration6ZeroSessions({token})},
     recoverDatabase:()=>recoverGeneration6Database({token}),removeVercel:removeVercelSecrets,removeSupabase:removeSupabaseSecrets,
   }})
 }

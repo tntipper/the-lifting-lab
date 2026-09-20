@@ -105,3 +105,14 @@ test('failed recovery returns a fixed reconciliation result and native entry rem
   assert.deepEqual(result,{status:'RECOVERY_REQUIRED',phase:'CONNECTION_VERIFICATION',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'NO_RETRY_RECONCILE'})
   assert.equal(NATIVE_TRANSPORT_ENABLED,false);assert.equal((await runNativeGeneration6CredentialWindow()).status,'NATIVE_TRANSPORT_DISABLED')
 })
+
+test('connection failure result projects only an exact fixed diagnostic',async()=>{
+  const f=fixture();f.ports.verifyConnections=async()=>{f.events.push('verify');const error=Error('PRIVATE_PASSWORD');error.connectionFailure={status:'FAIL',reason:'connection_verification_failed',purpose:'customer',check:'connect_retry'};throw error}
+  deterministicRandom.calls=0;deterministicUuid.calls=0
+  const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
+  assert.deepEqual(result.connectionFailure,{status:'FAIL',reason:'connection_verification_failed',purpose:'customer',check:'connect_retry'});assert.doesNotMatch(JSON.stringify(result),/PRIVATE|PASSWORD/)
+  const g=fixture();g.ports.verifyConnections=async()=>{g.events.push('verify');const error=Error('private');error.connectionFailure={status:'FAIL',reason:'connection_verification_failed',purpose:'PRIVATE',check:'connect_retry'};throw error}
+  deterministicRandom.calls=0;deterministicUuid.calls=0
+  const rejected=await executeGeneration6CredentialWindow({ports:g.ports,journal:journal(g.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
+  assert.equal('connectionFailure' in rejected,false)
+})

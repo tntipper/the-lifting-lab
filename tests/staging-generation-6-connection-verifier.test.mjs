@@ -1,12 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { ENTRYPOINTS, FUNCTION_MATRIX_QUERY, IDENTITY_QUERY, MEMBERSHIP_QUERY, PRIVATE_TABLE_DENIAL_QUERY, verifyGeneration6Connections } from '../scripts/staging-generation-6-connection-verifier.mjs'
+import { connectionFailureReport, ENTRYPOINTS, FUNCTION_MATRIX_QUERY, IDENTITY_QUERY, MEMBERSHIP_QUERY, POOLER_CONVERGENCE_MS, PRIVATE_TABLE_DENIAL_QUERY, verifyGeneration6Connections } from '../scripts/staging-generation-6-connection-verifier.mjs'
 import { IDENTITIES } from '../scripts/staging-generation-6-credentials.mjs'
 
 const purposes=Object.keys(IDENTITIES),expiresAt='2026-09-20T18:55:00.000Z',passwords=Object.fromEntries(purposes.map(p=>[p,`synthetic-${p}`]))
 function fixture(change={}){const events=[];return {events,createRuntime({purpose,password}){assert.equal(password,passwords[purpose]);let destroyed=false
   return {pool:{async connect(){events.push(`${purpose}:connect`);return {async query(sql){
-    if(sql===IDENTITY_QUERY)return {rows:[{database:'postgres',current_role:IDENTITIES[purpose].login,session_role:IDENTITIES[purpose].login,application_name:`tll-staging-${purpose}`,can_login:true,inherits:false,superuser:false,bypass_rls:false,create_role:false,create_database:false,replication:false,valid_until:expiresAt,...change.identity}]}
+    if(sql===IDENTITY_QUERY)return {rows:[{database:'postgres',current_role:IDENTITIES[purpose].login,session_role:IDENTITIES[purpose].login,application_name:'Supavisor',can_login:true,inherits:false,superuser:false,bypass_rls:false,create_role:false,create_database:false,replication:false,valid_until:expiresAt,...change.identity}]}
     if(sql===MEMBERSHIP_QUERY)return {rows:[{granted:IDENTITIES[purpose].membership,member:IDENTITIES[purpose].login,grantor:'postgres',admin_option:false,inherit_option:true,set_option:false,...change.membership}]}
     if(sql===FUNCTION_MATRIX_QUERY)return {rows:Object.entries(ENTRYPOINTS).flatMap(([owner,list])=>list.map(signature=>({purpose:owner,signature,present:true,allowed:owner===purpose,...change.matrix})))}
     if(sql===PRIVATE_TABLE_DENIAL_QUERY){destroyed=true;throw Error('contained denial')}
@@ -22,3 +22,24 @@ test('five current-schema identities pass exact membership, function matrix, dis
 
 for(const [name,change] of [['identity',{identity:{bypass_rls:true}}],['membership',{membership:{admin_option:true}}],['matrix',{matrix:{allowed:true}}],['own probe',{ownStatus:'ready'}]])
   test(`connection verifier fails closed on ${name}`,async()=>{const f=fixture(change);await assert.rejects(()=>verifyGeneration6Connections({passwords,expiresAt,createRuntime:f.createRuntime}),/unavailable/)})
+
+test('one failed connection waits once and uses one fresh runtime',async()=>{
+  const f=fixture(),waits=[];let attempts=0
+  const createRuntime=input=>{const runtime=f.createRuntime(input);if(input.purpose==='customer'&&attempts++===0){runtime.pool.connect=async()=>{throw Error('private stale credential')};runtime.close=async()=>f.events.push('customer:close')}return runtime}
+  const result=await verifyGeneration6Connections({passwords,expiresAt,createRuntime,pause:async ms=>waits.push(ms)})
+  assert.equal(result.status,'PASS');assert.deepEqual(waits,[POOLER_CONVERGENCE_MS]);assert.deepEqual(f.events.slice(0,3),['customer:close','customer:connect','customer:close'])
+})
+
+test('second connection failure reports only fixed purpose and check',async()=>{
+  const f=fixture(),waits=[]
+  const createRuntime=input=>{const runtime=f.createRuntime(input);if(input.purpose==='customer'){runtime.pool.connect=async()=>{throw Error('PRIVATE_PASSWORD')};runtime.close=async()=>f.events.push('customer:close')}return runtime}
+  try{await verifyGeneration6Connections({passwords,expiresAt,createRuntime,pause:async ms=>waits.push(ms)});assert.fail('must reject')}
+  catch(error){assert.deepEqual(connectionFailureReport(error),{status:'FAIL',reason:'connection_verification_failed',purpose:'customer',check:'connect_retry'});assert.doesNotMatch(JSON.stringify(connectionFailureReport(error)),/PRIVATE|PASSWORD/)}
+  assert.deepEqual(waits,[POOLER_CONVERGENCE_MS])
+})
+
+test('identity drift reports fixed diagnostic and accepts Supavisor backend identity',async()=>{
+  const f=fixture({identity:{application_name:'PRIVATE_CLIENT_VALUE'}})
+  try{await verifyGeneration6Connections({passwords,expiresAt,createRuntime:f.createRuntime});assert.fail('must reject')}
+  catch(error){assert.deepEqual(connectionFailureReport(error),{status:'FAIL',reason:'connection_verification_failed',purpose:'customer',check:'identity'});assert.doesNotMatch(JSON.stringify(connectionFailureReport(error)),/PRIVATE|CLIENT/)}
+})
