@@ -25,7 +25,7 @@ test('database dispatch accepts only the fixed generated package and forwards on
 test('entry baseline requires the exact inert generation 5 hosted state',async()=>{
   let query;const value=await verifyGeneration6EntryBaseline({token,post:async(_token,sql)=>{query=sql;return [{tll_generation_6_entry_baseline:{status:'ENTRY_BASELINE_PASS',projectRef:PROJECT_REF,windowId:WINDOW_ID,runtimeGeneration:5,runtimeInert:true,controlsEnabled:false}}]}})
   assert.equal(value.status,'ENTRY_BASELINE_PASS');assert.match(query,/BEGIN READ ONLY/);assert.match(query,/pg_authid/);assert.match(query,/generation":5/);assert.match(query,/tll_bridge_private\.control/)
-  assert.ok(query.includes("rolvaliduntil IS DISTINCT FROM '2026-09-18T14:24:02.000Z'::timestamptz"))
+  assert.ok(query.includes("rolvaliduntil IS DISTINCT FROM '1970-01-01T00:00:00.000Z'::timestamptz"))
   await assert.rejects(()=>verifyGeneration6EntryBaseline({token,post:async()=>[{tll_generation_6_entry_baseline:{status:'ENTRY_BASELINE_PASS',projectRef:PROJECT_REF,windowId:WINDOW_ID,runtimeGeneration:6,runtimeInert:true,controlsEnabled:false}}]}),/unavailable/)
 })
 

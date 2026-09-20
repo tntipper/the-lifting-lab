@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { buildGeneration6CredentialSql, createGeneration6DispatchJournal, IDENTITIES, PACKAGE_ID, PREDECESSOR, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-6-credentials.mjs'
+import { buildGeneration6CredentialSql, createGeneration6DispatchJournal, IDENTITIES, INERT_VALID_UNTIL, PACKAGE_ID, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-6-credentials.mjs'
 
 const NOW = Date.parse('2026-09-20T18:00:00.000Z')
 const EXPIRES = '2026-09-20T18:59:00.000Z'
@@ -16,7 +16,7 @@ test('generation-6 SQL is one fixed staging transaction with exact identities an
   assert.equal((sql.match(/^ALTER ROLE /gm) ?? []).length, 5); assert.equal((sql.match(/^GRANT /gm) ?? []).length, 5)
   assert.match(sql, new RegExp(PROJECT_REF)); assert.doesNotMatch(sql, /wrhgscovsgsudtedbljr[^']*operator_project_ref=/)
   assert.match(sql, new RegExp(WINDOW_ID)); assert.match(sql, /Generation 6 requires disabled controls/)
-  assert.ok(sql.includes(`rolvaliduntil IS DISTINCT FROM '${PREDECESSOR.expiresAt}'::timestamptz`))
+  assert.ok(sql.includes(`rolvaliduntil IS DISTINCT FROM '${INERT_VALID_UNTIL}'::timestamptz`))
   assert.match(sql, /Generation 6 control changed during install/); assert.match(sql, /runtimeCount',5/)
   for (const [purpose, identity] of Object.entries(IDENTITIES)) {
     assert.match(sql, new RegExp(`GRANT ${identity.membership} TO ${identity.login}`)); assert.ok(sql.includes(values[purpose]))

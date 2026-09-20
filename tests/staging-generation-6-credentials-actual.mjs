@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { admin, assertFixture } from './account-operations/local-pg.mjs'
-import { buildGeneration6CredentialSql, IDENTITIES, PREDECESSOR, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-6-credentials.mjs'
+import { buildGeneration6CredentialSql, IDENTITIES, INERT_VALID_UNTIL, PREDECESSOR, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-6-credentials.mjs'
 import { deriveScramVerifier } from '../scripts/staging-generation-6-transport.mjs'
 
 // Actual PostgreSQL 17 syntax/authority proof in the existing isolated fixture.
@@ -36,7 +36,7 @@ try {
     GRANT SELECT ON pg_authid TO ${OPERATOR};
     GRANT USAGE ON SCHEMA tll_customer_private,tll_broker_private,tll_provisional_private,tll_bridge_private TO ${OPERATOR};
     ${executors.map(role => `CREATE ROLE ${role} NOLOGIN NOINHERIT;`).join('\n')}
-    ${runtimes.map(role => `CREATE ROLE ${role} NOLOGIN NOINHERIT VALID UNTIL ${q(PREDECESSOR.expiresAt)};`).join('\n')}
+    ${runtimes.map(role => `CREATE ROLE ${role} NOLOGIN NOINHERIT VALID UNTIL ${q(INERT_VALID_UNTIL)};`).join('\n')}
     GRANT ${[...executors, ...runtimes].join(',')} TO ${OPERATOR} WITH ADMIN TRUE,INHERIT FALSE,SET FALSE;
     CREATE SCHEMA tll_g6_staging_private;
     CREATE TABLE tll_g6_staging_private.environment(singleton boolean PRIMARY KEY,environment text NOT NULL,operator_project_ref text NOT NULL,
@@ -58,7 +58,7 @@ try {
   assert.throws(() => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${sql}`), /retired predecessor mismatch/)
   admin(`COMMENT ON ROLE ${runtimes[0]} IS ${q(predecessor)}; ALTER ROLE ${runtimes[0]} VALID UNTIL 'infinity';`)
   assert.throws(() => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${sql}`), /retired predecessor mismatch/)
-  admin(`ALTER ROLE ${runtimes[0]} VALID UNTIL ${q(PREDECESSOR.expiresAt)}; UPDATE tll_g6_cart_private.control SET enabled=true;`)
+  admin(`ALTER ROLE ${runtimes[0]} VALID UNTIL ${q(INERT_VALID_UNTIL)}; UPDATE tll_g6_cart_private.control SET enabled=true;`)
   assert.throws(() => managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${sql}`), /requires disabled controls/)
   admin('UPDATE tll_g6_cart_private.control SET enabled=false;')
   const output = managed(`SET SESSION AUTHORIZATION ${OPERATOR}; ${sql}`)
