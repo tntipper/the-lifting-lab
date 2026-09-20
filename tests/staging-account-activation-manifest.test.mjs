@@ -51,7 +51,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.generation6Credentials.maximumWindowMinutes, 60)
   assert.equal(manifest.generation6Credentials.secretBearingSqlMustRemainInMemory, true)
   assert.equal(manifest.generation6Credentials.exclusiveNonsecretJournal, true)
-  assert.equal(manifest.generation6Credentials.nativeTransportEnabled, false)
+  assert.equal(manifest.generation6Credentials.nativeTransportEnabled, true)
   assert.ok(manifest.gates.indexOf('verify_post_016_recovery_package_before_credentials')
     < manifest.gates.indexOf('install_distinct_runtime_credentials_and_secret_configuration'))
   assert.ok(manifest.sourceTree.fileCount > 40); assert.match(manifest.sourceTree.sha256, /^[a-f0-9]{64}$/)
