@@ -46,10 +46,11 @@ export async function dispatchGeneration7Database(sql,{token,post=postManagement
   return post(token,sql)
 }
 
+const predecessorMarkerPayload=JSON.stringify({expiresAt:'2026-09-20T19:50:41.000Z',generation:6,projectRef:PROJECT_REF,state:'retired',windowId:'83888906-23fa-4653-a886-fe2733ed76a0'})
 export const GENERATION_7_ENTRY_BASELINE_SQL=`BEGIN READ ONLY;
 SET LOCAL statement_timeout='15s';
 SET LOCAL lock_timeout='5s';
-DO $preflight$ BEGIN
+DO $preflight$ DECLARE r text; role_marker text; parsed_marker jsonb; BEGIN
  IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres'
   OR coalesce((SELECT rolsuper FROM pg_roles WHERE rolname=current_user),true)
   OR NOT coalesce((SELECT rolcreaterole FROM pg_roles WHERE rolname=current_user),false)
@@ -61,10 +62,15 @@ DO $preflight$ BEGIN
   OR EXISTS(SELECT FROM pg_roles WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') AND (rolcanlogin OR rolvaliduntil IS DISTINCT FROM '${INERT_VALID_UNTIL}'::timestamptz))
   OR EXISTS(SELECT FROM pg_authid WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') AND rolpassword IS NOT NULL)
   OR (SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') OR member.rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'))<>5
-  OR (SELECT count(*) FROM pg_stat_activity WHERE backend_type='client backend' AND usename IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'))<>0
-  OR (SELECT count(*) FROM pg_roles WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime')
-   AND shobj_description(oid,'pg_authid')='tll-runtime-window/v1 {"expiresAt":"2026-09-20T19:50:41.000Z","generation":6,"projectRef":"${PROJECT_REF}","state":"retired","windowId":"83888906-23fa-4653-a886-fe2733ed76a0"}')<>5 THEN
+  OR (SELECT count(*) FROM pg_stat_activity WHERE backend_type='client backend' AND usename IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'))<>0 THEN
   RAISE EXCEPTION 'Generation 7 entry predecessor mismatch'; END IF;
+ FOREACH r IN ARRAY ARRAY['tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'] LOOP
+  SELECT shobj_description(oid,'pg_authid') INTO role_marker FROM pg_roles WHERE rolname=r;
+  IF role_marker IS NULL OR role_marker !~ '^tll-runtime-window/v1 [{].*[}]$' THEN RAISE EXCEPTION 'Generation 7 entry predecessor marker malformed: %',r; END IF;
+  BEGIN parsed_marker:=substring(role_marker FROM '^tll-runtime-window/v1 ([{].*[}])$')::jsonb;
+  EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'Generation 7 entry predecessor marker invalid: %',r; END;
+  IF parsed_marker IS DISTINCT FROM '${predecessorMarkerPayload}'::jsonb THEN RAISE EXCEPTION 'Generation 7 entry predecessor marker mismatch: %',r; END IF;
+ END LOOP;
  IF EXISTS(SELECT FROM (VALUES ((SELECT enabled FROM tll_customer_private.control WHERE singleton)),((SELECT enabled FROM tll_cart_private.control WHERE singleton)),((SELECT enabled FROM tll_broker_private.control WHERE singleton)),((SELECT enabled FROM tll_provisional_private.control WHERE singleton)),((SELECT enabled FROM tll_bridge_private.control WHERE singleton))) controls(enabled) WHERE enabled) THEN
   RAISE EXCEPTION 'Generation 7 entry control enabled'; END IF;
 END $preflight$;

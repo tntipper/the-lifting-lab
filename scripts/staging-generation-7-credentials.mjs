@@ -60,7 +60,6 @@ function marker({ generation, windowId, expiresAt }, state) {
 /** Build the only secret-bearing SQL used by the credential installer. */
 export function buildGeneration7CredentialSql({ expiresAt, verifiers, nowMs = Date.now() }) {
   validateExpiry(expiresAt, nowMs); validateVerifiers(verifiers)
-  const predecessor = marker(PREDECESSOR, 'retired')
   const inertValidUntil = sqlLiteral(INERT_VALID_UNTIL)
   const active = marker({ generation: GENERATION, windowId: WINDOW_ID, expiresAt }, 'active')
   const logins = purposes.map(purpose => IDENTITIES[purpose].login)
@@ -77,7 +76,7 @@ export function buildGeneration7CredentialSql({ expiresAt, verifiers, nowMs = Da
 SET LOCAL lock_timeout='5s';
 SET LOCAL statement_timeout='30s';
 DO $preflight$
-DECLARE r text; operator_name name:=session_user;
+DECLARE r text; role_marker text; parsed_marker jsonb; operator_name name:=session_user;
 BEGIN
  IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres' OR current_user<>session_user
   OR current_setting('server_version_num')::int<170000 OR (SELECT rolsuper OR NOT rolcreaterole FROM pg_roles WHERE rolname=operator_name)
@@ -93,9 +92,17 @@ BEGIN
   RAISE EXCEPTION 'Generation 7 staging binding mismatch'; END IF;
  IF (SELECT count(*) FROM pg_roles WHERE rolname IN(${roleList}))<>5
   OR EXISTS(SELECT FROM pg_roles WHERE rolname IN(${roleList}) AND (rolcanlogin OR rolvaliduntil IS DISTINCT FROM ${inertValidUntil}::timestamptz))
-  OR EXISTS(SELECT FROM pg_authid WHERE rolname IN(${roleList}) AND rolpassword IS NOT NULL)
-  OR EXISTS(SELECT FROM pg_roles WHERE rolname IN(${roleList}) AND shobj_description(oid,'pg_authid') IS DISTINCT FROM ${sqlLiteral(predecessor)}) THEN
+  OR EXISTS(SELECT FROM pg_authid WHERE rolname IN(${roleList}) AND rolpassword IS NOT NULL) THEN
   RAISE EXCEPTION 'Generation 7 retired predecessor mismatch'; END IF;
+ FOREACH r IN ARRAY ARRAY[${logins.map(sqlLiteral).join(',')}] LOOP
+  SELECT shobj_description(oid,'pg_authid') INTO role_marker FROM pg_roles WHERE rolname=r;
+  IF role_marker IS NULL OR role_marker !~ '^tll-runtime-window/v1 [{].*[}]$' THEN
+   RAISE EXCEPTION 'Generation 7 retired predecessor marker malformed: %',r; END IF;
+  BEGIN parsed_marker:=substring(role_marker FROM '^tll-runtime-window/v1 ([{].*[}])$')::jsonb;
+  EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'Generation 7 retired predecessor marker invalid: %',r; END;
+  IF parsed_marker IS DISTINCT FROM ${sqlLiteral(JSON.stringify({ expiresAt: PREDECESSOR.expiresAt, generation: PREDECESSOR.generation, projectRef: PROJECT_REF, state: 'retired', windowId: PREDECESSOR.windowId }))}::jsonb THEN
+   RAISE EXCEPTION 'Generation 7 retired predecessor marker mismatch: %',r; END IF;
+ END LOOP;
  IF EXISTS(SELECT FROM pg_auth_members e JOIN pg_roles m ON m.oid=e.member JOIN pg_roles g ON g.oid=e.roleid
   WHERE m.rolname IN(${roleList}) AND NOT (g.rolname,m.rolname) IN (${expectedPairs}))
   OR EXISTS(SELECT FROM pg_auth_members e JOIN pg_roles m ON m.oid=e.member JOIN pg_roles g ON g.oid=e.roleid

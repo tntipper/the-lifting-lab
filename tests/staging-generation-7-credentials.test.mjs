@@ -16,6 +16,7 @@ test('generation 7 SQL requires exact retired generation 6 and remains one disab
   assert.equal((sql.match(/^ALTER ROLE /gm)??[]).length,5);assert.equal((sql.match(/^GRANT /gm)??[]).length,5)
   assert.match(sql,new RegExp(PROJECT_REF));assert.match(sql,new RegExp(WINDOW_ID));assert.match(sql,/Generation 7 retired predecessor mismatch/)
   assert.ok(sql.includes(`"expiresAt":"${PREDECESSOR.expiresAt}","generation":6,"projectRef":"${PROJECT_REF}","state":"retired","windowId":"${PREDECESSOR.windowId}"`))
+  assert.match(sql,/substring\(role_marker FROM/);assert.match(sql,/parsed_marker IS DISTINCT FROM/);assert.doesNotMatch(sql,/shobj_description\(oid,'pg_authid'\) IS DISTINCT FROM/)
   assert.ok(sql.includes(`rolvaliduntil IS DISTINCT FROM '${INERT_VALID_UNTIL}'::timestamptz`));assert.match(sql,/Generation 7 control changed during install/)
   assert.match(sql,/tll_generation_7_credential_receipt/);assert.doesNotMatch(sql,/tll_generation_6_credential_receipt/)
   for(const [purpose,identity] of Object.entries(IDENTITIES)){assert.match(sql,new RegExp(`GRANT ${identity.membership} TO ${identity.login}`));assert.ok(sql.includes(values[purpose]))}

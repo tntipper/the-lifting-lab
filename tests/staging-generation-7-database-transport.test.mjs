@@ -25,6 +25,7 @@ test('generation 7 entry baseline requires exact retired generation 6 marker',as
   let query;const receipt={status:'ENTRY_BASELINE_PASS',projectRef:PROJECT_REF,windowId:WINDOW_ID,runtimeGeneration:6,runtimeInert:true,controlsEnabled:false}
   const value=await verifyGeneration7EntryBaseline({token,post:async(_token,text)=>{query=text;return [{tll_generation_7_entry_baseline:receipt}]}})
   assert.deepEqual(value,receipt);assert.equal(query,GENERATION_7_ENTRY_BASELINE_SQL);assert.match(query,/BEGIN READ ONLY/);assert.match(query,new RegExp(PREDECESSOR.windowId));assert.match(query,/generation":6/)
+  assert.match(query,/substring\(role_marker FROM/);assert.match(query,/parsed_marker IS DISTINCT FROM/);assert.doesNotMatch(query,/shobj_description\(oid,'pg_authid'\)='/)
   await assert.rejects(()=>verifyGeneration7EntryBaseline({token,post:async()=>[{tll_generation_7_entry_baseline:{...receipt,runtimeGeneration:5}}]}),/unavailable/)
 })
 
