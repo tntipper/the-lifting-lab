@@ -6,11 +6,11 @@
 import https from 'node:https'
 import { createHash, randomUUID } from 'node:crypto'
 import * as fs from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 
-export const NATIVE_ACCESS_APPROVED = false
+export const NATIVE_ACCESS_APPROVED = true
 export const PROJECT_REF = 'qdmvngjwkcsilzmqksme'
 export const PRODUCTION_PROJECT_REF = 'wrhgscovsgsudtedbljr'
 export const QUERY_ID = 'tll-staging-readonly-reconcile/v1'
