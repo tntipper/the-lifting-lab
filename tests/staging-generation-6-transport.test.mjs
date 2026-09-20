@@ -14,6 +14,7 @@ function receipt() { return [{ tll_generation_6_credential_receipt: { status:'PA
 function journal(events) { return { recordIntent(value) { events.push('intent'); return { ...value, state:'INTENT_RECORDED',runId:'synthetic' } }, transition(_intent,state) { events.push(state); return { state } } } }
 function fixture(fail) {
   const events = [], ports = {
+    async preflightDatabase() { events.push('preflight'); if (fail==='preflight') throw Error('private') },
     async stageVercel(input) { events.push('stageVercel'); if (fail==='vercel') throw Error('private'); assert.deepEqual(input.configuration, DISABLED_VERCEL_CONFIGURATION) },
     async stageSupabase() { events.push('stageSupabase'); if (fail==='supabase') throw Error('private') },
     async readbackNames() { events.push('readback'); if (fail==='readback') return {vercel:[],supabase:[]}; return {vercel:[...STAGED_VERCEL_NAMES],supabase:[...GENERATED_SUPABASE_SECRET_NAMES]} },
@@ -54,7 +55,14 @@ test('successful flow stages disabled providers, journals before one dispatch an
   const f=fixture(); deterministicRandom.calls=0;deterministicUuid.calls=0
   const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
   assert.equal(result.status,'CREDENTIALS_VERIFIED_CONTROLS_DISABLED');assert.equal(result.expiresAt,EXPIRES)
-  assert.deepEqual(f.events,['stageVercel','stageSupabase','readback','intent','dispatch','verify','RECEIPT_VALIDATED'])
+  assert.deepEqual(f.events,['preflight','stageVercel','stageSupabase','readback','intent','dispatch','verify','RECEIPT_VALIDATED'])
+})
+
+test('entry baseline failure creates no material, provider change or dispatch',async()=>{
+  const f=fixture('preflight');let generated=false
+  const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:size=>{generated=true;return Buffer.alloc(size,1)},randomUUID:deterministicUuid})
+  assert.deepEqual(result,{status:'ENTRY_BASELINE_FAILED',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'REVIEW_ENTRY_BASELINE'})
+  assert.equal(generated,false);assert.deepEqual(f.events,['preflight'])
 })
 
 for(const phase of ['vercel','supabase','readback']) test(`provider failure ${phase} cleans names and never dispatches`,async()=>{

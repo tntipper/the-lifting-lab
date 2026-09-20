@@ -119,12 +119,13 @@ function eraseProjection(projection) {
  */
 export async function executeGeneration6CredentialWindow({ ports, journal = createGeneration6DispatchJournal(), now = Date.now,
   randomBytes = systemRandomBytes, randomUUID = systemRandomUUID } = {}) {
-  const required = ['stageVercel','stageSupabase','readbackNames','dispatchDatabase','verifyConnections','recoverDatabase','removeVercel','removeSupabase']
+  const required = ['preflightDatabase','stageVercel','stageSupabase','readbackNames','dispatchDatabase','verifyConnections','recoverDatabase','removeVercel','removeSupabase']
   if (!ports || required.some(name => typeof ports[name] !== 'function')) unavailable()
   const nowMs = now(), expiryMs = Math.floor((nowMs + MAX_WINDOW_MS - 5 * 60 * 1000) / 1000) * 1000
   const expiresAt = new Date(expiryMs).toISOString()
-  let material; let projection; let intent; let dispatchAttempted = false; let providerAttempted = false
+  let material; let projection; let intent; let dispatchAttempted = false; let providerAttempted = false; let preflightPassed = false
   try {
+    await ports.preflightDatabase(); preflightPassed = true
     material = generateGeneration6Material({ randomBytes, randomUUID }); projection = projectGeneration6Secrets(material)
     providerAttempted = true
     await ports.stageVercel({ secrets: projection.vercel, configuration: DISABLED_VERCEL_CONFIGURATION })
@@ -151,20 +152,21 @@ export async function executeGeneration6CredentialWindow({ ports, journal = crea
       try { await ports.removeVercel(STAGED_VERCEL_NAMES) } catch { /* fixed failure result below */ }
       try { await ports.removeSupabase(GENERATED_SUPABASE_SECRET_NAMES) } catch { /* fixed failure result below */ }
     }
-    return Object.freeze({ status: dispatchAttempted ? recovery : 'STOPPED_BEFORE_DATABASE', target: PROJECT_REF,
-      generation: GENERATION, windowId: WINDOW_ID, nextAction: dispatchAttempted ? 'NO_RETRY_RECONCILE' : 'REVIEW_PROVIDER_STAGING' })
+    return Object.freeze({ status: dispatchAttempted ? recovery : preflightPassed ? 'STOPPED_BEFORE_DATABASE' : 'ENTRY_BASELINE_FAILED', target: PROJECT_REF,
+      generation: GENERATION, windowId: WINDOW_ID, nextAction: dispatchAttempted ? 'NO_RETRY_RECONCILE' : preflightPassed ? 'REVIEW_PROVIDER_STAGING' : 'REVIEW_ENTRY_BASELINE' })
   } finally { eraseProjection(projection); eraseGeneration6Material(material) }
 }
 
 export async function runNativeGeneration6CredentialWindow() {
   if (!NATIVE_TRANSPORT_ENABLED) return Object.freeze({ status: 'NATIVE_TRANSPORT_DISABLED', target: PROJECT_REF, generation: GENERATION, windowId: WINDOW_ID })
   const [{ stageVercelSecrets,stageSupabaseSecrets,readbackProviderNames,removeVercelSecrets,removeSupabaseSecrets },
-    { readSupabaseTokenFromKeychain,dispatchGeneration6Database,recoverGeneration6Database,verifyGeneration6ZeroSessions },
+    { readSupabaseTokenFromKeychain,dispatchGeneration6Database,recoverGeneration6Database,verifyGeneration6EntryBaseline,verifyGeneration6ZeroSessions },
     { verifyGeneration6Connections },{ createStagingPostgresRuntime }]=await Promise.all([
       import('./staging-generation-6-provider-transport.mjs'),import('./staging-generation-6-database-transport.mjs'),
       import('./staging-generation-6-connection-verifier.mjs'),import('../lib/server/staging-postgres.ts')])
   const token=readSupabaseTokenFromKeychain()
   return executeGeneration6CredentialWindow({ports:{
+    preflightDatabase:()=>verifyGeneration6EntryBaseline({token}),
     stageVercel:stageVercelSecrets,stageSupabase:stageSupabaseSecrets,readbackNames:readbackProviderNames,
     dispatchDatabase:sql=>dispatchGeneration6Database(sql,{token}),
     verifyConnections:async input=>{await verifyGeneration6Connections({...input,createRuntime:createStagingPostgresRuntime});await verifyGeneration6ZeroSessions({token})},

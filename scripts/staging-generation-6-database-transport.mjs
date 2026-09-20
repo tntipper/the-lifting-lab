@@ -45,6 +45,40 @@ export async function dispatchGeneration6Database(sql,{token,post=postManagement
   return post(token,sql)
 }
 
+const entryBaselineSql=`BEGIN READ ONLY;
+SET LOCAL statement_timeout='15s';
+SET LOCAL lock_timeout='5s';
+DO $preflight$ BEGIN
+ IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres'
+  OR coalesce((SELECT rolsuper FROM pg_roles WHERE rolname=current_user),true)
+  OR NOT coalesce((SELECT rolcreaterole FROM pg_roles WHERE rolname=current_user),false)
+  OR NOT has_table_privilege(current_user,'pg_authid','SELECT') THEN
+  RAISE EXCEPTION 'Generation 6 entry operator mismatch'; END IF;
+ IF NOT EXISTS(SELECT FROM tll_staging_private.environment WHERE singleton AND environment='tll-hosted-staging-v1'
+  AND operator_project_ref='${PROJECT_REF}') THEN RAISE EXCEPTION 'Generation 6 entry environment mismatch'; END IF;
+ IF (SELECT count(*) FROM pg_roles WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'))<>5
+  OR EXISTS(SELECT FROM pg_roles WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') AND (rolcanlogin OR rolvaliduntil IS NOT NULL))
+  OR EXISTS(SELECT FROM pg_authid WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') AND rolpassword IS NOT NULL)
+  OR (SELECT count(*) FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member WHERE granted.rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') OR member.rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'))<>5
+  OR (SELECT count(*) FROM pg_stat_activity WHERE backend_type='client backend' AND usename IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime'))<>0
+  OR (SELECT count(*) FROM pg_roles WHERE rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime')
+   AND shobj_description(oid,'pg_authid')='tll-runtime-window/v1:{"projectRef":"${PROJECT_REF}","generation":5,"windowId":"e8aeb142-d2f8-4a58-b0a5-8931d90a6952","expiresAt":"2026-09-18T14:24:02.000Z","state":"retired"}')<>5 THEN
+  RAISE EXCEPTION 'Generation 6 entry predecessor mismatch'; END IF;
+ IF EXISTS(SELECT FROM (VALUES ((SELECT enabled FROM tll_customer_private.control WHERE singleton)),((SELECT enabled FROM tll_cart_private.control WHERE singleton)),((SELECT enabled FROM tll_broker_private.control WHERE singleton)),((SELECT enabled FROM tll_provisional_private.control WHERE singleton)),((SELECT enabled FROM tll_bridge_private.control WHERE singleton))) controls(enabled) WHERE enabled) THEN
+  RAISE EXCEPTION 'Generation 6 entry control enabled'; END IF;
+END $preflight$;
+COMMIT;
+SELECT jsonb_build_object('status','ENTRY_BASELINE_PASS','projectRef','${PROJECT_REF}','windowId','${WINDOW_ID}','runtimeGeneration',5,'runtimeInert',true,'controlsEnabled',false) AS tll_generation_6_entry_baseline;
+`
+export async function verifyGeneration6EntryBaseline({token,post=postManagementQuery}={}){
+  const rows=await post(token,entryBaselineSql)
+  if(!Array.isArray(rows)||rows.length!==1||Object.keys(rows[0]??{}).join('|')!=='tll_generation_6_entry_baseline')unavailable()
+  const value=rows[0].tll_generation_6_entry_baseline,expected={controlsEnabled:false,projectRef:PROJECT_REF,runtimeGeneration:5,runtimeInert:true,status:'ENTRY_BASELINE_PASS',windowId:WINDOW_ID}
+  if(!value||Object.keys(value).sort().join('|')!==Object.keys(expected).sort().join('|'))unavailable()
+  for(const [key,wanted]of Object.entries(expected))if(value[key]!==wanted)unavailable()
+  return Object.freeze(expected)
+}
+
 const zeroSessionSql=`BEGIN READ ONLY;
 SET LOCAL statement_timeout='15s';
 DO $verify$ BEGIN
