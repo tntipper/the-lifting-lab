@@ -125,7 +125,9 @@ export async function executeGeneration6CredentialWindow({ ports, journal = crea
   const expiresAt = new Date(expiryMs).toISOString()
   let material; let projection; let intent; let dispatchAttempted = false; let providerAttempted = false; let preflightPassed = false; let phase='ENTRY_PREFLIGHT'
   try {
-    await ports.preflightDatabase(); preflightPassed = true
+    try { await ports.preflightDatabase() }
+    catch { phase='ENTRY_PREFLIGHT_RETRY';await ports.preflightDatabase() }
+    preflightPassed = true
     phase='MATERIAL_GENERATION'
     material = generateGeneration6Material({ randomBytes, randomUUID }); projection = projectGeneration6Secrets(material)
     providerAttempted = true;phase='VERCEL_STAGE'

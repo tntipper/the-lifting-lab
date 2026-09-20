@@ -61,8 +61,16 @@ test('successful flow stages disabled providers, journals before one dispatch an
 test('entry baseline failure creates no material, provider change or dispatch',async()=>{
   const f=fixture('preflight');let generated=false
   const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:size=>{generated=true;return Buffer.alloc(size,1)},randomUUID:deterministicUuid})
-  assert.deepEqual(result,{status:'ENTRY_BASELINE_FAILED',phase:'ENTRY_PREFLIGHT',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'REVIEW_ENTRY_BASELINE'})
-  assert.equal(generated,false);assert.deepEqual(f.events,['preflight'])
+  assert.deepEqual(result,{status:'ENTRY_BASELINE_FAILED',phase:'ENTRY_PREFLIGHT_RETRY',target:PROJECT_REF,generation:6,windowId:WINDOW_ID,nextAction:'REVIEW_ENTRY_BASELINE'})
+  assert.equal(generated,false);assert.deepEqual(f.events,['preflight','preflight'])
+})
+
+test('one transient read-only entry failure retries before material generation',async()=>{
+  const f=fixture();let attempts=0;f.ports.preflightDatabase=async()=>{f.events.push('preflight');if(++attempts===1)throw Error('private')}
+  deterministicRandom.calls=0;deterministicUuid.calls=0
+  const result=await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
+  assert.equal(result.status,'CREDENTIALS_VERIFIED_CONTROLS_DISABLED');assert.equal(attempts,2)
+  assert.deepEqual(f.events.slice(0,3),['preflight','preflight','stageVercel'])
 })
 
 for(const phase of ['vercel','supabase','readback']) test(`provider failure ${phase} cleans names and never dispatches`,async()=>{

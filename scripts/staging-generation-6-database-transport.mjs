@@ -46,7 +46,7 @@ export async function dispatchGeneration6Database(sql,{token,post=postManagement
   return post(token,sql)
 }
 
-const entryBaselineSql=`BEGIN READ ONLY;
+export const GENERATION_6_ENTRY_BASELINE_SQL=`BEGIN READ ONLY;
 SET LOCAL statement_timeout='15s';
 SET LOCAL lock_timeout='5s';
 DO $preflight$ BEGIN
@@ -72,7 +72,7 @@ COMMIT;
 SELECT jsonb_build_object('status','ENTRY_BASELINE_PASS','projectRef','${PROJECT_REF}','windowId','${WINDOW_ID}','runtimeGeneration',5,'runtimeInert',true,'controlsEnabled',false) AS tll_generation_6_entry_baseline;
 `
 export async function verifyGeneration6EntryBaseline({token,post=postManagementQuery}={}){
-  const rows=await post(token,entryBaselineSql)
+  const rows=await post(token,GENERATION_6_ENTRY_BASELINE_SQL)
   if(!Array.isArray(rows)||rows.length!==1||Object.keys(rows[0]??{}).join('|')!=='tll_generation_6_entry_baseline')unavailable()
   const value=rows[0].tll_generation_6_entry_baseline,expected={controlsEnabled:false,projectRef:PROJECT_REF,runtimeGeneration:5,runtimeInert:true,status:'ENTRY_BASELINE_PASS',windowId:WINDOW_ID}
   if(!value||Object.keys(value).sort().join('|')!==Object.keys(expected).sort().join('|'))unavailable()
