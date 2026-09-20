@@ -14,9 +14,9 @@
   "failedOrUncertainWindowReplayPermitted": false,
   "currentHold": {
     "scope": "staging-runtime-credential-window",
-    "reason": "generation-11-one-reviewed-staging-window-authorized-requires-direct-live-launcher-and-phase-journal-ordinary-tests-forbidden-while-armed",
+    "reason": "generation-11-interrupted-recovered-intent-locked-disarmed-no-replay",
     "generation10ReplayPermitted": false,
-    "generation11Armed": true,
+    "generation11Armed": false,
     "nextGenerationPermittedBeforeBoundaryReview": false
   }
 }
