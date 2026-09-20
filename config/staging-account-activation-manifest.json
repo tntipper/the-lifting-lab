@@ -761,6 +761,111 @@
     "nativeTransportEnabled": false,
     "status": "CONNECTION_RECOVERED_RECONCILIATION_REQUIRED"
   },
+  "generation10Successor": {
+    "packageId": "tll-staging-generation-10-credentials/v1",
+    "sources": [
+      {
+        "path": "config/certs/supabase-prod-ca-2021.crt",
+        "sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7"
+      },
+      {
+        "path": "scripts/staging-supabase-ca.mjs",
+        "sha256": "700249b6bc4c5b126f8733f015f0fd836d17df49316165b246475011ffdd46f9"
+      },
+      {
+        "path": "scripts/staging-generation-6-connection-verifier.mjs",
+        "sha256": "1cd541bc43f1b19f96879c77b04cbd229bedb9687c8af18eaeabf747e09328e5"
+      },
+      {
+        "path": "scripts/staging-generation-10-credentials.mjs",
+        "sha256": "e000aad1692bb20d49a6050a267c67e51a2e5ca9f1676ff0269e6d8249f16a42"
+      },
+      {
+        "path": "scripts/staging-generation-10-transport.mjs",
+        "sha256": "5ec6c806700274ae6f76eec15b746af1dc13b61ff970e66306488508cf9683a7"
+      },
+      {
+        "path": "scripts/staging-generation-10-database-transport.mjs",
+        "sha256": "85b62a27dc5f24c8c4f701b5f5eaedec2a14b6c88a974621903e0f499c33f646"
+      },
+      {
+        "path": "scripts/staging-generation-10-keychain.py",
+        "sha256": "a2285b99535d0af902a99b3139c477eb8c7009876bf6a95339bf4f6331410ccd"
+      },
+      {
+        "path": "scripts/staging-generation-10-recovery.mjs",
+        "sha256": "2704dd3af4e80de15efcaaa84018f0bf25775fb8baf4a235957cf17caa5190eb"
+      },
+      {
+        "path": "config/staging-generation-10-recovery.sql",
+        "sha256": "6e669f5e37921e4770d5eeb4beb25cf26280744dd96a697d84a2076a76e41c7f"
+      },
+      {
+        "path": "config/staging-generation-10-recovery-postcommit.sql",
+        "sha256": "809ece6559f6aa3d8c7903c7c3aad8167cf1d3c6e89eb0ec39c19a2791ef1712"
+      },
+      {
+        "path": "tests/staging-generation-10-credentials.test.mjs",
+        "sha256": "12773ba3812a9958d63428572c9c1ae88bdabcdc67d9992c188af84a31432a39"
+      },
+      {
+        "path": "tests/staging-generation-10-transport.test.mjs",
+        "sha256": "d64881d829da8065ee712418f6045d4973a0b4e522c3ce12c718ff705c1229bc"
+      },
+      {
+        "path": "tests/staging-generation-10-database-transport.test.mjs",
+        "sha256": "7a9174269214e28d13c58b31b83b0388955151a84129079373777b44a2f95af2"
+      },
+      {
+        "path": "tests/staging-generation-10-recovery.test.mjs",
+        "sha256": "15f43643e5825562a526cdd7905fbd7cd75f33e319f155b98e595cc194c30b97"
+      }
+    ],
+    "target": "qdmvngjwkcsilzmqksme",
+    "generation": 10,
+    "windowId": "04e1b5da-b3e1-430b-8247-caf1d46faa5a",
+    "predecessor": {
+      "generation": 9,
+      "windowId": "08ceb448-c1e2-4641-85ff-bee536774466",
+      "expiresAt": "2026-09-20T20:31:55.000Z",
+      "journalState": "RECONCILIATION_REQUIRED",
+      "recoveryVerified": true,
+      "validUntil": "2026-09-20T20:31:55.000Z",
+      "liveReadOnlyConfirmed": true
+    },
+    "supersedesAttempts": [
+      {
+        "generation": 7,
+        "windowId": "753c2188-ae64-4f40-90ab-1ec26f8569d3",
+        "outcome": "ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION",
+        "journalExists": false
+      },
+      {
+        "generation": 8,
+        "windowId": "c790120a-9d62-49f1-9fe4-0a10983fd114",
+        "outcome": "ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION",
+        "journalExists": false
+      }
+    ],
+    "predecessorMarkerComparison": "PARSED_JSON_SEMANTICS",
+    "predecessorValidUntilComparison": "EXACT_PREDECESSOR_EXPIRY",
+    "connectionVerifier": {
+      "usesPinnedSupabaseCa": true,
+      "source": "scripts/staging-supabase-ca.mjs",
+      "runtimeFactory": "lib/server/staging-postgres.ts"
+    },
+    "recoveryPostcondition": {
+      "independentProviderZeroReadbackRequired": true
+    },
+    "maximumWindowMinutes": 60,
+    "poolerConvergenceWaitMs": 16000,
+    "freshPoolRetryAttempts": 1,
+    "thirdAttemptPermitted": false,
+    "secretBearingSqlMustRemainInMemory": true,
+    "exclusiveNonsecretJournal": true,
+    "nativeTransportEnabled": false,
+    "status": "DISABLED_REVIEWED_READY_FOR_ARMING_GATE"
+  },
   "gates": [
     "verify_exact_target_and_production_exclusion",
     "run_one_pinned_authenticated_read_only_preflight",

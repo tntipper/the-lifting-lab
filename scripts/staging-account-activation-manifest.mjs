@@ -104,6 +104,22 @@ const generation9SuccessorSources = [
   'tests/staging-generation-9-database-transport.test.mjs',
   'tests/staging-generation-9-recovery.test.mjs',
 ]
+const generation10SuccessorSources = [
+  // The connection verifier consumes this reviewed public CA via readPinnedSupabaseCa.
+  ...stagingSupabaseCaSources,
+  'scripts/staging-generation-6-connection-verifier.mjs',
+  'scripts/staging-generation-10-credentials.mjs',
+  'scripts/staging-generation-10-transport.mjs',
+  'scripts/staging-generation-10-database-transport.mjs',
+  'scripts/staging-generation-10-keychain.py',
+  'scripts/staging-generation-10-recovery.mjs',
+  'config/staging-generation-10-recovery.sql',
+  'config/staging-generation-10-recovery-postcommit.sql',
+  'tests/staging-generation-10-credentials.test.mjs',
+  'tests/staging-generation-10-transport.test.mjs',
+  'tests/staging-generation-10-database-transport.test.mjs',
+  'tests/staging-generation-10-recovery.test.mjs',
+]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
   'scripts/staging-readonly-preflight-keychain.py',
@@ -270,6 +286,22 @@ const manifest = {
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
     secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
     status: 'CONNECTION_RECOVERED_RECONCILIATION_REQUIRED',
+  },
+  generation10Successor: {
+    packageId: 'tll-staging-generation-10-credentials/v1',
+    sources: await Promise.all(generation10SuccessorSources.map(pin)),
+    target: 'qdmvngjwkcsilzmqksme', generation: 10, windowId: '04e1b5da-b3e1-430b-8247-caf1d46faa5a',
+    predecessor: { generation: 9, windowId: '08ceb448-c1e2-4641-85ff-bee536774466', expiresAt: '2026-09-20T20:31:55.000Z', journalState: 'RECONCILIATION_REQUIRED', recoveryVerified: true, validUntil: '2026-09-20T20:31:55.000Z', liveReadOnlyConfirmed: true },
+    supersedesAttempts: [
+      { generation: 7, windowId: '753c2188-ae64-4f40-90ab-1ec26f8569d3', outcome: 'ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION', journalExists: false },
+      { generation: 8, windowId: 'c790120a-9d62-49f1-9fe4-0a10983fd114', outcome: 'ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION', journalExists: false },
+    ],
+    predecessorMarkerComparison: 'PARSED_JSON_SEMANTICS', predecessorValidUntilComparison: 'EXACT_PREDECESSOR_EXPIRY',
+    connectionVerifier: { usesPinnedSupabaseCa: true, source: 'scripts/staging-supabase-ca.mjs', runtimeFactory: 'lib/server/staging-postgres.ts' },
+    recoveryPostcondition: { independentProviderZeroReadbackRequired: true },
+    maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
+    status: 'DISABLED_REVIEWED_READY_FOR_ARMING_GATE',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
