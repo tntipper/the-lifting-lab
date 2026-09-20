@@ -567,6 +567,80 @@
     "nativeTransportEnabled": false,
     "status": "ENTRY_BASELINE_RECONCILIATION_REQUIRED"
   },
+  "generation8Successor": {
+    "packageId": "tll-staging-generation-8-credentials/v1",
+    "sources": [
+      {
+        "path": "scripts/staging-generation-8-credentials.mjs",
+        "sha256": "c3c79f5e01b12727125efddc12f9bec81183bb3d48bc45252db175b605a2a19c"
+      },
+      {
+        "path": "scripts/staging-generation-8-transport.mjs",
+        "sha256": "e1ad8b4e8c56b77b1ffec44cd35e2efb941d0150845e3e98a5ebea77a7044212"
+      },
+      {
+        "path": "scripts/staging-generation-8-database-transport.mjs",
+        "sha256": "ee19921310a86543c4565876a86705fe1a0b644225020ff261afafbf473477ba"
+      },
+      {
+        "path": "scripts/staging-generation-8-keychain.py",
+        "sha256": "5445e747f85c770990537eeac1d53117b2548986cffe3a25b7997e0deb7160ab"
+      },
+      {
+        "path": "scripts/staging-generation-8-recovery.mjs",
+        "sha256": "2c21feb6c495c8904467ff52b2f7a666415ecd647e9745f47acf4ea589c30007"
+      },
+      {
+        "path": "config/staging-generation-8-recovery.sql",
+        "sha256": "7540927ec5650ad85ce4ec0a87bae5163703e5bac8643acb74a5816426cf1218"
+      },
+      {
+        "path": "config/staging-generation-8-recovery-postcommit.sql",
+        "sha256": "b635b6291feefc05af1bd90ee2c76c7a38105d541e66f1a8e31456783ae4769a"
+      },
+      {
+        "path": "tests/staging-generation-8-credentials.test.mjs",
+        "sha256": "2434cf886546c3ce45c49484f91598a80f823e4f07832aeaafe849198485f266"
+      },
+      {
+        "path": "tests/staging-generation-8-transport.test.mjs",
+        "sha256": "1857dc7603ed192ee0ce39bb5f2b08df5598c06bd10c83e6a84d272f8f630799"
+      },
+      {
+        "path": "tests/staging-generation-8-database-transport.test.mjs",
+        "sha256": "a567519adca4226d45fc0454025f5d586772e519d84f5e32ab9a490d178c4db1"
+      },
+      {
+        "path": "tests/staging-generation-8-recovery.test.mjs",
+        "sha256": "d0f0e4e36e830f805c4d47f0d707df824c7641ef2e59bbc05b247c85fb3c4e90"
+      }
+    ],
+    "target": "qdmvngjwkcsilzmqksme",
+    "generation": 8,
+    "windowId": "c790120a-9d62-49f1-9fe4-0a10983fd114",
+    "predecessor": {
+      "generation": 6,
+      "windowId": "83888906-23fa-4653-a886-fe2733ed76a0",
+      "expiresAt": "2026-09-20T19:50:41.000Z",
+      "journalState": "RECONCILIATION_REQUIRED",
+      "recoveryVerified": true
+    },
+    "supersedesAttempt": {
+      "generation": 7,
+      "windowId": "753c2188-ae64-4f40-90ab-1ec26f8569d3",
+      "outcome": "ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION",
+      "journalExists": false
+    },
+    "predecessorMarkerComparison": "PARSED_JSON_SEMANTICS",
+    "maximumWindowMinutes": 60,
+    "poolerConvergenceWaitMs": 16000,
+    "freshPoolRetryAttempts": 1,
+    "thirdAttemptPermitted": false,
+    "secretBearingSqlMustRemainInMemory": true,
+    "exclusiveNonsecretJournal": true,
+    "nativeTransportEnabled": false,
+    "status": "LOCAL_DISABLED_SUCCESSOR_REVIEW_REQUIRED"
+  },
   "gates": [
     "verify_exact_target_and_production_exclusion",
     "run_one_pinned_authenticated_read_only_preflight",
