@@ -208,8 +208,8 @@ const manifest = {
     target: 'qdmvngjwkcsilzmqksme', generation: 7, windowId: '753c2188-ae64-4f40-90ab-1ec26f8569d3',
     predecessor: { generation: 6, windowId: '83888906-23fa-4653-a886-fe2733ed76a0', expiresAt: '2026-09-20T19:50:41.000Z', journalState: 'RECONCILIATION_REQUIRED', recoveryVerified: true },
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
-    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
-    status: 'LOCAL_DISABLED_SUCCESSOR_REVIEW_REQUIRED',
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: true,
+    status: 'ONE_STAGING_WINDOW_AUTHORIZED',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',

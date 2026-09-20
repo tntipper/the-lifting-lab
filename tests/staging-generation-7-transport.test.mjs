@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { PACKAGE_ID, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-7-credentials.mjs'
 import { GENERATED_SUPABASE_SECRET_NAMES, STAGED_VERCEL_NAMES } from '../scripts/staging-generation-6-transport.mjs'
-import { executeGeneration7CredentialWindow, GENERATION_7_SOURCE_FINGERPRINT, NATIVE_GENERATION_7_TRANSPORT_ENABLED, runNativeGeneration7CredentialWindow } from '../scripts/staging-generation-7-transport.mjs'
+import { executeGeneration7CredentialWindow, GENERATION_7_SOURCE_FINGERPRINT, NATIVE_GENERATION_7_TRANSPORT_ENABLED } from '../scripts/staging-generation-7-transport.mjs'
 
 const NOW=Date.parse('2026-09-20T20:00:00.000Z'),EXPIRES='2026-09-20T20:55:00.000Z'
 const randomBytes=(()=>{let n=0;return size=>Buffer.alloc(size,++n)})(),randomUUID=(()=>{let n=0;return()=>`00000000-0000-4000-8000-${String(++n).padStart(12,'0')}`})()
@@ -15,8 +15,8 @@ function fixture(fail){const events=[],ports={
   return{events,ports}}
 const journal=events=>({recordIntent(value){events.push('intent');return{...value,state:'INTENT_RECORDED',runId:'generation-7-test'}},transition(_intent,state){events.push(state);return{state}}})
 
-test('generation 7 remains disabled with a fixed nonsecret fingerprint',async()=>{
-  assert.equal(NATIVE_GENERATION_7_TRANSPORT_ENABLED,false);assert.match(GENERATION_7_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/);assert.equal((await runNativeGeneration7CredentialWindow()).status,'NATIVE_TRANSPORT_DISABLED')
+test('generation 7 is armed for one reviewed window with a fixed nonsecret fingerprint',()=>{
+  assert.equal(NATIVE_GENERATION_7_TRANSPORT_ENABLED,true);assert.match(GENERATION_7_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/)
 })
 
 test('generation 7 success stages providers, journals once and verifies before receipt',async()=>{
