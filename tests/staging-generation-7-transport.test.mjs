@@ -15,8 +15,8 @@ function fixture(fail){const events=[],ports={
   return{events,ports}}
 const journal=events=>({recordIntent(value){events.push('intent');return{...value,state:'INTENT_RECORDED',runId:'generation-7-test'}},transition(_intent,state){events.push(state);return{state}}})
 
-test('generation 7 is armed for one reviewed window with a fixed nonsecret fingerprint',()=>{
-  assert.equal(NATIVE_GENERATION_7_TRANSPORT_ENABLED,true);assert.match(GENERATION_7_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/)
+test('generation 7 is disarmed after entry stop with a fixed nonsecret fingerprint',()=>{
+  assert.equal(NATIVE_GENERATION_7_TRANSPORT_ENABLED,false);assert.match(GENERATION_7_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/)
 })
 
 test('generation 7 success stages providers, journals once and verifies before receipt',async()=>{
