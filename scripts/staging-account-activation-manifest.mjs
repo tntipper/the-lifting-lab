@@ -149,6 +149,7 @@ const stageSafetySources = [
   'docs/ops/stage-plans/2026-09-20-activation-safety-boundary.md',
   'docs/ops/stage-plans/2026-09-20-generation-10-runtime-diagnosis.md',
   'docs/ops/stage-plans/2026-09-20-generation-11-disabled-successor.md',
+  'docs/ops/stage-plans/2026-09-20-generation-11-arming-diff.md',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
@@ -215,7 +216,7 @@ const manifest = {
     policy: 'tll-project-stage-gate-policy/v1', ordinaryTestsRequireAllNativeGatesDisabled: true,
     ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
     ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true, liveExecutionRequiresPhaseJournal: true,
-    generation10ReplayPermitted: false, generation11Armed: false, successorHeldPendingBoundaryReview: true,
+    generation10ReplayPermitted: false, generation11Armed: true, successorHeldPendingBoundaryReview: true,
   },
   migrations: await Promise.all(migrations.map(pin)),
   edge: { functions: [
@@ -364,8 +365,8 @@ const manifest = {
       ordinaryTestsMayImportOrInvoke: false,
     },
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
-    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
-    status: 'DISABLED_SUCCESSOR_PENDING_ARMING_REVIEW',
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: true,
+    status: 'ONE_STAGING_WINDOW_AUTHORIZED',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',

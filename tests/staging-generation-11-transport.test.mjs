@@ -17,12 +17,12 @@ function fixture(fail){const events=[],ports={
 const journal=events=>({recordIntent(value){events.push('intent');return{...value,state:'INTENT_RECORDED',runId:'generation-11-test'}},transition(_intent,state){events.push(state);return{state}}})
 const rejectedJournal=events=>({recordIntent(){events.push('journalRejected');throw Error('consumed')},transition(){events.push('journalTransition')}})
 
-test('generation 11 is disarmed after verified recovery with a fixed nonsecret fingerprint',()=>{
-  assert.equal(NATIVE_GENERATION_11_TRANSPORT_ENABLED,false);assert.match(GENERATION_11_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/)
+test('generation 11 is armed for one reviewed window with a fixed nonsecret fingerprint',()=>{
+  assert.equal(NATIVE_GENERATION_11_TRANSPORT_ENABLED,true);assert.match(GENERATION_11_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/)
 })
 
 test('generation 11 consumed transport contains no native launcher or credential-bearing imports',()=>{
-  assert.equal(NATIVE_GENERATION_11_TRANSPORT_ENABLED,false)
+  assert.equal(NATIVE_GENERATION_11_TRANSPORT_ENABLED,true)
   const source=readFileSync('scripts/staging-generation-11-transport.mjs','utf8')
   assert.doesNotMatch(source,/runNativeGeneration11CredentialWindow/)
   assert.doesNotMatch(source,/staging-generation-6-provider-transport|readSupabaseTokenFromKeychain|createStagingPostgresRuntime|readPinnedSupabaseCa/)
