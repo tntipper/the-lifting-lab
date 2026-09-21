@@ -245,6 +245,8 @@ const stageSafetySources = [
   'docs/ops/stage-plans/2026-09-21-generation-13-connection-diagnosis.md',
   'docs/ops/stage-plans/2026-09-21-generation-14-disabled-successor.md',
   'docs/ops/stage-plans/2026-09-21-generation-14-arming-diff.md',
+  'docs/ops/stage-plans/2026-09-21-generation-14-connection-recovery.md',
+  'docs/ops/stage-plans/2026-09-21-generation-14-bridge-own-probe-diagnosis.md',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
@@ -312,7 +314,7 @@ const manifest = {
     ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
     ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true, liveExecutionRequiresPhaseJournal: true,
     generation10ReplayPermitted: false, generation11ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: true, generation12ReplayPermitted: false, generation13ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
+    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation12ReplayPermitted: false, generation13ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
   },
   migrations: await Promise.all(migrations.map(pin)),
   edge: { functions: [
@@ -570,8 +572,8 @@ const manifest = {
       approximateWallBudgetMinutes: 45,
     },
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
-    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: true,
-    status: 'ONE_STAGING_WINDOW_AUTHORIZED',
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
+    status: 'CONNECTION_RECOVERY_REQUIRED_RECONCILIATION_REQUIRED_NO_REPLAY',
   },
   gates: [
     'verify_exact_target_and_production_exclusion', 'run_one_pinned_authenticated_read_only_preflight',
