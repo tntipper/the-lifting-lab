@@ -8,6 +8,18 @@ const MAX_COOKIE_BYTES = 32_768, MAX_SESSION_BYTES = 32_768, MAX_CHUNKS = 12, MA
 type Action = 'prepare' | 'start' | 'authorize' | 'shopify-callback' | 'callback' | 'recover' | 'orders' | 'logout'
 type RuntimeFactory = typeof createStagingCustomerRuntime
 
+/** Test-only mount seam. Ordinary requests never set this; production ignores it unless
+ * `TLL_CUSTOMER_AUTH_MOUNT_FIXTURE=1` is explicitly present in the process environment. */
+export const STAGING_CUSTOMER_ROUTE_RUNTIME_FACTORY = Symbol.for('tll.stagingCustomerRoute.runtimeFactory')
+
+function resolveRuntimeFactory(runtimeFactory: RuntimeFactory): RuntimeFactory {
+  if (process.env.TLL_CUSTOMER_AUTH_MOUNT_FIXTURE === '1') {
+    const injected = (globalThis as Record<PropertyKey, unknown>)[STAGING_CUSTOMER_ROUTE_RUNTIME_FACTORY]
+    if (typeof injected === 'function') return injected as RuntimeFactory
+  }
+  return runtimeFactory
+}
+
 function held() {
   return Response.json({ status: 'held' }, { status: 409, headers: {
     'cache-control': 'no-store, private', pragma: 'no-cache', 'referrer-policy': 'no-referrer',
@@ -91,7 +103,8 @@ export async function stagingCustomerRoute(request: Request, action: Action,
   invalidateSupabaseSession: () => Promise<boolean> = async () => false): Promise<Response> {
   let runtime: StagingCustomerRuntime | null = null
   try {
-    runtime = runtimeFactory({ readAccessToken: async () => stagingSupabaseAccessToken(request), invalidateSupabaseSession })
+    const factory = resolveRuntimeFactory(runtimeFactory)
+    runtime = factory({ readAccessToken: async () => stagingSupabaseAccessToken(request), invalidateSupabaseSession })
     if (!runtime) return held()
     if (action === 'orders') {
       const projection = await runtime.accountOperations.readOrders()
