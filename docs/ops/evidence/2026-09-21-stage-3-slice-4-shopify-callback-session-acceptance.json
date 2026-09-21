@@ -1,0 +1,23 @@
+{
+  "slice": "stage-3-slice-4-shopify-callback-session",
+  "date": "2026-09-21",
+  "baseSha": "da3ae52cc6727e24828b1a9ad2d334d0dd868802",
+  "plan": "docs/ops/stage-plans/2026-09-21-stage-3-slice-4-shopify-callback-session.md",
+  "evidence": "docs/ops/evidence/2026-09-21-stage-3-slice-4-shopify-callback-session-acceptance.md",
+  "liveBoundaries": { "status": "PASS", "violations": 0 },
+  "results": [
+    { "id": "mounted-shopify-callback-allowlisted-redirect", "status": "PASS", "pointer": "tests/customer-auth-callback-mount.test.mjs" },
+    { "id": "mounted-shopify-callback-allowlist-denials", "status": "PASS", "pointer": "tests/customer-auth-callback-mount.test.mjs" },
+    { "id": "mounted-final-callback-session-release", "status": "PASS", "pointer": "tests/customer-auth-callback-mount.test.mjs" },
+    { "id": "mounted-final-callback-persistence-hold", "status": "PASS", "pointer": "tests/customer-auth-callback-mount.test.mjs" },
+    { "id": "mounted-final-callback-allowlist-denials", "status": "PASS", "pointer": "tests/customer-auth-callback-mount.test.mjs" },
+    { "id": "mounted-missing-reconciliation-evidence-hold", "status": "PASS", "pointer": "tests/customer-auth-callback-mount.test.mjs", "note": "contract; durable mode selection in broker/final suites" },
+    { "id": "shared-email-distinct-provider-subjects", "status": "PASS", "pointer": "tests/customer-subject-broker.test.mjs" },
+    { "id": "sign-in-vs-migration-evidence", "status": "PASS", "pointer": "tests/customer-subject-broker.test.mjs;tests/customer-final-reconciliation.test.mjs;tests/supabase-final-exchange.test.mjs" },
+    { "id": "fixture-seam-inert", "status": "PASS", "pointer": "tests/customer-auth-callback-mount.test.mjs" },
+    { "id": "fail-closed-route-modules", "status": "PASS", "pointer": "tests/staging-customer-route.test.mjs" },
+    { "id": "local-next-http-allowlisted-origin-drive-through", "status": "GAP", "pointer": "docs/ops/evidence/2026-09-21-stage-3-slice-4-shopify-callback-session-acceptance.md" },
+    { "id": "full-sql-journey-through-app-router-mounts", "status": "GAP", "pointer": "tests/admission-bridge/browser-delivery.test.mjs" },
+    { "id": "slice-5-cart-bind", "status": "GAP", "pointer": "explicit exclusion" }
+  ]
+}

@@ -84,6 +84,21 @@ test('pending migration reservations cannot silently attach the same provider su
   await admitted(other); assert.equal((await other.api.ready()).status, 'held')
   assert.equal([...f.repository.subjects.values()][0].targetUserId, USER)
 })
+test('two different Shopify subjects cannot merge by sharing the same email metadata', async () => {
+  const sharedEmail = 'shared-contact@example.invalid'
+  const first = fixture({ mode: 'sign_in' }); first.setProof(null)
+  first.setShopify({ ...first.getShopify(), subject: 'gid://shopify/Customer/alpha', email: sharedEmail })
+  const firstInfo = await userinfo(first.api, await issued(first))
+  const second = fixture({ mode: 'sign_in', repository: first.repository }); second.setProof(null)
+  second.setShopify({ ...second.getShopify(), subject: 'gid://shopify/Customer/beta', email: sharedEmail })
+  const secondInfo = await userinfo(second.api, await issued(second))
+  assert.notEqual(firstInfo.body.sub, secondInfo.body.sub)
+  assert.equal(first.repository.subjects.size, 2)
+  const keys = [...first.repository.subjects.keys()]
+  assert.ok(keys.every((key) => key.includes('gid://shopify/Customer/')))
+  assert.ok(keys.every((key) => !key.includes(sharedEmail) && !key.includes('@')))
+  assert.doesNotMatch(JSON.stringify([...first.repository.subjects.values()]), /shared-contact|@example/)
+})
 test('an unresolved provisional sign-in is not sufficient authority for a legacy account merge', async () => {
   const f = fixture({ mode: 'sign_in' }); await issued(f)
   const migration = fixture({ repository: f.repository }); await admitted(migration)
