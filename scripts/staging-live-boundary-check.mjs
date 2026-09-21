@@ -38,9 +38,11 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
   if (policy.currentHold?.generation10ReplayPermitted !== false
     || policy.currentHold?.generation11ReplayPermitted !== false
     || policy.currentHold?.generation12ReplayPermitted !== false
+    || policy.currentHold?.generation13ReplayPermitted !== false
     || policy.currentHold?.generation11Armed !== false
     || policy.currentHold?.generation12Armed !== false
     || policy.currentHold?.generation13Armed !== false
+    || policy.currentHold?.generation14Armed !== false
     || policy.currentHold?.nextGenerationPermittedBeforeBoundaryReview !== false) violations.push('policy:currentHold')
 
   for (const path of filesBelow(join(projectRoot, 'tests')).filter(path => /\.(?:mjs|js|ts|tsx)$/.test(path))) {

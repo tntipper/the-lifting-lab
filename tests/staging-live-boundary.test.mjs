@@ -16,8 +16,8 @@ const policy = {
   preventiveControlVerificationRequiredBeforeSuccessor: true, failedOrUncertainWindowReplayPermitted: false,
   currentHold: {
     generation10ReplayPermitted: false, generation11ReplayPermitted: false,
-    generation12ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: false, generation13Armed: false,
+    generation12ReplayPermitted: false, generation13ReplayPermitted: false,
+    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false,
     nextGenerationPermittedBeforeBoundaryReview: false,
   },
 }
@@ -74,14 +74,19 @@ test('boundary rejects an ordinary test that imports the Gen 13 live launcher', 
   ])
 })
 
-test('repository Gen 13 live launcher is accepted because it uses the phase journal', () => {
-  const source = readFileSync('scripts/staging-generation-13-live-launcher.mjs', 'utf8')
-  assert.match(source, /createStagingWindowPhaseJournal/)
-  assert.match(source, /export async function runNativeGeneration13CredentialWindow/)
-  assert.match(source, /ACTIVE_WITHIN_PHASE_BOUND/)
-  assert.match(source, /long-lived process/)
-  assert.doesNotMatch(readFileSync('scripts/staging-generation-13-transport.mjs', 'utf8'), /runNativeGeneration13CredentialWindow/)
-  assert.doesNotMatch(readFileSync('scripts/staging-generation-13-journal-watch.mjs', 'utf8'), /runNativeGeneration13CredentialWindow|readSupabaseTokenFromKeychain/)
+test('repository Gen 13 and Gen 14 live launchers are accepted because they use the phase journal', () => {
+  for (const generation of [13, 14]) {
+    const launcher = `scripts/staging-generation-${generation}-live-launcher.mjs`
+    const transport = `scripts/staging-generation-${generation}-transport.mjs`
+    const watch = `scripts/staging-generation-${generation}-journal-watch.mjs`
+    const source = readFileSync(launcher, 'utf8')
+    assert.match(source, /createStagingWindowPhaseJournal/)
+    assert.match(source, new RegExp(`export async function runNativeGeneration${generation}CredentialWindow`))
+    assert.match(source, /ACTIVE_WITHIN_PHASE_BOUND/)
+    assert.match(source, /long-lived process/)
+    assert.doesNotMatch(readFileSync(transport, 'utf8'), new RegExp(`runNativeGeneration${generation}CredentialWindow`))
+    assert.doesNotMatch(readFileSync(watch, 'utf8'), new RegExp(`runNativeGeneration${generation}CredentialWindow|readSupabaseTokenFromKeychain`))
+  }
   assert.deepEqual(assertStagingLiveBoundary(), { status: 'PASS', policy: 'tll-project-stage-gate-policy/v1', violations: 0 })
 })
 
