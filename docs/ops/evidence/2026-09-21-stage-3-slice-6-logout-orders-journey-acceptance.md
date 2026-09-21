@@ -3,7 +3,7 @@
 Date: 2026-09-21  
 Base: `codex/tll-integration` @ `d6a2d79e6e1af61fc71afe5c777ba82cbda5a322`  
 Plan: `docs/ops/stage-plans/2026-09-21-stage-3-slice-6-logout-orders-journey.md`  
-Tip under test: (see JSON `tipSha` after final commit)
+Tip under test: 60680fdbd713b2e90650c744c0aaa58ce9afbd7e
 
 ## Investigation (library vs mount vs hosted)
 
