@@ -8,7 +8,7 @@ Updated: 2026-09-21 (Stage 3 Slice 3)
 - **Slice 1+2:** landed on `codex/tll-integration` tip `3989c6c7e539caeece71841a18f90ee3bbd6382a` (PR #47).
 - **Slice 3:** App Router prepare/start/authorize/recover mount proof landed (see plan/evidence below). Honest GAPs: local Next HTTP allowlisted-origin drive-through; full SQL start→admit→recover through mount.
 - **Next:** Stage 3 Slice 4 — Shopify callback / final session.
-- **This tip:**  on .
+- **This tip:** `b4e1311d19266e1a50029afff29c83fe5c3f5e6e` on `cursor/stage3-slice3-auth-mount-922b`.
 
 ## Authoritative pointers
 
