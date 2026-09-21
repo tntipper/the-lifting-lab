@@ -179,7 +179,8 @@ export function createCustomerSubjectBroker(input: { ports: BrokerPorts; clientS
   const { ports, clientSecret } = input, repo = ports.repository
   const enabled = input.syntheticExecution === true && input.liveEnabled !== true && typeof clientSecret === 'string'
     && Buffer.byteLength(clientSecret) >= 32 && Buffer.byteLength(clientSecret) <= 512 && !/[\x00-\x1f\x7f]/.test(clientSecret)
-  const active = () => enabled && typeof window === 'undefined'
+  // Deno Edge exposes `window` under node-compat; treat Deno as a non-browser host.
+  const active = () => enabled && (typeof (globalThis as { Deno?: unknown }).Deno !== 'undefined' || typeof window === 'undefined')
   const op = (): Operation => ({ operationId: randomUUID(), configHash: CONFIG_HASH })
   const hold = async (operation: Operation, locator: BrokerLocator) => { try { await repo.holdOperation({ ...operation, locator }) } catch { /* No output or automatic retry. */ } }
   const browser = async () => { const b = await ports.currentBrowser(); return browserValid(b) ? structuredClone(b) : null }

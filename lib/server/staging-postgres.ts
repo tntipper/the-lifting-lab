@@ -1,5 +1,6 @@
 // Node-only transport. No connection, credential lookup or provider work at import.
 import { checkServerIdentity } from 'node:tls'
+import { Buffer } from 'node:buffer'
 import { X509Certificate, createHash } from 'node:crypto'
 import type { PoolConfig } from 'pg'
 
@@ -49,11 +50,22 @@ type DriverPool = {
   on(event: 'error', listener: () => void): unknown
 }
 const unavailable = () => new Error('Staging database unavailable')
-/** Deno Edge has no Node `process`. A missing process or `process.env` cannot
- * carry PG* or TLS overrides, so that host is safe. When `process.env` exists,
- * Node/Vercel still fail closed on those overrides. */
+/** Public CA DER bytes from a single PEM certificate (no private material). */
+function derBytesFromPem(pem: string): Buffer {
+  const body = pem.replace(/^-----BEGIN CERTIFICATE-----/, '')
+    .replace(/-----END CERTIFICATE-----\s*$/, '')
+    .replace(/\s+/g, '')
+  if (!body || body.length > 24_000 || /[^A-Za-z0-9+/=]/.test(body)) throw unavailable()
+  const der = Buffer.from(body, 'base64')
+  if (der.byteLength < 64 || der.byteLength > 16_384) throw unavailable()
+  return der
+}
+/** Deno Edge may expose both `window` and `process.env` under node-compat.
+ * Treat an explicit Deno global as a non-browser host and only fail closed on
+ * PG* or TLS overrides. Browser bundles (no Deno) still fail on `window`. */
 const serverEnvironmentSafe = () => {
-  if (typeof window !== 'undefined') return false
+  const isDeno = typeof (globalThis as { Deno?: unknown }).Deno !== 'undefined'
+  if (!isDeno && typeof window !== 'undefined') return false
   const proc = (globalThis as { process?: { env?: NodeJS.ProcessEnv } }).process
   if (proc == null || proc.env == null) return true
   const env = proc.env
@@ -78,7 +90,9 @@ export function createStagingPostgresRuntime(input: StagingPostgresOptions, fixt
         || !/^-----BEGIN CERTIFICATE-----[\s\S]+-----END CERTIFICATE-----\s*$/.test(supplied.pem)
         || (supplied.pem.match(/-----BEGIN CERTIFICATE-----/g) ?? []).length !== 1) throw unavailable()
       const certificate = new X509Certificate(supplied.pem)
-      if (!certificate.ca || createHash('sha256').update(certificate.raw).digest('hex') !== supplied.sha256
+      // Deno Edge stubs X509Certificate.raw; PEM→DER is the standard digest input.
+      const der = derBytesFromPem(supplied.pem)
+      if (!certificate.ca || createHash('sha256').update(der).digest('hex') !== supplied.sha256
         || Date.parse(certificate.validFrom) > Date.now() || Date.parse(certificate.validTo) <= Date.now()) throw unavailable()
       ca = supplied.pem
     } catch { throw unavailable() }
