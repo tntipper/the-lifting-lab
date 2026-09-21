@@ -4,11 +4,19 @@ import { readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { PREDECESSOR, PROJECT_REF, PACKAGE_ID, WINDOW_ID } from './staging-generation-17-credentials.mjs'
-import { POOLER_CONVERGENCE_MS } from './staging-generation-6-connection-verifier.mjs'
 
-export const NATIVE_GENERATION_17_DATABASE_TRANSPORT_ENABLED = true
+export const NATIVE_GENERATION_17_DATABASE_TRANSPORT_ENABLED = false
 export const MANAGEMENT_ENDPOINT = Object.freeze({ hostname:'api.supabase.com',path:`/v1/projects/${PROJECT_REF}/database/query`,method:'POST' })
 export const KEYCHAIN_HELPER_TIMEOUT_MS=45_000
+/**
+ * Gen 17 live (~134s CONNECTION_VERIFICATION) exhausted default maxAttempts=3 × POOLER_CONVERGENCE_MS=16s
+ * with true `runtime_sessions_remain`. Gen-18-ready tip defaults: longer drain wait + more attempts,
+ * still hard-capped. Probe reconnect wait remains POOLER_CONVERGENCE_MS (16s) in the verifier.
+ */
+export const ZERO_SESSIONS_DRAIN_CONVERGENCE_MS = 30_000
+export const ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS = 5
+export const ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS_CAP = 8
+export const ZERO_SESSIONS_DRAIN_CONVERGENCE_MS_CAP = 90_000
 const MAX_RESPONSE_BYTES=65_536, TIMEOUT_MS=35_000
 const unavailable=()=>{throw new Error('Generation-17 database transport unavailable')}
 
@@ -163,10 +171,14 @@ export function classifyZeroSessionsFailure(error){
   return 'unavailable'
 }
 
-function projectZeroSessionsFailure(error,failureReason){
+function projectZeroSessionsFailure(error,failureReason,{zeroSessionsAttempts}={}){
   const projected=Error('Generation-17 zero-session verification unavailable')
   projected.failureStep='zero_sessions'
   projected.failureReason=failureReason
+  // Secret-free attempt count only (integer); never SQL or body text.
+  if(Number.isInteger(zeroSessionsAttempts)&&zeroSessionsAttempts>=1&&zeroSessionsAttempts<=ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS_CAP){
+    projected.zeroSessionsAttempts=zeroSessionsAttempts
+  }
   // Persist secret-free Management HTTP status when known (number only; never body text).
   let current=error
   for(let depth=0;depth<5&&current;depth+=1){
@@ -180,35 +192,39 @@ function projectZeroSessionsFailure(error,failureReason){
 
 /**
  * Post-probe zero-session proof with bounded pooler drain.
- * Contract: connection verifier closes runtimes → wait POOLER_CONVERGENCE_MS → prove.
- * Retries only while failureReason is runtime_sessions_remain; never infinite.
+ * Contract: connection verifier closes runtimes (finally → runtime.close()) → wait
+ * ZERO_SESSIONS_DRAIN_CONVERGENCE_MS → prove. Retries only while failureReason is
+ * runtime_sessions_remain; never infinite. SQL proof still requires zero sessions + controls off.
  */
 export async function verifyGeneration17ZeroSessionsAfterPoolerDrain({
   token,
   post=postManagementQuery,
   pause=ms=>new Promise(resolve=>setTimeout(resolve,ms)),
-  convergenceMs=POOLER_CONVERGENCE_MS,
-  maxAttempts=3,
+  convergenceMs=ZERO_SESSIONS_DRAIN_CONVERGENCE_MS,
+  maxAttempts=ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS,
 }={}){
-  if(!Number.isInteger(maxAttempts)||maxAttempts<1||maxAttempts>5)unavailable()
-  if(!Number.isFinite(convergenceMs)||convergenceMs<0||convergenceMs>60_000)unavailable()
+  if(!Number.isInteger(maxAttempts)||maxAttempts<1||maxAttempts>ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS_CAP)unavailable()
+  if(!Number.isFinite(convergenceMs)||convergenceMs<0||convergenceMs>ZERO_SESSIONS_DRAIN_CONVERGENCE_MS_CAP)unavailable()
   if(typeof pause!=='function')unavailable()
   // Initial drain after probes closed all runtimes — pooler sessions can linger briefly.
   await pause(convergenceMs)
   let lastError
+  let attemptsCompleted=0
   for(let attempt=1;attempt<=maxAttempts;attempt+=1){
     try{
+      attemptsCompleted=attempt
       return await verifyGeneration17ZeroSessions({token,post})
     }catch(error){
       lastError=error
+      attemptsCompleted=attempt
       const failureReason=classifyZeroSessionsFailure(error)
       if(failureReason!=='runtime_sessions_remain'||attempt===maxAttempts){
-        throw projectZeroSessionsFailure(error,failureReason)
+        throw projectZeroSessionsFailure(error,failureReason,{zeroSessionsAttempts:attemptsCompleted})
       }
       await pause(convergenceMs)
     }
   }
-  throw projectZeroSessionsFailure(lastError,classifyZeroSessionsFailure(lastError))
+  throw projectZeroSessionsFailure(lastError,classifyZeroSessionsFailure(lastError),{zeroSessionsAttempts:attemptsCompleted||maxAttempts})
 }
 
 const recoverySql=()=>readFileSync(new URL('../config/staging-generation-17-recovery.sql',import.meta.url),'utf8')+

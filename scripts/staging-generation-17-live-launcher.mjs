@@ -175,8 +175,8 @@ export async function runNativeGeneration17CredentialWindow({
             throw projected
           }
           try {
-            // Probes already closed runtimes in finally; drain/wait then prove zero sessions
-            // so Supavisor teardown can converge before the SQL proof (Gen 15 failure class).
+            // Probes already closed runtimes in finally (runtime.close()); drain/wait then prove
+            // zero sessions so Supavisor teardown can converge before the SQL proof.
             await verifyGeneration17ZeroSessionsAfterPoolerDrain({ token })
           } catch (error) {
             // Probe report is intentionally absent here — surface secret-free step + reason tags
@@ -185,6 +185,12 @@ export async function runNativeGeneration17CredentialWindow({
             projected.failureStep = 'zero_sessions'
             const allowedReasons = new Set(['runtime_sessions_remain', 'control_enabled', 'receipt_mismatch', 'unavailable'])
             projected.failureReason = allowedReasons.has(error?.failureReason) ? error.failureReason : 'unavailable'
+            if (Number.isInteger(error?.zeroSessionsAttempts) && error.zeroSessionsAttempts >= 1 && error.zeroSessionsAttempts <= 8) {
+              projected.zeroSessionsAttempts = error.zeroSessionsAttempts
+            }
+            if (Number.isInteger(error?.managementStatusCode) && error.managementStatusCode >= 100 && error.managementStatusCode <= 599) {
+              projected.managementStatusCode = error.managementStatusCode
+            }
             throw projected
           }
         },

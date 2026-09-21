@@ -7,6 +7,10 @@ import {
   postManagementQuery,
   verifyGeneration17ZeroSessions,
   verifyGeneration17ZeroSessionsAfterPoolerDrain,
+  ZERO_SESSIONS_DRAIN_CONVERGENCE_MS,
+  ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS,
+  ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS_CAP,
+  ZERO_SESSIONS_DRAIN_CONVERGENCE_MS_CAP,
 } from '../scripts/staging-generation-17-database-transport.mjs'
 import { PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-17-credentials.mjs'
 
@@ -78,6 +82,18 @@ test('postManagementQuery preserves allow-listed SQL RAISE text from non-201 JSO
   )
 })
 
+test('drain defaults are Gen-18-ready longer wait and more attempts (bounded)', () => {
+  assert.equal(POOLER_CONVERGENCE_MS, 16_000)
+  assert.equal(ZERO_SESSIONS_DRAIN_CONVERGENCE_MS, 30_000)
+  assert.equal(ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS, 5)
+  assert.equal(ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS_CAP, 8)
+  assert.equal(ZERO_SESSIONS_DRAIN_CONVERGENCE_MS_CAP, 90_000)
+  assert.ok(ZERO_SESSIONS_DRAIN_CONVERGENCE_MS > POOLER_CONVERGENCE_MS)
+  assert.ok(ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS > 3)
+  assert.ok(ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS <= ZERO_SESSIONS_DRAIN_MAX_ATTEMPTS_CAP)
+  assert.ok(ZERO_SESSIONS_DRAIN_CONVERGENCE_MS <= ZERO_SESSIONS_DRAIN_CONVERGENCE_MS_CAP)
+})
+
 test('happy path still requires ZERO_SESSIONS receipt after initial pooler drain', async () => {
   const pauses = []
   let posts = 0
@@ -93,7 +109,6 @@ test('happy path still requires ZERO_SESSIONS receipt after initial pooler drain
   assert.deepEqual(value, receipt)
   assert.deepEqual(pauses, [7])
   assert.equal(posts, 1)
-  assert.equal(POOLER_CONVERGENCE_MS, 16_000)
 })
 
 test('transient runtime_sessions_remain retries with bounded pooler drain then passes', async () => {
@@ -115,7 +130,7 @@ test('transient runtime_sessions_remain retries with bounded pooler drain then p
   assert.equal(posts, 3)
 })
 
-test('exhausted runtime_sessions_remain still surfaces failureStep zero_sessions', async () => {
+test('exhausted runtime_sessions_remain still surfaces failureStep zero_sessions and zeroSessionsAttempts', async () => {
   const pauses = []
   await assert.rejects(
     () => verifyGeneration17ZeroSessionsAfterPoolerDrain({
@@ -128,6 +143,7 @@ test('exhausted runtime_sessions_remain still surfaces failureStep zero_sessions
     error => {
       assert.equal(error.failureStep, 'zero_sessions')
       assert.equal(error.failureReason, 'runtime_sessions_remain')
+      assert.equal(error.zeroSessionsAttempts, 2)
       assert.match(error.message, /zero-session verification unavailable/)
       return true
     },
@@ -135,7 +151,7 @@ test('exhausted runtime_sessions_remain still surfaces failureStep zero_sessions
   assert.deepEqual(pauses, [5, 5])
 })
 
-test('permanent control_enabled fails immediately with failureStep zero_sessions', async () => {
+test('permanent control_enabled fails immediately with failureStep zero_sessions and attempt count', async () => {
   const pauses = []
   let posts = 0
   await assert.rejects(
@@ -152,6 +168,7 @@ test('permanent control_enabled fails immediately with failureStep zero_sessions
     error => {
       assert.equal(error.failureStep, 'zero_sessions')
       assert.equal(error.failureReason, 'control_enabled')
+      assert.equal(error.zeroSessionsAttempts, 1)
       return true
     },
   )
