@@ -54,11 +54,11 @@
     "sources": [
       {
         "path": "config/project-stage-gate-policy.json",
-        "sha256": "551db301039e54240b111c1fecb6036a0af41536d5cb235ce333de3fec9f54d9"
+        "sha256": "97bcdbe2d54c697707becf19199d91106102915a4498fa0b93362330c4753a47"
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "0017cdb8effd443c3d04dc118bc721797d556e97a912f3d9296daa0cb94f9c8c"
+        "sha256": "7b611fe9a76329fd4bbf1bdaf88a93c0bbf05a7f579908b6a4ee7d1b0ae5a051"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -97,8 +97,28 @@
         "sha256": "446fd51ab4e474aac26461a53c81ee79100b86c1686a158f154fb56472473099"
       },
       {
+        "path": "scripts/staging-generation-14-live-launcher.mjs",
+        "sha256": "3b41db3f6d0086b975611d74d98836e9638445923302093e3458f2724b284786"
+      },
+      {
+        "path": "scripts/staging-generation-14-connection-failure-evidence.mjs",
+        "sha256": "510face0264707c442c21db12ca5f68cabc092696ec4b29634a9bed45efab1a0"
+      },
+      {
+        "path": "scripts/staging-generation-14-long-session-contract.mjs",
+        "sha256": "f38ea35be519304b47da26d5c2fd644cfd513e818228b350bb61f46d5865c7ad"
+      },
+      {
+        "path": "scripts/staging-generation-14-journal-watch.mjs",
+        "sha256": "1ee95489c0fa9c6b13bfa679a7c62e1c1ab79b06bef2326b9284032c60bf47b5"
+      },
+      {
+        "path": "scripts/staging-generation-14-run-live-once.mjs",
+        "sha256": "98dbafeb969075111c26bb0b6950447729b86695ec5fe5fc4ce0c3e8d1f3fca4"
+      },
+      {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "628f0c50a8f9f5a3b3cc3f97f6f36f373f8f2bc537f83863560fc7800dda56d4"
+        "sha256": "3f4c3275d72aed8d9f27dacf6ae74fedac16b773bcf1220b8e2e9f2810af453b"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -111,6 +131,14 @@
       {
         "path": "tests/staging-generation-13-connection-failure-evidence.test.mjs",
         "sha256": "bef1402948c49ca5e5b20d545367c893c9127db6534be44810ee2beaf70840df"
+      },
+      {
+        "path": "tests/staging-generation-14-long-session.test.mjs",
+        "sha256": "00e029ace73b6b334dc090d01a60beb21595d32727a7a8e9c2fc26f67b6382ad"
+      },
+      {
+        "path": "tests/staging-generation-14-connection-failure-evidence.test.mjs",
+        "sha256": "3835ebe5440f8ed7818541fb68d8686a1719834d2f86cace09312c68b53ab7a1"
       },
       {
         "path": "docs/ops/project-stage-execution-protocol.md",
@@ -171,6 +199,10 @@
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-13-connection-diagnosis.md",
         "sha256": "28b47d473cfcfc7af456babfa0b2acbe1fadaffa9fa64d85c31da370d2519b9f"
+      },
+      {
+        "path": "docs/ops/stage-plans/2026-09-21-generation-14-disabled-successor.md",
+        "sha256": "c818b75b35932da2c80c7c49eddbd33253b91059f3e2fe270f2f5f3b2e83ae2e"
       }
     ],
     "policy": "tll-project-stage-gate-policy/v1",
@@ -185,7 +217,9 @@
     "generation11Armed": false,
     "generation12Armed": false,
     "generation13Armed": false,
+    "generation14Armed": false,
     "generation12ReplayPermitted": false,
+    "generation13ReplayPermitted": false,
     "successorHeldPendingBoundaryReview": true
   },
   "migrations": [
@@ -1473,6 +1507,183 @@
     "exclusiveNonsecretJournal": true,
     "nativeTransportEnabled": false,
     "status": "CONNECTION_RECOVERY_VERIFIED_RECONCILIATION_REQUIRED_NO_REPLAY"
+  },
+  "generation14Successor": {
+    "packageId": "tll-staging-generation-14-credentials/v1",
+    "sources": [
+      {
+        "path": "config/certs/supabase-prod-ca-2021.crt",
+        "sha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7"
+      },
+      {
+        "path": "scripts/staging-supabase-ca.mjs",
+        "sha256": "700249b6bc4c5b126f8733f015f0fd836d17df49316165b246475011ffdd46f9"
+      },
+      {
+        "path": "scripts/staging-generation-6-connection-verifier.mjs",
+        "sha256": "1cd541bc43f1b19f96879c77b04cbd229bedb9687c8af18eaeabf747e09328e5"
+      },
+      {
+        "path": "scripts/staging-generation-14-credentials.mjs",
+        "sha256": "29c195782d6612a33298fcb1d54a383984b389d6efcfb88314d28251b02ba266"
+      },
+      {
+        "path": "scripts/staging-generation-14-transport.mjs",
+        "sha256": "f9c9d30c38f16dd85cf0964d4ded5561ce70683b0acbdbc12634869ee7cd353a"
+      },
+      {
+        "path": "scripts/staging-generation-14-database-transport.mjs",
+        "sha256": "def89bbd230611e8d06f98c87c7d0a45d36986825e6ac33e2e19a5eb0cdfc0ae"
+      },
+      {
+        "path": "scripts/staging-generation-14-keychain.py",
+        "sha256": "44113bf2ac6a3521586d3c261671802986bea86a16a60ab857a62ed9e996b3b0"
+      },
+      {
+        "path": "scripts/staging-generation-14-recovery.mjs",
+        "sha256": "698cfaffd26a330a356145d5c176286ac76bf8bdece75411da8e8a8cc0c0ccdd"
+      },
+      {
+        "path": "scripts/staging-generation-14-live-launcher.mjs",
+        "sha256": "3b41db3f6d0086b975611d74d98836e9638445923302093e3458f2724b284786"
+      },
+      {
+        "path": "scripts/staging-generation-14-connection-failure-evidence.mjs",
+        "sha256": "510face0264707c442c21db12ca5f68cabc092696ec4b29634a9bed45efab1a0"
+      },
+      {
+        "path": "scripts/staging-generation-14-long-session-contract.mjs",
+        "sha256": "f38ea35be519304b47da26d5c2fd644cfd513e818228b350bb61f46d5865c7ad"
+      },
+      {
+        "path": "scripts/staging-generation-14-journal-watch.mjs",
+        "sha256": "1ee95489c0fa9c6b13bfa679a7c62e1c1ab79b06bef2326b9284032c60bf47b5"
+      },
+      {
+        "path": "scripts/staging-generation-14-run-live-once.mjs",
+        "sha256": "98dbafeb969075111c26bb0b6950447729b86695ec5fe5fc4ce0c3e8d1f3fca4"
+      },
+      {
+        "path": "scripts/staging-window-phase-journal.mjs",
+        "sha256": "f68a740072c582a0d493adf8d6c38331391402d74d277ccfc22f1cee76b88f4f"
+      },
+      {
+        "path": "config/staging-generation-14-recovery.sql",
+        "sha256": "75d13d0f0067c8ee2a9883ff32c16a542eaedea70b0e53171589d0c5d4adda6b"
+      },
+      {
+        "path": "config/staging-generation-14-recovery-postcommit.sql",
+        "sha256": "eee9e7b522fcebd3fe1267fcb8f34e510e3fe4ffc8a6e6a72e76c20829f7c9b5"
+      },
+      {
+        "path": "tests/staging-generation-14-credentials.test.mjs",
+        "sha256": "0ef0725acd324d6f66b2a12eac27385251f2b1402542361738ae7ecd77e0f10d"
+      },
+      {
+        "path": "tests/staging-generation-14-transport.test.mjs",
+        "sha256": "f51c8711bb343f02548e55a5998d65daba7001d880c85b9a7d016db230dccb13"
+      },
+      {
+        "path": "tests/staging-generation-14-database-transport.test.mjs",
+        "sha256": "f7b79ca46c1cef3bc2155c9f2f1e24be82481e4576e0f3dcc1d79eb88179b5c9"
+      },
+      {
+        "path": "tests/staging-generation-14-recovery.test.mjs",
+        "sha256": "4b31105f3421528a992d3840260532f0b8ed056f6b0efd5bd4bf34bf01e15b90"
+      },
+      {
+        "path": "tests/staging-generation-14-long-session.test.mjs",
+        "sha256": "00e029ace73b6b334dc090d01a60beb21595d32727a7a8e9c2fc26f67b6382ad"
+      },
+      {
+        "path": "tests/staging-generation-14-connection-failure-evidence.test.mjs",
+        "sha256": "3835ebe5440f8ed7818541fb68d8686a1719834d2f86cace09312c68b53ab7a1"
+      }
+    ],
+    "target": "qdmvngjwkcsilzmqksme",
+    "generation": 14,
+    "windowId": "a8955fc3-2347-4544-b04e-55a2cb6fe7aa",
+    "predecessor": {
+      "generation": 13,
+      "windowId": "866b0e78-7530-493a-8963-e8cf24cf3067",
+      "expiresAt": "2026-09-21T06:36:08.000Z",
+      "journalState": "RECONCILIATION_REQUIRED",
+      "journalLocksReplay": true,
+      "recoveryVerified": true,
+      "validUntil": "2026-09-21T06:36:08.000Z",
+      "liveReadOnlyConfirmed": true,
+      "replayPermitted": false,
+      "note": "Gen 13 reached DATABASE_DISPATCH then RECOVERY_VERIFIED; role markers are Gen 13 retired. Gen 11/12 never dispatched. expiresAt confirmed 2026-09-21 from local Gen 13 dispatch journal (implementation-state/staging/tll-generation-13-credential-dispatch.json)."
+    },
+    "supersedesAttempts": [
+      {
+        "generation": 7,
+        "windowId": "753c2188-ae64-4f40-90ab-1ec26f8569d3",
+        "outcome": "ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION",
+        "journalExists": false
+      },
+      {
+        "generation": 8,
+        "windowId": "c790120a-9d62-49f1-9fe4-0a10983fd114",
+        "outcome": "ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION",
+        "journalExists": false
+      },
+      {
+        "generation": 10,
+        "windowId": "04e1b5da-b3e1-430b-8247-caf1d46faa5a",
+        "outcome": "INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY",
+        "journalExists": true,
+        "replayPermitted": false
+      },
+      {
+        "generation": 11,
+        "windowId": "56ff2757-3e34-4cf0-a1dc-40999a713874",
+        "outcome": "INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY",
+        "journalExists": true,
+        "replayPermitted": false
+      },
+      {
+        "generation": 12,
+        "windowId": "6d4c5ed4-08a3-4d20-b580-cd03ab000e83",
+        "outcome": "INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY",
+        "journalExists": true,
+        "replayPermitted": false
+      },
+      {
+        "generation": 13,
+        "windowId": "866b0e78-7530-493a-8963-e8cf24cf3067",
+        "outcome": "CONNECTION_RECOVERY_VERIFIED_RECONCILIATION_REQUIRED_NO_REPLAY",
+        "journalExists": true,
+        "replayPermitted": false
+      }
+    ],
+    "predecessorMarkerComparison": "PARSED_JSON_SEMANTICS",
+    "predecessorValidUntilComparison": "EXACT_PREDECESSOR_EXPIRY",
+    "connectionVerifier": {
+      "usesPinnedSupabaseCa": true,
+      "source": "scripts/staging-supabase-ca.mjs",
+      "runtimeFactory": "lib/server/staging-postgres.ts"
+    },
+    "liveLauncher": {
+      "path": "scripts/staging-generation-14-live-launcher.mjs",
+      "phaseJournal": "scripts/staging-window-phase-journal.mjs",
+      "phaseJournalPath": "../implementation-state/staging/tll-generation-14-window-phase.json",
+      "ordinaryTestsMayImportOrInvoke": false,
+      "requiresLongLivedProcess": true,
+      "requiresLongSessionContract": true,
+      "supportedOperatorEntry": "scripts/staging-generation-14-run-live-once.mjs",
+      "separateReadOnlyObserver": "scripts/staging-generation-14-journal-watch.mjs",
+      "neverKillWhileActiveWithinPhaseBound": true,
+      "approximateWallBudgetMinutes": 45
+    },
+    "maximumWindowMinutes": 60,
+    "poolerConvergenceWaitMs": 16000,
+    "freshPoolRetryAttempts": 1,
+    "thirdAttemptPermitted": false,
+    "secretBearingSqlMustRemainInMemory": true,
+    "exclusiveNonsecretJournal": true,
+    "nativeTransportEnabled": false,
+    "status": "DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW"
   },
   "gates": [
     "verify_exact_target_and_production_exclusion",

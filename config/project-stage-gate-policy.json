@@ -14,13 +14,15 @@
   "failedOrUncertainWindowReplayPermitted": false,
   "currentHold": {
     "scope": "staging-runtime-credential-window",
-    "reason": "generation-13-connection-recovery-verified-reconciliation-required-no-replay-awaiting-connection-diagnosis-successor",
+    "reason": "generation-14-disabled-successor-prepared-gen13-reconciliation-required-no-replay-awaiting-arming-review",
     "generation10ReplayPermitted": false,
     "generation11ReplayPermitted": false,
     "generation11Armed": false,
     "generation12Armed": false,
     "nextGenerationPermittedBeforeBoundaryReview": false,
     "generation12ReplayPermitted": false,
-    "generation13Armed": false
+    "generation13Armed": false,
+    "generation13ReplayPermitted": false,
+    "generation14Armed": false
   }
 }
