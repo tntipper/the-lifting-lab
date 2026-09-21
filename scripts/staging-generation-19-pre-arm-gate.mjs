@@ -128,6 +128,9 @@ export async function assertGeneration19PreArmReady({
 
   if (!proven && !cleanupPath) unavailable('predecessor_retirement_unproven')
 
+  const nativeGatesArmed = NATIVE_GENERATION_19_TRANSPORT_ENABLED === true
+    && NATIVE_GENERATION_19_DATABASE_TRANSPORT_ENABLED === true
+
   return Object.freeze({
     schema: PRE_ARM_SCHEMA,
     status: 'PRE_ARM_READY',
@@ -138,16 +141,39 @@ export async function assertGeneration19PreArmReady({
     predecessorRetirementProven: Boolean(proven),
     reviewedCleanupPathListed: Boolean(cleanupPath),
     cleanupPath: cleanupPath?.path ?? null,
-    nativeGatesArmed: false,
-    nextAction: proven
-      ? 'INDEPENDENT_ARMING_REVIEW'
-      : 'OPERATOR_APPROVED_GEN17_CLEANUP_THEN_ARMING_REVIEW',
+    nativeGatesArmed,
+    nextAction: nativeGatesArmed
+      ? 'ARMED_PHASE_3_REQUIRES_RUN_LIVE_ONCE'
+      : proven
+        ? 'INDEPENDENT_ARMING_REVIEW'
+        : 'OPERATOR_APPROVED_GEN17_CLEANUP_THEN_ARMING_REVIEW',
   })
+}
+
+/** Optional local-only evidence path (implementation-state; never invent remote secrets). */
+export const DEFAULT_LOCAL_RETIREMENT_EVIDENCE_PATH =
+  'implementation-state/staging/tll-generation-19-predecessor-retirement-evidence.json'
+
+function loadRetirementEvidenceFromArgv(argv = process.argv) {
+  const flag = argv.find((arg) => arg.startsWith('--retirement-evidence='))
+  if (!flag) return null
+  const relative = flag.slice('--retirement-evidence='.length)
+  if (!relative) unavailable('retirement_evidence_path_empty')
+  try {
+    return JSON.parse(readFileSync(resolve(root, relative), 'utf8'))
+  } catch {
+    unavailable('retirement_evidence_unreadable')
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const result = await assertGeneration19PreArmReady()
+    const retirementEvidence = loadRetirementEvidenceFromArgv()
+    const requireArmedGatesFalse = !process.argv.includes('--allow-armed-gates')
+    const result = await assertGeneration19PreArmReady({
+      retirementEvidence,
+      requireArmedGatesFalse,
+    })
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
   } catch (error) {
     process.stderr.write(`${error.message}\n`)

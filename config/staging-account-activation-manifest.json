@@ -54,7 +54,7 @@
     "sources": [
       {
         "path": "config/project-stage-gate-policy.json",
-        "sha256": "f1907bc887bdf3f0a2acba3cdec579682cf45bb3984105fbf929c0e34282f209"
+        "sha256": "4ee304638a3d2afd5adad6d408cadd9f7814669ca470dbdb03186d08be551230"
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
@@ -346,7 +346,11 @@
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-19-pre-arm-checklist.md",
-        "sha256": "95346662f926ad3ebdde530f9c60a81422b8ddb0dfcfb55ba61c884f040aab64"
+        "sha256": "bc842189fe6613e03af364601fefde9e17d9152dd4246d7ad1a10a5ccc85fe61"
+      },
+      {
+        "path": "docs/ops/stage-plans/2026-09-21-generation-19-arming-diff.md",
+        "sha256": "05169b1f318d8a883b5a59b8532f1bada6c46e384f3159024a1376e36cf0d397"
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-17-correct-cleanup.md",
@@ -370,7 +374,7 @@
     "generation16Armed": false,
     "generation17Armed": false,
     "generation18Armed": false,
-    "generation19Armed": false,
+    "generation19Armed": true,
     "generation12ReplayPermitted": false,
     "generation13ReplayPermitted": false,
     "generation14ReplayPermitted": false,
@@ -2739,15 +2743,15 @@
       },
       {
         "path": "scripts/staging-generation-19-transport.mjs",
-        "sha256": "946460692b7690467fadfadb20cf9407d746e5c760b8941bb6db34db1f813dc0"
+        "sha256": "dc3ea6458c68c9c536ece967c756d240396d0bd9fbb03ec21bee6c6d9fa65d16"
       },
       {
         "path": "scripts/staging-generation-19-database-transport.mjs",
-        "sha256": "57c292ec9b58ae29f36c6c09ecdac5ea8ec4d6dbf14fe5eb69c99a4145e5e5f4"
+        "sha256": "39ebb718f7fc3f4e9df878143595b3c5f53ccad5591187c57a49089202226905"
       },
       {
         "path": "scripts/staging-generation-19-keychain.py",
-        "sha256": "bbc07bb71b2a240716c3592bd4fb4fdc3be94bafd3f5def22891782fc92b6c45"
+        "sha256": "fac6a1afbd83d018157f0b0aa758db6c24575cc7a75e899cd662c33b9113855d"
       },
       {
         "path": "scripts/staging-generation-19-recovery.mjs",
@@ -2775,7 +2779,7 @@
       },
       {
         "path": "scripts/staging-generation-19-pre-arm-gate.mjs",
-        "sha256": "f0ab712bd0c7570c422278f8dc6fad615b6ecfc89e9579e6acca39f1f1959ab4"
+        "sha256": "4be29bf9dc5ad50106e9a98c3f6e1a23d7fd6d551e6f4c466bee2c5e13666072"
       },
       {
         "path": "scripts/staging-generation-recovery-pin-contract.mjs",
@@ -2799,11 +2803,11 @@
       },
       {
         "path": "tests/staging-generation-19-transport.test.mjs",
-        "sha256": "5b8170fe905d559bbe65a5e3da77010574d8998f0dbc433543d6e20e2d784191"
+        "sha256": "357669e92de3722a0217388907f23f346c9a0bf2f9f6bcc331706512222c93ac"
       },
       {
         "path": "tests/staging-generation-19-database-transport.test.mjs",
-        "sha256": "f0234f7b76dad05a421402151763717b3d10c4ad66374741263a81ac5380d461"
+        "sha256": "515a56af4d5bfe34ef4ccde56d0fcef013244db63df5ef520eff3e2bac48423a"
       },
       {
         "path": "tests/staging-generation-19-recovery.test.mjs",
@@ -2811,7 +2815,7 @@
       },
       {
         "path": "tests/staging-generation-19-long-session.test.mjs",
-        "sha256": "fcf3f50b04a68916c613f3365bcdba091f5ba3dfe51afcf08945f6944621bbde"
+        "sha256": "9045fad5f4526d3a65a8263e7166b9e8c21a29d5c433bb931a134c400ba12186"
       },
       {
         "path": "tests/staging-generation-19-connection-failure-evidence.test.mjs",
@@ -2823,7 +2827,7 @@
       },
       {
         "path": "tests/staging-generation-19-pre-arm-gate.test.mjs",
-        "sha256": "9f6146679db8ded107279872fb311ae8297943cd01cd79d4e81fcbc7155d65b7"
+        "sha256": "8d6cbdaece73adcc649bc0ef3a1b1a80ddad0a83a5c12fdab0f09893f4c83824"
       },
       {
         "path": "tests/staging-generation-recovery-pin-contract.test.mjs",
@@ -2835,7 +2839,7 @@
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-19-pre-arm-checklist.md",
-        "sha256": "95346662f926ad3ebdde530f9c60a81422b8ddb0dfcfb55ba61c884f040aab64"
+        "sha256": "bc842189fe6613e03af364601fefde9e17d9152dd4246d7ad1a10a5ccc85fe61"
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-17-correct-cleanup.md",
@@ -2966,8 +2970,8 @@
     "zeroSessionsDrainMaxAttempts": 5,
     "secretBearingSqlMustRemainInMemory": true,
     "exclusiveNonsecretJournal": true,
-    "nativeTransportEnabled": false,
-    "status": "DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW",
+    "nativeTransportEnabled": true,
+    "status": "ONE_STAGING_WINDOW_AUTHORIZED",
     "preArmRequiresPredecessorRetirementOrReviewedCleanup": true,
     "reviewedCleanupPath": "docs/ops/stage-plans/2026-09-21-generation-17-correct-cleanup.md"
   },
