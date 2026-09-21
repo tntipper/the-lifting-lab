@@ -6,7 +6,7 @@ const bundle=await build({entryPoints:['lib/identity/customer-shopify-proof.ts']
 const {createCustomerShopifyProofFlow,shopifyProofConfigHash}=await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'))
 const NOW=Date.parse('2026-09-18T15:00:00Z'),ORIGIN='https://the-lifting-synthetic-my-lifting-lab-s-projects.vercel.app'
 const TRANSACTION='a0000000-0000-4000-8000-000000000001',SHOP='107532616020'
-const ISSUER='https://shopify.com/authentication/'+SHOP,CLIENT='63f474eda69ec32778ce2a99e8c1114f'
+const ISSUER='https://shopify.com/authentication/'+SHOP,CLIENT='c8f7b926-9073-416c-9949-0d99e89a99c0'
 const SCOPE='openid email customer-account-api:full'
 const config=(change={})=>{const c={applicationOrigin:ORIGIN,verification:null,...change};c.verification=change.verification===undefined?{evidenceId:'synthetic-reviewed-config',configHash:shopifyProofConfigHash(c),verifiedAt:NOW-1000,expiresAt:NOW+3600000}:change.verification;return c}
 function repository(){

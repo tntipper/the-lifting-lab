@@ -4,8 +4,9 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto'
 
 export const CUSTOMER_CONNECTION_LIVE_ENABLED = false
 export const STAGING_SHOP_ID = '107532616020'
-// Public Optimus TLL Customer Account app client (Dev Dashboard). Not a secret.
-export const STAGING_CUSTOMER_CLIENT_ID = '63f474eda69ec32778ce2a99e8c1114f'
+// Public Headless Customer Account Confidential Client ID for shop 107532616020.
+// Not the Dev Dashboard app key, and not a secret.
+export const STAGING_CUSTOMER_CLIENT_ID = 'c8f7b926-9073-416c-9949-0d99e89a99c0'
 export const STAGING_ISSUER = `https://shopify.com/authentication/${STAGING_SHOP_ID}`
 export const STAGING_DISCOVERY = 'https://tll-integration-staging.myshopify.com/.well-known/openid-configuration'
 export const STAGING_SUPABASE_ISSUER = 'https://qdmvngjwkcsilzmqksme.supabase.co/auth/v1'
