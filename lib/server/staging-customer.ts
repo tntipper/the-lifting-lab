@@ -18,7 +18,9 @@ import { createStagingPostgresRuntime, STAGING_POSTGRES_PROJECT_REF,
   type StagingPostgresPool, type StagingPostgresRuntime } from '@/lib/server/staging-postgres'
 import { isStagingReviewedPreviewOrigin } from '@/lib/server/staging-preview-origin'
 
-const PURPOSES = ['customer', 'broker', 'provisional', 'bridge'] as const
+export const STAGING_CUSTOMER_COMPOSITION_PURPOSES = ['customer', 'broker', 'provisional', 'bridge'] as const
+export const STAGING_CUSTOMER_CUSTODY_SURFACES = ['token', 'provisional', 'cookie', 'final'] as const
+const PURPOSES = STAGING_CUSTOMER_COMPOSITION_PURPOSES
 const unavailable = () => new Error('Staging customer runtime unavailable')
 
 type RuntimeFactory = typeof createStagingPostgresRuntime

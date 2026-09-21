@@ -5,7 +5,11 @@ import { build } from 'esbuild'
 
 const bundle = await build({ stdin: { contents: "export * from './lib/server/staging-customer.ts'", resolveDir: process.cwd() },
   bundle: true, format: 'esm', platform: 'node', write: false, logLevel: 'silent' })
-const { createStagingCustomerRuntime } = await import('data:text/javascript;base64,' + Buffer.from(bundle.outputFiles[0].text).toString('base64'))
+const {
+  createStagingCustomerRuntime,
+  STAGING_CUSTOMER_COMPOSITION_PURPOSES,
+  STAGING_CUSTOMER_CUSTODY_SURFACES,
+} = await import('data:text/javascript;base64,' + Buffer.from(bundle.outputFiles[0].text).toString('base64'))
 const ORIGIN = 'https://the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app'
 const proofHash = createHash('sha256').update(JSON.stringify(['tll-shopify-proof/v1','107532616020','https://shopify.com/authentication/107532616020',
   'c8f7b926-9073-416c-9949-0d99e89a99c0','https://shopify.com/authentication/107532616020/oauth/authorize',
@@ -164,4 +168,12 @@ test('constructor failure returns unavailable and closes every resource already 
 test('browser runtime is unavailable', () => {
   globalThis.window = {}
   try { const f = fixture(); assert.equal(f.runtime, null); assert.equal(f.calls.length, 0) } finally { delete globalThis.window }
+})
+
+test('Slice 2 inventory locks admission purposes without cart and four custody surfaces', () => {
+  assert.deepEqual([...STAGING_CUSTOMER_COMPOSITION_PURPOSES], ['customer', 'broker', 'provisional', 'bridge'])
+  assert.equal(STAGING_CUSTOMER_COMPOSITION_PURPOSES.includes('cart'), false)
+  assert.deepEqual([...STAGING_CUSTOMER_CUSTODY_SURFACES], ['token', 'provisional', 'cookie', 'final'])
+  assert.equal(new Set(STAGING_CUSTOMER_COMPOSITION_PURPOSES).size, 4)
+  assert.equal(new Set(STAGING_CUSTOMER_CUSTODY_SURFACES).size, 4)
 })
