@@ -14,12 +14,12 @@ import { NATIVE_GENERATION_19_TRANSPORT_ENABLED } from '../scripts/staging-gener
 import { NATIVE_GENERATION_19_DATABASE_TRANSPORT_ENABLED } from '../scripts/staging-generation-19-database-transport.mjs'
 import { assertSupportedOperatorEntry } from '../scripts/staging-generation-19-run-live-once.mjs'
 
-test('generation 19 native gates are disarmed after entry-baseline failure', () => {
-  assert.equal(NATIVE_GENERATION_19_TRANSPORT_ENABLED, false)
-  assert.equal(NATIVE_GENERATION_19_DATABASE_TRANSPORT_ENABLED, false)
+test('generation 19 native gates are armed for one reviewed window', () => {
+  assert.equal(NATIVE_GENERATION_19_TRANSPORT_ENABLED, true)
+  assert.equal(NATIVE_GENERATION_19_DATABASE_TRANSPORT_ENABLED, true)
 })
 
-test('disabled launcher CLI returns NATIVE_TRANSPORT_DISABLED without long-session env', () => {
+test('armed launcher CLI refuses without long-session contract (fail-closed)', () => {
   const env = { ...process.env }
   delete env.TLL_LIVE_LONG_SESSION
   delete env.TLL_LIVE_KEEPALIVE_PATH
@@ -28,11 +28,8 @@ test('disabled launcher CLI returns NATIVE_TRANSPORT_DISABLED without long-sessi
     ['scripts/staging-generation-19-live-launcher.mjs'],
     { encoding: 'utf8', env },
   )
-  assert.equal(result.status, 0, result.stderr)
-  const line = result.stdout.trim().split('\n').at(-1)
-  const payload = JSON.parse(line)
-  assert.equal(payload.status, 'NATIVE_TRANSPORT_DISABLED')
-  assert.equal(payload.generation, 19)
+  assert.equal(result.status, 2, result.stderr)
+  assert.match(result.stderr, /LONG_SESSION|long.session|keepalive|TLL_LIVE_LONG_SESSION/i)
 })
 
 test('assertLongSessionContract rejects missing long-session env', () => {

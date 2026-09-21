@@ -12,6 +12,18 @@
 
 Gate helper: `scripts/staging-generation-19-pre-arm-gate.mjs` → `assertGeneration19PreArmReady()`.
 
+## Gen 17 retirement status (2026-09-21)
+
+Operator-approved Gen 17 correct cleanup **already executed** on staging `qdmvngjwkcsilzmqksme`: `recoverGeneration17Database` → `RECOVERY_VERIFIED` / `RETIRED_MARKERS_PROVEN` for window `5728d807-701a-486b-a8c5-34bf89238275`.
+
+**Do not re-run cleanup.** Optional local-only evidence file (never invent remote secrets / never commit secrets):
+
+```text
+implementation-state/staging/tll-generation-19-predecessor-retirement-evidence.json
+```
+
+CLI while armed: `node scripts/staging-generation-19-pre-arm-gate.mjs --retirement-evidence=<path> --allow-armed-gates`
+
 ## Mint checklist (every Gen N)
 
 When minting Gen N from Gen N−1:
@@ -22,9 +34,9 @@ When minting Gen N from Gen N−1:
 - [ ] Regenerate `config/staging-generation-N-recovery*.sql`
 - [ ] Recovery test asserts **this** generation’s pins (not N−1)
 - [ ] Run recovery-pin regression for Gen 15–N
-- [ ] All native / Keychain / manifest / policy gates **FALSE**
+- [ ] All native / Keychain / manifest / policy gates **FALSE** (Phase 1 only)
 - [ ] Stage plan documents the recovery-pin mint step
 
-## Gen 19 Phase 1 status
+## Gen 19 Phase 2 status
 
-Gates remain false. Cleanup path is listed; live cleanup is **not** run here. Next: operator-approved Gen 17 cleanup (if markers still active), then independent Gen 19 arming review.
+Gates armed for one reviewed staging window (`ONE_STAGING_WINDOW_AUTHORIZED`). Predecessor retirement proven; cleanup must not be re-run. Next: independent Phase 3 live via `scripts/staging-generation-19-run-live-once.mjs` only (separate approval).
