@@ -25,14 +25,14 @@ const RETIREMENT_EVIDENCE = Object.freeze({
   source: 'operator-approved-gen17-correct-cleanup',
 })
 
-test('generation 19 package identity is fixed and native gates are armed for one window', () => {
+test('generation 19 package identity is fixed and native gates are disarmed after credentials verified', () => {
   assert.equal(GENERATION, 19)
   assert.equal(WINDOW_ID, '51809dd4-bd4b-44c7-8609-7dd8ca063679')
   assert.equal(PACKAGE_ID, 'tll-staging-generation-19-credentials/v1')
   assert.equal(PREDECESSOR.generation, 17)
   assert.equal(PREDECESSOR.windowId, EXPECTED_GEN17_CLEANUP_TARGET.windowId)
-  assert.equal(NATIVE_GENERATION_19_TRANSPORT_ENABLED, true)
-  assert.equal(NATIVE_GENERATION_19_DATABASE_TRANSPORT_ENABLED, true)
+  assert.equal(NATIVE_GENERATION_19_TRANSPORT_ENABLED, false)
+  assert.equal(NATIVE_GENERATION_19_DATABASE_TRANSPORT_ENABLED, false)
 })
 
 test('reviewed Gen 17 cleanup path lists correct window and package', () => {
@@ -67,34 +67,22 @@ test('predecessor retirement evidence is secret-free and exact', () => {
   )
 })
 
-test('pre-arm gate refuses default requireArmedGatesFalse while gates are armed', async () => {
-  await assert.rejects(
-    () => assertGeneration19PreArmReady({ retirementEvidence: RETIREMENT_EVIDENCE }),
-    error => {
-      assert.match(error.message, /native_gates_must_stay_false_until_arming_diff/)
-      return true
-    },
-  )
-})
-
-test('pre-arm gate passes with retirement evidence when allow-armed (Phase 2 arming path)', async () => {
-  const ready = await assertGeneration19PreArmReady({
-    retirementEvidence: RETIREMENT_EVIDENCE,
-    requireArmedGatesFalse: false,
-  })
-  assert.equal(ready.status, 'PRE_ARM_READY')
-  assert.equal(ready.predecessorRetirementProven, true)
-  assert.equal(ready.reviewedCleanupPathListed, false)
-  assert.equal(ready.nativeGatesArmed, true)
-  assert.equal(ready.windowId, WINDOW_ID)
-  assert.equal(ready.nextAction, 'ARMED_PHASE_3_REQUIRES_RUN_LIVE_ONCE')
-  assert.match(DEFAULT_LOCAL_RETIREMENT_EVIDENCE_PATH, /implementation-state\/staging\//)
-})
-
-test('pre-arm gate still accepts reviewed cleanup path without re-running cleanup when allow-armed', async () => {
-  const ready = await assertGeneration19PreArmReady({ requireArmedGatesFalse: false })
+test('pre-arm gate passes with reviewed cleanup path while gates stay false', async () => {
+  const ready = await assertGeneration19PreArmReady()
   assert.equal(ready.status, 'PRE_ARM_READY')
   assert.equal(ready.reviewedCleanupPathListed, true)
   assert.equal(ready.predecessorRetirementProven, false)
-  assert.equal(ready.nativeGatesArmed, true)
+  assert.equal(ready.nativeGatesArmed, false)
+  assert.equal(ready.windowId, WINDOW_ID)
+  assert.match(ready.nextAction, /GEN17_CLEANUP|ARMING_REVIEW/)
+})
+
+test('pre-arm gate accepts secret-free retirement evidence without requiring cleanup execution', async () => {
+  const ready = await assertGeneration19PreArmReady({
+    retirementEvidence: RETIREMENT_EVIDENCE,
+  })
+  assert.equal(ready.predecessorRetirementProven, true)
+  assert.equal(ready.nativeGatesArmed, false)
+  assert.equal(ready.nextAction, 'INDEPENDENT_ARMING_REVIEW')
+  assert.match(DEFAULT_LOCAL_RETIREMENT_EVIDENCE_PATH, /implementation-state\/staging\//)
 })
