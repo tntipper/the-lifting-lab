@@ -1,7 +1,7 @@
 {
   "slice": "stage-3-slice-3-auth-mount",
   "date": "2026-09-21",
-  "tipSha": "b4e1311d19266e1a50029afff29c83fe5c3f5e6e",
+  "tipSha": "cursor/stage3-slice3-auth-mount-922b",
   "baseSha": "3989c6c7e539caeece71841a18f90ee3bbd6382a",
   "baseBranch": "codex/tll-integration",
   "plan": "docs/ops/stage-plans/2026-09-21-stage-3-slice-3-auth-mount.md",
