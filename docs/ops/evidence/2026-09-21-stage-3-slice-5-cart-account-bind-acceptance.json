@@ -1,0 +1,36 @@
+{
+  "slice": "stage-3-slice-5-cart-account-bind",
+  "date": "2026-09-21",
+  "baseSha": "7f670cbc1b7ba8fb4a0a95caf1be93e0d8c44d76",
+  "baseBranch": "codex/tll-integration",
+  "plan": "docs/ops/stage-plans/2026-09-21-stage-3-slice-5-cart-account-bind.md",
+  "results": [
+    { "id": "mounted-account-bind", "result": "PASS", "pointer": "tests/staging-cart.test.mjs" },
+    { "id": "mounted-transition-required-no-silent-merge", "result": "PASS", "pointer": "tests/staging-cart.test.mjs" },
+    { "id": "mounted-transfer", "result": "PASS", "pointer": "tests/staging-cart.test.mjs" },
+    { "id": "mounted-use-account-no-merge", "result": "PASS", "pointer": "tests/staging-cart.test.mjs" },
+    { "id": "refresh-no-mutation-resend", "result": "PASS", "pointer": "tests/browser/staging-cart.mjs; tests/staging-cart.test.mjs uncertain*" },
+    { "id": "duplicate-request-no-second-write", "result": "PASS", "pointer": "tests/staging-cart.test.mjs" },
+    { "id": "stale-revision", "result": "PASS", "pointer": "tests/staging-cart.test.mjs" },
+    { "id": "unavailable-variant", "result": "PASS", "pointer": "tests/staging-cart.test.mjs provider unavailable/wrongVariant" },
+    { "id": "uncertain-mutation-no-auto-resend", "result": "PASS", "pointer": "tests/staging-cart.test.mjs" },
+    { "id": "browser-history-back", "result": "GAP", "reason": "No dedicated history.back case; account-switch/unmount discard covered instead" },
+    { "id": "hosted-preview-cart-session", "result": "GAP", "reason": "Excluded; offline mount fixture only" },
+    { "id": "sql-transition-through-mount", "result": "GAP", "reason": "PG suite separate; mount uses injected pool" },
+    { "id": "slice-6", "result": "GAP", "reason": "Excluded" },
+    { "id": "live-boundaries", "result": "PASS", "violations": 0 }
+  ],
+  "commands": [
+    "npm run check:live-boundaries",
+    "node --test tests/staging-cart.test.mjs",
+    "node --test tests/staging-cart-transition.test.mjs"
+  ],
+  "exclusions": [
+    "no-gen-20",
+    "no-live-arming",
+    "no-production-supabase",
+    "no-purchases",
+    "no-customer-email-identity",
+    "no-slice-6"
+  ]
+}
