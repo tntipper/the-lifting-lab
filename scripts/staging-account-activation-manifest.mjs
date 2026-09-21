@@ -347,6 +347,7 @@ const stageSafetySources = [
   'docs/ops/stage-plans/2026-09-21-generation-16-connection-recovery.md',
   'docs/ops/stage-plans/2026-09-21-generation-16-zero-sessions-unavailable-diagnosis.md',
   'docs/ops/stage-plans/2026-09-21-generation-17-disabled-successor.md',
+  'docs/ops/stage-plans/2026-09-21-generation-17-arming-diff.md',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
@@ -414,7 +415,7 @@ const manifest = {
     ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
     ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true, liveExecutionRequiresPhaseJournal: true,
     generation10ReplayPermitted: false, generation11ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation12ReplayPermitted: false, generation13ReplayPermitted: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false, generation16ReplayPermitted: false, generation17ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
+    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: true, generation12ReplayPermitted: false, generation13ReplayPermitted: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false, generation16ReplayPermitted: false, generation17ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
   },
   migrations: await Promise.all(migrations.map(pin)),
   edge: { functions: [
@@ -786,8 +787,8 @@ const manifest = {
       approximateWallBudgetMinutes: 45,
     },
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
-    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
-    status: 'DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW',
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: true,
+    status: 'ONE_STAGING_WINDOW_AUTHORIZED',
   },
   
   gates: [

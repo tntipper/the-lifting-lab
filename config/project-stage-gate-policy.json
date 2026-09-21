@@ -14,7 +14,7 @@
   "failedOrUncertainWindowReplayPermitted": false,
   "currentHold": {
     "scope": "staging-runtime-credential-window",
-    "reason": "generation-17-disabled-successor-prepared-mgmt-error-mapping-zero-sessions-drain-awaiting-independent-arming-review",
+    "reason": "generation-17-one-reviewed-staging-window-authorized-requires-direct-live-launcher-and-phase-journal-ordinary-tests-forbidden-while-armed",
     "generation10ReplayPermitted": false,
     "generation11ReplayPermitted": false,
     "generation11Armed": false,
@@ -29,7 +29,7 @@
     "generation15ReplayPermitted": false,
     "generation16Armed": false,
     "generation16ReplayPermitted": false,
-    "generation17Armed": false,
+    "generation17Armed": true,
     "generation17ReplayPermitted": false
   }
 }
