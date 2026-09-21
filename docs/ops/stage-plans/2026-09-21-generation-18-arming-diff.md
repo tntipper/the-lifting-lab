@@ -1,0 +1,82 @@
+# Generation 18 arming diff
+
+## Outcome
+
+Arm Generation 18 for one independently reviewed staging credential window. This change flips only the Gen 18 native/Keychain/manifest/policy gates. It does not run the live launcher and does not mutate staging or production.
+
+## Exact flags flipped
+
+| Location | Flag | Before | After |
+|----------|------|--------|-------|
+| `scripts/staging-generation-18-transport.mjs` | `NATIVE_GENERATION_18_TRANSPORT_ENABLED` | `false` | `true` |
+| `scripts/staging-generation-18-database-transport.mjs` | `NATIVE_GENERATION_18_DATABASE_TRANSPORT_ENABLED` | `false` | `true` |
+| `scripts/staging-generation-18-keychain.py` | `APPROVED_NATIVE_READ` | `False` | `True` |
+| `scripts/staging-account-activation-manifest.mjs` → `generation18Successor.nativeTransportEnabled` | | `false` | `true` |
+| `generation18Successor.status` | | `DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW` | `ONE_STAGING_WINDOW_AUTHORIZED` |
+| `stageSafety.generation18Armed` / `config/project-stage-gate-policy.json` `currentHold.generation18Armed` | | `false` | `true` |
+| Policy hold reason | | `generation-18-disabled-successor-awaiting-arming-review-gen17-disarmed-zero-sessions-runtime-sessions-remain-no-replay` | `generation-18-one-reviewed-staging-window-authorized-requires-direct-live-launcher-and-phase-journal-ordinary-tests-forbidden-while-armed` |
+
+Pinned sha256 values for every Gen 18 / stage-safety source whose content changed are recomputed in `config/staging-account-activation-manifest.json`. Staging target remains `qdmvngjwkcsilzmqksme`. Production `wrhgscovsgsudtedbljr` stays excluded. Credentials `windowId` / `packageId` are unchanged from the disabled successor mint (`44e3fff5-5dff-4183-af6b-3cdfb367f1af` / `tll-staging-generation-18-credentials/v1`).
+
+## Merge = arm; live run is later (Phase 3)
+
+Merging this PR **is** the arm. A live Gen 18 attempt is a **separate Phase 3** that still requires explicit Toby yes and must use **only**:
+
+```text
+scripts/staging-generation-18-run-live-once.mjs
+```
+
+Long foreground only — never `nohup`, never a short-lived remote shell. Operator must be present for Phase 3; do not merge overnight unattended.
+
+Do not merge without that arming yes. Do not run the live launcher from this PR tip without Phase 3 approval.
+
+## Long-session contract (required while armed)
+
+When gates are true, the live launcher refuses native work / journal claim unless:
+
+1. `TLL_LIVE_LONG_SESSION=1`
+2. Parent-held keepalive JSON via `TLL_LIVE_KEEPALIVE_PATH` (held by `run-live-once`)
+3. Process is not an orphan (`ppid<=1`) or `nohup` child
+
+Plan ~45 minutes wall clock (VERCEL_STAGE alone up to 660s; CONNECTION_VERIFICATION up to 420s). Monitor only from a **separate** read-only observer (`scripts/staging-generation-18-journal-watch.mjs` / `assessStagingWindowProgress`). Never kill while `ACTIVE_WITHIN_PHASE_BOUND`.
+
+## Bake-ins already in the package (do not remint)
+
+- **Zero-sessions drain + management error mapping already on tip** — Gen 18 waits `POOLER_CONVERGENCE_MS` after connection probes, proves zero sessions with bounded retry only while `failureReason === 'runtime_sessions_remain'`, drains non-201 Management bodies so allow-listed RAISE phrases are classified (PR #37/#40 tip defaults inherited via PR #41 disabled successor: **30s × 5** — do not weaken), and surfaces allow-listed `failureStep` / `failureReason` (plus optional secret-free `managementStatusCode` / `zeroSessionsAttempts`) on permanent zero-sessions failures.
+- **Bridge own_probe fixed on tip** — shared verifier uses allow-listed `register` + `{}` + expected raise-mode `'error'` (Gen 14 FAIL root cause; carried forward).
+- **SCRAM from projected passwords** — Gen 18 transport derives SCRAM verifiers from projected base64url passwords, not raw material buffers.
+- **connectionFailure evidence required** — secret-free `{purpose,check,status,reason}` plus allow-listed extras remain wired into launcher stdout, implementation-state evidence, and live-session summary.
+- **Pinned CA** — `readPinnedSupabaseCa()` remains wired into the live launcher connection verifier.
+- Predecessor Gen 17 `expiresAt` **`2026-09-21T09:31:04.000Z`** confirmed from the Gen 17 live dispatch journal / connection-recovery record (`RECONCILIATION_REQUIRED`; no replay).
+
+## Never `npm test` while armed
+
+On the armed tip, `npm run check:live-boundaries` **must fail closed**. Observed on this tip:
+
+```text
+Staging live boundary unavailable: enabled-keychain-read:scripts/staging-generation-18-keychain.py, enabled-native-gate:scripts/staging-generation-18-database-transport.mjs, enabled-native-gate:scripts/staging-generation-18-transport.mjs, policy:currentHold
+```
+
+That is correct. Never run ordinary `npm test` (or any suite that runs the boundary preflight) while Gen 18 is armed. Focused injected Gen 18 / manifest tests may be run without the boundary preflight; that is not a green full suite.
+
+Do **not** “fix” the live-boundary failure by disarming on this arming branch.
+
+## Gen 11 / Gen 12 / Gen 13 / Gen 14 / Gen 15 / Gen 16 / Gen 17 — no replay
+
+Generation 11 through Generation 17 remain non-replayable. `generation11Armed` … `generation17Armed` stay `false`. Replay of Gen 11–17 is forbidden. Gen 17 remains the role/DB predecessor for Gen 18 (intent-locked / reconciliation-required; no replay).
+
+## Gen 11/12 interrupt lessons that bind this arm
+
+1. One supported operator entry only: `scripts/staging-generation-18-run-live-once.mjs` (sets long-session env, holds keepalive, foreground launcher).
+2. Never start via short-lived remote-shell/`nohup` — that was the Gen 11/12 interrupt root cause.
+3. Separate journal-watch / `assessStagingWindowProgress` observer only.
+4. Exclusive dispatch journal is claimed before material generation.
+5. Disarm after any live attempt or if the arm is abandoned.
+
+## Disarm
+
+After any live attempt — success, failure, interruption, or abandonment of the arm — disarm by restoring every Gen 18 gate above to the disabled values, regenerating manifest pins, and restoring `generation18Armed: false` with an updated hold reason. Do not leave the repository armed. Disarm before any other work.
+
+## Reviewer diff
+
+Use `gh pr diff` (or the forge PR files view) for the machine-readable unified diff. Do not invent credential or journal files under `implementation-state`; that tree is local-only.
