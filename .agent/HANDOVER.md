@@ -1,6 +1,6 @@
 # Agent handover — The Lifting Lab
 
-Updated: 2026-09-21 (Stage 3 Slice 6)
+Updated: 2026-09-21 (staging Optimus TLL Client ID retarget)
 
 ## Stage status
 
@@ -10,9 +10,10 @@ Updated: 2026-09-21 (Stage 3 Slice 6)
 - **Slice 4:** Shopify callback + final application-session mount proof landed (PR #49 merge tip `7f670cbc1b7ba8fb4a0a95caf1be93e0d8c44d76`).
 - **Slice 5:** Cart account bind + explicit guest→account transition mount proof landed (PR #50 merge tip `d6a2d79e6e1af61fc71afe5c777ba82cbda5a322`).
 - **Slice 6:** Logout + orders App Router mount + offline orders UI projection proof landed (see plan/evidence below). Honest **GAP:** hosted stop-before-purchase browser journey (needs Toby/preview secrets + activation; not run).
+- **Staging Customer Account Client ID:** retargeted to live Optimus TLL app `63f474eda69ec32778ce2a99e8c1114f` (retired obsolete `c8f7b926-9073-416c-9949-0d99e89a99c0`). Shop `107532616020` / issuer / reviewed preview origin unchanged. OAuth scopes remain `openid email customer-account-api:full` (Dev Dashboard `customer_read_*` are app access scopes, not OAuth token scopes). **`TLL_STAGING_CUSTOMER_ENABLED` / cart flags still off** — no staging enablement in this change.
 - **Stage 3 closed?** Offline wiring checklist slices 1–6 mount/composition **PASS**. Stage 3 is **not** fully closed until the hosted stop-before-purchase journey is owner-run and recorded (or explicitly waived under new programme authority).
 - **Next programme step:** Owner-controlled hosted activation journey per `docs/ops/staging-account-activation.md` (owned test email; cart choice without checkout; `/account/orders`; unified logout; **stop before purchase**). Do not arm Gen 20 / live launchers from ordinary agents. After that residual GAP closes, Stage 3 can be marked closed and the programme can move to the next reviewed stage.
-- **This tip:** branch `cursor/stage3-slice6-logout-orders-journey-71bf` (see PR head SHA in report).
+- **This tip:** branch `cursor/staging-optimus-tll-client-id-856a` (see PR head SHA in report).
 
 ## Authoritative pointers
 

@@ -12,7 +12,7 @@ const {
 } = await import('data:text/javascript;base64,' + Buffer.from(bundle.outputFiles[0].text).toString('base64'))
 const ORIGIN = 'https://the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app'
 const proofHash = createHash('sha256').update(JSON.stringify(['tll-shopify-proof/v1','107532616020','https://shopify.com/authentication/107532616020',
-  'c8f7b926-9073-416c-9949-0d99e89a99c0','https://shopify.com/authentication/107532616020/oauth/authorize',
+  '63f474eda69ec32778ce2a99e8c1114f','https://shopify.com/authentication/107532616020/oauth/authorize',
   'https://shopify.com/authentication/107532616020/oauth/token','https://shopify.com/authentication/107532616020/.well-known/jwks.json',
   ORIGIN + '/auth/customer/shopify/callback','openid email customer-account-api:full'])).digest('hex')
 const now = Date.now()
@@ -135,7 +135,7 @@ test('valid preview composition owns four distinct purpose pools and four isolat
   assert.equal(coordinated.invalidateSupabaseSession,f.invalidateSupabaseSession);assert.equal(coordinated.applicationOrigin,ORIGIN)
   assert.equal(coordinated.syntheticExecution,true);assert.equal(coordinated.liveEnabled,false)
   assert.equal(f.runtime.accountOperations,f.accountOperations);assert.equal(f.runtime.accountLogout,f.accountLogout)
-  assert.deepEqual(f.runtime.connection, { projectRef:'qdmvngjwkcsilzmqksme', shopId:'107532616020', clientId:'c8f7b926-9073-416c-9949-0d99e89a99c0',
+  assert.deepEqual(f.runtime.connection, { projectRef:'qdmvngjwkcsilzmqksme', shopId:'107532616020', clientId:'63f474eda69ec32778ce2a99e8c1114f',
     issuer:'https://shopify.com/authentication/107532616020', discovery:'https://tll-integration-staging.myshopify.com/.well-known/openid-configuration' })
   await f.runtime.close(); await f.runtime.close(); assert.deepEqual(f.closed.sort(), ['bridge','broker','customer','provisional']); assert.deepEqual(f.destroyed, ['customer-token-v1','customer-provisional-v1','customer-cookie-v1','customer-final-v1'])
 })
