@@ -202,7 +202,7 @@
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-14-disabled-successor.md",
-        "sha256": "3cf49b6a1c5a3d77834dc8ce1b887c52faddd1ef577aab6b43b256b97aa2e331"
+        "sha256": "c818b75b35932da2c80c7c49eddbd33253b91059f3e2fe270f2f5f3b2e83ae2e"
       }
     ],
     "policy": "tll-project-stage-gate-policy/v1",
@@ -1525,7 +1525,7 @@
       },
       {
         "path": "scripts/staging-generation-14-credentials.mjs",
-        "sha256": "a483915da4f3d3a4330f57812661e19fee5d76a36a03fda2196660add456c1cc"
+        "sha256": "29c195782d6612a33298fcb1d54a383984b389d6efcfb88314d28251b02ba266"
       },
       {
         "path": "scripts/staging-generation-14-transport.mjs",
@@ -1606,14 +1606,14 @@
     "predecessor": {
       "generation": 13,
       "windowId": "866b0e78-7530-493a-8963-e8cf24cf3067",
-      "expiresAt": "2026-09-21T06:37:00.000Z",
+      "expiresAt": "2026-09-21T06:36:08.000Z",
       "journalState": "RECONCILIATION_REQUIRED",
       "journalLocksReplay": true,
       "recoveryVerified": true,
-      "validUntil": "2026-09-21T06:37:00.000Z",
-      "liveReadOnlyConfirmed": false,
+      "validUntil": "2026-09-21T06:36:08.000Z",
+      "liveReadOnlyConfirmed": true,
       "replayPermitted": false,
-      "note": "Gen 13 reached DATABASE_DISPATCH then RECOVERY_VERIFIED; role markers are Gen 13 retired. Gen 11/12 never dispatched. expiresAt is UNCONFIRMED on tip (live journal local-only) — confirm from dispatch journal or read-only baseline before arming."
+      "note": "Gen 13 reached DATABASE_DISPATCH then RECOVERY_VERIFIED; role markers are Gen 13 retired. Gen 11/12 never dispatched. expiresAt confirmed 2026-09-21 from local Gen 13 dispatch journal (implementation-state/staging/tll-generation-13-credential-dispatch.json)."
     },
     "supersedesAttempts": [
       {

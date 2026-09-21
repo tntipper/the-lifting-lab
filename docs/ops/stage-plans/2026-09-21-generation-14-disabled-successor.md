@@ -36,7 +36,7 @@ Prepare a fresh, fully disabled Generation 14 credential package derived from th
 | Package ID | `tll-staging-generation-14-credentials/v1` |
 | Window ID | `a8955fc3-2347-4544-b04e-55a2cb6fe7aa` |
 | Role predecessor | Gen 13 / `866b0e78-7530-493a-8963-e8cf24cf3067` (Gen 13 reached `DATABASE_DISPATCH` and recovery wrote Gen 13 retired markers; Gen 11/12 never dispatched) |
-| Predecessor expiresAt | **UNCONFIRMED on tip** — live dispatch journal is local-only. Package embeds a provisional ISO for artefact completeness with `liveReadOnlyConfirmed: false`. **Replace from** `implementation-state/staging/tll-generation-13-credential-dispatch.json` **or a read-only role-marker baseline before any arming.** |
+| Predecessor expiresAt | `2026-09-21T06:36:08.000Z` — confirmed 2026-09-21 from local Gen 13 dispatch journal `implementation-state/staging/tll-generation-13-credential-dispatch.json` (`liveReadOnlyConfirmed: true`) |
 | Superseded / locked | Gen 11 + Gen 12 `INTENT_RECORDED` no-replay; Gen 13 `RECONCILIATION_REQUIRED` / `CONNECTION_RECOVERY_VERIFIED_…_NO_REPLAY` |
 | Staging project | `qdmvngjwkcsilzmqksme` only |
 | Production excluded forever | `wrhgscovsgsudtedbljr` |
@@ -47,7 +47,7 @@ Prepare a fresh, fully disabled Generation 14 credential package derived from th
 
 | Check | Pass | Fail |
 |-------|------|------|
-| Predecessor Gen 13 `expiresAt` confirmed from dispatch journal or read-only baseline; `liveReadOnlyConfirmed: true` | ☐ | ☐ |
+| Predecessor Gen 13 `expiresAt` confirmed from dispatch journal (`2026-09-21T06:36:08.000Z`); `liveReadOnlyConfirmed: true` | ☑ | ☐ |
 | Long-session Shell / `node scripts/staging-generation-14-run-live-once.mjs` only | ☐ | ☐ |
 | Separate observer: journal-watch `--follow --interval 20` | ☐ | ☐ |
 | Never kill while `ACTIVE_WITHIN_PHASE_BOUND` | ☐ | ☐ |
@@ -64,7 +64,7 @@ Prepare a fresh, fully disabled Generation 14 credential package derived from th
 
 This stage ends when the disabled package, live launcher, run-live-once wrapper, journal-watch follow mode, evidence helpers, SCRAM projected derivation, boundary coverage, tests and documentation are committed. The next gate is **independent review of the exact arming diff** (a separate change that flips native/Keychain gates). This PR must not contain that diff.
 
-**Do not arm** until Gen 13 predecessor `expiresAt` is confirmed from the live journal or read-only baseline.
+Gen 13 predecessor `expiresAt` is confirmed from the live Mac dispatch journal. Gates remain disabled; arming is still a separate reviewed change.
 
 ## Exclusions
 

@@ -20,14 +20,14 @@ export const PACKAGE_ID = 'tll-staging-generation-14-credentials/v1'
  * Role/DB predecessor is Generation 13: tip 072da0a confirms DATABASE_DISPATCH +
  * RECOVERY_VERIFIED wrote Gen 13 retired markers (Gen 11/12 never dispatched; Gen 13 did).
  *
- * `expiresAt` is UNCONFIRMED on tip — the live dispatch journal is local-only. Replace this
- * value from `implementation-state/staging/tll-generation-13-credential-dispatch.json` or a
- * read-only role-marker baseline before any arming (`liveReadOnlyConfirmed` stays false until then).
+ * `expiresAt` confirmed 2026-09-21 from the live Mac dispatch journal
+ * `implementation-state/staging/tll-generation-13-credential-dispatch.json`
+ * (windowId 866b0e78-…, state RECONCILIATION_REQUIRED).
  */
 export const PREDECESSOR = Object.freeze({
   generation: 13,
   windowId: '866b0e78-7530-493a-8963-e8cf24cf3067',
-  expiresAt: '2026-09-21T06:37:00.000Z',
+  expiresAt: '2026-09-21T06:36:08.000Z',
 })
 export const PREDECESSOR_VALID_UNTIL = PREDECESSOR.expiresAt
 export const IDENTITIES = Object.freeze({

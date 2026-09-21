@@ -541,10 +541,10 @@ const manifest = {
     sources: await Promise.all(generation14SuccessorSources.map(pin)),
     target: 'qdmvngjwkcsilzmqksme', generation: 14, windowId: 'a8955fc3-2347-4544-b04e-55a2cb6fe7aa',
     predecessor: {
-      generation: 13, windowId: '866b0e78-7530-493a-8963-e8cf24cf3067', expiresAt: '2026-09-21T06:37:00.000Z',
+      generation: 13, windowId: '866b0e78-7530-493a-8963-e8cf24cf3067', expiresAt: '2026-09-21T06:36:08.000Z',
       journalState: 'RECONCILIATION_REQUIRED', journalLocksReplay: true, recoveryVerified: true,
-      validUntil: '2026-09-21T06:37:00.000Z', liveReadOnlyConfirmed: false, replayPermitted: false,
-      note: 'Gen 13 reached DATABASE_DISPATCH then RECOVERY_VERIFIED; role markers are Gen 13 retired. Gen 11/12 never dispatched. expiresAt is UNCONFIRMED on tip (live journal local-only) — confirm from dispatch journal or read-only baseline before arming.',
+      validUntil: '2026-09-21T06:36:08.000Z', liveReadOnlyConfirmed: true, replayPermitted: false,
+      note: 'Gen 13 reached DATABASE_DISPATCH then RECOVERY_VERIFIED; role markers are Gen 13 retired. Gen 11/12 never dispatched. expiresAt confirmed 2026-09-21 from local Gen 13 dispatch journal (implementation-state/staging/tll-generation-13-credential-dispatch.json).',
     },
     supersedesAttempts: [
       { generation: 7, windowId: '753c2188-ae64-4f40-90ab-1ec26f8569d3', outcome: 'ENTRY_BASELINE_FAILED_BEFORE_MATERIAL_GENERATION', journalExists: false },
