@@ -3,7 +3,7 @@
 Date: 2026-09-21  
 Base: `codex/tll-integration` @ `da3ae52cc6727e24828b1a9ad2d334d0dd868802`  
 Plan: `docs/ops/stage-plans/2026-09-21-stage-3-slice-4-shopify-callback-session.md`  
-Tip under test: see branch tip after this evidence lands (record in HANDOVER)
+Tip under test: `3ea97c91b424a7832aa2bef200d6e7639920cbd6`
 
 ## Investigation (library vs mount)
 
