@@ -1,7 +1,7 @@
 # Stage 3 Slice 3 — auth mount acceptance
 
 Date: 2026-09-21  
-Tip under test: see git tip of this PR branch  
+Tip under test: `5f32b6158a70894f1276e3a3bf5dba1b4ae82e9b`
 Base: `codex/tll-integration` @ `3989c6c7e539caeece71841a18f90ee3bbd6382a`  
 Plan: `docs/ops/stage-plans/2026-09-21-stage-3-slice-3-auth-mount.md`
 
