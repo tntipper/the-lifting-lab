@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { POOLER_CONVERGENCE_MS } from '../scripts/staging-generation-6-connection-verifier.mjs'
 import {
   classifyZeroSessionsFailure,
+  extractAllowListedSqlExceptionMessage,
+  postManagementQuery,
   verifyGeneration16ZeroSessions,
   verifyGeneration16ZeroSessionsAfterPoolerDrain,
 } from '../scripts/staging-generation-16-database-transport.mjs'
@@ -21,6 +23,59 @@ test('classifyZeroSessionsFailure maps secret-free message classes', () => {
   assert.equal(classifyZeroSessionsFailure(Error('Generation 16 control enabled during zero-session proof')), 'control_enabled')
   assert.equal(classifyZeroSessionsFailure(Error('Generation-16 zero-session receipt mismatch')), 'receipt_mismatch')
   assert.equal(classifyZeroSessionsFailure(Error('Generation-16 database transport unavailable')), 'unavailable')
+})
+
+test('classifyZeroSessionsFailure walks cause chain for allow-listed SQL phrases', () => {
+  const wrapped = Error('Generation-16 database transport unavailable')
+  wrapped.cause = Error('ERROR: Generation 16 runtime sessions remain')
+  assert.equal(classifyZeroSessionsFailure(wrapped), 'runtime_sessions_remain')
+})
+
+test('extractAllowListedSqlExceptionMessage promotes only allow-listed Management API phrases', () => {
+  assert.equal(
+    extractAllowListedSqlExceptionMessage(JSON.stringify({ message: 'ERROR: Generation 16 runtime sessions remain\nDETAIL: x' })),
+    'Generation 16 runtime sessions remain',
+  )
+  assert.equal(
+    extractAllowListedSqlExceptionMessage(JSON.stringify({ error: 'Generation 16 control enabled during zero-session proof' })),
+    'Generation 16 control enabled during zero-session proof',
+  )
+  assert.equal(extractAllowListedSqlExceptionMessage(JSON.stringify({ message: 'permission denied for table secrets' })), undefined)
+  assert.equal(extractAllowListedSqlExceptionMessage('not-json but runtime sessions remain here'), 'Generation 16 runtime sessions remain')
+})
+
+test('postManagementQuery preserves allow-listed SQL RAISE text from non-201 JSON bodies', async () => {
+  const request = (_options, onResponse) => {
+    const listeners = new Map()
+    const response = {
+      statusCode: 400,
+      headers: { 'content-type': 'application/json' },
+      on(event, handler) {
+        listeners.set(event, handler)
+        return response
+      },
+      destroy() {},
+    }
+    queueMicrotask(() => {
+      onResponse(response)
+      listeners.get('data')?.(Buffer.from(JSON.stringify({ message: 'ERROR: Generation 16 runtime sessions remain' })))
+      listeners.get('end')?.()
+    })
+    return {
+      on() { return this },
+      end() {},
+      destroy() {},
+    }
+  }
+  await assert.rejects(
+    () => postManagementQuery(token, 'SELECT 1', { request }),
+    error => {
+      assert.match(error.message, /runtime sessions remain/i)
+      assert.equal(error.managementStatusCode, 400)
+      assert.equal(classifyZeroSessionsFailure(error), 'runtime_sessions_remain')
+      return true
+    },
+  )
 })
 
 test('happy path still requires ZERO_SESSIONS receipt after initial pooler drain', async () => {

@@ -26,7 +26,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.stageSafety.generation13Armed, false)
   assert.equal(manifest.stageSafety.generation14Armed, false)
   assert.equal(manifest.stageSafety.generation15Armed, false)
-  assert.equal(manifest.stageSafety.generation16Armed, true)
+  assert.equal(manifest.stageSafety.generation16Armed, false)
   assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation12ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation13ReplayPermitted, false)
@@ -274,10 +274,10 @@ test('generation 15 successor is pinned with Gen 14 predecessor and native gates
 })
 
 
-test('generation 16 successor is pinned with Gen 15 predecessor and native gates armed for one window', () => {
+test('generation 16 successor is pinned with Gen 15 predecessor and native gates disarmed after zero-sessions unavailable recovery', () => {
   execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
   const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
-  assert.equal(manifest.stageSafety.generation16Armed, true)
+  assert.equal(manifest.stageSafety.generation16Armed, false)
   assert.equal(manifest.stageSafety.generation15Armed, false)
   assert.equal(manifest.generation16Successor.packageId, 'tll-staging-generation-16-credentials/v1')
   assert.equal(manifest.generation16Successor.generation, 16)
@@ -293,8 +293,8 @@ test('generation 16 successor is pinned with Gen 15 predecessor and native gates
   assert.equal(manifest.generation16Successor.liveLauncher.path, 'scripts/staging-generation-16-live-launcher.mjs')
   assert.equal(manifest.generation16Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-16-run-live-once.mjs')
   assert.equal(manifest.generation16Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-16-journal-watch.mjs')
-  assert.equal(manifest.generation16Successor.nativeTransportEnabled, true)
-  assert.equal(manifest.generation16Successor.status, 'ONE_STAGING_WINDOW_AUTHORIZED')
+  assert.equal(manifest.generation16Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation16Successor.status, 'CONNECTION_RECOVERY_REQUIRED_RECONCILIATION_REQUIRED_NO_REPLAY')
   assert.equal(manifest.generation16Successor.connectionVerifier.bridgeOwnProbe.op, 'register')
   assert.equal(manifest.generation16Successor.connectionVerifier.bridgeOwnProbe.expectedMode, 'error')
   assert.ok(manifest.generation16Successor.sources.some(item => item.path === 'scripts/staging-generation-16-live-launcher.mjs'))
@@ -303,4 +303,6 @@ test('generation 16 successor is pinned with Gen 15 predecessor and native gates
   assert.ok(manifest.generation16Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-disabled-successor.md') ||
             manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-disabled-successor.md'))
   assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-arming-diff.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-connection-recovery.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-zero-sessions-unavailable-diagnosis.md'))
 })
