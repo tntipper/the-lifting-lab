@@ -34,6 +34,10 @@ import {
   KEEPALIVE_SCHEMA,
   LONG_SESSION_ENV,
 } from './staging-generation-13-long-session-contract.mjs'
+import {
+  extractLauncherTerminalFromStdout,
+  projectSecretFreeConnectionFailure,
+} from './staging-generation-13-connection-failure-evidence.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = resolve(here, '..')
@@ -227,6 +231,8 @@ export async function runLiveOnceMain(argv = process.argv.slice(2), {
     summaryDir,
     `tll-generation-13-live-session-${startedAt.replace(/[:.]/g, '-')}.json`,
   )
+  const launcherTerminal = extractLauncherTerminalFromStdout(launcherResult?.stdout)
+  const connectionFailure = projectSecretFreeConnectionFailure(launcherTerminal?.connectionFailure)
   const summary = {
     schema: 'tll-generation-13-live-session-summary/v1',
     generation: 13,
@@ -236,12 +242,17 @@ export async function runLiveOnceMain(argv = process.argv.slice(2), {
     holderPid: process.pid,
     launcherExitCode: launcherResult?.code ?? null,
     launcherSignal: launcherResult?.signal ?? null,
+    launcherStatus: launcherTerminal?.status ?? null,
+    launcherPhase: launcherTerminal?.phase ?? null,
+    launcherNextAction: launcherTerminal?.nextAction ?? null,
+    ...(connectionFailure ? { connectionFailure } : {}),
     watchIntervalSec: watchIntervalSec || null,
     watchExitCode: watchExit?.code ?? null,
     notes: [
       'Secret-free summary only.',
       'Gates remain disabled unless a separate reviewed arming diff landed.',
       'Do not replay Gen 11 or Gen 12. Do not arm overnight unattended without a proven supervisor.',
+      'When connection verification fails, connectionFailure.{purpose,check,status,reason} must be retained here.',
     ],
   }
   writeFileSync(summaryPath, `${JSON.stringify(summary, null, 2)}\n`, { mode: 0o600 })
@@ -249,6 +260,8 @@ export async function runLiveOnceMain(argv = process.argv.slice(2), {
     event: 'run-live-once-finish',
     summaryPath,
     launcherExitCode: summary.launcherExitCode,
+    launcherStatus: summary.launcherStatus,
+    ...(connectionFailure ? { connectionFailure } : {}),
   })}\n`)
 
   return { exitCode: launcherResult?.code ?? 1, summaryPath, summary }

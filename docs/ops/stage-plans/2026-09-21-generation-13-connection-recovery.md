@@ -27,7 +27,7 @@ Worked. Foreground `run-live-once` + keepalive contract prevented the Gen 11/12 
 
 ## Next (no new window yet)
 
-Diagnose the connection-verification failure (Gen 9 class) and accept a root cause **before** minting or arming any successor. Do not open a new credential window until that diagnosis is accepted. Replay of Gen 13 is forbidden.
+Diagnosis accepted in `2026-09-21-generation-13-connection-diagnosis.md`: Gen 9 CA omission is not Gen 13; strongest cause is SCRAM/password projection mismatch (fixed on the diagnosis branch). Do not open a new credential window until Gen 14 bakes in that fix plus secret-free `connectionFailure` persistence. Replay of Gen 13 remains forbidden.
 
 ## Replay
 

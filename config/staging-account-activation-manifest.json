@@ -78,7 +78,11 @@
       },
       {
         "path": "scripts/staging-generation-13-live-launcher.mjs",
-        "sha256": "1709a58731167098910e1e67b844a1c5a49dd06a7797acad86ad5a5089b0cabc"
+        "sha256": "b5ca60f8a43505ac667a8dbdea3c73cbded3b709b647844e767d528b88c40d56"
+      },
+      {
+        "path": "scripts/staging-generation-13-connection-failure-evidence.mjs",
+        "sha256": "37bbd9200511312ad55e6a979c31f825295438f8a9a7833a71d7062ac9a8d23a"
       },
       {
         "path": "scripts/staging-generation-13-long-session-contract.mjs",
@@ -90,7 +94,7 @@
       },
       {
         "path": "scripts/staging-generation-13-run-live-once.mjs",
-        "sha256": "184948a82aa1f3275bc882d3b152541d01aa3c3cfd34498f26917b317c27e1f6"
+        "sha256": "446fd51ab4e474aac26461a53c81ee79100b86c1686a158f154fb56472473099"
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
@@ -103,6 +107,10 @@
       {
         "path": "tests/staging-generation-13-long-session.test.mjs",
         "sha256": "dc2de395b9df23731f285a28e828b5ed72fe6503a5b8916e5c70ee3977c74fd1"
+      },
+      {
+        "path": "tests/staging-generation-13-connection-failure-evidence.test.mjs",
+        "sha256": "bef1402948c49ca5e5b20d545367c893c9127db6534be44810ee2beaf70840df"
       },
       {
         "path": "docs/ops/project-stage-execution-protocol.md",
@@ -158,7 +166,11 @@
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-13-connection-recovery.md",
-        "sha256": "83f122bca8630aca594bc03ffeff81d4916a9dde412e4a1759c97927a83c425c"
+        "sha256": "454b74363ac31d2ef402968f5fa558d8b49bfef79eba2b8b2d637c235320c306"
+      },
+      {
+        "path": "docs/ops/stage-plans/2026-09-21-generation-13-connection-diagnosis.md",
+        "sha256": "28b47d473cfcfc7af456babfa0b2acbe1fadaffa9fa64d85c31da370d2519b9f"
       }
     ],
     "policy": "tll-project-stage-gate-policy/v1",
@@ -578,7 +590,7 @@
       },
       {
         "path": "scripts/staging-generation-6-transport.mjs",
-        "sha256": "2aeb34e79a3df35b92827d6844e87c0f60fb919aa1f200c63af6ef5f196e06f7"
+        "sha256": "c4874311b5529776a9ebfeba8edafb5107f40b64bbe8a6ccd965554a4498ccc2"
       },
       {
         "path": "scripts/staging-generation-6-provider-transport.mjs",
@@ -606,7 +618,7 @@
       },
       {
         "path": "tests/staging-generation-6-transport.test.mjs",
-        "sha256": "df4fd07fb8b9056337d8a6260a70696e5cf3f2b1b9eac11f22c797eda0a0405a"
+        "sha256": "d60c9882c342a0e687d5d74ab15f46697eaf6182a84efeddfd1a33d78722a17a"
       },
       {
         "path": "tests/staging-generation-6-provider-transport.test.mjs",
@@ -655,7 +667,7 @@
       },
       {
         "path": "scripts/staging-generation-7-transport.mjs",
-        "sha256": "629998e71c06ed8ddecece5a0b647ad9749f654dbb1435d434b36dfd9ad91734"
+        "sha256": "fc5c2646196491f28cb83ce77810982698c44236121cc48ef091a4c22d3a2dc5"
       },
       {
         "path": "scripts/staging-generation-7-database-transport.mjs",
@@ -730,7 +742,7 @@
       },
       {
         "path": "scripts/staging-generation-8-transport.mjs",
-        "sha256": "b862506ce67f245e5281a78de3b9c070dd34fb7e965603b75106cc0f51046369"
+        "sha256": "7a983de40d9a01ae4e832bb282cddd38af66fd6db4bc81994f6870ef8b060a37"
       },
       {
         "path": "scripts/staging-generation-8-database-transport.mjs",
@@ -812,7 +824,7 @@
       },
       {
         "path": "scripts/staging-generation-9-transport.mjs",
-        "sha256": "ac3a914b8d2e96d7660fe3311e3757b321f74f0a5a45aa0545bfe7c1def0ce7d"
+        "sha256": "46fb5a1f62448122bccb63fd806790fe9701f2b57d50d3b84f41642dee0231dd"
       },
       {
         "path": "scripts/staging-generation-9-database-transport.mjs",
@@ -908,7 +920,7 @@
       },
       {
         "path": "scripts/staging-generation-10-transport.mjs",
-        "sha256": "89220778e2fbcc9d27e76554691822e1c70006425ff22406b12d2f3d2bcb1fb4"
+        "sha256": "2248706c10491e0addc93c829d7ce504365f9c088a574bb8f5b6cf99555c2331"
       },
       {
         "path": "scripts/staging-generation-10-database-transport.mjs",
@@ -1023,7 +1035,7 @@
       },
       {
         "path": "scripts/staging-generation-11-transport.mjs",
-        "sha256": "da49ed259e156a89b3817a0772364e1ba5588c72ffd1a53428de5a1415891f43"
+        "sha256": "e7611a0ff6dac6e3b4e3dee37fe897d6a36c3efa9cf13a39accf93527b430acd"
       },
       {
         "path": "scripts/staging-generation-11-database-transport.mjs",
@@ -1156,7 +1168,7 @@
       },
       {
         "path": "scripts/staging-generation-12-transport.mjs",
-        "sha256": "1f6514df7e4233f6fc74389e54b2cd56ecf377677505dec83f5550e55539ad8b"
+        "sha256": "1903aca4b9c2ff930c463b97b20c69225a6bf5023047c5a436668a53ee088be1"
       },
       {
         "path": "scripts/staging-generation-12-database-transport.mjs",
@@ -1180,7 +1192,7 @@
       },
       {
         "path": "scripts/staging-generation-13-live-launcher.mjs",
-        "sha256": "1709a58731167098910e1e67b844a1c5a49dd06a7797acad86ad5a5089b0cabc"
+        "sha256": "b5ca60f8a43505ac667a8dbdea3c73cbded3b709b647844e767d528b88c40d56"
       },
       {
         "path": "scripts/staging-generation-13-long-session-contract.mjs",
@@ -1192,7 +1204,7 @@
       },
       {
         "path": "scripts/staging-generation-13-run-live-once.mjs",
-        "sha256": "184948a82aa1f3275bc882d3b152541d01aa3c3cfd34498f26917b317c27e1f6"
+        "sha256": "446fd51ab4e474aac26461a53c81ee79100b86c1686a158f154fb56472473099"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -1313,7 +1325,7 @@
       },
       {
         "path": "scripts/staging-generation-13-transport.mjs",
-        "sha256": "b80f532d5144949f3a2c069925174d73615509e83c6439aa884177431ecda2c6"
+        "sha256": "46479110b0a319f8d307678a24fdeb48993e59bce490e05a251b3b255063a65a"
       },
       {
         "path": "scripts/staging-generation-13-database-transport.mjs",
@@ -1329,7 +1341,11 @@
       },
       {
         "path": "scripts/staging-generation-13-live-launcher.mjs",
-        "sha256": "1709a58731167098910e1e67b844a1c5a49dd06a7797acad86ad5a5089b0cabc"
+        "sha256": "b5ca60f8a43505ac667a8dbdea3c73cbded3b709b647844e767d528b88c40d56"
+      },
+      {
+        "path": "scripts/staging-generation-13-connection-failure-evidence.mjs",
+        "sha256": "37bbd9200511312ad55e6a979c31f825295438f8a9a7833a71d7062ac9a8d23a"
       },
       {
         "path": "scripts/staging-generation-13-long-session-contract.mjs",
@@ -1341,7 +1357,7 @@
       },
       {
         "path": "scripts/staging-generation-13-run-live-once.mjs",
-        "sha256": "184948a82aa1f3275bc882d3b152541d01aa3c3cfd34498f26917b317c27e1f6"
+        "sha256": "446fd51ab4e474aac26461a53c81ee79100b86c1686a158f154fb56472473099"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -1361,7 +1377,7 @@
       },
       {
         "path": "tests/staging-generation-13-transport.test.mjs",
-        "sha256": "148cf381fa19702c70287d31b23a73a25c74bc627994649a67ce6e6026ad6c11"
+        "sha256": "4b592da942b152863f357c75d673b428bae29194171ef1d6462fcfeb143d983e"
       },
       {
         "path": "tests/staging-generation-13-database-transport.test.mjs",
@@ -1374,6 +1390,10 @@
       {
         "path": "tests/staging-generation-13-long-session.test.mjs",
         "sha256": "dc2de395b9df23731f285a28e828b5ed72fe6503a5b8916e5c70ee3977c74fd1"
+      },
+      {
+        "path": "tests/staging-generation-13-connection-failure-evidence.test.mjs",
+        "sha256": "bef1402948c49ca5e5b20d545367c893c9127db6534be44810ee2beaf70840df"
       }
     ],
     "target": "qdmvngjwkcsilzmqksme",

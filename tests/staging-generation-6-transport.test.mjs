@@ -120,3 +120,29 @@ test('connection failure result projects only an exact fixed diagnostic',async()
   const rejected=await executeGeneration6CredentialWindow({ports:g.ports,journal:journal(g.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
   assert.equal('connectionFailure' in rejected,false)
 })
+
+test('SCRAM verifiers are derived from projected base64url passwords, not raw material buffers',async()=>{
+  deterministicRandom.calls=0;deterministicUuid.calls=0
+  const material=generateGeneration6Material({randomBytes:deterministicRandom,randomUUID:deterministicUuid})
+  const projection=projectGeneration6Secrets(material)
+  const salt=Buffer.alloc(18,1)
+  const fromRaw=deriveScramVerifier(material.passwords.customer,salt)
+  const fromProjected=deriveScramVerifier(projection.passwords.customer,salt)
+  assert.notEqual(fromRaw,fromProjected)
+  assert.equal(typeof projection.passwords.customer,'string')
+  assert.ok(Buffer.isBuffer(material.passwords.customer))
+
+  let capturedSql='',capturedPasswords=null
+  const f=fixture()
+  f.ports.dispatchDatabase=async sql=>{f.events.push('dispatch');capturedSql=sql;return receipt()}
+  f.ports.verifyConnections=async input=>{f.events.push('verify');capturedPasswords=Object.fromEntries(Object.entries(input.passwords).map(([purpose,value])=>[purpose,String(value)]))}
+  deterministicRandom.calls=0;deterministicUuid.calls=0
+  await executeGeneration6CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:deterministicRandom,randomUUID:deterministicUuid})
+  assert.ok(capturedPasswords)
+  for(const [index,purpose] of ['customer','cart','broker','provisional','bridge'].entries()){
+    const expected=deriveScramVerifier(capturedPasswords[purpose],Buffer.alloc(18,index+1))
+    const rejected=deriveScramVerifier(Buffer.from(capturedPasswords[purpose],'base64url'),Buffer.alloc(18,index+1))
+    assert.ok(capturedSql.includes(expected),`sql must embed SCRAM for ${purpose}`)
+    assert.notEqual(expected,rejected)
+  }
+})

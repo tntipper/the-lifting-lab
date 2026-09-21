@@ -46,6 +46,10 @@ import {
 import { NATIVE_GENERATION_13_DATABASE_TRANSPORT_ENABLED } from './staging-generation-13-database-transport.mjs'
 import { createStagingWindowPhaseJournal } from './staging-window-phase-journal.mjs'
 import { assertLongSessionContract } from './staging-generation-13-long-session-contract.mjs'
+import {
+  persistConnectionFailureEvidence,
+  secretFreeLauncherTerminal,
+} from './staging-generation-13-connection-failure-evidence.mjs'
 
 export {
   assertLongSessionContract,
@@ -57,6 +61,13 @@ export {
 export const DEFAULT_PHASE_JOURNAL_PATH = fileURLToPath(
   new URL('../../implementation-state/staging/tll-generation-13-window-phase.json', import.meta.url),
 )
+
+export {
+  DEFAULT_CONNECTION_FAILURE_EVIDENCE_PATH,
+  persistConnectionFailureEvidence,
+  projectSecretFreeConnectionFailure,
+  secretFreeLauncherTerminal,
+} from './staging-generation-13-connection-failure-evidence.mjs'
 
 const identity = Object.freeze({
   packageId: PACKAGE_ID,
@@ -165,6 +176,7 @@ export async function runNativeGeneration13CredentialWindow({
       },
     })
     phaseJournal.finish(receipt, mapTerminalOutcome(result))
+    try { persistConnectionFailureEvidence(result) } catch { /* never mask terminal outcome */ }
     return result
   } catch (error) {
     try { phaseJournal.finish(receipt, 'RECOVERY_REQUIRED') } catch { /* preserve original failure */ }
@@ -175,14 +187,7 @@ export async function runNativeGeneration13CredentialWindow({
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const result = await runNativeGeneration13CredentialWindow()
-    process.stdout.write(`${JSON.stringify({
-      status: result.status,
-      target: result.target,
-      generation: result.generation,
-      windowId: result.windowId,
-      phase: result.phase,
-      nextAction: result.nextAction,
-    })}\n`)
+    process.stdout.write(`${JSON.stringify(secretFreeLauncherTerminal(result))}\n`)
     if (result.status === 'NATIVE_TRANSPORT_DISABLED') process.exitCode = 0
     else if (result.status !== 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED') process.exitCode = 1
   } catch (error) {

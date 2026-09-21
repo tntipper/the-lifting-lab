@@ -145,7 +145,10 @@ export async function executeGeneration6CredentialWindow({ ports, journal = crea
       || STAGED_VERCEL_NAMES.some(name => !names.vercel.includes(name))
       || GENERATED_SUPABASE_SECRET_NAMES.some(name => !names.supabase.includes(name))) unavailable()
     phase='DATABASE_PACKAGE'
-    const verifiers = Object.fromEntries(purposes.map((purpose, index) => [purpose, deriveScramVerifier(material.passwords[purpose], Buffer.alloc(18, index + 1))]))
+    // SCRAM must be derived from the same base64url password string that providers
+    // store and that verifyConnections / runtime clients will present. Deriving from
+    // the raw material buffer produced Gen 13-class connect_retry after TLS was fixed.
+    const verifiers = Object.fromEntries(purposes.map((purpose, index) => [purpose, deriveScramVerifier(projection.passwords[purpose], Buffer.alloc(18, index + 1))]))
     const sql = buildGeneration6CredentialSql({ expiresAt, verifiers, nowMs })
     phase='JOURNAL_INTENT'
     intent = journal.recordIntent({ expiresAt, nowMs }); dispatchAttempted = true
