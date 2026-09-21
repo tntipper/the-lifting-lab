@@ -13,7 +13,7 @@ const nativeBundle = await build({ stdin: { contents: "export * from './lib/iden
   } }] })
 const native = await import(`data:text/javascript;base64,${Buffer.from(nativeBundle.outputFiles[0].text).toString('base64')}`)
 const ISSUER = 'https://shopify.com/authentication/107532616020', TOKEN = `${ISSUER}/oauth/token`, JWKS = `${ISSUER}/.well-known/jwks.json`
-const CLIENT = 'c8f7b926-9073-416c-9949-0d99e89a99c0', CALLBACK = 'https://synthetic-staging.vercel.app/auth/shopify/callback'
+const CLIENT = '63f474eda69ec32778ce2a99e8c1114f', CALLBACK = 'https://synthetic-staging.vercel.app/auth/shopify/callback'
 const SCOPE = 'openid email customer-account-api:full', NOW = Date.parse('2026-09-15T21:00:00Z'), SECRET = 'synthetic:secret+%/only'
 const exchange = { endpoint: TOKEN, clientId: CLIENT, code: 'synthetic-code', verifier: 'x'.repeat(43), redirectUri: CALLBACK }
 const refresh = { endpoint: TOKEN, clientId: CLIENT, refreshToken: 'synthetic-old-refresh' }

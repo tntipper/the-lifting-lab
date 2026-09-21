@@ -510,7 +510,7 @@ const manifest = {
       bridge: { login: 'tll_bridge_runtime', membership: 'tll_bridge_executor' },
     }, vercelSecrets: vercelSecrets.sort(), vercelConfiguration: vercelConfiguration.sort(),
     enableLast: ['TLL_STAGING_CUSTOMER_ENABLED','TLL_STAGING_CART_ENABLED','NEXT_PUBLIC_TLL_STAGING_CUSTOMER','NEXT_PUBLIC_TLL_STAGING_CART'] },
-  provider: { customerClientId: 'c8f7b926-9073-416c-9949-0d99e89a99c0', shopId: '107532616020',
+  provider: { customerClientId: '63f474eda69ec32778ce2a99e8c1114f', shopId: '107532616020',
     issuer: 'https://shopify.com/authentication/107532616020', discovery: 'https://tll-integration-staging.myshopify.com/.well-known/openid-configuration',
     authorizationEndpoint: 'https://shopify.com/authentication/107532616020/oauth/authorize',
     tokenEndpoint: 'https://shopify.com/authentication/107532616020/oauth/token',

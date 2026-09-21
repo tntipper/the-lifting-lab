@@ -1,6 +1,6 @@
 // Node-only staging composition. Importing performs no credential, database or provider work.
 import { createCustomerAdmissionBrowserDelivery } from '@/lib/identity/customer-admission-browser-delivery'
-import { STAGING_CUSTOMER_CLIENT_ID, STAGING_DISCOVERY, STAGING_ISSUER, STAGING_SHOP_ID } from '@/lib/identity/customer-connection'
+import { CUSTOMER_SCOPES, STAGING_CUSTOMER_CLIENT_ID, STAGING_DISCOVERY, STAGING_ISSUER, STAGING_SHOP_ID } from '@/lib/identity/customer-connection'
 import { createShopifyCustomerJwksLoader, createShopifyCustomerTokenAdapter } from '@/lib/identity/customer-http'
 import { createCustomerShopifyProofFlow, shopifyProofConfigHash } from '@/lib/identity/customer-shopify-proof'
 import { createCustomerShopifyProofRepository } from '@/lib/identity/customer-shopify-proof-repository'
@@ -176,7 +176,7 @@ export function createStagingCustomerRuntime(input: {
     const proofRepository = proofRepositoryFactory({ pool: customer.pool, vault: tokenVault,
       syntheticExecution: true, liveEnabled: false })
     const tokenAdapter = tokenAdapterFactory({ enabled: true, clientSecret: customerClientSecret,
-      callbackUrl: `${origin}/auth/customer/shopify/callback`, authorizationScope: 'openid email customer-account-api:full' })
+      callbackUrl: `${origin}/auth/customer/shopify/callback`, authorizationScope: CUSTOMER_SCOPES.join(' ') })
     const jwks = jwksLoaderFactory({ enabled: true })
     const shopifyProof = proofFlowFactory({ config: proofConfig, ports: { repository: proofRepository,
       exchangeCode: tokenAdapter.exchangeCode, verifyIdToken: jwks.verifyIdToken, now: Date.now },

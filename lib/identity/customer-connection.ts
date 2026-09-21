@@ -4,10 +4,15 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto'
 
 export const CUSTOMER_CONNECTION_LIVE_ENABLED = false
 export const STAGING_SHOP_ID = '107532616020'
-export const STAGING_CUSTOMER_CLIENT_ID = 'c8f7b926-9073-416c-9949-0d99e89a99c0'
+// Public Optimus TLL Customer Account app client (Dev Dashboard). Not a secret.
+export const STAGING_CUSTOMER_CLIENT_ID = '63f474eda69ec32778ce2a99e8c1114f'
 export const STAGING_ISSUER = `https://shopify.com/authentication/${STAGING_SHOP_ID}`
 export const STAGING_DISCOVERY = 'https://tll-integration-staging.myshopify.com/.well-known/openid-configuration'
 export const STAGING_SUPABASE_ISSUER = 'https://qdmvngjwkcsilzmqksme.supabase.co/auth/v1'
+// OAuth authorize/token scope string Shopify Customer Account still documents.
+// Dev Dashboard app access scopes (customer_read_customers / customer_read_orders)
+// are separate shop-side permissions — not substitutes for this OIDC triad.
+// Token adapters fail closed on exact set equality with this list.
 export const CUSTOMER_SCOPES = Object.freeze(['openid', 'email', 'customer-account-api:full'])
 const MAX_PROOF_AGE_MS = 5 * 60_000
 const ATTEMPT_TTL_MS = 5 * 60_000
