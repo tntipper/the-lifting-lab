@@ -1,6 +1,11 @@
 // @ts-expect-error Deno requires the source extension; the Edge bundle resolves it.
 import { createCustomerSubjectBrokerEdgeHandler, edgeEnvironment } from '../../../lib/identity/customer-subject-broker-edge.ts'
 
-const handler = createCustomerSubjectBrokerEdgeHandler('token', edgeEnvironment())
-const server = { fetch: handler }
+// Read secrets inside fetch. A module-load snapshot can stay empty on Edge,
+// and the gate then returns 503 before OAuth Basic authentication.
+const server = {
+  fetch(request: Request) {
+    return createCustomerSubjectBrokerEdgeHandler('token', edgeEnvironment())(request)
+  },
+}
 export default server

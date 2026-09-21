@@ -49,9 +49,17 @@ type DriverPool = {
   on(event: 'error', listener: () => void): unknown
 }
 const unavailable = () => new Error('Staging database unavailable')
-const serverEnvironmentSafe = () => typeof window === 'undefined'
-  && !Object.keys(process.env).some(key => key.startsWith('PG') && !!process.env[key])
-  && !process.env.NODE_PG_FORCE_NATIVE && process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0'
+/** Deno Edge has no Node `process`. A missing process or `process.env` cannot
+ * carry PG* or TLS overrides, so that host is safe. When `process.env` exists,
+ * Node/Vercel still fail closed on those overrides. */
+const serverEnvironmentSafe = () => {
+  if (typeof window !== 'undefined') return false
+  const proc = (globalThis as { process?: { env?: NodeJS.ProcessEnv } }).process
+  if (proc == null || proc.env == null) return true
+  const env = proc.env
+  return !Object.keys(env).some(key => key.startsWith('PG') && !!env[key])
+    && !env.NODE_PG_FORCE_NATIVE && env.NODE_TLS_REJECT_UNAUTHORIZED !== '0'
+}
 
 /** Fixed staging transaction-pooler transport. Explicit enable permits connection
  * attempts only; it does not activate SQL controls, provider routes or live use. */
