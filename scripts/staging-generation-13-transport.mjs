@@ -35,7 +35,7 @@ export async function executeGeneration13CredentialWindow({ports,journal=createG
     providerAttempted=true;await notify('VERCEL_STAGE');await ports.stageVercel({secrets:projection.vercel,configuration:DISABLED_VERCEL_CONFIGURATION})
     await notify('SUPABASE_STAGE');await ports.stageSupabase({secrets:projection.supabase});await notify('PROVIDER_READBACK');const names=await ports.readbackNames()
     if(!names||!Array.isArray(names.vercel)||!Array.isArray(names.supabase)||STAGED_VERCEL_NAMES.some(name=>!names.vercel.includes(name))||GENERATED_SUPABASE_SECRET_NAMES.some(name=>!names.supabase.includes(name)))unavailable()
-    await notify('DATABASE_PACKAGE');const verifiers=Object.fromEntries(purposes.map((purpose,index)=>[purpose,deriveScramVerifier(material.passwords[purpose],Buffer.alloc(18,index+1))]));const sql=buildGeneration13CredentialSql({expiresAt,verifiers,nowMs})
+    await notify('DATABASE_PACKAGE');const verifiers=Object.fromEntries(purposes.map((purpose,index)=>[purpose,deriveScramVerifier(projection.passwords[purpose],Buffer.alloc(18,index+1))]));const sql=buildGeneration13CredentialSql({expiresAt,verifiers,nowMs})
     dispatchAttempted=true;await notify('DATABASE_DISPATCH');const receipt=validateReceipt(await ports.dispatchDatabase(sql),expiresAt)
     await notify('CONNECTION_VERIFICATION');await ports.verifyConnections({passwords:projection.passwords,expiresAt})
     await notify('JOURNAL_FINALIZE');journal.transition(intent,'RECEIPT_VALIDATED')

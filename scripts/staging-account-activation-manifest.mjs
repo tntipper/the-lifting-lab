@@ -168,6 +168,7 @@ const generation13SuccessorSources = [
   'scripts/staging-generation-13-keychain.py',
   'scripts/staging-generation-13-recovery.mjs',
   'scripts/staging-generation-13-live-launcher.mjs',
+  'scripts/staging-generation-13-connection-failure-evidence.mjs',
   'scripts/staging-generation-13-long-session-contract.mjs',
   'scripts/staging-generation-13-journal-watch.mjs',
   'scripts/staging-generation-13-run-live-once.mjs',
@@ -179,6 +180,7 @@ const generation13SuccessorSources = [
   'tests/staging-generation-13-database-transport.test.mjs',
   'tests/staging-generation-13-recovery.test.mjs',
   'tests/staging-generation-13-long-session.test.mjs',
+  'tests/staging-generation-13-connection-failure-evidence.test.mjs',
 ]
 const stageSafetySources = [
   'config/project-stage-gate-policy.json',
@@ -188,12 +190,14 @@ const stageSafetySources = [
   'scripts/staging-generation-12-live-launcher.mjs',
   'scripts/staging-generation-12-journal-watch.mjs',
   'scripts/staging-generation-13-live-launcher.mjs',
+  'scripts/staging-generation-13-connection-failure-evidence.mjs',
   'scripts/staging-generation-13-long-session-contract.mjs',
   'scripts/staging-generation-13-journal-watch.mjs',
   'scripts/staging-generation-13-run-live-once.mjs',
   'tests/staging-live-boundary.test.mjs',
   'tests/staging-window-phase-journal.test.mjs',
   'tests/staging-generation-13-long-session.test.mjs',
+  'tests/staging-generation-13-connection-failure-evidence.test.mjs',
   'docs/ops/project-stage-execution-protocol.md',
   'docs/ops/incidents/2026-09-20-generation-10-native-test.md',
   'docs/ops/stage-plans/2026-09-20-activation-safety-boundary.md',
@@ -208,6 +212,7 @@ const stageSafetySources = [
   'docs/ops/stage-plans/2026-09-21-generation-13-disabled-successor.md',
   'docs/ops/stage-plans/2026-09-21-generation-13-arming-diff.md',
   'docs/ops/stage-plans/2026-09-21-generation-13-connection-recovery.md',
+  'docs/ops/stage-plans/2026-09-21-generation-13-connection-diagnosis.md',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',

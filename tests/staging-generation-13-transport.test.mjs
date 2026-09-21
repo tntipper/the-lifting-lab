@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { PACKAGE_ID, PROJECT_REF, WINDOW_ID } from '../scripts/staging-generation-13-credentials.mjs'
-import { GENERATED_SUPABASE_SECRET_NAMES, STAGED_VERCEL_NAMES } from '../scripts/staging-generation-6-transport.mjs'
+import { deriveScramVerifier, GENERATED_SUPABASE_SECRET_NAMES, STAGED_VERCEL_NAMES } from '../scripts/staging-generation-6-transport.mjs'
 import { executeGeneration13CredentialWindow, GENERATION_13_SOURCE_FINGERPRINT, NATIVE_GENERATION_13_TRANSPORT_ENABLED } from '../scripts/staging-generation-13-transport.mjs'
 
 const NOW=Date.parse('2026-09-20T21:30:00.000Z'),EXPIRES='2026-09-20T22:25:00.000Z'
@@ -44,4 +44,22 @@ test('generation 13 connection failure recovers once, projects fixed diagnostic 
   let byte=0;const f=fixture('verify'),result=await executeGeneration13CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes:size=>Buffer.alloc(size,++byte),randomUUID:(()=>{let n=0;return()=>`10000000-0000-4000-8000-${String(++n).padStart(12,'0')}`})()})
   assert.equal(result.status,'RECOVERY_VERIFIED');assert.deepEqual(result.connectionFailure,{status:'FAIL',reason:'connection_verification_failed',purpose:'customer',check:'connect_retry'})
   assert.equal(f.events.filter(value=>value==='dispatch').length,1);assert.ok(f.events.includes('RECONCILIATION_REQUIRED'));assert.deepEqual(f.events.slice(-2),['removeVercel','removeSupabase']);assert.doesNotMatch(JSON.stringify(result),/private/i)
+})
+
+test('generation 13 embeds SCRAM derived from projected passwords into dispatch SQL',async()=>{
+  let capturedSql='',capturedPasswords=null,byte=0
+  const randomBytes=size=>Buffer.alloc(size,++byte)
+  const randomUUID=(()=>{let n=0;return()=>`20000000-0000-4000-8000-${String(++n).padStart(12,'0')}`})()
+  const f=fixture()
+  f.ports.dispatchDatabase=async sql=>{f.events.push('dispatch');capturedSql=sql;return[{tll_generation_13_credential_receipt:{status:'PASS',packageId:PACKAGE_ID,projectRef:PROJECT_REF,generation:13,windowId:WINDOW_ID,expiresAt:EXPIRES,controlsEnabled:false,runtimeCount:5}}]}
+  f.ports.verifyConnections=async input=>{f.events.push('verify');capturedPasswords=Object.fromEntries(Object.entries(input.passwords).map(([purpose,value])=>[purpose,String(value)]))}
+  await executeGeneration13CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes,randomUUID})
+  assert.ok(capturedPasswords)
+  for(const [index,purpose] of ['customer','cart','broker','provisional','bridge'].entries()){
+    const expected=deriveScramVerifier(capturedPasswords[purpose],Buffer.alloc(18,index+1))
+    const rawEquivalent=deriveScramVerifier(Buffer.from(capturedPasswords[purpose],'base64url'),Buffer.alloc(18,index+1))
+    assert.ok(capturedSql.includes(expected),`gen13 sql must embed projected SCRAM for ${purpose}`)
+    assert.equal(capturedSql.includes(rawEquivalent),false)
+    assert.notEqual(expected,rawEquivalent)
+  }
 })
