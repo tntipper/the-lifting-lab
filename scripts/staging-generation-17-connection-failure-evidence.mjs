@@ -111,6 +111,11 @@ function projectManagementStatusCode(value){
   return undefined
 }
 
+function projectZeroSessionsAttempts(value){
+  if(Number.isInteger(value)&&value>=1&&value<=8)return value
+  return undefined
+}
+
 /** Secret-free launcher stdout / summary payload. Never includes passwords or SQL. */
 export function secretFreeLauncherTerminal(result) {
   const connectionFailure = projectSecretFreeConnectionFailure(result?.connectionFailure)
@@ -133,6 +138,8 @@ export function secretFreeLauncherTerminal(result) {
   if (failureReason) payload.failureReason = failureReason
   const managementStatusCode = projectManagementStatusCode(result?.managementStatusCode)
   if (managementStatusCode !== undefined) payload.managementStatusCode = managementStatusCode
+  const zeroSessionsAttempts = projectZeroSessionsAttempts(result?.zeroSessionsAttempts)
+  if (zeroSessionsAttempts !== undefined) payload.zeroSessionsAttempts = zeroSessionsAttempts
   if (connectionFailure) payload.connectionFailure = connectionFailure
   return Object.freeze(payload)
 }
@@ -153,6 +160,7 @@ export function persistConnectionFailureEvidence(result, {
   const recoveryOutcome = projectRecoveryOutcome(result?.recoveryOutcome)
   const failureStep = projectFailureStep(result?.failureStep)
   const failureReason = projectFailureReason(result?.failureReason)
+  const zeroSessionsAttempts = projectZeroSessionsAttempts(result?.zeroSessionsAttempts)
   const record = Object.freeze({
     schema: CONNECTION_FAILURE_EVIDENCE_SCHEMA,
     generation: result.generation,
@@ -168,6 +176,7 @@ export function persistConnectionFailureEvidence(result, {
     ...(projectManagementStatusCode(result?.managementStatusCode) !== undefined
       ? { managementStatusCode: projectManagementStatusCode(result?.managementStatusCode) }
       : {}),
+    ...(zeroSessionsAttempts !== undefined ? { zeroSessionsAttempts } : {}),
     ...(connectionFailure ? { connectionFailure } : {}),
     recordedAt: new Date(now()).toISOString(),
   })

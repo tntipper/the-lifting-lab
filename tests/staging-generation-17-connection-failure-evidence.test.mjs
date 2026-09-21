@@ -91,6 +91,7 @@ test('persistConnectionFailureEvidence writes mode-0600 secret-free record with 
     failureStep: 'zero_sessions',
     failureReason: 'runtime_sessions_remain',
     managementStatusCode: 400,
+    zeroSessionsAttempts: 5,
   }, { path, now: () => Date.parse('2026-09-21T06:56:00.000Z') })
   assert.equal(recoveryOnly, path)
   const recoveryRecord = JSON.parse(readFileSync(path, 'utf8'))
@@ -100,6 +101,7 @@ test('persistConnectionFailureEvidence writes mode-0600 secret-free record with 
   assert.equal(recoveryRecord.failureStep, 'zero_sessions')
   assert.equal(recoveryRecord.failureReason, 'runtime_sessions_remain')
   assert.equal(recoveryRecord.managementStatusCode, 400)
+  assert.equal(recoveryRecord.zeroSessionsAttempts, 5)
   assert.equal('connectionFailure' in recoveryRecord, false)
   assert.equal(persistConnectionFailureEvidence({ status: 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED' }, { path }), null)
   rmSync(directory, { recursive: true, force: true })

@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { buildGeneration17CredentialSql, createGeneration17DispatchJournal, GENERATION, IDENTITIES, MAX_WINDOW_MS, PACKAGE_ID, PROJECT_REF, WINDOW_ID } from './staging-generation-17-credentials.mjs'
 import { deriveScramVerifier, DISABLED_VERCEL_CONFIGURATION, eraseGeneration6Material, generateGeneration6Material, GENERATED_SUPABASE_SECRET_NAMES, projectGeneration6Secrets, SHOPIFY_CREDENTIAL_DEPENDENCIES, STAGED_VERCEL_NAMES } from './staging-generation-6-transport.mjs'
 
-export const NATIVE_GENERATION_17_TRANSPORT_ENABLED=true
+export const NATIVE_GENERATION_17_TRANSPORT_ENABLED=false
 const purposes=Object.keys(IDENTITIES),providerFailurePhases=new Set(['VERCEL_STAGE','SUPABASE_STAGE','PROVIDER_READBACK'])
 const providerFailureCodes=new Set(['AUTH','TRANSIENT','VALIDATION','API','CLI_EXIT','TIMEOUT','SPAWN','STREAM','OUTPUT_LIMIT','INPUT_STREAM','READBACK','CLEANUP','PROBE','PROVIDER_VALIDATION'])
 const connectionFailureChecks=new Set(['input','factory','connect','connect_wait','factory_retry','connect_retry','identity','membership','matrix','own_probe','table_denial','release','close'])
@@ -62,6 +62,10 @@ export async function executeGeneration17CredentialWindow({ports,journal=createG
     const failureStep=allowedFailureSteps.has(error?.failureStep)?error.failureStep:undefined
     const allowedFailureReasons=new Set(['runtime_sessions_remain','control_enabled','receipt_mismatch','unavailable'])
     const failureReason=allowedFailureReasons.has(error?.failureReason)?error.failureReason:undefined
+    const zeroSessionsAttempts=Number.isInteger(error?.zeroSessionsAttempts)&&error.zeroSessionsAttempts>=1&&error.zeroSessionsAttempts<=8
+      ?error.zeroSessionsAttempts:undefined
+    const managementStatusCode=Number.isInteger(error?.managementStatusCode)&&error.managementStatusCode>=100&&error.managementStatusCode<=599
+      ?error.managementStatusCode:undefined
     const failureClassification=providerFailurePhases.has(failedPhase)&&providerFailureCodes.has(error?.code)?error.code:undefined
     const connectionFailure=failedPhase==='CONNECTION_VERIFICATION'?projectConnectionFailure(error?.connectionFailure):undefined
     let recoveryOutcome='NOT_REQUIRED'
@@ -81,6 +85,8 @@ export async function executeGeneration17CredentialWindow({ports,journal=createG
       target:PROJECT_REF,generation:GENERATION,windowId:WINDOW_ID,
       ...(failureStep?{failureStep}:{}),
       ...(failureReason?{failureReason}:{}),
+      ...(zeroSessionsAttempts!==undefined?{zeroSessionsAttempts}:{}),
+      ...(managementStatusCode!==undefined?{managementStatusCode}:{}),
       ...(failureClassification?{failureClassification}:{}),
       ...(connectionFailure?{connectionFailure}:{}),
       nextAction:dispatchAttempted?'NO_RETRY_RECONCILE':journalRejected?'REVIEW_EXCLUSIVE_JOURNAL':preflightPassed?'REVIEW_PROVIDER_STAGING':'REVIEW_ENTRY_BASELINE',
