@@ -8,14 +8,15 @@ import vm from 'node:vm'
 import { randomUUID, createHash } from 'node:crypto'
 
 const require = createRequire(import.meta.url), ts = require('typescript')
-function modules({ env = {}, fetch = async () => { throw new Error('Unexpected network') }, postgresRuntime = () => { throw Error('Unexpected database factory') } } = {}) {
+function modules({ env = {}, fetch = async () => { throw new Error('Unexpected network') }, postgresRuntime = () => { throw Error('Unexpected database factory') },
+  getUser = async () => ({ data: { user: null }, error: null }) } = {}) {
   const cache = new Map()
   function load(path) {
     if (cache.has(path)) return cache.get(path)
     const filename = fileURLToPath(new URL('../' + path, import.meta.url)), loaded = { exports: {} }
     const code = ts.transpileModule(readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
     const local = name => name === '@/lib/server/staging-postgres' ? { STAGING_POSTGRES_PROJECT_REF: 'qdmvngjwkcsilzmqksme', createStagingPostgresRuntime: postgresRuntime }
-      : name === '@/lib/supabase-server' ? { createServerSupabase: async () => ({ auth: { getUser: async () => ({ data: { user: null }, error: null }) } }) }
+      : name === '@/lib/supabase-server' ? { createServerSupabase: async () => ({ auth: { getUser } }) }
       : name.startsWith('@/') ? load(name.slice(2) + '.ts')
         : name.startsWith('.') ? load(relative(fileURLToPath(new URL('../', import.meta.url)), fileURLToPath(new URL(/\.[mc]?[jt]s$/.test(name) ? name : name + '.ts', new URL('../' + path, import.meta.url))))) : require(name)
     vm.runInNewContext(code, { module: loaded, exports: loaded.exports, require: local, Buffer, Map, Uint8Array, URL, Request, Response, Headers, AbortSignal, TextDecoder, process: { env }, fetch, console }, { filename })
@@ -138,9 +139,92 @@ function fixture(faults = {}) {
   }
   const open = () => request('POST', { action: 'open' })
   const set = (quantity, headers = {}) => request('PATCH', { productId: sf.STAGING_CART_PRODUCT, quantity, revision: view.revision }, headers)
-  return { rows, ops, transitionRows, calls, transport, repository, service, handler, request, open, set, faults,
+  return { rows, ops, transitionRows, calls, transport, repository, transitionRepository, service, handler, request, open, set, faults,
     setActor: value => { actor = value }, setProviderQuantity: value => { count = value },
     get cookie() { return cookie }, get view() { return view }, get authReads() { return authReads } }
+}
+
+/** App Router mount harness: same env/origin/project gates as stagingCartRoute, injectable verified account. */
+function mountedCart(f, { actorId = null } = {}) {
+  let verified = actorId
+  const env = {
+    NEXT_PUBLIC_TLL_ENVIRONMENT: 'staging', NEXT_PUBLIC_TLL_STAGING_CART: 'enabled', TLL_STAGING_CART_ENABLED: 'true',
+    VERCEL: '1', VERCEL_ENV: 'preview', TLL_STAGING_POSTGRES_CA_PEM: 'synthetic-public-CA-fixture',
+    TLL_STAGING_POSTGRES_CA_SHA256: 'c'.repeat(64), TLL_STAGING_CART_ORIGIN: ORIGIN,
+    TLL_STAGING_SUPABASE_PROJECT_REF: 'qdmvngjwkcsilzmqksme',
+    NEXT_PUBLIC_SUPABASE_URL: 'https://qdmvngjwkcsilzmqksme.supabase.co', TLL_STAGING_CART_SHOP: sf.STAGING_CART_SHOP,
+    TLL_STAGING_CART_VAULT_KEY_HEX: 'b'.repeat(64), TLL_STAGING_CART_HMAC_KEY_HEX: HMAC, TLL_STAGING_CART_VAULT_KEY_ID: 'cart-v1',
+    TLL_STAGING_CART_STOREFRONT_TOKEN: 'synthetic-private-token', TLL_STAGING_CART_DATABASE_PASSWORD: 'synthetic-never-a-real-password',
+  }
+  let closed = 0, active = 0
+  const postgresRuntime = options => {
+    assert.equal(options.purpose, 'cart')
+    return {
+      enabled: true, close: async () => { closed++ },
+      pool: {
+        connect: async () => {
+          active++
+          let transaction = false
+          return {
+            async query(sql, args) {
+              if (sql === 'BEGIN') { transaction = true; return { rows: [] } }
+              if (sql === 'COMMIT') { assert.equal(transaction, true); transaction = false; return { rows: [] } }
+              assert.equal(transaction, true)
+              const name = /public\.tll_cart_(\w+)\(/.exec(sql)[1]
+              const inputs = Array.from(args)
+              if (name.startsWith('transition_')) {
+                const method = name.slice('transition_'.length)
+                const binding = { sourceSession: inputs[0], sourceActor: inputs[1], targetSession: inputs[2], targetActor: inputs[3] }
+                if (method === 'read') return { rows: [{ result: await f.transitionRepository.read(binding) }] }
+                if (method === 'claim') return { rows: [{ result: await f.transitionRepository.claim(binding, inputs[4], Number(inputs[5])) }] }
+                if (method === 'finish') {
+                  const source = f.rows.get(binding.sourceSession)
+                  const envelope = inputs[5] === null ? null : typeof inputs[5] === 'string' ? JSON.parse(inputs[5]) : inputs[5]
+                  return { rows: [{ result: await f.transitionRepository.finish(binding, inputs[4], envelope, source) }] }
+                }
+                throw new Error('Unexpected transition RPC ' + method)
+              }
+              if (name === 'finish') {
+                const [session, actor, id, state, envelope, quantity, unitPricePence, subtotalPence] = inputs
+                return { rows: [{ result: await f.repository.finish(session, actor, id, state, envelope === null ? null : JSON.parse(envelope), quantity === null ? null : { quantity, unitPricePence, subtotalPence }) }] }
+              }
+              return { rows: [{ result: await f.repository[name](...inputs) }] }
+            },
+            release(destroy) { assert.equal(destroy, false); active-- },
+          }
+        },
+      },
+    }
+  }
+  const getUser = async () => ({ data: { user: verified ? { id: verified } : null }, error: null })
+  const route = modules({ env, fetch: f.transport, postgresRuntime, getUser })('app/api/cart/route.ts')
+  let cookie = '', view
+  async function call(method = 'GET', body, headers = {}, rawCookie = cookie) {
+    const response = await route[method](new Request(ORIGIN + '/api/cart', {
+      method,
+      headers: {
+        ...(rawCookie ? { cookie: rawCookie } : {}),
+        ...(method !== 'GET' ? { Origin: ORIGIN, 'Content-Type': 'application/json', 'X-TLL-Cart-Intent': 'staging-cart', 'X-TLL-Cart-CSRF': view?.csrfToken ?? '', 'Idempotency-Key': randomUUID() } : {}),
+        ...headers,
+      },
+      body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
+    }))
+    const text = await response.text()
+    for (const secret of [RAW_CART, 'PRIVATE-CART', env.TLL_STAGING_CART_STOREFRONT_TOKEN, env.TLL_STAGING_CART_DATABASE_PASSWORD, env.TLL_STAGING_CART_VAULT_KEY_HEX, verified ?? '']) {
+      if (secret) assert.equal(text.includes(secret), false)
+    }
+    if (response.headers.has('set-cookie')) cookie = /Max-Age=0/.test(response.headers.get('set-cookie')) ? '' : response.headers.get('set-cookie').split(';')[0]
+    view = JSON.parse(text)
+    return { response, view, text }
+  }
+  return {
+    call, env,
+    setActor: id => { verified = id },
+    get cookie() { return cookie },
+    get view() { return view },
+    get closed() { return closed },
+    get active() { return active },
+  }
 }
 
 test('opaque HttpOnly bootstrap precedes cart creation; browser receives only safe prices and quantities', async () => {
@@ -354,4 +438,101 @@ test('stale revision explicitly reports that the requested change was not applie
   const f=fixture();await f.open();await f.set(1);const before=f.calls.length
   const conflict=await f.request('PATCH',{productId:sf.STAGING_CART_PRODUCT,quantity:2,revision:0})
   assert.equal(conflict.response.status,409);assert.match(conflict.view.message,/not applied/);assert.equal(conflict.view.quantity,1);assert.equal(f.calls.length,before)
+})
+
+// --- Stage 3 Slice 5: App Router mount proof for account bind + explicit guest→account ---
+
+test('mounted route binds cart actor to verified canonical account without a guest cookie', async () => {
+  const f = fixture(), mount = mountedCart(f, { actorId: ACTOR })
+  const empty = await mount.call('GET')
+  assert.equal(empty.response.status, 200)
+  assert.equal(empty.view.state, 'empty')
+  assert.equal(mount.cookie, '')
+  assert.equal(empty.response.headers.has('set-cookie'), false)
+  const opened = await mount.call('POST', { action: 'open' })
+  assert.equal(opened.response.status, 200)
+  assert.equal(opened.response.headers.has('set-cookie'), false)
+  assert.equal(mount.cookie, '')
+  const created = await mount.call('PATCH', { productId: sf.STAGING_CART_PRODUCT, quantity: 2, revision: 0 })
+  assert.equal(created.response.status, 200)
+  assert.equal(created.view.quantity, 2)
+  assert.equal(created.view.state, 'ready')
+  assert.equal(mount.cookie, '')
+  const refreshed = await mount.call('GET')
+  assert.equal(refreshed.view.quantity, 2)
+  assert.equal(mount.active, 0)
+  assert.ok(mount.closed >= 3)
+  // A second verified account cannot read the first account cart by cookie or shared guest capability.
+  const other = mountedCart(f, { actorId: '70000000-0000-4000-8000-000000000002' })
+  assert.equal((await other.call('GET')).view.state, 'empty')
+})
+
+test('mounted route never silently reinterprets a guest cookie as the signed-in account cart', async () => {
+  const shared = fixture()
+  const asGuest = mountedCart(shared)
+  await asGuest.call('POST', { action: 'open' })
+  const lined = await asGuest.call('PATCH', { productId: sf.STAGING_CART_PRODUCT, quantity: 1, revision: 0 })
+  assert.equal(lined.view.quantity, 1)
+  const cookie = asGuest.cookie
+  asGuest.setActor(ACTOR)
+  const choice = await asGuest.call('GET', undefined, {}, cookie)
+  assert.equal(choice.response.status, 200)
+  assert.equal(choice.view.state, 'transition_required')
+  assert.equal(choice.view.quantity, 1)
+  assert.match(choice.view.message, /Choose whether to connect/)
+  assert.notEqual(choice.view.state, 'ready')
+  // GET must not clear the guest capability or expose a ready account projection from the guest cookie alone.
+  assert.equal(asGuest.cookie, cookie)
+})
+
+test('mounted transfer moves guest custody to the account session and clears the capability only after acknowledgement', async () => {
+  const f = fixture()
+  const mount = mountedCart(f)
+  await mount.call('POST', { action: 'open' })
+  await mount.call('PATCH', { productId: sf.STAGING_CART_PRODUCT, quantity: 1, revision: 0 })
+  const guestCookie = mount.cookie
+  mount.setActor(ACTOR)
+  const choice = await mount.call('GET', undefined, {}, guestCookie)
+  assert.equal(choice.view.state, 'transition_required')
+  const moved = await mount.call('POST', { action: 'transfer', revision: choice.view.revision }, {
+    'X-TLL-Cart-CSRF': choice.view.csrfToken,
+  }, guestCookie)
+  assert.equal(moved.response.status, 200)
+  assert.equal(moved.view.state, 'ready')
+  assert.equal(moved.view.quantity, 1)
+  assert.match(moved.response.headers.get('set-cookie') ?? '', /Max-Age=0/)
+  assert.equal(mount.cookie, '')
+  const account = await mount.call('GET')
+  assert.equal(account.view.quantity, 1)
+  assert.equal(account.view.state, 'ready')
+  // Replaying the old guest cookie against the signed-in mount does not resurrect a second cart merge.
+  const replay = await mount.call('GET', undefined, {}, guestCookie)
+  assert.equal(replay.response.status, 200)
+  assert.equal(replay.view.quantity, 1)
+  assert.ok(replay.view.state === 'ready' || replay.view.message?.includes('connected'))
+})
+
+test('mounted use_account refuses silent merge when the account already has a cart', async () => {
+  const f = fixture()
+  const account = mountedCart(f, { actorId: ACTOR })
+  await account.call('POST', { action: 'open' })
+  await account.call('PATCH', { productId: sf.STAGING_CART_PRODUCT, quantity: 2, revision: 0 })
+  account.setActor(null)
+  await account.call('POST', { action: 'open' })
+  await account.call('PATCH', { productId: sf.STAGING_CART_PRODUCT, quantity: 1, revision: 0 })
+  const guestCookie = account.cookie
+  account.setActor(ACTOR)
+  f.setProviderQuantity(2)
+  const choice = await account.call('GET', undefined, {}, guestCookie)
+  assert.equal(choice.view.state, 'transition_required')
+  assert.match(choice.view.message, /already has a cart/)
+  const selected = await account.call('POST', { action: 'use_account' }, {
+    'X-TLL-Cart-CSRF': choice.view.csrfToken,
+  }, guestCookie)
+  assert.equal(selected.response.status, 200)
+  assert.equal(selected.view.quantity, 2)
+  assert.match(selected.response.headers.get('set-cookie') ?? '', /Max-Age=0/)
+  assert.equal(account.cookie, '')
+  const guestSession = hash(guestCookie.slice(guestCookie.indexOf('=') + 1))
+  assert.equal(f.rows.get(guestSession).quantity, 1)
 })
