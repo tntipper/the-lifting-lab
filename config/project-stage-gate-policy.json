@@ -14,7 +14,7 @@
   "failedOrUncertainWindowReplayPermitted": false,
   "currentHold": {
     "scope": "staging-runtime-credential-window",
-    "reason": "generation-15-disabled-successor-prepared-gen14-reconciliation-required-no-replay-awaiting-arming-review",
+    "reason": "generation-15-one-reviewed-staging-window-authorized-requires-direct-live-launcher-and-phase-journal-ordinary-tests-forbidden-while-armed",
     "generation10ReplayPermitted": false,
     "generation11ReplayPermitted": false,
     "generation11Armed": false,
@@ -25,6 +25,6 @@
     "generation13ReplayPermitted": false,
     "generation14Armed": false,
     "generation14ReplayPermitted": false,
-    "generation15Armed": false
+    "generation15Armed": true
   }
 }

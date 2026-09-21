@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { buildGeneration15CredentialSql, createGeneration15DispatchJournal, GENERATION, IDENTITIES, MAX_WINDOW_MS, PACKAGE_ID, PROJECT_REF, WINDOW_ID } from './staging-generation-15-credentials.mjs'
 import { deriveScramVerifier, DISABLED_VERCEL_CONFIGURATION, eraseGeneration6Material, generateGeneration6Material, GENERATED_SUPABASE_SECRET_NAMES, projectGeneration6Secrets, SHOPIFY_CREDENTIAL_DEPENDENCIES, STAGED_VERCEL_NAMES } from './staging-generation-6-transport.mjs'
 
-export const NATIVE_GENERATION_15_TRANSPORT_ENABLED=false
+export const NATIVE_GENERATION_15_TRANSPORT_ENABLED=true
 const purposes=Object.keys(IDENTITIES),providerFailurePhases=new Set(['VERCEL_STAGE','SUPABASE_STAGE','PROVIDER_READBACK'])
 const providerFailureCodes=new Set(['AUTH','TRANSIENT','VALIDATION','API','CLI_EXIT','TIMEOUT','SPAWN','STREAM','OUTPUT_LIMIT','INPUT_STREAM','READBACK','CLEANUP','PROBE','PROVIDER_VALIDATION'])
 const connectionFailureChecks=new Set(['input','factory','connect','connect_wait','factory_retry','connect_retry','identity','membership','matrix','own_probe','table_denial','release','close'])
