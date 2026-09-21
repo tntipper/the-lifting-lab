@@ -17,7 +17,7 @@ const policy = {
   currentHold: {
     generation10ReplayPermitted: false, generation11ReplayPermitted: false,
     generation12ReplayPermitted: false, generation13ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false,
+    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation18Armed: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false,
     nextGenerationPermittedBeforeBoundaryReview: false,
   },
 }
