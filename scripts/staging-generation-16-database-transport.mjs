@@ -6,11 +6,46 @@ import { fileURLToPath } from 'node:url'
 import { PREDECESSOR, PROJECT_REF, PACKAGE_ID, WINDOW_ID } from './staging-generation-16-credentials.mjs'
 import { POOLER_CONVERGENCE_MS } from './staging-generation-6-connection-verifier.mjs'
 
-export const NATIVE_GENERATION_16_DATABASE_TRANSPORT_ENABLED = true
+export const NATIVE_GENERATION_16_DATABASE_TRANSPORT_ENABLED = false
 export const MANAGEMENT_ENDPOINT = Object.freeze({ hostname:'api.supabase.com',path:`/v1/projects/${PROJECT_REF}/database/query`,method:'POST' })
 export const KEYCHAIN_HELPER_TIMEOUT_MS=45_000
 const MAX_RESPONSE_BYTES=65_536, TIMEOUT_MS=35_000
 const unavailable=()=>{throw new Error('Generation-16 database transport unavailable')}
+
+/**
+ * Promote only allow-listed Gen-16 SQL exception phrases from Management API error bodies.
+ * Never logs or returns raw response text. Normalizes to fixed secret-free messages for classification.
+ */
+export function extractAllowListedSqlExceptionMessage(text){
+  if(typeof text!=='string'||text.length<1||text.length>MAX_RESPONSE_BYTES)return undefined
+  const candidates=[]
+  try{
+    const parsed=JSON.parse(text)
+    if(typeof parsed==='string')candidates.push(parsed)
+    else if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed)){
+      for(const key of ['message','error','msg','hint']){
+        if(typeof parsed[key]==='string')candidates.push(parsed[key])
+      }
+      if(parsed.error&&typeof parsed.error==='object'&&typeof parsed.error.message==='string')candidates.push(parsed.error.message)
+    }
+  }catch{
+    candidates.push(text.slice(0,500))
+  }
+  for(const candidate of candidates){
+    if(/runtime sessions remain/i.test(candidate))return 'Generation 16 runtime sessions remain'
+    if(/control enabled/i.test(candidate))return 'Generation 16 control enabled during zero-session proof'
+  }
+  return undefined
+}
+
+function projectManagementHttpFailure(statusCode,output){
+  let text=''
+  try{text=output.toString('utf8')}catch{/* ignore decode failure */}
+  const allowListed=extractAllowListedSqlExceptionMessage(text)
+  const error=new Error(allowListed??'Generation-16 database transport unavailable')
+  if(Number.isInteger(statusCode)&&statusCode>=100&&statusCode<=599)error.managementStatusCode=statusCode
+  return error
+}
 
 export function normalizeSupabaseToken(value){
   if(typeof value!=='string'||value.length>256)unavailable()
@@ -34,9 +69,18 @@ export async function postManagementQuery(token,query,{request=https.request}={}
     const fail=()=>{try{req?.destroy()}catch{};finish(new Error('Generation-16 database transport unavailable'))};const timer=setTimeout(fail,TIMEOUT_MS)
     req=request({protocol:'https:',hostname:MANAGEMENT_ENDPOINT.hostname,port:443,path:MANAGEMENT_ENDPOINT.path,method:'POST',minVersion:'TLSv1.2',rejectUnauthorized:true,servername:MANAGEMENT_ENDPOINT.hostname,agent:false,
       headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','Content-Length':body.length}},response=>{
-      if(response.statusCode!==201||!/^application\/json(?:;|$)/i.test(String(response.headers['content-type']??''))){response.destroy();return fail()}
-      response.on('error',fail);response.on('aborted',fail);response.on('data',chunk=>{size+=chunk.length;if(size>MAX_RESPONSE_BYTES){chunk.fill(0);response.destroy();fail()}else chunks.push(chunk)})
-      response.on('end',()=>{const output=Buffer.concat(chunks);try{const parsed=JSON.parse(output.toString('utf8'));if(!Array.isArray(parsed))unavailable();finish(null,parsed)}catch{fail()}finally{output.fill(0)}})
+      // Always drain the body (bounded). Non-201 SQL RAISE responses carry the exception text in JSON;
+      // destroying without reading collapsed every RAISE into generic unavailable and skipped drain retries.
+      const isJson=/^application\/json(?:;|$)/i.test(String(response.headers['content-type']??''))
+      response.on('error',fail);response.on('aborted',fail)
+      response.on('data',chunk=>{size+=chunk.length;if(size>MAX_RESPONSE_BYTES){chunk.fill(0);response.destroy();fail()}else chunks.push(chunk)})
+      response.on('end',()=>{const output=Buffer.concat(chunks);try{
+        if(response.statusCode!==201||!isJson){finish(projectManagementHttpFailure(response.statusCode,output));return}
+        let parsed
+        try{parsed=JSON.parse(output.toString('utf8'))}catch{finish(new Error('Generation-16 database transport unavailable'));return}
+        if(!Array.isArray(parsed)){finish(new Error('Generation-16 database transport unavailable'));return}
+        finish(null,parsed)
+      }finally{output.fill(0)}})
     });req.on('error',fail);req.end(body)
   })}finally{body.fill(0);token=undefined}
 }
@@ -106,12 +150,16 @@ export async function verifyGeneration16ZeroSessions({token,post=postManagementQ
   return Object.freeze(expected)
 }
 
-/** Secret-free classification of zero-session proof failures. Never logs SQL or secrets. */
+/** Secret-free classification of zero-session proof failures. Never logs SQL or secrets. Walks cause chain. */
 export function classifyZeroSessionsFailure(error){
-  const message=typeof error?.message==='string'?error.message:''
-  if(/runtime sessions remain/i.test(message))return 'runtime_sessions_remain'
-  if(/control enabled/i.test(message))return 'control_enabled'
-  if(/zero-session receipt mismatch/i.test(message))return 'receipt_mismatch'
+  let current=error
+  for(let depth=0;depth<5&&current;depth+=1){
+    const message=typeof current?.message==='string'?current.message:''
+    if(/runtime sessions remain/i.test(message))return 'runtime_sessions_remain'
+    if(/control enabled/i.test(message))return 'control_enabled'
+    if(/zero-session receipt mismatch/i.test(message))return 'receipt_mismatch'
+    current=current?.cause
+  }
   return 'unavailable'
 }
 

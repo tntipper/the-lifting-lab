@@ -54,7 +54,7 @@
     "sources": [
       {
         "path": "config/project-stage-gate-policy.json",
-        "sha256": "e4d2e8f84b9fee1252d6fac9d54927e8bd2b47e36582062b32f913cfa0ed19da"
+        "sha256": "2ed948619c1a0724f873936391d7818344df02449404e783284847081dbabb01"
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
@@ -190,7 +190,7 @@
       },
       {
         "path": "tests/staging-generation-16-long-session.test.mjs",
-        "sha256": "48453f31b646719a3ee1714102be809d5ecc8622485b07a1482799cf03ac75e3"
+        "sha256": "216aef79f4891e15206ab3336b7b6b51f5e766e78593997aca19b6038a1c4e96"
       },
       {
         "path": "tests/staging-generation-16-connection-failure-evidence.test.mjs",
@@ -198,7 +198,7 @@
       },
       {
         "path": "tests/staging-generation-16-zero-sessions-drain.test.mjs",
-        "sha256": "c07dda4a67fae71749276a8be21fb10d96d68ca9329ce84b801bab06a22fc00f"
+        "sha256": "c49800426337aa86c792ff35aded3acb8c6fd14276b2dfb4a3b98ada4fb1983d"
       },
       {
         "path": "docs/ops/project-stage-execution-protocol.md",
@@ -299,6 +299,14 @@
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-16-arming-diff.md",
         "sha256": "ada20b4009eb40787a9e0bb433a3ce403b1cd5b460309ca95326b44622dd31f2"
+      },
+      {
+        "path": "docs/ops/stage-plans/2026-09-21-generation-16-connection-recovery.md",
+        "sha256": "5a49d11d03c6fe036a085344348de3d6a3bf3ffed654e0b59c6cb59689058ac6"
+      },
+      {
+        "path": "docs/ops/stage-plans/2026-09-21-generation-16-zero-sessions-unavailable-diagnosis.md",
+        "sha256": "1bfc83e99e91af702d871147b233f893946ff3bbfb469edd321533186f9a6f7d"
       }
     ],
     "policy": "tll-project-stage-gate-policy/v1",
@@ -315,10 +323,12 @@
     "generation13Armed": false,
     "generation14Armed": false,
     "generation15Armed": false,
-    "generation16Armed": true,
+    "generation16Armed": false,
     "generation12ReplayPermitted": false,
     "generation13ReplayPermitted": false,
     "generation14ReplayPermitted": false,
+    "generation15ReplayPermitted": false,
+    "generation16ReplayPermitted": false,
     "successorHeldPendingBoundaryReview": true
   },
   "migrations": [
@@ -1994,15 +2004,15 @@
       },
       {
         "path": "scripts/staging-generation-16-transport.mjs",
-        "sha256": "632cb208642582983883d95160ed167406991960f32a4b25800532a95e5b9f68"
+        "sha256": "7a683f7dddab2627f49104adb05709efefddc3b892705cb1580e13814d047901"
       },
       {
         "path": "scripts/staging-generation-16-database-transport.mjs",
-        "sha256": "e9692b14b6990dbf347cb2f11a4d4e2872bfca04700a597920c94be95fc31669"
+        "sha256": "c22ea2fdec2a435fcdadd2eb1ab52502a97cf6fc59c0066fe91ec72e5c3a6473"
       },
       {
         "path": "scripts/staging-generation-16-keychain.py",
-        "sha256": "27ac1b4e5c8b9c911106f69785776500f71e4d0b05db6dfaffa4caa71a6aa34b"
+        "sha256": "94625ca98f6aaf0a52a4b29ef677aa108b79892a285db8ab86522b8a892d530f"
       },
       {
         "path": "scripts/staging-generation-16-recovery.mjs",
@@ -2046,11 +2056,11 @@
       },
       {
         "path": "tests/staging-generation-16-transport.test.mjs",
-        "sha256": "0c18b21b767c7452b942fcbeade0ab5989e24d56ba774f44802ea1eb810b1e8b"
+        "sha256": "4b8566baa953fe22a98a907c027f2152bdb4f0032dc4028bacc758a305f67c4d"
       },
       {
         "path": "tests/staging-generation-16-database-transport.test.mjs",
-        "sha256": "27574f248b7ecd07f463c2b45b268a091a024bb34e08d0740cedef382bd05890"
+        "sha256": "1094cf56ab2bba063507e29d5f45326e2757abd8e3abc32261f218cb86e1dc19"
       },
       {
         "path": "tests/staging-generation-16-recovery.test.mjs",
@@ -2058,7 +2068,7 @@
       },
       {
         "path": "tests/staging-generation-16-long-session.test.mjs",
-        "sha256": "48453f31b646719a3ee1714102be809d5ecc8622485b07a1482799cf03ac75e3"
+        "sha256": "216aef79f4891e15206ab3336b7b6b51f5e766e78593997aca19b6038a1c4e96"
       },
       {
         "path": "tests/staging-generation-16-connection-failure-evidence.test.mjs",
@@ -2066,7 +2076,7 @@
       },
       {
         "path": "tests/staging-generation-16-zero-sessions-drain.test.mjs",
-        "sha256": "c07dda4a67fae71749276a8be21fb10d96d68ca9329ce84b801bab06a22fc00f"
+        "sha256": "c49800426337aa86c792ff35aded3acb8c6fd14276b2dfb4a3b98ada4fb1983d"
       }
     ],
     "target": "qdmvngjwkcsilzmqksme",
@@ -2170,8 +2180,8 @@
     "thirdAttemptPermitted": false,
     "secretBearingSqlMustRemainInMemory": true,
     "exclusiveNonsecretJournal": true,
-    "nativeTransportEnabled": true,
-    "status": "ONE_STAGING_WINDOW_AUTHORIZED"
+    "nativeTransportEnabled": false,
+    "status": "CONNECTION_RECOVERY_REQUIRED_RECONCILIATION_REQUIRED_NO_REPLAY"
   },
   "gates": [
     "verify_exact_target_and_production_exclusion",
