@@ -25,7 +25,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.stageSafety.generation12Armed, false)
   assert.equal(manifest.stageSafety.generation13Armed, false)
   assert.equal(manifest.stageSafety.generation14Armed, false)
-  assert.equal(manifest.stageSafety.generation15Armed, false)
+  assert.equal(manifest.stageSafety.generation15Armed, true)
   assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation12ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation13ReplayPermitted, false)
@@ -239,10 +239,10 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.deepEqual([...new Set(edgeKeys)].filter(key => !edgeClassified.has(key)), [])
 })
 
-test('generation 15 disabled successor is pinned with Gen 14 predecessor and native gates off', () => {
+test('generation 15 successor is pinned with Gen 14 predecessor and native gates armed for one window', () => {
   execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
   const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
-  assert.equal(manifest.stageSafety.generation15Armed, false)
+  assert.equal(manifest.stageSafety.generation15Armed, true)
   assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
   assert.equal(manifest.generation15Successor.packageId, 'tll-staging-generation-15-credentials/v1')
   assert.equal(manifest.generation15Successor.generation, 15)
@@ -258,8 +258,8 @@ test('generation 15 disabled successor is pinned with Gen 14 predecessor and nat
   assert.equal(manifest.generation15Successor.liveLauncher.path, 'scripts/staging-generation-15-live-launcher.mjs')
   assert.equal(manifest.generation15Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-15-run-live-once.mjs')
   assert.equal(manifest.generation15Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-15-journal-watch.mjs')
-  assert.equal(manifest.generation15Successor.nativeTransportEnabled, false)
-  assert.equal(manifest.generation15Successor.status, 'DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW')
+  assert.equal(manifest.generation15Successor.nativeTransportEnabled, true)
+  assert.equal(manifest.generation15Successor.status, 'ONE_STAGING_WINDOW_AUTHORIZED')
   assert.equal(manifest.generation15Successor.connectionVerifier.bridgeOwnProbe.op, 'register')
   assert.equal(manifest.generation15Successor.connectionVerifier.bridgeOwnProbe.expectedMode, 'error')
   assert.ok(manifest.generation15Successor.sources.some(item => item.path === 'scripts/staging-generation-15-live-launcher.mjs'))
@@ -267,5 +267,6 @@ test('generation 15 disabled successor is pinned with Gen 14 predecessor and nat
   assert.ok(manifest.generation15Successor.sources.some(item => item.path === 'scripts/staging-generation-6-connection-verifier.mjs'))
   assert.ok(manifest.generation15Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-15-disabled-successor.md') ||
             manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-15-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-15-arming-diff.md'))
 })
 
