@@ -61,6 +61,22 @@ test('unknown purpose, invalid password and browser execution fail before a cons
  for(const options of [{purpose:'admin'},{purpose:'__proto__'},{purpose:'constructor'},{purpose:'broker.other-project'},{purpose:{toString:()=> 'customer'}},{purpose:null},{password:''},{password:()=>''},{password:'x'.repeat(1025)},{password:'private\nsecret'}])assert.throws(()=>setup(options),unavailable)
  const prior=globalThis.window;try{globalThis.window={};assert.throws(()=>setup(),unavailable)}finally{if(prior===undefined)delete globalThis.window;else globalThis.window=prior}
 })
+test('missing process or process.env is safe for Deno Edge and does not construct a driver',()=>{
+ const prior=globalThis.process
+ let missing
+ try{
+  Object.defineProperty(globalThis,'process',{configurable:true,value:undefined})
+  missing=setup()
+ }finally{Object.defineProperty(globalThis,'process',{configurable:true,value:prior})}
+ assert.equal(missing.runtime.enabled,true);assert.equal(missing.captures.length,0)
+ const envDescriptor=Object.getOwnPropertyDescriptor(prior,'env')
+ let noEnv
+ try{
+  Object.defineProperty(prior,'env',{configurable:true,writable:true,value:undefined})
+  noEnv=setup()
+ }finally{Object.defineProperty(prior,'env',envDescriptor)}
+ assert.equal(noEnv.runtime.enabled,true);assert.equal(noEnv.captures.length,0)
+})
 test('ambient PG destination, SSL, options and native-driver overrides are rejected without reading credential stores',async()=>{
  for(const [key,value]of [['PGHOST','synthetic.invalid'],['PGPORT','1'],['PGUSER','postgres'],['PGPASSWORD','SYNTHETIC_PRIVATE'],['PGDATABASE','other'],['PGSSLMODE','disable'],['PGOPTIONS','-c role=postgres'],['PGREPLICATION','database'],['PGBINARY','1'],['NODE_PG_FORCE_NATIVE','1'],['NODE_TLS_REJECT_UNAUTHORIZED','0']]){
   const previous=process.env[key]

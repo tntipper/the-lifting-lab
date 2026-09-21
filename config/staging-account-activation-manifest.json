@@ -47,8 +47,8 @@
       "app/api/account",
       "supabase/functions"
     ],
-    "fileCount": 62,
-    "sha256": "b913f3457a322f9da3fd2cdfd5f03c0f18f97aabd868c78869de8c7e87a74289"
+    "fileCount": 65,
+    "sha256": "71c71ce48ea1db855757831146eb3e468289881afc1e6db9d1b5aabed310dfb3"
   },
   "stageSafety": {
     "sources": [
@@ -427,7 +427,7 @@
     "sources": [
       {
         "path": "supabase/functions/tll-broker-token/index.ts",
-        "sha256": "d0fce3e10c228041f5962b3e50d32df99ce299b70c2aefa97a8bb78680ec1e54"
+        "sha256": "8323a721d8bf6969c88df1f60c974af3d45341c97b17e519f3b4014c5a3a0456"
       },
       {
         "path": "supabase/functions/tll-broker-token/deno.json",
@@ -435,7 +435,7 @@
       },
       {
         "path": "supabase/functions/tll-broker-userinfo/index.ts",
-        "sha256": "ca6f234d8f7ac2adc5b2e4e33c129749c68354c13ef76f178469013c6630e928"
+        "sha256": "c3aba3e303c2637f696dc4c772d0d4da68125dd53f2c9eb42b5c1475b2d9150e"
       },
       {
         "path": "supabase/functions/tll-broker-userinfo/deno.json",
@@ -455,7 +455,7 @@
       },
       {
         "path": "lib/server/staging-postgres.ts",
-        "sha256": "522eb20f7c7a61771d0e5c08e2297ef736a982bdda8a640901620b7c21bde5b4"
+        "sha256": "d71229b2339b90dd756b705c45484c55431c3df6d13dc6ca8e2f7abee86c5c0c"
       }
     ],
     "requiredSecrets": [
