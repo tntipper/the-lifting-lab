@@ -1,10 +1,11 @@
 /**
- * Secret-free Generation 15 connection-failure evidence helpers.
+ * Secret-free Generation 15 connection-failure / recovery evidence helpers.
  *
  * No passwords, SQL, tokens, or provider payloads. Used by the live launcher
- * stdout/path persistence and by run-live-once session summaries so the next
- * live attempt cannot lose {purpose,check,status,reason} plus allow-listed
- * extras (sqlstate, expectedMode, purposesPassed, host/port constants).
+ * stdout/path persistence and by run-live-once session summaries so ANY path
+ * to RECOVERY_REQUIRED / RECOVERY_VERIFIED retains failedPhase, whether
+ * connectionFailure was present, and recoveryOutcome — even when probes passed
+ * and a later step (for example zero_sessions) failed without a probe report.
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
@@ -26,6 +27,15 @@ const connectionFailureChecks = new Set([
 const connectionFailurePurposes = new Set(['customer', 'cart', 'broker', 'provisional', 'bridge'])
 const optionalKeys = new Set(['sqlstate', 'expectedMode', 'purposesPassed', 'host', 'port', 'recoverySubOutcome'])
 const recoverySubOutcomes = new Set(['RECOVERY_COMMITTED', 'RECOVERY_POSTCOMMIT_FAILED', 'RECOVERY_REQUIRED'])
+const recoveryTerminalStatuses = new Set(['RECOVERY_REQUIRED', 'RECOVERY_VERIFIED'])
+const allowedFailureSteps = new Set([
+  'zero_sessions', 'connection_verification', 'provider', 'preflight', 'journal', 'dispatch', 'recovery',
+])
+const allowedFailedPhases = new Set([
+  'ENTRY_PREFLIGHT', 'ENTRY_PREFLIGHT_RETRY', 'JOURNAL_INTENT', 'MATERIAL_GENERATION',
+  'VERCEL_STAGE', 'SUPABASE_STAGE', 'PROVIDER_READBACK', 'DATABASE_PACKAGE', 'DATABASE_DISPATCH',
+  'CONNECTION_VERIFICATION', 'JOURNAL_FINALIZE', 'DATABASE_RECOVERY', 'VERCEL_CLEANUP', 'SUPABASE_CLEANUP',
+])
 
 /** Secret-free allow-listed projection of a connectionFailure object. */
 export function projectSecretFreeConnectionFailure(value) {
@@ -75,8 +85,26 @@ export function projectSecretFreeConnectionFailure(value) {
   return Object.freeze(projected)
 }
 
+function projectFailedPhase(value) {
+  return typeof value === 'string' && allowedFailedPhases.has(value) ? value : null
+}
+
+function projectRecoveryOutcome(value) {
+  return value === 'NOT_REQUIRED' || value === 'RECOVERY_VERIFIED' || value === 'RECOVERY_REQUIRED'
+    ? value
+    : null
+}
+
+function projectFailureStep(value) {
+  return typeof value === 'string' && allowedFailureSteps.has(value) ? value : null
+}
+
 /** Secret-free launcher stdout / summary payload. Never includes passwords or SQL. */
 export function secretFreeLauncherTerminal(result) {
+  const connectionFailure = projectSecretFreeConnectionFailure(result?.connectionFailure)
+  const failedPhase = projectFailedPhase(result?.failedPhase)
+  const recoveryOutcome = projectRecoveryOutcome(result?.recoveryOutcome)
+  const failureStep = projectFailureStep(result?.failureStep)
   const payload = {
     status: result?.status ?? null,
     target: result?.target ?? null,
@@ -84,27 +112,42 @@ export function secretFreeLauncherTerminal(result) {
     windowId: result?.windowId ?? null,
     phase: result?.phase ?? null,
     nextAction: result?.nextAction ?? null,
+    failedPhase,
+    recoveryOutcome,
+    connectionFailurePresent: Boolean(connectionFailure) || result?.connectionFailurePresent === true,
   }
-  const connectionFailure = projectSecretFreeConnectionFailure(result?.connectionFailure)
+  if (failureStep) payload.failureStep = failureStep
   if (connectionFailure) payload.connectionFailure = connectionFailure
   return Object.freeze(payload)
 }
 
-/** Persist secret-free connectionFailure evidence under implementation-state. */
+/**
+ * Persist secret-free evidence under implementation-state.
+ * Writes for any RECOVERY_* terminal even when connectionFailure is absent —
+ * that was the Gen 15 live evidence gap versus Gen 14.
+ */
 export function persistConnectionFailureEvidence(result, {
   path = DEFAULT_CONNECTION_FAILURE_EVIDENCE_PATH,
   now = Date.now,
 } = {}) {
   const connectionFailure = projectSecretFreeConnectionFailure(result?.connectionFailure)
-  if (!connectionFailure) return null
+  const recoveryTerminal = recoveryTerminalStatuses.has(result?.status)
+  if (!connectionFailure && !recoveryTerminal) return null
+  const failedPhase = projectFailedPhase(result?.failedPhase)
+  const recoveryOutcome = projectRecoveryOutcome(result?.recoveryOutcome)
+  const failureStep = projectFailureStep(result?.failureStep)
   const record = Object.freeze({
     schema: CONNECTION_FAILURE_EVIDENCE_SCHEMA,
     generation: result.generation,
     windowId: result.windowId,
     target: result.target,
-    phase: result.phase ?? 'CONNECTION_VERIFICATION',
+    phase: result.phase ?? null,
+    failedPhase,
     status: result.status,
-    connectionFailure,
+    recoveryOutcome,
+    connectionFailurePresent: Boolean(connectionFailure),
+    ...(failureStep ? { failureStep } : {}),
+    ...(connectionFailure ? { connectionFailure } : {}),
     recordedAt: new Date(now()).toISOString(),
   })
   mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
