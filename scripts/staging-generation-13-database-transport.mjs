@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { PREDECESSOR, PROJECT_REF, PACKAGE_ID, WINDOW_ID } from './staging-generation-13-credentials.mjs'
 
-export const NATIVE_GENERATION_13_DATABASE_TRANSPORT_ENABLED = false
+export const NATIVE_GENERATION_13_DATABASE_TRANSPORT_ENABLED = true
 export const MANAGEMENT_ENDPOINT = Object.freeze({ hostname:'api.supabase.com',path:`/v1/projects/${PROJECT_REF}/database/query`,method:'POST' })
 export const KEYCHAIN_HELPER_TIMEOUT_MS=45_000
 const MAX_RESPONSE_BYTES=65_536, TIMEOUT_MS=35_000
