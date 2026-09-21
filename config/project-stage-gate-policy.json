@@ -14,7 +14,7 @@
   "failedOrUncertainWindowReplayPermitted": false,
   "currentHold": {
     "scope": "staging-runtime-credential-window",
-    "reason": "generation-15-connection-recovery-required-reconciliation-required-no-replay-awaiting-recovery-diagnosis-successor",
+    "reason": "generation-16-disabled-successor-prepared-zero-sessions-drain-awaiting-independent-arming-review",
     "generation10ReplayPermitted": false,
     "generation11ReplayPermitted": false,
     "generation11Armed": false,
@@ -25,6 +25,8 @@
     "generation13ReplayPermitted": false,
     "generation14Armed": false,
     "generation14ReplayPermitted": false,
-    "generation15Armed": false
+    "generation15Armed": false,
+    "generation15ReplayPermitted": false,
+    "generation16Armed": false
   }
 }
