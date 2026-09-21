@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { isSyntheticPreview } from '@/lib/preview-mode'
+import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
 import { StagingCartButton } from './StagingCartActions'
 
 const AR = '166,226,46'
@@ -54,10 +55,11 @@ export default function TopNav() {
     return pathname.startsWith(href)
   }
 
-  // Account button target: signed-in → dashboard, signed-out → auth.
+  // Account button target: signed-in → dashboard, signed-out → ordinary /auth
+  // or staging Customer Account entry when public staging-customer flags are on.
   // While auth is unknown we point at /dashboard, which itself redirects
-  // unauthenticated users to /auth — so the link is always safe.
-  const accountHref = isSyntheticPreview() ? '/preview' : signedIn === false ? '/auth' : '/dashboard'
+  // unauthenticated users to the same sign-in entry — so the link is always safe.
+  const accountHref = isSyntheticPreview() ? '/preview' : signedIn === false ? accountSignInHref() : '/dashboard'
   const accountLabel = isSyntheticPreview() ? 'Preview only' : signedIn === false ? 'Sign In' : 'My Account'
 
   return (
