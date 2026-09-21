@@ -10,9 +10,24 @@ export const ENTRYPOINTS=Object.freeze({
 })
 const purposes=Object.keys(IDENTITIES),failureChecks=new Set(['input','factory','connect','connect_wait','factory_retry','connect_retry','identity','membership','matrix','own_probe','table_denial','release','close'])
 const failures=new WeakMap()
-const unavailable=(purpose=null,check='input')=>{const error=new Error('Generation-6 connection verification unavailable');failures.set(error,{purpose:purposes.includes(purpose)?purpose:null,check:failureChecks.has(check)?check:'input'});return error}
+const sqlstateOf=error=>typeof error?.code==='string'&&/^[0-9A-Z]{5}$/.test(error.code)?error.code:null
+const unavailable=(purpose=null,check='input',extras={})=>{
+  const error=new Error('Generation-6 connection verification unavailable')
+  const meta={purpose:purposes.includes(purpose)?purpose:null,check:failureChecks.has(check)?check:'input'}
+  if(extras.expectedMode==='rejected'||extras.expectedMode==='error')meta.expectedMode=extras.expectedMode
+  if(typeof extras.sqlstate==='string'&&/^[0-9A-Z]{5}$/.test(extras.sqlstate))meta.sqlstate=extras.sqlstate
+  if(Number.isInteger(extras.purposesPassed)&&extras.purposesPassed>=0&&extras.purposesPassed<=purposes.length)meta.purposesPassed=extras.purposesPassed
+  failures.set(error,meta);return error
+}
 export const POOLER_CONVERGENCE_MS=16_000
-export function connectionFailureReport(error){const value=failures.get(error);return Object.freeze({status:'FAIL',reason:'connection_verification_failed',purpose:value?.purpose??null,check:value?.check??'input'})}
+export function connectionFailureReport(error){
+  const value=failures.get(error)
+  const report={status:'FAIL',reason:'connection_verification_failed',purpose:value?.purpose??null,check:value?.check??'input'}
+  if(value?.expectedMode==='rejected'||value?.expectedMode==='error')report.expectedMode=value.expectedMode
+  if(typeof value?.sqlstate==='string')report.sqlstate=value.sqlstate
+  if(Number.isInteger(value?.purposesPassed))report.purposesPassed=value.purposesPassed
+  return Object.freeze(report)
+}
 const values=purposes.flatMap(purpose=>ENTRYPOINTS[purpose].map(signature=>`('${purpose}','${signature}')`)).join(',')
 export const IDENTITY_QUERY=`SELECT current_database() AS database,current_user::text AS current_role,session_user::text AS session_role,current_setting('application_name') AS application_name,
  r.rolcanlogin AS can_login,r.rolinherit AS inherits,r.rolsuper AS superuser,r.rolbypassrls AS bypass_rls,r.rolcreaterole AS create_role,r.rolcreatedb AS create_database,
@@ -28,8 +43,9 @@ const ownProbe=Object.freeze({
   cart:[`SELECT public.tll_cart_open(repeat('a',64),repeat('b',64)) AS result`,null,'error'],
   broker:[`SELECT tll_broker_private.repository('admit',$1::jsonb) AS result`,'{}','rejected'],
   provisional:[`SELECT tll_provisional_private.repository('prepare',$1::jsonb) AS result`,'{}','rejected'],
-  bridge:[`SELECT tll_bridge_private.repository('admit',$1::jsonb) AS result`,'{}','rejected'],
+  bridge:[`SELECT tll_bridge_private.repository('register',$1::jsonb) AS result`,'{}','error'],
 })
+export const OWN_PROBE=ownProbe
 
 function exactIdentity(row,purpose,expiresAt){const login=IDENTITIES[purpose].login
   if(!row||row.database!=='postgres'||row.current_role!==login||row.session_role!==login||row.application_name!=='Supavisor'||row.can_login!==true||row.inherits!==false
@@ -43,6 +59,7 @@ function exactMatrix(rows,purpose){if(!Array.isArray(rows)||rows.length!==Object
 export async function verifyGeneration6Connections({passwords,expiresAt,tlsCa,createRuntime,pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))}){
   if(!passwords||Object.keys(passwords).sort().join('|')!==[...purposes].sort().join('|')||!tlsCa||Object.keys(tlsCa).sort().join('|')!=='pem|sha256'
     ||typeof tlsCa.pem!=='string'||!tlsCa.pem||!/^[a-f0-9]{64}$/.test(tlsCa.sha256)||typeof createRuntime!=='function'||typeof pause!=='function')throw unavailable()
+  let purposesPassed=0
   for(const purpose of purposes){let runtime,client,primary,check='factory'
     try{
       const create=()=>createRuntime({purpose,enabled:true,password:passwords[purpose],tlsCa})
@@ -55,12 +72,32 @@ export async function verifyGeneration6Connections({passwords,expiresAt,tlsCa,cr
       check='matrix';exactMatrix((await client.query(FUNCTION_MATRIX_QUERY)).rows,purpose)
       const [query,payload,expected]=ownProbe[purpose]
       check='own_probe'
-      if(expected==='error'){let rejected=false;try{await client.query(query)}catch{rejected=true}if(!rejected)throw unavailable(purpose,check);client=undefined}
-      else{const rows=(await client.query(query,[payload])).rows;if(rows.length!==1||rows[0]?.result?.status!==expected)throw unavailable(purpose,check)}
-      if(client){check='table_denial';let denied=false;try{await client.query(PRIVATE_TABLE_DENIAL_QUERY)}catch{denied=true}if(!denied)throw unavailable(purpose,check);client=undefined}
-    }catch(error){primary=failures.has(error)?error:unavailable(purpose,check)}
-    finally{try{client?.release(true)}catch{if(!primary)primary=unavailable(purpose,'release')}try{await runtime?.close()}catch{if(!primary)primary=unavailable(purpose,'close')}}
+      if(expected==='error'){
+        let rejected=false,sqlstate=null
+        try{if(payload==null)await client.query(query);else await client.query(query,[payload])}
+        catch(probeError){rejected=true;sqlstate=sqlstateOf(probeError)}
+        if(!rejected)throw unavailable(purpose,check,{expectedMode:'error',purposesPassed})
+        client=undefined
+      }else{
+        try{
+          const rows=(await client.query(query,[payload])).rows
+          if(rows.length!==1||rows[0]?.result?.status!==expected)throw unavailable(purpose,check,{expectedMode:expected,purposesPassed})
+        }catch(probeError){
+          if(failures.has(probeError))throw probeError
+          throw unavailable(purpose,check,{expectedMode:expected,purposesPassed,...(sqlstateOf(probeError)?{sqlstate:sqlstateOf(probeError)}:{})})
+        }
+      }
+      if(client){check='table_denial';let denied=false;try{await client.query(PRIVATE_TABLE_DENIAL_QUERY)}catch{denied=true}if(!denied)throw unavailable(purpose,check,{purposesPassed});client=undefined}
+    }catch(error){
+      if(failures.has(error)){
+        const prior=failures.get(error)
+        if(!Number.isInteger(prior.purposesPassed))failures.set(error,{...prior,purposesPassed})
+        primary=error
+      }else primary=unavailable(purpose,check,{purposesPassed})
+    }
+    finally{try{client?.release(true)}catch{if(!primary)primary=unavailable(purpose,'release',{purposesPassed})}try{await runtime?.close()}catch{if(!primary)primary=unavailable(purpose,'close',{purposesPassed})}}
     if(primary)throw primary
+    purposesPassed+=1
   }
   return Object.freeze({status:'PASS',projectRef:PROJECT_REF,purposes:5,controlsEnabled:false})
 }
