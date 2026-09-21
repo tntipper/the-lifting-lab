@@ -3,7 +3,7 @@
 Date: 2026-09-21  
 Base: `codex/tll-integration` @ `7f670cbc1b7ba8fb4a0a95caf1be93e0d8c44d76`  
 Plan: `docs/ops/stage-plans/2026-09-21-stage-3-slice-5-cart-account-bind.md`  
-Tip under test: see PR head / latest commit on `cursor/stage3-slice5-cart-account-bind-f326`
+Tip under test: `0269c70352cd044c566dd24e69cc984ddbc624e1`
 
 ## Investigation (library vs mount)
 
