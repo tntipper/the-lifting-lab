@@ -59,7 +59,7 @@ async function fixture({ mode = 'sign_in', hook, sessionHook, admissionHook, coo
   const shopifyProof = { async start(input) { proofCalls.push('start');proofTransaction = input.transactionId
       if(proofIssue==='start')return{status:'held',liveEnabled:false}
       const authorizationUrl = 'https://shopify.com/authentication/107532616020/oauth/authorize?' + new URLSearchParams({ state: proofState,
-        client_id: '63f474eda69ec32778ce2a99e8c1114f', redirect_uri: ORIGIN + '/auth/customer/shopify/callback' })
+        client_id: 'c8f7b926-9073-416c-9949-0d99e89a99c0', redirect_uri: ORIGIN + '/auth/customer/shopify/callback' })
       return { status:'authorization_ready', authorizationUrl, expiresAt:Math.min(input.transactionExpiresAt,Date.now()+300000), liveEnabled:false }
     }, async complete(input) { proofCalls.push('complete');const u=new URL(input.callbackUrl)
       if(proofIssue==='complete')return{status:'held',liveEnabled:false}

@@ -2,7 +2,7 @@
 
 `lib/identity/customer-http.ts` supplies real Node HTTPS implementations for a Confidential Customer Account client and its public JWKS loader. Both factories default to disabled. An explicit trusted-server `enabled:true` permits the adapter's pinned HTTP operation; it does **not** activate the connection foundation, which remains `liveEnabled:false`, and no route/provider wiring or approved callback configuration is shipped.
 
-The staging shop, issuer, token/JWKS paths and public Customer Account client `63f474eda69ec32778ce2a99e8c1114f` are fixed. Domain configuration now requires that same client. The exact callback must be supplied from reviewed server configuration and match each code exchange. Client secrets are injected by the server; these modules do not read environment files, browsers, cookies or credential stores. Imports depend on Node HTTPS and cannot be built as browser code; a browser runtime guard also refuses requests. Response tokens are private domain-port material, never a browser DTO.
+The staging shop, issuer, token/JWKS paths and public Headless Customer Account client `c8f7b926-9073-416c-9949-0d99e89a99c0` are fixed. Domain configuration now requires that same client. The exact callback must be supplied from reviewed server configuration and match each code exchange. Client secrets are injected by the server; these modules do not read environment files, browsers, cookies or credential stores. Imports depend on Node HTTPS and cannot be built as browser code; a browser runtime guard also refuses requests. Response tokens are private domain-port material, never a browser DTO.
 
 ## Transport and response boundary
 

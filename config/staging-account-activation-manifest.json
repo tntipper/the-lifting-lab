@@ -48,7 +48,7 @@
       "supabase/functions"
     ],
     "fileCount": 65,
-    "sha256": "71c71ce48ea1db855757831146eb3e468289881afc1e6db9d1b5aabed310dfb3"
+    "sha256": "7fd1e93a1267769e5060ee0b3c94bcc8d6d3acb9b8bf650c5025cbab4c396960"
   },
   "stageSafety": {
     "sources": [
@@ -447,7 +447,7 @@
       },
       {
         "path": "lib/identity/customer-subject-broker.ts",
-        "sha256": "29eed79286a122bc628dc0a757dc00e0b1dfa1e1f41b267b6405274b681b4c26"
+        "sha256": "837e34461202e72d2080495626a492e545c6c2b44bd01837140396eff38000cd"
       },
       {
         "path": "lib/identity/customer-subject-broker-repository.ts",
@@ -455,7 +455,7 @@
       },
       {
         "path": "lib/server/staging-postgres.ts",
-        "sha256": "d71229b2339b90dd756b705c45484c55431c3df6d13dc6ca8e2f7abee86c5c0c"
+        "sha256": "705bc43b712af5aace56bfee5122adef4bec71178f7e6b886146b66c6336044a"
       }
     ],
     "requiredSecrets": [
@@ -601,7 +601,7 @@
     ]
   },
   "provider": {
-    "customerClientId": "63f474eda69ec32778ce2a99e8c1114f",
+    "customerClientId": "c8f7b926-9073-416c-9949-0d99e89a99c0",
     "shopId": "107532616020",
     "issuer": "https://shopify.com/authentication/107532616020",
     "discovery": "https://tll-integration-staging.myshopify.com/.well-known/openid-configuration",
