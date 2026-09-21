@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { track } from '@/lib/gtag'
 import Avatar from '@/components/Avatar'
+import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
 
 type Review = {
   id: string
@@ -257,7 +258,7 @@ export default function ReviewSection({ productId, productName }: { productId: s
       )}
 
       {!loading && signedIn === false && (
-        <a href="/auth" className="block mb-5 text-center bg-lab-bg/40 border border-lab-border rounded-xl p-4 text-sm text-lab-muted hover:border-lab-lime/50 transition-colors">
+        <a href={accountSignInHref()} className="block mb-5 text-center bg-lab-bg/40 border border-lab-border rounded-xl p-4 text-sm text-lab-muted hover:border-lab-lime/50 transition-colors">
           <span className="text-lab-lime font-bold">Sign in</span> to review this product and earn 75 points.
         </a>
       )}

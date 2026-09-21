@@ -2,13 +2,19 @@
 
 import { isSyntheticPreview } from '@/lib/preview-mode'
 import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
+import StagingCustomerSignInEntry from '@/components/StagingCustomerSignInEntry'
+import { stagingCustomerUiEnabled } from '@/lib/identity/staging-customer-ui'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { authErrorMessage, safeAuthReturnPath } from '@/lib/auth-flow'
 
 export default function AuthPage() {
-  return isSyntheticPreview() ? <PreviewUnavailableContent /> : <AuthPageForm />
+  if (isSyntheticPreview()) return <PreviewUnavailableContent />
+  // Preview staging customer: never offer Google / magic-link as the primary path
+  // (covers TopNav via /auth/customer and Shopify logout return to /auth).
+  if (stagingCustomerUiEnabled()) return <StagingCustomerSignInEntry />
+  return <AuthPageForm />
 }
 
 function AuthPageForm() {
