@@ -53,6 +53,7 @@ test('secretFreeLauncherTerminal includes enriched connectionFailure without sec
   assert.deepEqual(terminal.connectionFailure, projectSecretFreeConnectionFailure(failure))
   assert.equal(terminal.status, 'RECOVERY_VERIFIED')
   assert.equal(terminal.generation, 15)
+  assert.equal(terminal.connectionFailurePresent, true)
   assert.equal('passwords' in terminal, false)
   assert.doesNotMatch(JSON.stringify(terminal), /SECRET_PASSWORD|BEGIN;|scram-sha|password\s*:/i)
 })
@@ -77,7 +78,26 @@ test('persistConnectionFailureEvidence writes mode-0600 secret-free record with 
   assert.equal(record.connectionFailure.host, CONNECTION_FAILURE_HOST)
   assert.equal(record.connectionFailure.port, CONNECTION_FAILURE_PORT)
   assert.doesNotMatch(JSON.stringify(record), /SECRET_PASSWORD|token|BEGIN;/i)
-  assert.equal(persistConnectionFailureEvidence({ status: 'RECOVERY_VERIFIED' }, { path }), null)
+  // Recovery terminals must persist even without connectionFailure (Gen 15 live gap).
+  const recoveryOnly = persistConnectionFailureEvidence({
+    status: 'RECOVERY_REQUIRED',
+    target: 'qdmvngjwkcsilzmqksme',
+    generation: 15,
+    windowId: '2ec1dcbb-dd43-4a45-893b-3b4dc4140188',
+    phase: 'SUPABASE_CLEANUP',
+    failedPhase: 'CONNECTION_VERIFICATION',
+    recoveryOutcome: 'RECOVERY_REQUIRED',
+    connectionFailurePresent: false,
+    failureStep: 'zero_sessions',
+  }, { path, now: () => Date.parse('2026-09-21T06:56:00.000Z') })
+  assert.equal(recoveryOnly, path)
+  const recoveryRecord = JSON.parse(readFileSync(path, 'utf8'))
+  assert.equal(recoveryRecord.connectionFailurePresent, false)
+  assert.equal(recoveryRecord.failedPhase, 'CONNECTION_VERIFICATION')
+  assert.equal(recoveryRecord.recoveryOutcome, 'RECOVERY_REQUIRED')
+  assert.equal(recoveryRecord.failureStep, 'zero_sessions')
+  assert.equal('connectionFailure' in recoveryRecord, false)
+  assert.equal(persistConnectionFailureEvidence({ status: 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED' }, { path }), null)
   rmSync(directory, { recursive: true, force: true })
 })
 
@@ -106,7 +126,9 @@ test('generation 15 live launcher and run-live-once wire secret-free evidence pe
   const runOnce = readFileSync('scripts/staging-generation-15-run-live-once.mjs', 'utf8')
   assert.match(launcher, /secretFreeLauncherTerminal/)
   assert.match(launcher, /persistConnectionFailureEvidence/)
+  assert.match(launcher, /failureStep = 'zero_sessions'/)
   assert.match(runOnce, /extractLauncherTerminalFromStdout/)
   assert.match(runOnce, /connectionFailure/)
-  assert.match(runOnce, /launcherPhase/)
+  assert.match(runOnce, /launcherFailedPhase|failedPhase/)
+  assert.match(runOnce, /connectionFailurePresent/)
 })

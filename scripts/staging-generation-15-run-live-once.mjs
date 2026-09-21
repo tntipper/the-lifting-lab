@@ -244,6 +244,10 @@ export async function runLiveOnceMain(argv = process.argv.slice(2), {
     launcherSignal: launcherResult?.signal ?? null,
     launcherStatus: launcherTerminal?.status ?? null,
     launcherPhase: launcherTerminal?.phase ?? null,
+    launcherFailedPhase: launcherTerminal?.failedPhase ?? null,
+    launcherRecoveryOutcome: launcherTerminal?.recoveryOutcome ?? null,
+    launcherFailureStep: launcherTerminal?.failureStep ?? null,
+    connectionFailurePresent: launcherTerminal?.connectionFailurePresent === true,
     launcherNextAction: launcherTerminal?.nextAction ?? null,
     ...(connectionFailure ? { connectionFailure } : {}),
     watchIntervalSec: watchIntervalSec || null,
@@ -251,8 +255,8 @@ export async function runLiveOnceMain(argv = process.argv.slice(2), {
     notes: [
       'Secret-free summary only.',
       'Gates remain disabled unless a separate reviewed arming diff landed.',
-      'Do not replay Gen 11 or Gen 12. Do not arm overnight unattended without a proven supervisor.',
-      'When connection verification fails, connectionFailure.{purpose,check,status,reason} must be retained here.',
+      'Do not replay Gen 11, Gen 12, Gen 14, or Gen 15. Do not arm overnight unattended without a proven supervisor.',
+      'On any RECOVERY_* terminal: retain failedPhase, connectionFailurePresent, recoveryOutcome, and connectionFailure when present.',
     ],
   }
   writeFileSync(summaryPath, `${JSON.stringify(summary, null, 2)}\n`, { mode: 0o600 })
@@ -261,6 +265,8 @@ export async function runLiveOnceMain(argv = process.argv.slice(2), {
     summaryPath,
     launcherExitCode: summary.launcherExitCode,
     launcherStatus: summary.launcherStatus,
+    launcherFailedPhase: summary.launcherFailedPhase,
+    connectionFailurePresent: summary.connectionFailurePresent,
     ...(connectionFailure ? { connectionFailure } : {}),
   })}\n`)
 

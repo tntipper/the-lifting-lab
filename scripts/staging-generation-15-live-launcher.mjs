@@ -174,7 +174,15 @@ export async function runNativeGeneration15CredentialWindow({
             projected.connectionFailure = connectionFailureReport(error)
             throw projected
           }
-          await verifyGeneration15ZeroSessions({ token })
+          try {
+            await verifyGeneration15ZeroSessions({ token })
+          } catch (error) {
+            // Probe report is intentionally absent here — surface a secret-free step tag
+            // so recovery evidence still records why CONNECTION_VERIFICATION threw.
+            const projected = Error('Generation-15 zero-session verification unavailable')
+            projected.failureStep = 'zero_sessions'
+            throw projected
+          }
         },
         recoverDatabase: () => recoverGeneration15Database({ token }),
         removeVercel: removeVercelSecrets,
