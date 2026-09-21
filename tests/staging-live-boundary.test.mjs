@@ -74,8 +74,8 @@ test('boundary rejects an ordinary test that imports the Gen 13 live launcher', 
   ])
 })
 
-test('repository Gen 13–17 live launchers are accepted because they use the phase journal', () => {
-  for (const generation of [13, 14, 15, 16]) {
+test('repository Gen 13–18 live launchers are accepted because they use the phase journal', () => {
+  for (const generation of [13, 14, 15, 16, 17, 18]) {
     const launcher = `scripts/staging-generation-${generation}-live-launcher.mjs`
     const transport = `scripts/staging-generation-${generation}-transport.mjs`
     const watch = `scripts/staging-generation-${generation}-journal-watch.mjs`
