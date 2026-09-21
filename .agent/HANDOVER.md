@@ -1,6 +1,6 @@
 # Agent handover — The Lifting Lab
 
-Updated: 2026-09-21 (Stage 3 Slice 5)
+Updated: 2026-09-21 (Stage 3 Slice 6)
 
 ## Stage status
 
@@ -8,14 +8,18 @@ Updated: 2026-09-21 (Stage 3 Slice 5)
 - **Slice 1+2:** landed on `codex/tll-integration` tip `3989c6c7e539caeece71841a18f90ee3bbd6382a` (PR #47).
 - **Slice 3:** App Router prepare/start/authorize/recover mount proof landed (PR #48 merge tip `da3ae52cc6727e24828b1a9ad2d334d0dd868802`).
 - **Slice 4:** Shopify callback + final application-session mount proof landed (PR #49 merge tip `7f670cbc1b7ba8fb4a0a95caf1be93e0d8c44d76`).
-- **Slice 5:** Cart account bind + explicit guest→account transition mount proof landed (see plan/evidence below). Honest GAPs: browser history.back; hosted preview cart with real Supabase + migration 014; durable SQL transition through App Router mounts.
-- **Next:** Stage 3 Slice 6 — logout/orders + hosted browser stop-before-purchase.
-- **This tip:** branch `cursor/stage3-slice5-cart-account-bind-f326` (see PR head SHA in report).
+- **Slice 5:** Cart account bind + explicit guest→account transition mount proof landed (PR #50 merge tip `d6a2d79e6e1af61fc71afe5c777ba82cbda5a322`).
+- **Slice 6:** Logout + orders App Router mount + offline orders UI projection proof landed (see plan/evidence below). Honest **GAP:** hosted stop-before-purchase browser journey (needs Toby/preview secrets + activation; not run).
+- **Stage 3 closed?** Offline wiring checklist slices 1–6 mount/composition **PASS**. Stage 3 is **not** fully closed until the hosted stop-before-purchase journey is owner-run and recorded (or explicitly waived under new programme authority).
+- **Next programme step:** Owner-controlled hosted activation journey per `docs/ops/staging-account-activation.md` (owned test email; cart choice without checkout; `/account/orders`; unified logout; **stop before purchase**). Do not arm Gen 20 / live launchers from ordinary agents. After that residual GAP closes, Stage 3 can be marked closed and the programme can move to the next reviewed stage.
+- **This tip:** branch `cursor/stage3-slice6-logout-orders-journey-71bf` (see PR head SHA in report).
 
 ## Authoritative pointers
 
 | Item | Path / value |
 |------|----------------|
+| Slice 6 stage plan | `docs/ops/stage-plans/2026-09-21-stage-3-slice-6-logout-orders-journey.md` |
+| Slice 6 evidence | `docs/ops/evidence/2026-09-21-stage-3-slice-6-logout-orders-journey-acceptance.md` (+ `.json`) |
 | Slice 5 stage plan | `docs/ops/stage-plans/2026-09-21-stage-3-slice-5-cart-account-bind.md` |
 | Slice 5 evidence | `docs/ops/evidence/2026-09-21-stage-3-slice-5-cart-account-bind-acceptance.md` (+ `.json`) |
 | Slice 4 stage plan | `docs/ops/stage-plans/2026-09-21-stage-3-slice-4-shopify-callback-session.md` |
@@ -27,9 +31,9 @@ Updated: 2026-09-21 (Stage 3 Slice 5)
 | Manifest status | `config/staging-account-activation-manifest.json` → `generation19Successor` |
 | Gates | `config/project-stage-gate-policy.json` — `generation19Armed` / `ReplayPermitted` = false |
 | Customer composition | `lib/server/staging-customer.ts` |
-| Customer route mount | `lib/server/staging-customer-route.ts` + `app/auth/customer/{prepare,start,authorize,shopify/callback,callback,recover}/route.ts` |
+| Customer route mount | `lib/server/staging-customer-route.ts` + `app/auth/customer/{prepare,start,authorize,shopify/callback,callback,recover,logout}/route.ts` |
+| Orders surfaces | `app/api/account/orders/route.ts`, `app/account/orders`, `lib/identity/customer-orders-projection.ts` |
 | Cart composition | `lib/commerce/staging-cart-server.ts` + `app/api/cart/route.ts` |
-| Cart account transition | `lib/commerce/staging-cart-http.ts` + `lib/commerce/staging-cart-transition.ts` |
 | Protocol | `docs/ops/project-stage-execution-protocol.md` |
 
 ## Hard stops
@@ -38,6 +42,6 @@ Updated: 2026-09-21 (Stage 3 Slice 5)
 - Native Gen gates stay false; no Gen 20; no live / run-live-once / keychain arming.
 - Gen 19 replay forbidden.
 
-## Slice 5 one-liner
+## Slice 6 one-liner
 
-App Router `/api/cart` account bind + explicit guest→account transition **PASS** (mounted verified UUID session, `transition_required`, transfer/use_account); history.back, hosted preview+014, and SQL-through-mount remain **GAP**.
+App Router `/auth/customer/logout` + `/api/account/orders` mount **PASS**; offline orders projection UI **PASS**; hosted stop-before-purchase **GAP** (no Toby/preview secrets in agent).

@@ -1,0 +1,74 @@
+{
+  "slice": "stage-3-slice-6-logout-orders-journey",
+  "date": "2026-09-21",
+  "baseSha": "d6a2d79e6e1af61fc71afe5c777ba82cbda5a322",
+  "baseBranch": "codex/tll-integration",
+  "plan": "docs/ops/stage-plans/2026-09-21-stage-3-slice-6-logout-orders-journey.md",
+  "results": [
+    {
+      "id": "mounted-logout-shopify-redirect-cookies",
+      "result": "PASS",
+      "pointer": "tests/customer-logout-orders-mount.test.mjs"
+    },
+    {
+      "id": "mounted-logout-repeat-local",
+      "result": "PASS",
+      "pointer": "tests/customer-logout-orders-mount.test.mjs"
+    },
+    {
+      "id": "mounted-logout-held-and-invalidation-failed",
+      "result": "PASS",
+      "pointer": "tests/customer-logout-orders-mount.test.mjs"
+    },
+    {
+      "id": "logout-post-only-get-405",
+      "result": "PASS",
+      "pointer": "tests/customer-logout-orders-mount.test.mjs; tests/integration/auth-routes.test.mjs"
+    },
+    {
+      "id": "mounted-orders-bounded-projection",
+      "result": "PASS",
+      "pointer": "tests/customer-logout-orders-mount.test.mjs"
+    },
+    {
+      "id": "orders-ui-projection-parser",
+      "result": "PASS",
+      "pointer": "tests/customer-orders-projection.test.mjs; lib/identity/customer-orders-projection.ts"
+    },
+    {
+      "id": "cart-no-checkout-url-no-access-token",
+      "result": "PASS",
+      "pointer": "tests/staging-cart.test.mjs"
+    },
+    {
+      "id": "hosted-stop-before-purchase-journey",
+      "result": "GAP",
+      "reason": "No Toby/preview secrets; gates false; hosted migrations/customer enablement not available in this agent"
+    },
+    {
+      "id": "temporary-access-retirement",
+      "result": "N/A",
+      "reason": "No temporary hosted access opened"
+    },
+    {
+      "id": "live-boundaries",
+      "result": "PASS",
+      "violations": 0
+    }
+  ],
+  "commands": [
+    "npm run check:live-boundaries",
+    "node --test tests/customer-logout-orders-mount.test.mjs tests/customer-orders-projection.test.mjs",
+    "node --test tests/staging-customer-route.test.mjs tests/customer-account-logout.test.mjs tests/customer-orders.test.mjs",
+    "node --test tests/staging-cart.test.mjs"
+  ],
+  "exclusions": [
+    "no-purchases",
+    "no-gen-20",
+    "no-live-arming",
+    "no-production-supabase",
+    "no-customer-marketing-email",
+    "no-paper-hosted-pass"
+  ],
+  "tipSha": "PENDING"
+}
