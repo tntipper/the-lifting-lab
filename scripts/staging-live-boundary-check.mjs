@@ -47,6 +47,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
     || policy.currentHold?.generation15Armed !== false
     || policy.currentHold?.generation16Armed !== false
     || policy.currentHold?.generation17Armed !== false
+    || policy.currentHold?.generation18Armed !== false
     || policy.currentHold?.nextGenerationPermittedBeforeBoundaryReview !== false) violations.push('policy:currentHold')
 
   for (const path of filesBelow(join(projectRoot, 'tests')).filter(path => /\.(?:mjs|js|ts|tsx)$/.test(path))) {
