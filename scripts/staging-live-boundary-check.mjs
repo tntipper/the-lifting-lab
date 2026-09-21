@@ -35,21 +35,14 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
     failedOrUncertainWindowReplayPermitted: false,
   }
   for (const [name, expected] of Object.entries(required)) if (policy[name] !== expected) violations.push(`policy:${name}`)
-  if (policy.currentHold?.generation10ReplayPermitted !== false
-    || policy.currentHold?.generation11ReplayPermitted !== false
-    || policy.currentHold?.generation12ReplayPermitted !== false
-    || policy.currentHold?.generation13ReplayPermitted !== false
-    || policy.currentHold?.generation14ReplayPermitted !== false
-    || policy.currentHold?.generation11Armed !== false
-    || policy.currentHold?.generation12Armed !== false
-    || policy.currentHold?.generation13Armed !== false
-    || policy.currentHold?.generation14Armed !== false
-    || policy.currentHold?.generation15Armed !== false
-    || policy.currentHold?.generation16Armed !== false
-    || policy.currentHold?.generation17Armed !== false
-    || policy.currentHold?.generation18Armed !== false
-    || policy.currentHold?.generation19Armed !== false
-    || policy.currentHold?.nextGenerationPermittedBeforeBoundaryReview !== false) violations.push('policy:currentHold')
+  const hold = policy.currentHold ?? {}
+  const replayHeld = Array.from({ length: 10 }, (_, index) => index + 10)
+    .every(generation => hold[`generation${generation}ReplayPermitted`] === false)
+  const armedHeld = Array.from({ length: 9 }, (_, index) => index + 11)
+    .every(generation => hold[`generation${generation}Armed`] === false)
+  if (!replayHeld || !armedHeld || hold.nextGenerationPermittedBeforeBoundaryReview !== false) {
+    violations.push('policy:currentHold')
+  }
 
   for (const path of filesBelow(join(projectRoot, 'tests')).filter(path => /\.(?:mjs|js|ts|tsx)$/.test(path))) {
     const source = read(path)

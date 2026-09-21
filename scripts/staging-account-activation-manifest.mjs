@@ -5,6 +5,8 @@ import { relative, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
 const output = resolve(root, 'config/staging-account-activation-manifest.json')
+const stageGatePolicy = JSON.parse(await readFile(resolve(root, 'config/project-stage-gate-policy.json'), 'utf8'))
+const currentHold = stageGatePolicy.currentHold ?? {}
 const hash = async path => createHash('sha256').update(await readFile(resolve(root, path))).digest('hex')
 const pin = async path => ({ path, sha256: await hash(path) })
 async function walk(directory) {
@@ -487,11 +489,33 @@ const manifest = {
     fileCount: sourceTreePins.length, sha256: sourceTreeSha256 },
   stageSafety: {
     sources: await Promise.all(stageSafetySources.map(pin)),
-    policy: 'tll-project-stage-gate-policy/v1', ordinaryTestsRequireAllNativeGatesDisabled: true,
-    ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
-    ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true, liveExecutionRequiresPhaseJournal: true,
-    generation10ReplayPermitted: false, generation11ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation18Armed: false, generation19Armed: false, generation12ReplayPermitted: false, generation13ReplayPermitted: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false, generation16ReplayPermitted: false, generation17ReplayPermitted: false, generation18ReplayPermitted: false, generation19ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
+    policy: stageGatePolicy.schema,
+    ordinaryTestsRequireAllNativeGatesDisabled: stageGatePolicy.ordinaryTestsRequireAllNativeGatesDisabled,
+    ordinaryTestsMayInvokeNativeLaunchers: stageGatePolicy.ordinaryTestsMayInvokeNativeLaunchers,
+    ordinaryTransportModulesMayDefineLiveLaunchers: stageGatePolicy.ordinaryTransportModulesMayDefineLiveLaunchers,
+    ordinaryTestsMayRewriteGeneratedArtifacts: stageGatePolicy.ordinaryTestsMayRewriteGeneratedArtifacts,
+    independentReviewRequiredBeforeArming: stageGatePolicy.independentReviewRequiredBeforeArming,
+    liveExecutionRequiresPhaseJournal: stageGatePolicy.liveExecutionRequiresPhaseJournal,
+    generation10ReplayPermitted: currentHold.generation10ReplayPermitted,
+    generation11ReplayPermitted: currentHold.generation11ReplayPermitted,
+    generation11Armed: currentHold.generation11Armed,
+    generation12Armed: currentHold.generation12Armed,
+    generation13Armed: currentHold.generation13Armed,
+    generation14Armed: currentHold.generation14Armed,
+    generation15Armed: currentHold.generation15Armed,
+    generation16Armed: currentHold.generation16Armed,
+    generation17Armed: currentHold.generation17Armed,
+    generation18Armed: currentHold.generation18Armed,
+    generation19Armed: currentHold.generation19Armed,
+    generation12ReplayPermitted: currentHold.generation12ReplayPermitted,
+    generation13ReplayPermitted: currentHold.generation13ReplayPermitted,
+    generation14ReplayPermitted: currentHold.generation14ReplayPermitted,
+    generation15ReplayPermitted: currentHold.generation15ReplayPermitted,
+    generation16ReplayPermitted: currentHold.generation16ReplayPermitted,
+    generation17ReplayPermitted: currentHold.generation17ReplayPermitted,
+    generation18ReplayPermitted: currentHold.generation18ReplayPermitted,
+    generation19ReplayPermitted: currentHold.generation19ReplayPermitted,
+    successorHeldPendingBoundaryReview: currentHold.nextGenerationPermittedBeforeBoundaryReview === false,
   },
   migrations: await Promise.all(migrations.map(pin)),
   edge: { functions: [

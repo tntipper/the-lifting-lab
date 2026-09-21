@@ -69,10 +69,9 @@ test('staging customer UI flag and Sign In href: enabled → /auth/customer; dis
   assert.equal(absent.accountSignInHref(), '/auth')
 })
 
-test('startStagingCustomerSignIn posts prepare then start and returns authorize Location', async () => {
+test('startStagingCustomerSignIn prepares then returns a fixed document POST contract', async () => {
   const { startStagingCustomerSignIn } = loadModule('../lib/identity/staging-customer-sign-in.ts')
   const csrf = opaqueCsrf()
-  const authorize = `${ORIGIN}/auth/customer/authorize?response_type=code&client_id=fixture`
   const calls = []
   const fetch = async (input, init = {}) => {
     const url = typeof input === 'string' ? input : input.url
@@ -83,26 +82,21 @@ test('startStagingCustomerSignIn posts prepare then start and returns authorize 
         headers: { 'content-type': 'application/json' },
       })
     }
-    if (url.endsWith('/auth/customer/start')) {
-      return new Response(null, { status: 303, headers: { location: authorize } })
-    }
     throw new Error(`unexpected fetch ${url}`)
   }
   const result = await startStagingCustomerSignIn({ fetch, origin: ORIGIN })
-  assert.equal(result.status, 'redirect')
-  assert.equal(result.status === 'redirect' ? result.location : null, authorize)
-  assert.equal(calls.length, 2)
+  assert.equal(result.status, 'submit')
+  assert.equal(result.status === 'submit' ? result.action : null, `${ORIGIN}/auth/customer/start`)
+  assert.deepEqual(result.status === 'submit' ? { ...result.fields } : null, { mode: 'sign_in', csrf })
+  assert.equal(calls.length, 1)
   assert.match(calls[0].url, /\/auth\/customer\/prepare$/)
   assert.equal(calls[0].method, 'POST')
   assert.equal(calls[0].body, 'mode=sign_in')
   assert.equal(calls[0].credentials, 'same-origin')
   assert.equal(calls[0].redirect, 'manual')
-  assert.match(calls[1].url, /\/auth\/customer\/start$/)
-  assert.equal(calls[1].method, 'POST')
-  assert.equal(calls[1].body, `mode=sign_in&csrf=${csrf}`)
 })
 
-test('startStagingCustomerSignIn stays held on prepare/start failure and never invents Google', async () => {
+test('startStagingCustomerSignIn stays held on prepare failure and never fetches the redirecting start route', async () => {
   const { startStagingCustomerSignIn, STAGING_CUSTOMER_SIGN_IN_HELD_MESSAGE } = loadModule(
     '../lib/identity/staging-customer-sign-in.ts',
   )
@@ -113,33 +107,16 @@ test('startStagingCustomerSignIn stays held on prepare/start failure and never i
   assert.equal(heldPrepare.status, 'held')
   assert.equal(heldPrepare.message, STAGING_CUSTOMER_SIGN_IN_HELD_MESSAGE)
 
-  const csrf = opaqueCsrf()
   let step = 0
-  const heldStart = await startStagingCustomerSignIn({
+  const prepared = await startStagingCustomerSignIn({
     origin: ORIGIN,
     fetch: async () => {
       step += 1
-      if (step === 1) {
-        return new Response(JSON.stringify({ csrf }), { status: 200 })
-      }
-      return new Response(JSON.stringify({ status: 'held' }), { status: 409 })
+      return new Response(JSON.stringify({ csrf: opaqueCsrf() }), { status: 200 })
     },
   })
-  assert.equal(heldStart.status, 'held')
-
-  step = 0
-  const badLocation = await startStagingCustomerSignIn({
-    origin: ORIGIN,
-    fetch: async () => {
-      step += 1
-      if (step === 1) return new Response(JSON.stringify({ csrf }), { status: 200 })
-      return new Response(null, {
-        status: 303,
-        headers: { location: 'https://accounts.google.com/o/oauth2/v2/auth' },
-      })
-    },
-  })
-  assert.equal(badLocation.status, 'held')
+  assert.equal(prepared.status, 'submit')
+  assert.equal(step, 1, 'the helper must not fetch the redirecting start endpoint')
 })
 
 test('TopNav Sign In uses accountSignInHref; auth page fails closed to customer entry when staging enabled', () => {
@@ -151,7 +128,7 @@ test('TopNav Sign In uses accountSignInHref; auth page fails closed to customer 
   const authPage = readFileSync(new URL('../app/auth/page.tsx', import.meta.url), 'utf8')
   assert.match(authPage, /stagingCustomerUiEnabled/)
   assert.match(authPage, /StagingCustomerSignInEntry/)
-  assert.match(authPage, /stagingCustomerUiEnabled\(\)\) return <StagingCustomerSignInEntry/)
+  assert.match(authPage, /stagingCustomerUiEnabled\(\)\) return <StagingCustomerSignInEntry autoStart=\{false\}/)
 
   const customerPage = readFileSync(new URL('../app/auth/customer/page.tsx', import.meta.url), 'utf8')
   assert.match(customerPage, /stagingCustomerUiEnabled/)
@@ -160,6 +137,10 @@ test('TopNav Sign In uses accountSignInHref; auth page fails closed to customer 
 
   const entry = readFileSync(new URL('../components/StagingCustomerSignInEntry.tsx', import.meta.url), 'utf8')
   assert.match(entry, /startStagingCustomerSignIn/)
+  assert.match(entry, /document\.createElement\('form'\)/)
+  assert.match(entry, /form\.submit\(\)/)
+  assert.doesNotMatch(entry, /window\.location\.assign/)
+  assert.doesNotMatch(readFileSync(new URL('../lib/identity/staging-customer-sign-in.ts', import.meta.url), 'utf8'), /redirect:\s*'manual'[\s\S]*\/auth\/customer\/start/)
   assert.match(entry, /\/auth\/customer\/prepare|startStagingCustomerSignIn/)
   assert.doesNotMatch(entry, /signInWithOAuth|Continue with Google|signInWithOtp/)
   assert.match(entry, /Google and magic-link are not offered/)

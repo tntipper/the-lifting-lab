@@ -11,8 +11,8 @@ Hosted walk found TopNav **SIGN IN** → `/auth` (ordinary Google/magic-link). G
 ## Approach
 
 - Public helpers `stagingCustomerUiEnabled` / `accountSignInHref` (flags only; no server arming).
-- Browser helper `startStagingCustomerSignIn` POSTs `/auth/customer/prepare` then `/auth/customer/start` with the existing form CSRF/cookie contract; navigates only to same-origin `/auth/customer/authorize`; fail-closed held message (no Google fallback).
-- `/auth/customer` page + `StagingCustomerSignInEntry`; `/auth` also renders that entry when staging customer public flags are on (covers Shopify logout return to `/auth`).
+- Browser helper `startStagingCustomerSignIn` fetches `/auth/customer/prepare`, then returns a fixed same-origin form contract. The component performs a document POST to `/auth/customer/start`, allowing the browser to follow the server's `303` without trying to inspect an opaque manual-redirect response.
+- `/auth/customer` intentionally auto-starts the entry. `/auth` renders a passive signed-out state with an explicit Shopify sign-in button, so Shopify logout cannot immediately reopen login.
 - TopNav and equivalent Sign In CTAs use `accountSignInHref()`.
 
 ## PASS / GAP
@@ -21,8 +21,10 @@ Hosted walk found TopNav **SIGN IN** → `/auth` (ordinary Google/magic-link). G
 |------|--------|----------|
 | Staging-enabled Sign In href → `/auth/customer` | **PASS** | `tests/staging-customer-sign-in-ui.test.mjs` |
 | Staging-disabled Sign In href → `/auth` | **PASS** | same |
-| prepare → start posts + authorize Location | **PASS** | same |
-| Held / non-authorize Location stays held (no Google) | **PASS** | same |
+| prepare fetch → validated fixed-action start form contract | **PASS** | same |
+| start uses document form navigation, not manual fetch redirect | **PASS** | same (source contract); hosted browser re-walk remains below |
+| prepare failure stays held (no Google) | **PASS** | same |
+| `/auth` is passive after logout; `/auth/customer` is intentional auto-start | **PASS** | same (source + helper) |
 | TopNav / auth page / entry wiring | **PASS** | same (source + helper) |
 | `npm run check:live-boundaries` | **PASS** | `{"status":"PASS","violations":0}` |
 | Hosted Preview re-walk (Sign In → Shopify) | **GAP** | Operator; needs preview + staging customer runtime |

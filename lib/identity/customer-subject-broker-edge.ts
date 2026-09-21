@@ -72,10 +72,10 @@ export function createCustomerSubjectBrokerEdgeHandler(surface: Surface, env: En
       const clientSecret = env.TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET
       const caPem = env.TLL_STAGING_POSTGRES_CA_PEM, caSha = env.TLL_STAGING_POSTGRES_CA_SHA256
       if (env.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED !== 'true' || env.SUPABASE_URL !== PROJECT_URL
-        || !secret(password) || !secret(clientSecret) || password === clientSecret || (!!caPem !== !!caSha)
-        || (caPem !== undefined && (!caPem || !/^[a-f0-9]{64}$/.test(caSha!)))) return fixed()
+        || !secret(password) || !secret(clientSecret) || password === clientSecret
+        || !caPem || !caSha || !/^[a-f0-9]{64}$/.test(caSha)) return fixed()
       runtime = runtimeFactory({ purpose: 'broker', enabled: true, password,
-        ...(caPem ? { tlsCa: { pem: caPem, sha256: caSha! } } : {}) })
+        tlsCa: { pem: caPem, sha256: caSha } })
       if (!runtime.enabled) return fixed()
       const repository = repositoryFactory({ pool: runtime.pool, syntheticExecution: true, liveEnabled: false })
       const unavailable = async () => null

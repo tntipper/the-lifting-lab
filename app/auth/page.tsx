@@ -13,7 +13,7 @@ export default function AuthPage() {
   if (isSyntheticPreview()) return <PreviewUnavailableContent />
   // Preview staging customer: never offer Google / magic-link as the primary path
   // (covers TopNav via /auth/customer and Shopify logout return to /auth).
-  if (stagingCustomerUiEnabled()) return <StagingCustomerSignInEntry />
+  if (stagingCustomerUiEnabled()) return <StagingCustomerSignInEntry autoStart={false} />
   return <AuthPageForm />
 }
 

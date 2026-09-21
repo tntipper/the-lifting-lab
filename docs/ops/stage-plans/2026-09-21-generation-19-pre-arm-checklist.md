@@ -1,5 +1,7 @@
 # Generation 19 pre-arm / Phase 2 checklist
 
+> **Historical, consumed window.** Generation 19 completed its one authorised window and is now disarmed and non-replayable. The Phase 2 wording below records the state at arming time; it is not a current instruction. Current policy is authoritative: `generation19Armed: false`, `generation19ReplayPermitted: false`, and no successor is permitted before a new boundary review.
+
 ## Marker
 
 `PREDECESSOR_RETIREMENT_OR_REVIEWED_CLEANUP_REQUIRED`
@@ -37,6 +39,6 @@ When minting Gen N from Gen N−1:
 - [ ] All native / Keychain / manifest / policy gates **FALSE** (Phase 1 only)
 - [ ] Stage plan documents the recovery-pin mint step
 
-## Gen 19 Phase 2 status
+## Historical Gen 19 Phase 2 status
 
-Gates armed for one reviewed staging window (`ONE_STAGING_WINDOW_AUTHORIZED`). Predecessor retirement proven; cleanup must not be re-run. Next: independent Phase 3 live via `scripts/staging-generation-19-run-live-once.mjs` only (separate approval).
+At the time of this checklist, gates were armed for one reviewed staging window (`ONE_STAGING_WINDOW_AUTHORIZED`). That window was consumed and subsequently disarmed. Predecessor retirement remains proven and cleanup must not be re-run. Do not run `scripts/staging-generation-19-run-live-once.mjs`; replay is forbidden.

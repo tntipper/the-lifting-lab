@@ -1,14 +1,20 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { build } from 'esbuild'
+import { createHash, X509Certificate } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 
 const SECRET = 'edge-broker-client-' + 's'.repeat(40)
 const PASSWORD = 'edge-broker-database-' + 'p'.repeat(40)
+const CA_PEM = readFileSync('config/certs/supabase-prod-ca-2021.crt', 'utf8')
+const CA_SHA256 = createHash('sha256').update(new X509Certificate(CA_PEM).raw).digest('hex')
 const enabled = {
   SUPABASE_URL: 'https://qdmvngjwkcsilzmqksme.supabase.co',
   TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'true',
   TLL_STAGING_BROKER_DATABASE_PASSWORD: PASSWORD,
   TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET: SECRET,
+  TLL_STAGING_POSTGRES_CA_PEM: CA_PEM,
+  TLL_STAGING_POSTGRES_CA_SHA256: CA_SHA256,
 }
 const values = {}
 let reads = 0

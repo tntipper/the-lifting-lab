@@ -78,7 +78,7 @@ function keyId(value: unknown): value is string {
 function password(value: unknown): value is string {
   return typeof value === 'string' && value.length >= 32 && value.length <= 1024 && !/[\x00-\x1f\x7f]/.test(value)
 }
-function timestamp(value: unknown): value is number {
+function timestamp(value: unknown): value is string {
   return typeof value === 'string' && /^(?:[1-9][0-9]{0,14})$/.test(value) && Number.isSafeInteger(Number(value))
 }
 function evidenceId(value: unknown): value is string {

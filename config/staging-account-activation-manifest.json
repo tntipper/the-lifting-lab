@@ -48,7 +48,7 @@
       "supabase/functions"
     ],
     "fileCount": 65,
-    "sha256": "7fd1e93a1267769e5060ee0b3c94bcc8d6d3acb9b8bf650c5025cbab4c396960"
+    "sha256": "31f5b0b4259813f2a9d54bd0eb757e741a887d6ff25d7f1b40e4d4d96e94bdd0"
   },
   "stageSafety": {
     "sources": [
@@ -58,7 +58,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "9ae23a66f495550fd0fa6938e9f7f49278f8587ec53c7c3fb01dd54323a3df53"
+        "sha256": "c9e94aa4eb61e3e457871df687458b02bee2c0f59de83d26716261194e12b714"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -158,7 +158,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "0f7bc6f61b61277a0a70f411400f70b58cb9343c3b2199d7ce9e9d3ac5313042"
+        "sha256": "18134c826dce8450f706db05b3fae2b2d854466eb0997fbc27cc6683bc49f159"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -346,7 +346,7 @@
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-19-pre-arm-checklist.md",
-        "sha256": "bc842189fe6613e03af364601fefde9e17d9152dd4246d7ad1a10a5ccc85fe61"
+        "sha256": "2755ed2f99e4c93516c174778bca870146852621ad988bb6fbee7f1b9c18315f"
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-19-arming-diff.md",
@@ -443,7 +443,7 @@
       },
       {
         "path": "lib/identity/customer-subject-broker-edge.ts",
-        "sha256": "2d75f51c9d22d2c66d17bacadeb814a115767a5401fe3614182e5831657a5a44"
+        "sha256": "8a1531096a6f6ef6ebd1bef62b331f0f74ca18dcd6eca75f3464e4f79d4d9516"
       },
       {
         "path": "lib/identity/customer-subject-broker.ts",
@@ -470,7 +470,7 @@
     "sources": [
       {
         "path": "lib/server/staging-customer.ts",
-        "sha256": "bb53ae519073796caa4412b00951856c96bf7abbdb3f50bc4ae8b85dc66f7023"
+        "sha256": "f5cb51e116fdb61c1979d472893aa3cfdee7cae3f740c322ec8f02843b1dc005"
       },
       {
         "path": "lib/server/staging-customer-route.ts",
@@ -2843,7 +2843,7 @@
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-19-pre-arm-checklist.md",
-        "sha256": "bc842189fe6613e03af364601fefde9e17d9152dd4246d7ad1a10a5ccc85fe61"
+        "sha256": "2755ed2f99e4c93516c174778bca870146852621ad988bb6fbee7f1b9c18315f"
       },
       {
         "path": "docs/ops/stage-plans/2026-09-21-generation-17-correct-cleanup.md",
