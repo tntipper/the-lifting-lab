@@ -27,7 +27,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.stageSafety.generation14Armed, false)
   assert.equal(manifest.stageSafety.generation15Armed, false)
   assert.equal(manifest.stageSafety.generation16Armed, false)
-  assert.equal(manifest.stageSafety.generation17Armed, false)
+  assert.equal(manifest.stageSafety.generation17Armed, true)
   assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation12ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation13ReplayPermitted, false)
@@ -279,7 +279,7 @@ test('generation 16 successor is pinned with Gen 15 predecessor and native gates
   execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
   const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
   assert.equal(manifest.stageSafety.generation16Armed, false)
-  assert.equal(manifest.stageSafety.generation17Armed, false)
+  assert.equal(manifest.stageSafety.generation17Armed, true)
   assert.equal(manifest.stageSafety.generation15Armed, false)
   assert.equal(manifest.generation16Successor.packageId, 'tll-staging-generation-16-credentials/v1')
   assert.equal(manifest.generation16Successor.generation, 16)
@@ -309,10 +309,10 @@ test('generation 16 successor is pinned with Gen 15 predecessor and native gates
   assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-zero-sessions-unavailable-diagnosis.md'))
 })
 
-test('generation 17 successor is pinned with Gen 16 predecessor, PR#37 mapping bake-in, and native gates disarmed', () => {
+test('generation 17 successor is pinned with Gen 16 predecessor, PR#37 mapping bake-in, and native gates armed for one window', () => {
   execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
   const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
-  assert.equal(manifest.stageSafety.generation17Armed, false)
+  assert.equal(manifest.stageSafety.generation17Armed, true)
   assert.equal(manifest.stageSafety.generation16Armed, false)
   assert.equal(manifest.generation17Successor.packageId, 'tll-staging-generation-17-credentials/v1')
   assert.equal(manifest.generation17Successor.generation, 17)
@@ -328,8 +328,8 @@ test('generation 17 successor is pinned with Gen 16 predecessor, PR#37 mapping b
   assert.equal(manifest.generation17Successor.liveLauncher.path, 'scripts/staging-generation-17-live-launcher.mjs')
   assert.equal(manifest.generation17Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-17-run-live-once.mjs')
   assert.equal(manifest.generation17Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-17-journal-watch.mjs')
-  assert.equal(manifest.generation17Successor.nativeTransportEnabled, false)
-  assert.equal(manifest.generation17Successor.status, 'DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW')
+  assert.equal(manifest.generation17Successor.nativeTransportEnabled, true)
+  assert.equal(manifest.generation17Successor.status, 'ONE_STAGING_WINDOW_AUTHORIZED')
   assert.equal(manifest.generation17Successor.connectionVerifier.bridgeOwnProbe.op, 'register')
   assert.equal(manifest.generation17Successor.connectionVerifier.bridgeOwnProbe.expectedMode, 'error')
   assert.ok(manifest.generation17Successor.sources.some(item => item.path === 'scripts/staging-generation-17-live-launcher.mjs'))
@@ -338,5 +338,6 @@ test('generation 17 successor is pinned with Gen 16 predecessor, PR#37 mapping b
   assert.ok(manifest.generation17Successor.sources.some(item => item.path === 'scripts/staging-generation-6-connection-verifier.mjs'))
   assert.ok(manifest.generation17Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-17-disabled-successor.md') ||
             manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-17-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-17-arming-diff.md'))
 })
 

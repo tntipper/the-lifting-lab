@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { PREDECESSOR, PROJECT_REF, PACKAGE_ID, WINDOW_ID } from './staging-generation-17-credentials.mjs'
 import { POOLER_CONVERGENCE_MS } from './staging-generation-6-connection-verifier.mjs'
 
-export const NATIVE_GENERATION_17_DATABASE_TRANSPORT_ENABLED = false
+export const NATIVE_GENERATION_17_DATABASE_TRANSPORT_ENABLED = true
 export const MANAGEMENT_ENDPOINT = Object.freeze({ hostname:'api.supabase.com',path:`/v1/projects/${PROJECT_REF}/database/query`,method:'POST' })
 export const KEYCHAIN_HELPER_TIMEOUT_MS=45_000
 const MAX_RESPONSE_BYTES=65_536, TIMEOUT_MS=35_000
