@@ -14,7 +14,7 @@
   "failedOrUncertainWindowReplayPermitted": false,
   "currentHold": {
     "scope": "staging-runtime-credential-window",
-    "reason": "generation-18-one-reviewed-staging-window-authorized-requires-direct-live-launcher-and-phase-journal-ordinary-tests-forbidden-while-armed",
+    "reason": "generation-18-entry-baseline-failed-entry-preflight-retry-management-400-no-replay-awaiting-diagnosis-successor",
     "generation10ReplayPermitted": false,
     "generation11ReplayPermitted": false,
     "generation11Armed": false,
@@ -31,7 +31,7 @@
     "generation16ReplayPermitted": false,
     "generation17Armed": false,
     "generation17ReplayPermitted": false,
-    "generation18Armed": true,
+    "generation18Armed": false,
     "generation18ReplayPermitted": false
   }
 }

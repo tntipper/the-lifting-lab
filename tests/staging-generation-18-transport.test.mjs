@@ -17,12 +17,12 @@ function fixture(fail){const events=[],ports={
 const journal=events=>({recordIntent(value){events.push('intent');return{...value,state:'INTENT_RECORDED',runId:'generation-18-test'}},transition(_intent,state){events.push(state);return{state}}})
 const rejectedJournal=events=>({recordIntent(){events.push('journalRejected');throw Error('consumed')},transition(){events.push('journalTransition')}})
 
-test('generation 18 is armed for one reviewed window with a fixed nonsecret fingerprint',()=>{
-  assert.equal(NATIVE_GENERATION_18_TRANSPORT_ENABLED,true);assert.match(GENERATION_18_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/)
+test('generation 18 is disarmed after entry-baseline failure with a fixed nonsecret fingerprint',()=>{
+  assert.equal(NATIVE_GENERATION_18_TRANSPORT_ENABLED,false);assert.match(GENERATION_18_SOURCE_FINGERPRINT,/^[a-f0-9]{64}$/)
 })
 
 test('generation 18 consumed transport contains no native launcher or credential-bearing imports',()=>{
-  assert.equal(NATIVE_GENERATION_18_TRANSPORT_ENABLED,true)
+  assert.equal(NATIVE_GENERATION_18_TRANSPORT_ENABLED,false)
   const source=readFileSync('scripts/staging-generation-18-transport.mjs','utf8')
   assert.doesNotMatch(source,/runNativeGeneration18CredentialWindow/)
   assert.doesNotMatch(source,/staging-generation-6-provider-transport|readSupabaseTokenFromKeychain|createStagingPostgresRuntime|readPinnedSupabaseCa/)
@@ -38,6 +38,27 @@ test('a consumed journal is rejected before material, provider, database, recove
     randomBytes(){throw Error('material must not be generated')},randomUUID(){throw Error('material must not be generated')}})
   assert.equal(result.status,'JOURNAL_CLAIM_REJECTED');assert.equal(result.phase,'JOURNAL_INTENT');assert.equal(result.nextAction,'REVIEW_EXCLUSIVE_JOURNAL')
   assert.deepEqual(f.events,['preflight','journalRejected'])
+})
+
+test('generation 18 entry baseline failure stops before providers and projects secret-free preflight fields',async()=>{
+  const f=fixture()
+  f.ports.preflightDatabase=async()=>{
+    f.events.push('preflight')
+    const error=Error('Generation-18 entry baseline verification unavailable')
+    error.failureStep='preflight'
+    error.failureReason='entry_predecessor_marker_mismatch'
+    error.managementStatusCode=400
+    throw error
+  }
+  const result=await executeGeneration18CredentialWindow({ports:f.ports,journal:journal(f.events),now:()=>NOW,randomBytes,randomUUID})
+  assert.equal(result.status,'ENTRY_BASELINE_FAILED')
+  assert.equal(result.failedPhase,'ENTRY_PREFLIGHT_RETRY')
+  assert.equal(result.failureStep,'preflight')
+  assert.equal(result.failureReason,'entry_predecessor_marker_mismatch')
+  assert.equal(result.managementStatusCode,400)
+  assert.equal(result.nextAction,'REVIEW_ENTRY_BASELINE')
+  assert.equal(result.recoveryOutcome,'NOT_REQUIRED')
+  assert.deepEqual(f.events,['preflight','preflight'])
 })
 
 test('generation 18 connection failure recovers once, projects fixed diagnostic and forbids replay',async()=>{

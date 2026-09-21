@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { buildGeneration18CredentialSql, createGeneration18DispatchJournal, GENERATION, IDENTITIES, MAX_WINDOW_MS, PACKAGE_ID, PROJECT_REF, WINDOW_ID } from './staging-generation-18-credentials.mjs'
 import { deriveScramVerifier, DISABLED_VERCEL_CONFIGURATION, eraseGeneration6Material, generateGeneration6Material, GENERATED_SUPABASE_SECRET_NAMES, projectGeneration6Secrets, SHOPIFY_CREDENTIAL_DEPENDENCIES, STAGED_VERCEL_NAMES } from './staging-generation-6-transport.mjs'
 
-export const NATIVE_GENERATION_18_TRANSPORT_ENABLED=true
+export const NATIVE_GENERATION_18_TRANSPORT_ENABLED=false
 const purposes=Object.keys(IDENTITIES),providerFailurePhases=new Set(['VERCEL_STAGE','SUPABASE_STAGE','PROVIDER_READBACK'])
 const providerFailureCodes=new Set(['AUTH','TRANSIENT','VALIDATION','API','CLI_EXIT','TIMEOUT','SPAWN','STREAM','OUTPUT_LIMIT','INPUT_STREAM','READBACK','CLEANUP','PROBE','PROVIDER_VALIDATION'])
 const connectionFailureChecks=new Set(['input','factory','connect','connect_wait','factory_retry','connect_retry','identity','membership','matrix','own_probe','table_denial','release','close'])
@@ -60,7 +60,12 @@ export async function executeGeneration18CredentialWindow({ports,journal=createG
     const failedPhase=phase
     const allowedFailureSteps=new Set(['zero_sessions','connection_verification','provider','preflight','journal','dispatch','recovery'])
     const failureStep=allowedFailureSteps.has(error?.failureStep)?error.failureStep:undefined
-    const allowedFailureReasons=new Set(['runtime_sessions_remain','control_enabled','receipt_mismatch','unavailable'])
+    const allowedFailureReasons=new Set([
+      'runtime_sessions_remain','control_enabled','receipt_mismatch','unavailable',
+      'entry_operator_mismatch','entry_environment_mismatch','entry_predecessor_mismatch',
+      'entry_predecessor_marker_malformed','entry_predecessor_marker_invalid','entry_predecessor_marker_mismatch',
+      'entry_control_enabled',
+    ])
     const failureReason=allowedFailureReasons.has(error?.failureReason)?error.failureReason:undefined
     const zeroSessionsAttempts=Number.isInteger(error?.zeroSessionsAttempts)&&error.zeroSessionsAttempts>=1&&error.zeroSessionsAttempts<=8
       ?error.zeroSessionsAttempts:undefined

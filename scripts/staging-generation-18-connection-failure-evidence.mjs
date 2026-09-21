@@ -28,11 +28,16 @@ const connectionFailurePurposes = new Set(['customer', 'cart', 'broker', 'provis
 const optionalKeys = new Set(['sqlstate', 'expectedMode', 'purposesPassed', 'host', 'port', 'recoverySubOutcome'])
 const recoverySubOutcomes = new Set(['RECOVERY_COMMITTED', 'RECOVERY_POSTCOMMIT_FAILED', 'RECOVERY_REQUIRED'])
 const recoveryTerminalStatuses = new Set(['RECOVERY_REQUIRED', 'RECOVERY_VERIFIED'])
+/** Also persist secret-free evidence for entry-baseline stops (Gen 18 live ENTRY_BASELINE_FAILED). */
+const entryBaselineTerminalStatuses = new Set(['ENTRY_BASELINE_FAILED'])
 const allowedFailureSteps = new Set([
   'zero_sessions', 'connection_verification', 'provider', 'preflight', 'journal', 'dispatch', 'recovery',
 ])
 const allowedFailureReasons = new Set([
   'runtime_sessions_remain', 'control_enabled', 'receipt_mismatch', 'unavailable',
+  'entry_operator_mismatch', 'entry_environment_mismatch', 'entry_predecessor_mismatch',
+  'entry_predecessor_marker_malformed', 'entry_predecessor_marker_invalid', 'entry_predecessor_marker_mismatch',
+  'entry_control_enabled',
 ])
 const allowedFailedPhases = new Set([
   'ENTRY_PREFLIGHT', 'ENTRY_PREFLIGHT_RETRY', 'JOURNAL_INTENT', 'MATERIAL_GENERATION',
@@ -155,7 +160,8 @@ export function persistConnectionFailureEvidence(result, {
 } = {}) {
   const connectionFailure = projectSecretFreeConnectionFailure(result?.connectionFailure)
   const recoveryTerminal = recoveryTerminalStatuses.has(result?.status)
-  if (!connectionFailure && !recoveryTerminal) return null
+  const entryBaselineTerminal = entryBaselineTerminalStatuses.has(result?.status)
+  if (!connectionFailure && !recoveryTerminal && !entryBaselineTerminal) return null
   const failedPhase = projectFailedPhase(result?.failedPhase)
   const recoveryOutcome = projectRecoveryOutcome(result?.recoveryOutcome)
   const failureStep = projectFailureStep(result?.failureStep)

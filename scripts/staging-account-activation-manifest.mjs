@@ -381,6 +381,8 @@ const stageSafetySources = [
   'docs/ops/stage-plans/2026-09-21-generation-17-arming-diff.md',
   'docs/ops/stage-plans/2026-09-21-generation-18-disabled-successor.md',
   'docs/ops/stage-plans/2026-09-21-generation-18-arming-diff.md',
+  'docs/ops/stage-plans/2026-09-21-generation-18-entry-baseline-failed.md',
+  'docs/ops/stage-plans/2026-09-21-generation-18-entry-baseline-diagnosis.md',
 ]
 const preflightSources = [
   'scripts/staging-readonly-preflight.mjs',
@@ -448,7 +450,7 @@ const manifest = {
     ordinaryTestsMayInvokeNativeLaunchers: false, ordinaryTransportModulesMayDefineLiveLaunchers: false,
     ordinaryTestsMayRewriteGeneratedArtifacts: false, independentReviewRequiredBeforeArming: true, liveExecutionRequiresPhaseJournal: true,
     generation10ReplayPermitted: false, generation11ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation18Armed: true, generation12ReplayPermitted: false, generation13ReplayPermitted: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false, generation16ReplayPermitted: false, generation17ReplayPermitted: false, generation18ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
+    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation18Armed: false, generation12ReplayPermitted: false, generation13ReplayPermitted: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false, generation16ReplayPermitted: false, generation17ReplayPermitted: false, generation18ReplayPermitted: false, successorHeldPendingBoundaryReview: true,
   },
   migrations: await Promise.all(migrations.map(pin)),
   edge: { functions: [
@@ -864,8 +866,8 @@ const manifest = {
     maximumWindowMinutes: 60, poolerConvergenceWaitMs: 16000, freshPoolRetryAttempts: 1, thirdAttemptPermitted: false,
     // Inherited from Gen 17 tip / PR #40 — do not weaken below 30s / 5.
     zeroSessionsDrainConvergenceMs: 30000, zeroSessionsDrainMaxAttempts: 5,
-    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: true,
-    status: 'ONE_STAGING_WINDOW_AUTHORIZED',
+    secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true, nativeTransportEnabled: false,
+    status: 'ENTRY_BASELINE_FAILED_NO_REPLAY',
   },
   
   gates: [
