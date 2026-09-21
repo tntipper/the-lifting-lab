@@ -104,6 +104,28 @@ test('persistConnectionFailureEvidence writes mode-0600 secret-free record with 
   assert.equal(recoveryRecord.zeroSessionsAttempts, 5)
   assert.equal('connectionFailure' in recoveryRecord, false)
   assert.equal(persistConnectionFailureEvidence({ status: 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED' }, { path }), null)
+
+  const entryOnly = persistConnectionFailureEvidence({
+    status: 'ENTRY_BASELINE_FAILED',
+    target: 'qdmvngjwkcsilzmqksme',
+    generation: 18,
+    windowId: '44e3fff5-5dff-4183-af6b-3cdfb367f1af',
+    phase: 'ENTRY_PREFLIGHT_RETRY',
+    failedPhase: 'ENTRY_PREFLIGHT_RETRY',
+    recoveryOutcome: 'NOT_REQUIRED',
+    connectionFailurePresent: false,
+    failureStep: 'preflight',
+    failureReason: 'entry_predecessor_marker_mismatch',
+    managementStatusCode: 400,
+  }, { path, now: () => Date.parse('2026-09-21T09:45:38.000Z') })
+  assert.equal(entryOnly, path)
+  const entryRecord = JSON.parse(readFileSync(path, 'utf8'))
+  assert.equal(entryRecord.status, 'ENTRY_BASELINE_FAILED')
+  assert.equal(entryRecord.failedPhase, 'ENTRY_PREFLIGHT_RETRY')
+  assert.equal(entryRecord.failureStep, 'preflight')
+  assert.equal(entryRecord.failureReason, 'entry_predecessor_marker_mismatch')
+  assert.equal(entryRecord.managementStatusCode, 400)
+  assert.equal(entryRecord.recoveryOutcome, 'NOT_REQUIRED')
   rmSync(directory, { recursive: true, force: true })
 })
 

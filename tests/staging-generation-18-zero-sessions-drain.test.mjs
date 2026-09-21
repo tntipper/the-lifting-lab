@@ -46,6 +46,14 @@ test('extractAllowListedSqlExceptionMessage promotes only allow-listed Managemen
   )
   assert.equal(extractAllowListedSqlExceptionMessage(JSON.stringify({ message: 'permission denied for table secrets' })), undefined)
   assert.equal(extractAllowListedSqlExceptionMessage('not-json but runtime sessions remain here'), 'Generation 18 runtime sessions remain')
+  assert.equal(
+    extractAllowListedSqlExceptionMessage(JSON.stringify({ message: 'ERROR: Generation 18 entry predecessor marker mismatch: tll_customer_runtime' })),
+    'Generation 18 entry predecessor marker mismatch',
+  )
+  assert.equal(
+    extractAllowListedSqlExceptionMessage(JSON.stringify({ message: 'ERROR: Generation 18 entry predecessor mismatch' })),
+    'Generation 18 entry predecessor mismatch',
+  )
 })
 
 test('postManagementQuery preserves allow-listed SQL RAISE text from non-201 JSON bodies', async () => {

@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { PREDECESSOR, PROJECT_REF, PACKAGE_ID, WINDOW_ID } from './staging-generation-18-credentials.mjs'
 
-export const NATIVE_GENERATION_18_DATABASE_TRANSPORT_ENABLED = true
+export const NATIVE_GENERATION_18_DATABASE_TRANSPORT_ENABLED = false
 export const MANAGEMENT_ENDPOINT = Object.freeze({ hostname:'api.supabase.com',path:`/v1/projects/${PROJECT_REF}/database/query`,method:'POST' })
 export const KEYCHAIN_HELPER_TIMEOUT_MS=45_000
 /**
@@ -22,8 +22,10 @@ const MAX_RESPONSE_BYTES=65_536, TIMEOUT_MS=35_000
 const unavailable=()=>{throw new Error('Generation-18 database transport unavailable')}
 
 /**
- * Promote only allow-listed Gen-16 SQL exception phrases from Management API error bodies.
+ * Promote only allow-listed SQL exception phrases from Management API error bodies.
  * Never logs or returns raw response text. Normalizes to fixed secret-free messages for classification.
+ * Includes entry-baseline RAISE phrases (Gen 18 live ENTRY_BASELINE_FAILED / managementStatusCode 400
+ * previously collapsed every entry RAISE into generic unavailable).
  */
 export function extractAllowListedSqlExceptionMessage(text){
   if(typeof text!=='string'||text.length<1||text.length>MAX_RESPONSE_BYTES)return undefined
@@ -42,6 +44,14 @@ export function extractAllowListedSqlExceptionMessage(text){
   }
   for(const candidate of candidates){
     if(/runtime sessions remain/i.test(candidate))return 'Generation 18 runtime sessions remain'
+    if(/control enabled during zero-session proof/i.test(candidate))return 'Generation 18 control enabled during zero-session proof'
+    if(/entry operator mismatch/i.test(candidate))return 'Generation 18 entry operator mismatch'
+    if(/entry environment mismatch/i.test(candidate))return 'Generation 18 entry environment mismatch'
+    if(/entry predecessor marker malformed/i.test(candidate))return 'Generation 18 entry predecessor marker malformed'
+    if(/entry predecessor marker invalid/i.test(candidate))return 'Generation 18 entry predecessor marker invalid'
+    if(/entry predecessor marker mismatch/i.test(candidate))return 'Generation 18 entry predecessor marker mismatch'
+    if(/entry predecessor mismatch/i.test(candidate))return 'Generation 18 entry predecessor mismatch'
+    if(/entry control enabled/i.test(candidate))return 'Generation 18 entry control enabled'
     if(/control enabled/i.test(candidate))return 'Generation 18 control enabled during zero-session proof'
   }
   return undefined
@@ -54,6 +64,37 @@ function projectManagementHttpFailure(statusCode,output){
   const error=new Error(allowListed??'Generation-18 database transport unavailable')
   if(Number.isInteger(statusCode)&&statusCode>=100&&statusCode<=599)error.managementStatusCode=statusCode
   return error
+}
+
+/** Secret-free classification of entry-baseline (ENTRY_PREFLIGHT) failures. Never logs SQL or secrets. */
+export function classifyEntryBaselineFailure(error){
+  let current=error
+  for(let depth=0;depth<5&&current;depth+=1){
+    const message=typeof current?.message==='string'?current.message:''
+    if(/entry operator mismatch/i.test(message))return 'entry_operator_mismatch'
+    if(/entry environment mismatch/i.test(message))return 'entry_environment_mismatch'
+    if(/entry predecessor marker malformed/i.test(message))return 'entry_predecessor_marker_malformed'
+    if(/entry predecessor marker invalid/i.test(message))return 'entry_predecessor_marker_invalid'
+    if(/entry predecessor marker mismatch/i.test(message))return 'entry_predecessor_marker_mismatch'
+    if(/entry predecessor mismatch/i.test(message))return 'entry_predecessor_mismatch'
+    if(/entry control enabled/i.test(message))return 'entry_control_enabled'
+    current=current?.cause
+  }
+  return 'unavailable'
+}
+
+function projectEntryBaselineFailure(error,failureReason){
+  const projected=Error('Generation-18 entry baseline verification unavailable')
+  projected.failureStep='preflight'
+  projected.failureReason=failureReason
+  let current=error
+  for(let depth=0;depth<5&&current;depth+=1){
+    const code=current?.managementStatusCode
+    if(Number.isInteger(code)&&code>=100&&code<=599){projected.managementStatusCode=code;break}
+    current=current?.cause
+  }
+  if(error&&typeof error==='object')projected.cause=error
+  return projected
 }
 
 export function normalizeSupabaseToken(value){
@@ -132,11 +173,22 @@ COMMIT;
 SELECT jsonb_build_object('status','ENTRY_BASELINE_PASS','projectRef','${PROJECT_REF}','windowId','${WINDOW_ID}','runtimeGeneration',17,'runtimeInert',true,'controlsEnabled',false) AS tll_generation_18_entry_baseline;
 `
 export async function verifyGeneration18EntryBaseline({token,post=postManagementQuery}={}){
-  const rows=await post(token,GENERATION_18_ENTRY_BASELINE_SQL)
-  if(!Array.isArray(rows)||rows.length!==1||Object.keys(rows[0]??{}).join('|')!=='tll_generation_18_entry_baseline')unavailable()
+  let rows
+  try{
+    rows=await post(token,GENERATION_18_ENTRY_BASELINE_SQL)
+  }catch(error){
+    throw projectEntryBaselineFailure(error,classifyEntryBaselineFailure(error))
+  }
+  if(!Array.isArray(rows)||rows.length!==1||Object.keys(rows[0]??{}).join('|')!=='tll_generation_18_entry_baseline'){
+    throw projectEntryBaselineFailure(new Error('Generation-18 database transport unavailable'),'unavailable')
+  }
   const value=rows[0].tll_generation_18_entry_baseline,expected={controlsEnabled:false,projectRef:PROJECT_REF,runtimeGeneration:17,runtimeInert:true,status:'ENTRY_BASELINE_PASS',windowId:WINDOW_ID}
-  if(!value||Object.keys(value).sort().join('|')!==Object.keys(expected).sort().join('|'))unavailable()
-  for(const [key,wanted]of Object.entries(expected))if(value[key]!==wanted)unavailable()
+  if(!value||Object.keys(value).sort().join('|')!==Object.keys(expected).sort().join('|')){
+    throw projectEntryBaselineFailure(new Error('Generation-18 database transport unavailable'),'unavailable')
+  }
+  for(const [key,wanted]of Object.entries(expected)){
+    if(value[key]!==wanted)throw projectEntryBaselineFailure(new Error('Generation-18 database transport unavailable'),'unavailable')
+  }
   return Object.freeze(expected)
 }
 

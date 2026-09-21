@@ -8,10 +8,10 @@ const token='sbp_'+('a'.repeat(40)),expiresAt='2026-09-20T22:25:00.000Z',nowMs=D
 const verifier=index=>`SCRAM-SHA-256$4096:${Buffer.alloc(18,index+1).toString('base64')}$${Buffer.alloc(32,index+2).toString('base64')}:${Buffer.alloc(32,index+3).toString('base64')}`
 const sql=buildGeneration18CredentialSql({expiresAt,nowMs,verifiers:Object.fromEntries(['customer','cart','broker','provisional','bridge'].map((purpose,index)=>[purpose,verifier(index)]))})
 
-test('generation 18 native database transport and keychain access are armed for one reviewed window',()=>{
+test('generation 18 native database transport and keychain access stay disabled',()=>{
   const helper=readFileSync('scripts/staging-generation-18-keychain.py','utf8')
-  assert.equal(normalizeSupabaseToken(token),token);assert.equal(NATIVE_GENERATION_18_DATABASE_TRANSPORT_ENABLED,true);assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000)
-  assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'True');assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
+  assert.equal(normalizeSupabaseToken(token),token);assert.equal(NATIVE_GENERATION_18_DATABASE_TRANSPORT_ENABLED,false);assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000)
+  assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'False');assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
   assert.match(helper,/Generation-18 native credential transport unavailable/);assert.doesNotMatch(helper,/Generation-6 native credential transport unavailable/)
 })
 
@@ -27,7 +27,20 @@ test('generation 18 entry baseline requires exact recovered retired generation 1
   assert.deepEqual(value,receipt);assert.equal(query,GENERATION_18_ENTRY_BASELINE_SQL);assert.match(query,/BEGIN READ ONLY/);assert.match(query,new RegExp(PREDECESSOR.windowId));assert.match(query,/generation":17/)
   assert.ok(query.includes(`rolvaliduntil IS DISTINCT FROM '${PREDECESSOR.expiresAt}'::timestamptz`))
   assert.match(query,/substring\(role_marker FROM/);assert.match(query,/parsed_marker IS DISTINCT FROM/);assert.doesNotMatch(query,/shobj_description\(oid,'pg_authid'\)='/)
-  await assert.rejects(()=>verifyGeneration18EntryBaseline({token,post:async()=>[{tll_generation_18_entry_baseline:{...receipt,runtimeGeneration:10}}]}),/unavailable/)
+  await assert.rejects(()=>verifyGeneration18EntryBaseline({token,post:async()=>[{tll_generation_18_entry_baseline:{...receipt,runtimeGeneration:10}}]}),error=>{
+    assert.match(error.message,/unavailable/);assert.equal(error.failureStep,'preflight');assert.equal(error.failureReason,'unavailable');return true
+  })
+})
+
+test('generation 18 entry baseline projects secret-free preflight step and allow-listed reason on management failure',async()=>{
+  const managementError=Error('Generation 18 entry predecessor marker mismatch')
+  managementError.managementStatusCode=400
+  await assert.rejects(()=>verifyGeneration18EntryBaseline({token,post:async()=>{throw managementError}}),error=>{
+    assert.equal(error.failureStep,'preflight')
+    assert.equal(error.failureReason,'entry_predecessor_marker_mismatch')
+    assert.equal(error.managementStatusCode,400)
+    return true
+  })
 })
 
 test('generation 18 recovery uses separately generated SQL and exact receipts',async()=>{
