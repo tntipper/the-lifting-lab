@@ -227,6 +227,31 @@ check. Independent review accepted the import-graph correction. This closes
 the incident without treating the failed launcher invocation as a completed
 baseline observation.
 
+### 2026-09-22 v3 credential preflight hold
+
+The independently reviewed v3 arming patch (SHA-256
+`26656202a1a18eeba01e27248b3110965f9d93276883c66b9999893f3534718e`)
+was applied exactly to the disabled checkpoint and committed as `41b02a7`.
+The launcher was invoked **once** and returned the allowlisted
+`CREDENTIAL_UNAVAILABLE` result in 18 seconds. The exclusive journal is absent,
+so no hosted request or baseline observation was made. The gates were immediately
+disarmed in `a46e510`; the disabled manifest, boundary check and all 2231 tests
+pass. This attempt must not be replayed under the same credential window.
+
+The three expected Keychain records existed. Secret-suppressed value-read
+diagnostics returned success for Supabase CLI and the new Vercel API token, but
+the new Preview bypass value read did not settle within a four-second diagnostic
+limit. This is the currently observed cause of the credential preflight failure;
+the precise macOS access-control or UI-prompt mechanism has not yet been proven.
+The launcher correctly failed closed before claiming the journal. The process
+error was attempting the armed run after checking Keychain item *existence* but
+not value readability through the exact helper/process boundary. Before another
+arming candidate or credential window, qualify each selector with a bounded,
+secret-suppressed value-read check from the same process context, confirm no
+unanswered Keychain prompt, and record only success/failure and duration. Keep
+the launcher disabled and independently review any helper or credential-ACL
+change before another one-shot attempt.
+
 - Target, team, branch, alias, provider or source drift stops before subsequent
   reads and records only an allowlisted reason.
 - Authentication failure records only the provider and status class. It does

@@ -163,6 +163,27 @@ existing custom-provider settings. The read-only observation must finish before
 deciding whether to reconcile provider settings, pin the connected repository
 ID, or build disabled deployment creation. Those remain later, separate stages.
 
+### 2026-09-22 v3 attempt update
+
+The user approved one new temporary credential window. The exact independently
+reviewed v3 patch was applied at its recorded SHA and armed in `41b02a7`.
+The launcher was invoked once and returned `CREDENTIAL_UNAVAILABLE` before
+the observation journal or any hosted request. It was disarmed in `a46e510`;
+the disabled manifest, live-boundary check and all 2231 tests pass. **Do not
+rerun that window.** The new Vercel API and bypass Keychain records existed,
+but a secret-suppressed diagnostic showed the bypass value read timing out,
+while the Supabase and Vercel API token value reads succeeded. The exact
+macOS Keychain mechanism is unproven. The missed precondition was value
+readability in the launcher's process context, beyond item existence.
+
+Before any new credential/arming window, implement and verify a bounded,
+secret-suppressed preflight of all three selectors through the same process
+context; inspect and resolve any Keychain ACL/prompt issue; keep native gates
+disabled; obtain independent review of any code or access-control change.
+The stage plan records the incident and next gate. Temporary Vercel credential
+revocation was awaiting final browser deletion confirmation when this update
+was drafted; verify its final status before any handoff claim.
+
 ## Programme work after the baseline
 
 The public launch remains held by
