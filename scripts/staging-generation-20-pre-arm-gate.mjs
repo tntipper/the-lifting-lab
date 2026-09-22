@@ -5,7 +5,8 @@
  * 1. Gen 19 + Gen 20 recovery successor pins match their credentials packages, AND
  * 2. the exact Gen 19 predecessor retirement is proven via secret-free evidence.
  *
- * Does not touch hosted staging, Keychain, or native gates. Phase 1 keeps all gates false.
+ * Does not touch hosted staging or Keychain. It verifies either the disabled base
+ * or the separately reviewed one-window armed state without invoking native work.
  */
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'

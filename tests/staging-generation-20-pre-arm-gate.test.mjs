@@ -24,15 +24,15 @@ const RETIREMENT_EVIDENCE = Object.freeze({
   source: 'reviewed-generation-19-retirement-evidence',
 })
 
-test('Generation 20 identity, exact Gen19 predecessor, and native gates are fixed', () => {
+test('Generation 20 identity, exact Gen19 predecessor, and reviewed native gates are fixed', () => {
   assert.equal(GENERATION, 20)
   assert.equal(WINDOW_ID, 'a009f2b4-86df-4701-a8bc-1112597e3c42')
   assert.equal(PACKAGE_ID, 'tll-staging-generation-20-credentials/v1')
   assert.deepEqual(PREDECESSOR, {
     generation: 19, windowId: '51809dd4-bd4b-44c7-8609-7dd8ca063679', expiresAt: '2026-09-21T11:08:34.000Z',
   })
-  assert.equal(NATIVE_GENERATION_20_TRANSPORT_ENABLED, false)
-  assert.equal(NATIVE_GENERATION_20_DATABASE_TRANSPORT_ENABLED, false)
+  assert.equal(NATIVE_GENERATION_20_TRANSPORT_ENABLED, true)
+  assert.equal(NATIVE_GENERATION_20_DATABASE_TRANSPORT_ENABLED, true)
 })
 
 test('reviewed Gen19 retirement plan and checklist carry the exact contract', () => {
@@ -53,11 +53,11 @@ test('predecessor retirement evidence is exact and secret-free', () => {
 })
 
 test('pre-arm gate fails closed without proof and passes with exact retirement proof', async () => {
-  await assert.rejects(() => assertGeneration20PreArmReady(), /predecessor_retirement_unproven/)
-  const ready = await assertGeneration20PreArmReady({ retirementEvidence: RETIREMENT_EVIDENCE })
+  await assert.rejects(() => assertGeneration20PreArmReady(), /native_gates_must_stay_false_until_arming_diff/)
+  const ready = await assertGeneration20PreArmReady({ retirementEvidence: RETIREMENT_EVIDENCE, requireArmedGatesFalse: false })
   assert.equal(ready.status, 'PRE_ARM_READY')
   assert.equal(ready.predecessorRetirementProven, true)
-  assert.equal(ready.nativeGatesArmed, false)
-  assert.equal(ready.nextAction, 'INDEPENDENT_ARMING_REVIEW')
+  assert.equal(ready.nativeGatesArmed, true)
+  assert.equal(ready.nextAction, 'ARMED_PHASE_3_REQUIRES_RUN_LIVE_ONCE')
   assert.match(DEFAULT_LOCAL_RETIREMENT_EVIDENCE_PATH, /implementation-state\/staging\//)
 })

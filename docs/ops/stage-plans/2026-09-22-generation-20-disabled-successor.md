@@ -2,6 +2,8 @@
 
 ## Purpose
 
+> Historical disabled-base record. The reviewed one-window arming state is documented separately in [Generation 20 one-window arming diff](2026-09-22-generation-20-arming-diff.md). This document does not authorise an action.
+
 This is a local, fully disabled successor package. It exists only to make the
 next reviewed activation boundary auditable. It performs no hosted action,
 generates no credential material, and leaves native, Keychain, replay, and

@@ -1,11 +1,11 @@
-"""Disabled exact reader for the existing Supabase CLI Keychain item."""
+"""Reviewed one-window exact reader for the existing Supabase CLI Keychain item."""
 import base64
 import os
 import re
 import subprocess
 import sys
 
-APPROVED_NATIVE_READ = False
+APPROVED_NATIVE_READ = True
 SERVICE = "Supabase CLI"
 ACCOUNT = "supabase"
 

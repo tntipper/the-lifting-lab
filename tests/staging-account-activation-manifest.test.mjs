@@ -30,7 +30,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.stageSafety.generation17Armed, false)
   assert.equal(manifest.stageSafety.generation18Armed, false)
   assert.equal(manifest.stageSafety.generation19Armed, false)
-  assert.equal(manifest.stageSafety.generation20Armed, false)
+  assert.equal(manifest.stageSafety.generation20Armed, true)
   assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation12ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation13ReplayPermitted, false)
@@ -433,10 +433,10 @@ test('generation 19 successor is pinned with Gen 17 role predecessor, Gen 18 att
   assert.equal(manifest.generation18Successor.status, 'ENTRY_BASELINE_FAILED_NO_REPLAY')
 })
 
-test('generation 20 successor is pinned to the exact retired Gen19 contract and remains disabled', () => {
+test('generation 20 successor is pinned to the exact retired Gen19 contract and one-window armed state', () => {
   execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
   const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
-  assert.equal(manifest.stageSafety.generation20Armed, false)
+  assert.equal(manifest.stageSafety.generation20Armed, true)
   assert.equal(manifest.stageSafety.generation20ReplayPermitted, false)
   assert.equal(manifest.generation20Successor.packageId, 'tll-staging-generation-20-credentials/v1')
   assert.equal(manifest.generation20Successor.generation, 20)
@@ -446,9 +446,11 @@ test('generation 20 successor is pinned to the exact retired Gen19 contract and 
     validUntil: '2026-09-21T11:08:34.000Z', state: 'retired', replayPermitted: false,
     note: 'Exact Gen19 retired runtime-marker contract. A fresh read-only proof is required before any separately reviewed Gen20 arming diff.',
   })
-  assert.equal(manifest.generation20Successor.nativeTransportEnabled, false)
-  assert.equal(manifest.generation20Successor.status, 'DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW')
+  assert.equal(manifest.generation20Successor.activeWindowExpiresAt, '2026-09-22T13:23:00.000Z')
+  assert.equal(manifest.generation20Successor.nativeTransportEnabled, true)
+  assert.equal(manifest.generation20Successor.status, 'ARMED_ONE_BOUNDED_WINDOW_REQUIRES_RUN_LIVE_ONCE')
   assert.equal(manifest.generation20Successor.preArmRequiresPredecessorRetirementEvidence, true)
   assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'scripts/staging-generation-20-pre-arm-gate.mjs'))
   assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-20-disabled-successor.md'))
+  assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-20-arming-diff.md'))
 })

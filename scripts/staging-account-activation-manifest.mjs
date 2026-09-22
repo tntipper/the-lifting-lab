@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto'
 import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { relative, resolve } from 'node:path'
+import { ACTIVE_WINDOW_EXPIRES_AT } from './staging-generation-20-credentials.mjs'
 
 const root = resolve(import.meta.dirname, '..')
 const output = resolve(root, 'config/staging-account-activation-manifest.json')
@@ -383,6 +384,7 @@ const generation20SuccessorSources = [
   'tests/staging-generation-recovery-pin-contract.test.mjs',
   'docs/ops/stage-plans/2026-09-22-generation-20-disabled-successor.md',
   'docs/ops/stage-plans/2026-09-22-generation-20-pre-arm-checklist.md',
+  'docs/ops/stage-plans/2026-09-22-generation-20-arming-diff.md',
   'docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md',
 ]
 const stageSafetySources = [
@@ -1036,7 +1038,8 @@ const manifest = {
       separateReadOnlyObserver: 'scripts/staging-generation-20-journal-watch.mjs',
     },
     secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true,
-    nativeTransportEnabled: false, status: 'DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW',
+    activeWindowExpiresAt: ACTIVE_WINDOW_EXPIRES_AT,
+    nativeTransportEnabled: true, status: 'ARMED_ONE_BOUNDED_WINDOW_REQUIRES_RUN_LIVE_ONCE',
     preArmRequiresPredecessorRetirementEvidence: true,
     reviewedRetirementPlan: 'docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md',
   },
