@@ -185,8 +185,11 @@ disabled; obtain independent review of any code or access-control change.
 The stage plan records the incident and next gate. Temporary Vercel credential
 status must be checked before any new window. The user directed that the
 one-hour Vercel API token expire naturally. The newly created Preview bypass
-has no stated expiry and needs a separate cleanup decision; leave the older
-bypass untouched.
+has no stated expiry. The user explicitly chose to keep it for a later test;
+its removal dialog was dismissed. Vercel still showed two bypasses with
+`Require Log In` enabled. Leave both bypasses untouched until a later user
+decision. The new bypass's local Keychain item remains with the access-control
+limitation above.
 
 ## Programme work after the baseline
 

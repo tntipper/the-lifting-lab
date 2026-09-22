@@ -253,9 +253,15 @@ secret-suppressed value-read check from the same process context, confirm no
 unanswered Keychain prompt, and record only success/failure and duration. A
 future credential setup must use an explicit, narrowly reviewed Keychain access
 path for the helper; do not switch the item to `Allow all applications` merely
-to avoid the prompt. Keep
-the launcher disabled and independently review any helper or credential-ACL
+to avoid the prompt. Keep the launcher disabled and independently review any helper or credential-ACL
 change before another one-shot attempt.
+
+The user directed that the one-hour Vercel API token expire naturally and that
+the new, non-expiring Preview bypass be kept for a later test. Its removal
+dialog was dismissed without deletion. Vercel still showed two bypasses and
+`Require Log In` enabled. The retained bypass is not proof that its Keychain
+value can be read by the launcher; no new observation is authorized by its
+presence.
 
 - Target, team, branch, alias, provider or source drift stops before subsequent
   reads and records only an allowlisted reason.
