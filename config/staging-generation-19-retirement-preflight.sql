@@ -45,14 +45,14 @@ BEGIN
       OR jsonb_typeof(parsed->'projectRef') IS DISTINCT FROM 'string' OR parsed->>'projectRef' IS DISTINCT FROM 'qdmvngjwkcsilzmqksme'
       OR jsonb_typeof(parsed->'generation') IS DISTINCT FROM 'number' OR parsed->>'generation' IS DISTINCT FROM '19'
       OR jsonb_typeof(parsed->'windowId') IS DISTINCT FROM 'string' OR parsed->>'windowId' IS DISTINCT FROM '51809dd4-bd4b-44c7-8609-7dd8ca063679'
-      OR jsonb_typeof(parsed->'expiresAt') IS DISTINCT FROM 'string'
+      OR jsonb_typeof(parsed->'expiresAt') IS DISTINCT FROM 'string' OR parsed->>'expiresAt' IS DISTINCT FROM '2026-09-21T11:08:34.000Z'
       OR jsonb_typeof(parsed->'state') IS DISTINCT FROM 'string' OR parsed->>'state' IS DISTINCT FROM 'active' THEN
       RAISE EXCEPTION 'Gen19 retirement preflight runtime marker target mismatch: %',r;
     END IF;
     BEGIN marker_expiry:=(parsed->>'expiresAt')::timestamptz;
     EXCEPTION WHEN others THEN RAISE EXCEPTION 'Gen19 retirement preflight runtime expiry invalid: %',r; END;
-    IF marker_expiry<=clock_timestamp()
-      OR (SELECT rolvaliduntil FROM pg_roles WHERE rolname=r) IS DISTINCT FROM marker_expiry
+    IF marker_expiry>=clock_timestamp()
+      OR (SELECT rolvaliduntil FROM pg_roles WHERE rolname=r) IS DISTINCT FROM 'infinity'::timestamptz
       OR NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin)
       OR NOT EXISTS(SELECT 1 FROM pg_authid WHERE rolname=r AND rolpassword IS NOT NULL) THEN
       RAISE EXCEPTION 'Gen19 retirement preflight runtime credential state mismatch: %',r;
@@ -114,8 +114,8 @@ BEGIN
   END IF;
 END $preflight$;
 SELECT jsonb_build_object(
-  'queryId','tll-staging-generation-19-retirement-preflight/v1','projectRef','qdmvngjwkcsilzmqksme','generation',19,'windowId','51809dd4-bd4b-44c7-8609-7dd8ca063679',
-  'status','PASS_EXACT_ACTIVE','migrations',15,'runtimeRoles',5,'runtimeSessions',0,
+  'queryId','tll-staging-generation-19-retirement-preflight/v2','projectRef','qdmvngjwkcsilzmqksme','generation',19,'windowId','51809dd4-bd4b-44c7-8609-7dd8ca063679',
+  'status','PASS_EXACT_ACTIVE_DRIFT','credentialDrift','MARKER_EXPIRED_ROLE_UNBOUNDED','migrations',15,'runtimeRoles',5,'runtimeSessions',0,
   'controlsEnabled',5,'executionEdges',5,'operatorEdges',5,
   'workCounts',jsonb_build_object(
     'shopifyProofs',(SELECT coalesce(jsonb_object_agg(state,n),'{}'::jsonb) FROM (SELECT state,count(*) n FROM tll_customer_private.shopify_proofs GROUP BY state) s),

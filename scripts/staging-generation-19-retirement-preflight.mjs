@@ -8,7 +8,8 @@ export const PROJECT_REF = 'qdmvngjwkcsilzmqksme'
 export const PRODUCTION_PROJECT_REF = 'wrhgscovsgsudtedbljr'
 export const GENERATION = 19
 export const WINDOW_ID = '51809dd4-bd4b-44c7-8609-7dd8ca063679'
-export const QUERY_ID = 'tll-staging-generation-19-retirement-preflight/v1'
+export const EXPIRES_AT = '2026-09-21T11:08:34.000Z'
+export const QUERY_ID = 'tll-staging-generation-19-retirement-preflight/v2'
 export const OUTPUT = 'config/staging-generation-19-retirement-preflight.sql'
 
 const migrations = Object.freeze([
@@ -80,14 +81,14 @@ BEGIN
       OR jsonb_typeof(parsed->'projectRef') IS DISTINCT FROM 'string' OR parsed->>'projectRef' IS DISTINCT FROM '${PROJECT_REF}'
       OR jsonb_typeof(parsed->'generation') IS DISTINCT FROM 'number' OR parsed->>'generation' IS DISTINCT FROM '${GENERATION}'
       OR jsonb_typeof(parsed->'windowId') IS DISTINCT FROM 'string' OR parsed->>'windowId' IS DISTINCT FROM '${WINDOW_ID}'
-      OR jsonb_typeof(parsed->'expiresAt') IS DISTINCT FROM 'string'
+      OR jsonb_typeof(parsed->'expiresAt') IS DISTINCT FROM 'string' OR parsed->>'expiresAt' IS DISTINCT FROM '${EXPIRES_AT}'
       OR jsonb_typeof(parsed->'state') IS DISTINCT FROM 'string' OR parsed->>'state' IS DISTINCT FROM 'active' THEN
       RAISE EXCEPTION 'Gen19 retirement preflight runtime marker target mismatch: %',r;
     END IF;
     BEGIN marker_expiry:=(parsed->>'expiresAt')::timestamptz;
     EXCEPTION WHEN others THEN RAISE EXCEPTION 'Gen19 retirement preflight runtime expiry invalid: %',r; END;
-    IF marker_expiry<=clock_timestamp()
-      OR (SELECT rolvaliduntil FROM pg_roles WHERE rolname=r) IS DISTINCT FROM marker_expiry
+    IF marker_expiry>=clock_timestamp()
+      OR (SELECT rolvaliduntil FROM pg_roles WHERE rolname=r) IS DISTINCT FROM 'infinity'::timestamptz
       OR NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin)
       OR NOT EXISTS(SELECT 1 FROM pg_authid WHERE rolname=r AND rolpassword IS NOT NULL) THEN
       RAISE EXCEPTION 'Gen19 retirement preflight runtime credential state mismatch: %',r;
@@ -150,7 +151,7 @@ BEGIN
 END $preflight$;
 SELECT jsonb_build_object(
   'queryId','${QUERY_ID}','projectRef','${PROJECT_REF}','generation',${GENERATION},'windowId','${WINDOW_ID}',
-  'status','PASS_EXACT_ACTIVE','migrations',${migrations.length},'runtimeRoles',5,'runtimeSessions',0,
+  'status','PASS_EXACT_ACTIVE_DRIFT','credentialDrift','MARKER_EXPIRED_ROLE_UNBOUNDED','migrations',${migrations.length},'runtimeRoles',5,'runtimeSessions',0,
   'controlsEnabled',5,'executionEdges',5,'operatorEdges',5,
   'workCounts',jsonb_build_object(
     'shopifyProofs',(SELECT coalesce(jsonb_object_agg(state,n),'{}'::jsonb) FROM (SELECT state,count(*) n FROM tll_customer_private.shopify_proofs GROUP BY state) s),
@@ -170,9 +171,9 @@ const unavailable = () => { throw new Error('Generation 19 retirement preflight 
 export function validateResult (rows) {
   if (!Array.isArray(rows) || rows.length !== 1 || Object.keys(rows[0] ?? {}).join('|') !== 'tll_gen19_retirement_preflight') unavailable()
   const receipt = rows[0].tll_gen19_retirement_preflight
-  const keys = ['controlsEnabled', 'executionEdges', 'generation', 'migrations', 'operatorEdges', 'projectRef', 'queryId', 'runtimeRoles', 'runtimeSessions', 'status', 'windowId', 'workCounts']
+  const keys = ['controlsEnabled', 'credentialDrift', 'executionEdges', 'generation', 'migrations', 'operatorEdges', 'projectRef', 'queryId', 'runtimeRoles', 'runtimeSessions', 'status', 'windowId', 'workCounts']
   if (!receipt || typeof receipt !== 'object' || Array.isArray(receipt) || Object.keys(receipt).sort().join('|') !== keys.sort().join('|')) unavailable()
-  if (receipt.queryId !== QUERY_ID || receipt.projectRef !== PROJECT_REF || receipt.generation !== GENERATION || receipt.windowId !== WINDOW_ID || receipt.status !== 'PASS_EXACT_ACTIVE') unavailable()
+  if (receipt.queryId !== QUERY_ID || receipt.projectRef !== PROJECT_REF || receipt.generation !== GENERATION || receipt.windowId !== WINDOW_ID || receipt.status !== 'PASS_EXACT_ACTIVE_DRIFT' || receipt.credentialDrift !== 'MARKER_EXPIRED_ROLE_UNBOUNDED') unavailable()
   if (receipt.migrations !== migrations.length || receipt.runtimeRoles !== 5 || receipt.runtimeSessions !== 0 || receipt.controlsEnabled !== 5 || receipt.executionEdges !== 5 || receipt.operatorEdges !== 5) unavailable()
   const workKeys = ['accountLogouts', 'accountOperations', 'bridgeFinalizations', 'bridgeGrants', 'brokerFlows', 'cartOperations', 'cartSessions', 'cartTransitions', 'provisionalIntents', 'shopifyProofs']
   if (!receipt.workCounts || Object.keys(receipt.workCounts).sort().join('|') !== workKeys.sort().join('|')) unavailable()

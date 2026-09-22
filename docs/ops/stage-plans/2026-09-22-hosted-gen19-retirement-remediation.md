@@ -14,6 +14,14 @@ The fresh secret-free hosted baseline contradicted the prior handover:
 - all five have zero active sessions;
 - the Generation 19 window is recorded as consumed and non-replayable.
 
+The first repository-pinned preflight failed closed before mutation. A narrower
+aggregate diagnosis then proved all five markers share the expired timestamp
+`2026-09-21 11:08:34+00`, while all five PostgreSQL roles have
+`VALID UNTIL infinity`, LOGIN and a configured password. The retirement gate is
+therefore pinned to this exact drift shape and exact canonical expiry
+`2026-09-21T11:08:34.000Z`; it must reject any other marker expiry,
+finite/different role expiry, missing password, missing LOGIN or mixed state.
+
 This is a drifted post-window state. It must be retired before any account, cart or orders journey. Generation 19 must not be replayed and Generation 20 must not be created.
 
 ## Surface freeze completed before database work
@@ -44,7 +52,8 @@ focused contract is `tests/staging-generation-19-retirement-preflight.test.mjs`.
 The artifact is read-only, has no caller-controlled project/query surface and
 returns aggregate state counts only.
 
-Proceed only when that bounded query returns `PASS_EXACT_ACTIVE` and proves all
+Proceed only when that bounded query returns `PASS_EXACT_ACTIVE_DRIFT` with
+`credentialDrift=MARKER_EXPIRED_ROLE_UNBOUNDED` and proves all
 of the following without returning credential or customer material:
 
 1. exact staging project binding and migrations 002-016;
@@ -54,7 +63,8 @@ of the following without returning credential or customer material:
    - generation `19`
    - window `51809dd4-bd4b-44c7-8609-7dd8ca063679`
    - state `active`
-   - one consistent valid `expiresAt`;
+   - one consistent expired `expiresAt`;
+   - every role remains LOGIN/password-configured with `VALID UNTIL infinity`;
 4. exactly five expected executor/gateway-to-runtime memberships and five
    reviewed runtime-role-to-operator ADMIN-only management edges, with no other
    edge touching a runtime role;

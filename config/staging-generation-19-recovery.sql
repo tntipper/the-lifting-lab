@@ -108,6 +108,14 @@ BEGIN
     BEGIN expires_at:=(parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN
       RAISE EXCEPTION 'Runtime marker expiry is invalid: %',r;
     END;
+    IF parsed->>'state'='active' AND (parsed->>'expiresAt' IS DISTINCT FROM '2026-09-21T11:08:34.000Z' OR expires_at>=clock_timestamp()
+      OR NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin AND rolvaliduntil='infinity'::timestamptz)
+      OR NOT EXISTS(SELECT 1 FROM pg_authid WHERE rolname=r AND rolpassword IS NOT NULL)) THEN
+      RAISE EXCEPTION 'Active Gen19 credential drift shape mismatch: %',r;
+    ELSIF parsed->>'state'='retired' AND (EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin)
+      OR EXISTS(SELECT 1 FROM pg_authid WHERE rolname=r AND rolpassword IS NOT NULL)) THEN
+      RAISE EXCEPTION 'Retired Gen19 credential state is not inert: %',r;
+    END IF;
     IF first_marker IS NULL THEN first_marker:=marker; expires_text:=parsed->>'expiresAt';
     ELSIF marker IS DISTINCT FROM first_marker OR parsed->>'expiresAt' IS DISTINCT FROM expires_text THEN RAISE EXCEPTION 'Runtime markers are partial or mixed'; END IF;
     IF parsed->>'state'='active' THEN active_count:=active_count+1; ELSE retired_count:=retired_count+1; END IF;

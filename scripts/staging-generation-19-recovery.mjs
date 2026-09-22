@@ -6,6 +6,7 @@ import { resolve } from 'node:path'
 const root=resolve(import.meta.dirname,'..')
 const predecessor=Object.freeze({generation:6,windowId:'83888906-23fa-4653-a886-fe2733ed76a0'})
 const successor=Object.freeze({generation:19,windowId:'51809dd4-bd4b-44c7-8609-7dd8ca063679'})
+const activeExpiresAt='2026-09-21T11:08:34.000Z'
 const files=Object.freeze([
   Object.freeze({source:'config/staging-account-activation-recovery.sql',sourceSha256:'69b6cae3da32c62512008e14c3fb6c68746e9ee533a1dedcaa690ff349fea87c',output:'config/staging-generation-19-recovery.sql'}),
   Object.freeze({source:'config/staging-account-activation-recovery-postcommit.sql',sourceSha256:'278953bd725c9ccdba2e2da0faaafac76aafd94e65234e1fa0c62d68b1d78d35',output:'config/staging-generation-19-recovery-postcommit.sql'}),
@@ -19,6 +20,22 @@ function transform(value){
   value=replaceRequired(value,`parsed->>'generation' IS DISTINCT FROM '${predecessor.generation}'`,`parsed->>'generation' IS DISTINCT FROM '${successor.generation}'`)
   if(value.includes(`'generation',${predecessor.generation}`))value=value.replaceAll(`'generation',${predecessor.generation}`,`'generation',${successor.generation}`)
   value=replaceRequired(value,predecessor.windowId,successor.windowId)
+  if(!isPostCommit){
+    value=replaceRequired(value,
+      "    BEGIN expires_at:=(parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN\n      RAISE EXCEPTION 'Runtime marker expiry is invalid: %',r;\n    END;",
+      `    BEGIN expires_at:=(parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN
+      RAISE EXCEPTION 'Runtime marker expiry is invalid: %',r;
+    END;
+    IF parsed->>'state'='active' AND (parsed->>'expiresAt' IS DISTINCT FROM '${activeExpiresAt}' OR expires_at>=clock_timestamp()
+      OR NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin AND rolvaliduntil='infinity'::timestamptz)
+      OR NOT EXISTS(SELECT 1 FROM pg_authid WHERE rolname=r AND rolpassword IS NOT NULL)) THEN
+      RAISE EXCEPTION 'Active Gen19 credential drift shape mismatch: %',r;
+    ELSIF parsed->>'state'='retired' AND (EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin)
+      OR EXISTS(SELECT 1 FROM pg_authid WHERE rolname=r AND rolpassword IS NOT NULL)) THEN
+      RAISE EXCEPTION 'Retired Gen19 credential state is not inert: %',r;
+    END IF;`
+    )
+  }
   const operator=isPostCommit?'session_user':'operator_name'
   value=replaceRequired(value,
     "IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin) OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid",
