@@ -187,15 +187,39 @@ export function projectHostedBaselineObservation (value) {
 /** Track both raw fetches and reader/cancel promises until they have settled. */
 export function createTrackedHostedBaselineFetch ({ fetch: fetcher } = {}) {
   if (typeof fetcher !== 'function') unavailable()
-  const pending = new Set(); let cleanupUncertain = false
+  const pending = new Set(); const failedCleanupProofs = []
   const trackOperation = promise => { const settled = Promise.resolve(promise); pending.add(settled); settled.then(() => pending.delete(settled), () => pending.delete(settled)); return settled }
-  const trackCleanup = promise => { const settled = trackOperation(promise); settled.catch(() => { cleanupUncertain = true }); return settled }
+  const trackCleanup = (promise, terminalProof = () => false) => {
+    const settled = trackOperation(promise)
+    settled.catch(() => { failedCleanupProofs.push(terminalProof) })
+    return settled
+  }
   const wrapBody = body => {
     if (!body || typeof body.getReader !== 'function') return body
     return Object.freeze({
       getReader () {
         const raw = body.getReader()
-        return Object.freeze({ read: () => trackOperation(raw.read()), cancel: value => trackCleanup(raw.cancel(value)), releaseLock: () => raw.releaseLock() })
+        // A native errored stream rejects both read() and cancel(). Only a
+        // reader.closed rejection before release proves that specific state:
+        // successful closure can precede a failed underlying cancel action.
+        // releaseLock() can also reject closed, so that later event is not
+        // accepted as terminal-error proof.
+        let terminalError = false; let released = false
+        if (raw.closed && typeof raw.closed.then === 'function') {
+          Promise.resolve(raw.closed).then(
+            () => {},
+            () => { if (!released) terminalError = true },
+          )
+        }
+        const terminalProof = () => terminalError
+        return Object.freeze({
+          read: () => trackOperation(raw.read()),
+          cancel: value => {
+            try { return trackCleanup(raw.cancel(value), terminalProof) }
+            catch (error) { failedCleanupProofs.push(terminalProof); throw error }
+          },
+          releaseLock: () => { released = true; return raw.releaseLock() },
+        })
       },
       cancel: value => trackCleanup(body.cancel(value)),
     })
@@ -213,7 +237,7 @@ export function createTrackedHostedBaselineFetch ({ fetch: fetcher } = {}) {
         },
       })
     },
-    async settle () { while (pending.size) await Promise.allSettled([...pending]); if (cleanupUncertain) unavailable() },
+    async settle () { while (pending.size) await Promise.allSettled([...pending]); if (failedCleanupProofs.some(proof => !proof())) unavailable() },
   })
 }
 
@@ -285,7 +309,7 @@ export async function runHostedBaselineSession ({
   try { intent = journal.claim() } catch { eraseCredentials(); return Object.freeze({ status: 'JOURNAL_UNAVAILABLE', target: HOSTED_BASELINE_SESSION_TARGET }) }
   const controller = new AbortController()
   const timer = setTimer(() => controller.abort(), deadlineMs)
-  let composition; let outcome; let phase = 'construction'
+  let composition; let outcome; let phase = 'construction'; let diagnosticReasonCode = 'cleanup_unavailable'
   try {
     composition = await createComposition(Object.freeze({ supabaseCredential, vercelCredential, protectionBypassCredential, signal: controller.signal }))
     if (!composition || typeof composition.observe !== 'function') unavailable()
@@ -299,8 +323,10 @@ export async function runHostedBaselineSession ({
     outcome = Object.freeze({ state: 'OBSERVATION_RECORDED', status: projected.status, reasonCodes: projected.reasonCodes, observationHash: projected.observationHash, observation: projected })
   } catch (error) {
     if (error?.code === 'CLEANUP_UNCERTAIN') outcome = Object.freeze({ state: 'INTENT_RECORDED', status: null, reasonCodes: Object.freeze([]), observationHash: null })
-    else
-      outcome = Object.freeze({ state: 'OBSERVATION_FAILED', status: 'FAILED', reasonCodes: Object.freeze([observationFailureReason(error, phase, controller.signal.aborted)]), observationHash: null })
+    else {
+      diagnosticReasonCode = observationFailureReason(error, phase, controller.signal.aborted)
+      outcome = Object.freeze({ state: 'OBSERVATION_FAILED', status: 'FAILED', reasonCodes: Object.freeze([diagnosticReasonCode]), observationHash: null })
+    }
   } finally {
     clearTimer(timer)
     controller.abort()
@@ -308,7 +334,7 @@ export async function runHostedBaselineSession ({
     try { await composition?.dispose?.() } catch { cleanupFailed = true }
     eraseCredentials()
     if (cleanupFailed) outcome = Object.freeze({ state: 'INTENT_RECORDED', status: null, reasonCodes: Object.freeze([]), observationHash: null })
-    if (outcome.state === 'INTENT_RECORDED') return Object.freeze({ status: 'RECONCILIATION_REQUIRED', target: HOSTED_BASELINE_SESSION_TARGET })
+    if (outcome.state === 'INTENT_RECORDED') return Object.freeze({ status: 'RECONCILIATION_REQUIRED', target: HOSTED_BASELINE_SESSION_TARGET, diagnosticReasonCode })
     try {
       journal.finish(intent, terminal(intent, outcome.state, { now, status: outcome.status, reasonCodes: outcome.reasonCodes, observationHash: outcome.observationHash }))
     } catch { return Object.freeze({ status: 'JOURNAL_UNAVAILABLE', target: HOSTED_BASELINE_SESSION_TARGET }) }

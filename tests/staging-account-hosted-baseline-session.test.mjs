@@ -221,12 +221,16 @@ test('session retains intent until deferred cleanup settles before terminal evid
 
 test('cleanup rejection preserves intent for reconciliation', async () => {
   const { journal } = makeJournal()
+  const firstReadFailure = Error('provider payload must not escape')
+  firstReadFailure.code = 'provider_read_unavailable'
   const result = await runHostedBaselineSession({
     journal, verifyManifest: async () => {}, readCredential: async selector => credential(selector),
-    createComposition: async () => ({ observe: async () => { throw Error('inert failure') }, dispose: async () => { throw Error('inert cleanup') } }),
+    createComposition: async () => ({ observe: async () => { throw firstReadFailure }, dispose: async () => { throw Error('inert cleanup') } }),
   })
   assert.equal(result.status, 'RECONCILIATION_REQUIRED')
+  assert.equal(result.diagnosticReasonCode, 'provider_read_unavailable')
   assert.equal(journal.read().state, 'INTENT_RECORDED')
+  assert.doesNotMatch(JSON.stringify(result), /provider payload|inert cleanup/)
 })
 
 test('projection rejects numeric and overlong identifiers from an otherwise valid rehashed PASS receipt', () => {
@@ -250,6 +254,42 @@ test('ordinary read rejection settles without marking cleanup custody uncertain'
   const response = await tracked.fetch('https://example.invalid')
   await assert.rejects(response.body.getReader().read())
   await tracked.settle()
+})
+
+test('native errored stream read and cancel rejection is terminal, not uncertain cleanup', async () => {
+  const body = new ReadableStream({ start (controller) { controller.error(new DOMException('inert', 'AbortError')) } })
+  const tracked = createTrackedHostedBaselineFetch({ fetch: async () => ({ body }) })
+  const response = await tracked.fetch('https://example.invalid')
+  const reader = response.body.getReader()
+  await assert.rejects(reader.read(), /inert/)
+  await assert.rejects(reader.cancel(), /inert/)
+  reader.releaseLock()
+  await assert.doesNotReject(tracked.settle())
+})
+
+test('native stream underlying cancellation failure remains uncertain despite closed fulfillment', async () => {
+  const body = new ReadableStream({ cancel () { throw Error('inert underlying cancellation') } })
+  const tracked = createTrackedHostedBaselineFetch({ fetch: async () => ({ body }) })
+  const response = await tracked.fetch('https://example.invalid')
+  const reader = response.body.getReader()
+  await assert.rejects(reader.cancel(), /underlying cancellation/)
+  reader.releaseLock()
+  await assert.rejects(tracked.settle(), /unavailable/)
+})
+
+test('cancel rejection without terminal proof remains uncertain after reader release', async () => {
+  let rejectClosed
+  const closed = new Promise((resolve, reject) => { rejectClosed = reject })
+  const tracked = createTrackedHostedBaselineFetch({ fetch: async () => ({ body: { getReader: () => ({
+    closed, read: async () => { throw Error('inert read') }, cancel: async () => { throw Error('inert cancel') },
+    releaseLock: () => rejectClosed(Error('lock released')),
+  }) } }) })
+  const response = await tracked.fetch('https://example.invalid')
+  const reader = response.body.getReader()
+  await assert.rejects(reader.read(), /inert read/)
+  await assert.rejects(reader.cancel(), /inert cancel/)
+  reader.releaseLock()
+  await assert.rejects(tracked.settle(), /unavailable/)
 })
 
 test('rejected body cancellation requires reconciliation', async () => {

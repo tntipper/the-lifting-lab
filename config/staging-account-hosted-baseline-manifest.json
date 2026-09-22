@@ -60,7 +60,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-session.mjs",
-      "sha256": "22e65ef3e4b08709569019d8b702f496489e192bc9cf2a4f6eeae9a9ed796e1a"
+      "sha256": "f92a040790fb9641ba92b04f564ab427a83effc27575768eac162405476c17c1"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-live-launcher.mjs",
@@ -76,7 +76,7 @@
     },
     {
       "path": "tests/staging-account-hosted-baseline-session.test.mjs",
-      "sha256": "11c2e7e0a4b83664275eeaf72fe85eb810b8a95df12d3fc140fc4a280ea7c652"
+      "sha256": "74b18c959c50ce16288acfd4d540cef203795812e499f980e36f8dd05c9ed430"
     },
     {
       "path": "tests/staging-account-hosted-baseline-composition.test.mjs",
