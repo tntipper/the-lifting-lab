@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { createStagingWindowPhaseJournal } from './staging-account-hosted-baseline-session.mjs'
 import { DB_REHEARSAL_JOURNAL_PATH, runStagingDatabaseRehearsal } from './staging-account-hosted-baseline-db-rehearsal.mjs'
 
-export const NATIVE_DB_REHEARSAL_ENABLED = false
+export const NATIVE_DB_REHEARSAL_ENABLED = true
 const TARGET = 'qdmvngjwkcsilzmqksme'
 
 function readCredential () {
