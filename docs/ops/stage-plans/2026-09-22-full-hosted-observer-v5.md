@@ -50,3 +50,31 @@ settlement stops the window; do not replay. Reconcile from the journal and a
 separate read-only source, disarm, verify live-boundary/manifest, then commit
 and push the outcome. If the full result is HOLD, plan downstream repair from
 its exact reason codes rather than enabling provider/surfaces immediately.
+
+## Credential setup correction before invocation
+
+The first v5 Vercel token was created with the intended one-hour project
+scope, but `/usr/bin/security add-generic-password ... -w` with piped input
+stored a zero-length password. macOS `security help add-generic-password`
+states that a final bare `-w` prompts interactively; the non-interactive
+pipeline did not supply the value. The token modal was closed and clipboard
+cleared before this was discovered, so that remote token cannot be recovered.
+It must expire naturally under the user's token preference; the empty local
+item may be replaced only after a new token is created. No hosted request or
+v5 journal claim occurred. The gates were returned to disabled, and the live
+boundary check passed. This was a credential-provisioning failure, not an
+observer attempt.
+
+For one same-scope, one-hour replacement, store the copied token with the
+documented `-w <value>` argument through an in-memory subprocess call (never
+in shell text, logs, or a repository file). Before dismissing Vercel's
+one-time token dialog or clearing clipboard, verify the fixed Keychain item
+returns the expected non-empty token shape using the helper's fixed
+`/usr/bin/security find-generic-password -w` selector, environment and bound;
+record only pass/fail and length range. After reviewed arming, run the exact
+helper with output suppressed before invoking the observer. The retained Preview bypass's
+first helper read timed out, while a subsequent direct `security` read
+completed in eight seconds; confirm it through the exact helper again after
+its access prompt has settled. If any local read fails, stop before arming.
+Do not enlarge the helper deadline or Keychain ACL without a separately
+reviewed cause and correction.
