@@ -10,7 +10,8 @@ Updated: 2026-09-22 after the disabled fresh hosted-baseline package
 - Remote branch was pushed to `origin/codex/tll-integration`.
 - Previous concrete binding checkpoint: `cc18fda`.
 - Preserve untracked `implementation-state/` and
-  `.agent/gen11-journal-watch.mjs`; neither belongs in a commit.
+  `.agent/gen11-journal-watch.mjs`; neither belongs in a commit. An untracked
+  `.agent/HANDOVER 2.md` iCloud copy is also present; preserve it.
 - Production Supabase `wrhgscovsgsudtedbljr` remains excluded.
 
 ## Safety and hosted state
@@ -87,12 +88,23 @@ disabled package. Verified final source hashes were:
 Do not implement or run Generation 22. Resume with a small, separate arming
 stage for the read-only baseline only:
 
+The exact arming candidate is prepared but **has not been reviewed, committed,
+or run**. The safe branch remains disabled. Its 27-line zero-context patch is
+`docs/ops/evidence/2026-09-22-hosted-baseline-arming-review.patch` (SHA-256
+`af33e28b8fa8a261b197726c476ad6dd5dd865b84c6c4a84baeca91e9da8ee7d`).
+It changes only the launcher gate, the matching Keychain-helper gate, and the
+regenerated manifest. `git apply --unidiff-zero --check` passed. The uncommitted candidate
+also exists in the local worktree `../implementation-hosted-baseline-arming-review`
+on branch `codex/tll-hosted-baseline-arming-review`; do not invoke its launcher.
+
 1. Verify `pwd`, branch, `HEAD`, remote, and working tree against this handover.
 2. Confirm the three hashes above and rerun the focused baseline tests, both
    manifest checks and the live-boundary check. Do not repeat the full audit.
-3. Review the exact arming diff independently before enabling either launcher
-   gate. The diff must add no writes, deployments, generic targets or production
-   access and must preserve the existing manifest pins.
+3. Independently review the saved arming patch and its exact source checkpoint.
+   The diff must add no writes, deployments, generic targets or production
+   access and must preserve the existing manifest pins. Do not run ordinary
+   tests in the armed worktree. Apply/commit the reviewed patch on the main
+   integration branch only when the run is ready.
 4. Obtain a fresh temporary Vercel automation key only at this gate, store it in
    the launcher's fixed Keychain selector, and revoke it immediately after the
    one bounded read-only run. User involvement may be required for creating the
