@@ -92,7 +92,10 @@ The broader release remains held by `docs/ops/integration-release-candidate.md`:
 
 - hosted unified sign-in/cart/account/orders/logout acceptance;
 - disabled inventory migration and separately qualified stock/order workers;
-- approved supplier mappings, cost/tax/stock evidence and price automation;
+- approved supplier mappings, cost/tax/stock evidence and price automation,
+  including retail-price versions, flash sales, affiliate-specific discount
+  codes, attribution, commission/refund reconciliation and spend controls in
+  `docs/ops/retail-promotions-affiliate-controls.md`;
 - restorable production backup and release rehearsal;
 - formula, label and category evidence before scientific recommendations; and
 - consent/email flows, production theme publication and production deployment.
@@ -107,3 +110,4 @@ The broader release remains held by `docs/ops/integration-release-candidate.md`:
 | Activation runbook | `docs/ops/staging-account-activation.md` |
 | Execution protocol | `docs/ops/project-stage-execution-protocol.md` |
 | Broader release gates | `docs/ops/integration-release-candidate.md` |
+| Retail, flash-sale and affiliate requirements | `docs/ops/retail-promotions-affiliate-controls.md` |

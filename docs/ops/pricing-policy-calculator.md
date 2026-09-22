@@ -68,3 +68,12 @@ npm test
 ```
 
 Actual product wholesale VAT bases, pack quantities and costs remain unresolved until evidenced. Invoice/payment-provider rounding, checkout promotion allocation, refunds and non-refundable fees must be reconciled against the chosen environment before any activation. The trusted integration must preserve group identity, cost/policy/payment/tariff versions and their validity at execution. No live price/API write, customer shipping change or hosted acceptance is claimed.
+
+Retail-price scheduling, flash sales, affiliate-specific customer discounts,
+affiliate commission and paid campaign spend are separate future inputs. Before
+activation, the calculator must be extended and independently verified against
+the versioned [retail, promotion and affiliate controls](retail-promotions-affiliate-controls.md).
+The combined burden must pass the same standalone line and order safeguards;
+an affiliate code or marketing budget can never bypass the approved price
+floor. The current module does not create campaigns, attribute orders or
+authorize Shopify discount configuration.

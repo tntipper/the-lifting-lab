@@ -5,6 +5,12 @@ This candidate combines the reviewed catalogue, pricing, accessible UI, retailer
 ## Resulting behaviour
 
 - Product identity, stock observations and cost evidence have explicit eligibility states. Unknown wholesale VAT treatment cannot authorize a price. The current TropShip tariff charges £5 ex VAT / £6 unrecoverable gross once per approved supplier order below £100 ex-VAT wholesale goods, and zero strictly above it. Exactly £100 is held with a conservative £6 estimate. Separate supplier orders cannot pool thresholds. Standalone product floors preserve the approved 35% target, 25% minimum and £3 cash safeguards; customer shipping charges are unchanged. See the [pricing policy](pricing-policy-calculator.md).
+- Future retail pricing, flash sales and TLL affiliate-specific codes must use
+  versioned campaign and attribution records. Customer discount, affiliate
+  commission, fixed sponsorship, advertising spend, payment fees and supplier
+  delivery all count in the commercial guard. Budget limits, refund/chargeback
+  reversals and Shopify allocation reconciliation fail closed. See [retail,
+  promotion and affiliate controls](retail-promotions-affiliate-controls.md).
 - Retailer listings are labelled as listings. An unresolved or unapproved own-shop mapping has no purchase action. Research-stack links do not imply a combined checkout.
 - All unapproved historical scores are excluded from effectiveness recommendations, awards and automatic wizard/goal-stack selections. Historical values remain neutral, explicitly unverified research data. Known category, product, comparison and alternatives pages remain available; score/value order becomes alphabetical and listed-price comparisons remain separate. API ranks are null and metadata follows the same rule. See [assessment approval containment](../research/unassessed-ranking-containment.md); this change does not approve the underlying science.
 - Navigation and dialogs preserve keyboard focus, hide closed controls and fit the tested widths. Stack budgets describe the initial pack purchase; they do not imply a verified monthly consumption cost.
@@ -25,7 +31,7 @@ The pricing revision separately passed 187 focused pricing/catalogue cases. The 
 2. Deploy the exact combined client to isolated staging and verify concurrent browser and account-change journeys. Migration 003 and nine direct hosted RPC cases passed separately; those results do not prove this client. Browser storage eviction, Safari/iOS and crash recovery remain acceptance limitations.
 3. Install and verify disabled migration 004 in isolated staging, then separately qualify a worker transport and its credentials. Installing a ledger does not activate supplier dispatch or stock writes.
 4. Obtain and rehearse a restorable private production backup, review migration impact and rollback, and satisfy Stage 0 release checks before production migration or release.
-5. Review exact commercial mappings, wholesale costs/tax, label provenance and stock semantics before enabling commerce projections or automation. Complete supplier order workers and outage/reconciliation acceptance.
+5. Review exact commercial mappings, wholesale costs/tax, label provenance and stock semantics before enabling commerce projections or automation. Complete supplier order workers and outage/reconciliation acceptance. Implement the versioned retail-price registry, flash-sale scheduler, discount-stacking matrix, affiliate/code attribution ledger, commission/refund reconciliation, spend budgets and contribution-based performance reporting in [retail, promotion and affiliate controls](retail-promotions-affiliate-controls.md).
 6. Verify the isolated Shopify customer-account and cart prototype, then consent/email and approved evidence publication. Synthetic component checks are not acceptance for those services.
 
 Production price changes, supplier dispatch, customer-email activation, production theme publication and production application/database deployment are not performed by this candidate. The finding register remains open until its recorded acceptance evidence is met.
