@@ -161,7 +161,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "7b3864734b9cad71817c8db8b164681c56df96d9128b6478e40079709a9074b6"
+        "sha256": "dc61c9a537d9d75a42ac9582c3dc8dda3e57eddbdd91074420bfae61b0c58e20"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
