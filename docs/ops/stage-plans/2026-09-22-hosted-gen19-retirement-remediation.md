@@ -99,8 +99,12 @@ The generated transaction is pinned to the exact project/generation/window. It:
 - restores the operator management graph before commit.
 
 The recovery and fresh-session proof explicitly verify `rolpassword IS NULL`,
-all five surviving ADMIN-only operator management edges, absence of every
-executor/gateway edge, exact retired markers and zero sessions. The post-commit
+zero memberships touching any retired runtime role, exact retired markers and
+zero sessions. PostgreSQL 17 removes the dependent runtime-to-operator
+ADMIN-only edge when its prerequisite executor/gateway-to-runtime edge is
+revoked; the first bounded attempt rolled back because an added proof wrongly
+required those dependent edges to survive. The corrected proof requires the
+safer zero-edge outcome. The post-commit
 artifact returns the fixed aggregate receipt
 `tll-staging-generation-19-retirement-postcommit/v1`. It must not terminate
 sessions or add privileges.

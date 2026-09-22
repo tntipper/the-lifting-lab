@@ -39,7 +39,12 @@ function transform(value){
   const operator=isPostCommit?'session_user':'operator_name'
   value=replaceRequired(value,
     "IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin) OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid",
-    `IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND (rolcanlogin OR rolpassword IS NOT NULL)) OR NOT EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid JOIN pg_roles member ON member.oid=e.member WHERE granted.rolname=r AND member.rolname=${operator} AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option) THEN RAISE EXCEPTION 'Missing retired runtime ADMIN-only operator edge: %',r; END IF;\n    IF EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid`
+    `IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND (rolcanlogin OR rolpassword IS NOT NULL)) THEN RAISE EXCEPTION 'Runtime credential survives retirement: %',r; END IF;\n    IF EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid`
+  )
+  value=replaceRequired(value,
+    `WHERE (granted.rolname=r OR member.rolname=r)
+        AND NOT (granted.rolname=r AND member.rolname=${operator} AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)`,
+    `WHERE (granted.rolname=r OR member.rolname=r)`
   )
   value=replaceRequired(value,
     "    IF EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid",
@@ -62,7 +67,7 @@ END $zero_runtime_sessions$;
 COMMIT;
 `)
     value=replaceRequired(value,'COMMIT;\n',`COMMIT;
-SELECT jsonb_build_object('queryId','tll-staging-generation-19-retirement-postcommit/v1','projectRef','qdmvngjwkcsilzmqksme','generation',19,'windowId','${successor.windowId}','status','PASS_RETIRED','runtimeRoles',5,'runtimeSessions',0,'controlsEnabled',0,'passwordsConfigured',0,'executionEdges',0,'operatorEdges',5) AS tll_gen19_retirement_postcommit;
+SELECT jsonb_build_object('queryId','tll-staging-generation-19-retirement-postcommit/v1','projectRef','qdmvngjwkcsilzmqksme','generation',19,'windowId','${successor.windowId}','status','PASS_RETIRED','runtimeRoles',5,'runtimeSessions',0,'controlsEnabled',0,'passwordsConfigured',0,'executionEdges',0,'operatorEdges',0) AS tll_gen19_retirement_postcommit;
 `)
   }
   if(value.includes(predecessor.windowId)||value.includes(`parsed->>'generation' IS DISTINCT FROM '${predecessor.generation}'`))unavailable()

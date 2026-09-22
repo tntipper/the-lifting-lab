@@ -40,15 +40,14 @@ BEGIN
       OR jsonb_typeof(parsed->'state') IS DISTINCT FROM 'string' OR parsed->>'state' IS DISTINCT FROM 'retired' THEN RAISE EXCEPTION 'Retired runtime marker target, generation or window mismatch: %',r; END IF;
     BEGIN PERFORM (parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker expiry invalid: %',r; END;
     IF first_marker IS NULL THEN first_marker:=marker; ELSIF marker IS DISTINCT FROM first_marker THEN RAISE EXCEPTION 'Retired runtime markers are partial or mixed'; END IF;
-    IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND (rolcanlogin OR rolpassword IS NOT NULL)) OR NOT EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid JOIN pg_roles member ON member.oid=e.member WHERE granted.rolname=r AND member.rolname=session_user AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option) THEN RAISE EXCEPTION 'Missing retired runtime ADMIN-only operator edge: %',r; END IF;
+    IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND (rolcanlogin OR rolpassword IS NOT NULL)) THEN RAISE EXCEPTION 'Runtime credential survives retirement: %',r; END IF;
     IF EXISTS(
       SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(n.nspacl) a WHERE n.nspname LIKE 'tll\_%\_private' ESCAPE '\' AND a.grantee=0 AND a.privilege_type='USAGE'
       UNION ALL SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(n.nspacl) a JOIN pg_roles g ON g.oid=a.grantee WHERE n.nspname LIKE 'tll\_%\_private' ESCAPE '\' AND g.rolname=r
       UNION ALL SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace CROSS JOIN LATERAL aclexplode(c.relacl) a JOIN pg_roles g ON g.oid=a.grantee WHERE n.nspname LIKE 'tll\_%\_private' ESCAPE '\' AND g.rolname=r
       UNION ALL SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace CROSS JOIN LATERAL aclexplode(p.proacl) a JOIN pg_roles g ON g.oid=a.grantee WHERE n.nspname LIKE 'tll\_%\_private' ESCAPE '\' AND g.rolname=r) THEN RAISE EXCEPTION 'Direct private authority survives retirement: %',r; END IF;
     IF EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid
-      JOIN pg_roles member ON member.oid=e.member WHERE (granted.rolname=r OR member.rolname=r)
-        AND NOT (granted.rolname=r AND member.rolname=session_user AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)) THEN
+      JOIN pg_roles member ON member.oid=e.member WHERE (granted.rolname=r OR member.rolname=r)) THEN
       RAISE EXCEPTION 'Runtime identity recovered executable authority after retirement: %',r;
     END IF;
   END LOOP;
@@ -61,4 +60,4 @@ BEGIN
   END IF;
 END $zero_runtime_sessions$;
 COMMIT;
-SELECT jsonb_build_object('queryId','tll-staging-generation-19-retirement-postcommit/v1','projectRef','qdmvngjwkcsilzmqksme','generation',19,'windowId','51809dd4-bd4b-44c7-8609-7dd8ca063679','status','PASS_RETIRED','runtimeRoles',5,'runtimeSessions',0,'controlsEnabled',0,'passwordsConfigured',0,'executionEdges',0,'operatorEdges',5) AS tll_gen19_retirement_postcommit;
+SELECT jsonb_build_object('queryId','tll-staging-generation-19-retirement-postcommit/v1','projectRef','qdmvngjwkcsilzmqksme','generation',19,'windowId','51809dd4-bd4b-44c7-8609-7dd8ca063679','status','PASS_RETIRED','runtimeRoles',5,'runtimeSessions',0,'controlsEnabled',0,'passwordsConfigured',0,'executionEdges',0,'operatorEdges',0) AS tll_gen19_retirement_postcommit;
