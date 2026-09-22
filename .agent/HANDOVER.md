@@ -1,11 +1,14 @@
 # Agent handover — The Lifting Lab integration
 
-Updated: 2026-09-22 after the disabled hosted-baseline credential correction
+Updated: 2026-09-22 after the pre-journal module-cycle incident and disabled correction
 
 ## Exact repository state
 
 - Repository: `implementation-integration`
 - Branch: `codex/tll-integration`
+- Incident checkpoint trail: pushed disabled `e0f8d3`, local armed `f777dc3`,
+  local disarmed `8d35faa`; the pending disabled correction follows. Verify
+  the actual tip and remote before any new change.
 - Hosted-baseline checkpoint: `690ca06` (`Add reviewed staging hosted baseline observer`),
   followed by the credential correction recorded below. Verify the current
   branch tip before applying any future arming patch.
@@ -24,13 +27,18 @@ Updated: 2026-09-22 after the disabled hosted-baseline credential correction
 - The new hosted-baseline launcher is deliberately disabled. Running it without
   a later reviewed arming change returns `HOSTED_BASELINE_LIVE_DISABLED` with
   `nativeAccessApproved:false`.
-- This stage made no Keychain read, credential read, network request, hosted
-  request, database query, deployment, provider/secret change, customer action,
-  purchase or production change.
-- No new Vercel credentials were created or used in this correction. The project
-  UI shows Preview `Require Log In` enabled and one masked bypass entry, which
-  does not prove that a qualified bypass value is available. Do not reuse an
-  old revoked test key.
+- The reviewed arming patch was committed locally as `f777dc3` and the live
+  launcher invoked once. Node exited 13 with an unsettled top-level await
+  before any journal claim or hosted request. The journal path remains absent;
+  no child process remained. The branch was disarmed at `8d35faa` and the
+  disabled launcher and live-boundary policy pass again. Never replay that
+  attempt or use its v2 patch again.
+- A one-hour Vercel Access Token scoped to the-lifting-lab and a new project
+  bypass were created for that attempt. Neither was used by the launcher.
+  Both local Keychain entries have been deleted and verified absent. Remote
+  deletion of the two temporary credentials is pending the computer-use
+  confirmation shown to the user; complete that promptly. The older masked
+  bypass is unrelated and must remain untouched.
 
 ## Completed work unit
 
@@ -114,45 +122,40 @@ Typecheck, build (153 pages), audit (zero high production vulnerabilities),
 both manifest checks, live-boundary check and diff check passed. Lint has zero
 errors and the same 20 existing warnings. No hosted request was made.
 
-### Separate arming gate
+### Current hold and next stage
 
-Do not implement or run Generation 22. Resume with a small, separate arming
-stage for the read-only baseline only:
+Do not implement or run Generation 22. The two earlier arming patches,
+`2026-09-22-hosted-baseline-arming-review.patch` and its `-v2.patch`, are
+**superseded**. Do not apply either. The v2 patch was executed exactly once,
+but an ESM cycle prevented its manifest from loading. The manifest imported
+the launcher gate while the launcher awaited a dynamic import of the manifest.
+This is documented in the stage plan's incident section.
 
-The new minimal arming candidate is saved at
-`docs/ops/evidence/2026-09-22-hosted-baseline-arming-review-v2.patch`
-(SHA-256 `098cb59546cd713a28a08156dc678a5984cb0ba2aa18b52cca8be10b5a6c7a5f`).
-It is based on disabled commit `5080ac6` and changes only the launcher gate,
-matching Keychain-helper gate and generated manifest. Independent review
-accepted the exact patch with all 22 source pins matching and no actionable
-finding. `git apply --check` passed on the disabled branch. The earlier patch
-remains superseded. The integration branch stays disabled until credentials,
-journal state and action-time approvals are ready for the one bounded run.
+The disabled correction removes that reverse import and parses the pinned
+launcher gate from source. Independent review confirmed the root cause and
+accepted a recursive static import-graph regression test after removing a
+test that improperly invoked the real launcher. The corrected package needs
+its disabled commit/push, then a **new** arming diff and independent review.
+Focused tests passed 71/71 and the complete suite passed 2231/2231. Build,
+audit, both manifest checks and live-boundary check passed; lint has zero
+errors and the same 20 existing warnings. Typecheck was rerun after removing
+three duplicate generated `.next/types/* 2.ts` iCloud files; the duplicate
+files were generated output, not repository source. No new credential window
+should begin before the two remote temporary credentials are revoked and the
+incident is closed.
 
-1. Verify `pwd`, branch, `HEAD`, remote, and working tree against this handover.
-2. Confirm current manifest hashes and rerun the focused baseline tests, both
-   manifest checks and the live-boundary check. Do not repeat the full audit.
-3. Verify the saved v2 patch and its exact source checkpoint before applying.
-   Its independent review accepted no writes, deployments, generic targets or
-   production access, with all manifest pins preserved. Do not run ordinary
-   tests in an armed worktree. Apply/commit it on the main integration branch
-   only when the run is ready; any further source edit invalidates this review.
-4. Obtain a temporary Vercel Access Token for the Management API and a separate
-   project automation-bypass value for protected Preview readiness. Keep them
-   in their distinct fixed Keychain selectors, then revoke both and remove the
-   selectors immediately after the one bounded read-only run. Vercel Access
-   Tokens can have broader account/team permissions than this launcher's fixed
-   GETs; verify team scope and action-time approval. Do not expose values in
-   chat, logs or evidence.
-5. Use the existing approved Supabase CLI account only for the fixed staging
-   Management API reads. The launcher may transiently reveal the one legacy
-   staging service-role key in memory for the fixed read-only database call; it
-   must wipe it and never persist or print it.
-6. Run the baseline once. If the journal remains at `INTENT_RECORDED`, stop and
-   reconcile; never retry blindly. A `HOLD` is valid evidence and must not be
-   converted to PASS.
-7. Revoke/remove the Vercel key, verify protection remains active, archive only
-   the secret-free receipt, and independently review the observation.
+1. Confirm remote deletion of the named one-hour Vercel token and the newly
+   created project bypass; leave all older tokens/bypasses untouched. Confirm
+   deployment protection remains enabled. The local selectors are absent.
+2. Verify branch, tip, worktree, absent journal and disabled gates. Finalize
+   the incident record with the exact external state and checks.
+3. Run complete disabled checks, commit/push the corrected package, and
+   prepare a new minimal arming diff from that checkpoint. Independently
+   review the exact new diff; do not run ordinary tests while armed.
+4. At a later separately approved action window, create two new short-lived
+   credentials in their distinct Keychain selectors, verify the journal is
+   absent and invoke the new reviewed launcher once. If it records intent or
+   returns HOLD/FAILED, preserve and reconcile; never retry blindly.
 
 Expected HOLDs include absent TLL application-manifest metadata or drift in the
 existing custom-provider settings. The read-only observation must finish before

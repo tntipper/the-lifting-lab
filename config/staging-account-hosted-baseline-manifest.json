@@ -72,7 +72,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-manifest.mjs",
-      "sha256": "8a3e7fb956f5e45994660b26815618f06e8904c2aa0166927976dae325beecd7"
+      "sha256": "c7eb3a5534a0d0d479ec9bae0c123271137dc1aa28f540618280ef959e4a24a3"
     },
     {
       "path": "tests/staging-account-hosted-baseline-session.test.mjs",
@@ -80,7 +80,7 @@
     },
     {
       "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",
-      "sha256": "eaccc5228183165c2074618062e1c15252dc53ed92e2e141d2bb6ea53bc2cc92"
+      "sha256": "71796c756e9abba1555709702ed3a32f678c59cb3f6e2976eaab3972ddd98449"
     },
     {
       "path": "package.json",
@@ -92,7 +92,7 @@
     },
     {
       "path": "docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md",
-      "sha256": "8dda441e7f8f0729fe1df0fbc0ee618ef34bd3b49a71eab3d05477c7c3b20721"
+      "sha256": "dfeed89c450db7efb95fa441fb76086aec51e1bf3762b93ac7a72fb329c0ced1"
     }
   ],
   "keychain": {

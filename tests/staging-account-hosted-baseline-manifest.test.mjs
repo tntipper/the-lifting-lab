@@ -64,3 +64,19 @@ test('launcher and helper are both source-level disabled gates', () => {
   assert.match(helper, /timeout=10/)
   assert.match(launcher, /timeout: 15_000/)
 })
+
+test('manifest import graph cannot reach the live entry point', () => {
+  const launcherPath = resolve('scripts/staging-account-hosted-baseline-live-launcher.mjs')
+  const seen = new Set()
+  const visit = path => {
+    if (seen.has(path)) return
+    seen.add(path)
+    const source = readFileSync(path, 'utf8')
+    for (const match of source.matchAll(/from\s+['"](\.[^'"]+)['"]|import\(['"](\.[^'"]+)['"]\)/g)) {
+      const candidate = normalize(resolve(dirname(path), match[1] ?? match[2]))
+      if (existsSync(candidate)) visit(candidate)
+    }
+  }
+  visit(resolve('scripts/staging-account-hosted-baseline-manifest.mjs'))
+  assert.equal(seen.has(launcherPath), false, 'manifest must not import its awaited live launcher')
+})

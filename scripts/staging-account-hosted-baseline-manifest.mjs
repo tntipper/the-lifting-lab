@@ -7,7 +7,6 @@ import {
   HOSTED_BASELINE_SESSION_PRODUCTION_EXCLUDED,
   HOSTED_BASELINE_SESSION_TARGET,
 } from './staging-account-hosted-baseline-session.mjs'
-import { HOSTED_BASELINE_LIVE_ENABLED } from './staging-account-hosted-baseline-live-launcher.mjs'
 
 const root = resolve(import.meta.dirname, '..')
 const output = resolve(root, 'config/staging-account-hosted-baseline-manifest.json')
@@ -37,14 +36,18 @@ const sources = [
 ]
 const hash = async path => createHash('sha256').update(await readFile(resolve(root, path))).digest('hex')
 const sourcePins = await Promise.all(sources.map(async path => ({ path, sha256: await hash(path) })))
+// Read the pinned gate as data. Importing the live entry point here deadlocks
+// its own top-level await when it dynamically imports this manifest.
+const launcher = await readFile(resolve(root, 'scripts/staging-account-hosted-baseline-live-launcher.mjs'), 'utf8')
+const launcherApproval = /^export const HOSTED_BASELINE_LIVE_ENABLED = (true|false)$/m.exec(launcher)?.[1]
 const helper = await readFile(resolve(root, 'scripts/staging-account-hosted-baseline-keychain.py'), 'utf8')
 const helperApproval = /^APPROVED_NATIVE_READ = (True|False)$/m.exec(helper)?.[1]
-if (helperApproval === undefined || (helperApproval === 'True') !== HOSTED_BASELINE_LIVE_ENABLED) throw Error('hosted-baseline native gates disagree')
+if (launcherApproval === undefined || helperApproval === undefined || (helperApproval === 'True') !== (launcherApproval === 'true')) throw Error('hosted-baseline native gates disagree')
 
 export const hostedBaselineManifest = Object.freeze({
   schema: 'tll-staging-hosted-baseline-manifest/v1',
   target: { projectRef: HOSTED_BASELINE_SESSION_TARGET, productionProjectRefExcluded: HOSTED_BASELINE_SESSION_PRODUCTION_EXCLUDED },
-  nativeAccessApproved: HOSTED_BASELINE_LIVE_ENABLED,
+  nativeAccessApproved: launcherApproval === 'true',
   sources: sourcePins,
   keychain: { supabase: { service: 'Supabase CLI', account: 'supabase' }, vercel: { service: 'TLL Hosted Baseline Vercel API', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' }, vercelBypass: { service: 'TLL Hosted Baseline Preview Bypass', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' } },
   endpoints: { supabaseManagement: `https://api.supabase.com/v1/projects/${HOSTED_BASELINE_SESSION_TARGET}`, vercel: 'https://api.vercel.com', surface: `https://${HOSTED_BASELINE_SESSION_TARGET}.supabase.co` },

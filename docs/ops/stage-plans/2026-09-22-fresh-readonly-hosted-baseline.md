@@ -184,6 +184,37 @@ closed; it must pass the full local stage gates and independent review before a
 new minimal arming patch is prepared. Creating either Vercel credential and
 using the bypass are separate action-time approval gates in the browser UI.
 
+### 2026-09-22 pre-journal module-cycle incident
+
+The reviewed v2 gates were committed locally and the launcher was invoked
+once. Node exited with code 13 and reported an unsettled top-level await at
+the launcher's `await runHostedBaselineLiveOnce()`. No observation journal was
+created, no child process remained, and no hosted request could have begun:
+the launcher imports its manifest before credential access or journal claim.
+The branch was immediately disarmed and the disabled boundary rechecked.
+
+Direct cause: the launcher dynamically imports the manifest during its
+top-level await, while the manifest statically imports the launcher's gate
+constant. ESM waits for the entry module to finish before evaluating its
+dependent manifest, while the entry waits for that manifest. The process
+decision that allowed this was verifying the manifest as its own entry point
+and testing injected session code, without checking the armed launcher's
+module graph as an entry point. The minimal arming diff left this pre-existing
+cycle unchanged, so diff review alone could not reveal the runtime deadlock.
+
+Corrective unit: keep both native gates disabled; remove the reverse manifest
+import of the launcher and derive approval from the pinned launcher source (or
+an inert dedicated gate module); add a regression that rejects any manifest
+import path from the manifest to the live launcher, directly or transitively,
+while ordinary tests continue checking the disabled manifest without invoking
+the live entry point.
+Regenerate source pins, rerun focused and full disabled checks, and obtain an
+independent source review before another arming candidate. The new candidate
+requires its own exact-diff review. Do not replay the just-failed invocation
+or treat the absent journal as proof that the attempt did not occur. Revoke
+both temporary Vercel credentials and remove their local selectors before
+preparing a fresh credential window. No production or purchase action occurred.
+
 - Target, team, branch, alias, provider or source drift stops before subsequent
   reads and records only an allowlisted reason.
 - Authentication failure records only the provider and status class. It does
