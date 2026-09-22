@@ -57,6 +57,15 @@ test('boundary rejects an armed database rehearsal launcher', () => {
   ])
 })
 
+test('boundary rejects an armed full hosted observer launcher', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-account-hosted-baseline-live-launcher.mjs'),
+    'const createStagingWindowPhaseJournal = null\nexport const HOSTED_BASELINE_LIVE_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-account-hosted-baseline-live-launcher.mjs',
+  ])
+})
+
 test('boundary rejects any missing or enabled Generation 10-21 replay hold', () => {
   for (const generation of [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]) {
     const root = fixture()
