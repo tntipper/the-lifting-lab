@@ -6,7 +6,7 @@ import {
 } from './staging-account-hosted-baseline-database.mjs'
 import { createStagingWindowPhaseJournal, createTrackedHostedBaselineFetch } from './staging-account-hosted-baseline-session.mjs'
 
-export const DB_DIAGNOSTIC_JOURNAL_PATH = resolve(import.meta.dirname, '../../implementation-state/staging/tll-hosted-baseline-v3-db-diagnostic.json')
+export const DB_DIAGNOSTIC_JOURNAL_PATH = resolve(import.meta.dirname, '../../implementation-state/staging/tll-hosted-baseline-v4-db-framing.json')
 export const DB_DIAGNOSTIC_DEADLINE_MS = 60_000
 const TARGET = 'qdmvngjwkcsilzmqksme'
 const ENDPOINT = `https://api.supabase.com/v1/projects/${TARGET}/database/query`
@@ -91,9 +91,13 @@ async function observe (fetcher, credential, signal) {
     await cancelResponse(response)
     return Object.freeze({ status: 'HOLD', reasonCodes: ['RESPONSE_TARGET_DRIFT'] })
   }
-  if (encoding && encoding !== 'identity' || transfer || length != null && (!/^\d+$/.test(length) || Number(length) > MAX_BODY_BYTES)) {
+  const framing = []
+  if (encoding && encoding !== 'identity') framing.push('RESPONSE_CONTENT_ENCODING')
+  if (transfer) framing.push('RESPONSE_TRANSFER_ENCODING')
+  if (length != null && (!/^\d+$/.test(length) || Number(length) > MAX_BODY_BYTES)) framing.push('RESPONSE_CONTENT_LENGTH')
+  if (framing.length) {
     await cancelResponse(response)
-    return Object.freeze({ status: 'HOLD', reasonCodes: [httpReason, 'RESPONSE_FRAMING_UNAVAILABLE'] })
+    return Object.freeze({ status: 'HOLD', reasonCodes: [httpReason, ...framing] })
   }
   const body = await readBoundedJson(response, signal, httpCode === 201 ? MAX_BODY_BYTES : 16_384)
   if (body.kind !== 'JSON') return Object.freeze({ status: 'HOLD', reasonCodes: [httpReason, body.kind] })

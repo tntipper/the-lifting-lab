@@ -53,7 +53,9 @@ test('HTTP failure, malformed receipt, framing drift and missing credential cann
   const outcomes = [
     { response: json({ message: 'secret value' }, 403), reasons: ['HTTP_403'] },
     { response: json([{ tll_staging_hosted_baseline_database: { ...receipt, runtimeSessions: 1 } }], 201), reasons: ['RECEIPT_MISMATCH'] },
-    { response: new Response('[]', { status: 201, headers: { 'content-encoding': 'gzip' } }), reasons: ['HTTP_201', 'RESPONSE_FRAMING_UNAVAILABLE'] },
+    { response: new Response('[]', { status: 201, headers: { 'content-encoding': 'gzip' } }), reasons: ['HTTP_201', 'RESPONSE_CONTENT_ENCODING'] },
+    { response: new Response('[]', { status: 201, headers: { 'transfer-encoding': 'chunked' } }), reasons: ['HTTP_201', 'RESPONSE_TRANSFER_ENCODING'] },
+    { response: new Response('[]', { status: 201, headers: { 'content-length': '1048577' } }), reasons: ['HTTP_201', 'RESPONSE_CONTENT_LENGTH'] },
     { response: new Response('access denied', { status: 401 }), reasons: ['HTTP_401', 'BODY_INVALID_JSON'] },
     { response: new Response('forbidden', { status: 403 }), reasons: ['HTTP_403', 'BODY_INVALID_JSON'] },
     { response: new Response('upstream unavailable', { status: 502 }), reasons: ['HTTP_502', 'BODY_INVALID_JSON'] },
