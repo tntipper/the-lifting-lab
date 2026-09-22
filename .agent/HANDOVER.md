@@ -1,12 +1,13 @@
 # Agent handover — The Lifting Lab integration
 
-Updated: 2026-09-22 after the disabled activation-tooling stage
+Updated: 2026-09-22 after the disabled native-adapter stage
 
 ## Exact repository state
 
 - Repository: `implementation-integration`
 - Branch: `codex/tll-integration`
-- Verified tooling checkpoint: `c4c2309` (`Add reviewed staging activation state machines`)
+- Verified adapter checkpoint: `ec62e32` (`Add disabled staging activation adapters`)
+- Prior state-machine checkpoint: `c4c2309`
 - Generation 21 retirement checkpoint: `9032191`
 - Production Supabase `wrhgscovsgsudtedbljr` remains excluded.
 - Preserve untracked `implementation-state/` and
@@ -29,9 +30,9 @@ Updated: 2026-09-22 after the disabled activation-tooling stage
 - No Generation 22 package exists or is armed. No purchase, checkout, supplier
   order, customer email or production mutation is authorized.
 
-## Completed work unit
+## Completed work units
 
-The disabled activation stage is complete at `c4c2309`:
+The disabled activation state-machine stage is complete at `c4c2309`:
 
 1. `scripts/staging-provider-broker-rotation.mjs` rotates one in-memory value
    through exact target-bound injected ports. It requires frozen provider,
@@ -48,42 +49,68 @@ The disabled activation stage is complete at `c4c2309`:
    Uncertain enabled-build dispatch remains reconciliation-required even after
    a held recovery build verifies.
 4. The manifest, runbook, Generation 21 incident learning and stage completion
-   record pin these contracts. Native adapters remain absent and every live
-   gate remains disabled.
+   record pin these contracts.
+
+The disabled native-adapter stage is complete at `ec62e32`:
+
+1. `scripts/staging-provider-broker-native-adapter.mjs` uses the official
+   Supabase Auth Admin custom-provider contract, separates actual drifted-state
+   inspection from strict post-update validation, verifies provider disablement
+   with a fresh final read and keeps staged host values after update uncertainty.
+2. `scripts/staging-database-native-adapter.mjs` owns the exact staging
+   Management API request and generates the only permitted control transaction
+   internally. There is no generic SQL, project or endpoint input.
+3. `scripts/staging-surface-activation-native-adapter.mjs` binds Edge, Vercel
+   Preview, deployment, alias, TLS and runtime evidence to the fixed target.
+   Every external operation requires the reviewed injected settled-executor
+   contract and an AbortSignal.
+4. `/api/staging/readiness` is Preview-only and secret-free. It proves the
+   immutable deployment plus private runtime flags and the public environment,
+   customer and cart values compiled into that build. Edge is proved separately.
+5. Independent review found and the implementation corrected blocked provider
+   repair, stale disabled receipts, unbounded adapter calls, opposite Edge
+   acknowledgements, false-positive tests, process-local deployment evidence,
+   malformed TLS acceptance and runtime/build-time flag confusion.
+
+Every native-enable constant remains false. There is no live launcher, no
+concrete wall-clock executor and no Generation 22 package.
 
 Independent security reviews passed the final provider, control and surface
 state machines. They did not qualify native adapters or hosted execution.
 
-## Verification at `c4c2309`
+## Verification at `ec62e32`
 
-- Focused activation tests: 25/25 passed (provider 10, controls 6, surfaces 9).
-- Actual PostgreSQL 17 fixture passed privilege-drift rejection, forced partial
-  rollback, atomic five-control enablement and ADMIN-only edge restoration.
-- Complete `npm test`: 2,112/2,112 passed.
+- Focused adapter, manifest and state-machine tests: 58/58 passed; final combined
+  adapter/state-machine subset: 50/50 passed before manifest integration.
+- Complete `npm test`: 2,137/2,137 passed.
 - Typecheck passed; lint had zero errors and 20 pre-existing warnings.
 - Production build passed with 153 static pages.
 - `npm audit --audit-level=high`: zero vulnerabilities.
 - Live-boundary check: PASS, zero violations.
 - Activation manifest `--check` and `git diff --check`: passed.
+- A transient typecheck failure came from iCloud-generated duplicate files under
+  disposable `.next/types`; deleting `.next` and regenerating from source passed.
 
-## Next coherent stage: native adapter preparation, still disabled
+## Next coherent stage: concrete executor/provider bindings and fresh baseline
 
 Do not arm Generation 22 first. Write a new stage plan and complete these units
 while runtime credentials remain retired:
 
-1. Build read-only target adapters returning exact redacted evidence for the
-   fully loaded provider, Vercel Preview project/scope/branch, Supabase Edge,
-   secret-name presence, immutable deployment, alias and runtime readiness.
-2. Add a reviewed provider-freeze/reconciliation step because rotation requires
-   the provider disabled and destination names absent before generation.
-3. Implement exact native adapters for all three injected contracts. Keep their
-   native enable constants false, accept no caller target/SQL/URL, keep secret
-   material off argv/files/results and test command/API construction with fakes.
-4. Obtain independent security review and run the full repository gates before
-   committing the disabled adapter stage.
-5. Only then obtain a fresh read-only hosted baseline and prepare a separate
-   Generation 22 arming diff. Arming, bounded execution, reconciliation/disarm
-   and the owned-email no-purchase journey are separate gates under
+1. Implement and independently review the concrete wall-clock executor and the
+   exact provider bindings injected into the provider/surface adapters. Prove
+   timeout cancellation has settled before compensating writes and redact all
+   diagnostics. Keep every gate false and add no general shell/API escape.
+2. Obtain a fresh read-only staging baseline for the fully loaded provider,
+   Vercel Preview project/scope/branch, Supabase Edge, destination-name absence,
+   immutable deployment, alias and readiness surfaces. Treat prior evidence as
+   drift-prone and stop on target or provider mismatch.
+3. Run the separate provider-disable/reconciliation prerequisite if the fresh
+   baseline remains enabled. A configured JWKS is a hard stop; blank scope is
+   repairable only inside the later exact rotation.
+4. Prepare and independently review a separate Generation 22 arming diff. Do
+   not combine arming with execution.
+5. Execute at most one bounded window, reconcile/disarm, then run the owned-email
+   no-purchase journey as separate gates under
    `docs/ops/project-stage-execution-protocol.md`.
 
 ## Programme work after Stage 3 hosted acceptance
