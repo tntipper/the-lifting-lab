@@ -52,7 +52,7 @@ export const hostedBaselineManifest = Object.freeze({
   sources: sourcePins,
   keychain: { supabase: { service: 'Supabase CLI', account: 'supabase' }, vercel: { service: 'TLL Hosted Baseline Vercel API', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' }, vercelBypass: { service: 'TLL Hosted Baseline Preview Bypass', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' } },
   endpoints: { supabaseManagement: `https://api.supabase.com/v1/projects/${HOSTED_BASELINE_SESSION_TARGET}`, vercel: 'https://api.vercel.com', surface: `https://${HOSTED_BASELINE_SESSION_TARGET}.supabase.co` },
-  journal: { path: '../implementation-state/staging/tll-hosted-baseline-observation-v6.json', exclusive: true, mode: '0600' },
+  journal: { path: '../implementation-state/staging/tll-hosted-baseline-observation-v7.json', exclusive: true, mode: '0600' },
   execution: { deadlineMs: HOSTED_BASELINE_SESSION_DEADLINE_MS, retries: 0, observationOnly: true },
 })
 const serialized = `${JSON.stringify(hostedBaselineManifest, null, 2)}\n`
