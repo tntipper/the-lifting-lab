@@ -62,6 +62,14 @@ tests passed after regenerating both hosted-baseline and activation manifests.
 The amended disabled package received independent review GO; this does not
 approve arming or executing v7.
 
+The separately approved one-hour v7 token window then passed its preflight:
+the saved token exactly matched Vercel's one-time display; all three fixed
+Keychain selectors were readable; Vercel project GET returned HTTP 200 with
+the expected project and team IDs; the exact Preview environment GET returned
+HTTP 200, 16 expected branch/Preview/type rows, no pagination property and
+no broker secret name. Supabase secret-name GET also returned HTTP 200 with
+the broker name absent. No observer journal was claimed in these reads.
+
 ## Execution and stop rules
 
 At action time obtain fresh approval for a one-hour Vercel Access Token
