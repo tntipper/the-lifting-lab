@@ -2787,7 +2787,7 @@
       },
       {
         "path": "scripts/staging-generation-19-retirement-preflight.mjs",
-        "sha256": "d20673dfad09dbb765fb9903c26517c5f339d42ddc4ec854a93e8f2d14437d8a"
+        "sha256": "5087f31f907d85528b1be04d0d5d10f5646203bf09c159be9b104eb90ff1a68d"
       },
       {
         "path": "scripts/staging-generation-recovery-pin-contract.mjs",
@@ -2807,7 +2807,7 @@
       },
       {
         "path": "config/staging-generation-19-retirement-preflight.sql",
-        "sha256": "53edd1dcd51416d0fd2937c634b2d0f6e1c7b5d5970173a1413661b178bbfc34"
+        "sha256": "215a136789ff671d123b07af49e9616c027fec6ae697fa3532315815528aa8ad"
       },
       {
         "path": "tests/staging-generation-19-credentials.test.mjs",
@@ -2843,7 +2843,7 @@
       },
       {
         "path": "tests/staging-generation-19-retirement-preflight.test.mjs",
-        "sha256": "1e8a029cb22f560c5c5af699e4cc879b3a3bddfe08d1056a1c91ed237c3a448c"
+        "sha256": "66f90613b5a20b067a0d1a6a65e6aabf2d9c96ea0f5e461b2363fb8c37ed5074"
       },
       {
         "path": "tests/staging-generation-recovery-pin-contract.test.mjs",

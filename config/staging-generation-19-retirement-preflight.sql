@@ -66,7 +66,7 @@ BEGIN
       ('tll_customer_executor','tll_customer_runtime'),('tll_cart_gateway','tll_cart_runtime'),
       ('tll_broker_executor','tll_broker_runtime'),('tll_provisional_executor','tll_provisional_runtime'),
       ('tll_bridge_executor','tll_bridge_runtime'))
-      AND e.grantor=operator_name::regrole AND NOT e.admin_option AND e.inherit_option AND e.set_option;
+      AND e.grantor=operator_name::regrole AND NOT e.admin_option AND e.inherit_option AND NOT e.set_option;
   SELECT count(*) INTO expected_operator_edges FROM pg_auth_members e
     JOIN pg_roles granted ON granted.oid=e.roleid JOIN pg_roles member ON member.oid=e.member
     WHERE granted.rolname IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime') AND member.rolname=operator_name

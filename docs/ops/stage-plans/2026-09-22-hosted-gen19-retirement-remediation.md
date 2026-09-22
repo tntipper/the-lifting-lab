@@ -67,7 +67,8 @@ of the following without returning credential or customer material:
    - every role remains LOGIN/password-configured with `VALID UNTIL infinity`;
 4. exactly five expected executor/gateway-to-runtime memberships and five
    reviewed runtime-role-to-operator ADMIN-only management edges, with no other
-   edge touching a runtime role;
+   edge touching a runtime role; executor/gateway edges are exactly
+   `ADMIN FALSE / INHERIT TRUE / SET FALSE`, granted by `postgres`;
 5. zero active sessions for the runtime roles;
 6. current five control states and private-work counts by state.
 
