@@ -71,3 +71,24 @@ The activation manifest was stale because the prior work unit added a
 The generator changed exactly that test's SHA-256 pin; `--check` and the full
 suite pass after refresh. This is a local generated-artifact correction, not a
 new hosted or production action.
+
+## Single v3 outcome and successor hold
+
+Disabled package `0c95a98` was independently reviewed. The exact one-line
+arming diff `6f04158` received independent GO and was invoked once. The
+mode-0600 v3 journal at the planned path is terminal HOLD, run ID
+`fa2735fd-4b32-4d08-a194-1ee35e7186e2`, 20:38:57.394–20:38:57.880 UTC,
+with `HTTP_201` and `RESPONSE_FRAMING_UNAVAILABLE`. This proves the Management
+endpoint returned its documented success status, but the local parser
+rejected a response header before validating the body. It does **not** prove
+the receipt or SQL retirement assertions passed. The v3 journal is consumed;
+never replay it. The launcher gate was immediately restored to false and the
+live-boundary check passes.
+
+The diagnostic grouped three framing conditions: content encoding, transfer
+encoding, and content length. That grouping still does not identify the exact
+header. A successor may report only which of those finite conditions occurred,
+using a fresh journal, then correct the smallest unsafe assumption. Do not
+weaken all framing checks merely to get a PASS. The original v2 failure and
+v3 HOLD share a likely local response-validation path, but v3 does not prove
+which header caused v2 because the original wrapper suppressed detail.
