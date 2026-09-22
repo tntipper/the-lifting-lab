@@ -5,16 +5,17 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ACTIVE_WINDOW_EXPIRES_AT, assertGeneration21ActiveWindowExpiry, buildGeneration21CredentialSql, createGeneration21DispatchJournal, GENERATION, IDENTITIES, PACKAGE_ID, PREDECESSOR, WINDOW_ID } from '../scripts/staging-generation-21-credentials.mjs'
 
-const NOW = Date.parse('2026-09-20T21:30:00.000Z')
-const EXPIRES = '2026-09-20T22:25:00.000Z'
+const NOW = Date.parse('2026-09-22T13:10:00.000Z')
+const EXPIRES = ACTIVE_WINDOW_EXPIRES_AT
 const verifier = index => `SCRAM-SHA-256$4096:${Buffer.from(`salt-${index}`).toString('base64')}$${Buffer.alloc(32,index+1).toString('base64')}:${Buffer.alloc(32,index+7).toString('base64')}`
 const verifiers = () => Object.fromEntries(Object.keys(IDENTITIES).map((purpose,index)=>[purpose,verifier(index)]))
 
-test('generation 21 installer consumes the sole phase-1 expiry source and fails closed while it is unset',()=>{
+test('generation 21 installer consumes the sole reviewed bounded expiry source',()=>{
   assert.equal(GENERATION,21);assert.equal(PREDECESSOR.generation,19);assert.equal(PREDECESSOR.windowId,'51809dd4-bd4b-44c7-8609-7dd8ca063679')
-  assert.equal(ACTIVE_WINDOW_EXPIRES_AT,'UNSET_REQUIRES_REVIEWED_ARMING_DIFF')
-  assert.throws(()=>assertGeneration21ActiveWindowExpiry(NOW),/unavailable/)
-  assert.throws(()=>buildGeneration21CredentialSql({verifiers:verifiers(),nowMs:NOW}),/unavailable/)
+  assert.equal(ACTIVE_WINDOW_EXPIRES_AT,'2026-09-22T14:00:00.000Z')
+  assert.equal(assertGeneration21ActiveWindowExpiry(NOW),ACTIVE_WINDOW_EXPIRES_AT)
+  const sql=buildGeneration21CredentialSql({verifiers:verifiers(),nowMs:NOW})
+  assert.match(sql,/2026-09-22T14:00:00\.000Z/)
   const source=readFileSync('scripts/staging-generation-21-credentials.mjs','utf8')
   assert.match(source,/WHERE \(g\.rolname IN\(\$\{roleList\}\) OR m\.rolname IN\(\$\{roleList\}\)\)/)
   assert.match(source,/m\.rolname=operator_name[\s\S]*e\.admin_option AND NOT e\.inherit_option AND NOT e\.set_option/)

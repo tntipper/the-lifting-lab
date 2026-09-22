@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto'
 import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { relative, resolve } from 'node:path'
+import { ACTIVE_WINDOW_EXPIRES_AT as GENERATION_21_ACTIVE_WINDOW_EXPIRES_AT } from './staging-generation-21-credentials.mjs'
 
 const root = resolve(import.meta.dirname, '..')
 const output = resolve(root, 'config/staging-account-activation-manifest.json')
@@ -420,6 +421,7 @@ const generation21SuccessorSources = [
   'tests/staging-generation-recovery-pin-contract.test.mjs',
   'docs/ops/stage-plans/2026-09-22-generation-21-disabled-successor.md',
   'docs/ops/stage-plans/2026-09-22-generation-21-pre-arm-checklist.md',
+  'docs/ops/stage-plans/2026-09-22-generation-21-arming-diff.md',
   'docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md',
   'docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md',
 ]
@@ -1108,7 +1110,8 @@ const manifest = {
       separateReadOnlyObserver: 'scripts/staging-generation-21-journal-watch.mjs',
     },
     secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true,
-    nativeTransportEnabled: false, status: 'DISABLED_PENDING_INDEPENDENT_ARMING_REVIEW',
+    activeWindowExpiresAt: GENERATION_21_ACTIVE_WINDOW_EXPIRES_AT,
+    nativeTransportEnabled: true, status: 'ARMED_ONE_BOUNDED_WINDOW_REQUIRES_RUN_LIVE_ONCE',
     preArmRequiresPredecessorRetirementEvidence: true,
     stagePlan: 'docs/ops/stage-plans/2026-09-22-generation-21-disabled-successor.md',
     preArmChecklist: 'docs/ops/stage-plans/2026-09-22-generation-21-pre-arm-checklist.md',

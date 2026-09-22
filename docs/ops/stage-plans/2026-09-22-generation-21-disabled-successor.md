@@ -1,5 +1,9 @@
 # Generation 21 disabled successor
 
+> Historical disabled-base record. The reviewed one-window arming state is
+> documented separately in [Generation 21 one-window arming diff](2026-09-22-generation-21-arming-diff.md).
+> This document does not authorise another action.
+
 ## Purpose
 
 Generation 21 is a new, fully disabled successor package. It carries the

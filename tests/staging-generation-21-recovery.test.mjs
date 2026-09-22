@@ -21,7 +21,7 @@ test('generation 21 recovery is derived from exact pinned generation 6 recovery 
   assert.doesNotMatch(recovery,/pg_roles WHERE rolname=r AND \(rolcanlogin OR rolpassword/)
   assert.match(recovery,/Direct private authority survives retirement/)
   assert.match(recovery,/Active Gen21 credential drift shape mismatch/)
-  assert.match(recovery,/'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'='UNSET_REQUIRES_REVIEWED_ARMING_DIFF'/)
+  assert.match(recovery,/'2026-09-22T14:00:00\.000Z'='UNSET_REQUIRES_REVIEWED_ARMING_DIFF'/)
   assert.match(recovery,/rolvaliduntil=expires_at/)
   assert.match(recovery,/rolvaliduntil IS DISTINCT FROM 'infinity'::timestamptz/)
   const postcommit=readFileSync('config/staging-generation-21-recovery-postcommit.sql','utf8')

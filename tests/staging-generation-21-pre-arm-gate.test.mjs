@@ -28,15 +28,15 @@ const RETIREMENT_EVIDENCE = Object.freeze({
   source: 'reviewed-generation-19-retirement-evidence',
 })
 
-test('Generation 21 identity, exact Gen19 predecessor, and native gates are fixed', () => {
+test('Generation 21 identity, exact Gen19 predecessor, and reviewed native gates are fixed', () => {
   assert.equal(GENERATION, 21)
   assert.equal(WINDOW_ID, 'a5511645-77af-4fc9-9e4c-f5c8a474d5fa')
   assert.equal(PACKAGE_ID, 'tll-staging-generation-21-credentials/v1')
   assert.deepEqual(PREDECESSOR, {
     generation: 19, windowId: '51809dd4-bd4b-44c7-8609-7dd8ca063679', expiresAt: '2026-09-21T11:08:34.000Z',
   })
-  assert.equal(NATIVE_GENERATION_21_TRANSPORT_ENABLED, false)
-  assert.equal(NATIVE_GENERATION_21_DATABASE_TRANSPORT_ENABLED, false)
+  assert.equal(NATIVE_GENERATION_21_TRANSPORT_ENABLED, true)
+  assert.equal(NATIVE_GENERATION_21_DATABASE_TRANSPORT_ENABLED, true)
 })
 
 test('reviewed Gen19 retirement plan and checklist carry the exact contract', () => {
@@ -60,13 +60,13 @@ test('predecessor retirement evidence requires the complete canonical retired-ro
   assert.equal(projectPredecessorRetirementEvidence({ ...RETIREMENT_EVIDENCE, token: 'sbp_oauth_deadbeef' }), null)
 })
 
-test('pre-arm gate needs exact evidence and remains disarmed before an independent arming review', async () => {
+test('pre-arm gate needs exact evidence and recognizes the reviewed armed state', async () => {
   assert.equal(GENERATION_21_CONSUMED, false)
-  await assert.rejects(() => assertGeneration21PreArmReady(), /predecessor_retirement_unproven/)
-  const result = await assertGeneration21PreArmReady({ retirementEvidence: RETIREMENT_EVIDENCE })
+  await assert.rejects(() => assertGeneration21PreArmReady(), /native_gates_must_stay_false_until_arming_diff/)
+  const result = await assertGeneration21PreArmReady({ retirementEvidence: RETIREMENT_EVIDENCE, requireArmedGatesFalse: false })
   assert.equal(result.status, 'PRE_ARM_READY')
   assert.equal(result.predecessorBaselineComplete, true)
-  assert.equal(result.nativeGatesArmed, false)
-  assert.equal(result.nextAction, 'INDEPENDENT_ARMING_REVIEW')
+  assert.equal(result.nativeGatesArmed, true)
+  assert.equal(result.nextAction, 'ARMED_PHASE_3_REQUIRES_RUN_LIVE_ONCE')
   assert.match(DEFAULT_LOCAL_RETIREMENT_EVIDENCE_PATH, /implementation-state\/staging\//)
 })

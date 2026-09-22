@@ -14,7 +14,7 @@
   "failedOrUncertainWindowReplayPermitted": false,
   "currentHold": {
     "scope": "staging-runtime-credential-window",
-    "reason": "generation-20-entry-baseline-failed-before-dispatch-consumed-no-replay",
+    "reason": "generation-21-armed-one-bounded-window-2026-09-22T14:00:00.000Z",
     "generation10ReplayPermitted": false,
     "generation11ReplayPermitted": false,
     "generation11Armed": false,
@@ -37,7 +37,7 @@
     "generation19ReplayPermitted": false,
     "generation20Armed": false,
     "generation20ReplayPermitted": false,
-    "generation21Armed": false,
+    "generation21Armed": true,
     "generation21ReplayPermitted": false
   }
 }

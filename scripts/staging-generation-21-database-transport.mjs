@@ -1,11 +1,11 @@
-/** Fixed Supabase Management API transport. Native token access is disabled. */
+/** Fixed Supabase Management API transport for the reviewed one-window run. */
 import https from 'node:https'
 import { readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { PREDECESSOR, PROJECT_REF, PACKAGE_ID, WINDOW_ID } from './staging-generation-21-credentials.mjs'
 
-export const NATIVE_GENERATION_21_DATABASE_TRANSPORT_ENABLED = false
+export const NATIVE_GENERATION_21_DATABASE_TRANSPORT_ENABLED = true
 export const MANAGEMENT_ENDPOINT = Object.freeze({ hostname:'api.supabase.com',path:`/v1/projects/${PROJECT_REF}/database/query`,method:'POST' })
 export const KEYCHAIN_HELPER_TIMEOUT_MS=45_000
 /**

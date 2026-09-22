@@ -16,9 +16,9 @@ export const GENERATION = 21
 export const WINDOW_ID = 'a5511645-77af-4fc9-9e4c-f5c8a474d5fa'
 export const MAX_WINDOW_MS = 60 * 60 * 1000
 export const PACKAGE_ID = 'tll-staging-generation-21-credentials/v1'
-// The sole Gen21 active-window expiry source. Phase 1 deliberately has no
-// UTC expiry. A reviewed arming-only diff must replace this one literal.
-export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'
+// The sole Gen21 active-window expiry source. This reviewed arming-only diff
+// supplies the exact bounded literal for the one Generation 21 window.
+export const ACTIVE_WINDOW_EXPIRES_AT = '2026-09-22T14:00:00.000Z'
 /**
  * Role/DB predecessor is the exact retired Generation 19 runtime window.
  * Generation 21 may never be armed until a new reviewed boundary confirms the

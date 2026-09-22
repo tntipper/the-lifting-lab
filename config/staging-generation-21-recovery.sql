@@ -108,8 +108,8 @@ BEGIN
     BEGIN expires_at:=(parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN
       RAISE EXCEPTION 'Runtime marker expiry is invalid: %',r;
     END;
-    IF parsed->>'state'='active' AND ('UNSET_REQUIRES_REVIEWED_ARMING_DIFF'='UNSET_REQUIRES_REVIEWED_ARMING_DIFF'
-      OR parsed->>'expiresAt' IS DISTINCT FROM 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'
+    IF parsed->>'state'='active' AND ('2026-09-22T14:00:00.000Z'='UNSET_REQUIRES_REVIEWED_ARMING_DIFF'
+      OR parsed->>'expiresAt' IS DISTINCT FROM '2026-09-22T14:00:00.000Z'
       OR NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin AND rolvaliduntil=expires_at)
       OR NOT EXISTS(SELECT 1 FROM pg_authid WHERE rolname=r AND rolpassword IS NOT NULL)) THEN
       RAISE EXCEPTION 'Active Gen21 credential drift shape mismatch: %',r;
