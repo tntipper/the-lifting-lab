@@ -620,7 +620,7 @@
       },
       {
         "path": "scripts/staging-provider-broker-native-adapter.mjs",
-        "sha256": "508622a8d3ed1a777a4bce2bfb32ab7bc47309ec48dd7d42c0a60a6394e75ba3"
+        "sha256": "a36da1f91c2e589c9ec8de6175e5d4605183c6c743ec0422ddaf4d3ade35cd10"
       },
       {
         "path": "scripts/staging-provider-broker-native-binding.mjs",
@@ -664,7 +664,7 @@
       },
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",
-        "sha256": "da7d38ab519b4b35228af7df4c2187c43968122a36cc02c0af8195fbb04586fb"
+        "sha256": "53382ecaef0d095be27561b34b06f0c13c194dd0676b11c37c8022e8f773b9e4"
       },
       {
         "path": "tests/staging-provider-broker-native-binding.test.mjs",

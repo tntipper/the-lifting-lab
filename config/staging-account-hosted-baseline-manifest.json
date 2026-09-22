@@ -40,7 +40,7 @@
     },
     {
       "path": "scripts/staging-provider-broker-native-adapter.mjs",
-      "sha256": "508622a8d3ed1a777a4bce2bfb32ab7bc47309ec48dd7d42c0a60a6394e75ba3"
+      "sha256": "a36da1f91c2e589c9ec8de6175e5d4605183c6c743ec0422ddaf4d3ade35cd10"
     },
     {
       "path": "scripts/staging-provider-broker-rotation.mjs",

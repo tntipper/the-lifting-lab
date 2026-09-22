@@ -4,7 +4,7 @@ import { createProviderBrokerRotationJournal, BROKER_SECRET_NAME, PROVIDER_IDENT
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createStagingProviderBrokerNativeAdapter, NATIVE_STAGING_PROVIDER_BROKER_ADAPTER_ENABLED, projectOfficialStagingProvider, STAGING_AUTH_URL, STAGING_PROVIDER_NAME } from '../scripts/staging-provider-broker-native-adapter.mjs'
+import { createStagingProviderBrokerNativeAdapter, NATIVE_STAGING_PROVIDER_BROKER_ADAPTER_ENABLED, projectOfficialProviderSchema, projectOfficialStagingProvider, STAGING_AUTH_URL, STAGING_PROVIDER_NAME } from '../scripts/staging-provider-broker-native-adapter.mjs'
 
 const projectSecret = Buffer.alloc(48, 3)
 const rawProvider = ({ enabled = false, ...override } = {}) => ({
@@ -54,6 +54,15 @@ test('strict rotation projection maps the documented snake_case desired state an
   assert.equal(projected.clientId, STAGING_BROKER_PROVIDER.clientId); assert.equal(projected.authorizationUrl, STAGING_BROKER_PROVIDER.authorizationUrl)
   for (const override of [{ client_secret: 'must-never-accept' }, { unknown: true }, { scopes: [] }, { enabled: true }, { jwks_uri: 'https://bad.example/jwks' }, { authorization_params: { secret: 'bad' } }]) {
     assert.throws(() => projectOfficialStagingProvider(rawProvider(override)), /unavailable/)
+  }
+})
+
+test('provider readback accepts only an empty custom claims allowlist', () => {
+  const baseline = projectOfficialProviderSchema(rawProvider({ custom_claims_allowlist: [] }))
+  assert.equal(baseline.identifier, PROVIDER_IDENTIFIER)
+  assert.equal(Object.hasOwn(baseline, 'customClaimsAllowlist'), false)
+  for (const custom_claims_allowlist of [null, {}, ['role'], [1]]) {
+    assert.throws(() => projectOfficialProviderSchema(rawProvider({ custom_claims_allowlist })), /unavailable/)
   }
 })
 

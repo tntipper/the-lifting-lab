@@ -25,7 +25,7 @@ export const STAGING_PROVIDER_NAME = 'TLL staging subject broker'
 const OFFICIAL_PROVIDER_KEYS = new Set([
   'id', 'provider_type', 'identifier', 'name', 'client_id',
   'acceptable_client_ids', 'scopes', 'pkce_enabled', 'attribute_mapping',
-  'authorization_params', 'enabled', 'email_optional', 'issuer',
+  'authorization_params', 'custom_claims_allowlist', 'enabled', 'email_optional', 'issuer',
   'discovery_url', 'skip_nonce_check', 'authorization_url', 'token_url',
   'userinfo_url', 'jwks_uri', 'discovery_document', 'created_at', 'updated_at',
 ])
@@ -84,6 +84,7 @@ export function projectOfficialProviderSchema(value) {
     || !validTimestamp(value.created_at) || !validTimestamp(value.updated_at) || !safeStringArray(value.acceptable_client_ids)
     || !safeStringArray(value.scopes) || typeof value.pkce_enabled !== 'boolean' || typeof value.enabled !== 'boolean'
     || typeof value.email_optional !== 'boolean' || !safeObject(value.attribute_mapping) || !safeObject(value.authorization_params)
+    || !(value.custom_claims_allowlist === undefined || (Array.isArray(value.custom_claims_allowlist) && value.custom_claims_allowlist.length === 0))
     || !safeOptionalUrl(value.issuer) || !safeOptionalUrl(value.discovery_url)
     || !(value.skip_nonce_check === undefined || value.skip_nonce_check === null || typeof value.skip_nonce_check === 'boolean')
     || !safeOptionalUrl(value.authorization_url) || !safeOptionalUrl(value.token_url) || !safeOptionalUrl(value.userinfo_url)
