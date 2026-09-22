@@ -1,136 +1,135 @@
 # Agent handover — The Lifting Lab integration
 
-Updated: 2026-09-22 after the disabled concrete activation-binding stage
+Updated: 2026-09-22 after the disabled fresh hosted-baseline package
 
 ## Exact repository state
 
 - Repository: `implementation-integration`
 - Branch: `codex/tll-integration`
-- Verified binding checkpoint: `cc18fda1241db68561fc46f404b9080904aaa9c5`
-- Prior adapter checkpoint: `ec62e32`
-- Prior state-machine checkpoint: `c4c2309`
-- Generation 21 retirement checkpoint: `9032191`
-- Production Supabase `wrhgscovsgsudtedbljr` remains excluded.
+- Hosted-baseline checkpoint: `690ca06` (`Add reviewed staging hosted baseline observer`)
+- Remote branch was pushed to `origin/codex/tll-integration`.
+- Previous concrete binding checkpoint: `cc18fda`.
 - Preserve untracked `implementation-state/` and
   `.agent/gen11-journal-watch.mjs`; neither belongs in a commit.
+- Production Supabase `wrhgscovsgsudtedbljr` remains excluded.
 
-## Hosted state and safety boundary
+## Safety and hosted state
 
-- Generation 21 is recovered, consumed and non-replayable. Recovery returned
-  `PASS_RETIRED`: five runtime roles are NOLOGIN with no passwords, `VALID UNTIL
-  infinity`, zero execution edges/sessions, five ADMIN-only operator edges and
-  five disabled controls.
-- Generation 21 Vercel branch entries and Supabase Edge secret entries were
-  removed and their names read back absent. The secret-free receipt is
-  `implementation-state/staging/tll-generation-21-retirement-evidence.json`.
-- The existing custom provider predates Generation 21 and was not changed. Its
-  last readback is drift-prone: it was enabled, its required `subject` scope was
-  blank and its JWKS state was unresolved. Obtain a fresh fully loaded read-only
-  baseline before relying on these facts.
-- No Generation 22 package exists or is armed. No purchase, checkout, supplier
-  order, customer email or production mutation is authorized.
+- Generation 21 remains retired, consumed and non-replayable. Its verified
+  retirement evidence is under `implementation-state/staging/`.
+- No Generation 22 package exists or is armed.
+- The new hosted-baseline launcher is deliberately disabled. Running it without
+  a later reviewed arming change returns `HOSTED_BASELINE_LIVE_DISABLED` with
+  `nativeAccessApproved:false`.
+- This stage made no Keychain read, credential read, network request, hosted
+  request, database query, deployment, provider/secret change, customer action,
+  purchase or production change.
+- No current temporary Vercel automation token was created. Do not reuse an old
+  revoked test key.
 
-## Completed work units
+## Completed work unit
 
-The disabled state-machine and adapter stages remain complete at `c4c2309` and
-`ec62e32`. Their provider rotation, atomic control transaction, ordered surface
-activation, fixed staging adapters and Preview-only secret-free readiness route
-remain disabled and manifest-pinned.
+Checkpoint `690ca06` adds a manifest-pinned, read-only staging observer for the
+fresh hosted baseline described in
+`docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md`.
 
-The disabled concrete binding stage is complete at `cc18fda`:
+It is fixed to:
 
-1. `scripts/staging-bounded-executor.mjs` supplies the fixed 30-second monotonic
-   cancellation boundary. It aborts once, waits for the operation to settle and
-   cannot return a late success.
-2. `scripts/staging-provider-broker-native-binding.mjs` constructs the official
-   Supabase client from the project root, proving one exact
-   `/auth/v1/admin/custom-providers/...` request. Its Vercel and Supabase ports
-   allow only the broker-secret commands and project only that secret's
-   presence after validating complete inventories.
-3. `scripts/staging-surface-activation-native-binding.mjs` implements the four
-   exact Preview flag writes, one exact Edge flag write, Edge runtime proof,
-   immutable readiness, alias resolution and Vercel v13 deployment reads. It
-   pins project, project ID, team ID, scope, branch, alias and Supabase ref;
-   streams JSON through a 64 KiB cap and exposes no generic fetch/CLI escape.
-4. The Supabase SDK base URL bug is fixed: the SDK receives the project root so
-   it cannot request `/auth/v1/auth/v1`.
-5. Deployment creation remains fixed unavailable because the connected Vercel
-   repository ID is not pinned. There is still no native launcher or ambient
-   credential/process/network lookup.
+- Supabase staging `qdmvngjwkcsilzmqksme` and excludes production;
+- Vercel project `prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4`, team
+  `team_gf7cgIkkoeMLtODFDDT5MrW4`, scope `my-lifting-lab-s-projects`, project
+  `the-lifting-lab`, branch `codex/tll-integration`, and repository
+  `tntipper/the-lifting-lab`;
+- the exact Generation 21 retired database receipt in one read-only transaction;
+- full custom-provider readback, broker-secret name absence, immutable Preview
+  deployment/source evidence, stable alias, readiness and Edge state.
 
-Independent review found and the implementation corrected delayed-deadline
-success, unscoped secret-name projection, invented Vercel response fields,
-adapter receipt incompatibility, missing status validation, unbounded response
-consumption, raw diagnostics and a generic fetch escape hatch. Final
-executor/provider and surface reviews were clean.
+The package exposes no generic SQL, URL, target, process or mutation input. It
+uses bounded response bodies, exact status/framing/identity checks, one-shot
+bindings, linked cancellation, settled cleanup, and secret-free allowlisted
+receipts. Raw and copied credentials are wiped. Cleanup uncertainty preserves
+the intent journal and returns `RECONCILIATION_REQUIRED`; it cannot create a
+misleading terminal receipt.
 
-## Verification at `cc18fda`
+Independent review repeatedly exercised the package and found/corrected:
 
-- Focused combined executor/provider/surface/readiness tests: 60/60 passed.
-- Complete `npm test`: 2,160/2,160 passed.
-- Typecheck passed.
-- Lint passed with zero errors and 20 pre-existing warnings.
-- Production build passed with 153 static pages and `/api/staging/readiness`.
-- `npm audit --audit-level=high`: zero vulnerabilities.
-- Live-boundary check: PASS, zero violations.
-- Activation manifest regeneration/check and `git diff --check`: passed.
-- No hosted service, provider, secret, database, deployment, alias or customer
-  journey was accessed or changed during this stage.
+- incomplete manifest dependency closure;
+- lost native `Response` properties;
+- credential-buffer and partial-constructor cleanup leaks;
+- terminal journaling before cleanup/settlement;
+- weak nested receipt/status/reason validation;
+- identifier coercion and missing length bounds;
+- ordinary-operation versus cancellation-cleanup error confusion; and
+- a vacuous identifier regression test.
 
-## Next coherent stage: fresh read-only hosted baseline
+Final independent review reported no actionable findings for the corrected
+disabled package. Verified final source hashes were:
 
-Do not arm Generation 22. Start a new stage plan, verify the repository identity
-and rerun only the focused binding/manifest/live-boundary checks needed to
-establish the local baseline. Then obtain one fresh, fully loaded read-only
-staging baseline that:
+- session: `d257d4eade35b96ff0187df5ec194f3cdfdf4828fa29bf8cce0f293d550bd046`;
+- session test: `b6ea4dfb358375d8404bdf2e4c3f6e26c8d849e7605e8e86d6d825bcbe46c4e2`;
+- generated manifest: `5d4bf61e793ffa3a083eda8b35b56cf5f7d798e1fd46c6db68a019abadc6aad2`.
 
-1. confirms Supabase staging `qdmvngjwkcsilzmqksme` and excludes production;
-2. confirms Vercel project `the-lifting-lab`, project ID
-   `prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4`, team ID
-   `team_gf7cgIkkoeMLtODFDDT5MrW4`, scope `my-lifting-lab-s-projects`, Preview
-   branch `codex/tll-integration` and the stable alias;
-3. captures the connected Git repository ID from an authenticated read-only
-   Vercel project response and records its exact source field/provenance;
-4. reads the full custom-provider projection, including enabled state, scopes,
-   PKCE, endpoints, JWKS and the exact callback/client identity;
-5. proves only the broker-secret name is absent in Vercel Preview and Supabase
-   Edge, without reading secret values;
-6. probes the current Edge runtime response and immutable readiness surface,
-   then records deployment, alias, source commit and flag evidence without a
-   protection bypass or mutation; and
-7. stops on any target mismatch, malformed/undocumented provider shape,
-   unexpected JWKS, non-absent broker destination or ambiguous response.
+## Verification at `690ca06`
 
-The baseline stage may use an authenticated read-only launcher only after its
-small exact diff is independently reviewed. It must not add provider writes,
-secret writes, deployments, alias changes, database queries, credential
-generation or Generation 22 arming. After the repository ID is reviewed and
-pinned, implement/review deployment creation as a separate disabled unit.
-Provider disablement/reconciliation, Generation 22 arming, one bounded window,
-reconciliation and the owned-email no-purchase journey remain later distinct
-gates.
+- Hosted-baseline focused suite: 65/65 passed.
+- Session/manifest focused suite: 14/14 passed.
+- Complete `npm test`: passed.
+- `npm run typecheck`: passed.
+- `npm run build`: passed; 153 pages generated.
+- `npm run lint`: zero errors and the same 20 pre-existing warnings.
+- `npm audit --omit=dev --audit-level=high`: zero vulnerabilities.
+- Hosted-baseline and existing activation manifest checks: passed.
+- Live-boundary policy: PASS with zero violations.
+- Python helper compilation and `git diff --check`: passed.
 
-## Programme work after Stage 3 hosted acceptance
+## Next action — separate arming gate
 
-The broader release remains held by `docs/ops/integration-release-candidate.md`:
+Do not implement or run Generation 22. Resume with a small, separate arming
+stage for the read-only baseline only:
 
-- hosted unified sign-in/cart/account/orders/logout acceptance;
-- disabled inventory migration and separately qualified stock/order workers;
-- approved supplier mappings, cost/tax/stock evidence and price automation,
-  including retail-price versions, flash sales, affiliate-specific discounts,
-  attribution, commission/refund reconciliation and spend controls;
-- restorable production backup and release rehearsal;
-- formula, label and category evidence before scientific recommendations; and
-- consent/email flows, production theme publication and production deployment.
+1. Verify `pwd`, branch, `HEAD`, remote, and working tree against this handover.
+2. Confirm the three hashes above and rerun the focused baseline tests, both
+   manifest checks and the live-boundary check. Do not repeat the full audit.
+3. Review the exact arming diff independently before enabling either launcher
+   gate. The diff must add no writes, deployments, generic targets or production
+   access and must preserve the existing manifest pins.
+4. Obtain a fresh temporary Vercel automation key only at this gate, store it in
+   the launcher's fixed Keychain selector, and revoke it immediately after the
+   one bounded read-only run. User involvement may be required for creating the
+   new key. Do not expose its value in chat, logs or evidence.
+5. Use the existing approved Supabase CLI account only for the fixed staging
+   Management API reads. The launcher may transiently reveal the one legacy
+   staging service-role key in memory for the fixed read-only database call; it
+   must wipe it and never persist or print it.
+6. Run the baseline once. If the journal remains at `INTENT_RECORDED`, stop and
+   reconcile; never retry blindly. A `HOLD` is valid evidence and must not be
+   converted to PASS.
+7. Revoke/remove the Vercel key, verify protection remains active, archive only
+   the secret-free receipt, and independently review the observation.
+
+Expected HOLDs include absent TLL application-manifest metadata or drift in the
+existing custom-provider settings. The read-only observation must finish before
+deciding whether to reconcile provider settings, pin the connected repository
+ID, or build disabled deployment creation. Those remain later, separate stages.
+
+## Programme work after the baseline
+
+The public launch remains held by
+`docs/ops/integration-release-candidate.md`, including hosted unified
+sign-in/cart/account/orders/logout acceptance, qualified inventory and order
+workers, approved mappings and supplier-cost evidence, retail pricing and flash
+sales, affiliate attribution/discount/commission/refund controls, backup and
+restore rehearsal, consent/email flows, scientific evidence review, theme
+publication and production deployment. No purchase is authorized.
 
 ## Authoritative pointers
 
 | Purpose | Path |
 |---|---|
-| Completed binding stage | `docs/ops/stage-plans/2026-09-22-disabled-concrete-activation-bindings.md` |
-| Activation manifest | `config/staging-account-activation-manifest.json` |
+| Current stage plan | `docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md` |
+| Hosted-baseline manifest | `config/staging-account-hosted-baseline-manifest.json` |
+| Existing activation manifest | `config/staging-account-activation-manifest.json` |
 | Activation runbook | `docs/ops/staging-account-activation.md` |
-| Provider incident | `docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md` |
 | Execution protocol | `docs/ops/project-stage-execution-protocol.md` |
 | Broader release gates | `docs/ops/integration-release-candidate.md` |
-| Retail, flash-sale and affiliate requirements | `docs/ops/retail-promotions-affiliate-controls.md` |
+| Retail/promotions/affiliate controls | `docs/ops/retail-promotions-affiliate-controls.md` |
