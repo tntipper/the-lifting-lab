@@ -17,7 +17,7 @@ const policy = {
   currentHold: {
     generation10ReplayPermitted: false, generation11ReplayPermitted: false,
     generation12ReplayPermitted: false, generation13ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation18Armed: false, generation19Armed: false, generation20Armed: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false, generation16ReplayPermitted: false, generation17ReplayPermitted: false, generation18ReplayPermitted: false, generation19ReplayPermitted: false, generation20ReplayPermitted: false,
+    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation18Armed: false, generation19Armed: false, generation20Armed: false, generation21Armed: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false, generation16ReplayPermitted: false, generation17ReplayPermitted: false, generation18ReplayPermitted: false, generation19ReplayPermitted: false, generation20ReplayPermitted: false, generation21ReplayPermitted: false,
     nextGenerationPermittedBeforeBoundaryReview: false,
   },
 }
@@ -48,8 +48,8 @@ test('boundary rejects enabled JavaScript and Keychain gates', () => {
   ])
 })
 
-test('boundary rejects any missing or enabled Generation 10-20 replay hold', () => {
-  for (const generation of [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]) {
+test('boundary rejects any missing or enabled Generation 10-21 replay hold', () => {
+  for (const generation of [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]) {
     const root = fixture()
     const changed = structuredClone(policy)
     changed.currentHold[`generation${generation}ReplayPermitted`] = true
@@ -58,8 +58,8 @@ test('boundary rejects any missing or enabled Generation 10-20 replay hold', () 
   }
 })
 
-test('boundary rejects any missing or enabled Generation 11-20 armed hold', () => {
-  for (const generation of [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]) {
+test('boundary rejects any missing or enabled Generation 11-21 armed hold', () => {
+  for (const generation of [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]) {
     const root = fixture()
     const changed = structuredClone(policy)
     changed.currentHold[`generation${generation}Armed`] = true

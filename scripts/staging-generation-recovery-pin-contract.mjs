@@ -76,7 +76,7 @@ export async function assertRecoverySuccessorPinsMatchCredentials(generations) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const generations = [15, 16, 17, 18, 19, 20]
+    const generations = [15, 16, 17, 18, 19, 20, 21]
     const results = await assertRecoverySuccessorPinsMatchCredentials(generations)
     process.stdout.write(`${JSON.stringify({ status: 'PASS', results }, null, 2)}\n`)
   } catch (error) {

@@ -31,9 +31,11 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.stageSafety.generation18Armed, false)
   assert.equal(manifest.stageSafety.generation19Armed, false)
   assert.equal(manifest.stageSafety.generation20Armed, false)
+  assert.equal(manifest.stageSafety.generation21Armed, false)
   assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation12ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation13ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.generation21ReplayPermitted, false)
   assert.equal(manifest.stageSafety.successorHeldPendingBoundaryReview, true)
   assert.equal(manifest.runtime.reviewedPreview.stableOrigin, manifest.provider.reviewedPreviewOrigin)
   assert.equal(manifest.runtime.reviewedPreview.branch, 'codex/tll-integration')
@@ -458,4 +460,27 @@ test('generation 20 is pinned to the corrected retired Gen19 contract and consum
   assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'scripts/staging-generation-20-pre-arm-gate.mjs'))
   assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-20-disabled-successor.md'))
   assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md'))
+})
+
+test('generation 21 is a disabled successor using the canonical Gen19 retired contract', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
+  assert.equal(manifest.stageSafety.generation21Armed, false)
+  assert.equal(manifest.stageSafety.generation21ReplayPermitted, false)
+  assert.equal(manifest.generation21Successor.packageId, 'tll-staging-generation-21-credentials/v1')
+  assert.equal(manifest.generation21Successor.generation, 21)
+  assert.equal(manifest.generation21Successor.windowId, 'a5511645-77af-4fc9-9e4c-f5c8a474d5fa')
+  assert.equal(manifest.generation21Successor.predecessor.generation, 19)
+  assert.equal(manifest.generation21Successor.predecessor.validUntil, 'infinity')
+  assert.equal(manifest.generation21Successor.predecessorMarkerComparison, 'PARSED_JSON_SEMANTICS')
+  assert.equal(manifest.generation21Successor.predecessorValidUntilComparison, 'CANONICAL_RETIRED_INFINITY')
+  assert.deepEqual(manifest.generation21Successor.supersedesAttempt, {
+    generation: 20, windowId: 'a009f2b4-86df-4701-a8bc-1112597e3c42',
+    outcome: 'ENTRY_BASELINE_FAILED_NO_REPLAY', databaseDispatchAttempted: false,
+    providerStagingAttempted: false, replayPermitted: false,
+  })
+  assert.equal(manifest.generation21Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation21Successor.status, 'DISABLED_PENDING_INDEPENDENT_ARMING_REVIEW')
+  assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'scripts/staging-generation-21-pre-arm-gate.mjs'))
+  assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-21-disabled-successor.md'))
 })
