@@ -2,6 +2,9 @@
 
 Date: 2026-09-22
 
+Status: **COMPLETE — PASS_RETIRED**. Evidence is recorded in
+`docs/ops/evidence/2026-09-22-generation-19-retirement.md`.
+
 Authority: the owner requested completion of the five documented staging gates, including the required remediation and no-purchase journey. This plan is limited to staging project `qdmvngjwkcsilzmqksme`; production project `wrhgscovsgsudtedbljr` is excluded.
 
 ## Trigger and diagnosis
