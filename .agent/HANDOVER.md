@@ -191,6 +191,19 @@ its removal dialog was dismissed. Vercel still showed two bypasses with
 decision. The new bypass's local Keychain item remains with the access-control
 limitation above.
 
+The next continuation checked branch `codex/tll-integration` and an absent
+observation journal. Keychain Access confirmed the retained bypass still has
+`Confirm before allowing access` and an empty allowlist. The exact
+`/usr/bin/security` file was selected for a proposed temporary, item-specific
+allowlist, but the final Add action was **not** taken while the computer-use
+access-grant confirmation remained unanswered. The chooser was cancelled;
+the ACL is unchanged. No credential read, arming or hosted request occurred.
+The stage-plan edits had made the disabled manifest stale; it was regenerated,
+and 19 focused tests plus the live-boundary check passed. That disabled
+manifest fix was pushed as `a70b521`. Resume at the pending Keychain
+access-grant decision, then run a bounded secret-suppressed value-read
+preflight for all three selectors before preparing a new arming candidate.
+
 ## Programme work after the baseline
 
 The public launch remains held by
