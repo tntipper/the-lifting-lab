@@ -58,6 +58,23 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.disabledMigrationInstall.dispatchJournal.noRetryAfterDispatch, true)
   assert.equal(manifest.disabledMigrationInstall.dispatchJournal.uncertainState, 'RECONCILIATION_REQUIRED')
   assert.equal(manifest.disabledMigrationInstall.actualPostgresAcceptanceRequired, true)
+  assert.equal(manifest.disabledActivationTooling.status, 'REVIEWED_DISABLED_ONLY')
+  assert.equal(manifest.disabledActivationTooling.nativeAdaptersImplemented, false)
+  assert.equal(manifest.disabledActivationTooling.generation22Armed, false)
+  assert.equal(manifest.disabledActivationTooling.providerRotation.exactFrozenPreflightRequired, true)
+  assert.equal(manifest.disabledActivationTooling.providerRotation.existingSecretNamesMustBeAbsent, true)
+  assert.equal(manifest.disabledActivationTooling.providerRotation.ambiguousProviderUpdateState, 'RECONCILIATION_REQUIRED')
+  assert.equal(manifest.disabledActivationTooling.databaseControls.transactionCount, 1)
+  assert.equal(manifest.disabledActivationTooling.databaseControls.actualPostgres17AcceptanceRequired, true)
+  assert.deepEqual(manifest.disabledActivationTooling.surfaces.order, ['edge','private','public'])
+  assert.equal(manifest.disabledActivationTooling.surfaces.distinctImmutableBuildRequiredForEachState, true)
+  assert.equal(manifest.disabledActivationTooling.surfaces.runtimeProofIncludesPublicFlags, true)
+  assert.equal(manifest.disabledActivationTooling.surfaces.ambiguousEnabledDeploymentState, 'RECONCILIATION_REQUIRED')
+  assert.deepEqual(manifest.disabledActivationTooling.sources.map(item => item.path), [
+    'scripts/staging-provider-broker-rotation.mjs','scripts/staging-control-activation.mjs','scripts/staging-surface-activation-transport.mjs',
+    'tests/staging-provider-broker-rotation.test.mjs','tests/staging-control-activation.test.mjs','tests/staging-control-activation-actual.mjs',
+    'tests/staging-surface-activation-transport.test.mjs','docs/ops/stage-plans/2026-09-22-disabled-activation-tooling.md',
+    'docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md'])
   assert.deepEqual(manifest.recovery.requiredInstalledMigrations, ['012','013','014','015','016'])
   assert.deepEqual(manifest.recovery.activationWindow, { generation: 6, windowId: '83888906-23fa-4653-a886-fe2733ed76a0' })
   assert.deepEqual(manifest.recovery.disablesControls, ['customer','cart','broker','provisional','bridge'])
@@ -227,13 +244,13 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.ok(manifest.gates.indexOf('verify_post_016_recovery_package_before_credentials')
     < manifest.gates.indexOf('install_distinct_runtime_credentials_and_secret_configuration'))
   assert.ok(manifest.sourceTree.fileCount > 40); assert.match(manifest.sourceTree.sha256, /^[a-f0-9]{64}$/)
-  assert.ok(manifest.gates.indexOf('enable_database_controls_then_edge_then_server_feature_flags')
+  assert.ok(manifest.gates.indexOf('enable_database_controls_atomically_then_edge_then_private_then_public_with_fresh_build_proof')
     > manifest.gates.indexOf('run_unavailable_route_and_cross_role_denial_checks'))
   assert.ok(manifest.runtime.vercelSecrets.every(value => /^[A-Z][A-Z0-9_]+$/.test(value)))
   assert.equal(JSON.stringify(manifest).includes('secretValue'), false)
   assert.equal(JSON.stringify(manifest).includes('passwordValue'), false)
   assert.equal(JSON.stringify(manifest).includes('keyHexValue'), false)
-  for (const pin of [...manifest.migrations,...manifest.stageSafety.sources,...manifest.edge.sources,...manifest.runtime.sources,...manifest.preflight.sources,...manifest.disabledMigrationInstall.sources,...manifest.recovery.sources,...manifest.generation6Credentials.sources,...manifest.generation7Successor.sources,...manifest.generation8Successor.sources,...manifest.generation9Successor.sources,...manifest.generation10Successor.sources,...manifest.generation11Successor.sources,...manifest.generation12Successor.sources,...manifest.generation13Successor.sources,...manifest.generation14Successor.sources,...manifest.generation15Successor.sources,...manifest.generation16Successor.sources,...manifest.generation17Successor.sources,...manifest.generation18Successor.sources,...manifest.generation19Successor.sources,...manifest.generation20Successor.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
+  for (const pin of [...manifest.migrations,...manifest.stageSafety.sources,...manifest.edge.sources,...manifest.runtime.sources,...manifest.disabledActivationTooling.sources,...manifest.preflight.sources,...manifest.disabledMigrationInstall.sources,...manifest.recovery.sources,...manifest.generation6Credentials.sources,...manifest.generation7Successor.sources,...manifest.generation8Successor.sources,...manifest.generation9Successor.sources,...manifest.generation10Successor.sources,...manifest.generation11Successor.sources,...manifest.generation12Successor.sources,...manifest.generation13Successor.sources,...manifest.generation14Successor.sources,...manifest.generation15Successor.sources,...manifest.generation16Successor.sources,...manifest.generation17Successor.sources,...manifest.generation18Successor.sources,...manifest.generation19Successor.sources,...manifest.generation20Successor.sources,...manifest.generation21Successor.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
 
   const classified = new Set([...manifest.runtime.vercelSecrets,...manifest.runtime.vercelConfiguration])
   const runtimeSource = ['lib/server/staging-customer.ts','lib/commerce/staging-cart-server.ts','app/auth/customer/logout/route.ts']

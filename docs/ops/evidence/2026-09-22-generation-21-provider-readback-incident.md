@@ -47,5 +47,9 @@ pass while credentials are retired:
 5. Require an independent review of those tools and a dry-run acceptance pack
    before a bounded runtime credential window is opened.
 
-The next implementation unit is the disabled-state activation tooling and its
-tests. It must be completed before proposing a Generation 22 window.
+The disabled-state activation tooling and tests are now complete and
+independently reviewed. The corrective contracts are pinned in
+`config/staging-account-activation-manifest.json`. Generation 22 still cannot
+be proposed until exact native adapters are implemented and reviewed, a fresh
+read-only hosted baseline proves the frozen provider and absent secret-name
+preconditions, and an arming diff is reviewed separately from execution.

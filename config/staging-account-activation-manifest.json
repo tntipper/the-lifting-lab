@@ -604,6 +604,79 @@
       "NEXT_PUBLIC_TLL_STAGING_CART"
     ]
   },
+  "disabledActivationTooling": {
+    "status": "REVIEWED_DISABLED_ONLY",
+    "sources": [
+      {
+        "path": "scripts/staging-provider-broker-rotation.mjs",
+        "sha256": "c8fcabc7306bf68974f7b4f92990983ad41d601389141c1e3695da7b5f510f2f"
+      },
+      {
+        "path": "scripts/staging-control-activation.mjs",
+        "sha256": "62dce7f87427aefb25ac4ded073e2faacf92caf323e07cddc72518cccd377c1c"
+      },
+      {
+        "path": "scripts/staging-surface-activation-transport.mjs",
+        "sha256": "a85ecae35ec2cbf5091157726cc18c2e4baaa2986ef0afc6711ae5371d0d9a4c"
+      },
+      {
+        "path": "tests/staging-provider-broker-rotation.test.mjs",
+        "sha256": "fbc52ad6b4e86326c72474307a07315de252ab454796c36edd1c1cdc49bc0863"
+      },
+      {
+        "path": "tests/staging-control-activation.test.mjs",
+        "sha256": "77c19d16e542d1d70c831c3500c2740a3b50005a2b7a7a3f17b5b1c8d48c2c9c"
+      },
+      {
+        "path": "tests/staging-control-activation-actual.mjs",
+        "sha256": "e88a541b1bf7fdbef81852768dff28e6ef6fd79f52c182452b9d8ffd4dd0ec63"
+      },
+      {
+        "path": "tests/staging-surface-activation-transport.test.mjs",
+        "sha256": "6afc591b134b462457cedd91882a937bce147ed2e7042c85a9b6618d8ebdaba8"
+      },
+      {
+        "path": "docs/ops/stage-plans/2026-09-22-disabled-activation-tooling.md",
+        "sha256": "836d63bc1835ac4dfca308cac7921139c46ff0bb046f33f9665875395cb36b1d"
+      },
+      {
+        "path": "docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md",
+        "sha256": "e7d867df8d9e24d29f476e56c9916c6784a449321cc1844a32fb6b2febd23e58"
+      }
+    ],
+    "nativeAdaptersImplemented": false,
+    "generation22Armed": false,
+    "providerRotation": {
+      "exactFrozenPreflightRequired": true,
+      "existingSecretNamesMustBeAbsent": true,
+      "ambiguousProviderUpdateState": "RECONCILIATION_REQUIRED",
+      "replayPermitted": false
+    },
+    "databaseControls": {
+      "transactionCount": 1,
+      "controlsEnabledAtomically": [
+        "customer",
+        "cart",
+        "broker",
+        "provisional",
+        "bridge"
+      ],
+      "actualPostgres17AcceptanceRequired": true,
+      "ambiguousAcknowledgementState": "RECONCILIATION_REQUIRED"
+    },
+    "surfaces": {
+      "order": [
+        "edge",
+        "private",
+        "public"
+      ],
+      "distinctImmutableBuildRequiredForEachState": true,
+      "runtimeProofIncludesPublicFlags": true,
+      "aliasAndTlsProofRequired": true,
+      "ambiguousEnabledDeploymentState": "RECONCILIATION_REQUIRED",
+      "replayPermitted": false
+    }
+  },
   "provider": {
     "customerClientId": "c8f7b926-9073-416c-9949-0d99e89a99c0",
     "shopId": "107532616020",
@@ -3315,7 +3388,7 @@
       },
       {
         "path": "docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md",
-        "sha256": "e14fe29964bade7c4aa6bd5999f012673a32935f153bd0d5ba5e04088441ea14"
+        "sha256": "e7d867df8d9e24d29f476e56c9916c6784a449321cc1844a32fb6b2febd23e58"
       },
       {
         "path": "docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md",
@@ -3383,12 +3456,14 @@
     "reconcile_any_uncertain_install_read_only_without_retry",
     "verify_roles_rls_acls_function_sources_and_empty_new_stores",
     "verify_post_016_recovery_package_before_credentials",
+    "verify_disabled_activation_tooling_pins_and_independent_reviews",
+    "reconcile_provider_disabled_and_secret_names_absent_before_rotation",
     "deploy_edge_disabled_and_verify_fixed_503",
     "install_distinct_runtime_credentials_and_secret_configuration",
     "verify_provider_endpoints_callbacks_permissions_and_logout_uri",
     "deploy_immutable_preview_with_public_feature_flags_disabled",
     "run_unavailable_route_and_cross_role_denial_checks",
-    "enable_database_controls_then_edge_then_server_feature_flags",
+    "enable_database_controls_atomically_then_edge_then_private_then_public_with_fresh_build_proof",
     "run_one_authenticated_account_orders_logout_journey",
     "retire_temporary_operator_access_and_preserve_postflight_evidence",
     "run_pinned_recovery_on_failed_or_uncertain_activation"

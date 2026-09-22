@@ -2,6 +2,11 @@
 
 This runbook activates the already reviewed source journey on `qdmvngjwkcsilzmqksme` and the protected Vercel preview only. Production `wrhgscovsgsudtedbljr`, purchases, customer email and live Shopify merchandise are outside the window. The machine-readable source of truth is `config/staging-account-activation-manifest.json`; regenerate it with `node scripts/staging-account-activation-manifest.mjs` and require `--check` to pass immediately before any window.
 
+Current checkpoint: Generation 21 is retired and non-replayable. The provider,
+control and surface state machines are reviewed but injected-only; their native
+adapters are not implemented and Generation 22 is not armed. Do not interpret
+the presence of these modules as permission or capability to mutate staging.
+
 ## 1. Freeze and read-only preflight
 
 Record the exact Git commit, manifest SHA256 and immutable preview URL. Confirm the Supabase project ref, Vercel project ID and Shopify development-store domain match the manifest. Confirm credential generations 1–5 remain retired, hosted migrations are exactly 002–011, all five repository controls are disabled, new 012–016 relations/functions are absent, and production identifiers do not appear in any target command or configuration value. Stop on any drift.
@@ -44,9 +49,30 @@ Deploy an immutable Vercel preview with server configuration present but custome
 
 Configure the existing Shopify confidential client with only the stable-alias callback and logout URI from the manifest. Configure the Supabase custom broker with the manifest client ID, token endpoint, userinfo endpoint, callback, `subject` scope, PKCE and email-optional behavior. Do not recreate either client. Read back and compare every setting before enabling a database or application control.
 
+The broker rotation must use the manifest-pinned injected contract through a
+separately reviewed native adapter. Before generating material, its exact
+target-bound preflight must prove the provider, Edge, private and public gates
+are disabled and that the broker secret name is absent in both Vercel Preview
+and Supabase Edge. A provider-update attempt with a lost or malformed
+acknowledgement is `RECONCILIATION_REQUIRED`; retain the staged destinations
+and do not retry or guess the old write-only value.
+
 ## 6. Activate in dependency order
 
 Enable the customer, cart, broker, provisional and bridge database controls only after the disabled denial checks pass. Enable the Edge broker next and run fixed protocol smoke checks. Enable the server customer/cart flags last, producing a new immutable preview. Record the enabled-phase immutable evidence tuple and prove the same stable alias resolves to it before the authenticated journey. Stop and retire the window if any expected hash, role, permission, endpoint, origin or response differs.
+
+Use the pinned control transaction once: it validates the exact runtime roles,
+markers, memberships, operator authority, disabled controls and zero runtime
+sessions, enables all five controls atomically, restores the four temporary
+owner SET edges to ADMIN-only and returns one redacted receipt. Any lost or
+malformed acknowledgement requires read-only reconciliation.
+
+Surface writes are Edge, private, then public. Configuration readback alone is
+insufficient. After the writes, require a distinct newly created immutable
+Preview whose creation follows the final flag receipt, exact source and manifest
+pins, stable-alias resolution, TLS checks and runtime proof of Edge, private and
+public flags. A lost enabled-deployment acknowledgement remains
+`RECONCILIATION_REQUIRED` even if a later held build currently owns the alias.
 
 ## 7. Acceptance without purchase
 
