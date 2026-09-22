@@ -107,3 +107,35 @@ Preview bypass in 0.03, 7.13 and 4.31 seconds respectively. After the run,
 remove `/usr/bin/security` from the bypass item as approved and keep the
 underlying bypass intact. This local preflight does not establish remote
 credential validity.
+
+## One-shot result and successor gate
+
+The reviewed arming diff was committed as `44e8414` and invoked once at
+21:02:30 UTC. The launcher returned `RECONCILIATION_REQUIRED` in 3.2 seconds.
+The exclusive v5 journal remains `INTENT_RECORDED` (run ID
+`11c13cc4-d008-461c-9363-c9179545a08b`, mode 0600, SHA-256
+`3eaec61fdc96cabd9c2123700800fb267d2f4cfc37101d3175e6d82e2a659ecd`).
+No terminal observation, reason code or observation hash exists. Preserve this
+journal and never replay it. Both source gates were immediately disarmed and
+the boundary check passed. A separate read-only process confirmed HTTP 200
+and exact staging project identity from Supabase and exact project identity
+from Vercel. The observer sources are GET/read-only and make no provider or
+deployment mutation; the initiating failed read remains unknown.
+
+Independent forensic review reproduced a narrower local code defect with an
+inert native Web Stream: when a stream errors, both read and later cancel
+may reject even though all operations settle. The tracker currently treats
+every cancel rejection as uncertain cleanup, leaving the intent journal
+open and masking the already-classified first read failure. The reproduction
+does not establish that this was v5's initiating provider error. A successor
+must distinguish a proven terminal errored stream from unresolved cleanup,
+retain the fixed secret-free first read reason when cleanup truly remains
+uncertain, and test both paths plus sibling abort/settlement before any new
+journal or credential window. No generic retry is authorized.
+
+After the run, the temporary `/usr/bin/security` allowance was removed from
+the retained bypass; Keychain Access showed an empty list with “Confirm
+before allowing access” still selected. The underlying bypass remains.
+The local API token item was deleted. The two one-hour Vercel tokens from this
+window were left to expire naturally as directed. No production change,
+purchase, customer message or deployment occurred.
