@@ -422,7 +422,7 @@ const generation21SuccessorSources = [
   'docs/ops/stage-plans/2026-09-22-generation-21-disabled-successor.md',
   'docs/ops/stage-plans/2026-09-22-generation-21-pre-arm-checklist.md',
   'docs/ops/stage-plans/2026-09-22-generation-21-arming-diff.md',
-  'docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md',
+  'docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md',
   'docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md',
 ]
 const stageSafetySources = [
@@ -1111,7 +1111,13 @@ const manifest = {
     },
     secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true,
     activeWindowExpiresAt: GENERATION_21_ACTIVE_WINDOW_EXPIRES_AT,
-    nativeTransportEnabled: true, status: 'ARMED_ONE_BOUNDED_WINDOW_REQUIRES_RUN_LIVE_ONCE',
+    nativeTransportEnabled: false, status: 'RECOVERY_VERIFIED_CONSUMED_NO_REPLAY',
+    attemptOutcome: {
+      installerStatus: 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED', recoveryOutcome: 'PASS_RETIRED',
+      databaseControlsEnabled: false, edgeEnabled: false, applicationFlagsEnabled: false,
+      generatedProviderValuesRetired: true, rootCause: 'EXISTING_PROVIDER_SECRET_AND_SCOPE_DRIFT',
+      incident: 'docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md',
+    },
     preArmRequiresPredecessorRetirementEvidence: true,
     stagePlan: 'docs/ops/stage-plans/2026-09-22-generation-21-disabled-successor.md',
     preArmChecklist: 'docs/ops/stage-plans/2026-09-22-generation-21-pre-arm-checklist.md',

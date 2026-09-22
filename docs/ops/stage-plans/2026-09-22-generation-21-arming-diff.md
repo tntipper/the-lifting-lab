@@ -100,3 +100,20 @@ After the single attempt, regardless of result:
    sentinel, set `generation21Armed` false, record the consumed no-replay
    outcome, and regenerate recovery, preflight, and activation artifacts.
 7. Run ordinary checks only after disarming.
+
+## Recorded terminal outcome
+
+The credential installer completed once with
+`CREDENTIALS_VERIFIED_CONTROLS_DISABLED`. The subsequent fully loaded Supabase
+provider readback found an existing enabled provider whose broker secret did
+not match the newly staged Generation 21 value and whose required `subject`
+scope was blank. No database control, Edge flag, customer flag or cart flag was
+enabled. The pinned recovery returned `PASS_RETIRED`; all Generation 21
+branch-scoped Vercel configuration entries and Supabase Edge secret entries
+were removed and their names read back absent. No enabled deployment was
+created. The pre-existing custom provider and its older retained secret were
+not changed. Generation 21 is consumed and cannot be replayed.
+
+The root cause and the controls required before another credential window are
+recorded in
+`docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md`.

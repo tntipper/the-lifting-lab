@@ -54,7 +54,7 @@
     "sources": [
       {
         "path": "config/project-stage-gate-policy.json",
-        "sha256": "f66b1b6d43ba62b6bb9b8eeeb4a47c6a0b0b8e67a241137a23deabae05f1a82e"
+        "sha256": "744641ac7ab873b54410725d68a9de2ecbef1bf87709b38f69720221bb59583a"
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
@@ -380,7 +380,7 @@
     "generation18Armed": false,
     "generation19Armed": false,
     "generation20Armed": false,
-    "generation21Armed": true,
+    "generation21Armed": false,
     "generation12ReplayPermitted": false,
     "generation13ReplayPermitted": false,
     "generation14ReplayPermitted": false,
@@ -3195,19 +3195,19 @@
       },
       {
         "path": "scripts/staging-generation-21-credentials.mjs",
-        "sha256": "be6e4e8120b91c4c098372be388994af954c30f878e9d43d23502e3682cde875"
+        "sha256": "bd46f317bb06888edc74739f469eb62362f0e21ca7367afbbfd763a443aeb8c9"
       },
       {
         "path": "scripts/staging-generation-21-transport.mjs",
-        "sha256": "205259b202f46cea3802c302c6c67381192589bb43beec7f4083d4ea2b30ba90"
+        "sha256": "587ea45cf4242215f7a797dfe78240a71e2fea0a8f3e9c307f28e7d920a3d08e"
       },
       {
         "path": "scripts/staging-generation-21-database-transport.mjs",
-        "sha256": "2b9a56d416929751e7de79f88283cab78714698587bf7cd569599229052be676"
+        "sha256": "4393165843a966088061b47642cf50bb92db816084635ac4724be4c453fce5c4"
       },
       {
         "path": "scripts/staging-generation-21-keychain.py",
-        "sha256": "a223dd686cc1a1add19414877c16f8cac6e171a67db35dc748546d0fa28726e5"
+        "sha256": "ab857ab3898ef4f31de2ab7061a437e2cfbd1097ee79ee10e8fce589be322799"
       },
       {
         "path": "scripts/staging-generation-21-recovery.mjs",
@@ -3235,7 +3235,7 @@
       },
       {
         "path": "scripts/staging-generation-21-pre-arm-gate.mjs",
-        "sha256": "4e6eb07b63d06044586a77b96153749c17a9bfc6f1931e8218131a65673b98f8"
+        "sha256": "2068048f01421db52a3093de681180238c43b89e8f6c065f319c7cf85bd55c8f"
       },
       {
         "path": "scripts/staging-generation-21-retirement-preflight.mjs",
@@ -3251,7 +3251,7 @@
       },
       {
         "path": "config/staging-generation-21-recovery.sql",
-        "sha256": "b7bfd37bca986ba8a8e08730baf854cf3d8db15ded97a6bec040d1b417cf28ae"
+        "sha256": "4aa89e3dbc9691b910182acd56e92078ed8ee89c68047cd849cc1e0bd67de31e"
       },
       {
         "path": "config/staging-generation-21-recovery-postcommit.sql",
@@ -3259,27 +3259,27 @@
       },
       {
         "path": "config/staging-generation-21-retirement-preflight.sql",
-        "sha256": "23dc436ca1850746f49a97785fbeaaa66258d941c1a07583c47765c638a9a0c0"
+        "sha256": "cb3f9ef47b5f0131d886deae2110b4bcca98df7af09fc4d1ce6701d52c99812f"
       },
       {
         "path": "tests/staging-generation-21-credentials.test.mjs",
-        "sha256": "218d81793510893ce2cfa00b5e54b12afbe19cbe4d3dc19ba470f0ca95316378"
+        "sha256": "060c12e036ee62025e3dc0e76879a688da5cfb87a63a27b1ff68c8b3f85daa76"
       },
       {
         "path": "tests/staging-generation-21-transport.test.mjs",
-        "sha256": "83dd0f608b5212151761515b9df20400a71967aef9d163bd625a57955447d779"
+        "sha256": "f9f7efdb5ed9f328ae0319e6911f221425d02725cd7b90cc09a867673f69be13"
       },
       {
         "path": "tests/staging-generation-21-database-transport.test.mjs",
-        "sha256": "0b709075c2f20afc75509ee57b61b72a0452b9ca67448a019575e165e366940d"
+        "sha256": "f59fc146580d7ec379215bafd18607448a48b7c2827929d41f19661c96d5c550"
       },
       {
         "path": "tests/staging-generation-21-recovery.test.mjs",
-        "sha256": "a53818a5ccae72ff4215fd5a01e5f4e2fe26b1df739ca4f4d50f3782c5d772fd"
+        "sha256": "796a3b50c9e5c49058cb3a33f987b2e579c9fe8f34f4a281fb9f615217f039f3"
       },
       {
         "path": "tests/staging-generation-21-long-session.test.mjs",
-        "sha256": "2f5b67fbe47d1eb345bc82b1b74f1be652683b9b56165656038862dc5ec2812c"
+        "sha256": "83c7f289738903da314a061e7e96757ca81fe0dc4332e905dc6ffac7c3bf70da"
       },
       {
         "path": "tests/staging-generation-21-connection-failure-evidence.test.mjs",
@@ -3291,11 +3291,11 @@
       },
       {
         "path": "tests/staging-generation-21-pre-arm-gate.test.mjs",
-        "sha256": "8d9dace0b6cba256fb99bd2220a2bba901690f7739b52e67785abb656241ec48"
+        "sha256": "98c0ff58aa59bb2ba7b637ce6f766e9ad0fb89c3560242d8190de94e7941f209"
       },
       {
         "path": "tests/staging-generation-21-retirement-preflight.test.mjs",
-        "sha256": "6f618524dd624ca885b30668e4a058261c8d5f69c5d62c81c306e457c0dadc78"
+        "sha256": "3e46a6a6b1295563cc0de3574f15cc9f754f268915599b3bd30fc4107488a694"
       },
       {
         "path": "tests/staging-generation-recovery-pin-contract.test.mjs",
@@ -3311,11 +3311,11 @@
       },
       {
         "path": "docs/ops/stage-plans/2026-09-22-generation-21-arming-diff.md",
-        "sha256": "22bdff36edc45aef98772f359aee00d52a773a7e4afd41acd8dbb47c80ad7bc0"
+        "sha256": "64852bf4b6a3629ced5b2f5b4bee578cc04bec7fb700e3a6e7c45b1dbe7f3aa5"
       },
       {
-        "path": "docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md",
-        "sha256": "9df6c269b0fb699b39ac434cd133604f8e4c1298f72850a9d1ad2dc409de3af1"
+        "path": "docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md",
+        "sha256": "e14fe29964bade7c4aa6bd5999f012673a32935f153bd0d5ba5e04088441ea14"
       },
       {
         "path": "docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md",
@@ -3356,9 +3356,19 @@
     },
     "secretBearingSqlMustRemainInMemory": true,
     "exclusiveNonsecretJournal": true,
-    "activeWindowExpiresAt": "2026-09-22T14:00:00.000Z",
-    "nativeTransportEnabled": true,
-    "status": "ARMED_ONE_BOUNDED_WINDOW_REQUIRES_RUN_LIVE_ONCE",
+    "activeWindowExpiresAt": "UNSET_REQUIRES_REVIEWED_ARMING_DIFF",
+    "nativeTransportEnabled": false,
+    "status": "RECOVERY_VERIFIED_CONSUMED_NO_REPLAY",
+    "attemptOutcome": {
+      "installerStatus": "CREDENTIALS_VERIFIED_CONTROLS_DISABLED",
+      "recoveryOutcome": "PASS_RETIRED",
+      "databaseControlsEnabled": false,
+      "edgeEnabled": false,
+      "applicationFlagsEnabled": false,
+      "generatedProviderValuesRetired": true,
+      "rootCause": "EXISTING_PROVIDER_SECRET_AND_SCOPE_DRIFT",
+      "incident": "docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md"
+    },
     "preArmRequiresPredecessorRetirementEvidence": true,
     "stagePlan": "docs/ops/stage-plans/2026-09-22-generation-21-disabled-successor.md",
     "preArmChecklist": "docs/ops/stage-plans/2026-09-22-generation-21-pre-arm-checklist.md"

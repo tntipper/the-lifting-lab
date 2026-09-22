@@ -45,7 +45,7 @@ BEGIN
       OR jsonb_typeof(parsed->'projectRef') IS DISTINCT FROM 'string' OR parsed->>'projectRef' IS DISTINCT FROM 'qdmvngjwkcsilzmqksme'
       OR jsonb_typeof(parsed->'generation') IS DISTINCT FROM 'number' OR parsed->>'generation' IS DISTINCT FROM '21'
       OR jsonb_typeof(parsed->'windowId') IS DISTINCT FROM 'string' OR parsed->>'windowId' IS DISTINCT FROM 'a5511645-77af-4fc9-9e4c-f5c8a474d5fa'
-      OR jsonb_typeof(parsed->'expiresAt') IS DISTINCT FROM 'string' OR parsed->>'expiresAt' IS DISTINCT FROM '2026-09-22T14:00:00.000Z'
+      OR jsonb_typeof(parsed->'expiresAt') IS DISTINCT FROM 'string' OR parsed->>'expiresAt' IS DISTINCT FROM 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'
       OR jsonb_typeof(parsed->'state') IS DISTINCT FROM 'string' OR parsed->>'state' IS DISTINCT FROM 'active' THEN
       RAISE EXCEPTION 'Gen21 retirement preflight runtime marker target mismatch: %',r;
     END IF;

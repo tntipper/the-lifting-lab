@@ -7,10 +7,10 @@ import { dispatchGeneration21Database, GENERATION_21_ENTRY_BASELINE_SQL, KEYCHAI
 const token='sbp_'+('a'.repeat(40))
 const sql=`BEGIN;\n-- ${WINDOW_ID} tll-staging-generation-21-credentials/v1\nSELECT 1 AS tll_generation_21_credential_receipt;\n`
 
-test('generation 21 reviewed arming diff enables the database and Keychain gates',()=>{
+test('generation 21 native database transport and Keychain access stay disabled',()=>{
   const helper=readFileSync('scripts/staging-generation-21-keychain.py','utf8')
-  assert.equal(normalizeSupabaseToken(token),token);assert.equal(NATIVE_GENERATION_21_DATABASE_TRANSPORT_ENABLED,true);assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000)
-  assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'True');assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
+  assert.equal(normalizeSupabaseToken(token),token);assert.equal(NATIVE_GENERATION_21_DATABASE_TRANSPORT_ENABLED,false);assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000)
+  assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'False');assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
   assert.match(helper,/Generation-21 native credential transport unavailable/);assert.doesNotMatch(helper,/Generation-6 native credential transport unavailable/)
 })
 

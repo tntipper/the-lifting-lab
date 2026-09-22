@@ -31,7 +31,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.stageSafety.generation18Armed, false)
   assert.equal(manifest.stageSafety.generation19Armed, false)
   assert.equal(manifest.stageSafety.generation20Armed, false)
-  assert.equal(manifest.stageSafety.generation21Armed, true)
+  assert.equal(manifest.stageSafety.generation21Armed, false)
   assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation12ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation13ReplayPermitted, false)
@@ -462,10 +462,10 @@ test('generation 20 is pinned to the corrected retired Gen19 contract and consum
   assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md'))
 })
 
-test('generation 21 is one-window armed using the canonical Gen19 retired contract', () => {
+test('generation 21 is retired and consumed using the canonical Gen19 contract', () => {
   execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
   const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
-  assert.equal(manifest.stageSafety.generation21Armed, true)
+  assert.equal(manifest.stageSafety.generation21Armed, false)
   assert.equal(manifest.stageSafety.generation21ReplayPermitted, false)
   assert.equal(manifest.generation21Successor.packageId, 'tll-staging-generation-21-credentials/v1')
   assert.equal(manifest.generation21Successor.generation, 21)
@@ -479,10 +479,17 @@ test('generation 21 is one-window armed using the canonical Gen19 retired contra
     outcome: 'ENTRY_BASELINE_FAILED_NO_REPLAY', databaseDispatchAttempted: false,
     providerStagingAttempted: false, replayPermitted: false,
   })
-  assert.equal(manifest.generation21Successor.activeWindowExpiresAt, '2026-09-22T14:00:00.000Z')
-  assert.equal(manifest.generation21Successor.nativeTransportEnabled, true)
-  assert.equal(manifest.generation21Successor.status, 'ARMED_ONE_BOUNDED_WINDOW_REQUIRES_RUN_LIVE_ONCE')
+  assert.equal(manifest.generation21Successor.activeWindowExpiresAt, 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF')
+  assert.equal(manifest.generation21Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation21Successor.status, 'RECOVERY_VERIFIED_CONSUMED_NO_REPLAY')
+  assert.deepEqual(manifest.generation21Successor.attemptOutcome, {
+    installerStatus: 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED', recoveryOutcome: 'PASS_RETIRED',
+    databaseControlsEnabled: false, edgeEnabled: false, applicationFlagsEnabled: false,
+    generatedProviderValuesRetired: true, rootCause: 'EXISTING_PROVIDER_SECRET_AND_SCOPE_DRIFT',
+    incident: 'docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md',
+  })
   assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'scripts/staging-generation-21-pre-arm-gate.mjs'))
   assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-21-disabled-successor.md'))
   assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-21-arming-diff.md'))
+  assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md'))
 })

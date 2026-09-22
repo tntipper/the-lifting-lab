@@ -19,7 +19,7 @@ import { assertRecoverySuccessorPinsMatchCredentials } from './staging-generatio
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 export const PRE_ARM_SCHEMA = 'tll-generation-21-pre-arm/v1'
-export const GENERATION_21_CONSUMED = false
+export const GENERATION_21_CONSUMED = true
 export const RETIREMENT_PLAN_DOC = 'docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md'
 export const PRE_ARM_CHECKLIST_DOC = 'docs/ops/stage-plans/2026-09-22-generation-21-pre-arm-checklist.md'
 
