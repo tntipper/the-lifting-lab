@@ -13,7 +13,7 @@ import {
   runHostedBaselineSession,
 } from './staging-account-hosted-baseline-session.mjs'
 
-export const HOSTED_BASELINE_LIVE_ENABLED = false
+export const HOSTED_BASELINE_LIVE_ENABLED = true
 export const HOSTED_BASELINE_LIVE_HELPER_PATH = resolve(import.meta.dirname, 'staging-account-hosted-baseline-keychain.py')
 export const HOSTED_BASELINE_LIVE_JOURNAL_PATH = HOSTED_BASELINE_SESSION_JOURNAL_PATH
 
