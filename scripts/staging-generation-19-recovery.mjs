@@ -39,7 +39,7 @@ function transform(value){
   const operator=isPostCommit?'session_user':'operator_name'
   value=replaceRequired(value,
     "IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin) OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid",
-    `IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND (rolcanlogin OR rolpassword IS NOT NULL)) THEN RAISE EXCEPTION 'Runtime credential survives retirement: %',r; END IF;\n    IF EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid`
+    `IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin) OR EXISTS(SELECT 1 FROM pg_authid WHERE rolname=r AND rolpassword IS NOT NULL) THEN RAISE EXCEPTION 'Runtime credential survives retirement: %',r; END IF;\n    IF EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles granted ON granted.oid=e.roleid`
   )
   value=replaceRequired(value,
     `WHERE (granted.rolname=r OR member.rolname=r)

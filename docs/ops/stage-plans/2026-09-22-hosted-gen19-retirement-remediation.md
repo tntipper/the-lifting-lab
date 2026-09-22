@@ -104,7 +104,10 @@ zero sessions. PostgreSQL 17 removes the dependent runtime-to-operator
 ADMIN-only edge when its prerequisite executor/gateway-to-runtime edge is
 revoked; the first bounded attempt rolled back because an added proof wrongly
 required those dependent edges to survive. The corrected proof requires the
-safer zero-edge outcome. The post-commit
+safer zero-edge outcome. A second bounded attempt also rolled back: its added
+password-null assertion used the redacted `pg_roles` view. The corrected proof
+checks `rolcanlogin` in `pg_roles` and password presence only in authoritative
+`pg_authid`, matching the reviewed preflight. The post-commit
 artifact returns the fixed aggregate receipt
 `tll-staging-generation-19-retirement-postcommit/v1`. It must not terminate
 sessions or add privileges.

@@ -244,7 +244,7 @@ BEGIN
       OR jsonb_typeof(parsed->'state') IS DISTINCT FROM 'string' OR parsed->>'state' IS DISTINCT FROM 'retired' THEN RAISE EXCEPTION 'Retired runtime marker target, generation or window mismatch: %',r; END IF;
     BEGIN PERFORM (parsed->>'expiresAt')::timestamptz; EXCEPTION WHEN others THEN RAISE EXCEPTION 'Retired runtime marker expiry invalid: %',r; END;
     IF first_marker IS NULL THEN first_marker:=marker; ELSIF marker IS DISTINCT FROM first_marker THEN RAISE EXCEPTION 'Retired runtime markers are partial or mixed'; END IF;
-    IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND (rolcanlogin OR rolpassword IS NOT NULL)) THEN RAISE EXCEPTION 'Runtime credential survives retirement: %',r; END IF;
+    IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r AND rolcanlogin) OR EXISTS(SELECT 1 FROM pg_authid WHERE rolname=r AND rolpassword IS NOT NULL) THEN RAISE EXCEPTION 'Runtime credential survives retirement: %',r; END IF;
     IF EXISTS(
       SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(n.nspacl) a WHERE n.nspname LIKE 'tll\_%\_private' ESCAPE '\' AND a.grantee=0 AND a.privilege_type='USAGE'
       UNION ALL SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(n.nspacl) a JOIN pg_roles g ON g.oid=a.grantee WHERE n.nspname LIKE 'tll\_%\_private' ESCAPE '\' AND g.rolname=r

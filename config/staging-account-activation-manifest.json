@@ -2759,7 +2759,7 @@
       },
       {
         "path": "scripts/staging-generation-19-recovery.mjs",
-        "sha256": "0d44c653d1544521203f8b8658bba1d4c1731f4638903f72ad084e46644dc9f5"
+        "sha256": "f7f459d121111520cc7e6796a798a283659396fb88ea7af5afeab784375c5ccd"
       },
       {
         "path": "scripts/staging-generation-19-live-launcher.mjs",
@@ -2799,11 +2799,11 @@
       },
       {
         "path": "config/staging-generation-19-recovery.sql",
-        "sha256": "a62430fcfb8c591d7263ac6b9c3ce7e20b1889453d66beac78d92c7116b52ef4"
+        "sha256": "1d7faf13bc838cc1f3d4b5fd6cc26153d4db2ccdd6dd12288bd52a5a2866a10c"
       },
       {
         "path": "config/staging-generation-19-recovery-postcommit.sql",
-        "sha256": "57342c0fc0f0cce2dfe32600346309a2366dbd68360be6e4b5d1fb7b890adc22"
+        "sha256": "e74fd17ea52e1c58245d6199944ffd3e98b5b603a4dcc538287046c5acbec32d"
       },
       {
         "path": "config/staging-generation-19-retirement-preflight.sql",
@@ -2823,7 +2823,7 @@
       },
       {
         "path": "tests/staging-generation-19-recovery.test.mjs",
-        "sha256": "9df05d3846f6989fbb75910c12efcfc8cbde850e0f564409fac1e7ee64bbdbaf"
+        "sha256": "88ea47c9be98cc5dc05804cf6dece81947cf56d489e607284e28c9c07c1d010b"
       },
       {
         "path": "tests/staging-generation-19-long-session.test.mjs",
