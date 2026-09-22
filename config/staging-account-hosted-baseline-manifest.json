@@ -4,7 +4,7 @@
     "projectRef": "qdmvngjwkcsilzmqksme",
     "productionProjectRefExcluded": "wrhgscovsgsudtedbljr"
   },
-  "nativeAccessApproved": false,
+  "nativeAccessApproved": true,
   "sources": [
     {
       "path": "scripts/staging-account-hosted-baseline.mjs",
@@ -64,11 +64,11 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-live-launcher.mjs",
-      "sha256": "4c99c5ea4f53df171d398eb1a8e8b3d496f946d5fb0d767133d4100da81a2ec3"
+      "sha256": "5717c56a906a8457960a2fc39dc531c551c528d4688644548eb39c9c24a215c7"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-keychain.py",
-      "sha256": "4fe9be1f0c232d2ba61eef279036ba18a0e70b9df1d992871bffba6a37670716"
+      "sha256": "731e0934952923cd358f04e0abd96ffe529a3ee233cf4476f8785b9df37de60a"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-manifest.mjs",
