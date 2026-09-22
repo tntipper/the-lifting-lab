@@ -146,9 +146,13 @@ has started.
 
 1. Verify branch, tip, worktree, absent journal and disabled gates. The incident
    is closed in the stage plan with the exact external state and checks.
-2. Prepare a new minimal arming diff from the corrected disabled checkpoint.
-   Independently review the exact new diff; do not run ordinary tests while
-   armed. The old v2 patch is superseded and cannot be reused.
+2. The new minimal candidate is saved as
+   `docs/ops/evidence/2026-09-22-hosted-baseline-arming-review-v3.patch`
+   (SHA-256 `26656202a1a18eeba01e27248b3110965f9d93276883c66b9999893f3534718e`).
+   It is based on pushed disabled commit `419cc8a`, changes only the two gates
+   and regenerated manifest, and was independently accepted with all 22 pins
+   matching. Its temporary armed review worktree was removed. The integration
+   branch remains disabled. The old v2 patch is superseded and cannot be reused.
 3. At a later separately approved action window, create two new short-lived
    credentials in their distinct Keychain selectors, verify the journal is
    absent and invoke the new reviewed launcher once. If it records intent or
