@@ -294,6 +294,36 @@ After one launcher invocation, immediately disarm, remove both temporary
 Vercel's `Require Log In` enabled. The user chose to retain the remote bypass;
 it must not be removed as part of this window.
 
+### 2026-09-22 v4 one-shot outcome and diagnostic gate
+
+The exact v4 patch was applied to disabled checkpoint `cdf3ca0` and committed
+locally as armed `b517942`. The launcher was invoked **once**. It exited 0 and
+reported `OBSERVATION_FAILED` with only `observation_unavailable`. The exclusive
+0600 journal at `../implementation-state/staging/tll-hosted-baseline-observation.json`
+is terminal `FAILED` for staging target `qdmvngjwkcsilzmqksme`; its timestamps
+span 19:54:23.426–19:54:24.029 UTC. This is not a successful hosted baseline.
+The generic reason code does not identify the failing provider or operation,
+and the short duration alone is insufficient to infer one. Do not delete or
+replay this journal.
+
+The v4 patch was immediately reversed and the disabled state committed locally
+as `b446921`; manifest and live-boundary checks passed. The temporary
+`/usr/bin/security` allowlist was removed from the retained Preview bypass,
+which remains on `Confirm before allowing access`; the local v4 API-token
+Keychain item was deleted and verified absent. The remote one-hour API token
+was left to expire naturally, following the user's prior preference. The
+remote Preview bypass remains retained for a later approved test. No purchase,
+production change or provider repair occurred.
+
+Before any new credential window or hosted request, design a **separate
+disabled diagnostic unit** that reports finite, non-secret stage-specific
+failure codes for composition construction and the fixed Supabase/Vercel reads.
+Test redaction and failure classification, review the exact diff independently,
+then verify the disabled boundary. The existing journal remains immutable; a
+new one-shot would require its own journal identity and fresh authorization.
+Do not arm Generation 22 or implement deployment creation from this failed
+baseline.
+
 - Target, team, branch, alias, provider or source drift stops before subsequent
   reads and records only an allowlisted reason.
 - Authentication failure records only the provider and status class. It does
