@@ -263,6 +263,37 @@ dialog was dismissed without deletion. Vercel still showed two bypasses and
 value can be read by the launcher; no new observation is authorized by its
 presence.
 
+### 2026-09-22 v4 credential preflight
+
+The user approved a temporary item-specific Keychain allowlist for
+`/usr/bin/security` on the retained Preview bypass. The item briefly showed
+`Allow all applications` after concurrent user interaction; this was restored
+to `Confirm before allowing access` and saved before any credential read.
+Only `security` is listed as allowed. A first secret-suppressed preflight then
+read Supabase and the retained bypass, but the v3 Vercel API-token item timed
+out. Read-only inspection found that item also had an empty allowlist.
+
+The user separately approved a fresh one-hour Vercel Access Token scoped to
+the exact `the-lifting-lab` project, replacement of only the local fixed
+Keychain selector, and an item-specific `/usr/bin/security` allowance on that
+new record. The previous remote token was left to expire naturally as directed.
+Both Vercel Keychain items now show `Confirm before allowing access`, with
+`security` as their sole allowed application. A bounded, secret-suppressed
+read using the helper's exact `/usr/bin/security find-generic-password -w`
+command and environment returned `READABLE` for Supabase, Vercel API and
+Preview bypass (0.04s, 5.01s and 3.47s respectively). No credential value
+was printed, saved in evidence or committed. The journal was absent, and the
+live gates remained disabled throughout this preflight.
+
+This is a new credential window, not a replay of the v3 invocation. Before
+arming, regenerate this manifest's stage-plan pin, rerun disabled checks,
+prepare a fresh exact three-file arming diff, and review that exact diff.
+The retained bypass remains restricted to the fixed immutable readiness GET.
+After one launcher invocation, immediately disarm, remove both temporary
+`security` allowlist entries and the local v4 API-token record, and leave
+Vercel's `Require Log In` enabled. The user chose to retain the remote bypass;
+it must not be removed as part of this window.
+
 - Target, team, branch, alias, provider or source drift stops before subsequent
   reads and records only an allowlisted reason.
 - Authentication failure records only the provider and status class. It does
