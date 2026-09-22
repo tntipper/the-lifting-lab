@@ -119,19 +119,24 @@ errors and the same 20 existing warnings. No hosted request was made.
 Do not implement or run Generation 22. Resume with a small, separate arming
 stage for the read-only baseline only:
 
-Prepare a **new** minimal arming candidate from the corrected disabled branch,
-regenerate its manifest, and independently review that exact diff. The old
-patch and its prior hashes no longer match the corrected source. The safe
-branch remains disabled until the separate reviewed gate.
+The new minimal arming candidate is saved at
+`docs/ops/evidence/2026-09-22-hosted-baseline-arming-review-v2.patch`
+(SHA-256 `098cb59546cd713a28a08156dc678a5984cb0ba2aa18b52cca8be10b5a6c7a5f`).
+It is based on disabled commit `5080ac6` and changes only the launcher gate,
+matching Keychain-helper gate and generated manifest. Independent review
+accepted the exact patch with all 22 source pins matching and no actionable
+finding. `git apply --check` passed on the disabled branch. The earlier patch
+remains superseded. The integration branch stays disabled until credentials,
+journal state and action-time approvals are ready for the one bounded run.
 
 1. Verify `pwd`, branch, `HEAD`, remote, and working tree against this handover.
 2. Confirm current manifest hashes and rerun the focused baseline tests, both
    manifest checks and the live-boundary check. Do not repeat the full audit.
-3. Independently review the new arming patch and its exact source checkpoint.
-   The diff must add no writes, deployments, generic targets or production
-   access and must preserve the existing manifest pins. Do not run ordinary
-   tests in the armed worktree. Apply/commit the reviewed patch on the main
-   integration branch only when the run is ready.
+3. Verify the saved v2 patch and its exact source checkpoint before applying.
+   Its independent review accepted no writes, deployments, generic targets or
+   production access, with all manifest pins preserved. Do not run ordinary
+   tests in an armed worktree. Apply/commit it on the main integration branch
+   only when the run is ready; any further source edit invalidates this review.
 4. Obtain a temporary Vercel Access Token for the Management API and a separate
    project automation-bypass value for protected Preview readiness. Keep them
    in their distinct fixed Keychain selectors, then revoke both and remove the
