@@ -59,6 +59,8 @@ The amended parser accepted the same read-only hosted provider response and
 reported the known held state (`enabled:true`, JWKS configured), without
 printing IDs or secret values. Focused 46/46 and full disabled 2,255/2,255
 tests passed after regenerating both hosted-baseline and activation manifests.
+The amended disabled package received independent review GO; this does not
+approve arming or executing v7.
 
 ## Execution and stop rules
 
