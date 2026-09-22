@@ -1,6 +1,6 @@
 # V7 incident decision before any new hosted observer
 
-## Current verdict: HOLD
+## Current verdict: exception preparation approved; execution remains HOLD
 
 The terminal v7 journal records `observation_validation_unavailable`, not
 the failing validation stage. Its one-shot run ID is
@@ -36,5 +36,11 @@ controls reduce ambiguity but do not retroactively identify v7's trigger.
    The exception must be documented before code or credential changes.
    Even a successful observation would not authorize Stage 3 activation.
 
-Neither decision has been made here. There is no v8 journal, token window,
-arming diff or hosted action authorized by this record.
+On 2026-09-23 the owner selected **prepare the one-time diagnostic
+exception**. This is a narrow amendment to the direct-cause prerequisite
+for *disabled preparation only*. It permits a new v8-specific plan and
+fresh, unclaimed journal path so that the reviewed stage can be made
+concrete. It does not approve credentials, arming, a hosted request, or
+Stage 3 activation. Those remain separate action-time gates. The first
+one-shot diagnostic execution, if later approved, must establish a fixed
+stage result or stop and reconcile; it cannot be automatically retried.

@@ -60,7 +60,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-session.mjs",
-      "sha256": "7b96928fd0edf443d8a0a36d1afd7f50f523b7eb928a4b1a38bc031dfabc0ead"
+      "sha256": "8886af98648898fb8925ad01ae76ea2f86a6442f55792b504a590010ce367aca"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-live-launcher.mjs",
@@ -72,7 +72,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-manifest.mjs",
-      "sha256": "d7ea069631d28965abae46a59dfb2da1b02b6df6a9318b5bae69dde96202140c"
+      "sha256": "cc65494d9a1df2c244a2ba65798941bd3a87d65d716f30e64f3e0847ed627565"
     },
     {
       "path": "tests/staging-account-hosted-baseline-session.test.mjs",
@@ -84,7 +84,7 @@
     },
     {
       "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",
-      "sha256": "7f7e6c3a0b3a534253feceac2e8d48921bdad95355e8117c0ca943cbbcd56f48"
+      "sha256": "ed17ff2f2a06234f67622fa9a3c64abb6ad435b7cf419827cf22840008f412aa"
     },
     {
       "path": "package.json",
@@ -119,7 +119,7 @@
     "surface": "https://qdmvngjwkcsilzmqksme.supabase.co"
   },
   "journal": {
-    "path": "../implementation-state/staging/tll-hosted-baseline-observation-v7.json",
+    "path": "../implementation-state/staging/tll-hosted-baseline-observation-v8.json",
     "exclusive": true,
     "mode": "0600"
   },
