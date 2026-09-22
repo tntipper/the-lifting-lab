@@ -3,9 +3,11 @@
 This runbook activates the already reviewed source journey on `qdmvngjwkcsilzmqksme` and the protected Vercel preview only. Production `wrhgscovsgsudtedbljr`, purchases, customer email and live Shopify merchandise are outside the window. The machine-readable source of truth is `config/staging-account-activation-manifest.json`; regenerate it with `node scripts/staging-account-activation-manifest.mjs` and require `--check` to pass immediately before any window.
 
 Current checkpoint: Generation 21 is retired and non-replayable. The provider,
-control and surface state machines are reviewed but injected-only; their native
-adapters are not implemented and Generation 22 is not armed. Do not interpret
-the presence of these modules as permission or capability to mutate staging.
+control and surface state machines plus their target-bound adapter contracts are
+reviewed and disabled. They have no native launcher, their required bounded
+executors remain injected, hosted execution is not approved and Generation 22
+is not armed. Do not interpret the presence of these modules as permission or
+capability to mutate staging.
 
 ## 1. Freeze and read-only preflight
 
@@ -57,6 +59,11 @@ and Supabase Edge. A provider-update attempt with a lost or malformed
 acknowledgement is `RECONCILIATION_REQUIRED`; retain the staged destinations
 and do not retry or guess the old write-only value.
 
+The adapter can inspect and disable the documented blank-scope provider before
+rotation, but the final disabled readback must be fresh. The pre-update read may
+contain repairable scope/configuration drift; a configured JWKS remains a hard
+stop. The post-update read must equal the exact desired provider projection.
+
 ## 6. Activate in dependency order
 
 Enable the customer, cart, broker, provisional and bridge database controls only after the disabled denial checks pass. Enable the Edge broker next and run fixed protocol smoke checks. Enable the server customer/cart flags last, producing a new immutable preview. Record the enabled-phase immutable evidence tuple and prove the same stable alias resolves to it before the authenticated journey. Stop and retire the window if any expected hash, role, permission, endpoint, origin or response differs.
@@ -73,6 +80,10 @@ Preview whose creation follows the final flag receipt, exact source and manifest
 pins, stable-alias resolution, TLS checks and runtime proof of Edge, private and
 public flags. A lost enabled-deployment acknowledgement remains
 `RECONCILIATION_REQUIRED` even if a later held build currently owns the alias.
+The runtime readiness route is Preview-only and secret-free. It binds the
+immutable deployment identity, fixed staging ref/branch, private runtime flags
+and the public environment/customer/cart flags compiled into that deployment.
+The Edge flag is proved separately at its Supabase boundary.
 
 ## 7. Acceptance without purchase
 

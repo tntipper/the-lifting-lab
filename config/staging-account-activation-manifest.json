@@ -612,16 +612,40 @@
         "sha256": "c8fcabc7306bf68974f7b4f92990983ad41d601389141c1e3695da7b5f510f2f"
       },
       {
+        "path": "scripts/staging-provider-broker-native-adapter.mjs",
+        "sha256": "b0346e625d5df08aa5fdab5aede1992a8a668ea4a97676de37aa4cda694d3986"
+      },
+      {
         "path": "scripts/staging-control-activation.mjs",
         "sha256": "62dce7f87427aefb25ac4ded073e2faacf92caf323e07cddc72518cccd377c1c"
+      },
+      {
+        "path": "scripts/staging-database-native-adapter.mjs",
+        "sha256": "e758fbba79e5061a57f18f786356ebc1779dac53126e7bb4e032c56fd3d9873a"
       },
       {
         "path": "scripts/staging-surface-activation-transport.mjs",
         "sha256": "a85ecae35ec2cbf5091157726cc18c2e4baaa2986ef0afc6711ae5371d0d9a4c"
       },
       {
+        "path": "scripts/staging-surface-activation-native-adapter.mjs",
+        "sha256": "954a871b0da053418608676a6c421c55d6b8bae4255452e8684987f1f62f13f6"
+      },
+      {
+        "path": "app/api/staging/readiness/contract.ts",
+        "sha256": "4e598ef4dd00e7e0574cfe4f981e735fb0962fa14d9225b64055b76b52d72233"
+      },
+      {
+        "path": "app/api/staging/readiness/route.ts",
+        "sha256": "568950e3b50e42b2c14e0339511fe5cbc477ec214348fbbb097fb4e4c066685e"
+      },
+      {
         "path": "tests/staging-provider-broker-rotation.test.mjs",
         "sha256": "fbc52ad6b4e86326c72474307a07315de252ab454796c36edd1c1cdc49bc0863"
+      },
+      {
+        "path": "tests/staging-provider-broker-native-adapter.test.mjs",
+        "sha256": "da7d38ab519b4b35228af7df4c2187c43968122a36cc02c0af8195fbb04586fb"
       },
       {
         "path": "tests/staging-control-activation.test.mjs",
@@ -632,19 +656,38 @@
         "sha256": "e88a541b1bf7fdbef81852768dff28e6ef6fd79f52c182452b9d8ffd4dd0ec63"
       },
       {
+        "path": "tests/staging-database-native-adapter.test.mjs",
+        "sha256": "b15bdeed3ebcd342510d4842909dada45e2121ccddc78697407beba3820cfae3"
+      },
+      {
         "path": "tests/staging-surface-activation-transport.test.mjs",
         "sha256": "6afc591b134b462457cedd91882a937bce147ed2e7042c85a9b6618d8ebdaba8"
+      },
+      {
+        "path": "tests/staging-surface-activation-native-adapter.test.mjs",
+        "sha256": "da3253e7dca5368a28cb448bbb6937a9b69b98d4341d5623f7121ff5aba2b5fc"
+      },
+      {
+        "path": "tests/staging-readiness-route.test.mjs",
+        "sha256": "acfd845f8c5740e37294573728d68b7c1cc1c250bef30eb559952bc4619b13e7"
       },
       {
         "path": "docs/ops/stage-plans/2026-09-22-disabled-activation-tooling.md",
         "sha256": "836d63bc1835ac4dfca308cac7921139c46ff0bb046f33f9665875395cb36b1d"
       },
       {
+        "path": "docs/ops/stage-plans/2026-09-22-disabled-native-activation-adapters.md",
+        "sha256": "f7198bebd153f79155b26bbfb9ff212c5d5ae15d0f8cfbcb692e5cfc171dee11"
+      },
+      {
         "path": "docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md",
         "sha256": "e7d867df8d9e24d29f476e56c9916c6784a449321cc1844a32fb6b2febd23e58"
       }
     ],
-    "nativeAdaptersImplemented": false,
+    "nativeAdaptersImplemented": true,
+    "nativeLaunchersImplemented": false,
+    "boundedExecutorsRequiredBeforeArming": true,
+    "hostedExecutionApproved": false,
     "generation22Armed": false,
     "providerRotation": {
       "exactFrozenPreflightRequired": true,
