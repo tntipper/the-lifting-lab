@@ -4,10 +4,13 @@ This runbook activates the already reviewed source journey on `qdmvngjwkcsilzmqk
 
 Current checkpoint: Generation 21 is retired and non-replayable. The provider,
 control and surface state machines plus their target-bound adapter contracts are
-reviewed and disabled. They have no native launcher, their required bounded
-executors remain injected, hosted execution is not approved and Generation 22
-is not armed. Do not interpret the presence of these modules as permission or
-capability to mutate staging.
+reviewed and disabled. The fixed bounded executor, provider binding and
+supported surface read/write bindings are implemented through injected host
+ports. Deployment creation remains deliberately unavailable because the
+connected Vercel repository ID is not yet pinned. There is no native launcher,
+hosted execution is not approved and Generation 22 is not armed. Do not
+interpret the presence of these modules as permission or capability to mutate
+staging.
 
 ## 1. Freeze and read-only preflight
 

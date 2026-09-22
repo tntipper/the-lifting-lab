@@ -38,6 +38,10 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.stageSafety.generation21ReplayPermitted, false)
   assert.equal(manifest.stageSafety.successorHeldPendingBoundaryReview, true)
   assert.equal(manifest.runtime.reviewedPreview.stableOrigin, manifest.provider.reviewedPreviewOrigin)
+  assert.equal(manifest.target.vercelProject, 'the-lifting-lab')
+  assert.equal(manifest.target.vercelProjectId, 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4')
+  assert.equal(manifest.target.vercelScope, 'my-lifting-lab-s-projects')
+  assert.equal(manifest.target.vercelTeamId, 'team_gf7cgIkkoeMLtODFDDT5MrW4')
   assert.equal(manifest.runtime.reviewedPreview.branch, 'codex/tll-integration')
   assert.deepEqual(manifest.runtime.reviewedPreview.originConfiguration, ['TLL_STAGING_CUSTOMER_ORIGIN', 'TLL_STAGING_CART_ORIGIN'])
   assert.deepEqual(manifest.runtime.reviewedPreview.immutableDeploymentEvidence.requiredForEachPhase, ['disabled', 'enabled'])
@@ -60,6 +64,11 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.disabledMigrationInstall.actualPostgresAcceptanceRequired, true)
   assert.equal(manifest.disabledActivationTooling.status, 'REVIEWED_DISABLED_ONLY')
   assert.equal(manifest.disabledActivationTooling.nativeAdaptersImplemented, true)
+  assert.equal(manifest.disabledActivationTooling.boundedExecutorImplemented, true)
+  assert.equal(manifest.disabledActivationTooling.providerBindingsImplemented, true)
+  assert.equal(manifest.disabledActivationTooling.surfaceReadBindingsImplemented, true)
+  assert.equal(manifest.disabledActivationTooling.deploymentCreationBindingImplemented, false)
+  assert.equal(manifest.disabledActivationTooling.deploymentCreationHoldReason, 'VERCEL_CONNECTED_REPOSITORY_ID_NOT_PINNED')
   assert.equal(manifest.disabledActivationTooling.nativeLaunchersImplemented, false)
   assert.equal(manifest.disabledActivationTooling.boundedExecutorsRequiredBeforeArming, true)
   assert.equal(manifest.disabledActivationTooling.hostedExecutionApproved, false)
@@ -74,15 +83,18 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.disabledActivationTooling.surfaces.runtimeProofIncludesPublicFlags, true)
   assert.equal(manifest.disabledActivationTooling.surfaces.ambiguousEnabledDeploymentState, 'RECONCILIATION_REQUIRED')
   assert.deepEqual(manifest.disabledActivationTooling.sources.map(item => item.path), [
-    'scripts/staging-provider-broker-rotation.mjs','scripts/staging-provider-broker-native-adapter.mjs',
+    'scripts/staging-bounded-executor.mjs','scripts/staging-provider-broker-rotation.mjs','scripts/staging-provider-broker-native-adapter.mjs',
+    'scripts/staging-provider-broker-native-binding.mjs',
     'scripts/staging-control-activation.mjs','scripts/staging-database-native-adapter.mjs',
-    'scripts/staging-surface-activation-transport.mjs','scripts/staging-surface-activation-native-adapter.mjs',
+    'scripts/staging-surface-activation-transport.mjs','scripts/staging-surface-activation-native-adapter.mjs','scripts/staging-surface-activation-native-binding.mjs',
     'app/api/staging/readiness/contract.ts','app/api/staging/readiness/route.ts',
-    'tests/staging-provider-broker-rotation.test.mjs','tests/staging-provider-broker-native-adapter.test.mjs',
+    'tests/staging-bounded-executor.test.mjs','tests/staging-provider-broker-rotation.test.mjs','tests/staging-provider-broker-native-adapter.test.mjs',
+    'tests/staging-provider-broker-native-binding.test.mjs',
     'tests/staging-control-activation.test.mjs','tests/staging-control-activation-actual.mjs','tests/staging-database-native-adapter.test.mjs',
-    'tests/staging-surface-activation-transport.test.mjs','tests/staging-surface-activation-native-adapter.test.mjs',
+    'tests/staging-surface-activation-transport.test.mjs','tests/staging-surface-activation-native-adapter.test.mjs','tests/staging-surface-activation-native-binding.test.mjs',
     'tests/staging-readiness-route.test.mjs','docs/ops/stage-plans/2026-09-22-disabled-activation-tooling.md',
     'docs/ops/stage-plans/2026-09-22-disabled-native-activation-adapters.md',
+    'docs/ops/stage-plans/2026-09-22-disabled-concrete-activation-bindings.md',
     'docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md'])
   assert.deepEqual(manifest.recovery.requiredInstalledMigrations, ['012','013','014','015','016'])
   assert.deepEqual(manifest.recovery.activationWindow, { generation: 6, windowId: '83888906-23fa-4653-a886-fe2733ed76a0' })

@@ -17,7 +17,9 @@ import {
 } from './staging-provider-broker-rotation.mjs'
 
 export const NATIVE_STAGING_PROVIDER_BROKER_ADAPTER_ENABLED = false
-export const STAGING_AUTH_URL = `https://${STAGING_PROJECT_REF}.supabase.co/auth/v1`
+// `@supabase/supabase-js` takes the project root and appends `/auth/v1`.
+// Keeping the root here prevents an accidental `/auth/v1/auth/v1` request.
+export const STAGING_AUTH_URL = `https://${STAGING_PROJECT_REF}.supabase.co`
 export const STAGING_PROVIDER_NAME = 'TLL staging subject broker'
 
 const OFFICIAL_PROVIDER_KEYS = new Set([

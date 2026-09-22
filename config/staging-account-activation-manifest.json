@@ -3,7 +3,10 @@
   "target": {
     "supabaseProjectRef": "qdmvngjwkcsilzmqksme",
     "shopDomain": "tll-integration-staging.myshopify.com",
+    "vercelProject": "the-lifting-lab",
     "vercelProjectId": "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4",
+    "vercelScope": "my-lifting-lab-s-projects",
+    "vercelTeamId": "team_gf7cgIkkoeMLtODFDDT5MrW4",
     "environment": "preview",
     "productionProjectRefExcluded": "wrhgscovsgsudtedbljr"
   },
@@ -608,12 +611,20 @@
     "status": "REVIEWED_DISABLED_ONLY",
     "sources": [
       {
+        "path": "scripts/staging-bounded-executor.mjs",
+        "sha256": "65974b82cc0a4cdcbd74a63c86f62968df2f0897863c85c9af2c14a8f55c0366"
+      },
+      {
         "path": "scripts/staging-provider-broker-rotation.mjs",
         "sha256": "c8fcabc7306bf68974f7b4f92990983ad41d601389141c1e3695da7b5f510f2f"
       },
       {
         "path": "scripts/staging-provider-broker-native-adapter.mjs",
-        "sha256": "b0346e625d5df08aa5fdab5aede1992a8a668ea4a97676de37aa4cda694d3986"
+        "sha256": "508622a8d3ed1a777a4bce2bfb32ab7bc47309ec48dd7d42c0a60a6394e75ba3"
+      },
+      {
+        "path": "scripts/staging-provider-broker-native-binding.mjs",
+        "sha256": "a6c22f8465d000fecfd77edc1d01545ccebfd18bb17e1e62623cdca9929d273b"
       },
       {
         "path": "scripts/staging-control-activation.mjs",
@@ -632,6 +643,10 @@
         "sha256": "954a871b0da053418608676a6c421c55d6b8bae4255452e8684987f1f62f13f6"
       },
       {
+        "path": "scripts/staging-surface-activation-native-binding.mjs",
+        "sha256": "7401e44647cbb6844d73fe64450dffe94d25e8dc3e0e3affd5c1bdbe801d8e6a"
+      },
+      {
         "path": "app/api/staging/readiness/contract.ts",
         "sha256": "4e598ef4dd00e7e0574cfe4f981e735fb0962fa14d9225b64055b76b52d72233"
       },
@@ -640,12 +655,20 @@
         "sha256": "568950e3b50e42b2c14e0339511fe5cbc477ec214348fbbb097fb4e4c066685e"
       },
       {
+        "path": "tests/staging-bounded-executor.test.mjs",
+        "sha256": "dcd7b32c91099dcdba6680696133c94c9e66c0d92c4729204a8f25ed5b7e1c3b"
+      },
+      {
         "path": "tests/staging-provider-broker-rotation.test.mjs",
         "sha256": "fbc52ad6b4e86326c72474307a07315de252ab454796c36edd1c1cdc49bc0863"
       },
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",
         "sha256": "da7d38ab519b4b35228af7df4c2187c43968122a36cc02c0af8195fbb04586fb"
+      },
+      {
+        "path": "tests/staging-provider-broker-native-binding.test.mjs",
+        "sha256": "f53988bf88d7253ae7d3f4bb6b7f7a562835ebdcca12a9696eb8e4ffbc95cb15"
       },
       {
         "path": "tests/staging-control-activation.test.mjs",
@@ -668,6 +691,10 @@
         "sha256": "da3253e7dca5368a28cb448bbb6937a9b69b98d4341d5623f7121ff5aba2b5fc"
       },
       {
+        "path": "tests/staging-surface-activation-native-binding.test.mjs",
+        "sha256": "91a3ebb3a53d820ea3d956316068511c6e63a4ea533abde89a7d38036a089ec5"
+      },
+      {
         "path": "tests/staging-readiness-route.test.mjs",
         "sha256": "acfd845f8c5740e37294573728d68b7c1cc1c250bef30eb559952bc4619b13e7"
       },
@@ -680,11 +707,20 @@
         "sha256": "f7198bebd153f79155b26bbfb9ff212c5d5ae15d0f8cfbcb692e5cfc171dee11"
       },
       {
+        "path": "docs/ops/stage-plans/2026-09-22-disabled-concrete-activation-bindings.md",
+        "sha256": "237b80b31d9081bf1bd487e3d0c7a255ce17a3c9fe80102483ac294a7c0a21a7"
+      },
+      {
         "path": "docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md",
         "sha256": "e7d867df8d9e24d29f476e56c9916c6784a449321cc1844a32fb6b2febd23e58"
       }
     ],
     "nativeAdaptersImplemented": true,
+    "boundedExecutorImplemented": true,
+    "providerBindingsImplemented": true,
+    "surfaceReadBindingsImplemented": true,
+    "deploymentCreationBindingImplemented": false,
+    "deploymentCreationHoldReason": "VERCEL_CONNECTED_REPOSITORY_ID_NOT_PINNED",
     "nativeLaunchersImplemented": false,
     "boundedExecutorsRequiredBeforeArming": true,
     "hostedExecutionApproved": false,
