@@ -67,14 +67,21 @@ observer attempt.
 
 For one same-scope, one-hour replacement, store the copied token with the
 documented `-w <value>` argument through an in-memory subprocess call (never
-in shell text, logs, or a repository file). Before dismissing Vercel's
-one-time token dialog or clearing clipboard, verify the fixed Keychain item
-returns the expected non-empty token shape using the helper's fixed
-`/usr/bin/security find-generic-password -w` selector, environment and bound;
-record only pass/fail and length range. After reviewed arming, run the exact
-helper with output suppressed before invoking the observer. The retained Preview bypass's
+in shell text, logs, a repository file, exception text or tool output). This
+briefly exposes the token in the `security` child process's argv; that is a
+residual risk of this CLI path, so keep the child bounded and do not start
+other local observers during storage. Before dismissing Vercel's one-time
+token dialog or clearing clipboard, read back the fixed Keychain item using
+the helper's `/usr/bin/security find-generic-password -w` selector,
+environment and bound, and compare it in memory with the newly copied token.
+Record only equality pass/fail and length range. This is a local read while
+the source gates remain disabled. After the reviewed arming diff is applied,
+run the exact helper for all three selectors with output suppressed before
+invoking the observer. If any helper read fails, disarm immediately without
+claiming the journal or making a hosted request. The retained Preview bypass's
 first helper read timed out, while a subsequent direct `security` read
 completed in eight seconds; confirm it through the exact helper again after
-its access prompt has settled. If any local read fails, stop before arming.
+its access prompt has settled. If the disabled storage read-back fails, do
+not arm; if an armed helper preflight fails, disarm immediately.
 Do not enlarge the helper deadline or Keychain ACL without a separately
 reviewed cause and correction.
