@@ -9,7 +9,7 @@ import { PROJECT_REF, PRODUCTION_PROJECT_REF, GENERATION, WINDOW_ID } from './st
 
 export { PROJECT_REF, PRODUCTION_PROJECT_REF }
 export const STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_ENABLED = false
-export const STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_QUERY_ID = 'tll-staging-hosted-baseline-database/v1'
+export const STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_QUERY_ID = 'tll-staging-hosted-baseline-database/v2'
 // Exact historical Gen21 expiry from the reviewed one-window arming diff:
 // docs/ops/stage-plans/2026-09-22-generation-21-arming-diff.md. The normal
 // credential source is deliberately disarmed and therefore contains a sentinel.
@@ -59,9 +59,9 @@ export const STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL = `BEGIN READ ONLY;
 SET LOCAL lock_timeout='5s';
 SET LOCAL statement_timeout='20s';
 DO $hosted_baseline$
-DECLARE r text; marker text; parsed jsonb; operator_name name:=session_user;
+DECLARE r text; marker text; parsed jsonb; operator_name name:='postgres';
 BEGIN
-  IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres' OR current_user<>session_user
+  IF current_database()<>'postgres' OR current_user<>'supabase_read_only_user' OR session_user<>'supabase_read_only_user' OR current_user<>session_user
     OR EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE operator_project_ref='${PRODUCTION_PROJECT_REF}')
     OR (SELECT count(*) FROM tll_staging_private.environment)<>1
     OR NOT EXISTS(SELECT 1 FROM tll_staging_private.environment WHERE singleton AND environment='tll-hosted-staging-v1'

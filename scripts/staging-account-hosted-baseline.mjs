@@ -42,7 +42,7 @@ function validateVercel(value) {
 }
 function validateDatabase(value) {
   if (!exact(value, ['status', 'target', 'queryId', 'receiptHash', 'counts']) || value.status !== 'PASS' || value.target !== PROJECT_REF
-    || value.queryId !== 'tll-staging-hosted-baseline-database/v1' || !/^[a-f0-9]{64}$/.test(value.receiptHash)
+    || value.queryId !== 'tll-staging-hosted-baseline-database/v2' || !/^[a-f0-9]{64}$/.test(value.receiptHash)
     || !exact(value.counts, ['migrations', 'controlsEnabled', 'runtimeRoles', 'runtimeSessions', 'executionEdges', 'operatorEdges'])
     || !same(value.counts, { migrations: 15, controlsEnabled: 0, runtimeRoles: 5, runtimeSessions: 0, executionEdges: 0, operatorEdges: 5 })) unavailable()
   return Object.freeze({ ...value.counts, receiptHash: value.receiptHash })

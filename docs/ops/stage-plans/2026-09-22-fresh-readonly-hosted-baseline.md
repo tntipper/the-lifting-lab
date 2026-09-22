@@ -340,6 +340,12 @@ does not authorize a new hosted request. A future read may still be ambiguous
 if several operations fail together; no code should be interpreted as proof
 that another provider succeeded.
 
+The v4 database failure was subsequently identified in staging Postgres logs:
+the `read_only: true` query ran as `supabase_read_only_user` while the v1 SQL
+required `postgres`. The disabled v2 correction and remaining rehearsal gate
+are recorded in
+`docs/ops/stage-plans/2026-09-22-v4-hosted-baseline-incident-reconciliation.md`.
+
 - Target, team, branch, alias, provider or source drift stops before subsequent
   reads and records only an allowlisted reason.
 - Authentication failure records only the provider and status class. It does

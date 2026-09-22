@@ -6,7 +6,7 @@ import { VERCEL_PROJECT, VERCEL_PROJECT_ID, VERCEL_SCOPE, VERCEL_TEAM_ID } from 
 import { PROJECT_REF, STAGING_ACCOUNT_HOSTED_BASELINE_ENABLED, STAGING_ACCOUNT_HOSTED_BASELINE_SCHEMA, createStagingAccountHostedBaseline } from '../scripts/staging-account-hosted-baseline.mjs'
 
 const signal = () => new AbortController().signal
-const database = Object.freeze({ status: 'PASS', target: PROJECT_REF, queryId: 'tll-staging-hosted-baseline-database/v1', receiptHash: 'a'.repeat(64), counts: Object.freeze({ migrations: 15, controlsEnabled: 0, runtimeRoles: 5, runtimeSessions: 0, executionEdges: 0, operatorEdges: 5 }) })
+const database = Object.freeze({ status: 'PASS', target: PROJECT_REF, queryId: 'tll-staging-hosted-baseline-database/v2', receiptHash: 'a'.repeat(64), counts: Object.freeze({ migrations: 15, controlsEnabled: 0, runtimeRoles: 5, runtimeSessions: 0, executionEdges: 0, operatorEdges: 5 }) })
 const provider = Object.freeze({
   id: 'provider-id', provider_type: 'oauth2', identifier: PROVIDER_IDENTIFIER, name: 'TLL staging subject broker', client_id: STAGING_BROKER_PROVIDER.clientId,
   acceptable_client_ids: [], scopes: ['subject'], pkce_enabled: true, attribute_mapping: {}, authorization_params: {}, enabled: false, email_optional: true,

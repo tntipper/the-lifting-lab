@@ -8,11 +8,11 @@
   "sources": [
     {
       "path": "scripts/staging-account-hosted-baseline.mjs",
-      "sha256": "51aa479d1c7f25146bf6e1edb2d0b73b9411762ca62502564220b75a84713a7d"
+      "sha256": "dad85bfe335c4d760ce3da8197f802759ec0cc53f6fe26f00dc78e998ccdea1b"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-database.mjs",
-      "sha256": "649628db4a41525e0d6a0646e13449328b013e110e80be3f910df7dd3d39c520"
+      "sha256": "9fb9faf775a645f45d2ac4d5c5ab04ecac2a60a6146501c3c180e6e4c324ff7c"
     },
     {
       "path": "scripts/staging-generation-21-credentials.mjs",
@@ -80,7 +80,7 @@
     },
     {
       "path": "tests/staging-account-hosted-baseline-composition.test.mjs",
-      "sha256": "a26202eea45f03a8235144711a6176c33466e7a90d2a2459d0154c187d99aee7"
+      "sha256": "1232a40fd7d3d8298d44a8d1c242be76e70832d5ad6a59fa38e7cdb0b3a9c2ec"
     },
     {
       "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",
@@ -96,7 +96,7 @@
     },
     {
       "path": "docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md",
-      "sha256": "1c0b56b05bc933e91bbbacc2df76fc2eed37841af39bad10a59ef104329a2be6"
+      "sha256": "bc85cbb7d8e08ba53af891f28c5baa12c3f2764d433261100982fe52df4297c7"
     }
   ],
   "keychain": {

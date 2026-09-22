@@ -14,7 +14,7 @@ import { STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL } from '../scripts/staging
 
 const token = () => Buffer.from('private-management-api-token')
 const receipt = Object.freeze({
-  queryId: 'tll-staging-hosted-baseline-database/v1', projectRef: 'qdmvngjwkcsilzmqksme', generation: 21,
+  queryId: 'tll-staging-hosted-baseline-database/v2', projectRef: 'qdmvngjwkcsilzmqksme', generation: 21,
   windowId: 'a5511645-77af-4fc9-9e4c-f5c8a474d5fa', status: 'PASS_RETIRED', migrations: 15, runtimeRoles: 5,
   controlsEnabled: 0, passwordsConfigured: 0, validUntilInfinity: 5, operatorEdges: 5, executionEdges: 0, runtimeSessions: 0,
 })
