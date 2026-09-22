@@ -172,17 +172,21 @@ the observation journal or any hosted request. It was disarmed in `a46e510`;
 the disabled manifest, live-boundary check and all 2231 tests pass. **Do not
 rerun that window.** The new Vercel API and bypass Keychain records existed,
 but a secret-suppressed diagnostic showed the bypass value read timing out,
-while the Supabase and Vercel API token value reads succeeded. The exact
-macOS Keychain mechanism is unproven. The missed precondition was value
+while the Supabase and Vercel API token value reads succeeded. Read-only
+Keychain Access inspection then showed the bypass item set to `Confirm before
+allowing access` with no allowed application listed. The missed precondition was value
 readability in the launcher's process context, beyond item existence.
 
 Before any new credential/arming window, implement and verify a bounded,
 secret-suppressed preflight of all three selectors through the same process
-context; inspect and resolve any Keychain ACL/prompt issue; keep native gates
+context; use a narrowly reviewed Keychain access path without `Allow all
+applications`; keep native gates
 disabled; obtain independent review of any code or access-control change.
 The stage plan records the incident and next gate. Temporary Vercel credential
-revocation was awaiting final browser deletion confirmation when this update
-was drafted; verify its final status before any handoff claim.
+status must be checked before any new window. The user directed that the
+one-hour Vercel API token expire naturally. The newly created Preview bypass
+has no stated expiry and needs a separate cleanup decision; leave the older
+bypass untouched.
 
 ## Programme work after the baseline
 

@@ -241,14 +241,19 @@ pass. This attempt must not be replayed under the same credential window.
 The three expected Keychain records existed. Secret-suppressed value-read
 diagnostics returned success for Supabase CLI and the new Vercel API token, but
 the new Preview bypass value read did not settle within a four-second diagnostic
-limit. This is the currently observed cause of the credential preflight failure;
-the precise macOS access-control or UI-prompt mechanism has not yet been proven.
+limit. Subsequent read-only inspection of that item's Keychain Access Control
+tab showed `Confirm before allowing access` selected and an empty allowed-app
+list. This explains why an unattended `/usr/bin/security` read could stall;
+the exact macOS prompt behaviour during the failed launcher was not captured.
 The launcher correctly failed closed before claiming the journal. The process
 error was attempting the armed run after checking Keychain item *existence* but
 not value readability through the exact helper/process boundary. Before another
 arming candidate or credential window, qualify each selector with a bounded,
 secret-suppressed value-read check from the same process context, confirm no
-unanswered Keychain prompt, and record only success/failure and duration. Keep
+unanswered Keychain prompt, and record only success/failure and duration. A
+future credential setup must use an explicit, narrowly reviewed Keychain access
+path for the helper; do not switch the item to `Allow all applications` merely
+to avoid the prompt. Keep
 the launcher disabled and independently review any helper or credential-ACL
 change before another one-shot attempt.
 
