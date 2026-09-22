@@ -127,3 +127,28 @@ second v4 hosted observer and does not establish provider, Vercel, readiness,
 Edge or deployment state. A future full observer still requires its own
 independent arming review, exclusive new journal, credential preflight and
 one-shot window.
+
+## v2 rehearsal outcome, 22 September 20:25 UTC
+
+The disabled package was committed as `fbd6024` and independently reviewed.
+Focused checks, the boundary checker, and the full 2,238-test suite passed
+while disabled. The exact one-line arming diff was independently reviewed GO,
+committed as `031777e`, and invoked **once**. The exclusive journal at the
+planned path is mode 0600, terminal `OBSERVATION_FAILED`, run ID
+`490c1ed0-4c12-442c-a31e-392febec6d4f`, 20:25:11.887–20:25:13.013 UTC,
+with the fixed code `database_read_unavailable`. This is a consumed attempt;
+never delete, replay, or reinterpret it as a successful baseline. The gate was
+disarmed and committed as `1ee0738`; `check:live-boundaries` passes.
+
+The separate read-only Management project lookup returned HTTP 200 using the
+same local Keychain selector, so the credential can access this staging
+project. The Postgres log explorer currently shows only the earlier v4 error;
+there is no visible v2 error at this checkpoint. The wrapper deliberately
+discarded the database query's HTTP/error body, so the direct failure cause is
+**not established**. It could be an API-level failure, SQL failure without a
+visible ingested log, or receipt/response mismatch. Do not assume one and do
+not re-execute v2 to diagnose it. Recheck staging logs after ingestion, then
+design a new diagnostic-only read path or reviewed successor with fixed,
+bounded non-secret status/error classification. Independently review that
+correction and use a fresh journal identity before any new request. Full
+observer, provider repair, deployment, and Generation 22 remain held.
