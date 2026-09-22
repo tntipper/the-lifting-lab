@@ -22,7 +22,7 @@ provider change, checkout, purchase, deployment, or live invocation.
 - [ ] The evidence record uses `PASS_RETIRED_BASELINE` and exact aggregate counts:
   `runtimeRoles=5`, `markerExact=5`, `loginRoles=0`, `passwordsConfigured=0`,
   `validUntilInfinity=5`, `operatorEdges=5`, `executionEdges=0`,
-  `runtimeSessions=0`, and `controlsEnabled=0` for staging project
+  `runtimeSessions=0`, `controlRows=5`, and `controlsEnabled=0` for staging project
   `qdmvngjwkcsilzmqksme`.
 - [ ] `node scripts/staging-generation-21-pre-arm-gate.mjs` is exercised only
   with evidence conforming to its public schema while native gates remain false.

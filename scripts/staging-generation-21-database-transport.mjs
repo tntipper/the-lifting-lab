@@ -176,7 +176,11 @@ DO $preflight$ DECLARE r text; role_marker text; parsed_marker jsonb; BEGIN
   EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'Generation 21 entry predecessor marker invalid: %',r; END;
   IF parsed_marker IS DISTINCT FROM '${predecessorMarkerPayload}'::jsonb THEN RAISE EXCEPTION 'Generation 21 entry predecessor marker mismatch: %',r; END IF;
  END LOOP;
- IF EXISTS(SELECT FROM (VALUES ((SELECT enabled FROM tll_customer_private.control WHERE singleton)),((SELECT enabled FROM tll_cart_private.control WHERE singleton)),((SELECT enabled FROM tll_broker_private.control WHERE singleton)),((SELECT enabled FROM tll_provisional_private.control WHERE singleton)),((SELECT enabled FROM tll_bridge_private.control WHERE singleton))) controls(enabled) WHERE enabled) THEN
+ IF (SELECT count(*) FROM tll_customer_private.control)<>1 OR EXISTS(SELECT FROM tll_customer_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_cart_private.control)<>1 OR EXISTS(SELECT FROM tll_cart_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_broker_private.control)<>1 OR EXISTS(SELECT FROM tll_broker_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_provisional_private.control)<>1 OR EXISTS(SELECT FROM tll_provisional_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_bridge_private.control)<>1 OR EXISTS(SELECT FROM tll_bridge_private.control WHERE NOT singleton OR enabled) THEN
   RAISE EXCEPTION 'Generation 21 entry control enabled'; END IF;
 END $preflight$;
 COMMIT;
@@ -212,7 +216,11 @@ const zeroSessionSql=`BEGIN READ ONLY;
 SET LOCAL statement_timeout='15s';
 DO $verify$ BEGIN
  IF EXISTS(SELECT FROM pg_stat_activity WHERE backend_type='client backend' AND usename IN ('tll_customer_runtime','tll_cart_runtime','tll_broker_runtime','tll_provisional_runtime','tll_bridge_runtime')) THEN RAISE EXCEPTION 'Generation 21 runtime sessions remain'; END IF;
- IF EXISTS(SELECT FROM (VALUES ((SELECT enabled FROM tll_customer_private.control WHERE singleton)),((SELECT enabled FROM tll_cart_private.control WHERE singleton)),((SELECT enabled FROM tll_broker_private.control WHERE singleton)),((SELECT enabled FROM tll_provisional_private.control WHERE singleton)),((SELECT enabled FROM tll_bridge_private.control WHERE singleton))) controls(enabled) WHERE enabled) THEN RAISE EXCEPTION 'Generation 21 control enabled during zero-session proof'; END IF;
+ IF (SELECT count(*) FROM tll_customer_private.control)<>1 OR EXISTS(SELECT FROM tll_customer_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_cart_private.control)<>1 OR EXISTS(SELECT FROM tll_cart_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_broker_private.control)<>1 OR EXISTS(SELECT FROM tll_broker_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_provisional_private.control)<>1 OR EXISTS(SELECT FROM tll_provisional_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_bridge_private.control)<>1 OR EXISTS(SELECT FROM tll_bridge_private.control WHERE NOT singleton OR enabled) THEN RAISE EXCEPTION 'Generation 21 control enabled during zero-session proof'; END IF;
 END $verify$;
 COMMIT;
 SELECT jsonb_build_object('status','ZERO_SESSIONS','projectRef','${PROJECT_REF}','windowId','${WINDOW_ID}','controlsEnabled',false) AS tll_generation_21_zero_sessions;

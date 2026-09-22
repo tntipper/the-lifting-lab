@@ -20,6 +20,8 @@ test('generation 21 installer consumes the sole phase-1 expiry source and fails 
   assert.match(source,/m\.rolname=operator_name[\s\S]*e\.admin_option AND NOT e\.inherit_option AND NOT e\.set_option/)
   assert.match(source,/m\.rolname=session_user[\s\S]*e\.admin_option AND NOT e\.inherit_option AND NOT e\.set_option/)
   assert.match(source,/AND NOT \(\(\(g\.rolname,m\.rolname\) IN/)
+  assert.match(source,/count\(\*\) FROM tll_customer_private\.control\)<>1/)
+  assert.match(source,/tll_bridge_private\.control WHERE NOT singleton OR enabled/)
 })
 
 test('generation 21 journal is separate, exclusive, mode 0600 and terminal',()=>{

@@ -23,7 +23,7 @@ const RETIREMENT_EVIDENCE = Object.freeze({
   predecessorWindowId: '51809dd4-bd4b-44c7-8609-7dd8ca063679',
   predecessorExpiresAt: '2026-09-21T11:08:34.000Z',
   state: 'retired', runtimeRoles: 5, markerExact: 5, loginRoles: 0, passwordsConfigured: 0,
-  validUntilInfinity: 5, operatorEdges: 5, executionEdges: 0, runtimeSessions: 0, controlsEnabled: 0,
+  validUntilInfinity: 5, operatorEdges: 5, executionEdges: 0, runtimeSessions: 0, controlRows: 5, controlsEnabled: 0,
   provenAt: '2026-09-22T10:00:00.000Z',
   source: 'reviewed-generation-19-retirement-evidence',
 })
@@ -56,6 +56,7 @@ test('predecessor retirement evidence requires the complete canonical retired-ro
   assert.equal(projectPredecessorRetirementEvidence({ ...RETIREMENT_EVIDENCE, validUntilInfinity: 0 }), null)
   assert.equal(projectPredecessorRetirementEvidence({ ...RETIREMENT_EVIDENCE, executionEdges: 1 }), null)
   assert.equal(projectPredecessorRetirementEvidence({ ...RETIREMENT_EVIDENCE, controlsEnabled: 1 }), null)
+  assert.equal(projectPredecessorRetirementEvidence({ ...RETIREMENT_EVIDENCE, controlRows: 4 }), null)
   assert.equal(projectPredecessorRetirementEvidence({ ...RETIREMENT_EVIDENCE, token: 'sbp_oauth_deadbeef' }), null)
 })
 

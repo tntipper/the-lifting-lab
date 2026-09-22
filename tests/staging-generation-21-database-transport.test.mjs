@@ -31,6 +31,8 @@ test('generation 21 entry baseline accepts the canonical retired Gen19 role shap
   assert.match(query,/rolcanlogin/);assert.match(query,/pg_authid/);assert.match(query,/rolpassword IS NOT NULL/)
   assert.match(query,/member\.rolname=current_user AND m\.admin_option AND NOT m\.inherit_option AND NOT m\.set_option/)
   assert.match(query,/AND NOT \(granted\.rolname IN/)
+  assert.match(query,/count\(\*\) FROM tll_customer_private\.control\)<>1/)
+  assert.match(query,/tll_bridge_private\.control WHERE NOT singleton OR enabled/)
   assert.match(query,/substring\(role_marker FROM/);assert.match(query,/parsed_marker IS DISTINCT FROM/);assert.doesNotMatch(query,/shobj_description\(oid,'pg_authid'\)='/)
   await assert.rejects(()=>verifyGeneration21EntryBaseline({token,post:async()=>[{tll_generation_21_entry_baseline:{...receipt,predecessorGeneration:10}}]}),error=>{
     assert.match(error.message,/unavailable/);assert.equal(error.failureStep,'preflight');assert.equal(error.failureReason,'unavailable');return true

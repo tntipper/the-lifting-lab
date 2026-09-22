@@ -51,7 +51,7 @@ export function projectPredecessorRetirementEvidence(value) {
   const allowed = [
     'schema', 'status', 'projectRef', 'predecessorGeneration', 'predecessorWindowId', 'predecessorExpiresAt',
     'state', 'runtimeRoles', 'markerExact', 'loginRoles', 'passwordsConfigured', 'validUntilInfinity',
-    'operatorEdges', 'executionEdges', 'runtimeSessions', 'controlsEnabled', 'provenAt', 'source',
+    'operatorEdges', 'executionEdges', 'runtimeSessions', 'controlRows', 'controlsEnabled', 'provenAt', 'source',
   ]
   if (keys.some((k) => !allowed.includes(k))) return null
   if (value.schema !== 'tll-generation-21-predecessor-retirement-evidence/v1') return null
@@ -63,7 +63,7 @@ export function projectPredecessorRetirementEvidence(value) {
   if (value.state !== 'retired') return null
   const exactCounts = {
     runtimeRoles: 5, markerExact: 5, loginRoles: 0, passwordsConfigured: 0, validUntilInfinity: 5,
-    operatorEdges: 5, executionEdges: 0, runtimeSessions: 0, controlsEnabled: 0,
+    operatorEdges: 5, executionEdges: 0, runtimeSessions: 0, controlRows: 5, controlsEnabled: 0,
   }
   for (const [key, expected] of Object.entries(exactCounts)) if (value[key] !== expected) return null
   if (typeof value.provenAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(value.provenAt)) return null

@@ -130,12 +130,11 @@ BEGIN
   RAISE EXCEPTION 'Generation 21 runtime memberships are not inert'; END IF;
  IF EXISTS(SELECT FROM pg_stat_activity WHERE backend_type='client backend' AND usename IN(${roleList})) THEN
   RAISE EXCEPTION 'Generation 21 runtime sessions remain'; END IF;
- IF EXISTS(SELECT FROM (VALUES
-   ((SELECT enabled FROM tll_customer_private.control WHERE singleton)),
-   ((SELECT enabled FROM tll_cart_private.control WHERE singleton)),
-   ((SELECT enabled FROM tll_broker_private.control WHERE singleton)),
-   ((SELECT enabled FROM tll_provisional_private.control WHERE singleton)),
-   ((SELECT enabled FROM tll_bridge_private.control WHERE singleton))) controls(enabled) WHERE enabled) THEN
+ IF (SELECT count(*) FROM tll_customer_private.control)<>1 OR EXISTS(SELECT FROM tll_customer_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_cart_private.control)<>1 OR EXISTS(SELECT FROM tll_cart_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_broker_private.control)<>1 OR EXISTS(SELECT FROM tll_broker_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_provisional_private.control)<>1 OR EXISTS(SELECT FROM tll_provisional_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_bridge_private.control)<>1 OR EXISTS(SELECT FROM tll_bridge_private.control WHERE NOT singleton OR enabled) THEN
   RAISE EXCEPTION 'Generation 21 requires disabled controls'; END IF;
  FOREACH r IN ARRAY ARRAY[${memberships.map(sqlLiteral).join(',')}] LOOP
   IF NOT EXISTS(SELECT FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid WHERE g.rolname=r AND e.member=operator_name::regrole
@@ -162,12 +161,11 @@ BEGIN
       OR (g.rolname IN(${roleList}) AND m.rolname=session_user
         AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option))) THEN
   RAISE EXCEPTION 'Generation 21 effective membership mismatch'; END IF;
- IF EXISTS(SELECT FROM (VALUES
-   ((SELECT enabled FROM tll_customer_private.control WHERE singleton)),
-   ((SELECT enabled FROM tll_cart_private.control WHERE singleton)),
-   ((SELECT enabled FROM tll_broker_private.control WHERE singleton)),
-   ((SELECT enabled FROM tll_provisional_private.control WHERE singleton)),
-   ((SELECT enabled FROM tll_bridge_private.control WHERE singleton))) controls(enabled) WHERE enabled) THEN
+ IF (SELECT count(*) FROM tll_customer_private.control)<>1 OR EXISTS(SELECT FROM tll_customer_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_cart_private.control)<>1 OR EXISTS(SELECT FROM tll_cart_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_broker_private.control)<>1 OR EXISTS(SELECT FROM tll_broker_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_provisional_private.control)<>1 OR EXISTS(SELECT FROM tll_provisional_private.control WHERE NOT singleton OR enabled)
+  OR (SELECT count(*) FROM tll_bridge_private.control)<>1 OR EXISTS(SELECT FROM tll_bridge_private.control WHERE NOT singleton OR enabled) THEN
   RAISE EXCEPTION 'Generation 21 control changed during install'; END IF;
 END $postflight$;
 COMMIT;
