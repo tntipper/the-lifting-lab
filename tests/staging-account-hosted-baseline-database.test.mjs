@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import {
   PROJECT_REF, PRODUCTION_PROJECT_REF, STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_ENABLED,
   STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_QUERY_ID, STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL,
@@ -26,6 +26,8 @@ test('database baseline has one immutable staging-only read-only query and liter
   assert.match(STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL, /current_user<>'supabase_read_only_user' OR session_user<>'supabase_read_only_user' OR current_user<>session_user/)
   assert.match(STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL, /operator_name name:='postgres'/)
   assert.doesNotMatch(STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL, /operator_name name:=session_user/)
+  assert.match(STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL, /pg_stat_activity WHERE usename IN\(/)
+  assert.doesNotMatch(STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL, /pg_stat_activity WHERE backend_type=/)
   assert.equal(GENERATION_21_RETIRED_EXPIRES_AT, '2026-09-22T14:00:00.000Z')
   for (const term of ['202609150002_public_submission_gateway', '202609180016_customer_account_logout', 'NOLOGIN', 'rolpassword', 'operatorEdges', 'pg_stat_activity', "'retired'", GENERATION_21_RETIRED_EXPIRES_AT]) assert.match(STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL, new RegExp(term))
   assert.match(STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL, /parsed IS DISTINCT FROM jsonb_build_object/)
@@ -42,6 +44,36 @@ test('when the existing local PostgreSQL fixture is running, PostgreSQL accepts 
   const sql = `SELECT ('${exactMarker}'::jsonb IS DISTINCT FROM jsonb_build_object('expiresAt','${GENERATION_21_RETIRED_EXPIRES_AT}','generation',21,'projectRef','${PROJECT_REF}','state','retired','windowId','${receipt.windowId}'))::text, ('${exactMarker}'::jsonb || '{\"extra\":true}'::jsonb IS DISTINCT FROM jsonb_build_object('expiresAt','${GENERATION_21_RETIRED_EXPIRES_AT}','generation',21,'projectRef','${PROJECT_REF}','state','retired','windowId','${receipt.windowId}'))::text;`
   const output = execFileSync('docker', ['exec', '-i', 'tll-stage0-postgres', 'psql', '-XqAt', '-U', 'postgres', '-d', 'postgres'], { input: sql, encoding: 'utf8' }).trim()
   assert.equal(output, 'false|true')
+})
+
+test('read-only role detects another user session without relying on hidden backend_type', async t => {
+  let running = ''
+  try { running = execFileSync('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres'], { encoding: 'utf8' }).trim() } catch { t.skip('local PostgreSQL fixture is unavailable'); return }
+  if (running !== 'true') { t.skip('local PostgreSQL fixture is not running'); return }
+  const sleeper = spawn('docker', ['exec', '-i', 'tll-stage0-postgres', 'psql', '-XqAt', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'postgres'], { stdio: ['pipe', 'pipe', 'pipe'] })
+  sleeper.stdin.end('SELECT pg_backend_pid(); SELECT pg_sleep(3);\n')
+  try {
+    const pid = await new Promise((resolve, reject) => {
+      let text = ''
+      const timeout = setTimeout(() => reject(Error('PostgreSQL sleeper did not report a PID')), 5000)
+      sleeper.on('error', reject)
+      sleeper.on('exit', () => reject(Error('PostgreSQL sleeper exited before the probe')))
+      sleeper.stdout.on('data', chunk => {
+        text += chunk.toString()
+        const match = /^(\d+)\r?\n/.exec(text)
+        if (match) { clearTimeout(timeout); resolve(Number(match[1])) }
+      })
+    })
+    const probe = `BEGIN READ ONLY; SET LOCAL ROLE pg_read_all_data;
+SELECT pg_has_role(current_user,'pg_read_all_stats','USAGE'),
+  count(*) FILTER (WHERE usename='postgres' AND pid=${pid}),
+  count(*) FILTER (WHERE usename='postgres' AND pid=${pid} AND backend_type='client backend')
+FROM pg_stat_activity; COMMIT;`
+    const result = execFileSync('docker', ['exec', '-i', 'tll-stage0-postgres', 'psql', '-XqAt', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'postgres'], { input: probe, encoding: 'utf8' }).trim()
+    assert.equal(result, 'f|1|0')
+  } finally {
+    if (sleeper.exitCode === null) sleeper.kill('SIGTERM')
+  }
 })
 
 test('only the exact compact retirement receipt is accepted and it is projected without raw SQL', () => {

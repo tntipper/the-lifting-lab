@@ -99,7 +99,7 @@ BEGIN
         AND NOT (granted.rolname IN(${roleList}) AND member.rolname=operator_name AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)) THEN
     RAISE EXCEPTION 'Hosted baseline runtime edges are not retired';
   END IF;
-  IF EXISTS(SELECT 1 FROM pg_stat_activity WHERE backend_type='client backend' AND usename IN(${roleList})) THEN
+  IF EXISTS(SELECT 1 FROM pg_stat_activity WHERE usename IN(${roleList})) THEN
     RAISE EXCEPTION 'Hosted baseline runtime sessions remain';
   END IF;
 END $hosted_baseline$;

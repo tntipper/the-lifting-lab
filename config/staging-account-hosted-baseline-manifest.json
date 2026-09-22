@@ -12,7 +12,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-database.mjs",
-      "sha256": "9fb9faf775a645f45d2ac4d5c5ab04ecac2a60a6146501c3c180e6e4c324ff7c"
+      "sha256": "aef547858e4c86cce6fb57aaeeddbb762d51751d5522ffdc975079cb94103623"
     },
     {
       "path": "scripts/staging-generation-21-credentials.mjs",

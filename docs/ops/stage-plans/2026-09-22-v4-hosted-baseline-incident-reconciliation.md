@@ -86,3 +86,44 @@ the full query will pass.
 | Preventive control | SQL v2 pins the read-only observer identity while pinning the retired operator edge to `postgres`. The session/composition now emit finite non-secret diagnostic codes. A successor must pass an exact read-only-role rehearsal before arming. |
 | Verification | Focused tests, all 2,234 repository tests, typecheck, build, lint (0 errors), dependency audit (0 vulnerabilities), manifest and live-boundary checks pass. The exact hosted SQL has **not** yet been rehearsed successfully under the Management read-only path. |
 | Remaining uncertainty | The v2 full SQL may reveal a later permission or state mismatch. The independent security review and hosted read-only rehearsal are pending; no successor window may be armed on the current evidence. |
+
+## Exact v2 read-only rehearsal gate
+
+The independent review found a blocking visibility flaw before this rehearsal:
+`supabase_read_only_user` inherits broad table read access but need not hold
+`pg_read_all_stats`. PostgreSQL can hide another user's
+`pg_stat_activity.backend_type` while leaving `usename` visible. Therefore a
+predicate requiring `backend_type='client backend'` can miss an active runtime
+session. The fixed SQL now conservatively checks all visible rows by runtime
+`usename` alone. An engine-backed restricted-role regression proves the
+difference, and the independent reviewer accepted the correction.
+The previously prepared `/tmp/tll-hosted-baseline-v2-rehearsal.sql` was stale
+and removed before use. No rehearsal intent has been claimed and no hosted v2
+query has been executed.
+
+The SQL Editor impersonation route is rejected: `SET LOCAL SESSION
+AUTHORIZATION supabase_read_only_user` requires a superuser starting identity,
+and hosted Supabase `postgres` is not a superuser. Perform **one** staging-only
+rehearsal through the existing Management API binding's `readDatabase` method.
+It fixes `POST /v1/projects/qdmvngjwkcsilzmqksme/database/query`, the exact
+exported `STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_SQL`, and `read_only:true`.
+It therefore uses the same read-only execution identity as v4. Use only the
+existing `Supabase CLI` Keychain credential; do not access Vercel, the custom
+provider, production, or customer data in this rehearsal.
+
+First commit and verify a disabled one-shot launcher. Its new secret-free,
+exclusive mode-0600 journal path is
+`../implementation-state/staging/tll-hosted-baseline-v2-db-rehearsal.json`.
+Review the exact arming diff independently. Verify target, query ID, SQL hash,
+read-only request, credential selector, journal absence and staging project
+binding before arming. Then invoke the launcher directly once within a
+60-second deadline; no retry. Record only the one-row validated receipt's
+status/hash or a fixed error class; never store raw rows, SQL text, tokens, or
+unrestricted logs. If request settlement or cleanup is uncertain, leave the
+journal at intent and reconcile from staging logs before any successor.
+
+This rehearsal proves SQL and role compatibility in staging, but it is not a
+second v4 hosted observer and does not establish provider, Vercel, readiness,
+Edge or deployment state. A future full observer still requires its own
+independent arming review, exclusive new journal, credential preflight and
+one-shot window.
