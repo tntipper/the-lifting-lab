@@ -32,7 +32,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-composition.mjs",
-      "sha256": "8a6ea89b8a524f7b8db2506931bd83284a68b26a7cdaba18a69f07eeb06b5cec"
+      "sha256": "220979b09ac5b3838bc0070688afea2e9d932e2836c5d50201314417f882f7cc"
     },
     {
       "path": "scripts/staging-provider-broker-native-binding.mjs",
@@ -80,7 +80,7 @@
     },
     {
       "path": "tests/staging-account-hosted-baseline-composition.test.mjs",
-      "sha256": "40c325c147e524184bc1ced80ed1a64002ca6780f0517540914ea8eb332f6dc7"
+      "sha256": "bb5d583585fdfd93adae694949fbd72350137dd5d114d734aad9f2b744d6574f"
     },
     {
       "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",

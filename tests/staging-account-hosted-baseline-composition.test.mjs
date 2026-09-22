@@ -69,6 +69,18 @@ test('secret presence is composed as HOLD without exposing inventories or values
   assert.deepEqual(result.brokerSecrets, { supabasePresent: true, vercelPresent: true })
 })
 
+test('Git-linked staging project with sourceless metadata still yields an honest HOLD when repository identity matches', async () => {
+  const observedProject = { ...project, repository: { ...project.repository, sourceless: true } }
+  const stagingProvider = { ...provider, enabled: true, jwks_uri: 'https://example.invalid/jwks', custom_claims_allowlist: [] }
+  const stagingSurface = { ...surfaceObservation, deployment: { ...surfaceObservation.deployment, applicationManifestSha256: null } }
+  const f = fixture({ projectOverride: observedProject, providerOverride: stagingProvider, surfaceOverride: stagingSurface })
+  const result = await f.composition.observe({ signal: signal() })
+  assert.equal(result.status, 'HOLD')
+  assert.deepEqual(result.reasonCodes, ['provider_enabled', 'provider_jwks_configured', 'application_manifest_evidence_absent'])
+  assert.equal(result.vercel.repositoryId, '998877')
+  assert.equal(f.surfaceReads, 1)
+})
+
 test('staging-shaped successful reads produce the same HOLD across concurrent completion orders', async () => {
   const names = ['provider', 'supabase-secrets', 'vercel-secrets', 'project', 'surface']
   const orders = [names, [...names].reverse(), ['surface', 'project', 'provider', 'vercel-secrets', 'supabase-secrets']]
@@ -137,6 +149,22 @@ test('repository disagreement fails closed, disposes Supabase, and cannot be rep
   assert.equal(f.disposed, 1); assert.equal(f.vercelDisposed, 1); assert.equal(f.surfaceDisposed, 1); assert.equal(f.surfaceReads, 1)
   await assert.rejects(f.composition.observe({ signal: signal() }), new RegExp(HOSTED_BASELINE_COMPOSITION_ERROR))
   assert.equal(f.surfaceReads, 1)
+})
+
+test('sourceless metadata never excuses a mismatched or malformed Git identity', async () => {
+  for (const repository of [
+    { ...project.repository, sourceless: true, repoId: 112233 },
+    { ...project.repository, sourceless: true, provider: 'gitlab' },
+    { ...project.repository, sourceless: 'true' },
+  ]) {
+    const f = fixture({ projectOverride: { ...project, repository } })
+    await assert.rejects(f.composition.observe({ signal: signal() }), error => {
+      assert.equal(error.code, 'vercel_merge_unavailable')
+      return true
+    })
+    assert.equal(f.surfaceReads, 1)
+    assert.equal(f.disposed, 1)
+  }
 })
 
 test('validation failures have fixed stage labels and cannot expose malformed responses', async () => {

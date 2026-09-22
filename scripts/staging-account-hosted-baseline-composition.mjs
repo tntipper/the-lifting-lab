@@ -30,7 +30,7 @@ function validateBindings(supabase, vercel, surface) {
 function mergeVercel(project, observedSurface) {
   if (!exact(project, ['target', 'repository']) || !project.repository || typeof project.repository !== 'object'
     || Array.isArray(project.repository) || !positiveRepositoryId(project.repository.repoId)
-    || project.repository.provider !== 'github' || project.repository.sourceless !== false
+    || project.repository.provider !== 'github' || typeof project.repository.sourceless !== 'boolean'
     || !exact(observedSurface, ['surface', 'deployment']) || !observedSurface.deployment
     || typeof observedSurface.deployment !== 'object' || Array.isArray(observedSurface.deployment)) unavailable()
   const deployment = observedSurface.deployment
