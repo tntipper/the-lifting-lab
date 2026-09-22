@@ -2759,7 +2759,7 @@
       },
       {
         "path": "scripts/staging-generation-19-recovery.mjs",
-        "sha256": "c0c2ee43d1655b30a8c6dc3cc765803af699a43a1c600d75426547e40b7a60af"
+        "sha256": "a0356541a86cb721c7267ac15c0a90db0755084e11da7a8a886ca4438b0ffe74"
       },
       {
         "path": "scripts/staging-generation-19-live-launcher.mjs",
@@ -2786,6 +2786,10 @@
         "sha256": "4be29bf9dc5ad50106e9a98c3f6e1a23d7fd6d551e6f4c466bee2c5e13666072"
       },
       {
+        "path": "scripts/staging-generation-19-retirement-preflight.mjs",
+        "sha256": "c8395e9447a9e50efb1d3d035e780e926993db0e692144ca14982945a7ea5b76"
+      },
+      {
         "path": "scripts/staging-generation-recovery-pin-contract.mjs",
         "sha256": "43523fdc7d1e7f7f2147f029dcbc8f6abd91f978bdb0400ffddc32483c49808c"
       },
@@ -2795,11 +2799,15 @@
       },
       {
         "path": "config/staging-generation-19-recovery.sql",
-        "sha256": "d943c9f4713f87e93700aa32446797d9bf593be927a6fc02598ced8a4a3e5516"
+        "sha256": "e545dd654a7daac90a76bd857374f0f650eb51be1759415c1ef74e11d6646cee"
       },
       {
         "path": "config/staging-generation-19-recovery-postcommit.sql",
-        "sha256": "1e78569f48de8a0eec03fb362289b5926124f7a35cc67b2fc9a12f14e7e96cd6"
+        "sha256": "1573f99fbd8cbd62ed21f60b863648ee34bea69b3b04fdb276cd3aeafc11c256"
+      },
+      {
+        "path": "config/staging-generation-19-retirement-preflight.sql",
+        "sha256": "355ff7f3364609e1002091384909e3f3bf4d72f766f748caa79619336c14b8f8"
       },
       {
         "path": "tests/staging-generation-19-credentials.test.mjs",
@@ -2815,7 +2823,7 @@
       },
       {
         "path": "tests/staging-generation-19-recovery.test.mjs",
-        "sha256": "90cc3b42e33d37cef3e14a12e7c6ce13b523a45316af641bac6a5cec88db0d25"
+        "sha256": "fae270c2558fec2fce82d4adf38cc895c1ffc563e33eceb02fa58da6d1edf7a0"
       },
       {
         "path": "tests/staging-generation-19-long-session.test.mjs",
@@ -2832,6 +2840,10 @@
       {
         "path": "tests/staging-generation-19-pre-arm-gate.test.mjs",
         "sha256": "ad62c7dc7d23b0e55c0191546f3ea3e5bfd8758f30380df6d123a83530a2f0ce"
+      },
+      {
+        "path": "tests/staging-generation-19-retirement-preflight.test.mjs",
+        "sha256": "6af824415019f4ff18300caf3468b1541c502aaca99709b4d2decfeee688e63d"
       },
       {
         "path": "tests/staging-generation-recovery-pin-contract.test.mjs",

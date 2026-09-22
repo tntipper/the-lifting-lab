@@ -14,4 +14,13 @@ test('generation 19 recovery is derived from exact pinned generation 6 recovery 
   }
   const recovery=readFileSync('config/staging-generation-19-recovery.sql','utf8')
   assert.match(recovery,/'generation',19/);assert.match(recovery,/state','retired'/);assert.match(recovery,/NOLOGIN PASSWORD NULL/)
+  assert.match(recovery,/rolpassword IS NOT NULL/)
+  assert.match(recovery,/Missing retired runtime ADMIN-only operator edge/)
+  assert.match(recovery,/Direct private authority survives retirement/)
+  const postcommit=readFileSync('config/staging-generation-19-recovery-postcommit.sql','utf8')
+  assert.match(postcommit,/rolpassword IS NOT NULL/)
+  assert.match(postcommit,/Missing retired runtime ADMIN-only operator edge/)
+  assert.match(postcommit,/Direct private authority survives retirement/)
+  assert.match(postcommit,/tll_gen19_retirement_postcommit/)
+  assert.match(postcommit,/Post-commit controls are not exact-singleton disabled/)
 })
