@@ -1,13 +1,11 @@
-# Generation 20 disabled successor
+# Generation 20 consumed successor record
 
 ## Purpose
 
-> Historical disabled-base record. The reviewed one-window arming state is documented separately in [Generation 20 one-window arming diff](2026-09-22-generation-20-arming-diff.md). This document does not authorise an action.
-
-This is a local, fully disabled successor package. It exists only to make the
-next reviewed activation boundary auditable. It performs no hosted action,
-generates no credential material, and leaves native, Keychain, replay, and
-policy gates false.
+This package is disarmed after its single live attempt stopped at the read-only
+entry baseline. It generated no hosted credential material and performed no
+provider or database mutation. Native, Keychain, replay, and policy gates are
+false, and this Generation 20 identity may never be re-armed.
 
 ## Fixed identity
 
@@ -22,18 +20,20 @@ policy gates false.
 | Predecessor window | `51809dd4-bd4b-44c7-8609-7dd8ca063679` |
 | Predecessor expiry | `2026-09-21T11:08:34.000Z` |
 
-## Preconditions for any future arming review
+## Preconditions for a future successor review
 
 1. Re-run secret-free, read-only proof that all five runtime-role markers are
    exactly Generation 19, the predecessor window above, state `retired`, and
    the predecessor expiry above.
 2. Re-run the focused package, recovery-pin, manifest, and live-boundary tests.
-3. Review an arming-only diff that supplies a new bounded expiry. Phase 1 uses
-   an intentionally invalid recovery-expiry sentinel, so recovery cannot be
-   accidentally used as a live path. The reviewed value must match both the
-   active runtime marker and PostgreSQL `VALID UNTIL`; `infinity` is rejected.
-4. Keep the current policy holds false until independent review approves that
-   separate arming diff.
+3. Mint a new generation and window identity. Generation 20 is consumed and
+   non-replayable. Its disabled code remains only as an audited record/template.
+4. Require the successor entry baseline to use the recovery contract for a
+   retired predecessor: exact retired marker, `NOLOGIN`, no password, PostgreSQL
+   `VALID UNTIL infinity`, inert ADMIN-only edges, zero sessions, and controls
+   disabled. Active credentials still require a finite reviewed expiry.
+5. Keep all policy holds false until independent review approves a separate
+   successor arming diff.
 
 ## What is included
 
@@ -48,7 +48,7 @@ policy gates false.
 
 - No Keychain access, credential creation, provider configuration, database
   mutation, deployment, checkout, purchase, or production access.
-- No Generation 19 replay and no generation-20 arming or live invocation.
+- No Generation 19 replay, no Generation 20 replay, and no Generation 20 re-arming or live invocation.
 - A future supported operator entry must provide a secret-free Gen19 retirement
   evidence path; the launcher refuses an armed start without it.
 - No use of this document as an activation instruction.

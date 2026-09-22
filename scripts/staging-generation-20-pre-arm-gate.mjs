@@ -5,8 +5,7 @@
  * 1. Gen 19 + Gen 20 recovery successor pins match their credentials packages, AND
  * 2. the exact Gen 19 predecessor retirement is proven via secret-free evidence.
  *
- * Does not touch hosted staging or Keychain. It verifies either the disabled base
- * or the separately reviewed one-window armed state without invoking native work.
+ * Does not touch hosted staging, Keychain, or native gates. Phase 1 keeps all gates false.
  */
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -19,6 +18,7 @@ import { assertRecoverySuccessorPinsMatchCredentials } from './staging-generatio
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 export const PRE_ARM_SCHEMA = 'tll-generation-20-pre-arm/v1'
+export const GENERATION_20_CONSUMED = true
 export const RETIREMENT_PLAN_DOC = 'docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md'
 export const PRE_ARM_CHECKLIST_DOC = 'docs/ops/stage-plans/2026-09-22-generation-20-pre-arm-checklist.md'
 
@@ -100,6 +100,7 @@ export async function assertGeneration20PreArmReady({
   retirementEvidence = null,
   requireArmedGatesFalse = true,
 } = {}) {
+  if (GENERATION_20_CONSUMED) unavailable('generation20_consumed_no_replay')
   if (GENERATION !== 20 || WINDOW_ID !== 'a009f2b4-86df-4701-a8bc-1112597e3c42' || PACKAGE_ID !== 'tll-staging-generation-20-credentials/v1') {
     unavailable('package_identity_mismatch')
   }

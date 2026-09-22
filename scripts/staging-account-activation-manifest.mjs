@@ -2,7 +2,6 @@
 import { createHash } from 'node:crypto'
 import { readFile, readdir, writeFile } from 'node:fs/promises'
 import { relative, resolve } from 'node:path'
-import { ACTIVE_WINDOW_EXPIRES_AT } from './staging-generation-20-credentials.mjs'
 
 const root = resolve(import.meta.dirname, '..')
 const output = resolve(root, 'config/staging-account-activation-manifest.json')
@@ -385,6 +384,7 @@ const generation20SuccessorSources = [
   'docs/ops/stage-plans/2026-09-22-generation-20-disabled-successor.md',
   'docs/ops/stage-plans/2026-09-22-generation-20-pre-arm-checklist.md',
   'docs/ops/stage-plans/2026-09-22-generation-20-arming-diff.md',
+  'docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md',
   'docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md',
 ]
 const stageSafetySources = [
@@ -1026,10 +1026,10 @@ const manifest = {
     target: 'qdmvngjwkcsilzmqksme', generation: 20, windowId: 'a009f2b4-86df-4701-a8bc-1112597e3c42',
     predecessor: {
       generation: 19, windowId: '51809dd4-bd4b-44c7-8609-7dd8ca063679', expiresAt: '2026-09-21T11:08:34.000Z',
-      validUntil: '2026-09-21T11:08:34.000Z', state: 'retired', replayPermitted: false,
-      note: 'Exact Gen19 retired runtime-marker contract. A fresh read-only proof is required before any separately reviewed Gen20 arming diff.',
+      validUntil: 'infinity', state: 'retired', replayPermitted: false,
+      note: 'Exact Gen19 retired marker plus canonical inert role contract. Generation 20 is consumed and cannot be re-armed.',
     },
-    predecessorMarkerComparison: 'PARSED_JSON_SEMANTICS', predecessorValidUntilComparison: 'EXACT_PREDECESSOR_EXPIRY',
+    predecessorMarkerComparison: 'PARSED_JSON_SEMANTICS', predecessorValidUntilComparison: 'CANONICAL_RETIRED_INFINITY',
     liveLauncher: {
       path: 'scripts/staging-generation-20-live-launcher.mjs', phaseJournal: 'scripts/staging-window-phase-journal.mjs',
       phaseJournalPath: '../implementation-state/staging/tll-generation-20-window-phase.json', ordinaryTestsMayImportOrInvoke: false,
@@ -1038,8 +1038,12 @@ const manifest = {
       separateReadOnlyObserver: 'scripts/staging-generation-20-journal-watch.mjs',
     },
     secretBearingSqlMustRemainInMemory: true, exclusiveNonsecretJournal: true,
-    activeWindowExpiresAt: ACTIVE_WINDOW_EXPIRES_AT,
-    nativeTransportEnabled: true, status: 'ARMED_ONE_BOUNDED_WINDOW_REQUIRES_RUN_LIVE_ONCE',
+    nativeTransportEnabled: false, status: 'ENTRY_BASELINE_FAILED_NO_REPLAY',
+    attemptOutcome: {
+      phase: 'ENTRY_PREFLIGHT_RETRY', recoveryOutcome: 'NOT_REQUIRED', databaseDispatchAttempted: false,
+      providerStagingAttempted: false, rootCause: 'RETIRED_VALID_UNTIL_CONTRACT_MISMATCH',
+      incident: 'docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md',
+    },
     preArmRequiresPredecessorRetirementEvidence: true,
     reviewedRetirementPlan: 'docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md',
   },

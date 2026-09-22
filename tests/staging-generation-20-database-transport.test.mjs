@@ -7,10 +7,10 @@ import { dispatchGeneration20Database, GENERATION_20_ENTRY_BASELINE_SQL, KEYCHAI
 const token='sbp_'+('a'.repeat(40))
 const sql=`BEGIN;\n-- ${WINDOW_ID} tll-staging-generation-20-credentials/v1\nSELECT 1 AS tll_generation_20_credential_receipt;\n`
 
-test('generation 20 reviewed arming diff enables the database and Keychain gates',()=>{
+test('generation 20 native database transport and keychain access stay disabled',()=>{
   const helper=readFileSync('scripts/staging-generation-20-keychain.py','utf8')
-  assert.equal(normalizeSupabaseToken(token),token);assert.equal(NATIVE_GENERATION_20_DATABASE_TRANSPORT_ENABLED,true);assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000)
-  assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'True');assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
+  assert.equal(normalizeSupabaseToken(token),token);assert.equal(NATIVE_GENERATION_20_DATABASE_TRANSPORT_ENABLED,false);assert.equal(KEYCHAIN_HELPER_TIMEOUT_MS,45_000)
+  assert.equal(helper.match(/^APPROVED_NATIVE_READ = (.+)$/m)?.[1],'False');assert.match(helper,/\["\/usr\/bin\/security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"\]/)
   assert.match(helper,/Generation-20 native credential transport unavailable/);assert.doesNotMatch(helper,/Generation-6 native credential transport unavailable/)
 })
 
@@ -20,13 +20,17 @@ test('generation 20 dispatch accepts only its new package and window',async()=>{
   await assert.rejects(()=>dispatchGeneration20Database(sql.replaceAll(WINDOW_ID,'wrong'),{token,post:async()=>[]}),/unavailable/)
 })
 
-test('generation 20 entry baseline returns the exact retired Gen19 predecessor contract',async()=>{
+test('generation 20 entry baseline accepts the canonical retired Gen19 role shape',async()=>{
   let query;const receipt={status:'ENTRY_BASELINE_PASS',projectRef:PROJECT_REF,windowId:WINDOW_ID,
     predecessorGeneration:19,predecessorWindowId:PREDECESSOR.windowId,predecessorExpiresAt:PREDECESSOR.expiresAt,
     predecessorState:'retired',runtimeInert:true,controlsEnabled:false}
   const value=await verifyGeneration20EntryBaseline({token,post:async(_token,text)=>{query=text;return [{tll_generation_20_entry_baseline:receipt}]}})
   assert.deepEqual(value,receipt);assert.equal(query,GENERATION_20_ENTRY_BASELINE_SQL);assert.match(query,/BEGIN READ ONLY/);assert.match(query,new RegExp(PREDECESSOR.windowId));assert.match(query,/generation":19/)
-  assert.ok(query.includes(`rolvaliduntil IS DISTINCT FROM '${PREDECESSOR.expiresAt}'::timestamptz`))
+  assert.ok(query.includes("rolvaliduntil IS DISTINCT FROM 'infinity'::timestamptz"))
+  assert.ok(!query.includes(`rolvaliduntil IS DISTINCT FROM '${PREDECESSOR.expiresAt}'::timestamptz`))
+  assert.match(query,/rolcanlogin/);assert.match(query,/pg_authid/);assert.match(query,/rolpassword IS NOT NULL/)
+  assert.match(query,/member\.rolname=current_user AND m\.admin_option AND NOT m\.inherit_option AND NOT m\.set_option/)
+  assert.match(query,/AND NOT \(granted\.rolname IN/)
   assert.match(query,/substring\(role_marker FROM/);assert.match(query,/parsed_marker IS DISTINCT FROM/);assert.doesNotMatch(query,/shobj_description\(oid,'pg_authid'\)='/)
   await assert.rejects(()=>verifyGeneration20EntryBaseline({token,post:async()=>[{tll_generation_20_entry_baseline:{...receipt,predecessorGeneration:10}}]}),error=>{
     assert.match(error.message,/unavailable/);assert.equal(error.failureStep,'preflight');assert.equal(error.failureReason,'unavailable');return true

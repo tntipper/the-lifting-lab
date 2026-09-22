@@ -54,7 +54,7 @@
     "sources": [
       {
         "path": "config/project-stage-gate-policy.json",
-        "sha256": "26795ae70062946f85f78e65f5c13bee0537f0534ad8a0bbcbeb64c12d7af104"
+        "sha256": "1b6b9a5a8577fcf1512e2baaebe5f43b0929d4c839712d866bee5855e9922271"
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
@@ -379,7 +379,7 @@
     "generation17Armed": false,
     "generation18Armed": false,
     "generation19Armed": false,
-    "generation20Armed": true,
+    "generation20Armed": false,
     "generation12ReplayPermitted": false,
     "generation13ReplayPermitted": false,
     "generation14ReplayPermitted": false,
@@ -3010,19 +3010,19 @@
       },
       {
         "path": "scripts/staging-generation-20-credentials.mjs",
-        "sha256": "efdded8184dc90c22d6be6a8ad94ae13d4f5f59e143b6fa56103b00924db257d"
+        "sha256": "1fbf8d01c9e00af4f91c22697ce01c6048ac15df393128617b23b1ad4825d4de"
       },
       {
         "path": "scripts/staging-generation-20-transport.mjs",
-        "sha256": "860ce047b30727663874315940c735cedb620bb8de5306b8c88d076b866bdef6"
+        "sha256": "d93d0e3da8c1ef1e2e6dbfc9c028cd675714e82b2a576eba796ead31319ddb68"
       },
       {
         "path": "scripts/staging-generation-20-database-transport.mjs",
-        "sha256": "2a98e4842d36400776bb8894ac9e2be87ffde41176aba6e4145414ffc64a412a"
+        "sha256": "d31ffbe2a76699a93e0203aa1f9383fe20966732b4034624cc17fa34392c4035"
       },
       {
         "path": "scripts/staging-generation-20-keychain.py",
-        "sha256": "7d3da3f163961243014627547954fdfa2ccc35ead210cba5161a8bdafb8b6924"
+        "sha256": "1872c3fa3369f406f0b8ca0435894f40b220f95aeb652aa7014482dbceca75d9"
       },
       {
         "path": "scripts/staging-generation-20-recovery.mjs",
@@ -3050,7 +3050,7 @@
       },
       {
         "path": "scripts/staging-generation-20-pre-arm-gate.mjs",
-        "sha256": "bc61d20e6910a4870116a0362780a4103f99d288b2ebee82900e0fff8c671cef"
+        "sha256": "8160107ce5dd414a934546c4f002917b1f2099c0f78d7ec24ae227e9bdffb3c6"
       },
       {
         "path": "scripts/staging-generation-20-retirement-preflight.mjs",
@@ -3066,7 +3066,7 @@
       },
       {
         "path": "config/staging-generation-20-recovery.sql",
-        "sha256": "6ecd0d9a3f78c7c9f9578bc6b2177a0bcdfb87c694d543ffe3b52f183747c3c3"
+        "sha256": "71410a3558e181a9a1421e262794c2e29cfb10395e8a6ae04ff9504c19706f24"
       },
       {
         "path": "config/staging-generation-20-recovery-postcommit.sql",
@@ -3074,27 +3074,27 @@
       },
       {
         "path": "config/staging-generation-20-retirement-preflight.sql",
-        "sha256": "011b801cc89bb328e90c7570316f90ca1b9ec653457c26ed54f332127fca1848"
+        "sha256": "3ed602e76ed3cbe73665dee9cee0b63c6d3207c28626d029b3b6b11957c6a9a2"
       },
       {
         "path": "tests/staging-generation-20-credentials.test.mjs",
-        "sha256": "ed3bca68550c7aad9ff2497ae7c949180994d6709b25aca388548f5a5e1d261a"
+        "sha256": "6d5a2983938a90199d8d1d27758a8232264a518f28838810c0504efbbef73056"
       },
       {
         "path": "tests/staging-generation-20-transport.test.mjs",
-        "sha256": "cf30f49cfc6766ddcad98a1a14523fbdb7130c0b3576150ffd3f0e532506c45f"
+        "sha256": "dab3567f4f27704f8ce32dff46df4688afb46e4f9533bf4d6e9990c0423cc29d"
       },
       {
         "path": "tests/staging-generation-20-database-transport.test.mjs",
-        "sha256": "d258f5e482764a9c443ce9bac92ff89c96cb9527fed9a00f6eefc223d1f3cde9"
+        "sha256": "9c06d8eddfe9a450476aa811965f95bd9893905ed10f373897c19fa0896b0eda"
       },
       {
         "path": "tests/staging-generation-20-recovery.test.mjs",
-        "sha256": "8a7ee8ad604d3d30cfa6653cced46e7399331fde6dd0f2c55f72fd374c82895a"
+        "sha256": "5d345be8a08954a305e4750aee4be027168fbc06233e28f241b2289effb853de"
       },
       {
         "path": "tests/staging-generation-20-long-session.test.mjs",
-        "sha256": "cb722717ec7ae0985e8df6dd62a4d3acd81a1edc21f5c767276f134d27398194"
+        "sha256": "ca1a0652dc23b42401b1f1919a0a0629f81361258a8c9c7dac599165d7d31b62"
       },
       {
         "path": "tests/staging-generation-20-connection-failure-evidence.test.mjs",
@@ -3106,11 +3106,11 @@
       },
       {
         "path": "tests/staging-generation-20-pre-arm-gate.test.mjs",
-        "sha256": "3098f6ea497b8740f0303163525a2ee087b9da645aa9ad4ab81b18eab7c551bf"
+        "sha256": "d10e619ecfc088ebd1677ca2441ac962ae098bb18bf6ed98b85593d188572c62"
       },
       {
         "path": "tests/staging-generation-20-retirement-preflight.test.mjs",
-        "sha256": "97a32b7754eaffd0f0054d2af4df757eae77ba89a642e727c545d1c4c42cf61d"
+        "sha256": "ba33c8f4e4e45e5ca8c19a77b81df714f9d8919a8cea09885dd282547ffe7d5b"
       },
       {
         "path": "tests/staging-generation-recovery-pin-contract.test.mjs",
@@ -3118,7 +3118,7 @@
       },
       {
         "path": "docs/ops/stage-plans/2026-09-22-generation-20-disabled-successor.md",
-        "sha256": "32a92763b38ebd766d5473dc799df2620acc23db7f74ee0ac1df10fd177af95e"
+        "sha256": "735add1e1077eb5318d32013334be3e4fbef3e10c75218241e94ff1bc80f21f8"
       },
       {
         "path": "docs/ops/stage-plans/2026-09-22-generation-20-pre-arm-checklist.md",
@@ -3126,7 +3126,11 @@
       },
       {
         "path": "docs/ops/stage-plans/2026-09-22-generation-20-arming-diff.md",
-        "sha256": "650e6365a6debfbdbc43a3fd750694964a2c79168aa22a7a5b3e702822e584d0"
+        "sha256": "6a7ccaaa8e118313668eaed1e827837d6476d7237520df1882664509d6c7188c"
+      },
+      {
+        "path": "docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md",
+        "sha256": "9df6c269b0fb699b39ac434cd133604f8e4c1298f72850a9d1ad2dc409de3af1"
       },
       {
         "path": "docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md",
@@ -3140,13 +3144,13 @@
       "generation": 19,
       "windowId": "51809dd4-bd4b-44c7-8609-7dd8ca063679",
       "expiresAt": "2026-09-21T11:08:34.000Z",
-      "validUntil": "2026-09-21T11:08:34.000Z",
+      "validUntil": "infinity",
       "state": "retired",
       "replayPermitted": false,
-      "note": "Exact Gen19 retired runtime-marker contract. A fresh read-only proof is required before any separately reviewed Gen20 arming diff."
+      "note": "Exact Gen19 retired marker plus canonical inert role contract. Generation 20 is consumed and cannot be re-armed."
     },
     "predecessorMarkerComparison": "PARSED_JSON_SEMANTICS",
-    "predecessorValidUntilComparison": "EXACT_PREDECESSOR_EXPIRY",
+    "predecessorValidUntilComparison": "CANONICAL_RETIRED_INFINITY",
     "liveLauncher": {
       "path": "scripts/staging-generation-20-live-launcher.mjs",
       "phaseJournal": "scripts/staging-window-phase-journal.mjs",
@@ -3159,9 +3163,16 @@
     },
     "secretBearingSqlMustRemainInMemory": true,
     "exclusiveNonsecretJournal": true,
-    "activeWindowExpiresAt": "2026-09-22T13:23:00.000Z",
-    "nativeTransportEnabled": true,
-    "status": "ARMED_ONE_BOUNDED_WINDOW_REQUIRES_RUN_LIVE_ONCE",
+    "nativeTransportEnabled": false,
+    "status": "ENTRY_BASELINE_FAILED_NO_REPLAY",
+    "attemptOutcome": {
+      "phase": "ENTRY_PREFLIGHT_RETRY",
+      "recoveryOutcome": "NOT_REQUIRED",
+      "databaseDispatchAttempted": false,
+      "providerStagingAttempted": false,
+      "rootCause": "RETIRED_VALID_UNTIL_CONTRACT_MISMATCH",
+      "incident": "docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md"
+    },
     "preArmRequiresPredecessorRetirementEvidence": true,
     "reviewedRetirementPlan": "docs/ops/stage-plans/2026-09-22-hosted-gen19-retirement-remediation.md"
   },

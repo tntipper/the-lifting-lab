@@ -15,7 +15,7 @@ test('Gen20 retirement preflight is fixed, read-only, and checked in', () => {
   assert.match(FIXED_QUERY, new RegExp(PRODUCTION_PROJECT_REF))
   assert.match(FIXED_QUERY, new RegExp(WINDOW_ID))
   assert.match(FIXED_QUERY, new RegExp(EXPIRES_AT.replace(/[.]/g, '\\.')))
-  assert.match(FIXED_QUERY, /2026-09-22T13:23:00\.000Z/)
+  assert.match(FIXED_QUERY, /UNSET_REQUIRES_REVIEWED_ARMING_DIFF/)
   assert.doesNotMatch(FIXED_QUERY, /2026-09-21T11:08:34\.000Z/)
   assert.doesNotMatch(FIXED_QUERY, /marker_expiry>=clock_timestamp\(\)/)
   assert.match(FIXED_QUERY, /rolvaliduntil FROM pg_roles WHERE rolname=r\) IS DISTINCT FROM marker_expiry/)

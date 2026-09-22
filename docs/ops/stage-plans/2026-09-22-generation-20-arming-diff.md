@@ -71,3 +71,12 @@ After the single attempt, regardless of result:
    activation manifest.
 5. Only after disarm may ordinary checks run. Any follow-on work needs a new
    reviewed successor boundary; this plan grants no second window.
+
+## Recorded terminal outcome
+
+This window was invoked once and is consumed. It stopped during the read-only
+entry baseline with `ENTRY_BASELINE_FAILED` before database dispatch or provider
+staging. Recovery was `NOT_REQUIRED`; no Generation 20 credential or control
+mutation occurred. Replay and re-arming are prohibited. The root cause and
+preventive correction are recorded in
+`docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md`.
