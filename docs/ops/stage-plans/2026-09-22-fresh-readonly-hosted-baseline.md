@@ -38,7 +38,7 @@ or Generation 22 work. This stage is complete only when:
 
 This stage performs no provider update or disablement, secret/environment
 write, database write, role/login/password change, function deployment,
-Preview deployment, alias change, protection bypass, Shopify change, browser
+Preview deployment, alias change, protection-setting change, Shopify change, browser
 sign-in, customer email, cart operation, checkout, purchase, supplier order,
 production request or Generation 22 creation/arming. A read-only baseline is
 evidence, not permission for the next mutation.
@@ -141,15 +141,48 @@ output are not substitutes.
   no concrete writer currently exists. A valid value is retained as application
   evidence; absence is recorded as `application_manifest_evidence_absent` and
   makes the observation `HOLD`. It is never invented from Git metadata.
-- No local Vercel credential source was found. The prior temporary automation
-  keys were revoked. The disabled Vercel reader can be implemented and reviewed,
-  but hosted execution remains blocked until an exact read-only token source is
-  separately reviewed and authorised.
+- No local Vercel Management API credential source was found. Previously used
+  temporary automation keys were revoked; a masked bypass entry visible in the
+  current project UI has not been qualified for this run. Hosted execution
+  remains blocked until the separate API and protection credentials are
+  provisioned and independently checked for their exact uses.
 - Cached Supabase CLI binaries match the previously pinned hash, but there is no
   installed Vercel CLI. The baseline should prefer fixed HTTPS reads and must
   not import historical mutation-capable provider transports.
 
 ## Failure modes and preventive controls
+
+### 2026-09-22 arming review correction
+
+The independent review of the first three-file arming patch returned **HOLD**.
+The current Vercel project UI shows **Require Log In** enabled for Preview.
+The immutable readiness GET would receive a protection challenge because it
+currently sends no deployment-protection credential. The same review found that
+the planned Keychain value called an automation key is actually used as a
+Vercel Management API bearer token. Vercel documents these as separate token
+types. The first arming patch is superseded and must not be applied or run.
+
+Before another arming candidate, the disabled package must use three separate
+credential sources: the existing Supabase Management credential, a short-lived
+Vercel Access Token scoped to the pinned team and used by this launcher only for
+the fixed REST reads, and
+a short-lived project automation-bypass secret sent only as the
+`x-vercel-protection-bypass` header on the fixed immutable readiness GET.
+The bypass must never enter a Management API Authorization header, URL, query,
+Edge request, evidence receipt or error. The API token must never enter the
+readiness or Edge request. Neither credential may be printed or committed.
+The project protection setting stays enabled. Both temporary Vercel credentials
+must be revoked immediately after the single observation and their Keychain
+entries removed. An existing masked automation-bypass entry in project settings
+is not proof that its value is available or appropriate for this window.
+
+Credential presence and format must be checked before claiming the exclusive
+observation journal, with all acquired buffers wiped on failure. The journal
+must still be claimed before any hosted request. The disabled correction needs
+fake-response tests proving exact header separation and a protected 401 fails
+closed; it must pass the full local stage gates and independent review before a
+new minimal arming patch is prepared. Creating either Vercel credential and
+using the bypass are separate action-time approval gates in the browser UI.
 
 - Target, team, branch, alias, provider or source drift stops before subsequent
   reads and records only an allowlisted reason.

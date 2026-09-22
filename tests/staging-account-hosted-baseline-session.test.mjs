@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto'
 import { STAGING_BROKER_PROVIDER } from '../scripts/staging-provider-broker-rotation.mjs'
 import {
   createHostedBaselineObservationJournal,
+  createHostedBaselineCompositionFromFactories,
   createTrackedHostedBaselineFetch,
   projectHostedBaselineObservation,
   HOSTED_BASELINE_SESSION_SCHEMA,
@@ -18,6 +19,28 @@ const makeJournal = () => {
   return { path, journal: createHostedBaselineObservationJournal({ path, makeRunId: () => '11111111-1111-4111-8111-111111111111', now: Date.now }) }
 }
 const credential = name => Buffer.from(`${name}-credential-secret`, 'utf8')
+
+test('composition factories keep the API token and readiness bypass separate', async () => {
+  const supabaseCredential = credential('supabase')
+  const vercelCredential = credential('vercel-api')
+  const protectionBypassCredential = credential('preview-bypass')
+  const seen = {}
+  const makeBinding = name => input => { seen[name] = input; return { dispose: () => {} } }
+  const composition = await createHostedBaselineCompositionFromFactories({
+    factories: {
+      supabase: makeBinding('supabase'), vercel: makeBinding('vercel'), surface: makeBinding('surface'),
+      composition: ({ supabase, vercel, surface }) => ({ observe: async () => ({ supabase, vercel, surface }), dispose: () => {} }),
+    },
+    supabaseCredential, vercelCredential, protectionBypassCredential, fetch: async () => { throw Error('must not fetch') },
+  })
+  assert.equal(seen.supabase.managementToken, supabaseCredential)
+  assert.equal(seen.supabase.vercelToken, undefined)
+  assert.equal(seen.vercel.vercelToken, vercelCredential)
+  assert.equal(seen.vercel.protectionBypassToken, undefined)
+  assert.equal(seen.surface.vercelToken, vercelCredential)
+  assert.equal(seen.surface.protectionBypassToken, protectionBypassCredential)
+  await composition.dispose()
+})
 
 test('journal records a mode-0600 exclusive intent then a secret-free terminal receipt', () => {
   const { path, journal } = makeJournal()
@@ -48,8 +71,8 @@ test('failure waits for the operation to settle, scrubs credentials, and records
     clearTimer: () => {},
     verifyManifest: async () => {},
     readCredential: async selector => { const item = credential(selector); supplied.push(item); return item },
-    createComposition: async ({ supabaseCredential, vercelCredential }) => {
-      received.push(supabaseCredential, vercelCredential)
+    createComposition: async ({ supabaseCredential, vercelCredential, protectionBypassCredential }) => {
+      received.push(supabaseCredential, vercelCredential, protectionBypassCredential)
       return {
       observe: async () => { await Promise.resolve(); settled = true; throw Error('internal secret detail') },
       dispose: async () => {},
@@ -65,6 +88,41 @@ test('failure waits for the operation to settle, scrubs credentials, and records
   assert.doesNotMatch(record, /internal secret detail|credential-secret/)
   assert.deepEqual(JSON.parse(record).reasonCodes, ['deadline_or_abort'])
 })
+
+test('missing bypass credential does not consume the one-shot journal and wipes earlier credentials', async () => {
+  const { journal } = makeJournal()
+  const supplied = []
+  const result = await runHostedBaselineSession({
+    journal, verifyManifest: async () => {},
+    readCredential: async selector => {
+      if (selector === 'vercel-bypass') throw Error('private keychain diagnostic')
+      const item = credential(selector); supplied.push(item); return item
+    },
+    createComposition: async () => { throw Error('must not run') },
+  })
+  assert.deepEqual(result, { status: 'CREDENTIAL_UNAVAILABLE', target: 'qdmvngjwkcsilzmqksme' })
+  assert.equal(journal.read(), null)
+  assert.ok(supplied.every(item => item.every(byte => byte === 0)))
+})
+
+for (const [selector, size] of [['vercel', 513], ['vercel-bypass', 1025]]) {
+  test(`oversize ${selector} credential does not claim the journal`, async () => {
+    const { journal } = makeJournal()
+    const supplied = []
+    const result = await runHostedBaselineSession({
+      journal, verifyManifest: async () => {},
+      readCredential: async name => {
+        const item = name === selector ? Buffer.alloc(size, 65) : credential(name)
+        supplied.push(item)
+        return item
+      },
+      createComposition: async () => { throw Error('must not run') },
+    })
+    assert.deepEqual(result, { status: 'CREDENTIAL_UNAVAILABLE', target: 'qdmvngjwkcsilzmqksme' })
+    assert.equal(journal.read(), null)
+    assert.ok(supplied.every(item => item.every(byte => byte === 0)))
+  })
+}
 
 test('manifest failure occurs before journal or credential operations', async () => {
   const { journal } = makeJournal()
@@ -108,11 +166,12 @@ test('tracked fetch preserves native WHATWG Response properties while tracking i
 test('session retains intent until deferred cleanup settles before terminal evidence', async () => {
   const { journal } = makeJournal()
   let release; const cleanup = new Promise(resolve => { release = resolve })
+  let entered; const compositionStarted = new Promise(resolve => { entered = resolve })
   const pending = runHostedBaselineSession({
     journal, verifyManifest: async () => {}, readCredential: async selector => credential(selector),
-    createComposition: async () => ({ observe: async () => { throw Error('inert failure') }, dispose: async () => cleanup }),
+    createComposition: async () => { entered(); return { observe: async () => { throw Error('inert failure') }, dispose: async () => cleanup } },
   })
-  await Promise.resolve(); await Promise.resolve()
+  await compositionStarted
   assert.equal(journal.read().state, 'INTENT_RECORDED')
   release()
   const result = await pending
@@ -120,7 +179,7 @@ test('session retains intent until deferred cleanup settles before terminal evid
   assert.equal(journal.read().state, 'OBSERVATION_FAILED')
 })
 
-test('cleanup rejection is journaled only after cleanup settles', async () => {
+test('cleanup rejection preserves intent for reconciliation', async () => {
   const { journal } = makeJournal()
   const result = await runHostedBaselineSession({
     journal, verifyManifest: async () => {}, readCredential: async selector => credential(selector),

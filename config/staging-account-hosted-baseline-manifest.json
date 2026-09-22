@@ -28,7 +28,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-surface.mjs",
-      "sha256": "e24aba6534b1ac30f2051609621d59e31c220a98884c60851d197f7261d1e333"
+      "sha256": "ee05be871b1c1e64cc0102acd35c4eece76807e7bf91004731a7f16dfa466f3c"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-composition.mjs",
@@ -60,27 +60,27 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-session.mjs",
-      "sha256": "d257d4eade35b96ff0187df5ec194f3cdfdf4828fa29bf8cce0f293d550bd046"
+      "sha256": "cb3578e4a963c82f35f5551ca42c6dd069c0f88916fc10a82f513c22df703546"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-live-launcher.mjs",
-      "sha256": "465f49a27a448dc5a8ca6fbea19c77ad6682708fb069113bada3be6e8318f9dd"
+      "sha256": "4c99c5ea4f53df171d398eb1a8e8b3d496f946d5fb0d767133d4100da81a2ec3"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-keychain.py",
-      "sha256": "2cd3e7eb54f9a57b99db2a9da798592cfa33cdf3ddf31eb5cff0d14fb8f34a89"
+      "sha256": "4fe9be1f0c232d2ba61eef279036ba18a0e70b9df1d992871bffba6a37670716"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-manifest.mjs",
-      "sha256": "a78780b026a91436aa7bd2d4acf2f976a86f273fced6e0c0d63c8d00f7b022af"
+      "sha256": "8a3e7fb956f5e45994660b26815618f06e8904c2aa0166927976dae325beecd7"
     },
     {
       "path": "tests/staging-account-hosted-baseline-session.test.mjs",
-      "sha256": "b6ea4dfb358375d8404bdf2e4c3f6e26c8d849e7605e8e86d6d825bcbe46c4e2"
+      "sha256": "1d8b9862e2f9c6472c4786e3f5cd480d6f772ee2c24687001ab15c7b7e04d35f"
     },
     {
       "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",
-      "sha256": "8ca70fb3d5303599b507f477f44c234bad1ce5487b95523ac35ee338d06666c2"
+      "sha256": "eaccc5228183165c2074618062e1c15252dc53ed92e2e141d2bb6ea53bc2cc92"
     },
     {
       "path": "package.json",
@@ -92,7 +92,7 @@
     },
     {
       "path": "docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md",
-      "sha256": "2a9c4b6f15aa2a15c05192619fa967c33d517ad508dae3761d082ee508fe8a25"
+      "sha256": "8dda441e7f8f0729fe1df0fbc0ee618ef34bd3b49a71eab3d05477c7c3b20721"
     }
   ],
   "keychain": {
@@ -101,7 +101,11 @@
       "account": "supabase"
     },
     "vercel": {
-      "service": "TLL Hosted Baseline Vercel",
+      "service": "TLL Hosted Baseline Vercel API",
+      "account": "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"
+    },
+    "vercelBypass": {
+      "service": "TLL Hosted Baseline Preview Bypass",
       "account": "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"
     }
   },

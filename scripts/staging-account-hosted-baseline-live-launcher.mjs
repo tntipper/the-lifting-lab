@@ -19,7 +19,7 @@ export const HOSTED_BASELINE_LIVE_JOURNAL_PATH = HOSTED_BASELINE_SESSION_JOURNAL
 
 const disabled = () => Object.freeze({ status: 'HOSTED_BASELINE_LIVE_DISABLED', target: HOSTED_BASELINE_SESSION_TARGET, nativeAccessApproved: false })
 
-async function createFutureApprovedComposition ({ supabaseCredential, vercelCredential, signal }) {
+async function createFutureApprovedComposition ({ supabaseCredential, vercelCredential, protectionBypassCredential, signal }) {
   const [
     { createStagingAccountHostedBaselineSupabaseBinding },
     { createStagingAccountHostedBaselineVercelBinding },
@@ -35,7 +35,7 @@ async function createFutureApprovedComposition ({ supabaseCredential, vercelCred
   return createHostedBaselineCompositionFromFactories({
     factories: Object.freeze({ supabase: createStagingAccountHostedBaselineSupabaseBinding, vercel: createStagingAccountHostedBaselineVercelBinding,
       surface: createStagingAccountHostedBaselineSurfaceBinding, composition: createStagingAccountHostedBaselineComposition }),
-    supabaseCredential, vercelCredential, fetch: globalThis.fetch,
+    supabaseCredential, vercelCredential, protectionBypassCredential, fetch: globalThis.fetch,
   })
 }
 

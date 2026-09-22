@@ -8,6 +8,7 @@ import {
 } from '../scripts/staging-account-hosted-baseline-surface.mjs'
 
 const token = () => Buffer.from('private-vercel-read-token')
+const bypassToken = () => Buffer.from('private-preview-bypass-token')
 const aliasHost = 'the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app'
 const aliasUrl = `https://api.vercel.com/v4/aliases/${aliasHost}?projectId=prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4&teamId=team_gf7cgIkkoeMLtODFDDT5MrW4`
 const deploymentId = 'dpl_A1b2c3'
@@ -21,7 +22,7 @@ const deployment = () => ({ id: deploymentId, projectId: 'prj_kI5iqqor8Qa63EGRyh
 const readiness = () => ({ deploymentId, immutableUrl, projectRef: 'qdmvngjwkcsilzmqksme', branch: 'codex/tll-integration', privateCustomer: false, privateCart: false, publicCustomer: false, publicCart: false })
 
 function binding ({ onFetch = () => {}, bodyFor } = {}) {
-  return createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: async (url, options) => {
+  return createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async (url, options) => {
     onFetch(url, options)
     const body = bodyFor ? bodyFor(url) : url === aliasUrl ? alias() : url === deploymentUrl ? deployment() : url === readinessUrl ? readiness() : { error: 'temporarily_unavailable' }
     return response(body, url === edgeUrl ? 503 : 200)
@@ -38,7 +39,12 @@ test('stays disabled and performs one fixed ordered read-only pass', async () =>
   assert.deepEqual(result.deployment, { projectId: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4', project: 'the-lifting-lab', teamId: 'team_gf7cgIkkoeMLtODFDDT5MrW4', scope: 'my-lifting-lab-s-projects', branch: 'codex/tll-integration', alias: `https://${aliasHost}`, deploymentId, immutableUrl, gitProvider: 'github', repositoryId: '998877', gitSourceCommit: 'a'.repeat(40), applicationManifestSha256: 'b'.repeat(64) })
   assert.deepEqual(calls[0].options, { method: 'GET', redirect: 'error', headers: calls[0].options.headers, signal })
   assert.match(calls[0].options.headers.authorization, /^Bearer /)
-  assert.deepEqual(calls[2].options.headers, { accept: 'application/json', 'accept-encoding': 'identity', 'x-tll-deployment-id': deploymentId })
+  assert.deepEqual(calls[2].options.headers, { accept: 'application/json', 'accept-encoding': 'identity', 'x-tll-deployment-id': deploymentId, 'x-vercel-protection-bypass': 'private-preview-bypass-token' })
+  assert.equal(calls[0].options.headers['x-vercel-protection-bypass'], undefined)
+  assert.equal(calls[1].options.headers['x-vercel-protection-bypass'], undefined)
+  assert.equal(calls[2].options.headers.authorization, undefined)
+  assert.equal(calls[3].options.headers.authorization, undefined)
+  assert.equal(calls[3].options.headers['x-vercel-protection-bypass'], undefined)
   assert.deepEqual(calls[3].options.headers, { accept: 'application/json', 'accept-encoding': 'identity' })
   const oneShot = binding()
   await oneShot.readBaseline({ signal: new AbortController().signal })
@@ -66,10 +72,22 @@ test('uses only protocol-approved Edge states and rejects target, source, URL, a
     } })
     await assert.rejects(ports.readBaseline({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
   }
-  const enabled = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: async url => response(url === aliasUrl ? alias() : url === deploymentUrl ? deployment() : url === readinessUrl ? readiness() : { error: 'invalid_client' }, url === edgeUrl ? 401 : 200) })
+  const enabled = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async url => response(url === aliasUrl ? alias() : url === deploymentUrl ? deployment() : url === readinessUrl ? readiness() : { error: 'invalid_client' }, url === edgeUrl ? 401 : 200) })
   assert.equal((await enabled.readBaseline({ signal: new AbortController().signal })).surface.edge.enabled, true)
-  const unexpected = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: async url => response(url === aliasUrl ? alias() : url === deploymentUrl ? deployment() : url === readinessUrl ? readiness() : { error: 'bad_request' }, url === edgeUrl ? 400 : 200) })
+  const unexpected = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async url => response(url === aliasUrl ? alias() : url === deploymentUrl ? deployment() : url === readinessUrl ? readiness() : { error: 'bad_request' }, url === edgeUrl ? 400 : 200) })
   await assert.rejects(unexpected.readBaseline({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+})
+
+test('protected readiness cannot be mistaken for a valid observation', async () => {
+  const calls = []
+  const ports = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async (url, options) => {
+    calls.push({ url, headers: options.headers })
+    return response(url === aliasUrl ? alias() : url === deploymentUrl ? deployment() : { error: 'authentication_required' }, url === readinessUrl ? 401 : 200)
+  } })
+  await assert.rejects(ports.readBaseline({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+  assert.deepEqual(calls.map(call => call.url), [aliasUrl, deploymentUrl, readinessUrl])
+  assert.equal(calls[2].headers['x-vercel-protection-bypass'], 'private-preview-bypass-token')
+  assert.equal(calls[2].headers.authorization, undefined)
 })
 
 test('normalizes documented Git repository IDs and observes, rather than invents, Git source SHA', async () => {
@@ -103,11 +121,11 @@ test('redirects, framing, compression and oversized responses fail closed', asyn
     response(alias(), 200, { 'content-length': '65537' }), response(alias(), 200, { 'content-encoding': 'gzip' }),
   ]
   for (const item of bad) {
-    const ports = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: async () => item })
+    const ports = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async () => item })
     await assert.rejects(ports.readBaseline({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
   }
   const bytes = new Uint8Array(65_537); bytes.fill(97)
-  const oversize = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: async () => ({ status: 200, redirected: false, url: aliasUrl, headers: new Headers(), body: new ReadableStream({ start (controller) { controller.enqueue(bytes); controller.close() } }) }) })
+  const oversize = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async () => ({ status: 200, redirected: false, url: aliasUrl, headers: new Headers(), body: new ReadableStream({ start (controller) { controller.enqueue(bytes); controller.close() } }) }) })
   await assert.rejects(oversize.readBaseline({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
 })
 
@@ -118,33 +136,33 @@ test('hostile response accessors remain redacted and cancel bodies where possibl
     { status: 200, redirected: false, url: aliasUrl, headers: new Headers(), body: { getReader () { throw Error('private reader canary') } } },
   ]
   for (const canary of canaries) {
-    const ports = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: async () => canary })
+    const ports = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async () => canary })
     await assert.rejects(ports.readBaseline({ signal: new AbortController().signal }), error => error.message === HOSTED_BASELINE_SURFACE_ERROR && !/private|canary/i.test(error.message))
   }
 })
 
 test('cancellation before or during a fetch or read settles and cleans up', async () => {
   const pre = new AbortController(); pre.abort()
-  const noCall = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: async () => { throw Error('must not run') } })
+  const noCall = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async () => { throw Error('must not run') } })
   await assert.rejects(noCall.readBaseline({ signal: pre.signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
   let resolveFetch, cancelled = 0
   const controller = new AbortController()
-  const pending = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: () => new Promise(resolve => { resolveFetch = resolve }) }).readBaseline({ signal: controller.signal })
+  const pending = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: () => new Promise(resolve => { resolveFetch = resolve }) }).readBaseline({ signal: controller.signal })
   await Promise.resolve(); controller.abort()
   resolveFetch({ status: 200, redirected: false, url: aliasUrl, headers: new Headers(), body: { getReader: () => ({ cancel: () => { cancelled += 1 }, releaseLock: () => {} }) } })
   await assert.rejects(pending, new RegExp(HOSTED_BASELINE_SURFACE_ERROR)); assert.equal(cancelled, 1)
   const neverFetchController = new AbortController()
-  const neverFetch = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: () => new Promise(() => {}) })
+  const neverFetch = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: () => new Promise(() => {}) })
   const neverFetchPending = neverFetch.readBaseline({ signal: neverFetchController.signal })
   await Promise.resolve(); neverFetchController.abort()
   await assert.rejects(neverFetchPending, new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
   let readCancelled = 0
-  const duringRead = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: async () => ({ status: 200, redirected: false, url: aliasUrl, headers: new Headers(), body: { getReader: () => ({ read: () => new Promise(() => {}), cancel: () => { readCancelled += 1; return new Promise(() => {}) }, releaseLock: () => {} }) } }) })
+  const duringRead = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async () => ({ status: 200, redirected: false, url: aliasUrl, headers: new Headers(), body: { getReader: () => ({ read: () => new Promise(() => {}), cancel: () => { readCancelled += 1; return new Promise(() => {}) }, releaseLock: () => {} }) } }) })
   const c = new AbortController(), p = duringRead.readBaseline({ signal: c.signal }); await Promise.resolve(); c.abort()
   await assert.rejects(p, new RegExp(HOSTED_BASELINE_SURFACE_ERROR)); assert.equal(readCancelled, 1)
   let resolveRead
   const deferredBytes = new Uint8Array([1, 2, 3, 4])
-  const deferred = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), fetch: async () => ({ status: 200, redirected: false, url: aliasUrl, headers: new Headers(), body: { getReader: () => ({ read: () => new Promise(resolve => { resolveRead = resolve }), cancel: () => {}, releaseLock: () => {} }) } }) })
+  const deferred = createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async () => ({ status: 200, redirected: false, url: aliasUrl, headers: new Headers(), body: { getReader: () => ({ read: () => new Promise(resolve => { resolveRead = resolve }), cancel: () => {}, releaseLock: () => {} }) } }) })
   const deferredController = new AbortController(), deferredPending = deferred.readBaseline({ signal: deferredController.signal })
   await new Promise(resolve => setImmediate(resolve)); assert.equal(typeof resolveRead, 'function'); deferredController.abort()
   await assert.rejects(deferredPending, new RegExp(HOSTED_BASELINE_SURFACE_ERROR))

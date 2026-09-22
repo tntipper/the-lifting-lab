@@ -6,7 +6,8 @@ import sys
 APPROVED_NATIVE_READ = False
 _SELECTORS = {
     "supabase": ("Supabase CLI", "supabase"),
-    "vercel": ("TLL Hosted Baseline Vercel", "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"),
+    "vercel": ("TLL Hosted Baseline Vercel API", "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"),
+    "vercel-bypass": ("TLL Hosted Baseline Preview Bypass", "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"),
 }
 
 def unavailable():

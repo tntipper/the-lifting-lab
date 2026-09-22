@@ -46,7 +46,7 @@ export const hostedBaselineManifest = Object.freeze({
   target: { projectRef: HOSTED_BASELINE_SESSION_TARGET, productionProjectRefExcluded: HOSTED_BASELINE_SESSION_PRODUCTION_EXCLUDED },
   nativeAccessApproved: HOSTED_BASELINE_LIVE_ENABLED,
   sources: sourcePins,
-  keychain: { supabase: { service: 'Supabase CLI', account: 'supabase' }, vercel: { service: 'TLL Hosted Baseline Vercel', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' } },
+  keychain: { supabase: { service: 'Supabase CLI', account: 'supabase' }, vercel: { service: 'TLL Hosted Baseline Vercel API', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' }, vercelBypass: { service: 'TLL Hosted Baseline Preview Bypass', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' } },
   endpoints: { supabaseManagement: `https://api.supabase.com/v1/projects/${HOSTED_BASELINE_SESSION_TARGET}`, vercel: 'https://api.vercel.com', surface: `https://${HOSTED_BASELINE_SESSION_TARGET}.supabase.co` },
   journal: { path: '../implementation-state/staging/tll-hosted-baseline-observation.json', exclusive: true, mode: '0600' },
   execution: { deadlineMs: HOSTED_BASELINE_SESSION_DEADLINE_MS, retries: 0, observationOnly: true },

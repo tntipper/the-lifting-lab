@@ -188,9 +188,11 @@ function edgeReceipt (response, value) {
  * Reads the pinned surface in exactly one ordered pass. It accepts no caller
  * URL, target, deployment, request headers, or credential callback.
  */
-export function createStagingAccountHostedBaselineSurfaceBinding ({ fetch: fetcher, vercelToken } = {}) {
+export function createStagingAccountHostedBaselineSurfaceBinding ({ fetch: fetcher, vercelToken, protectionBypassToken } = {}) {
   if (typeof fetcher !== 'function') unavailable()
   const token = copyToken(vercelToken)
+  let bypass
+  try { bypass = copyToken(protectionBypassToken) } catch { token.fill(0); unavailable() }
   let consumed = false; let disposed = false
   const read = async (url, options, statuses, signal) => {
     if (!validSignal(signal) || signal.aborted) unavailable()
@@ -223,7 +225,7 @@ export function createStagingAccountHostedBaselineSurfaceBinding ({ fetch: fetch
         const deployment = deploymentReceipt(deploymentResponse.value, alias.deploymentId)
         if (deployment.immutableUrl !== alias.immutableUrl) unavailable()
         const readyUrl = `${deployment.immutableUrl}/api/staging/readiness`
-        const readinessResponse = await read(readyUrl, Object.freeze({ method: 'GET', redirect: 'error', headers: Object.freeze({ accept: 'application/json', 'accept-encoding': 'identity', 'x-tll-deployment-id': deployment.deploymentId }), signal }), [200], signal)
+        const readinessResponse = await read(readyUrl, Object.freeze({ method: 'GET', redirect: 'error', headers: Object.freeze({ accept: 'application/json', 'accept-encoding': 'identity', 'x-tll-deployment-id': deployment.deploymentId, 'x-vercel-protection-bypass': bypass.toString('utf8') }), signal }), [200], signal)
         const flags = readinessReceipt(readinessResponse.value, deployment)
         const edgeResponse = await read(EDGE_URL, Object.freeze({ method: 'POST', redirect: 'error', headers: Object.freeze({ accept: 'application/json', 'accept-encoding': 'identity' }), signal }), [401, 503], signal)
         const edge = edgeReceipt(edgeResponse.response, edgeResponse.value)
@@ -231,8 +233,8 @@ export function createStagingAccountHostedBaselineSurfaceBinding ({ fetch: fetch
           projectId: VERCEL_PROJECT_ID, project: VERCEL_PROJECT, teamId: VERCEL_TEAM_ID, scope: VERCEL_SCOPE,
           branch: STAGING_BRANCH, alias: STAGING_ALIAS, ...deployment,
         }) })
-      } finally { disposed = true; token.fill(0) }
+      } finally { disposed = true; token.fill(0); bypass.fill(0) }
     },
-    dispose () { disposed = true; token.fill(0) },
+    dispose () { disposed = true; token.fill(0); bypass.fill(0) },
   })
 }

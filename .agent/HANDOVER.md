@@ -1,12 +1,14 @@
 # Agent handover — The Lifting Lab integration
 
-Updated: 2026-09-22 after the disabled fresh hosted-baseline package
+Updated: 2026-09-22 after the disabled hosted-baseline credential correction
 
 ## Exact repository state
 
 - Repository: `implementation-integration`
 - Branch: `codex/tll-integration`
-- Hosted-baseline checkpoint: `690ca06` (`Add reviewed staging hosted baseline observer`)
+- Hosted-baseline checkpoint: `690ca06` (`Add reviewed staging hosted baseline observer`),
+  followed by the credential correction recorded below. Verify the current
+  branch tip before applying any future arming patch.
 - Remote branch was pushed to `origin/codex/tll-integration`.
 - Previous concrete binding checkpoint: `cc18fda`.
 - Preserve untracked `implementation-state/` and
@@ -25,8 +27,10 @@ Updated: 2026-09-22 after the disabled fresh hosted-baseline package
 - This stage made no Keychain read, credential read, network request, hosted
   request, database query, deployment, provider/secret change, customer action,
   purchase or production change.
-- No current temporary Vercel automation token was created. Do not reuse an old
-  revoked test key.
+- No new Vercel credentials were created or used in this correction. The project
+  UI shows Preview `Require Log In` enabled and one masked bypass entry, which
+  does not prove that a qualified bypass value is available. Do not reuse an
+  old revoked test key.
 
 ## Completed work unit
 
@@ -83,32 +87,58 @@ disabled package. Verified final source hashes were:
 - Live-boundary policy: PASS with zero violations.
 - Python helper compilation and `git diff --check`: passed.
 
-## Next action — separate arming gate
+## Corrected disabled package and next action
+
+The first arming candidate at
+`docs/ops/evidence/2026-09-22-hosted-baseline-arming-review.patch` is
+**superseded and must never be applied**. An independent reviewer found that
+it would send an unprotected readiness GET to a protected Preview and treated a
+Vercel automation-bypass key as a Management API bearer token. Its uncommitted
+armed review worktree was removed after confirming it contained only that saved
+candidate. The current integration branch remains disabled.
+
+The disabled correction uses three separate credential selectors: Supabase
+Management, a temporary Vercel Access Token for fixed Management API reads,
+and a temporary project automation-bypass value for the immutable readiness GET
+only. It does not send either Vercel credential to the Edge probe. Credential
+format/size is checked before the exclusive journal claim; missing or invalid
+credentials return `CREDENTIAL_UNAVAILABLE` without consuming the run. The
+reviewer identified an initial Vercel length mismatch; preflight now enforces
+the API binding's 512-byte and surface binding's 1024-byte limits, with tests
+that prove no claim, no composition and buffer wiping for oversized values.
+
+The original review's two P1 findings were resolved. Independent targeted
+re-review accepted the final size-limit fix with no residual finding. Focused
+tests pass 70/70; complete `npm test` passes 2230/2230.
+Typecheck, build (153 pages), audit (zero high production vulnerabilities),
+both manifest checks, live-boundary check and diff check passed. Lint has zero
+errors and the same 20 existing warnings. No hosted request was made.
+
+### Separate arming gate
 
 Do not implement or run Generation 22. Resume with a small, separate arming
 stage for the read-only baseline only:
 
-The exact arming candidate is prepared but **has not been reviewed, committed,
-or run**. The safe branch remains disabled. Its 27-line zero-context patch is
-`docs/ops/evidence/2026-09-22-hosted-baseline-arming-review.patch` (SHA-256
-`af33e28b8fa8a261b197726c476ad6dd5dd865b84c6c4a84baeca91e9da8ee7d`).
-It changes only the launcher gate, the matching Keychain-helper gate, and the
-regenerated manifest. `git apply --unidiff-zero --check` passed. The uncommitted candidate
-also exists in the local worktree `../implementation-hosted-baseline-arming-review`
-on branch `codex/tll-hosted-baseline-arming-review`; do not invoke its launcher.
+Prepare a **new** minimal arming candidate from the corrected disabled branch,
+regenerate its manifest, and independently review that exact diff. The old
+patch and its prior hashes no longer match the corrected source. The safe
+branch remains disabled until the separate reviewed gate.
 
 1. Verify `pwd`, branch, `HEAD`, remote, and working tree against this handover.
-2. Confirm the three hashes above and rerun the focused baseline tests, both
+2. Confirm current manifest hashes and rerun the focused baseline tests, both
    manifest checks and the live-boundary check. Do not repeat the full audit.
-3. Independently review the saved arming patch and its exact source checkpoint.
+3. Independently review the new arming patch and its exact source checkpoint.
    The diff must add no writes, deployments, generic targets or production
    access and must preserve the existing manifest pins. Do not run ordinary
    tests in the armed worktree. Apply/commit the reviewed patch on the main
    integration branch only when the run is ready.
-4. Obtain a fresh temporary Vercel automation key only at this gate, store it in
-   the launcher's fixed Keychain selector, and revoke it immediately after the
-   one bounded read-only run. User involvement may be required for creating the
-   new key. Do not expose its value in chat, logs or evidence.
+4. Obtain a temporary Vercel Access Token for the Management API and a separate
+   project automation-bypass value for protected Preview readiness. Keep them
+   in their distinct fixed Keychain selectors, then revoke both and remove the
+   selectors immediately after the one bounded read-only run. Vercel Access
+   Tokens can have broader account/team permissions than this launcher's fixed
+   GETs; verify team scope and action-time approval. Do not expose values in
+   chat, logs or evidence.
 5. Use the existing approved Supabase CLI account only for the fixed staging
    Management API reads. The launcher may transiently reveal the one legacy
    staging service-role key in memory for the fixed read-only database call; it

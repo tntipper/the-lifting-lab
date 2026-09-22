@@ -10,6 +10,7 @@ export const HOSTED_BASELINE_SESSION_DEADLINE_MS = 60_000
 export const HOSTED_BASELINE_SESSION_JOURNAL_PATH = resolve(import.meta.dirname, '../../implementation-state/staging/tll-hosted-baseline-observation.json')
 
 const unavailable = () => { throw new Error('Staging hosted baseline session unavailable') }
+const wipe = value => { if (Buffer.isBuffer(value)) value.fill(0) }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 const safeString = value => typeof value === 'string' && value.length > 0 && value.length <= 128 && /^[A-Z0-9_./:-]+$/i.test(value)
@@ -103,8 +104,8 @@ export function createHostedBaselineObservationJournal ({ path = HOSTED_BASELINE
 // journal constructor is explicit. This alias remains a separate schema/path.
 export const createStagingWindowPhaseJournal = createHostedBaselineObservationJournal
 
-function copyCredential (value) {
-  if (!Buffer.isBuffer(value) || value.length < 8 || value.length > 4096 || value.includes(0)) unavailable()
+function copyCredential (value, maxLength = 4096) {
+  if (!Buffer.isBuffer(value) || value.length < 8 || value.length > maxLength || value.includes(0)) unavailable()
   const copy = Buffer.from(value)
   if (!/^[\x21-\x7e]+$/.test(copy.toString('utf8'))) { copy.fill(0); unavailable() }
   return copy
@@ -208,7 +209,7 @@ export function createTrackedHostedBaselineFetch ({ fetch: fetcher } = {}) {
 }
 
 /** Pure constructor seam: dispose all partial bindings if a later step fails. */
-export async function createHostedBaselineCompositionFromFactories ({ factories, supabaseCredential, vercelCredential, fetch: fetcher } = {}) {
+export async function createHostedBaselineCompositionFromFactories ({ factories, supabaseCredential, vercelCredential, protectionBypassCredential, fetch: fetcher } = {}) {
   if (!exact(factories, ['supabase', 'vercel', 'surface', 'composition']) || Object.values(factories).some(factory => typeof factory !== 'function')) unavailable()
   const tracker = createTrackedHostedBaselineFetch({ fetch: fetcher })
   let supabase; let vercel; let surface; let composition
@@ -221,7 +222,7 @@ export async function createHostedBaselineCompositionFromFactories ({ factories,
   try {
     supabase = factories.supabase({ fetch: tracker.fetch, managementToken: supabaseCredential })
     vercel = factories.vercel({ fetch: tracker.fetch, vercelToken: vercelCredential })
-    surface = factories.surface({ fetch: tracker.fetch, vercelToken: vercelCredential })
+    surface = factories.surface({ fetch: tracker.fetch, vercelToken: vercelCredential, protectionBypassToken: protectionBypassCredential })
     composition = factories.composition({ supabase, vercel, surface })
     if (!composition || typeof composition.observe !== 'function') unavailable()
     return Object.freeze({ observe: input => composition.observe(input), dispose })
@@ -250,22 +251,34 @@ export async function runHostedBaselineSession ({
   clearTimer = clearTimeout,
 } = {}) {
   if (HOSTED_BASELINE_SESSION_TARGET === HOSTED_BASELINE_SESSION_PRODUCTION_EXCLUDED || typeof verifyManifest !== 'function'
-    || !journal || typeof journal.claim !== 'function' || typeof journal.finish !== 'function' || typeof readCredential !== 'function'
+    || !journal || typeof journal.read !== 'function' || typeof journal.claim !== 'function' || typeof journal.finish !== 'function' || typeof readCredential !== 'function'
     || typeof createComposition !== 'function' || !Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > HOSTED_BASELINE_SESSION_DEADLINE_MS
     || typeof now !== 'function' || typeof setTimer !== 'function' || typeof clearTimer !== 'function') unavailable()
   // Verification deliberately precedes even the secret-free intent claim.
   await verifyManifest()
-  let intent
-  try { intent = journal.claim() } catch { return Object.freeze({ status: 'JOURNAL_UNAVAILABLE', target: HOSTED_BASELINE_SESSION_TARGET }) }
-  const controller = new AbortController()
-  const timer = setTimer(() => controller.abort(), deadlineMs)
-  let supabaseRaw; let vercelRaw; let supabaseCredential; let vercelCredential; let composition; let outcome
+  let supabaseRaw; let vercelRaw; let bypassRaw; let supabaseCredential; let vercelCredential; let protectionBypassCredential
+  const eraseCredentials = () => { for (const value of [supabaseRaw, vercelRaw, bypassRaw, supabaseCredential, vercelCredential, protectionBypassCredential]) wipe(value) }
+  try { if (journal.read()) return Object.freeze({ status: 'JOURNAL_UNAVAILABLE', target: HOSTED_BASELINE_SESSION_TARGET }) }
+  catch { return Object.freeze({ status: 'JOURNAL_UNAVAILABLE', target: HOSTED_BASELINE_SESSION_TARGET }) }
+  // A missing or malformed credential must not consume the single hosted run.
   try {
     supabaseRaw = await readCredential('supabase')
     supabaseCredential = copyCredential(supabaseRaw)
     vercelRaw = await readCredential('vercel')
-    vercelCredential = copyCredential(vercelRaw)
-    composition = await createComposition(Object.freeze({ supabaseCredential, vercelCredential, signal: controller.signal }))
+    vercelCredential = copyCredential(vercelRaw, 512)
+    bypassRaw = await readCredential('vercel-bypass')
+    protectionBypassCredential = copyCredential(bypassRaw, 1024)
+  } catch {
+    eraseCredentials()
+    return Object.freeze({ status: 'CREDENTIAL_UNAVAILABLE', target: HOSTED_BASELINE_SESSION_TARGET })
+  }
+  let intent
+  try { intent = journal.claim() } catch { eraseCredentials(); return Object.freeze({ status: 'JOURNAL_UNAVAILABLE', target: HOSTED_BASELINE_SESSION_TARGET }) }
+  const controller = new AbortController()
+  const timer = setTimer(() => controller.abort(), deadlineMs)
+  let composition; let outcome
+  try {
+    composition = await createComposition(Object.freeze({ supabaseCredential, vercelCredential, protectionBypassCredential, signal: controller.signal }))
     if (!composition || typeof composition.observe !== 'function') unavailable()
     // Do not race the observation against a timer: after aborting, wait for all
     // in-flight operations to settle before writing a terminal receipt.
@@ -282,10 +295,7 @@ export async function runHostedBaselineSession ({
     controller.abort()
     let cleanupFailed = false
     try { await composition?.dispose?.() } catch { cleanupFailed = true }
-    if (Buffer.isBuffer(supabaseRaw)) supabaseRaw.fill(0)
-    if (Buffer.isBuffer(vercelRaw)) vercelRaw.fill(0)
-    if (Buffer.isBuffer(supabaseCredential)) supabaseCredential.fill(0)
-    if (Buffer.isBuffer(vercelCredential)) vercelCredential.fill(0)
+    eraseCredentials()
     if (cleanupFailed) outcome = Object.freeze({ state: 'INTENT_RECORDED', status: null, reasonCodes: Object.freeze([]), observationHash: null })
     if (outcome.state === 'INTENT_RECORDED') return Object.freeze({ status: 'RECONCILIATION_REQUIRED', target: HOSTED_BASELINE_SESSION_TARGET })
     try {

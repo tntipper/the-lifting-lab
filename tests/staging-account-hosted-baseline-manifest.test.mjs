@@ -11,6 +11,11 @@ test('hosted baseline manifest pins the full disabled observation package', () =
   assert.equal(manifest.schema, 'tll-staging-hosted-baseline-manifest/v1')
   assert.deepEqual(manifest.target, { projectRef: 'qdmvngjwkcsilzmqksme', productionProjectRefExcluded: 'wrhgscovsgsudtedbljr' })
   assert.equal(manifest.nativeAccessApproved, false)
+  assert.deepEqual(manifest.keychain, {
+    supabase: { service: 'Supabase CLI', account: 'supabase' },
+    vercel: { service: 'TLL Hosted Baseline Vercel API', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' },
+    vercelBypass: { service: 'TLL Hosted Baseline Preview Bypass', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' },
+  })
   assert.deepEqual(manifest.execution, { deadlineMs: 60000, retries: 0, observationOnly: true })
   assert.deepEqual(manifest.journal, { path: '../implementation-state/staging/tll-hosted-baseline-observation.json', exclusive: true, mode: '0600' })
   assert.deepEqual(manifest.sources.map(item => item.path), [
@@ -55,6 +60,7 @@ test('launcher and helper are both source-level disabled gates', () => {
   assert.match(helper, /APPROVED_NATIVE_READ = False/)
   assert.match(helper, /"supabase"/)
   assert.match(helper, /"vercel"/)
+  assert.match(helper, /"vercel-bypass"/)
   assert.match(helper, /timeout=10/)
   assert.match(launcher, /timeout: 15_000/)
 })
