@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { createStagingWindowPhaseJournal } from './staging-account-hosted-baseline-session.mjs'
 import { DB_DIAGNOSTIC_JOURNAL_PATH, runStagingDatabaseDiagnostic } from './staging-account-hosted-baseline-db-diagnostic.mjs'
 
-export const NATIVE_DB_DIAGNOSTIC_ENABLED = true
+export const NATIVE_DB_DIAGNOSTIC_ENABLED = false
 const TARGET = 'qdmvngjwkcsilzmqksme'
 
 function readCredential () {
