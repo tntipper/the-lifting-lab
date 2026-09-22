@@ -65,3 +65,45 @@ temporary bypass `/usr/bin/security` allowance and local API token item,
 and leave remote one-hour tokens to expire naturally per user preference.
 Record the exact result, incident cause/correction if needed, handover and
 commit/push before moving to any downstream stage.
+
+## Executed result and correction
+
+The approved v6 window ran exactly once from armed commit `4275b9d` on
+2026-09-22. Its mode-0600 journal is terminal `OBSERVATION_FAILED`, run ID
+`a3286073-5169-4f27-b59b-01efd2c32d52`, reason
+`vercel_environment_read_unavailable`, SHA-256
+`faaf41b67a1d8f8ba1b9f42c744f3c77052c15f6819878b8c04e737af3706d54`.
+It contains no observation hash. Never replay or modify this journal.
+Source gates were disarmed in `5cfe7fe`; the temporary Keychain API token
+item was deleted, the retained bypass's `/usr/bin/security` allowance was
+removed, and the remote one-hour token was left to expire naturally.
+
+Separate read-only inspection of the exact Vercel Preview environment URL
+returned HTTP 200 and 16 branch-specific Preview entries, with no
+`pagination` property. All 16 had the expected branch, Preview target and
+recognized type. The parser incorrectly required `pagination.next === null`
+for every response. The process error was treating test fixtures containing
+only explicit terminal cursors as representative of the live API. The
+contributing condition was that the preflight checked credential readability
+and project identity but never checked the shape of the exact Preview
+environment response. This caused a false local failure, with no provider,
+database or deployment mutation; the terminal journal and separate HTTP 200
+read are the recovery evidence. [Vercel's API guidance](https://vercel.com/docs/rest-api)
+says pagination is returned when the total record count exceeds the request
+limit. The disabled correction accepts an omitted pagination property only
+when the returned count is strictly below the fixed request limit of 100;
+a full page without a cursor and malformed/non-terminal cursors still fail
+closed. The new fixture covers the real short-page shape, and a full-page
+counterexample proves the ambiguity remains rejected. Focused 11/11 and
+disabled full 2,254/2,254 tests pass. A successor preflight must inspect the
+exact endpoint's status and structural envelope without recording names or
+values; the source parser remains the final acceptance check. Other hosted
+reads may have started concurrently, but v6 did not independently prove
+their success and the shared abort may have interrupted them. They could
+still reveal a separate issue in a successor window.
+
+Before any successor window, obtain independent review of this correction,
+rotate to a new exclusive journal path, verify the disabled manifest and
+boundaries, then independently review the exact arming diff. A new credential
+window requires fresh action-time authorization; do not reuse v6's consumed
+journal or expiring token.

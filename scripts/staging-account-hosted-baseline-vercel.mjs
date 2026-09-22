@@ -32,6 +32,7 @@ export const HOSTED_BASELINE_VERCEL_TARGET = Object.freeze({
 const API = 'https://api.vercel.com'
 const MAX_RESPONSE_BYTES = 64 * 1024
 const MAX_ENVIRONMENTS = 4_096
+const ENVIRONMENT_PAGE_LIMIT = 100
 const SAFE_TEXT = /^[\x21-\x7e]{1,512}$/
 const ENV_NAME = /^[A-Z][A-Z0-9_]{0,255}$/
 const ENV_TYPES = new Set(['encrypted', 'plain', 'secret', 'sensitive', 'system'])
@@ -42,7 +43,7 @@ const PROJECT_URL = `${API}/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_TEA
 // Vercel's documented endpoint is paginated. A fixed maximum page is the only
 // page accepted here, and a non-terminal cursor fails rather than implying an
 // absence from a partial inventory.
-const ENVIRONMENT_URL = `${API}/v10/projects/${VERCEL_PROJECT_ID}/env?target=preview&gitBranch=codex%2Ftll-integration&limit=100&teamId=${VERCEL_TEAM_ID}`
+const ENVIRONMENT_URL = `${API}/v10/projects/${VERCEL_PROJECT_ID}/env?target=preview&gitBranch=codex%2Ftll-integration&limit=${ENVIRONMENT_PAGE_LIMIT}&teamId=${VERCEL_TEAM_ID}`
 const discardedResponses = new WeakSet()
 
 const unavailable = () => { throw new Error(HOSTED_BASELINE_VERCEL_ERROR) }
@@ -187,10 +188,12 @@ function exactPreviewTarget (value) {
 function environmentReceipt (value) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !Array.isArray(value.envs)
     || value.envs.length > MAX_ENVIRONMENTS) unavailable()
-  // This documented endpoint is paginated. A terminal cursor is required even
-  // for an empty page: without it, absence is not evidence of a full inventory.
-  if (!value.pagination || typeof value.pagination !== 'object' || Array.isArray(value.pagination)
-    || !Object.hasOwn(value.pagination, 'next') || value.pagination.next !== null) unavailable()
+  // Vercel omits pagination when fewer records than the requested limit exist.
+  // A full page without a cursor is ambiguous, so it cannot prove absence.
+  if (Object.hasOwn(value, 'pagination')) {
+    if (!value.pagination || typeof value.pagination !== 'object' || Array.isArray(value.pagination)
+      || !Object.hasOwn(value.pagination, 'next') || value.pagination.next !== null) unavailable()
+  } else if (value.envs.length >= ENVIRONMENT_PAGE_LIMIT) unavailable()
   let brokerSecretPresent = false
   for (const item of value.envs) {
     if (!item || typeof item !== 'object' || Array.isArray(item) || !ENV_NAME.test(item.key)

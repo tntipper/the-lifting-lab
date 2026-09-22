@@ -84,10 +84,14 @@ test('preview branch, target, and documented environment types are all exact', a
   assert.equal(sensitive.brokerSecretPresent, true)
 })
 
-test('a non-terminal or incomplete pagination cursor rejects absence evidence from a partial preview inventory', async () => {
-  for (const pagination of [undefined, {}, { next: 'next-page' }, { next: 1 }, null]) {
+test('a short page without pagination is terminal, while a full page or incomplete cursor cannot prove absence', async () => {
+  const shortPage = await binding({ bodyFor: () => ({ envs: [] }) }).readPreviewEnvironmentPresence({ signal: new AbortController().signal })
+  assert.equal(shortPage.brokerSecretPresent, false)
+  for (const pagination of [{}, { next: 'next-page' }, { next: 1 }, null]) {
     await assert.rejects(binding({ bodyFor: () => ({ envs: [], pagination }) }).readPreviewEnvironmentPresence({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_VERCEL_ERROR))
   }
+  const fullPage = Array.from({ length: 100 }, () => ({ key: 'VALID_NAME', target: ['preview'], gitBranch: 'codex/tll-integration', type: 'encrypted' }))
+  await assert.rejects(binding({ bodyFor: () => ({ envs: fullPage }) }).readPreviewEnvironmentPresence({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_VERCEL_ERROR))
   const terminal = await binding({ bodyFor: () => ({ envs: [], pagination: { next: null, count: 0 } }) }).readPreviewEnvironmentPresence({ signal: new AbortController().signal })
   assert.equal(terminal.brokerSecretPresent, false)
 })
@@ -244,6 +248,7 @@ test('source has no ambient launcher, credential discovery, process, or generic 
   assert.doesNotMatch(source, /child_process|spawn\(|exec\(|process\.|keychain|dotenv|globalThis\.fetch|https?\.request/i)
   assert.doesNotMatch(source, /new URL\(|URLSearchParams|caller.*url/i)
   assert.match(source, /v9\/projects\/\$\{VERCEL_PROJECT_ID\}/)
-  assert.match(source, /v10\/projects\/\$\{VERCEL_PROJECT_ID\}\/env\?target=preview&gitBranch=codex%2Ftll-integration&limit=100/)
+  assert.match(source, /const ENVIRONMENT_PAGE_LIMIT = 100/)
+  assert.match(source, /v10\/projects\/\$\{VERCEL_PROJECT_ID\}\/env\?target=preview&gitBranch=codex%2Ftll-integration&limit=\$\{ENVIRONMENT_PAGE_LIMIT\}/)
   assert.match(source, /githubFullName: 'tntipper\/the-lifting-lab'/)
 })
