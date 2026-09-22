@@ -65,16 +65,15 @@ v5 journal claim occurred. The gates were returned to disabled, and the live
 boundary check passed. This was a credential-provisioning failure, not an
 observer attempt.
 
-For one same-scope, one-hour replacement, store the copied token with the
-documented `-w <value>` argument through an in-memory subprocess call (never
-in shell text, logs, a repository file, exception text or tool output). This
-briefly exposes the token in the `security` child process's argv; that is a
-residual risk of this CLI path, so keep the child bounded and do not start
-other local observers during storage. Before dismissing Vercel's one-time
-token dialog or clearing clipboard, read back the fixed Keychain item using
-the helper's `/usr/bin/security find-generic-password -w` selector,
-environment and bound, and compare it in memory with the newly copied token.
-Record only equality pass/fail and length range. This is a local read while
+For one same-scope, one-hour replacement, enter the token through the
+Keychain Access secure-password field, avoiding the `security -w <value>`
+process-argument exposure. Check the Keychain Item Name and Account Name
+visually before saving; the accessibility tree lists those fields out of
+visual order. Set only `/usr/bin/security` on the item's application allowlist,
+while keeping “Confirm before allowing access.” Before dismissing Vercel's
+one-time token dialog or clearing its clipboard, read back the fixed Keychain
+item and compare it in memory with the newly copied token. Record only
+equality pass/fail and length range. This is a local read while
 the source gates remain disabled. After the reviewed arming diff is applied,
 run the exact helper for all three selectors with output suppressed before
 invoking the observer. If any helper read fails, disarm immediately without
@@ -85,3 +84,26 @@ its access prompt has settled. If the disabled storage read-back fails, do
 not arm; if an armed helper preflight fails, disarm immediately.
 Do not enlarge the helper deadline or Keychain ACL without a separately
 reviewed cause and correction.
+
+The replacement `tll-hosted-baseline-v5b-2026-09-22` was created with the
+same one-hour `the-lifting-lab` scope. A first Keychain Access entry put the
+name and account in reversed fields, observed by exact-selector lookup and
+the item details; that erroneous local item was deleted before use. A second
+entry was checked visually, saved under the fixed selector, and restricted to
+`/usr/bin/security` with confirmation retained. A secret-suppressed CLI
+lookup returned a 60-character token shape. Keychain Access then displayed
+the stored value locally, and the browser/Keychain values compared equal in
+memory before the one-time Vercel dialog was closed. Both displays were
+closed or hidden, and the browser clipboard was cleared. No hosted request,
+observer journal claim, or source arming occurred during provisioning.
+
+The retained Preview bypass still existed but its access-control application
+list was empty, explaining the repeated bounded CLI timeouts. The user
+approved adding only `/usr/bin/security` to that item's list for this run.
+Keychain Access then showed that sole allowed application and retained
+“Confirm before allowing access.” With both item detail windows closed, a
+local-only, secret-suppressed read completed for Supabase, Vercel API and the
+Preview bypass in 0.03, 7.13 and 4.31 seconds respectively. After the run,
+remove `/usr/bin/security` from the bypass item as approved and keep the
+underlying bypass intact. This local preflight does not establish remote
+credential validity.
