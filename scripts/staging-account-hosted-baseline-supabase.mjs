@@ -72,7 +72,7 @@ function validateResponse (response, url, status) {
   const transferEncoding = response.headers?.get?.('transfer-encoding')
   if ((length !== null && length !== undefined && (!/^\d+$/.test(length) || Number(length) > MAX_RESPONSE_BYTES))
     || (encoding !== null && encoding !== undefined && encoding !== '' && encoding !== 'identity')
-    || (transferEncoding !== null && transferEncoding !== undefined && transferEncoding !== '')) rejectResponse(response)
+    || (transferEncoding !== null && transferEncoding !== undefined && transferEncoding !== '' && transferEncoding.trim().toLowerCase() !== 'chunked')) rejectResponse(response)
 }
 
 async function parseBoundedJson (response, url, signal, status) {

@@ -111,7 +111,7 @@ test('wrong response status, redirects, URL drift, framing, compression and over
     async () => ({ status: 201, redirected: true, url: expected, body: jsonResponse(database()).body, headers: new Headers() }),
     async () => ({ status: 201, redirected: false, url: 'https://attacker.invalid', body: jsonResponse(database()).body, headers: new Headers() }),
     async () => jsonResponse(database(), 201, { 'content-encoding': 'gzip' }),
-    async () => jsonResponse(database(), 201, { 'transfer-encoding': 'chunked' }),
+    async () => jsonResponse(database(), 201, { 'transfer-encoding': 'gzip' }),
     async () => jsonResponse(database(), 201, { 'content-length': '1048577' }),
   ]
   for (const fetch of cases) {
@@ -123,6 +123,13 @@ test('wrong response status, redirects, URL drift, framing, compression and over
     ? { status: 201, redirected: false, url: expected, headers: new Headers(), body: new ReadableStream({ start (controller) { controller.enqueue(oversized); controller.close() } }) }
     : jsonResponse([]) })
   await assert.rejects(ports.readDatabase({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SUPABASE_ERROR))
+})
+
+test('standard chunked response is read within the byte cap and validated', async () => {
+  const ports = binding({ fetch: async () => jsonResponse(database(), 201, { 'transfer-encoding': 'chunked' }) })
+  const result = await ports.readDatabase({ signal: new AbortController().signal })
+  assert.equal(result.status, 'PASS')
+  ports.dispose()
 })
 
 test('midstream abort cancels the body, invalid bodies are cancelled, and dispose prevents reuse', async () => {

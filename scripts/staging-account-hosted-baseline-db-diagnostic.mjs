@@ -6,7 +6,7 @@ import {
 } from './staging-account-hosted-baseline-database.mjs'
 import { createStagingWindowPhaseJournal, createTrackedHostedBaselineFetch } from './staging-account-hosted-baseline-session.mjs'
 
-export const DB_DIAGNOSTIC_JOURNAL_PATH = resolve(import.meta.dirname, '../../implementation-state/staging/tll-hosted-baseline-v4-db-framing.json')
+export const DB_DIAGNOSTIC_JOURNAL_PATH = resolve(import.meta.dirname, '../../implementation-state/staging/tll-hosted-baseline-v5-db-chunked.json')
 export const DB_DIAGNOSTIC_DEADLINE_MS = 60_000
 const TARGET = 'qdmvngjwkcsilzmqksme'
 const ENDPOINT = `https://api.supabase.com/v1/projects/${TARGET}/database/query`
@@ -93,7 +93,7 @@ async function observe (fetcher, credential, signal) {
   }
   const framing = []
   if (encoding && encoding !== 'identity') framing.push('RESPONSE_CONTENT_ENCODING')
-  if (transfer) framing.push('RESPONSE_TRANSFER_ENCODING')
+  if (transfer && transfer.trim().toLowerCase() !== 'chunked') framing.push('RESPONSE_TRANSFER_ENCODING')
   if (length != null && (!/^\d+$/.test(length) || Number(length) > MAX_BODY_BYTES)) framing.push('RESPONSE_CONTENT_LENGTH')
   if (framing.length) {
     await cancelResponse(response)
