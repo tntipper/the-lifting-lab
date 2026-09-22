@@ -7,6 +7,7 @@ export const HOSTED_BASELINE_SESSION_SCHEMA = 'tll-staging-hosted-baseline-sessi
 export const HOSTED_BASELINE_SESSION_TARGET = 'qdmvngjwkcsilzmqksme'
 export const HOSTED_BASELINE_SESSION_PRODUCTION_EXCLUDED = 'wrhgscovsgsudtedbljr'
 export const HOSTED_BASELINE_SESSION_DEADLINE_MS = 60_000
+export const HOSTED_BASELINE_SESSION_CLEANUP_GRACE_MS = 5_000
 export const HOSTED_BASELINE_SESSION_JOURNAL_PATH = resolve(import.meta.dirname, '../../implementation-state/staging/tll-hosted-baseline-observation-v8.json')
 
 const unavailable = () => { throw new Error('Staging hosted baseline session unavailable') }
@@ -237,7 +238,18 @@ export function createTrackedHostedBaselineFetch ({ fetch: fetcher } = {}) {
         },
       })
     },
-    async settle () { while (pending.size) await Promise.allSettled([...pending]); if (failedCleanupProofs.some(proof => !proof())) unavailable() },
+    async settle () {
+      // Binding callbacks can register a late response-body cancellation in
+      // the same event-loop turn after the raw fetch leaves `pending`.
+      // One quiescent turn lets those continuations register before custody
+      // is declared settled; any newly tracked cancellation is then awaited.
+      let quiescent = false
+      while (!quiescent || pending.size) {
+        if (pending.size) { await Promise.allSettled([...pending]); quiescent = false }
+        else { await new Promise(resolve => setImmediate(resolve)); quiescent = true }
+      }
+      if (failedCleanupProofs.some(proof => !proof())) unavailable()
+    },
   })
 }
 
@@ -279,14 +291,19 @@ export async function runHostedBaselineSession ({
   readCredential,
   createComposition,
   deadlineMs = HOSTED_BASELINE_SESSION_DEADLINE_MS,
+  cleanupGraceMs = HOSTED_BASELINE_SESSION_CLEANUP_GRACE_MS,
   now = Date.now,
   setTimer = setTimeout,
   clearTimer = clearTimeout,
+  setCleanupTimer = setTimeout,
+  clearCleanupTimer = clearTimeout,
 } = {}) {
   if (HOSTED_BASELINE_SESSION_TARGET === HOSTED_BASELINE_SESSION_PRODUCTION_EXCLUDED || typeof verifyManifest !== 'function'
     || !journal || typeof journal.read !== 'function' || typeof journal.claim !== 'function' || typeof journal.finish !== 'function' || typeof readCredential !== 'function'
     || typeof createComposition !== 'function' || !Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > HOSTED_BASELINE_SESSION_DEADLINE_MS
-    || typeof now !== 'function' || typeof setTimer !== 'function' || typeof clearTimer !== 'function') unavailable()
+    || !Number.isSafeInteger(cleanupGraceMs) || cleanupGraceMs < 1 || cleanupGraceMs > HOSTED_BASELINE_SESSION_CLEANUP_GRACE_MS
+    || typeof now !== 'function' || typeof setTimer !== 'function' || typeof clearTimer !== 'function'
+    || typeof setCleanupTimer !== 'function' || typeof clearCleanupTimer !== 'function') unavailable()
   // Verification deliberately precedes even the secret-free intent claim.
   await verifyManifest()
   let supabaseRaw; let vercelRaw; let bypassRaw; let supabaseCredential; let vercelCredential; let protectionBypassCredential
@@ -330,10 +347,23 @@ export async function runHostedBaselineSession ({
   } finally {
     clearTimer(timer)
     controller.abort()
-    let cleanupFailed = false
-    try { await composition?.dispose?.() } catch { cleanupFailed = true }
+    let disposal
+    try { disposal = Promise.resolve(composition?.dispose?.()) } catch { disposal = Promise.reject() }
+    const settledDisposal = disposal.then(() => 'CLEAN', () => 'FAILED')
+    // The live composition has its own credential copies. Session-owned
+    // buffers must not remain live while an unresponsive cleanup is pending.
     eraseCredentials()
-    if (cleanupFailed) outcome = Object.freeze({ state: 'INTENT_RECORDED', status: null, reasonCodes: Object.freeze([]), observationHash: null })
+    let cleanupTimer
+    let cleanupResult
+    try {
+      const grace = new Promise(resolve => { cleanupTimer = setCleanupTimer(() => resolve('TIMEOUT'), cleanupGraceMs) })
+      cleanupResult = await Promise.race([settledDisposal, grace])
+    } catch { cleanupResult = 'TIMEOUT' }
+    finally { try { if (cleanupTimer !== undefined) clearCleanupTimer(cleanupTimer) } catch {} }
+    if (cleanupResult !== 'CLEAN') {
+      if (cleanupResult === 'TIMEOUT') diagnosticReasonCode = 'cleanup_timeout'
+      outcome = Object.freeze({ state: 'INTENT_RECORDED', status: null, reasonCodes: Object.freeze([]), observationHash: null })
+    }
     if (outcome.state === 'INTENT_RECORDED') return Object.freeze({ status: 'RECONCILIATION_REQUIRED', target: HOSTED_BASELINE_SESSION_TARGET, diagnosticReasonCode })
     try {
       journal.finish(intent, terminal(intent, outcome.state, { now, status: outcome.status, reasonCodes: outcome.reasonCodes, observationHash: outcome.observationHash }))

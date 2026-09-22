@@ -78,3 +78,18 @@ reports zero violations. Independent read-only review returned GO for the
 exact disabled package and confirmed all 23 hosted source pins. Execution
 remains HOLD. No token, Keychain allowance, journal claim, hosted request
 or deployment was made during preparation.
+
+## Pre-arm safety review amendment
+
+The owner's 2026-09-23 cross-attempt review found a reproducible
+late-response cancellation settlement gap. Preparation is paused at HOLD.
+Before any credential window, perform the offline hardening unit in
+`2026-09-23-v8-failure-prevention.md`. That unit may change the session
+tracker, its focused test, generated hosted manifest, this plan and
+handover while every live gate remains false. The hardening review also
+found that cleanup can wait indefinitely after the observation abort; the
+same unit may add a separate fixed cleanup grace to the session, hosted
+manifest generator/test and generated manifest. Its regression and
+independent review supersede the earlier path-only review for amended
+sources. The 60-second limit above is the observation deadline after
+credential acquisition, not a proven end-to-end wall-clock bound.

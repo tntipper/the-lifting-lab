@@ -192,6 +192,119 @@ test('tracked fetch settlement waits for a deferred body read', async () => {
   assert.equal(settled, true)
 })
 
+test('tracked fetch settlement waits for late-response cancellation to settle', async () => {
+  let releaseRaw; let releaseCancel
+  let cancelStarted = false; let cancelSettled = false; let trackerSettled = false
+  const raw = new Promise(resolve => { releaseRaw = resolve })
+  const cancel = new Promise(resolve => { releaseCancel = () => { cancelSettled = true; resolve() } })
+  const tracked = createTrackedHostedBaselineFetch({ fetch: () => raw })
+  const pending = Promise.resolve().then(() => tracked.fetch('https://example.invalid/fixed'))
+  pending.then(response => {
+    const reader = response.body.getReader()
+    Promise.resolve(reader.cancel()).catch(() => {})
+    reader.releaseLock()
+  })
+  await Promise.resolve()
+  const waiter = tracked.settle().then(() => { trackerSettled = true })
+  releaseRaw({ body: { getReader: () => ({ cancel: () => { cancelStarted = true; return cancel }, releaseLock: () => {} }) } })
+  await new Promise(resolve => setImmediate(resolve))
+  const beforeRelease = { cancelStarted, cancelSettled, trackerSettled }
+  releaseCancel()
+  await waiter
+  assert.deepEqual(beforeRelease, { cancelStarted: true, cancelSettled: false, trackerSettled: false })
+})
+
+test('rejected late-response cancellation remains uncertain after settlement', async () => {
+  let releaseRaw; let rejectCancel
+  let cancelStarted = false; let trackerSettled = false
+  const raw = new Promise(resolve => { releaseRaw = resolve })
+  const cancel = new Promise((resolve, reject) => { rejectCancel = () => reject(Error('private cancellation detail')) })
+  const tracked = createTrackedHostedBaselineFetch({ fetch: () => raw })
+  const pending = Promise.resolve().then(() => tracked.fetch('https://example.invalid/fixed'))
+  pending.then(response => {
+    const reader = response.body.getReader()
+    Promise.resolve(reader.cancel()).catch(() => {})
+    reader.releaseLock()
+  })
+  await Promise.resolve()
+  const waiter = tracked.settle().then(() => { trackerSettled = true })
+  releaseRaw({ body: { getReader: () => ({ cancel: () => { cancelStarted = true; return cancel }, releaseLock: () => {} }) } })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(cancelStarted, true)
+  assert.equal(trackerSettled, false)
+  rejectCancel()
+  await assert.rejects(waiter, /Staging hosted baseline session unavailable/)
+})
+
+test('session keeps its intent journal until a late response cancellation settles', async () => {
+  const { journal } = makeJournal()
+  let releaseRaw; let releaseCancel; let markStarted
+  let cancelStarted = false
+  const started = new Promise(resolve => { markStarted = resolve })
+  const raw = new Promise(resolve => { releaseRaw = resolve })
+  const cancel = new Promise(resolve => { releaseCancel = resolve })
+  const resultPromise = runHostedBaselineSession({
+    journal, verifyManifest: async () => {}, readCredential: async selector => credential(selector),
+    createComposition: async () => {
+      const tracked = createTrackedHostedBaselineFetch({ fetch: () => { markStarted(); return raw } })
+      return {
+        observe: async () => {
+          const pending = Promise.resolve().then(() => tracked.fetch('https://example.invalid/fixed'))
+          pending.then(response => {
+            const reader = response.body.getReader()
+            Promise.resolve(reader.cancel()).catch(() => {})
+            reader.releaseLock()
+          })
+          await started
+          const error = Error('private provider response')
+          error.code = 'provider_read_unavailable'
+          throw error
+        },
+        dispose: () => tracked.settle(),
+      }
+    },
+  })
+  await started
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(journal.read().state, 'INTENT_RECORDED')
+  releaseRaw({ body: { getReader: () => ({ cancel: () => { cancelStarted = true; return cancel }, releaseLock: () => {} }) } })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(cancelStarted, true)
+  assert.equal(journal.read().state, 'INTENT_RECORDED')
+  releaseCancel()
+  const result = await resultPromise
+  assert.equal(result.status, 'OBSERVATION_FAILED')
+  assert.deepEqual(result.reasonCodes, ['provider_read_unavailable'])
+  assert.equal(journal.read().state, 'OBSERVATION_FAILED')
+})
+
+test('cleanup grace expires to reconciliation, wipes credentials and leaves intent unclaimed', async () => {
+  const { journal } = makeJournal()
+  const supplied = []; const received = []
+  let markDisposing; let expireCleanup
+  const disposing = new Promise(resolve => { markDisposing = resolve })
+  const resultPromise = runHostedBaselineSession({
+    journal, verifyManifest: async () => {},
+    readCredential: async selector => { const value = credential(selector); supplied.push(value); return value },
+    createComposition: async ({ supabaseCredential, vercelCredential, protectionBypassCredential }) => {
+      received.push(supabaseCredential, vercelCredential, protectionBypassCredential)
+      return {
+        observe: async () => { const error = Error('private provider response'); error.code = 'provider_read_unavailable'; throw error },
+        dispose: () => { markDisposing(); return new Promise(() => {}) },
+      }
+    },
+    setCleanupTimer: callback => { expireCleanup = callback; return 1 }, clearCleanupTimer: () => {},
+  })
+  await disposing
+  await Promise.resolve()
+  assert.equal(journal.read().state, 'INTENT_RECORDED')
+  assert.ok([...supplied, ...received].every(value => value.every(byte => byte === 0)))
+  expireCleanup()
+  const result = await resultPromise
+  assert.deepEqual(result, { status: 'RECONCILIATION_REQUIRED', target: 'qdmvngjwkcsilzmqksme', diagnosticReasonCode: 'cleanup_timeout' })
+  assert.equal(journal.read().state, 'INTENT_RECORDED')
+})
+
 test('tracked fetch preserves native WHATWG Response properties while tracking its body', async () => {
   const native = new Response('body', { status: 200, headers: { 'x-tll': 'present' } })
   Object.defineProperty(native, 'url', { configurable: true, value: 'https://api.example.invalid/fixed' })

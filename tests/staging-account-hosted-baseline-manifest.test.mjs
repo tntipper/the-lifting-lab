@@ -16,7 +16,7 @@ test('hosted baseline manifest pins the full disabled observation package', () =
     vercel: { service: 'TLL Hosted Baseline Vercel API', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' },
     vercelBypass: { service: 'TLL Hosted Baseline Preview Bypass', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' },
   })
-  assert.deepEqual(manifest.execution, { deadlineMs: 60000, retries: 0, observationOnly: true })
+  assert.deepEqual(manifest.execution, { deadlineMs: 60000, cleanupGraceMs: 5000, retries: 0, observationOnly: true })
   assert.deepEqual(manifest.journal, { path: '../implementation-state/staging/tll-hosted-baseline-observation-v8.json', exclusive: true, mode: '0600' })
   assert.deepEqual(manifest.sources.map(item => item.path), [
     'scripts/staging-account-hosted-baseline.mjs', 'scripts/staging-account-hosted-baseline-database.mjs', 'scripts/staging-generation-21-credentials.mjs',

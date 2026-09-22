@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import {
   HOSTED_BASELINE_SESSION_DEADLINE_MS,
+  HOSTED_BASELINE_SESSION_CLEANUP_GRACE_MS,
   HOSTED_BASELINE_SESSION_PRODUCTION_EXCLUDED,
   HOSTED_BASELINE_SESSION_TARGET,
 } from './staging-account-hosted-baseline-session.mjs'
@@ -53,7 +54,7 @@ export const hostedBaselineManifest = Object.freeze({
   keychain: { supabase: { service: 'Supabase CLI', account: 'supabase' }, vercel: { service: 'TLL Hosted Baseline Vercel API', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' }, vercelBypass: { service: 'TLL Hosted Baseline Preview Bypass', account: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' } },
   endpoints: { supabaseManagement: `https://api.supabase.com/v1/projects/${HOSTED_BASELINE_SESSION_TARGET}`, vercel: 'https://api.vercel.com', surface: `https://${HOSTED_BASELINE_SESSION_TARGET}.supabase.co` },
   journal: { path: '../implementation-state/staging/tll-hosted-baseline-observation-v8.json', exclusive: true, mode: '0600' },
-  execution: { deadlineMs: HOSTED_BASELINE_SESSION_DEADLINE_MS, retries: 0, observationOnly: true },
+  execution: { deadlineMs: HOSTED_BASELINE_SESSION_DEADLINE_MS, cleanupGraceMs: HOSTED_BASELINE_SESSION_CLEANUP_GRACE_MS, retries: 0, observationOnly: true },
 })
 const serialized = `${JSON.stringify(hostedBaselineManifest, null, 2)}\n`
 export async function assertCurrentHostedBaselineManifest () {
