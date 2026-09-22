@@ -215,6 +215,18 @@ or treat the absent journal as proof that the attempt did not occur. Revoke
 both temporary Vercel credentials and remove their local selectors before
 preparing a fresh credential window. No production or purchase action occurred.
 
+The cleanup is complete. Vercel showed successful removal of the newly named
+one-hour token `tll-hosted-baseline-readonly-2026-09-22` and of the bypass
+noted `TLL staging read-only baseline, one run, 2026-09-22`. The earlier bypass
+entry (added one day before) remains, and Preview `Require Log In` remains
+checked. Both fixed local Keychain selectors return absent; the Supabase CLI
+selector was untouched. The observation journal remains absent. The corrected
+disabled checkpoint `7f8052e` was pushed after 2231/2231 tests, typecheck,
+build, lint with zero errors, audit, both manifest checks and the live-boundary
+check. Independent review accepted the import-graph correction. This closes
+the incident without treating the failed launcher invocation as a completed
+baseline observation.
+
 - Target, team, branch, alias, provider or source drift stops before subsequent
   reads and records only an allowlisted reason.
 - Authentication failure records only the provider and status class. It does

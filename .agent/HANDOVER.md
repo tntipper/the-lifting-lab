@@ -35,10 +35,9 @@ Updated: 2026-09-22 after the pre-journal module-cycle incident and disabled cor
   attempt or use its v2 patch again.
 - A one-hour Vercel Access Token scoped to the-lifting-lab and a new project
   bypass were created for that attempt. Neither was used by the launcher.
-  Both local Keychain entries have been deleted and verified absent. Remote
-  deletion of the two temporary credentials is pending the computer-use
-  confirmation shown to the user; complete that promptly. The older masked
-  bypass is unrelated and must remain untouched.
+  Both were deleted in Vercel and their local Keychain entries were deleted
+  and verified absent. The older masked bypass remains and Preview `Require
+  Log In` is still checked. The Supabase CLI selector was untouched.
 
 ## Completed work unit
 
@@ -134,25 +133,23 @@ This is documented in the stage plan's incident section.
 The disabled correction removes that reverse import and parses the pinned
 launcher gate from source. Independent review confirmed the root cause and
 accepted a recursive static import-graph regression test after removing a
-test that improperly invoked the real launcher. The corrected package needs
-its disabled commit/push, then a **new** arming diff and independent review.
+test that improperly invoked the real launcher. The corrected disabled package
+was committed and pushed as `7f8052e`; it needs a **new** arming diff and
+independent review.
 Focused tests passed 71/71 and the complete suite passed 2231/2231. Build,
 audit, both manifest checks and live-boundary check passed; lint has zero
 errors and the same 20 existing warnings. Typecheck was rerun after removing
 three duplicate generated `.next/types/* 2.ts` iCloud files; the duplicate
-files were generated output, not repository source. No new credential window
-should begin before the two remote temporary credentials are revoked and the
-incident is closed.
+files were generated output, not repository source. The two remote temporary
+credentials were revoked and the incident is closed. No new credential window
+has started.
 
-1. Confirm remote deletion of the named one-hour Vercel token and the newly
-   created project bypass; leave all older tokens/bypasses untouched. Confirm
-   deployment protection remains enabled. The local selectors are absent.
-2. Verify branch, tip, worktree, absent journal and disabled gates. Finalize
-   the incident record with the exact external state and checks.
-3. Run complete disabled checks, commit/push the corrected package, and
-   prepare a new minimal arming diff from that checkpoint. Independently
-   review the exact new diff; do not run ordinary tests while armed.
-4. At a later separately approved action window, create two new short-lived
+1. Verify branch, tip, worktree, absent journal and disabled gates. The incident
+   is closed in the stage plan with the exact external state and checks.
+2. Prepare a new minimal arming diff from the corrected disabled checkpoint.
+   Independently review the exact new diff; do not run ordinary tests while
+   armed. The old v2 patch is superseded and cannot be reused.
+3. At a later separately approved action window, create two new short-lived
    credentials in their distinct Keychain selectors, verify the journal is
    absent and invoke the new reviewed launcher once. If it records intent or
    returns HOLD/FAILED, preserve and reconcile; never retry blindly.
