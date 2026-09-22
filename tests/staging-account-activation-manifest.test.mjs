@@ -30,6 +30,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.stageSafety.generation17Armed, false)
   assert.equal(manifest.stageSafety.generation18Armed, false)
   assert.equal(manifest.stageSafety.generation19Armed, false)
+  assert.equal(manifest.stageSafety.generation20Armed, false)
   assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation12ReplayPermitted, false)
   assert.equal(manifest.stageSafety.generation13ReplayPermitted, false)
@@ -230,7 +231,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(JSON.stringify(manifest).includes('secretValue'), false)
   assert.equal(JSON.stringify(manifest).includes('passwordValue'), false)
   assert.equal(JSON.stringify(manifest).includes('keyHexValue'), false)
-  for (const pin of [...manifest.migrations,...manifest.stageSafety.sources,...manifest.edge.sources,...manifest.runtime.sources,...manifest.preflight.sources,...manifest.disabledMigrationInstall.sources,...manifest.recovery.sources,...manifest.generation6Credentials.sources,...manifest.generation7Successor.sources,...manifest.generation8Successor.sources,...manifest.generation9Successor.sources,...manifest.generation10Successor.sources,...manifest.generation11Successor.sources,...manifest.generation12Successor.sources,...manifest.generation13Successor.sources,...manifest.generation14Successor.sources,...manifest.generation15Successor.sources,...manifest.generation16Successor.sources,...manifest.generation17Successor.sources,...manifest.generation18Successor.sources,...manifest.generation19Successor.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
+  for (const pin of [...manifest.migrations,...manifest.stageSafety.sources,...manifest.edge.sources,...manifest.runtime.sources,...manifest.preflight.sources,...manifest.disabledMigrationInstall.sources,...manifest.recovery.sources,...manifest.generation6Credentials.sources,...manifest.generation7Successor.sources,...manifest.generation8Successor.sources,...manifest.generation9Successor.sources,...manifest.generation10Successor.sources,...manifest.generation11Successor.sources,...manifest.generation12Successor.sources,...manifest.generation13Successor.sources,...manifest.generation14Successor.sources,...manifest.generation15Successor.sources,...manifest.generation16Successor.sources,...manifest.generation17Successor.sources,...manifest.generation18Successor.sources,...manifest.generation19Successor.sources,...manifest.generation20Successor.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
 
   const classified = new Set([...manifest.runtime.vercelSecrets,...manifest.runtime.vercelConfiguration])
   const runtimeSource = ['lib/server/staging-customer.ts','lib/commerce/staging-cart-server.ts','app/auth/customer/logout/route.ts']
@@ -432,3 +433,22 @@ test('generation 19 successor is pinned with Gen 17 role predecessor, Gen 18 att
   assert.equal(manifest.generation18Successor.status, 'ENTRY_BASELINE_FAILED_NO_REPLAY')
 })
 
+test('generation 20 successor is pinned to the exact retired Gen19 contract and remains disabled', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
+  assert.equal(manifest.stageSafety.generation20Armed, false)
+  assert.equal(manifest.stageSafety.generation20ReplayPermitted, false)
+  assert.equal(manifest.generation20Successor.packageId, 'tll-staging-generation-20-credentials/v1')
+  assert.equal(manifest.generation20Successor.generation, 20)
+  assert.equal(manifest.generation20Successor.windowId, 'a009f2b4-86df-4701-a8bc-1112597e3c42')
+  assert.deepEqual(manifest.generation20Successor.predecessor, {
+    generation: 19, windowId: '51809dd4-bd4b-44c7-8609-7dd8ca063679', expiresAt: '2026-09-21T11:08:34.000Z',
+    validUntil: '2026-09-21T11:08:34.000Z', state: 'retired', replayPermitted: false,
+    note: 'Exact Gen19 retired runtime-marker contract. A fresh read-only proof is required before any separately reviewed Gen20 arming diff.',
+  })
+  assert.equal(manifest.generation20Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation20Successor.status, 'DISABLED_SUCCESSOR_AWAITING_ARMING_REVIEW')
+  assert.equal(manifest.generation20Successor.preArmRequiresPredecessorRetirementEvidence, true)
+  assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'scripts/staging-generation-20-pre-arm-gate.mjs'))
+  assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-20-disabled-successor.md'))
+})

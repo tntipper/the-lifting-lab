@@ -34,6 +34,8 @@
     "generation18Armed": false,
     "generation18ReplayPermitted": false,
     "generation19Armed": false,
-    "generation19ReplayPermitted": false
+    "generation19ReplayPermitted": false,
+    "generation20Armed": false,
+    "generation20ReplayPermitted": false
   }
 }

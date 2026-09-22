@@ -17,7 +17,7 @@ const policy = {
   currentHold: {
     generation10ReplayPermitted: false, generation11ReplayPermitted: false,
     generation12ReplayPermitted: false, generation13ReplayPermitted: false,
-    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation18Armed: false, generation19Armed: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false, generation16ReplayPermitted: false, generation17ReplayPermitted: false, generation18ReplayPermitted: false, generation19ReplayPermitted: false,
+    generation11Armed: false, generation12Armed: false, generation13Armed: false, generation14Armed: false, generation15Armed: false, generation16Armed: false, generation17Armed: false, generation18Armed: false, generation19Armed: false, generation20Armed: false, generation14ReplayPermitted: false, generation15ReplayPermitted: false, generation16ReplayPermitted: false, generation17ReplayPermitted: false, generation18ReplayPermitted: false, generation19ReplayPermitted: false, generation20ReplayPermitted: false,
     nextGenerationPermittedBeforeBoundaryReview: false,
   },
 }
@@ -48,11 +48,21 @@ test('boundary rejects enabled JavaScript and Keychain gates', () => {
   ])
 })
 
-test('boundary rejects any missing or enabled Generation 10-19 replay hold', () => {
-  for (const generation of [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]) {
+test('boundary rejects any missing or enabled Generation 10-20 replay hold', () => {
+  for (const generation of [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]) {
     const root = fixture()
     const changed = structuredClone(policy)
     changed.currentHold[`generation${generation}ReplayPermitted`] = true
+    writeFileSync(join(root, 'config/project-stage-gate-policy.json'), JSON.stringify(changed))
+    assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), ['policy:currentHold'])
+  }
+})
+
+test('boundary rejects any missing or enabled Generation 11-20 armed hold', () => {
+  for (const generation of [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]) {
+    const root = fixture()
+    const changed = structuredClone(policy)
+    changed.currentHold[`generation${generation}Armed`] = true
     writeFileSync(join(root, 'config/project-stage-gate-policy.json'), JSON.stringify(changed))
     assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), ['policy:currentHold'])
   }

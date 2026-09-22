@@ -15,13 +15,14 @@ test('parseRecoverySuccessorPin reads generation and windowId', () => {
   assert.equal(parseRecoverySuccessorPin('no pin here'), null)
 })
 
-test('generation 15-19 recovery successor pins match credentials packages (regresses Gen 17 Gen-16 leftover)', async () => {
-  const results = await assertRecoverySuccessorPinsMatchCredentials([15, 16, 17, 18, 19])
-  assert.equal(results.length, 5)
+test('generation 15-20 recovery successor pins match credentials packages (regresses Gen 17 Gen-16 leftover)', async () => {
+  const results = await assertRecoverySuccessorPinsMatchCredentials([15, 16, 17, 18, 19, 20])
+  assert.equal(results.length, 6)
   const byGen = Object.fromEntries(results.map((item) => [item.generation, item]))
   assert.equal(byGen[17].windowId, '5728d807-701a-486b-a8c5-34bf89238275')
   assert.equal(byGen[18].windowId, '44e3fff5-5dff-4183-af6b-3cdfb367f1af')
   assert.equal(byGen[19].windowId, '51809dd4-bd4b-44c7-8609-7dd8ca063679')
+  assert.equal(byGen[20].windowId, 'a009f2b4-86df-4701-a8bc-1112597e3c42')
   // Explicit anti-regression: Gen 17 must not still pin Gen 16.
   const gen17Recovery = loadGenerationRecoverySuccessorPin(17)
   assert.notEqual(gen17Recovery.windowId, '313afec9-46d0-41bb-af47-0be277c6fa4f')

@@ -36,9 +36,9 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
   }
   for (const [name, expected] of Object.entries(required)) if (policy[name] !== expected) violations.push(`policy:${name}`)
   const hold = policy.currentHold ?? {}
-  const replayHeld = Array.from({ length: 10 }, (_, index) => index + 10)
+  const replayHeld = Array.from({ length: 11 }, (_, index) => index + 10)
     .every(generation => hold[`generation${generation}ReplayPermitted`] === false)
-  const armedHeld = Array.from({ length: 9 }, (_, index) => index + 11)
+  const armedHeld = Array.from({ length: 10 }, (_, index) => index + 11)
     .every(generation => hold[`generation${generation}Armed`] === false)
   if (!replayHeld || !armedHeld || hold.nextGenerationPermittedBeforeBoundaryReview !== false) {
     violations.push('policy:currentHold')
