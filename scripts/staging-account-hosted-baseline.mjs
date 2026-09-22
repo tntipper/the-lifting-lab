@@ -11,6 +11,15 @@ export const STAGING_ACCOUNT_HOSTED_BASELINE_ENABLED = false
 export const STAGING_ACCOUNT_HOSTED_BASELINE_SCHEMA = 'tll-staging-account-hosted-baseline/v1'
 
 const unavailable = () => { throw new Error('Staging hosted baseline unavailable') }
+const VALIDATION_CODES = new Set(['database_validation_unavailable', 'provider_validation_unavailable', 'secret_inventory_validation_unavailable', 'surface_validation_unavailable', 'vercel_validation_unavailable', 'vercel_merge_unavailable'])
+const validationUnavailable = code => {
+  const error = new Error('Staging hosted baseline unavailable')
+  error.code = code
+  throw error
+}
+const validateStage = (code, operation) => {
+  try { return operation() } catch { validationUnavailable(code) }
+}
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right)
@@ -97,22 +106,28 @@ export function createStagingAccountHostedBaseline({ readDatabase, readProvider,
       const abortLinked = () => { if (!linked.signal.aborted) linked.abort() }
       abortSignal.addEventListener('abort', abortLinked, { once: true })
       let database, provider, secrets, surface, vercel
+      let classifiedReadFailure = null
       try {
         // Database identity is the first dependency; any malformed state stops
         // all later reads. The other safe reads are then collected once.
-        database = validateDatabase(await ports.readDatabase({ signal: linked.signal }))
+        const databaseRead = await ports.readDatabase({ signal: linked.signal })
+        database = validateStage('database_validation_unavailable', () => validateDatabase(databaseRead))
         signal(linked.signal)
         const reads = [ports.readProvider, ports.readBrokerSecrets, ports.readSurface, ports.readVercel]
-          .map(port => Promise.resolve().then(() => port({ signal: linked.signal })).catch(error => { abortLinked(); throw error }))
+          .map(port => Promise.resolve().then(() => port({ signal: linked.signal })).catch(error => {
+            if (!classifiedReadFailure && VALIDATION_CODES.has(error?.code)) classifiedReadFailure = error.code
+            abortLinked(); throw error
+          }))
         const settled = await Promise.allSettled(reads)
+        if (classifiedReadFailure) validationUnavailable(classifiedReadFailure)
         if (linked.signal.aborted || settled.some(result => result.status !== 'fulfilled')) unavailable()
         ;[provider, secrets, surface, vercel] = settled.map(result => result.value)
-      } catch { unavailable() }
+      } catch (error) { if (VALIDATION_CODES.has(error?.code)) validationUnavailable(error.code); unavailable() }
       finally { abortLinked(); abortSignal.removeEventListener('abort', abortLinked) }
-      const observedProvider = providerObservation(provider)
-      const observedSecrets = validateNames(secrets)
-      const observedSurface = validateSurface(surface)
-      const observedVercel = validateVercel(vercel)
+      const observedProvider = validateStage('provider_validation_unavailable', () => providerObservation(provider))
+      const observedSecrets = validateStage('secret_inventory_validation_unavailable', () => validateNames(secrets))
+      const observedSurface = validateStage('surface_validation_unavailable', () => validateSurface(surface))
+      const observedVercel = validateStage('vercel_validation_unavailable', () => validateVercel(vercel))
       const reasonCodes = []
       addProviderHoldReasons(reasonCodes, observedProvider)
       if (observedSecrets.supabasePresent) reasonCodes.push('broker_secret_present_supabase')

@@ -8,7 +8,7 @@
   "sources": [
     {
       "path": "scripts/staging-account-hosted-baseline.mjs",
-      "sha256": "dad85bfe335c4d760ce3da8197f802759ec0cc53f6fe26f00dc78e998ccdea1b"
+      "sha256": "cac04e7c8e04fdfbfb20f76c68493570413878bc249252da671081e03ebde034"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-database.mjs",
@@ -32,7 +32,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-composition.mjs",
-      "sha256": "2ffc8016853e185310235f5ced61b83213a09dda6aef494a3379016f502e30b2"
+      "sha256": "8a6ea89b8a524f7b8db2506931bd83284a68b26a7cdaba18a69f07eeb06b5cec"
     },
     {
       "path": "scripts/staging-provider-broker-native-binding.mjs",
@@ -60,7 +60,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-session.mjs",
-      "sha256": "52f1e06b85d5c81b25ff8c1bc8d560c42d5ec56af6ea67abb0ee9f737be53871"
+      "sha256": "7b96928fd0edf443d8a0a36d1afd7f50f523b7eb928a4b1a38bc031dfabc0ead"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-live-launcher.mjs",
@@ -76,11 +76,11 @@
     },
     {
       "path": "tests/staging-account-hosted-baseline-session.test.mjs",
-      "sha256": "74b18c959c50ce16288acfd4d540cef203795812e499f980e36f8dd05c9ed430"
+      "sha256": "30b764825135f334cf18e33930ab80d6710e2a296ba211c18eef3a57920fce32"
     },
     {
       "path": "tests/staging-account-hosted-baseline-composition.test.mjs",
-      "sha256": "1232a40fd7d3d8298d44a8d1c242be76e70832d5ad6a59fa38e7cdb0b3a9c2ec"
+      "sha256": "e6cf312684a3376ae1bb494270b6945c8796c34a9d7b367f48adcd311623bd55"
     },
     {
       "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",

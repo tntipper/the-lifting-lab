@@ -100,6 +100,7 @@ test('terminal failure journal keeps only bounded construction and observation r
   const cases = [
     ['construction', 'composition_construction_unavailable'],
     ['classified-read', 'database_read_unavailable'],
+    ['classified-validation', 'provider_validation_unavailable'],
     ['unknown-error', 'observation_unavailable'],
     ['projection', 'observation_projection_unavailable'],
   ]
@@ -115,6 +116,7 @@ test('terminal failure journal keeps only bounded construction and observation r
           if (kind === 'projection') return { privateToken: 'private provider response and token' }
           const error = Error('private provider response and token')
           if (kind === 'classified-read') error.code = 'database_read_unavailable'
+          else if (kind === 'classified-validation') error.code = 'provider_validation_unavailable'
           else error.code = 'private_provider_error'
           throw error
         }, dispose: async () => {} }

@@ -13,6 +13,7 @@ export const HOSTED_BASELINE_COMPOSITION_ERROR = 'Staging hosted baseline compos
 
 const unavailable = () => { throw new Error(HOSTED_BASELINE_COMPOSITION_ERROR) }
 const classifiedUnavailable = code => { const error = new Error(HOSTED_BASELINE_COMPOSITION_ERROR); error.code = code; throw error }
+const VALIDATION_CODES = new Set(['database_validation_unavailable', 'provider_validation_unavailable', 'secret_inventory_validation_unavailable', 'surface_validation_unavailable', 'vercel_validation_unavailable', 'vercel_merge_unavailable'])
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 const positiveRepositoryId = value => typeof value === 'number' && Number.isSafeInteger(value) && value > 0
@@ -71,7 +72,7 @@ export function createStagingAccountHostedBaselineComposition({ supabase, vercel
       const failedRead = (code, error) => {
         // The original error may contain a URL, token, or provider response.
         // Retain only this fixed operation label before aborting siblings.
-        if (!firstReadFailure && !session.signal.aborted) firstReadFailure = code
+        if (!firstReadFailure && !session.signal.aborted) firstReadFailure = code === 'surface_read_unavailable' && error?.code === 'surface_validation_unavailable' ? error.code : code
         abortSession()
         throw error
       }
@@ -99,7 +100,10 @@ export function createStagingAccountHostedBaselineComposition({ supabase, vercel
       }
       const readSurfaceOnce = childSignal => {
         const hostedSignal = sessionSignal(childSignal)
-        if (!surfacePromise) surfacePromise = Promise.resolve().then(() => surface.readBaseline({ signal: hostedSignal })).catch(error => failedRead('surface_read_unavailable', error))
+        if (!surfacePromise) surfacePromise = Promise.resolve()
+          .then(() => surface.readBaseline({ signal: hostedSignal }))
+          .catch(error => failedRead('surface_read_unavailable', error))
+          .then(value => { if (!exact(value, ['surface', 'deployment'])) classifiedUnavailable('surface_validation_unavailable'); return value })
         return surfacePromise
       }
       try {
@@ -113,7 +117,7 @@ export function createStagingAccountHostedBaselineComposition({ supabase, vercel
               ['supabase_secret_names_read_unavailable', hostedSignal => supabase.readEdgeSecretNames({ signal: hostedSignal })],
               ['vercel_environment_read_unavailable', hostedSignal => vercel.readPreviewEnvironmentPresence({ signal: hostedSignal })],
             ])
-            if (!Array.isArray(supabaseNames) || !vercelPresence || typeof vercelPresence.brokerSecretPresent !== 'boolean') unavailable()
+            if (!Array.isArray(supabaseNames) || !vercelPresence || typeof vercelPresence.brokerSecretPresent !== 'boolean') classifiedUnavailable('secret_inventory_validation_unavailable')
             return Object.freeze({ supabase: supabaseNames, vercel: Object.freeze(vercelPresence.brokerSecretPresent ? [BROKER_SECRET_NAME] : []) })
           },
           readSurface: async ({ signal: childSignal }) => (await readSurfaceOnce(childSignal)).surface,
@@ -122,11 +126,11 @@ export function createStagingAccountHostedBaselineComposition({ supabase, vercel
               ['vercel_project_read_unavailable', hostedSignal => vercel.readProject({ signal: hostedSignal })],
               ['surface_read_unavailable', () => readSurfaceOnce(childSignal)],
             ])
-            return mergeVercel(project, observedSurface)
+            try { return mergeVercel(project, observedSurface) } catch { classifiedUnavailable('vercel_merge_unavailable') }
           },
         })
         return await baseline.observe({ signal })
-      } catch { classifiedUnavailable(firstReadFailure || 'observation_validation_unavailable') } finally {
+      } catch (error) { classifiedUnavailable(firstReadFailure || (VALIDATION_CODES.has(error?.code) ? error.code : 'observation_validation_unavailable')) } finally {
         abortSession()
         try { coreSignal?.removeEventListener('abort', abortCore) } catch {}
         disposeBindings()

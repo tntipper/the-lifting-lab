@@ -87,3 +87,37 @@ and hosted state separately, remove temporary local access and leave the
 remote one-hour token to expire naturally. Preserve any intent-only journal
 and diagnose it without replay. Record the result and update handover before
 any downstream stage.
+
+## Executed result and incident boundary
+
+The independently reviewed v7 arming diff was committed as `898bf0d` and the
+launcher invoked exactly once. It returned terminal `OBSERVATION_FAILED` with
+`observation_validation_unavailable`. The mode-0600 journal has run ID
+`c66a7537-a63b-4071-baab-cd3442516ad2`, SHA-256
+`d53760204f68ca4949af4be340f2dadaf4e3442abe24b91a6eb66e5f6c4d6084`,
+and no observation hash. It is consumed and must not be replayed. Source
+gates were disarmed in `53ffb67`, boundary and manifest checks passed, the
+temporary bypass reader allowance and local Vercel API Keychain item were
+removed, and the remote one-hour token was left to expire naturally.
+
+Separate read-only reconciliation confirmed the staging database receipt
+still passes with 15 migrations, zero enabled controls, five runtime roles,
+zero runtime sessions, zero execution edges and five operator edges. The
+Supabase provider read, Supabase and Vercel broker-name reads, Vercel project
+and Preview environment reads, and the alias/deployment/readiness/Edge
+surface reads all succeeded when isolated. The surface returned HTTP
+200/200/200/503 in its fixed order with disabled readiness flags. The
+project and deployment repository IDs, Git provider, project and branch
+matched. An independently assembled receipt from serial read-only values
+produced a local HOLD with four reasons and passed the pure receipt
+projection. A tracked-fetch serial read also succeeded.
+
+The direct cause of v7's generic validation failure is **not established**.
+The process weakness is that the composite concurrent path can return the
+generic `observation_validation_unavailable` without preserving the failing
+validation stage, despite its port-level fixed labels. The sequential
+reconciliation narrows the issue to composition/concurrency or a transient
+inconsistent observation, but does not prove either. Do not prepare or arm v8
+until a disabled, synthetic reproduction identifies the cause and a
+reviewed fixed-stage diagnostic or correction has a counterexample test.
+Never rerun v7's launcher or use a new journal merely to discover the error.
