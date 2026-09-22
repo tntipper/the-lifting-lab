@@ -60,6 +60,13 @@ test('journal rejects a second claim after an intent or terminal record', () => 
   assert.throws(() => journal.claim(), /unavailable/)
 })
 
+test('journal rejects failure reason codes outside the finite diagnostic set', () => {
+  const { journal } = makeJournal()
+  const intent = journal.claim()
+  assert.throws(() => journal.finish(intent, { ...intent, state: 'OBSERVATION_FAILED', status: 'FAILED', reasonCodes: ['private_provider_error'] }), /unavailable/)
+  assert.equal(journal.read().state, 'INTENT_RECORDED')
+})
+
 test('failure waits for the operation to settle, scrubs credentials, and records no secret', async () => {
   const { path, journal } = makeJournal()
   const supplied = []; const received = []
@@ -87,6 +94,39 @@ test('failure waits for the operation to settle, scrubs credentials, and records
   const record = readFileSync(path, 'utf8')
   assert.doesNotMatch(record, /internal secret detail|credential-secret/)
   assert.deepEqual(JSON.parse(record).reasonCodes, ['deadline_or_abort'])
+})
+
+test('terminal failure journal keeps only bounded construction and observation reason codes', async () => {
+  const cases = [
+    ['construction', 'composition_construction_unavailable'],
+    ['classified-read', 'database_read_unavailable'],
+    ['unknown-error', 'observation_unavailable'],
+    ['projection', 'observation_projection_unavailable'],
+  ]
+  for (const [kind, expected] of cases) {
+    const { path, journal } = makeJournal()
+    const supplied = []
+    const result = await runHostedBaselineSession({
+      journal, verifyManifest: async () => {},
+      readCredential: async selector => { const item = credential(selector); supplied.push(item); return item },
+      createComposition: async () => {
+        if (kind === 'construction') throw Error('private provider response and token')
+        return { observe: async () => {
+          if (kind === 'projection') return { privateToken: 'private provider response and token' }
+          const error = Error('private provider response and token')
+          if (kind === 'classified-read') error.code = 'database_read_unavailable'
+          else error.code = 'private_provider_error'
+          throw error
+        }, dispose: async () => {} }
+      },
+    })
+    assert.equal(result.status, 'OBSERVATION_FAILED')
+    assert.deepEqual(result.reasonCodes, [expected])
+    const record = readFileSync(path, 'utf8')
+    assert.deepEqual(JSON.parse(record).reasonCodes, [expected])
+    assert.doesNotMatch(record, /private provider response|token/i)
+    assert.ok(supplied.every(item => item.every(byte => byte === 0)))
+  }
 })
 
 test('missing bypass credential does not consume the one-shot journal and wipes earlier credentials', async () => {

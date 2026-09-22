@@ -32,7 +32,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-composition.mjs",
-      "sha256": "e9625c864a48124e74d4bed2ddae35ff33f46a0c05e3f7968ab91142e02da43e"
+      "sha256": "2ffc8016853e185310235f5ced61b83213a09dda6aef494a3379016f502e30b2"
     },
     {
       "path": "scripts/staging-provider-broker-native-binding.mjs",
@@ -60,7 +60,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-session.mjs",
-      "sha256": "cb3578e4a963c82f35f5551ca42c6dd069c0f88916fc10a82f513c22df703546"
+      "sha256": "44bd990fd3e24cae1eac57f10127b9dc6e9b22a4f0956e942b9edab6bb8161c7"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-live-launcher.mjs",
@@ -72,15 +72,19 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-manifest.mjs",
-      "sha256": "c7eb3a5534a0d0d479ec9bae0c123271137dc1aa28f540618280ef959e4a24a3"
+      "sha256": "76d4b2fffbeb62ded9504ff3bb6149d27c03115b25284e4f1ddef6b403bfe099"
     },
     {
       "path": "tests/staging-account-hosted-baseline-session.test.mjs",
-      "sha256": "1d8b9862e2f9c6472c4786e3f5cd480d6f772ee2c24687001ab15c7b7e04d35f"
+      "sha256": "11c2e7e0a4b83664275eeaf72fe85eb810b8a95df12d3fc140fc4a280ea7c652"
+    },
+    {
+      "path": "tests/staging-account-hosted-baseline-composition.test.mjs",
+      "sha256": "a26202eea45f03a8235144711a6176c33466e7a90d2a2459d0154c187d99aee7"
     },
     {
       "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",
-      "sha256": "71796c756e9abba1555709702ed3a32f678c59cb3f6e2976eaab3972ddd98449"
+      "sha256": "afd26a9996a10fd3f74be25dbbb5ffbd01f22b3401c6e2aa812973c03bc40512"
     },
     {
       "path": "package.json",
@@ -92,7 +96,7 @@
     },
     {
       "path": "docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md",
-      "sha256": "85b5dfa298c58edfba1a793b07210b752efdc27c2d9d28210cdbc4075c8274a4"
+      "sha256": "1c0b56b05bc933e91bbbacc2df76fc2eed37841af39bad10a59ef104329a2be6"
     }
   ],
   "keychain": {

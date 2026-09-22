@@ -324,6 +324,22 @@ new one-shot would require its own journal identity and fresh authorization.
 Do not arm Generation 22 or implement deployment creation from this failed
 baseline.
 
+### Disabled diagnostic correction
+
+The next local work unit adds fixed failure labels for composition construction,
+each of the six fixed read operations, observation validation and receipt
+projection. It retains the existing deadline and unknown-error fallbacks. The
+composition retains only the first read's operation label while settling and
+aborting sibling reads; it never copies provider error text into a returned
+error or journal. The session accepts only the finite failure-code set in a
+terminal record, including the historical `observation_unavailable` value.
+Focused tests inject private error text into every read and verify redaction,
+binding disposal, one-shot journal custody and credential wiping. This local
+correction cannot identify the cause of the already-consumed v4 run, and it
+does not authorize a new hosted request. A future read may still be ambiguous
+if several operations fail together; no code should be interpreted as proof
+that another provider succeeded.
+
 - Target, team, branch, alias, provider or source drift stops before subsequent
   reads and records only an allowlisted reason.
 - Authentication failure records only the provider and status class. It does

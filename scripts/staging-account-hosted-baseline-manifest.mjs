@@ -29,6 +29,7 @@ const sources = [
   'scripts/staging-account-hosted-baseline-keychain.py',
   'scripts/staging-account-hosted-baseline-manifest.mjs',
   'tests/staging-account-hosted-baseline-session.test.mjs',
+  'tests/staging-account-hosted-baseline-composition.test.mjs',
   'tests/staging-account-hosted-baseline-manifest.test.mjs',
   'package.json',
   'package-lock.json',

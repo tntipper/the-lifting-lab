@@ -29,20 +29,21 @@ const surfaceObservation = Object.freeze({
 const project = Object.freeze({ target: Object.freeze({ projectId: VERCEL_PROJECT_ID, project: VERCEL_PROJECT, scope: VERCEL_SCOPE, teamId: VERCEL_TEAM_ID, environment: 'preview', branch: 'codex/tll-integration' }),
   repository: Object.freeze({ provider: 'github', repoId: 998877, org: 'tntipper', repo: 'the-lifting-lab', ownerId: 776655, productionBranch: 'main', sourceless: false }) })
 
-function fixture({ brokerAtSupabase = false, brokerAtVercel = false, projectOverride = project } = {}) {
+function fixture({ brokerAtSupabase = false, brokerAtVercel = false, projectOverride = project, failAt = null } = {}) {
   const calls = []; let disposed = 0; let vercelDisposed = 0; let surfaceDisposed = 0; let surfaceReads = 0
+  const read = (name, value) => { calls.push(name); if (name === failAt) throw Error('private provider response and token'); return value }
   const supabase = {
-    readDatabase: async () => { calls.push('database'); return database },
-    readProvider: async () => { calls.push('provider'); return provider },
-    readEdgeSecretNames: async () => { calls.push('supabase-secrets'); return brokerAtSupabase ? [BROKER_SECRET_NAME] : [] },
+    readDatabase: async () => read('database', database),
+    readProvider: async () => read('provider', provider),
+    readEdgeSecretNames: async () => read('supabase-secrets', brokerAtSupabase ? [BROKER_SECRET_NAME] : []),
     dispose: () => { disposed += 1 },
   }
   const vercel = {
-    readProject: async () => { calls.push('project'); return projectOverride },
-    readPreviewEnvironmentPresence: async () => { calls.push('vercel-secrets'); return { brokerSecretPresent: brokerAtVercel } },
+    readProject: async () => read('project', projectOverride),
+    readPreviewEnvironmentPresence: async () => read('vercel-secrets', { brokerSecretPresent: brokerAtVercel }),
     dispose: () => { vercelDisposed += 1 },
   }
-  const surface = { readBaseline: async () => { calls.push('surface'); surfaceReads += 1; return surfaceObservation }, dispose: () => { surfaceDisposed += 1 } }
+  const surface = { readBaseline: async () => { surfaceReads += 1; return read('surface', surfaceObservation) }, dispose: () => { surfaceDisposed += 1 } }
   return { calls, get disposed() { return disposed }, get vercelDisposed() { return vercelDisposed }, get surfaceDisposed() { return surfaceDisposed }, get surfaceReads() { return surfaceReads }, composition: createStagingAccountHostedBaselineComposition({ supabase, vercel, surface }) }
 }
 
@@ -64,6 +65,27 @@ test('secret presence is composed as HOLD without exposing inventories or values
   assert.equal(result.status, 'HOLD')
   assert.deepEqual(result.reasonCodes, ['broker_secret_present_supabase', 'broker_secret_present_vercel'])
   assert.deepEqual(result.brokerSecrets, { supabasePresent: true, vercelPresent: true })
+})
+
+test('each fixed hosted read reports only its allowlisted operation label', async () => {
+  const cases = [
+    ['database', 'database_read_unavailable'],
+    ['provider', 'provider_read_unavailable'],
+    ['supabase-secrets', 'supabase_secret_names_read_unavailable'],
+    ['vercel-secrets', 'vercel_environment_read_unavailable'],
+    ['surface', 'surface_read_unavailable'],
+    ['project', 'vercel_project_read_unavailable'],
+  ]
+  for (const [failAt, code] of cases) {
+    const f = fixture({ failAt })
+    await assert.rejects(f.composition.observe({ signal: signal() }), error => {
+      assert.equal(error.code, code)
+      assert.equal(error.message, HOSTED_BASELINE_COMPOSITION_ERROR)
+      assert.doesNotMatch(JSON.stringify(error), /private provider response|token/)
+      return true
+    })
+    assert.equal(f.disposed, 1); assert.equal(f.vercelDisposed, 1); assert.equal(f.surfaceDisposed, 1)
+  }
 })
 
 test('repository disagreement fails closed, disposes Supabase, and cannot be replayed', async () => {

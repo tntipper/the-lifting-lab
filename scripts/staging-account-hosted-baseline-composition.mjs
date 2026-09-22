@@ -12,6 +12,7 @@ export const HOSTED_BASELINE_COMPOSITION_ENABLED = false
 export const HOSTED_BASELINE_COMPOSITION_ERROR = 'Staging hosted baseline composition unavailable'
 
 const unavailable = () => { throw new Error(HOSTED_BASELINE_COMPOSITION_ERROR) }
+const classifiedUnavailable = code => { const error = new Error(HOSTED_BASELINE_COMPOSITION_ERROR); error.code = code; throw error }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 const positiveRepositoryId = value => typeof value === 'number' && Number.isSafeInteger(value) && value > 0
@@ -66,6 +67,14 @@ export function createStagingAccountHostedBaselineComposition({ supabase, vercel
       let coreSignal, abortCore, surfacePromise
       const session = new AbortController()
       const abortSession = () => { if (!session.signal.aborted) session.abort() }
+      let firstReadFailure = null
+      const failedRead = (code, error) => {
+        // The original error may contain a URL, token, or provider response.
+        // Retain only this fixed operation label before aborting siblings.
+        if (!firstReadFailure && !session.signal.aborted) firstReadFailure = code
+        abortSession()
+        throw error
+      }
       const sessionSignal = childSignal => {
         if (!childSignal || typeof childSignal.addEventListener !== 'function' || childSignal.aborted) unavailable()
         if (coreSignal && coreSignal !== childSignal) unavailable()
@@ -77,32 +86,32 @@ export function createStagingAccountHostedBaselineComposition({ supabase, vercel
         }
         return session.signal
       }
-      const call = async (childSignal, operation) => {
+      const call = async (childSignal, code, operation) => {
         const hostedSignal = sessionSignal(childSignal)
-        try { return await operation(hostedSignal) } catch (error) { abortSession(); throw error }
+        try { return await operation(hostedSignal) } catch (error) { failedRead(code, error) }
       }
       const settleGroup = async (childSignal, operations) => {
         const hostedSignal = sessionSignal(childSignal)
-        const pending = operations.map(operation => Promise.resolve().then(() => operation(hostedSignal)).catch(error => { abortSession(); throw error }))
+        const pending = operations.map(([code, operation]) => Promise.resolve().then(() => operation(hostedSignal)).catch(error => failedRead(code, error)))
         const results = await Promise.allSettled(pending)
         if (session.signal.aborted || results.some(result => result.status !== 'fulfilled')) unavailable()
         return results.map(result => result.value)
       }
       const readSurfaceOnce = childSignal => {
         const hostedSignal = sessionSignal(childSignal)
-        if (!surfacePromise) surfacePromise = Promise.resolve().then(() => surface.readBaseline({ signal: hostedSignal })).catch(error => { abortSession(); throw error })
+        if (!surfacePromise) surfacePromise = Promise.resolve().then(() => surface.readBaseline({ signal: hostedSignal })).catch(error => failedRead('surface_read_unavailable', error))
         return surfacePromise
       }
       try {
         if (!exact(input, ['signal'])) unavailable()
         const { signal } = input
         const baseline = createStagingAccountHostedBaseline({
-          readDatabase: ({ signal: childSignal }) => call(childSignal, hostedSignal => supabase.readDatabase({ signal: hostedSignal })),
-          readProvider: ({ signal: childSignal }) => call(childSignal, hostedSignal => supabase.readProvider({ signal: hostedSignal })),
+          readDatabase: ({ signal: childSignal }) => call(childSignal, 'database_read_unavailable', hostedSignal => supabase.readDatabase({ signal: hostedSignal })),
+          readProvider: ({ signal: childSignal }) => call(childSignal, 'provider_read_unavailable', hostedSignal => supabase.readProvider({ signal: hostedSignal })),
           readBrokerSecrets: async ({ signal: childSignal }) => {
             const [supabaseNames, vercelPresence] = await settleGroup(childSignal, [
-              hostedSignal => supabase.readEdgeSecretNames({ signal: hostedSignal }),
-              hostedSignal => vercel.readPreviewEnvironmentPresence({ signal: hostedSignal }),
+              ['supabase_secret_names_read_unavailable', hostedSignal => supabase.readEdgeSecretNames({ signal: hostedSignal })],
+              ['vercel_environment_read_unavailable', hostedSignal => vercel.readPreviewEnvironmentPresence({ signal: hostedSignal })],
             ])
             if (!Array.isArray(supabaseNames) || !vercelPresence || typeof vercelPresence.brokerSecretPresent !== 'boolean') unavailable()
             return Object.freeze({ supabase: supabaseNames, vercel: Object.freeze(vercelPresence.brokerSecretPresent ? [BROKER_SECRET_NAME] : []) })
@@ -110,14 +119,14 @@ export function createStagingAccountHostedBaselineComposition({ supabase, vercel
           readSurface: async ({ signal: childSignal }) => (await readSurfaceOnce(childSignal)).surface,
           readVercel: async ({ signal: childSignal }) => {
             const [project, observedSurface] = await settleGroup(childSignal, [
-              hostedSignal => vercel.readProject({ signal: hostedSignal }),
-              () => readSurfaceOnce(childSignal),
+              ['vercel_project_read_unavailable', hostedSignal => vercel.readProject({ signal: hostedSignal })],
+              ['surface_read_unavailable', () => readSurfaceOnce(childSignal)],
             ])
             return mergeVercel(project, observedSurface)
           },
         })
         return await baseline.observe({ signal })
-      } catch { unavailable() } finally {
+      } catch { classifiedUnavailable(firstReadFailure || 'observation_validation_unavailable') } finally {
         abortSession()
         try { coreSignal?.removeEventListener('abort', abortCore) } catch {}
         disposeBindings()

@@ -27,7 +27,8 @@ test('hosted baseline manifest pins the full disabled observation package', () =
     'scripts/staging-surface-activation-native-binding.mjs', 'scripts/staging-surface-activation-native-adapter.mjs',
     'scripts/staging-account-hosted-baseline-session.mjs', 'scripts/staging-account-hosted-baseline-live-launcher.mjs',
     'scripts/staging-account-hosted-baseline-keychain.py', 'scripts/staging-account-hosted-baseline-manifest.mjs',
-    'tests/staging-account-hosted-baseline-session.test.mjs', 'tests/staging-account-hosted-baseline-manifest.test.mjs',
+    'tests/staging-account-hosted-baseline-session.test.mjs', 'tests/staging-account-hosted-baseline-composition.test.mjs',
+    'tests/staging-account-hosted-baseline-manifest.test.mjs',
     'package.json', 'package-lock.json', 'docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md',
   ])
   assert.ok(manifest.sources.every(source => /^[a-f0-9]{64}$/.test(source.sha256)))

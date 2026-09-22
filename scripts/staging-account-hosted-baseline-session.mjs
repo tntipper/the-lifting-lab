@@ -18,6 +18,15 @@ const cleanProviderString = (value, maximum) => typeof value === 'string' && val
 const validRunId = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 const sha256 = value => createHash('sha256').update(value).digest('hex')
 const HOLD_REASONS = new Set(['provider_name_drift','provider_enabled','provider_pkce_disabled','provider_client_id_drift','provider_acceptable_client_ids_drift','provider_scopes_drift','provider_email_policy_drift','provider_attribute_mapping_drift','provider_authorization_params_drift','provider_skip_nonce_check_enabled','provider_authorization_endpoint_drift','provider_token_endpoint_drift','provider_userinfo_endpoint_drift','provider_jwks_configured','provider_issuer_configured','broker_secret_present_supabase','broker_secret_present_vercel','surface_enabled','application_manifest_evidence_absent'])
+const OBSERVATION_FAILURE_REASONS = new Set(['database_read_unavailable', 'provider_read_unavailable', 'supabase_secret_names_read_unavailable', 'vercel_environment_read_unavailable', 'surface_read_unavailable', 'vercel_project_read_unavailable', 'observation_validation_unavailable'])
+const FAILED_REASONS = new Set(['deadline_or_abort', 'composition_construction_unavailable', 'observation_projection_unavailable', 'observation_unavailable', ...OBSERVATION_FAILURE_REASONS])
+function observationFailureReason(error, phase, aborted) {
+  if (aborted) return 'deadline_or_abort'
+  if (phase === 'construction') return 'composition_construction_unavailable'
+  if (phase === 'projection') return 'observation_projection_unavailable'
+  try { if (OBSERVATION_FAILURE_REASONS.has(error?.code)) return error.code } catch {}
+  return 'observation_unavailable'
+}
 
 function validRecord (value) {
   if (!exact(value, ['schema', 'state', 'runId', 'target', 'startedAt', 'updatedAt', 'deadlineMs', 'status', 'reasonCodes', 'observationHash'])
@@ -30,7 +39,7 @@ function validRecord (value) {
   } else if (value.state === 'OBSERVATION_RECORDED') {
     if (!['PASS', 'HOLD'].includes(value.status) || !/^[a-f0-9]{64}$/.test(value.observationHash)) unavailable()
   } else if (value.state === 'OBSERVATION_FAILED') {
-    if (value.status !== 'FAILED' || value.observationHash !== null || value.reasonCodes.length < 1) unavailable()
+    if (value.status !== 'FAILED' || value.observationHash !== null || value.reasonCodes.length !== 1 || !FAILED_REASONS.has(value.reasonCodes[0])) unavailable()
   } else unavailable()
   return Object.freeze({ ...value, reasonCodes: Object.freeze([...value.reasonCodes]) })
 }
@@ -276,20 +285,22 @@ export async function runHostedBaselineSession ({
   try { intent = journal.claim() } catch { eraseCredentials(); return Object.freeze({ status: 'JOURNAL_UNAVAILABLE', target: HOSTED_BASELINE_SESSION_TARGET }) }
   const controller = new AbortController()
   const timer = setTimer(() => controller.abort(), deadlineMs)
-  let composition; let outcome
+  let composition; let outcome; let phase = 'construction'
   try {
     composition = await createComposition(Object.freeze({ supabaseCredential, vercelCredential, protectionBypassCredential, signal: controller.signal }))
     if (!composition || typeof composition.observe !== 'function') unavailable()
     // Do not race the observation against a timer: after aborting, wait for all
     // in-flight operations to settle before writing a terminal receipt.
+    phase = 'observation'
     const observation = await composition.observe(Object.freeze({ signal: controller.signal }))
     if (controller.signal.aborted) unavailable()
+    phase = 'projection'
     const projected = projectHostedBaselineObservation(observation)
     outcome = Object.freeze({ state: 'OBSERVATION_RECORDED', status: projected.status, reasonCodes: projected.reasonCodes, observationHash: projected.observationHash, observation: projected })
   } catch (error) {
     if (error?.code === 'CLEANUP_UNCERTAIN') outcome = Object.freeze({ state: 'INTENT_RECORDED', status: null, reasonCodes: Object.freeze([]), observationHash: null })
     else
-      outcome = Object.freeze({ state: 'OBSERVATION_FAILED', status: 'FAILED', reasonCodes: Object.freeze([controller.signal.aborted ? 'deadline_or_abort' : 'observation_unavailable']), observationHash: null })
+      outcome = Object.freeze({ state: 'OBSERVATION_FAILED', status: 'FAILED', reasonCodes: Object.freeze([observationFailureReason(error, phase, controller.signal.aborted)]), observationHash: null })
   } finally {
     clearTimer(timer)
     controller.abort()
