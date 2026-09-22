@@ -69,6 +69,42 @@ test('secret presence is composed as HOLD without exposing inventories or values
   assert.deepEqual(result.brokerSecrets, { supabasePresent: true, vercelPresent: true })
 })
 
+test('staging-shaped successful reads produce the same HOLD across concurrent completion orders', async () => {
+  const names = ['provider', 'supabase-secrets', 'vercel-secrets', 'project', 'surface']
+  const orders = [names, [...names].reverse(), ['surface', 'project', 'provider', 'vercel-secrets', 'supabase-secrets']]
+  const hashes = []
+  for (const order of orders) {
+    const gates = Object.fromEntries(names.map(name => {
+      let release
+      const promise = new Promise(resolve => { release = resolve })
+      return [name, { promise, release }]
+    }))
+    const calls = []; const disposals = []; let surfaceReads = 0
+    const read = async (name, value) => { calls.push(name); await gates[name].promise; return value }
+    const stagingProvider = { ...provider, enabled: true, jwks_uri: 'https://example.invalid/jwks', custom_claims_allowlist: [] }
+    const stagingSurface = { ...surfaceObservation, deployment: { ...surfaceObservation.deployment, applicationManifestSha256: null } }
+    const composition = createStagingAccountHostedBaselineComposition({
+      supabase: { readDatabase: async () => database, readProvider: () => read('provider', stagingProvider),
+        readEdgeSecretNames: () => read('supabase-secrets', []), dispose: () => { disposals.push('supabase') } },
+      vercel: { readProject: () => read('project', project), readPreviewEnvironmentPresence: () => read('vercel-secrets', { brokerSecretPresent: false }),
+        dispose: () => { disposals.push('vercel') } },
+      surface: { readBaseline: () => { surfaceReads += 1; return read('surface', stagingSurface) }, dispose: () => { disposals.push('surface') } },
+    })
+    const pending = composition.observe({ signal: signal() })
+    await new Promise(resolve => setImmediate(resolve))
+    assert.deepEqual([...calls].sort(), [...names].sort())
+    for (const name of order) { gates[name].release(); await Promise.resolve() }
+    const result = await pending
+    assert.equal(result.status, 'HOLD')
+    assert.deepEqual(result.reasonCodes, ['provider_enabled', 'provider_jwks_configured', 'application_manifest_evidence_absent'])
+    assert.equal(surfaceReads, 1)
+    assert.deepEqual(disposals.sort(), ['supabase', 'surface', 'vercel'])
+    assert.doesNotMatch(JSON.stringify(result), /privateToken|client_secret/)
+    hashes.push(result.observationHash)
+  }
+  assert.equal(new Set(hashes).size, 1)
+})
+
 test('each fixed hosted read reports only its allowlisted operation label', async () => {
   const cases = [
     ['database', 'database_read_unavailable'],

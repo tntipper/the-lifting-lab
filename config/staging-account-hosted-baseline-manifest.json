@@ -80,7 +80,7 @@
     },
     {
       "path": "tests/staging-account-hosted-baseline-composition.test.mjs",
-      "sha256": "e6cf312684a3376ae1bb494270b6945c8796c34a9d7b367f48adcd311623bd55"
+      "sha256": "40c325c147e524184bc1ced80ed1a64002ca6780f0517540914ea8eb332f6dc7"
     },
     {
       "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",
