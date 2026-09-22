@@ -7,7 +7,7 @@ export const HOSTED_BASELINE_SESSION_SCHEMA = 'tll-staging-hosted-baseline-sessi
 export const HOSTED_BASELINE_SESSION_TARGET = 'qdmvngjwkcsilzmqksme'
 export const HOSTED_BASELINE_SESSION_PRODUCTION_EXCLUDED = 'wrhgscovsgsudtedbljr'
 export const HOSTED_BASELINE_SESSION_DEADLINE_MS = 60_000
-export const HOSTED_BASELINE_SESSION_JOURNAL_PATH = resolve(import.meta.dirname, '../../implementation-state/staging/tll-hosted-baseline-observation-v5.json')
+export const HOSTED_BASELINE_SESSION_JOURNAL_PATH = resolve(import.meta.dirname, '../../implementation-state/staging/tll-hosted-baseline-observation-v6.json')
 
 const unavailable = () => { throw new Error('Staging hosted baseline session unavailable') }
 const wipe = value => { if (Buffer.isBuffer(value)) value.fill(0) }

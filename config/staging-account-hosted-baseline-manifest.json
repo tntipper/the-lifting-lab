@@ -60,7 +60,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-session.mjs",
-      "sha256": "f92a040790fb9641ba92b04f564ab427a83effc27575768eac162405476c17c1"
+      "sha256": "fce655ce71e8a3d0da8ecb065f4886569e2883426cf5686e5be4edfd2237821f"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-live-launcher.mjs",
@@ -72,7 +72,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-manifest.mjs",
-      "sha256": "62ed249aa3f2fd71ed4e13384612c8c87657f508be849aed1109bc97167a9a02"
+      "sha256": "6dd2a311ddf2425a4a2c015121450ccf72550238d45b8f2ab3bde0718a6f85ec"
     },
     {
       "path": "tests/staging-account-hosted-baseline-session.test.mjs",
@@ -84,7 +84,7 @@
     },
     {
       "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",
-      "sha256": "88a6deb72c156b5d1f200f82182d4f52428122ff2209df60d91f17ce03552e30"
+      "sha256": "05a137a8179217186c91f5686c433fce0de35d25aa5880dc9c1ffeff4c48eb2f"
     },
     {
       "path": "package.json",
@@ -119,7 +119,7 @@
     "surface": "https://qdmvngjwkcsilzmqksme.supabase.co"
   },
   "journal": {
-    "path": "../implementation-state/staging/tll-hosted-baseline-observation-v5.json",
+    "path": "../implementation-state/staging/tll-hosted-baseline-observation-v6.json",
     "exclusive": true,
     "mode": "0600"
   },
