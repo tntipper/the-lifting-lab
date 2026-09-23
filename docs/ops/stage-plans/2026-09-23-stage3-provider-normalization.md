@@ -1,0 +1,32 @@
+# Stage 3 staging provider normalization — planned, not armed
+
+## Outcome and acceptance
+
+Return the existing `custom:tll-staging-subject-broker-v1` provider in Supabase project `qdmvngjwkcsilzmqksme` to a disabled, JWKS-free baseline **before** broker rotation. Acceptance requires a fresh read-only provider projection showing `enabled:false` and empty `jwks_uri`, the staging database and public/private/Edge controls still disabled, the broker secret name absent in both hosts, and an independently reviewed secret-free receipt. This step does not activate sign-in.
+
+## Starting evidence and assumptions
+
+On 23 September 2026 the exact staging project dashboard showed this provider **enabled** with a JWKS URI. The last independent database/secret reconciliation reported disabled controls and absent broker secret, but it must be refreshed at the action gate. `rotateStagingProviderBroker` rejects an enabled provider or configured JWKS before generating material; another observer would only repeat those known HOLDs. The existing native provider adapter can inspect the full official schema and contains a disabled-only provider update path, but no reviewed launcher exists for this normalization. Production project `wrhgscovsgsudtedbljr` is excluded.
+
+## Scope and exclusions
+
+The only proposed hosted change is to disable this one existing staging provider and clear **its** JWKS URI. Preserve identifier, client ID, endpoints, scope, PKCE, email policy and all other fields unless a fresh full read proves a separate explicitly reviewed correction is necessary. Do not delete/recreate the provider, create/rotate secrets, enable a feature flag, deploy, contact a customer, place an order or alter production. Do not record the JWKS value or any credential in logs, Git or the receipt.
+
+The installed `@supabase/auth-js` declaration for `UpdateCustomProviderParams` says all fields are optional and only provided fields are updated. It permits `enabled` and `jwks_uri`, so the proposed SDK payload can contain exactly those two fields. Hosted behavior still requires a bounded one-shot test and full readback; the local declaration alone is not an acknowledgement.
+
+## Required pre-mutation checks
+
+1. Verify repo path, branch, HEAD, status, disabled native gates and exact activation manifest. The disabled normalizer and fixed target must be committed and pass focused tests, manifest checks and `npm run check:live-boundaries` before any arming diff.
+2. Read the exact staging provider through the official admin path and validate its complete schema. Record only fixed categorical fields: project, identifier, enabled, JWKS-present, client-ID match, PKCE, scopes and endpoint-match booleans. Stop on unknown schema or any additional drift; do not use a dashboard edit form as the authoritative readback.
+3. Fresh read-only database and host-secret inventories must show five controls disabled, no runtime sessions, Edge/private/public flags false and the broker secret name absent. Stop on any mismatch or uncertain read.
+4. Prepare and independently review the exact one-shot normalization request, journal transitions, bounded executor, response parser and recovery. Review the final arming diff separately. The dashboard must not be used as an ad hoc substitute for these checks.
+
+## One-shot execution and failure handling
+
+Use a separately reviewed dedicated live launcher with a fresh mode-0600 phase journal. Maximum provider-update attempts: **one** within a bounded window. Record intent durably before dispatch. Update only `enabled:false` and `jwks_uri:''` if the official API supports a partial update preserving all other fields; otherwise stop and revise the plan with a full-field payload review. A timeout, malformed response or lost acknowledgement is `RECONCILIATION_REQUIRED`; do not retry, infer success from the UI or proceed to broker rotation. Reconcile from a separate read-only process. A provider left disabled is the safe held state; do not automatically re-enable it as a rollback.
+
+After a definite acknowledgement, separately read the provider and compare every field to the pre-update projection except the two intended changes. Confirm secret absence, controls off and zero sessions. Disarm and verify native boundaries, record a secret-free receipt and update `.agent/HANDOVER.md`. An unexpected field change, enabled state, nonempty JWKS or unavailable readback keeps Stage 3 on HOLD. The later rotation, deployment and customer journey each require their own gate.
+
+## Current gate
+
+**NOT ARMED.** A pure normalization contract now accepts only the exact intended staging-provider baseline and returns only `{ enabled:false, jwks_uri:'' }`. Its separate readback verifier validates the complete official provider response, permitting only those two changes and an advancing `updated_at`; it emits a redacted fixed receipt. The contract has no transport, credential reader or launcher, and `STAGING_PROVIDER_NORMALIZATION_ENABLED` remains false. The activation manifest pins its source and tests. Focused tests passed 11/11; the full disabled suite passed 2,321/2,321. Typecheck, both manifest checks, live-boundary and diff checks passed; lint had 0 errors and 20 existing warnings. A first full-suite attempt correctly caught a stale generated manifest after a final source edit; regeneration and the repeat suite passed. This is ready for independent review, not a provider edit. No arming diff, live launcher or independent review exists yet. The known enabled/JWKS provider must not be treated as a fresh discovery warranting another observer run.

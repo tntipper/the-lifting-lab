@@ -627,6 +627,10 @@
         "sha256": "a6c22f8465d000fecfd77edc1d01545ccebfd18bb17e1e62623cdca9929d273b"
       },
       {
+        "path": "scripts/staging-provider-normalization-contract.mjs",
+        "sha256": "de7092b36d4c6bc65bd26f687daf903bbd42e988c79fd0b2ff505220fa852e90"
+      },
+      {
         "path": "scripts/staging-control-activation.mjs",
         "sha256": "62dce7f87427aefb25ac4ded073e2faacf92caf323e07cddc72518cccd377c1c"
       },
@@ -673,6 +677,10 @@
       {
         "path": "tests/staging-provider-broker-native-binding.test.mjs",
         "sha256": "f53988bf88d7253ae7d3f4bb6b7f7a562835ebdcca12a9696eb8e4ffbc95cb15"
+      },
+      {
+        "path": "tests/staging-provider-normalization-contract.test.mjs",
+        "sha256": "f1e0b16611f822b57b65986f1b4e82631fdddba272f21ef5a956a180fcb60cd1"
       },
       {
         "path": "tests/staging-control-activation.test.mjs",
