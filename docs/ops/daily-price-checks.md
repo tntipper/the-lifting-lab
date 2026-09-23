@@ -45,6 +45,14 @@ The current planner accounts for every **supplied** variant and offer. It
 cannot prove that a supplier or Shopify export included the entire catalogue.
 The future ingestion job must verify pagination/completeness against its
 source receipt and hold an empty or partial feed before calling this planner.
+The offline `price-check-catalogue-receipt.ts` gate now checks internal
+agreement among supplied Shopify page cursors, IDs and a separately declared
+variant count. Its PASS is not proof that Shopify supplied those facts, that
+the declared count is authentic, or that concurrent pagination was a stable
+snapshot. The future read-only Shopify collector must authenticate the Admin
+API response, specify the exact catalogue filter/market scope, obtain a count
+for that same scope, and bind the collected prices and variant rows to the
+receipt. Any missing or mismatched evidence must HOLD the entire shadow run.
 
 ## Gates before scheduling or action
 
