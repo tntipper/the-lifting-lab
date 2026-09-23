@@ -1,0 +1,25 @@
+# Stage 3 — focused Supabase read-only provider probe
+
+## Outcome and acceptance
+
+Prepare one disabled, bounded, staging-only probe that uses the existing fixed Supabase Management binding to obtain (1) the strict `supabase_read_only_user` database receipt, (2) exact Edge secret-name absence and (3) the full official custom-provider response, validating it against the already reviewed normalization contract. The result and journal may contain only fixed statuses, target/provider IDs and a receipt hash, never tokens, keys, raw provider data or secret values. This is a focused replacement for the unavailable UI facts, not a replay or variant of the consumed v8 composite observer.
+
+## Starting state and exclusions
+
+Local HEAD `e17020a`, branch `codex/tll-integration`, disabled launcher/helper gates, passing manifests and live boundary. The 23 September dashboard baseline found the provider enabled/JWKS-configured and Preview behind local HEAD. An existing signed-in Supabase CLI read exact staging aggregates under database role `postgres`, but the strict fixed baseline SQL intentionally rejected that role; do not relax it. The project ref is `qdmvngjwkcsilzmqksme`; production `wrhgscovsgsudtedbljr` is excluded. Do not run a hosted read, request a new token, touch Keychain, update a provider/secret/database/flag, deploy, buy or send customer communication in this disabled implementation unit.
+
+## Files and design
+
+Add an injected-only probe core, a dedicated false-gated `*-live-launcher.mjs`, focused synthetic tests that never import/execute the launcher, and a fixed distinct provider-read phase-journal path. Reuse the reviewed provider-normalization phase-journal implementation and the fixed Supabase Management binding; do not reuse its consumed observation path. Reuse the existing disabled provider-owned Keychain helper, reading only selector `supabase` in a future approved window. Pin new source/tests in the activation manifest and extend the live-boundary checker to reject an armed probe gate during ordinary tests. Add one source-policy regression for that gate.
+
+The launcher checks the activation manifest before effects. The core checks its journal for replay, starts the phase journal before credential read, uses one abort signal with bounded deadlines, disposes the binding and wipes its credential Buffer on every path. Record `PREFLIGHT` before the strict database/secret reads, then `PROVIDER_PREREAD` before the official provider GET. `buildStagingProviderNormalizationPatch` validates the full frozen provider contract, but no update is dispatched; finish `STOPPED_BEFORE_UPDATE`. Any uncertain or failed read consumes the distinct journal and returns a fixed HOLD/UNAVAILABLE status. Never return or log raw API or SQL errors. Preserve the provider intent journal and the normalization phase journal untouched.
+
+## Checks, review and later gate
+
+Verify branch/HEAD/status, exact helper and source signatures before edits. Run focused synthetic success, wrong-target, failed/late read, replay, timeout and credential-wiping checks; run the full disabled suite, typecheck, lint, both manifest checks, live-boundary and diff checks. Obtain independent review of the exact disabled probe and launcher. A later separate action gate must inspect a minimal arming diff, confirm the existing Supabase CLI Keychain item can be used for one read-only window, and approve that credential read at action time. Maximum hosted provider GETs in that later window: one; maximum provider updates: zero. On any unexpected target, field or receipt, stop without mutation, preserve the consumed probe journal and update the handover. A successful probe does **not** authorize provider normalization: Vercel/surface evidence and the mutation arming diff still require their own gates.
+
+## Disabled checkpoint — 23 September
+
+The launcher returns `STAGING_PROVIDER_READONLY_LIVE_DISABLED` before manifest loading, journal creation, Keychain access or network calls. The dedicated probe and boundary tests passed 27/27; the full disabled suite passed 2,362/2,362; typecheck, both manifest checks, the live-boundary check and diff check passed. Lint reported zero errors and 20 pre-existing warnings. Independent review returned GO for committing this disabled package, with no actionable finding, and HOLD for hosted arming. The reviewer also exercised the actual Supabase binding and official SDK through synthetic HTTP: one SQL POST, secret inventory, API-key and provider GETs, no update, with credential wiping. No hosted read or credential window occurred in this unit.
+
+Next, prepare and independently review only the two-flag arming diff plus regenerated activation manifest. The shared provider Keychain helper must remain scoped to the single `supabase` selector in this launcher; its other selectors are not part of the read-only probe. Obtain fresh action-time authorization before any Keychain read or hosted request. Do not run ordinary tests while armed. Disarm, reconcile the distinct journal and verify the disabled boundary after the one permitted run.

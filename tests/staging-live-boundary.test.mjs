@@ -75,6 +75,15 @@ test('boundary rejects an armed provider normalization launcher', () => {
   ])
 })
 
+test('boundary rejects an armed focused provider read-only launcher', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-provider-readonly-live-launcher.mjs'),
+    'const createProviderNormalizationPhaseJournal = null\nexport const STAGING_PROVIDER_READONLY_LIVE_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-provider-readonly-live-launcher.mjs',
+  ])
+})
+
 test('provider normalization arming is isolated from the consumed hosted observer gates', () => {
   const launcher = readFileSync('scripts/staging-provider-normalization-live-launcher.mjs', 'utf8')
   const helper = readFileSync('scripts/staging-provider-normalization-keychain.py', 'utf8')

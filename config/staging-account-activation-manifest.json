@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "4a929fe7fa04ae94de0d884c8df78033b52cb596d77d9ce843012ac82571d472"
+        "sha256": "18b339643a9c8b2c0e72c435b8a28cdeaba3e9a41ac4a05b26a51acaab92efba"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -161,7 +161,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "9b674ea610d9d76b991bc7c277cbf4f82c81c637942fb49371f42900c4ef15b2"
+        "sha256": "d14ea27aa1fd11d5c7f3171e336e71196b6cda259b49178bb0954bfcef3cf9a0"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -663,6 +663,14 @@
         "sha256": "15063b2f5f2b7ecf554de58f8c66422702426d2aadd50d00955a40c714b7c882"
       },
       {
+        "path": "scripts/staging-provider-readonly-probe.mjs",
+        "sha256": "a61f73dd3598ced682f956c2d7709fb31f34df87ed10be344bb726470450819b"
+      },
+      {
+        "path": "scripts/staging-provider-readonly-live-launcher.mjs",
+        "sha256": "85e5c64eeb2177554134f0f914ac2065f046a55c4e6243650f7fa8da28a55c35"
+      },
+      {
         "path": "scripts/staging-control-activation.mjs",
         "sha256": "62dce7f87427aefb25ac4ded073e2faacf92caf323e07cddc72518cccd377c1c"
       },
@@ -737,6 +745,10 @@
       {
         "path": "tests/staging-provider-normalization-session.test.mjs",
         "sha256": "5868b3831fb161aceb3bd86b3dd956120fdf0448745e39b7adfec4b0c5ad2b81"
+      },
+      {
+        "path": "tests/staging-provider-readonly-probe.test.mjs",
+        "sha256": "e7c6b3cf1b94a628afe6ac76f5d3bda680e77d832c35c31e32c20f45d4a48aba"
       },
       {
         "path": "tests/staging-control-activation.test.mjs",

@@ -64,6 +64,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
     if (/\bNATIVE(?:_[A-Z0-9]+)*_(?:TRANSPORT_)?ENABLED\s*=\s*true\b/.test(source)
       || /\bHOSTED_BASELINE_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bPROVIDER_NORMALIZATION_LIVE_ENABLED\s*=\s*true\b/.test(source)
+      || /\bSTAGING_PROVIDER_READONLY_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_TRANSPORT_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_DATABASE_TRANSPORT_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_ACCESS_APPROVED\s*=\s*true\b/.test(source)) violations.push(`enabled-native-gate:${display(path)}`)
