@@ -47,6 +47,8 @@ test('SDK port sends one fixed partial update and requires a separate validated 
     && call.redirect === 'error' && call.signal.aborted === false))
   assert.deepEqual(JSON.parse(calls[1].body), { enabled: false, jwks_uri: '' })
   assert.doesNotMatch(JSON.stringify(receipt), /staging\.example|client_secret/)
+  await assert.rejects(() => port.updateProvider(STAGING_PROVIDER_TARGET, readBefore), /unavailable/)
+  assert.equal(calls.filter(call => call.method === 'PUT').length, 1)
 })
 
 test('target, pre-update state, transport errors and malformed response fail closed', async () => {

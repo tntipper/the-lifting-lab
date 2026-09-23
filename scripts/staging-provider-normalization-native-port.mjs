@@ -24,6 +24,7 @@ function providerData(result) {
 export function createStagingProviderNormalizationNativePort({ projectSecret, execute, fetcher } = {}) {
   if (!Buffer.isBuffer(projectSecret) || projectSecret.length < 1 || projectSecret.length > 24_576
     || typeof execute !== 'function' || typeof fetcher !== 'function') unavailable()
+  let updateAttempted = false
 
   async function bounded(operation) {
     try {
@@ -47,6 +48,8 @@ export function createStagingProviderNormalizationNativePort({ projectSecret, ex
       validateTarget(target)
       let patch
       try { patch = buildStagingProviderNormalizationPatch(before) } catch { unavailable() }
+      if (updateAttempted) unavailable()
+      updateAttempted = true
       await bounded(async providers => {
         const updated = providerData(await providers.updateProvider(PROVIDER_IDENTIFIER, patch))
         verifyStagingProviderNormalization(before, updated)

@@ -632,7 +632,7 @@
       },
       {
         "path": "scripts/staging-provider-normalization-native-port.mjs",
-        "sha256": "8aec058e71e6c09e7f86022b9645e117d808b8484b4c5ac1fbd5c6101108bd25"
+        "sha256": "4fc83959fdeb385f06769f3e10ba5490f2fed5ef3b95487cb6120d91cfb8415d"
       },
       {
         "path": "scripts/staging-control-activation.mjs",
@@ -688,7 +688,7 @@
       },
       {
         "path": "tests/staging-provider-normalization-native-port.test.mjs",
-        "sha256": "314fd705ffd8391987f4d0003ee99ce188e9cf7ef515eeff420bb3c46cf4fefe"
+        "sha256": "35a2323fcfab3066460d3b8df983842f302975854c82974e5fd3e0b2dc6d5f9d"
       },
       {
         "path": "tests/staging-control-activation.test.mjs",
