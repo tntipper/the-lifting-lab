@@ -41,3 +41,7 @@ Invoke `node scripts/staging-provider-readonly-live-launcher.mjs` directly once,
 ## Post-run and handover
 
 Immediately after the one invocation ends, whether success, failure or interruption, disarm both assignments and regenerate the activation manifest before any hosted reconciliation or prompt. If the process is interrupted, the first recovery action is disarm; never leave the shared Keychain helper armed while investigating. Then inspect only redacted fixed output and the journal phase/hash, and perform separate read-only reconciliation of provider, secret-name and database aggregates. Run disabled-focused checks, the full suite if source changed beyond the two flags, typecheck, both manifest checks, live-boundary and diff check. Commit the disarmed state and update `.agent/HANDOVER.md` with the exact result and remaining uncertainty. A later provider mutation requires its own fresh plan, review and approval.
+
+## Closed outcome
+
+The exact diff received independent GO and was armed at `391055b`. One direct invocation returned `READONLY_PROVIDER_PRECONDITION_VERIFIED` and the strict database receipt hash. The distinct mode-0600 journal is terminal `STOPPED_BEFORE_UPDATE`. Both flags were disarmed before separate UI/CLI reconciliation. Details and limits are recorded in `docs/ops/evidence/2026-09-23-stage3-provider-readonly-probe-result.md`. No mutation was attempted; the provider remains ENABLED and Stage 3 sign-in acceptance remains HOLD.

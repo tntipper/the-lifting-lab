@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 
-APPROVED_NATIVE_READ = True
+APPROVED_NATIVE_READ = False
 _SELECTORS = {
     "supabase": ("Supabase CLI", "supabase"),
     "vercel": ("TLL Hosted Baseline Vercel API", "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"),
