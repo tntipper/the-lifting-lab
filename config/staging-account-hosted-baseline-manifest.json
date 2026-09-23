@@ -20,7 +20,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-supabase.mjs",
-      "sha256": "bae32a4a23b43e2227b9c0f87972468c6aab19eb83431eb3a63f784f635f221c"
+      "sha256": "fff75585ad5f9f8968ae8847b24e30aece1ae7284d61ca7290a6d5303b9642ca"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-vercel.mjs",

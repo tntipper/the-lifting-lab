@@ -211,9 +211,13 @@ export function createStagingAccountHostedBaselineSupabaseBinding ({ fetch: fetc
     return validateStagingAccountHostedBaselineDatabaseReceipt(rows)
   }
   const readEdgeSecretNames = async ({ signal } = {}) => secretNames(await request(HOSTED_BASELINE_SUPABASE_ENDPOINTS.secrets, { signal }))
+  const readProjectSecret = async ({ signal } = {}) => {
+    const selected = takeLegacyServiceRole(await request(HOSTED_BASELINE_SUPABASE_ENDPOINTS.apiKeys, { signal }))
+    if (disposed || signal.aborted) { selected.fill(0); unavailable() }
+    return selected
+  }
   const readProvider = async ({ signal } = {}) => {
-    const keys = await request(HOSTED_BASELINE_SUPABASE_ENDPOINTS.apiKeys, { signal })
-    const projectSecret = takeLegacyServiceRole(keys)
+    const projectSecret = await readProjectSecret({ signal })
     let client
     try {
       if (!signalLike(signal) || signal.aborted) unavailable()
@@ -238,6 +242,7 @@ export function createStagingAccountHostedBaselineSupabaseBinding ({ fetch: fetc
     nativeEnabled: HOSTED_BASELINE_SUPABASE_BINDING_ENABLED,
     readDatabase,
     readEdgeSecretNames,
+    readProjectSecret,
     readProvider,
     dispose () { disposed = true; token.fill(0) },
   })

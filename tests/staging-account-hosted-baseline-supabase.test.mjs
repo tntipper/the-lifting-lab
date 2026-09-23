@@ -104,6 +104,56 @@ test('provider read selects only one legacy service-role key, validates data, an
   await assert.rejects(withSecret.readProvider({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SUPABASE_ERROR))
 })
 
+test('one fixed Management API key read returns only the selected private Buffer', async () => {
+  const calls = [], ports = binding({ fetch: async (url, options) => {
+    calls.push({ url, options })
+    return jsonResponse(keys())
+  } })
+  const signal = new AbortController().signal
+  const selected = await ports.readProjectSecret({ signal })
+  assert.ok(Buffer.isBuffer(selected))
+  assert.equal(selected.toString('utf8'), 's'.repeat(64))
+  assert.deepEqual(calls.map(call => call.url), [HOSTED_BASELINE_SUPABASE_ENDPOINTS.apiKeys])
+  assert.equal(calls[0].options.method, 'GET')
+  assert.equal(calls[0].options.signal, signal)
+  selected.fill(0)
+  ports.dispose()
+  await assert.rejects(ports.readProjectSecret({ signal }), new RegExp(HOSTED_BASELINE_SUPABASE_ERROR))
+
+  const aborted = new AbortController(); aborted.abort()
+  await assert.rejects(binding().readProjectSecret({ signal: aborted.signal }), new RegExp(HOSTED_BASELINE_SUPABASE_ERROR))
+  for (const invalid of [[], [{ name: 'service_role', type: 'legacy', api_key: 's'.repeat(64) },
+    { name: 'service_role', type: 'legacy', api_key: 'q'.repeat(64) }], [{ name: 'service_role', type: 'new', api_key: 's'.repeat(64) }]]) {
+    const bad = binding({ fetch: async () => jsonResponse(invalid) })
+    await assert.rejects(bad.readProjectSecret({ signal }), error => error.message === HOSTED_BASELINE_SUPABASE_ERROR)
+    bad.dispose()
+  }
+})
+
+test('pending key fetch or body cannot deliver privileged material after binding disposal', async () => {
+  let releaseFetch
+  const pendingFetch = new Promise(resolve => { releaseFetch = resolve })
+  const fetchPorts = binding({ fetch: async () => pendingFetch })
+  const fetchRead = fetchPorts.readProjectSecret({ signal: new AbortController().signal })
+  fetchPorts.dispose()
+  releaseFetch(jsonResponse(keys()))
+  await assert.rejects(fetchRead, error => error.message === HOSTED_BASELINE_SUPABASE_ERROR)
+
+  let bodyController, bodyStarted
+  const started = new Promise(resolve => { bodyStarted = resolve })
+  const stream = new ReadableStream({ start(controller) { bodyController = controller } })
+  const bodyPorts = binding({ fetch: async () => {
+    bodyStarted()
+    return new Response(stream, { status: 200 })
+  } })
+  const bodyRead = bodyPorts.readProjectSecret({ signal: new AbortController().signal })
+  await started
+  bodyPorts.dispose()
+  bodyController.enqueue(new TextEncoder().encode(JSON.stringify(keys())))
+  bodyController.close()
+  await assert.rejects(bodyRead, error => error.message === HOSTED_BASELINE_SUPABASE_ERROR)
+})
+
 test('wrong response status, redirects, URL drift, framing, compression and oversize streams are rejected', async () => {
   const expected = HOSTED_BASELINE_SUPABASE_ENDPOINTS.database
   const cases = [
