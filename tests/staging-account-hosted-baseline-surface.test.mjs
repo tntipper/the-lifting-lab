@@ -2,9 +2,12 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import {
+  assessStagingPreviewSourceReadback,
   createStagingAccountHostedBaselineSurfaceBinding,
+  createStagingPreviewSourceReadbackBinding,
   HOSTED_BASELINE_SURFACE_BINDING_ENABLED,
   HOSTED_BASELINE_SURFACE_ERROR,
+  PREVIEW_SOURCE_READBACK_ENABLED,
 } from '../scripts/staging-account-hosted-baseline-surface.mjs'
 
 const token = () => Buffer.from('private-vercel-read-token')
@@ -20,6 +23,100 @@ const response = (body, status = 200, headers) => new Response(JSON.stringify(bo
 const alias = () => ({ alias: aliasHost, projectId: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4', deploymentId, deployment: { id: deploymentId, url: 'the-lifting-lab-abc123.vercel.app' } })
 const deployment = () => ({ id: deploymentId, projectId: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4', ownerId: 'team_gf7cgIkkoeMLtODFDDT5MrW4', target: null, readyState: 'READY', url: 'the-lifting-lab-abc123.vercel.app', gitSource: { type: 'github', repoId: 998877, ref: 'codex/tll-integration', sha: 'a'.repeat(40) }, meta: { tllManifestSha256: 'b'.repeat(64) } })
 const readiness = () => ({ deploymentId, immutableUrl, projectRef: 'qdmvngjwkcsilzmqksme', branch: 'codex/tll-integration', privateCustomer: false, privateCart: false, publicCustomer: false, publicCart: false })
+
+test('Vercel-only source readback uses two fixed GETs without bypass or application access', async () => {
+  assert.equal(PREVIEW_SOURCE_READBACK_ENABLED, false)
+  const calls = [], signal = new AbortController().signal
+  const port = createStagingPreviewSourceReadbackBinding({ vercelToken: token(), fetch: async (url, options) => {
+    calls.push({ url, options }); return response(url === aliasUrl ? alias() : deployment())
+  } })
+  const result = await port.readSource({ signal })
+  assert.deepEqual(calls.map(call => call.url), [aliasUrl, deploymentUrl])
+  for (const call of calls) {
+    assert.equal(call.options.method, 'GET')
+    assert.equal(call.options.redirect, 'error')
+    assert.equal(call.options.signal.aborted, false)
+    assert.match(call.options.headers.authorization, /^Bearer /)
+    assert.equal(call.options.headers['x-vercel-protection-bypass'], undefined)
+  }
+  assert.equal(result.gitSourceCommit, 'a'.repeat(40))
+  assert.equal(result.repositoryId, '998877')
+  await assert.rejects(port.readSource({ signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+})
+
+test('Vercel-only source readback fails closed on drift, abort and disposal', async () => {
+  for (const mutate of [
+    value => ({ ...value, target: 'production' }),
+    value => ({ ...value, gitSource: { ...value.gitSource, ref: 'main' } }),
+    value => ({ ...value, projectId: 'prj_other' }),
+  ]) {
+    const port = createStagingPreviewSourceReadbackBinding({ vercelToken: token(), fetch: async url =>
+      response(url === aliasUrl ? alias() : mutate(deployment())) })
+    await assert.rejects(port.readSource({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+  }
+  const aborted = new AbortController(); aborted.abort()
+  const noCall = createStagingPreviewSourceReadbackBinding({ vercelToken: token(), fetch: () => { throw new Error('should not fetch') } })
+  await assert.rejects(noCall.readSource({ signal: aborted.signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+  noCall.dispose()
+  const pendingController = new AbortController()
+  const never = createStagingPreviewSourceReadbackBinding({ vercelToken: token(), fetch: () => new Promise(() => {}) })
+  const pending = never.readSource({ signal: pendingController.signal }); pendingController.abort()
+  await assert.rejects(pending, new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+  let resolveAlias
+  const disposedCalls = []
+  const disposedDuringAlias = createStagingPreviewSourceReadbackBinding({ vercelToken: token(), fetch: url => {
+    disposedCalls.push(url)
+    return new Promise(resolve => { resolveAlias = resolve })
+  } })
+  const disposedRead = disposedDuringAlias.readSource({ signal: new AbortController().signal })
+  await Promise.resolve(); await Promise.resolve()
+  disposedDuringAlias.dispose()
+  await assert.rejects(disposedRead, new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+  resolveAlias(response(alias()))
+  await Promise.resolve()
+  assert.deepEqual(disposedCalls, [aliasUrl])
+  for (const stop of ['abort', 'dispose']) {
+    let calls = 0
+    const controller = new AbortController()
+    const port = createStagingPreviewSourceReadbackBinding({ vercelToken: token(), fetch: () => { calls++; return response(alias()) } })
+    const read = port.readSource({ signal: controller.signal })
+    if (stop === 'abort') controller.abort()
+    else port.dispose()
+    await assert.rejects(read, new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+    assert.equal(calls, 0)
+  }
+  let releaseBody
+  const bodyPort = createStagingPreviewSourceReadbackBinding({ vercelToken: token(), fetch: async () => ({
+    status: 200, redirected: false, url: aliasUrl, headers: new Headers(),
+    body: new ReadableStream({ pull () { return new Promise(resolve => { releaseBody = resolve }) } }),
+  }) })
+  const bodyRead = bodyPort.readSource({ signal: new AbortController().signal })
+  for (let i = 0; i < 20 && !releaseBody; i++) await Promise.resolve()
+  assert.equal(typeof releaseBody, 'function')
+  bodyPort.dispose()
+  await assert.rejects(bodyRead, new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+  releaseBody()
+})
+
+test('source assessment requires fixed numeric repository identity and committed-source proof', () => {
+  const projectReceipt = { target: { projectId: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4', teamId: 'team_gf7cgIkkoeMLtODFDDT5MrW4' },
+    repository: { provider: 'github', repoId: 1264363509 } }
+  const deploymentReceipt = { projectId: projectReceipt.target.projectId, teamId: projectReceipt.target.teamId,
+    branch: 'codex/tll-integration', repositoryId: '1264363509', gitProvider: 'github', deploymentId,
+    immutableUrl, gitSourceCommit: 'a'.repeat(40), applicationManifestSha256: 'b'.repeat(64) }
+  const sourceProof = { status: 'SOURCE_PROOF_VERIFIED', sourceCommit: 'a'.repeat(40), manifestSha256: 'b'.repeat(64) }
+  assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt, deployment: deploymentReceipt }).status, 'CURRENT_SOURCE_UNPROVEN')
+  assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt, deployment: deploymentReceipt,
+    sourceProof: { ...sourceProof, sourceCommit: 'c'.repeat(40) } }).status, 'CURRENT_SOURCE_NOT_DEPLOYED')
+  assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt, deployment: deploymentReceipt,
+    sourceProof }).status, 'SOURCE_AND_METADATA_MATCH_CLAIMS')
+  assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt,
+    deployment: { ...deploymentReceipt, applicationManifestSha256: null }, sourceProof }).status, 'CURRENT_SOURCE_NOT_DEPLOYED')
+  for (const bad of [
+    { project: { ...projectReceipt, repository: { ...projectReceipt.repository, repoId: 998877 } }, deployment: deploymentReceipt },
+    { project: projectReceipt, deployment: { ...deploymentReceipt, repositoryId: '998877' } },
+  ]) assert.throws(() => assessStagingPreviewSourceReadback(bad), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+})
 
 function binding ({ onFetch = () => {}, bodyFor } = {}) {
   return createStagingAccountHostedBaselineSurfaceBinding({ vercelToken: token(), protectionBypassToken: bypassToken(), fetch: async (url, options) => {

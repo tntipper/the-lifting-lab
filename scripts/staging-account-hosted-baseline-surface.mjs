@@ -22,6 +22,7 @@ import {
 
 export const HOSTED_BASELINE_SURFACE_BINDING_ENABLED = false
 export const HOSTED_BASELINE_SURFACE_ERROR = 'Staging hosted baseline surface binding unavailable'
+export const PREVIEW_SOURCE_READBACK_ENABLED = false
 export const HOSTED_BASELINE_SURFACE_TARGET = Object.freeze({
   projectRef: STAGING_PROJECT_REF,
   productionProjectRef: PRODUCTION_PROJECT_REF,
@@ -182,6 +183,77 @@ function edgeReceipt (response, value) {
     return Object.freeze({ target: STAGING_SURFACE_TARGET, functionName: STAGING_EDGE_FUNCTION, enabled: true })
   }
   unavailable()
+}
+
+/**
+ * Vercel-only source evidence. This shares the established bounded alias and
+ * deployment parsers but cannot call the protected application or Supabase.
+ */
+export function createStagingPreviewSourceReadbackBinding ({ fetch: fetcher, vercelToken } = {}) {
+  if (typeof fetcher !== 'function') unavailable()
+  const token = copyToken(vercelToken)
+  let consumed = false; let disposed = false; let active
+  const read = async (url, signal) => {
+    let abort
+    const aborted = new Promise(resolve => { abort = () => resolve('ABORTED') })
+    signal.addEventListener('abort', abort, { once: true })
+    let pending
+    try {
+      pending = Promise.resolve().then(() => {
+        if (disposed || signal.aborted) unavailable()
+        return fetcher(url, Object.freeze({ method: 'GET', redirect: 'error',
+          headers: Object.freeze({ accept: 'application/json', 'accept-encoding': 'identity',
+            authorization: `Bearer ${token.toString('utf8')}` }), signal }))
+      })
+      pending.then(response => { if (disposed || signal.aborted) cancelResponse(response) }, () => {})
+      const response = await Promise.race([pending, aborted])
+      if (response === 'ABORTED' || disposed || signal.aborted) { pending.then(cancelResponse, () => {}); unavailable() }
+      return await parseJson(response, url, [200], signal)
+    } catch { unavailable() } finally { signal.removeEventListener('abort', abort) }
+  }
+  return Object.freeze({
+    async readSource ({ signal } = {}) {
+      if (consumed || disposed || !validSignal(signal) || signal.aborted) unavailable()
+      consumed = true
+      const controller = new AbortController()
+      active = controller
+      const abort = () => controller.abort()
+      signal.addEventListener('abort', abort, { once: true })
+      try {
+        if (disposed || signal.aborted) unavailable()
+        const alias = aliasReceipt(await read(ALIAS_URL, controller.signal))
+        if (disposed || controller.signal.aborted) unavailable()
+        const deployment = deploymentReceipt(await read(DEPLOYMENT_URL(alias.deploymentId), controller.signal), alias.deploymentId)
+        if (disposed || controller.signal.aborted) unavailable()
+        if (deployment.immutableUrl !== alias.immutableUrl) unavailable()
+        return Object.freeze({ projectId: VERCEL_PROJECT_ID, teamId: VERCEL_TEAM_ID,
+          branch: STAGING_BRANCH, alias: STAGING_ALIAS, ...deployment })
+      } finally { signal.removeEventListener('abort', abort); active = undefined; disposed = true; token.fill(0) }
+    },
+    dispose () { disposed = true; active?.abort(); token.fill(0) },
+  })
+}
+
+/** Classify exact project/source evidence without treating metadata as byte proof. */
+export function assessStagingPreviewSourceReadback ({ project, deployment, sourceProof } = {}) {
+  const expectedRepoId = 1264363509
+  if (!project || project.target?.projectId !== VERCEL_PROJECT_ID || project.target?.teamId !== VERCEL_TEAM_ID
+    || project.repository?.provider !== 'github' || project.repository?.repoId !== expectedRepoId
+    || deployment?.projectId !== VERCEL_PROJECT_ID || deployment?.teamId !== VERCEL_TEAM_ID
+    || deployment?.repositoryId !== String(expectedRepoId) || deployment?.branch !== STAGING_BRANCH
+    || deployment?.gitProvider !== 'github' || !isSha(deployment?.gitSourceCommit)
+    || !isDeploymentId(deployment?.deploymentId) || !isImmutableUrl(deployment?.immutableUrl)) unavailable()
+  const base = { deploymentId: deployment.deploymentId, immutableUrl: deployment.immutableUrl,
+    sourceCommit: deployment.gitSourceCommit, applicationManifestSha256: deployment.applicationManifestSha256 }
+  if (sourceProof?.status !== 'SOURCE_PROOF_VERIFIED' || !isSha(sourceProof.sourceCommit)
+    || !isManifest(sourceProof.manifestSha256)) return Object.freeze({ status: 'CURRENT_SOURCE_UNPROVEN', ...base })
+  if (sourceProof.sourceCommit !== deployment.gitSourceCommit
+    || sourceProof.manifestSha256 !== deployment.applicationManifestSha256) {
+    return Object.freeze({ status: 'CURRENT_SOURCE_NOT_DEPLOYED', ...base })
+  }
+  // Even a matching metadata claim requires independent committed-byte and
+  // runtime verification before deployment or provider activation.
+  return Object.freeze({ status: 'SOURCE_AND_METADATA_MATCH_CLAIMS', ...base })
 }
 
 /**
