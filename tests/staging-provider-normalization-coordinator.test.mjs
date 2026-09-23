@@ -77,6 +77,34 @@ test('stale or unsafe preflight and provider drift stop before intent or mutatio
   assert.equal(result.status, 'STOPPED_BEFORE_UPDATE'); assert.equal(updates, 0); assert.equal(journal.read(), null)
 })
 
+test('provider read consuming preflight freshness stops before durable intent', async () => {
+  const { journal } = journalAt(); let clock = nowMs, updates = 0
+  const result = await normalizeStagingProviderOnce({ ports: {
+    preflight: async () => baseline(),
+    readProvider: async () => { clock += 31_000; return provider() },
+    updateProvider: async () => { updates++ },
+  }, journal, now: () => clock })
+  assert.equal(result.status, 'STOPPED_BEFORE_UPDATE')
+  assert.equal(updates, 0)
+  assert.equal(journal.read(), null)
+})
+
+test('journal persistence consuming preflight freshness reconciles without dispatch', async () => {
+  const { journal } = journalAt(); let clock = nowMs, updates = 0
+  const delayedJournal = {
+    read: () => journal.read(),
+    recordIntent: hash => { const receipt = journal.recordIntent(hash); clock += 31_000; return receipt },
+    transition: (receipt, state) => journal.transition(receipt, state),
+  }
+  const result = await normalizeStagingProviderOnce({ ports: {
+    preflight: async () => baseline(), readProvider: async () => provider(),
+    updateProvider: async () => { updates++ },
+  }, journal: delayedJournal, now: () => clock })
+  assert.equal(result.status, 'RECONCILIATION_REQUIRED')
+  assert.equal(updates, 0)
+  assert.equal(journal.read().state, 'RECONCILIATION_REQUIRED')
+})
+
 test('uncertain update or post-read mismatch consumes journal without a second update', async () => {
   for (const failure of ['update', 'postread', 'postflight', 'stale-postflight']) {
     const { journal } = journalAt(); let reads = 0, updates = 0, preflights = 0

@@ -45,12 +45,15 @@ export async function normalizeStagingProviderOnce({ ports, journal, now = Date.
     baseline = validatePreflight(structuredClone(await ports.preflight(STAGING_PROVIDER_TARGET)), now())
     before = structuredClone(await ports.readProvider(STAGING_PROVIDER_TARGET))
     buildStagingProviderNormalizationPatch(before)
+    validatePreflight(baseline, now())
   } catch { return fixed('STOPPED_BEFORE_UPDATE') }
 
   const preflightSha256 = createHash('sha256').update(JSON.stringify({ baseline, provider: before })).digest('hex')
   let intent
+  try { validatePreflight(baseline, now()) } catch { return fixed('STOPPED_BEFORE_UPDATE') }
   try { intent = journal.recordIntent(preflightSha256) } catch { return fixed('RECONCILIATION_REQUIRED') }
   try {
+    validatePreflight(baseline, now())
     const update = await ports.updateProvider(STAGING_PROVIDER_TARGET, structuredClone(before))
     if (!exact(update, ['status', 'target', 'providerIdentifier']) || update.status !== 'UPDATED_NEEDS_INDEPENDENT_READBACK'
       || update.providerIdentifier !== PROVIDER_IDENTIFIER) unavailable()
