@@ -636,7 +636,7 @@
       },
       {
         "path": "scripts/staging-provider-normalization-journal.mjs",
-        "sha256": "4d0f5f81b910685ae3c73bee441995c07cadd6c265145691fe55398101311b44"
+        "sha256": "2fc4fe7e3e10baf2299ca6c53262d413efcbcc16c205ac607ea90bd43e4832c8"
       },
       {
         "path": "scripts/staging-control-activation.mjs",
@@ -696,7 +696,7 @@
       },
       {
         "path": "tests/staging-provider-normalization-journal.test.mjs",
-        "sha256": "4a5203fd58def1abc9f5807eb16b1ef151f126f75440db626ef2e9e110658f08"
+        "sha256": "310e5d02dd76afd604f3f6b57557cee4e9ed66b8b56e86e46c58f9db0af9b723"
       },
       {
         "path": "tests/staging-control-activation.test.mjs",

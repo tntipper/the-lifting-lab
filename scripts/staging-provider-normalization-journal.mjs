@@ -21,6 +21,15 @@ function syncDirectory(path, fileSystem) {
   try { fileSystem.fsyncSync(fd) } finally { fileSystem.closeSync(fd) }
 }
 
+function writeAll(fd, bytes, fileSystem) {
+  let offset = 0
+  while (offset < bytes.length) {
+    const written = fileSystem.writeSync(fd, bytes, offset, bytes.length - offset, null)
+    if (!Number.isSafeInteger(written) || written < 1 || written > bytes.length - offset) unavailable()
+    offset += written
+  }
+}
+
 function readJournal(path, fileSystem) {
   try {
     const stat = fileSystem.lstatSync(path)
@@ -57,7 +66,7 @@ export function createProviderNormalizationJournal({ path = DEFAULT_PROVIDER_NOR
       try {
         fileSystem.mkdirSync(dirname(path), { recursive: true, mode: 0o700 })
         fd = fileSystem.openSync(path, 'wx', 0o600)
-        fileSystem.writeSync(fd, bytes); fileSystem.fsyncSync(fd)
+        writeAll(fd, bytes, fileSystem); fileSystem.fsyncSync(fd)
         fileSystem.closeSync(fd); fd = undefined
         syncDirectory(path, fileSystem)
         ownedRunId = runId
@@ -76,7 +85,7 @@ export function createProviderNormalizationJournal({ path = DEFAULT_PROVIDER_NOR
       let fd
       try {
         fd = fileSystem.openSync(temporary, 'wx', 0o600)
-        fileSystem.writeSync(fd, bytes); fileSystem.fsyncSync(fd)
+        writeAll(fd, bytes, fileSystem); fileSystem.fsyncSync(fd)
         fileSystem.closeSync(fd); fd = undefined
         fileSystem.renameSync(temporary, path)
         syncDirectory(path, fileSystem)
