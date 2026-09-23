@@ -708,11 +708,11 @@
       },
       {
         "path": "scripts/staging-preview-source-live-launcher.mjs",
-        "sha256": "1f6b5fa43d96dd87801f0392b76cc1e9cf18aba1287c9b2a74443017d7c708b8"
+        "sha256": "ca69c5b6f3b6969082b15dc9f509bd39c483a7ebbb84cf85cac9629944fed87e"
       },
       {
         "path": "scripts/staging-preview-source-keychain.py",
-        "sha256": "ad81e693f1defe79381de16125696bafe2f1b31caeb29dcf7630c8780bedc7da"
+        "sha256": "fe7d53faf077de5a4aeab63205ae1080adff60d588fe0052a5f6c62b656d7516"
       },
       {
         "path": "app/api/staging/readiness/contract.ts",

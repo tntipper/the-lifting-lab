@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 
-APPROVED_PREVIEW_SOURCE_READ = True
+APPROVED_PREVIEW_SOURCE_READ = False
 SERVICE = "TLL Hosted Baseline Vercel API"
 ACCOUNT = "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"
 

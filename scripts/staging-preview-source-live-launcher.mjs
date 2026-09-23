@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-export const PREVIEW_SOURCE_LIVE_ENABLED = true
+export const PREVIEW_SOURCE_LIVE_ENABLED = false
 const root = resolve(import.meta.dirname, '..')
 const helper = resolve(import.meta.dirname, 'staging-preview-source-keychain.py')
 const unavailable = () => { throw new Error('Preview source live read unavailable') }
