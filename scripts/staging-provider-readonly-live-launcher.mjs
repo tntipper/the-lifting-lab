@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-export const STAGING_PROVIDER_READONLY_LIVE_ENABLED = false
+export const STAGING_PROVIDER_READONLY_LIVE_ENABLED = true
 const root = resolve(import.meta.dirname, '..')
 const helper = resolve(import.meta.dirname, 'staging-provider-normalization-keychain.py')
 const journalPath = resolve(root, '../implementation-state/staging/tll-provider-readonly-probe-v1.json')

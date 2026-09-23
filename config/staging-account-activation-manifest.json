@@ -660,7 +660,7 @@
       },
       {
         "path": "scripts/staging-provider-normalization-keychain.py",
-        "sha256": "15063b2f5f2b7ecf554de58f8c66422702426d2aadd50d00955a40c714b7c882"
+        "sha256": "bdc882464b9425243afe71a16527bcdf08a4545af14a4a6d6c31fe3d3077950f"
       },
       {
         "path": "scripts/staging-provider-readonly-probe.mjs",
@@ -668,7 +668,7 @@
       },
       {
         "path": "scripts/staging-provider-readonly-live-launcher.mjs",
-        "sha256": "85e5c64eeb2177554134f0f914ac2065f046a55c4e6243650f7fa8da28a55c35"
+        "sha256": "75082b2ea2118a4c3d982035f98f2d0f26285d88892dbd8e19c12b76a3180231"
       },
       {
         "path": "scripts/staging-control-activation.mjs",
