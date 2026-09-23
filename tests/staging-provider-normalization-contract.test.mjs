@@ -30,11 +30,15 @@ test('disabled contract proposes only two provider fields and returns a redacted
   assert.deepEqual(receipt, { status: 'PROVIDER_NORMALIZED_VERIFIED', identifier: PROVIDER_IDENTIFIER,
     enabled: false, jwksConfigured: false })
   assert.doesNotMatch(JSON.stringify(receipt), /staging\.example|client_secret/)
+  const observed = { ...before, name: STAGING_BROKER_PROVIDER.clientId, scopes: [] }
+  const observedAfter = { ...observed, enabled: false, jwks_uri: '', updated_at: after.updated_at }
+  assert.deepEqual(buildStagingProviderNormalizationPatch(observed), { enabled: false, jwks_uri: '' })
+  assert.equal(verifyStagingProviderNormalization(observed, observedAfter).status, 'PROVIDER_NORMALIZED_VERIFIED')
 })
 
 test('normalization holds any unrelated drift or incomplete readback', () => {
   for (const state of [
-    { ...before, scopes: [] }, { ...before, client_id: 'other' },
+    { ...before, scopes: ['openid'] }, { ...before, name: 'other' }, { ...before, client_id: 'other' },
     { ...before, jwks_uri: '' }, { ...before, enabled: false },
     { ...before, client_secret: 'hidden' }, { ...before, extra: 'unknown' },
   ]) assert.throws(() => buildStagingProviderNormalizationPatch(state), /unavailable/)

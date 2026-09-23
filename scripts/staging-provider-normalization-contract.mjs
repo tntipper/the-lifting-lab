@@ -18,9 +18,9 @@ const exactArray = (value, expected) => Array.isArray(value) && value.length ===
 function project(value) {
   let provider
   try { provider = projectOfficialProviderSchema(value) } catch { unavailable() }
-  if (provider.identifier !== PROVIDER_IDENTIFIER || provider.name !== STAGING_PROVIDER_NAME
+  if (provider.identifier !== PROVIDER_IDENTIFIER || ![STAGING_PROVIDER_NAME, BROKER_CLIENT_ID].includes(provider.name)
     || provider.clientId !== BROKER_CLIENT_ID || !exactArray(provider.acceptableClientIds, [])
-    || !exactArray(provider.scopes, STAGING_BROKER_PROVIDER.scopes)
+    || !(exactArray(provider.scopes, []) || exactArray(provider.scopes, STAGING_BROKER_PROVIDER.scopes))
     || !provider.pkce || !provider.emailOptional || provider.attributeMappingPresent
     || provider.authorizationParamsPresent || provider.issuer !== '' || provider.discoveryUrl !== ''
     || provider.skipNonceCheck || provider.discoveryDocumentPresent
