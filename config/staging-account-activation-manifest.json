@@ -692,7 +692,7 @@
       },
       {
         "path": "scripts/staging-surface-preview-deployment-request.mjs",
-        "sha256": "83be4bae575f0ae1a2b952e8b9bf1544902f40e9eb4c48944ec40391b97056bf"
+        "sha256": "b7721de5f6eef59219392873242a00b004e06ba7d3d1d27f66b7c5175b3bf9d4"
       },
       {
         "path": "app/api/staging/readiness/contract.ts",
@@ -776,7 +776,7 @@
       },
       {
         "path": "tests/staging-surface-preview-deployment-request.test.mjs",
-        "sha256": "961a9eeaefe29fcd57af474d3466c882b77e4f12d89ba5ecd7ecd9146af86736"
+        "sha256": "defead503ed0fd2db0db37f5aaf6bdf2dbb61fbd05176f3c73ec8b8c4049d08c"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",

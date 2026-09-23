@@ -33,9 +33,22 @@ test('request cannot select another source, production, enabled public flags or 
   for (const invalid of [
     { ...valid, branch: 'main' }, { ...valid, sourceCommit: 'a'.repeat(39) },
     { ...valid, sourceCommit: 'A'.repeat(40) }, { ...valid, manifestSha256: 'b'.repeat(63) },
+    { ...valid, sourceCommit: ['a'.repeat(40)] }, { ...valid, manifestSha256: ['b'.repeat(64)] },
+    { ...valid, sourceCommit: new String('a'.repeat(40)) },
+    { ...valid, manifestSha256: new String('b'.repeat(64)) },
     { ...valid, publicCustomer: true }, { ...valid, publicCart: true },
     { ...valid, target: 'production' }, { ...valid, project: 'another-project' },
     { ...valid, gitSource: { ref: 'main' } }, { ...valid, meta: { arbitrary: 'value' } },
     null, {}, [],
   ]) assert.throws(() => buildStagingPreviewDeploymentRequest(invalid), new RegExp(STAGING_PREVIEW_DEPLOYMENT_REQUEST_ERROR))
+})
+
+test('request rejects accessors before invoking them or emitting an unvalidated hash', () => {
+  for (const key of ['sourceCommit', 'manifestSha256']) {
+    const input = { ...valid }
+    let reads = 0
+    Object.defineProperty(input, key, { enumerable: true, get() { reads++; return valid[key] } })
+    assert.throws(() => buildStagingPreviewDeploymentRequest(input), new RegExp(STAGING_PREVIEW_DEPLOYMENT_REQUEST_ERROR))
+    assert.equal(reads, 0)
+  }
 })
