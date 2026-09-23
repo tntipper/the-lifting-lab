@@ -54,6 +54,17 @@ API response, specify the exact catalogue filter/market scope, obtain a count
 for that same scope, and bind the collected prices and variant rows to the
 receipt. Any missing or mismatched evidence must HOLD the entire shadow run.
 
+The offline Shopify read package uses the Admin API's unfiltered variant
+listing and exact variant count. Shopify does not support search fields on
+`productVariantsCount`, so its count cannot prove completeness for an
+active-only query. The package therefore retains all product statuses and
+does not turn an `ACTIVE` status into a claim that the item is published to
+the online store. Its default-shop GBP variant price is not necessarily the
+UK buyer's contextual price; a separately reviewed storefront/checkout
+read is needed for that. Matching counts before and after pagination are a
+drift check, not a transactional snapshot guarantee. No live transport is
+wired and its output is not authorized for shadow or price action yet.
+
 ## Gates before scheduling or action
 
 Select and approve the competitor data source and permitted use, source
