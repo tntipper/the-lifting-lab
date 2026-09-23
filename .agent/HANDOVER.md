@@ -1,12 +1,14 @@
 # Agent handover — The Lifting Lab integration
 
-Updated: 2026-09-23 after the consumed v8 diagnostic, reviewed disabled correction, and offline Stage 6/scoring work. Verify this against Git and hosted state before acting.
+Updated: 2026-09-23 after the prelaunch email-capture work and earlier consumed v8 diagnostic/offline Stage 6 work. Verify this against Git and hosted state before acting.
 
 ## Objective and boundary
 
-Continue the staged comparison-site/Shopify integration under `docs/ops/project-stage-execution-protocol.md` and `docs/ops/integration-release-candidate.md`. No purchase, production change, supplier order, customer message, provider enablement or deployment occurred in this work unit. Public launch remains held.
+Continue the staged comparison-site/Shopify integration under `docs/ops/project-stage-execution-protocol.md` and `docs/ops/integration-release-candidate.md`. This email-capture work changed only the live Shopify password-page copy, double-opt-in setting and authorized DNS records. A single confirmation email was sent through the owner's test signup. No purchase, supplier order, promotional customer message, provider enablement or deployment occurred. Public launch remains held.
 
 ## Current state
+
+- Prelaunch shop email capture is live on the password page (published theme `207410200906`): clear launch/promotions consent copy, “Join the launch list” button and confirmation-aware success text. Marketing double opt-in is enabled for new email subscribers only. One owner-controlled signup moved from Pending to Email Subscribed after the confirmation email link; no purchase or customer campaign occurred. Local theme commit is `48c35ee`. The owner approved and we added Shopify's six exact authentication CNAMEs plus `_dmarc` TXT in Netlify; each resolved correctly at its authoritative nameserver, with Microsoft 365 MX and existing SPF intact. After one Shopify recheck, Admin reported **Propagating**, not yet Authenticated. See `docs/ops/stage-plans/2026-09-23-prelaunch-email-capture.md` for DNS values, evidence, drafts and consent boundaries. Next read-only check: Shopify must show Authenticated before sender testing or campaign activation. The comparison-site privacy page does not yet cover this marketing list; existing legacy Shopify subscribed contacts need consent review before ongoing offers. Shopify Flow is not installed and no welcome automation or campaign is active.
 
 - Repo `implementation-integration`, branch `codex/tll-integration`. Verify `pwd`, branch, HEAD, status and upstream. The v7 observer was armed in `898bf0d` and disarmed in `53ffb67`; later checkpoint commits may advance HEAD. Both `HOSTED_BASELINE_LIVE_ENABLED` and `APPROVED_NATIVE_READ` are false; generated manifest declares `nativeAccessApproved:false`. The v7 journal path is `../implementation-state/staging/tll-hosted-baseline-observation-v7.json` and is consumed.
 - Preserve the unrelated untracked `.agent/gen11-journal-watch.mjs`, `implementation-state/` and iCloud ` 2` copies. Never stage by wildcard. The v4 full observer journal and v2/v3/v4 database journals are consumed. The v5 database journal is terminal PASS with hash `04ee2fe8a104a319c44ababed0faed0737b6d983fb724567da6b50c4f5ea0670`.
