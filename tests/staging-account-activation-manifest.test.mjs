@@ -92,6 +92,8 @@ test('staging account activation manifest pins reviewed sources and contains no 
     'scripts/staging-provider-normalization-preflight.mjs',
     'scripts/staging-provider-normalization-phase-journal.mjs',
     'scripts/staging-provider-normalization-session.mjs',
+    'scripts/staging-provider-normalization-live-launcher.mjs',
+    'scripts/staging-provider-normalization-keychain.py',
     'scripts/staging-control-activation.mjs','scripts/staging-database-native-adapter.mjs',
     'scripts/staging-surface-activation-transport.mjs','scripts/staging-surface-activation-native-adapter.mjs','scripts/staging-surface-activation-native-binding.mjs',
     'scripts/staging-surface-preview-deployment-request.mjs',

@@ -560,6 +560,8 @@ const disabledActivationToolingSources = [
   'scripts/staging-provider-normalization-preflight.mjs',
   'scripts/staging-provider-normalization-phase-journal.mjs',
   'scripts/staging-provider-normalization-session.mjs',
+  'scripts/staging-provider-normalization-live-launcher.mjs',
+  'scripts/staging-provider-normalization-keychain.py',
   'scripts/staging-control-activation.mjs',
   'scripts/staging-database-native-adapter.mjs',
   'scripts/staging-surface-activation-transport.mjs',

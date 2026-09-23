@@ -57,11 +57,13 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       && /\b(?:export\s+)?async\s+function\s+runNativeGeneration\d+CredentialWindow\s*\(/.test(source)) {
       violations.push(`embedded-live-launcher:${display(path)}`)
     }
-    if (/-live-launcher\.mjs$/.test(path) && !/createStagingWindowPhaseJournal/.test(source)) {
+    if (/-live-launcher\.mjs$/.test(path)
+      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal/.test(source)) {
       violations.push(`live-launcher-missing-phase-journal:${display(path)}`)
     }
     if (/\bNATIVE(?:_[A-Z0-9]+)*_(?:TRANSPORT_)?ENABLED\s*=\s*true\b/.test(source)
       || /\bHOSTED_BASELINE_LIVE_ENABLED\s*=\s*true\b/.test(source)
+      || /\bPROVIDER_NORMALIZATION_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_TRANSPORT_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_DATABASE_TRANSPORT_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_ACCESS_APPROVED\s*=\s*true\b/.test(source)) violations.push(`enabled-native-gate:${display(path)}`)

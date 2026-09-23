@@ -66,6 +66,28 @@ test('boundary rejects an armed full hosted observer launcher', () => {
   ])
 })
 
+test('boundary rejects an armed provider normalization launcher', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-provider-normalization-live-launcher.mjs'),
+    'const createProviderNormalizationPhaseJournal = null\nexport const PROVIDER_NORMALIZATION_LIVE_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-provider-normalization-live-launcher.mjs',
+  ])
+})
+
+test('provider normalization arming is isolated from the consumed hosted observer gates', () => {
+  const launcher = readFileSync('scripts/staging-provider-normalization-live-launcher.mjs', 'utf8')
+  const helper = readFileSync('scripts/staging-provider-normalization-keychain.py', 'utf8')
+  const oldHelper = readFileSync('scripts/staging-account-hosted-baseline-keychain.py', 'utf8')
+  const oldLauncher = readFileSync('scripts/staging-account-hosted-baseline-live-launcher.mjs', 'utf8')
+  assert.match(launcher, /staging-provider-normalization-keychain\.py/)
+  assert.match(launcher, /staging-account-activation-manifest\.mjs/)
+  assert.doesNotMatch(launcher, /staging-account-hosted-baseline-(?:keychain\.py|manifest\.mjs)/)
+  assert.match(helper, /^APPROVED_NATIVE_READ = False$/m)
+  assert.match(oldHelper, /^APPROVED_NATIVE_READ = False$/m)
+  assert.match(oldLauncher, /HOSTED_BASELINE_LIVE_ENABLED = false/)
+})
+
 test('boundary rejects any missing or enabled Generation 10-21 replay hold', () => {
   for (const generation of [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]) {
     const root = fixture()
