@@ -50,8 +50,8 @@
       "app/api/account",
       "supabase/functions"
     ],
-    "fileCount": 67,
-    "sha256": "99a23dcd71936d2ccc54fda53c4f7949aac0fc41bc1d5f3f925f4246f5febba5"
+    "fileCount": 68,
+    "sha256": "7fdcc7c2117e59dc05bc6d854384e37995d675dd2c1a6ba0b41501e689b1321a"
   },
   "stageSafety": {
     "sources": [
