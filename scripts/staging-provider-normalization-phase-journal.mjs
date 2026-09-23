@@ -8,7 +8,7 @@ import { PROVIDER_IDENTIFIER, STAGING_PROJECT_REF } from './staging-provider-bro
 export const PROVIDER_NORMALIZATION_PHASE_JOURNAL_ENABLED = false
 export const DEFAULT_PROVIDER_NORMALIZATION_PHASE_JOURNAL = fileURLToPath(new URL('../../implementation-state/staging/tll-provider-normalization-phase-v1.json', import.meta.url))
 export const PROVIDER_NORMALIZATION_PHASE_DEADLINES_MS = Object.freeze({
-  LAUNCH_STARTED: 15_000, PREFLIGHT: 45_000, PROVIDER_PREREAD: 30_000,
+  LAUNCH_STARTED: 60_000, PREFLIGHT: 45_000, PROVIDER_PREREAD: 30_000,
   INTENT_RECORDED: 10_000, UPDATE_DISPATCH: 30_000, UPDATE_ACKNOWLEDGED: 10_000, POSTREAD: 45_000,
 })
 const SCHEMA = 'tll-staging-provider-normalization-phase/v1'
