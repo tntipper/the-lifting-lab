@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "18b339643a9c8b2c0e72c435b8a28cdeaba3e9a41ac4a05b26a51acaab92efba"
+        "sha256": "234b6fc37bfd09c37027eea99baa90ab97c6397668195fc1055cb159e22309f8"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -699,6 +699,22 @@
         "sha256": "95b4fa41a775555a8f9d5119da99c49ce0e4bc3ad0f372d00b525a1f5721e4bb"
       },
       {
+        "path": "scripts/staging-preview-source-journal.mjs",
+        "sha256": "4b379f4f4ebd9af642807a37593ac9a12803db509d51bb963d2241ddc1d7de75"
+      },
+      {
+        "path": "scripts/staging-preview-source-observer.mjs",
+        "sha256": "8202de03fcc2ef55cd70a4278effb62cf5746adae65d5682da2249c407d09e88"
+      },
+      {
+        "path": "scripts/staging-preview-source-live-launcher.mjs",
+        "sha256": "ca69c5b6f3b6969082b15dc9f509bd39c483a7ebbb84cf85cac9629944fed87e"
+      },
+      {
+        "path": "scripts/staging-preview-source-keychain.py",
+        "sha256": "fe7d53faf077de5a4aeab63205ae1080adff60d588fe0052a5f6c62b656d7516"
+      },
+      {
         "path": "app/api/staging/readiness/contract.ts",
         "sha256": "4e598ef4dd00e7e0574cfe4f981e735fb0962fa14d9225b64055b76b52d72233"
       },
@@ -785,6 +801,10 @@
       {
         "path": "tests/staging-preview-git-source-preflight.test.mjs",
         "sha256": "63ba389b7d9ee3c0dc1ac9620d6d0b5004514760e09beb05729af16ff042bb6c"
+      },
+      {
+        "path": "tests/staging-preview-source-observer.test.mjs",
+        "sha256": "145e6fbe9480a00305cd384cec6d7cd54e98d79bff58dc90ddf6e850fad2d115"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",
