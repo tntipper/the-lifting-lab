@@ -5,6 +5,23 @@ import Foundation
 import Security
 
 enum TLLCredentialItem: String {
+    #if TLL_KEYCHAIN_FIXTURE
+    // Fixture builds have a separate, compile-time selector namespace.  They
+    // cannot name a production service, account, or the login keychain.
+    case fixtureAllowed = "fixture-allowed"
+    case fixtureDenied = "fixture-denied"
+    case fixtureMissing = "fixture-missing"
+
+    var service: String { "TLL Stage 3 Disposable Keychain Fixture v1" }
+
+    var account: String {
+        switch self {
+        case .fixtureAllowed: return "allowed"
+        case .fixtureDenied: return "denied"
+        case .fixtureMissing: return "missing"
+        }
+    }
+    #else
     case supabase
     case vercel
     case vercelBypass = "vercel-bypass"
@@ -20,6 +37,7 @@ enum TLLCredentialItem: String {
     var account: String {
         self == .supabase ? "supabase" : "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"
     }
+    #endif
 }
 
 enum TLLCredentialExit: Int32 {
@@ -138,7 +156,31 @@ func tllWriteAll(_ bytes: UnsafeRawBufferPointer,
 
 #if !TLL_KEYCHAIN_TEST
 private let TLL_NATIVE_READER_ENABLED = false
-private struct TLLRealKeychainPort: TLLKeychainPort {
+struct TLLRealKeychainPort: TLLKeychainPort {
+    private let keychain: SecKeychain?
+
+    init(keychain: SecKeychain) {
+        self.keychain = keychain
+    }
+
+    #if !TLL_KEYCHAIN_FIXTURE
+    static func login() -> TLLRealKeychainPort {
+        TLLRealKeychainPort(keychain: nil)
+    }
+
+    private init(keychain: SecKeychain?) {
+        self.keychain = keychain
+    }
+
+    private func pinnedKeychain() -> (OSStatus, SecKeychain?) {
+        if let keychain { return (errSecSuccess, keychain) }
+        let path = NSHomeDirectory() + "/Library/Keychains/login.keychain-db"
+        var keychain: SecKeychain?
+        let status = SecKeychainOpen(path, &keychain)
+        return (status, keychain)
+    }
+    #endif
+
     func getInteractionAllowed() -> (OSStatus, Bool) {
         var allowed: DarwinBoolean = false
         let status = SecKeychainGetUserInteractionAllowed(&allowed)
@@ -150,15 +192,19 @@ private struct TLLRealKeychainPort: TLLKeychainPort {
     }
 
     func read(_ item: TLLCredentialItem) -> TLLCredentialReadResult {
-        // These existing items are in the file-based login keychain. Do not opt
-        // into the data-protection or synchronizable keychain implementation.
-        let path = NSHomeDirectory() + "/Library/Keychains/login.keychain-db"
-        var keychain: SecKeychain?
-        let openStatus = SecKeychainOpen(path, &keychain)
+        // The caller pins a legacy file-based keychain. Do not opt into the
+        // data-protection or synchronizable keychain implementation.
+        #if TLL_KEYCHAIN_FIXTURE
+        guard let keychain else {
+            return TLLCredentialReadResult(status: errSecInvalidKeychain, secret: nil)
+        }
+        #else
+        let (openStatus, keychain) = pinnedKeychain()
         guard openStatus == errSecSuccess, let keychain else {
             return TLLCredentialReadResult(status: openStatus == errSecSuccess ? errSecInvalidKeychain : openStatus,
                                            secret: nil)
         }
+        #endif
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: item.service,
@@ -197,12 +243,15 @@ private func tllWriteToPrivatePipe(_ bytes: UnsafeRawBufferPointer) -> Bool {
     }
 }
 
+#if !TLL_KEYCHAIN_FIXTURE
 @main private struct TLLMain {
     static func main() {
         guard TLL_NATIVE_READER_ENABLED else { Darwin.exit(TLLCredentialExit.guardFailed.rawValue) }
         guard CommandLine.arguments.count == 2 else { Darwin.exit(TLLCredentialExit.guardFailed.rawValue) }
-        let outcome = tllReadOnce(CommandLine.arguments[1], port: TLLRealKeychainPort(), write: tllWriteToPrivatePipe)
+        let port = TLLRealKeychainPort.login()
+        let outcome = tllReadOnce(CommandLine.arguments[1], port: port, write: tllWriteToPrivatePipe)
         Darwin.exit(outcome.rawValue)
     }
 }
+#endif
 #endif

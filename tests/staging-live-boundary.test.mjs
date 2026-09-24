@@ -93,6 +93,18 @@ test('boundary rejects an armed native Swift Keychain reader', () => {
   ])
 })
 
+test('boundary rejects either disposable Keychain fixture gate when armed', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-provider-keychain-fixture-native.swift'),
+    'private let TLL_FIXTURE_NATIVE_ENABLED = true\n')
+  writeFileSync(join(root, 'scripts/staging-provider-keychain-fixture-live-launcher.mjs'),
+    'const createFixturePhaseJournal = null\nexport const TLL_FIXTURE_LIVE_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-provider-keychain-fixture-live-launcher.mjs',
+    'enabled-native-gate:scripts/staging-provider-keychain-fixture-native.swift',
+  ])
+})
+
 test('boundary rejects an armed focused provider read-only launcher', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-provider-readonly-live-launcher.mjs'),
