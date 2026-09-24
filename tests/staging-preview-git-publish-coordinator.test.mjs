@@ -22,7 +22,7 @@ test('one durable dispatch precedes one push and a selected remote yields only P
   assert.equal(STAGING_PREVIEW_GIT_PUBLISH_NATIVE_ENABLED, false)
   await withWindow(async ({ journal }) => {
     const events = []
-    const coordinator = createStagingPreviewGitPublishCoordinator({ journal,
+    const coordinator = createStagingPreviewGitPublishCoordinator({ journal, recheckSource: async () => ({ status: "PUBLISH_SOURCE_SELECTED", ...selection }),
       readRemote: async phase => { events.push(`read:${phase}`); return phase === 'before' ? predecessorCommit : selectedCommit },
       push: async value => {
         events.push('push')
@@ -46,7 +46,7 @@ test('remote drift, malformed selection and getter fields stop before journal an
     { ...selection, extra: true }, [selection],
   ]) await withWindow(async ({ path, journal }) => {
     let pushed = 0
-    const result = await createStagingPreviewGitPublishCoordinator({ journal,
+    const result = await createStagingPreviewGitPublishCoordinator({ journal, recheckSource: async () => ({ status: "PUBLISH_SOURCE_SELECTED", ...selection }),
       readRemote: async () => predecessorCommit, push: async () => { pushed++ },
     }).execute(candidate)
     assert.deepEqual(result, HOLD); assert.equal(pushed, 0); assert.equal(fs.existsSync(path), false)
@@ -55,23 +55,69 @@ test('remote drift, malformed selection and getter fields stop before journal an
     let reads = 0
     const candidate = { ...selection }
     Object.defineProperty(candidate, 'selectedCommit', { enumerable: true, get() { reads++; return selectedCommit } })
-    assert.deepEqual(await createStagingPreviewGitPublishCoordinator({ journal, readRemote: async () => predecessorCommit,
+    assert.deepEqual(await createStagingPreviewGitPublishCoordinator({ journal, recheckSource: async () => ({ status: "PUBLISH_SOURCE_SELECTED", ...selection }), readRemote: async () => predecessorCommit,
       push: async () => assert.fail('no push') }).execute(candidate), HOLD)
     assert.equal(reads, 0); assert.equal(fs.existsSync(path), false)
   })
   await withWindow(async ({ path, journal }) => {
     let pushed = 0
-    assert.deepEqual(await createStagingPreviewGitPublishCoordinator({ journal,
+    assert.deepEqual(await createStagingPreviewGitPublishCoordinator({ journal, recheckSource: async () => ({ status: "PUBLISH_SOURCE_SELECTED", ...selection }),
       readRemote: async () => 'd'.repeat(40), push: async () => { pushed++ },
     }).execute(selection), HOLD)
     assert.equal(pushed, 0); assert.equal(fs.existsSync(path), false)
   })
 })
 
+test('fresh source, predecessor and manifest must still match immediately before dispatch', async () => {
+  for (const fresh of [
+    undefined,
+    { status: 'PUBLISH_SOURCE_HOLD' },
+    { status: 'PUBLISH_SOURCE_SELECTED', ...selection, selectedCommit: 'd'.repeat(40) },
+    { status: 'PUBLISH_SOURCE_SELECTED', ...selection, predecessorCommit: 'd'.repeat(40) },
+    { status: 'PUBLISH_SOURCE_SELECTED', ...selection, manifestSha256: 'd'.repeat(64) },
+    { status: 'PUBLISH_SOURCE_SELECTED', ...selection, extra: 'unexpected' },
+  ]) await withWindow(async ({ path, journal }) => {
+    let pushed = 0
+    const coordinator = createStagingPreviewGitPublishCoordinator({ journal,
+      readRemote: async () => predecessorCommit, recheckSource: async () => fresh,
+      push: async () => { pushed++ },
+    })
+    assert.deepEqual(await coordinator.execute(selection), HOLD)
+    assert.deepEqual(await coordinator.execute(selection), HOLD)
+    assert.equal(pushed, 0)
+    assert.equal(fs.existsSync(path), false)
+  })
+  await withWindow(async ({ path, journal }) => {
+    let statusReads = 0
+    const fresh = { ...selection }
+    Object.defineProperty(fresh, 'status', { get() { statusReads++; return 'PUBLISH_SOURCE_SELECTED' } })
+    assert.deepEqual(await createStagingPreviewGitPublishCoordinator({ journal,
+      readRemote: async () => predecessorCommit, recheckSource: async () => fresh,
+      push: async () => assert.fail('no push'),
+    }).execute(selection), HOLD)
+    assert.equal(statusReads, 0)
+    assert.equal(fs.existsSync(path), false)
+  })
+})
+
+test('missing or failed fresh source port consumes the coordinator without creating a journal', async () => {
+  for (const port of [undefined, async () => { throw Error('source unavailable') }]) {
+    await withWindow(async ({ path, journal }) => {
+      const coordinator = createStagingPreviewGitPublishCoordinator({ journal,
+        readRemote: async () => predecessorCommit, recheckSource: port,
+        push: async () => assert.fail('no push'),
+      })
+      assert.deepEqual(await coordinator.execute(selection), HOLD)
+      assert.deepEqual(await coordinator.execute(selection), HOLD)
+      assert.equal(fs.existsSync(path), false)
+    })
+  }
+})
+
 test('uncertain push acknowledgement reconciles once, never retries and preserves terminal outcome', async () => {
   for (const after of [selectedCommit, predecessorCommit, undefined]) await withWindow(async ({ journal }) => {
     let pushes = 0, reads = 0
-    const result = await createStagingPreviewGitPublishCoordinator({ journal,
+    const result = await createStagingPreviewGitPublishCoordinator({ journal, recheckSource: async () => ({ status: "PUBLISH_SOURCE_SELECTED", ...selection }),
       readRemote: async phase => { reads++; if (phase === 'before') return predecessorCommit; if (after === undefined) throw Error('read failed'); return after },
       push: async () => { pushes++; throw Error('acknowledgement unknown') },
     }).execute(selection)
@@ -105,7 +151,7 @@ test('transition write, fsync and rename failures stop before push even if persi
     }
     await withWindow(async ({ journal }) => {
       let pushes = 0
-      const coordinator = createStagingPreviewGitPublishCoordinator({ journal,
+      const coordinator = createStagingPreviewGitPublishCoordinator({ journal, recheckSource: async () => ({ status: "PUBLISH_SOURCE_SELECTED", ...selection }),
         readRemote: async () => predecessorCommit, push: async () => { pushes++ },
       })
       assert.deepEqual(await coordinator.execute(selection), HOLD)
@@ -134,7 +180,7 @@ test('uncertain terminal persistence cannot yield a publication receipt', async 
     }
     await withWindow(async ({ journal }) => {
       let pushes = 0
-      const result = await createStagingPreviewGitPublishCoordinator({ journal,
+      const result = await createStagingPreviewGitPublishCoordinator({ journal, recheckSource: async () => ({ status: "PUBLISH_SOURCE_SELECTED", ...selection }),
         readRemote: async phase => phase === 'before' ? predecessorCommit : selectedCommit,
         push: async () => { pushes++ },
       }).execute(selection)
@@ -148,7 +194,7 @@ test('concurrent calls share a single-use latch before the first remote read res
   await withWindow(async ({ journal }) => {
     let release, pushes = 0
     const pending = new Promise(resolve => { release = resolve })
-    const coordinator = createStagingPreviewGitPublishCoordinator({ journal,
+    const coordinator = createStagingPreviewGitPublishCoordinator({ journal, recheckSource: async () => ({ status: "PUBLISH_SOURCE_SELECTED", ...selection }),
       readRemote: async phase => phase === 'before' ? pending : selectedCommit,
       push: async () => { pushes++ },
     })
@@ -167,7 +213,7 @@ test('malformed terminal journal receipt suppresses success after reconciliation
       const record = journal.finish(previous, outcome)
       return { ...record, outcome: 'REMOTE_NOT_SELECTED' }
     } }
-    const result = await createStagingPreviewGitPublishCoordinator({ journal: alteredJournal,
+    const result = await createStagingPreviewGitPublishCoordinator({ journal: alteredJournal, recheckSource: async () => ({ status: "PUBLISH_SOURCE_SELECTED", ...selection }),
       readRemote: async phase => phase === 'before' ? predecessorCommit : selectedCommit,
       push: async () => { pushes++ },
     }).execute(selection)

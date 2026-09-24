@@ -3,8 +3,9 @@ export const STAGING_PREVIEW_GIT_PUBLISH_NATIVE_ENABLED = false
 const HOLD = Object.freeze({ status: 'SOURCE_PUBLICATION_HOLD' })
 const fullSha = value => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value)
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)
-function captureSelection(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value) || Reflect.ownKeys(value).length !== 3) return null
+function captureSelection(value, fresh = false) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Reflect.ownKeys(value).length !== (fresh ? 4 : 3)
+    || (fresh && Object.getOwnPropertyDescriptor(value, 'status')?.value !== 'PUBLISH_SOURCE_SELECTED')) return null
   const sourceCommit = Object.getOwnPropertyDescriptor(value, 'selectedCommit')?.value
   const predecessorCommit = Object.getOwnPropertyDescriptor(value, 'predecessorCommit')?.value
   const manifestSha256 = Object.getOwnPropertyDescriptor(value, 'manifestSha256')?.value
@@ -14,7 +15,7 @@ function captureSelection(value) {
 }
 
 /** Ports must be bounded, reviewed bindings in any future live launcher. */
-export function createStagingPreviewGitPublishCoordinator({ journal, readRemote, push } = {}) {
+export function createStagingPreviewGitPublishCoordinator({ journal, readRemote, recheckSource, push } = {}) {
   let used = false
   return Object.freeze({
     async execute(selection) {
@@ -22,12 +23,21 @@ export function createStagingPreviewGitPublishCoordinator({ journal, readRemote,
       used = true
       let selected
       try { selected = captureSelection(selection) } catch { return HOLD }
-      if (!selected || typeof readRemote !== 'function' || typeof push !== 'function'
+      if (!selected || typeof readRemote !== 'function' || typeof recheckSource !== 'function'
+        || typeof push !== 'function'
         || typeof journal?.start !== 'function' || typeof journal?.recordDispatch !== 'function'
         || typeof journal?.finish !== 'function') return HOLD
       let before
       try { before = await readRemote('before') } catch { return HOLD }
       if (before !== selected.predecessorCommit) return HOLD
+      let fresh
+      try { fresh = await recheckSource() } catch { return HOLD }
+      try {
+        const verified = captureSelection(fresh, true)
+        if (!verified || verified.selectedCommit !== selected.selectedCommit
+          || verified.predecessorCommit !== selected.predecessorCommit
+          || verified.manifestSha256 !== selected.manifestSha256) return HOLD
+      } catch { return HOLD }
       let dispatched
       try {
         const intent = journal.start(selected)

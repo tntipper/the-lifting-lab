@@ -708,7 +708,7 @@
       },
       {
         "path": "scripts/staging-preview-git-publish-coordinator.mjs",
-        "sha256": "07989489e1f36a8c970833625d5966ad7ae11da1d17f24bd96f39e80bb488de9"
+        "sha256": "42b5d1db95d7be59e085b1a2ebd4f51e8e6dd403a2d99c69ec4f6584689ab5b3"
       },
       {
         "path": "scripts/staging-preview-git-publish-native-contract.mjs",
@@ -832,7 +832,7 @@
       },
       {
         "path": "tests/staging-preview-git-publish-coordinator.test.mjs",
-        "sha256": "896744988a25d74022a3299095b2a2ba51269a8cd7fcc8d5f3508ae56f4391e7"
+        "sha256": "45da00e5e89eeea9470a4bf3ee925bb3155aa4f0e8d8c717fdddbf1db6437b20"
       },
       {
         "path": "tests/staging-preview-git-publish-native-contract.test.mjs",
