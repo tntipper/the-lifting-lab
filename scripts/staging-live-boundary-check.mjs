@@ -48,6 +48,10 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
     const source = read(path)
     if (/runNativeGeneration\d*CredentialWindow\s*\(/.test(source)) violations.push(`test-native-call:${display(path)}`)
     if (/from\s+['"][^'"]*live-launcher[^'"]*['"]/.test(source)) violations.push(`test-live-launcher-import:${display(path)}`)
+    if (display(path) === 'tests/staging-provider-keychain-fixture-recovery-launcher.test.mjs'
+      && /\b(?:spawn|spawnSync|execFile|execFileSync)\s*\(/.test(source)) {
+      violations.push(`test-fixture-recovery-live-launcher-call:${display(path)}`)
+    }
     if (/execFileSync\(process\.execPath,\s*\[\s*['"]scripts\/[^'"]*(?:prepare|recovery|manifest|generate|generator|build)[^'"]*\.mjs['"]\s*\]/.test(source)) violations.push(`test-generated-write:${display(path)}`)
   }
 
@@ -58,7 +62,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       violations.push(`embedded-live-launcher:${display(path)}`)
     }
     if (/-live-launcher\.mjs$/.test(path)
-      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal/.test(source)) {
+      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal|createFixtureRecoveryJournal/.test(source)) {
       violations.push(`live-launcher-missing-phase-journal:${display(path)}`)
     }
     if (/\bNATIVE(?:_[A-Z0-9]+)*_(?:TRANSPORT_)?ENABLED\s*=\s*true\b/.test(source)
@@ -68,6 +72,8 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       || /\bTLL_NATIVE_READER_ENABLED\s*=\s*true\b/.test(source)
       || /\bTLL_FIXTURE_NATIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bTLL_FIXTURE_LIVE_ENABLED\s*=\s*true\b/.test(source)
+      || /\bTLL_FIXTURE_RECOVERY_ENABLED\s*=\s*true\b/.test(source)
+      || /\bTLL_FIXTURE_RECOVERY_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_PROVIDER_READONLY_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bPREVIEW_SOURCE_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED\s*=\s*true\b/.test(source)

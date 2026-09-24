@@ -93,6 +93,28 @@ test('boundary rejects an armed native Swift Keychain reader', () => {
   ])
 })
 
+test('boundary rejects armed synthetic fixture recovery gates', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-provider-keychain-fixture-recovery-native.swift'),
+    'private let TLL_FIXTURE_RECOVERY_ENABLED = true\n')
+  writeFileSync(join(root, 'scripts/staging-provider-keychain-fixture-recovery-live-launcher.mjs'),
+    'const createFixtureRecoveryJournal = null\nexport const TLL_FIXTURE_RECOVERY_LIVE_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-provider-keychain-fixture-recovery-live-launcher.mjs',
+    'enabled-native-gate:scripts/staging-provider-keychain-fixture-recovery-native.swift',
+  ])
+})
+
+test('boundary rejects calling the fixture recovery live launcher from an ordinary test', () => {
+  const target = ['staging-provider-keychain-fixture-recovery', '-live-launcher.mjs'].join('')
+  const source = `const target = '${target}'\nspawn(process.execPath, [target])\n`
+  const root = fixture()
+  writeFileSync(join(root, 'tests/staging-provider-keychain-fixture-recovery-launcher.test.mjs'), source)
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'test-fixture-recovery-live-launcher-call:tests/staging-provider-keychain-fixture-recovery-launcher.test.mjs',
+  ])
+})
+
 test('boundary rejects either disposable Keychain fixture gate when armed', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-provider-keychain-fixture-native.swift'),
