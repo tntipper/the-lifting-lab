@@ -7,6 +7,8 @@ import { STAGING_BRANCH } from './staging-surface-activation-transport.mjs'
 
 export const STAGING_PREVIEW_DEPLOYMENT_REQUEST_ENABLED = false
 export const STAGING_GITHUB_REPOSITORY_ID = 1264363509
+export const STAGING_GITHUB_ORG = 'tntipper'
+export const STAGING_GITHUB_REPO = 'the-lifting-lab'
 export const STAGING_PREVIEW_DEPLOYMENT_REQUEST_ERROR = 'Staging Preview deployment request unavailable'
 
 const unavailable = () => { throw new Error(STAGING_PREVIEW_DEPLOYMENT_REQUEST_ERROR) }
@@ -28,8 +30,8 @@ export function buildStagingPreviewDeploymentRequest(input) {
     || !/^[a-f0-9]{40}$/.test(values.sourceCommit)
     || typeof values.manifestSha256 !== 'string' || !/^[a-f0-9]{64}$/.test(values.manifestSha256)
     || values.publicCustomer !== false || values.publicCart !== false) unavailable()
-  const gitSource = Object.freeze({ type: 'github', repoId: STAGING_GITHUB_REPOSITORY_ID,
-    ref: STAGING_BRANCH, sha: values.sourceCommit })
+  const gitSource = Object.freeze({ type: 'github', org: STAGING_GITHUB_ORG,
+    repo: STAGING_GITHUB_REPO, ref: STAGING_BRANCH, sha: values.sourceCommit })
   const meta = Object.freeze({ githubCommitRef: STAGING_BRANCH, githubCommitSha: values.sourceCommit,
     tllManifestSha256: values.manifestSha256 })
   const body = Object.freeze({ name: VERCEL_PROJECT, project: VERCEL_PROJECT_ID, gitSource, meta })
