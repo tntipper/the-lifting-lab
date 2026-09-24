@@ -2,6 +2,8 @@
 
 Status: **research and conditional economics only**. No Shopify price, shipping rule, discount, affiliate code, supplier order or customer message changed. Reviewed 25 September 2026.
 
+**Later same-day update:** A fresh Shopify Admin export was obtained after this historical screen. Its current variant reconciliation and updated offer arithmetic are in the [current-export addendum](2026-09-25-current-shopify-variant-and-offer-addendum.md). Keep this document as the earlier evidence, not the current variant count.
+
 ## 1. Account-specific supplier terms
 
 The direct account email from `CS@tropicanawholesale.com`, dated 14 September 2026, says: TropShip dropshipping is currently limited to mainland UK; parcels go direct to TLL customers via DPD; the TLL TropShip account has a standard **£5 plus VAT delivery charge for each order**; the free delivery threshold above £100 plus VAT applies to a **separate wholesale account** shipping to TLL. This is stronger evidence for TLL's own account than the generic public delivery page. The email does not say that two separately submitted supplier orders to one customer become one fee, so the calculator rightly charges each supplier order.
