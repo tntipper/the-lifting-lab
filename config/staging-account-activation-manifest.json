@@ -660,7 +660,7 @@
       },
       {
         "path": "scripts/staging-provider-normalization-keychain.py",
-        "sha256": "15063b2f5f2b7ecf554de58f8c66422702426d2aadd50d00955a40c714b7c882"
+        "sha256": "dde7e8c31e6cba2634b65e9207abac05dcbf8e1db5fc49a1cfd4a07c96beb0a2"
       },
       {
         "path": "scripts/staging-provider-readonly-probe.mjs",
