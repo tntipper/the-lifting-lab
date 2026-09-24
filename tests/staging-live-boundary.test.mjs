@@ -84,6 +84,15 @@ test('boundary rejects an armed local credential-readiness launcher', () => {
   ])
 })
 
+test('boundary rejects an armed native Swift Keychain reader', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-provider-noninteractive-keychain.swift'),
+    'private let TLL_NATIVE_READER_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-provider-noninteractive-keychain.swift',
+  ])
+})
+
 test('boundary rejects an armed focused provider read-only launcher', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-provider-readonly-live-launcher.mjs'),

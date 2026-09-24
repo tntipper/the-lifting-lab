@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "7aa6d38a96dbd9d8a95da585cc172571ffdb799dfaf4474f9d2150f4352a1e6a"
+        "sha256": "ac2813e6d424686ac01b5706bc9dcbd387e9bcd6ce3763f7fee4fcbea355cd34"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -161,7 +161,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "8ce8d2a14ca86dc1cfa4970fbe2efb7b14e17441ade929d0681a1c3cacc80ef9"
+        "sha256": "0844224c97ad81003a87383f232c148850fa5bbfc5f3217303e00ec8efbdb122"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -679,6 +679,14 @@
         "sha256": "1eb3e3f1ffd3b591e34ef1dbeacfba8e8096d1c82f6c2a6116b43787e8eef59e"
       },
       {
+        "path": "scripts/staging-provider-noninteractive-keychain.swift",
+        "sha256": "46de62172b91f8258dd1ee1b109b984e1134c9c30416d83e6fb604e197b6daf4"
+      },
+      {
+        "path": "scripts/staging-provider-noninteractive-keychain-build.mjs",
+        "sha256": "571a82a9aed223398e514a69b2ecc4103498763de2714b0e527156f189168128"
+      },
+      {
         "path": "scripts/staging-provider-readonly-probe.mjs",
         "sha256": "a61f73dd3598ced682f956c2d7709fb31f34df87ed10be344bb726470450819b"
       },
@@ -825,6 +833,18 @@
       {
         "path": "tests/staging-provider-credential-readiness.test.mjs",
         "sha256": "733c2e84575ca760e0503104754e58f8c684dc5b519d21589a6778302043a7c9"
+      },
+      {
+        "path": "tests/staging-provider-noninteractive-keychain.test.mjs",
+        "sha256": "b321a64a5d5a73afbef44c8ddf45d017be7a348779f9c1919c3e149f553e87a1"
+      },
+      {
+        "path": "tests/staging-provider-noninteractive-keychain-build.test.mjs",
+        "sha256": "7a12e639baf34a10c194b9d25ae0b50cf029700b50152a072107d6b951a310d2"
+      },
+      {
+        "path": "tests/staging_provider_noninteractive_keychain_test.swift",
+        "sha256": "08f10d63ee3eb38bd4e777f92df6c31749e75d44bf19573fba68316bc02987d9"
       },
       {
         "path": "tests/staging_provider_normalization_keychain_test.py",

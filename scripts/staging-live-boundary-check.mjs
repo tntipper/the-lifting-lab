@@ -51,7 +51,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
     if (/execFileSync\(process\.execPath,\s*\[\s*['"]scripts\/[^'"]*(?:prepare|recovery|manifest|generate|generator|build)[^'"]*\.mjs['"]\s*\]/.test(source)) violations.push(`test-generated-write:${display(path)}`)
   }
 
-  for (const path of filesBelow(join(projectRoot, 'scripts')).filter(path => /\.(?:mjs|js|ts|py)$/.test(path))) {
+  for (const path of filesBelow(join(projectRoot, 'scripts')).filter(path => /\.(?:mjs|js|ts|py|swift)$/.test(path))) {
     const source = read(path)
     if (!/-live-launcher\.mjs$/.test(path)
       && /\b(?:export\s+)?async\s+function\s+runNativeGeneration\d+CredentialWindow\s*\(/.test(source)) {
@@ -65,6 +65,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       || /\bHOSTED_BASELINE_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bPROVIDER_NORMALIZATION_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bCREDENTIAL_READINESS_LIVE_ENABLED\s*=\s*true\b/.test(source)
+      || /\bTLL_NATIVE_READER_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_PROVIDER_READONLY_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bPREVIEW_SOURCE_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED\s*=\s*true\b/.test(source)
