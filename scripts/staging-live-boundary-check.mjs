@@ -58,12 +58,13 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       violations.push(`embedded-live-launcher:${display(path)}`)
     }
     if (/-live-launcher\.mjs$/.test(path)
-      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal/.test(source)) {
+      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal/.test(source)) {
       violations.push(`live-launcher-missing-phase-journal:${display(path)}`)
     }
     if (/\bNATIVE(?:_[A-Z0-9]+)*_(?:TRANSPORT_)?ENABLED\s*=\s*true\b/.test(source)
       || /\bHOSTED_BASELINE_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bPROVIDER_NORMALIZATION_LIVE_ENABLED\s*=\s*true\b/.test(source)
+      || /\bCREDENTIAL_READINESS_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_PROVIDER_READONLY_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bPREVIEW_SOURCE_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED\s*=\s*true\b/.test(source)

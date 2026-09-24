@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "bd1407227afb48644a946f3cce74342e329cadbb038215dad2747f678bbecd50"
+        "sha256": "7aa6d38a96dbd9d8a95da585cc172571ffdb799dfaf4474f9d2150f4352a1e6a"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -161,7 +161,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "b2f1c0697d6176fa05295b296d89e800fdf264461c8c8c76beff415d32a0cc6a"
+        "sha256": "8ce8d2a14ca86dc1cfa4970fbe2efb7b14e17441ade929d0681a1c3cacc80ef9"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -663,6 +663,22 @@
         "sha256": "dde7e8c31e6cba2634b65e9207abac05dcbf8e1db5fc49a1cfd4a07c96beb0a2"
       },
       {
+        "path": "scripts/staging-provider-credential-readiness-phase-journal.mjs",
+        "sha256": "4d0212f172d7599e086b748a51b8160a7d19c749b06ee8c36430af3ef1b3768f"
+      },
+      {
+        "path": "scripts/staging-provider-credential-readiness-session.mjs",
+        "sha256": "3909680e5543212d866bb6379a61cf9b027546d2360c7b76aab8775a39e716c6"
+      },
+      {
+        "path": "scripts/staging-provider-credential-readiness-native.mjs",
+        "sha256": "f2e9657d8b89227553715b6cbb3a32bcb884374d9868f5a96b8f5f432509bd07"
+      },
+      {
+        "path": "scripts/staging-provider-credential-readiness-live-launcher.mjs",
+        "sha256": "1eb3e3f1ffd3b591e34ef1dbeacfba8e8096d1c82f6c2a6116b43787e8eef59e"
+      },
+      {
         "path": "scripts/staging-provider-readonly-probe.mjs",
         "sha256": "a61f73dd3598ced682f956c2d7709fb31f34df87ed10be344bb726470450819b"
       },
@@ -805,6 +821,14 @@
       {
         "path": "tests/staging-provider-normalization-session.test.mjs",
         "sha256": "f84cd759cd21c5ff13e76110d86f693de06597d95905f1a021cd7db5c8f79700"
+      },
+      {
+        "path": "tests/staging-provider-credential-readiness.test.mjs",
+        "sha256": "733c2e84575ca760e0503104754e58f8c684dc5b519d21589a6778302043a7c9"
+      },
+      {
+        "path": "tests/staging_provider_normalization_keychain_test.py",
+        "sha256": "40873bfc51a657913bda572b24e5bf39aeb2b950fde62af1a273de4237ba6d7a"
       },
       {
         "path": "tests/staging-provider-readonly-probe.test.mjs",

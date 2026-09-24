@@ -75,6 +75,15 @@ test('boundary rejects an armed provider normalization launcher', () => {
   ])
 })
 
+test('boundary rejects an armed local credential-readiness launcher', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-provider-credential-readiness-live-launcher.mjs'),
+    'const createCredentialReadinessPhaseJournal = null\nexport const CREDENTIAL_READINESS_LIVE_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-provider-credential-readiness-live-launcher.mjs',
+  ])
+})
+
 test('boundary rejects an armed focused provider read-only launcher', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-provider-readonly-live-launcher.mjs'),

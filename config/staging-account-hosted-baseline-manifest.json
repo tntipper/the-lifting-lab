@@ -28,7 +28,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-surface.mjs",
-      "sha256": "3346bbb3888379d4d87ac5082bfab74dd1cc0c241e874c73b5a675a259e198e0"
+      "sha256": "0246d02fa86a85c39a8479f409b1b3edc35895a9790c98ea22ad58654c03de82"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-composition.mjs",
