@@ -103,17 +103,23 @@ test('source identity, remote shape, ancestry and dirty tracked tree fail closed
 
 test('one fixed lease/refspec has no arbitrary URL, force flag, hook execution or extra ref', () => {
   const args = stagingPreviewGitPushCommand({ selectedCommit, predecessorCommit })
-  assert.deepEqual(args, ['-c', 'core.hooksPath=/dev/null', 'push', '--porcelain', '--no-verify',
+  assert.deepEqual(args, ['-c', 'core.hooksPath=/dev/null', '-c', 'credential.helper=',
+    '-c', 'credential.https://github.com.helper=!/Users/tobiastipper/.local/bin/gh auth git-credential',
+    'push', '--porcelain', '--no-verify',
     `--force-with-lease=${ref}:${predecessorCommit}`, '--', origin, `${selectedCommit}:${ref}`])
   assert.equal(Object.isFrozen(args), true)
   const options = stagingPreviewGitPublishProcessOptions(args, 4_096)
   assert.equal(options.env.GIT_CONFIG_GLOBAL, '/dev/null')
   assert.equal(options.env.GIT_TERMINAL_PROMPT, '0')
+  assert.equal(options.env.HOME, '/Users/tobiastipper')
+  assert.equal(options.env.GH_CONFIG_DIR, '/Users/tobiastipper/.config/gh')
+  assert.deepEqual(options.stdio, ['ignore', 'ignore', 'ignore'])
   assert.equal(options.cwd, root)
   for (const changed of [
     [], ['push'],
-    [...args.slice(0, 7), 'https://other.example/repo.git', args[8]],
-    [...args.slice(0, 8), `+${selectedCommit}:${ref}`],
+    [...args.slice(0, 11), 'https://other.example/repo.git', args[12]],
+    [...args.slice(0, 12), `+${selectedCommit}:${ref}`],
+    [...args.slice(0, 5), 'credential.https://github.com.helper=!/tmp/other', ...args.slice(6)],
     [...args, 'main:main'],
     [...args.slice(0, 3), '--force', ...args.slice(3)],
   ]) assert.throws(() => stagingPreviewGitPublishProcessOptions(changed, 4_096), /Git publication command unavailable/)

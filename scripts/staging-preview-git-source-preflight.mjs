@@ -14,6 +14,9 @@ const gitBinary = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runti
 const gitBinarySha256 = 'ee73b116cc37f44ecdaa9e3fdfbc25ce827675859f5f966ec671112fd5caf074'
 const gitExecPath = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core'
 const gitHttpsHelperSha256 = '20dbe4b0aa0c95e234158aef05c706cd88c23a0d84b8cf7810cec4502551491f'
+const githubCli = '/Users/tobiastipper/.local/bin/gh'
+const githubCliSha256 = 'a38e8ea1b9794a445a1ce746392e36111ca00a3242a6447b49cd4c162cb191a7'
+const githubCliConfig = '/Users/tobiastipper/.config/gh'
 const hold = () => Object.freeze({ status: 'SOURCE_PROOF_UNAVAILABLE' })
 const notRemote = () => Object.freeze({ status: 'SOURCE_NOT_AT_REMOTE' })
 const line = bytes => {
@@ -96,6 +99,20 @@ export function stagingPreviewGitHttpsHelperReady() {
       || directory.uid !== process.getuid() || (directory.mode & 0o022) !== 0
       || !link.isSymbolicLink() || readlinkSync(`${gitExecPath}/git-remote-https`) !== 'git-remote-http') return false
     return stagingPreviewGitExecutableReady({ path: `${gitExecPath}/git-remote-http`, sha256: gitHttpsHelperSha256 })
+  } catch { return false }
+}
+
+/** Push-only prerequisite; never opens the credential store or prints a token. */
+export function stagingPreviewGithubCliReady() {
+  try {
+    const directory = lstatSync(githubCliConfig)
+    const hosts = lstatSync(`${githubCliConfig}/hosts.yml`)
+    return stagingPreviewGitExecutableReady({ path: githubCli, sha256: githubCliSha256 })
+      && directory.isDirectory() && !directory.isSymbolicLink()
+      && realpathSync(githubCliConfig) === githubCliConfig
+      && directory.uid === process.getuid() && (directory.mode & 0o022) === 0
+      && hosts.isFile() && !hosts.isSymbolicLink() && hosts.nlink === 1
+      && hosts.uid === process.getuid() && (hosts.mode & 0o077) === 0
   } catch { return false }
 }
 

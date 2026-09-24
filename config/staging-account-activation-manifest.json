@@ -696,7 +696,7 @@
       },
       {
         "path": "scripts/staging-preview-git-source-preflight.mjs",
-        "sha256": "2188640d0f4143b756f5275bee36b2e92667a251dfc5a7203d5d33b563a157d5"
+        "sha256": "23bee5a8d9548d7f216c69ba7bbaad59363c706592104297a852d088588fa9d8"
       },
       {
         "path": "scripts/staging-preview-git-acceptance.mjs",
@@ -716,11 +716,15 @@
       },
       {
         "path": "scripts/staging-preview-git-publish-native-contract.mjs",
-        "sha256": "5cd5c1213dbba07c1ac449524a9bc8311895e971d614e2c2f0e00329813e1e52"
+        "sha256": "860de69f8da62ad2f86571f572f2c0d09e47cd7833cae7f36baa76559e7d8408"
       },
       {
         "path": "scripts/staging-preview-git-publish-native-read.mjs",
         "sha256": "504df40e7491c5608af45fa05a806cfc321aae27346825a0500439e300fff651"
+      },
+      {
+        "path": "scripts/staging-preview-git-publish-native-push.mjs",
+        "sha256": "d533ae09e8095a3fcf6a4db1be913df4426f4ace6336bc6c92c3825800de011e"
       },
       {
         "path": "scripts/staging-preview-source-journal.mjs",
@@ -844,11 +848,15 @@
       },
       {
         "path": "tests/staging-preview-git-publish-native-contract.test.mjs",
-        "sha256": "01d9a10288df3d2f018d1986344af3ee837aec13c276f16775151d7567b43156"
+        "sha256": "b001352794096b3748ffab88b306cfffe120d6c2e464bc1487d41470f02d4c23"
       },
       {
         "path": "tests/staging-preview-git-publish-native-read.test.mjs",
         "sha256": "a7445fe9258253ec029df464cf4a470f2ea1a4e92467f6823f9bf61cef4ff145"
+      },
+      {
+        "path": "tests/staging-preview-git-publish-native-push.test.mjs",
+        "sha256": "ed3099cf73876f6054cb408bad69d24526fd9c57b69fb4e17f02a86e1cef1d42"
       },
       {
         "path": "tests/staging-preview-source-observer.test.mjs",

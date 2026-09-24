@@ -7,6 +7,7 @@ const root = resolve(import.meta.dirname, '..')
 const branch = 'codex/tll-integration'
 const ref = `refs/heads/${branch}`
 const origin = 'https://github.com/tntipper/the-lifting-lab.git'
+const credentialHelper = '!/Users/tobiastipper/.local/bin/gh auth git-credential'
 const manifestPath = 'config/staging-account-activation-manifest.json'
 const commonConfig = resolve(root, '../audit-code/.git/config')
 const worktreeConfig = resolve(root, '../audit-code/.git/worktrees/implementation-integration/config.worktree')
@@ -61,7 +62,8 @@ export function stagingPreviewGitPushCommand({ selectedCommit, predecessorCommit
   if (!fullSha(selectedCommit) || !fullSha(predecessorCommit) || selectedCommit === predecessorCommit) {
     throw Error('Git publication command unavailable')
   }
-  return Object.freeze(['-c', 'core.hooksPath=/dev/null', 'push', '--porcelain', '--no-verify',
+  return Object.freeze(['-c', 'core.hooksPath=/dev/null', '-c', 'credential.helper=',
+    '-c', `credential.https://github.com.helper=${credentialHelper}`, 'push', '--porcelain', '--no-verify',
     `--force-with-lease=${ref}:${predecessorCommit}`, '--', origin, `${selectedCommit}:${ref}`])
 }
 
@@ -75,7 +77,7 @@ export function captureStagingPreviewGitArguments(args) {
   try {
     if (!Array.isArray(args)) return null
     const length = Object.getOwnPropertyDescriptor(args, 'length')?.value
-    if (!Number.isSafeInteger(length) || length < 1 || length > 9
+    if (!Number.isSafeInteger(length) || length < 1 || length > 13
       || Reflect.ownKeys(args).length !== length + 1) return null
     const captured = []
     for (let index = 0; index < length; index++) {
@@ -101,11 +103,11 @@ export function stagingPreviewGitPublishProcessOptions(args, maxBuffer) {
   const show = /^show\0[a-f0-9]{40}:config\/staging-account-activation-manifest\.json$/.test(command)
   const ancestor = /^merge-base\0--is-ancestor\0[a-f0-9]{40}\0[a-f0-9]{40}$/.test(command)
   let push = false
-  if (captured.length === 9 && captured[2] === 'push') {
+  if (captured.length === 13 && captured[6] === 'push') {
     try {
       push = command === stagingPreviewGitPushCommand({
-        selectedCommit: /^([a-f0-9]{40}):refs\/heads\/codex\/tll-integration$/.exec(captured[8])?.[1],
-        predecessorCommit: /^--force-with-lease=refs\/heads\/codex\/tll-integration:([a-f0-9]{40})$/.exec(captured[5])?.[1],
+        selectedCommit: /^([a-f0-9]{40}):refs\/heads\/codex\/tll-integration$/.exec(captured[12])?.[1],
+        predecessorCommit: /^--force-with-lease=refs\/heads\/codex\/tll-integration:([a-f0-9]{40})$/.exec(captured[9])?.[1],
       }).join('\0')
     } catch { /* malformed command rejected below */ }
   }
@@ -115,11 +117,13 @@ export function stagingPreviewGitPublishProcessOptions(args, maxBuffer) {
   }
   const remote = captured[0] === 'ls-remote'
   return Object.freeze({ cwd: remote ? '/' : root,
-    env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C', HOME: '/var/empty', XDG_CONFIG_HOME: '/var/empty',
+    env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C', HOME: push ? '/Users/tobiastipper' : '/var/empty',
+      XDG_CONFIG_HOME: '/var/empty', ...(push ? { GH_CONFIG_DIR: '/Users/tobiastipper/.config/gh' } : {}),
       GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null',
       GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: '/usr/bin/false', GIT_NO_REPLACE_OBJECTS: '1',
       GIT_EXEC_PATH: '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core' }),
-    stdio: Object.freeze(['ignore', 'pipe', 'ignore']), timeout: push ? 45_000 : 15_000, maxBuffer })
+    stdio: Object.freeze(['ignore', push ? 'ignore' : 'pipe', 'ignore']),
+    timeout: push ? 45_000 : 15_000, maxBuffer })
 }
 
 /** runGit returns {status, stdout}; every nonzero exit, including merge-base false, is a HOLD. */
