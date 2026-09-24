@@ -10,7 +10,7 @@ import Security
 #error("The fixture source must only be compiled with TLL_KEYCHAIN_FIXTURE")
 #endif
 
-private let TLL_FIXTURE_NATIVE_ENABLED = true
+private let TLL_FIXTURE_NATIVE_ENABLED = false
 private let tllFixtureDirectory = NSHomeDirectory() + "/Library/Caches/tll-stage3-keychain-fixture"
 private let tllFixturePath = tllFixtureDirectory + "/tll-stage3-fixture.keychain-db"
 private let tllFixturePassword = Array("tll-stage3-fixture-passphrase-v1".utf8)
