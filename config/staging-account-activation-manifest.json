@@ -695,16 +695,20 @@
         "sha256": "d0bf0b991ce1e2d10508b6fd1bd283440226f6751a4ee628a8b5f07ae29fd234"
       },
       {
+        "path": "scripts/staging-provider-keychain-fixture-armed-build.mjs",
+        "sha256": "16014fa13f4611c9d1248064071b0090627eb0c20df9247f1d108f507eaf0277"
+      },
+      {
         "path": "scripts/staging-provider-keychain-fixture-phase-journal.mjs",
         "sha256": "0c96a97e5b3678cfabf517503fb259b17533a90e9decd4c6aff0f060b9a9ff27"
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-session.mjs",
-        "sha256": "0efe7ed8834c4496340bb52e06df675ee612ad189c6907127069cf4e94c3c52c"
+        "sha256": "ee487c8d81a73f832c1a088bcff598c1d5e2e0b2e03ed0a2d341741b22d995a0"
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-live-launcher.mjs",
-        "sha256": "c4b2ed27fb3e9c2b0fadbff0b71230c34417f1eeb2ae748f394ca03b97baba97"
+        "sha256": "bf81f025d866acfb2ceb7734c2080430d3eec84bc5619bad4ecc8493e6a9b889"
       },
       {
         "path": "scripts/staging-provider-readonly-probe.mjs",
@@ -871,12 +875,16 @@
         "sha256": "26bdef44218206a2aa45a0ddd1543016ec64f0380aa6365cb7e879c0ae9d32ca"
       },
       {
+        "path": "tests/staging-provider-keychain-fixture-armed-build.test.mjs",
+        "sha256": "d03f97b0b378cd48cd6e6bddf99ee7856e716ce3f09a51dce3d488d41489f98d"
+      },
+      {
         "path": "tests/staging-provider-keychain-fixture-phase-journal.test.mjs",
         "sha256": "176c4afdee9fa13c909b0c2b51b7c6f9660222bc396e0b2d8c782c4d2864e909"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-session.test.mjs",
-        "sha256": "2ae688a43ba1976b5945a6b0689e10fb2f6187a6f83df2ebc92fefe3b55f1c84"
+        "sha256": "768539b332f4b0fb377204a924233d66c5a6f118ed70e259d913165e5cf7041b"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-native-offline.test.mjs",

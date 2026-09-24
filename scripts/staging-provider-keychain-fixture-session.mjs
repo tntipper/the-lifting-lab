@@ -8,6 +8,20 @@ const exact = (value, keys) => value && typeof value === 'object' && !Array.isAr
 const fixed = (status, category = null) => Object.freeze({ status, category })
 const fail = () => { throw Error('Disposable Keychain fixture session unavailable') }
 
+export function parseFixtureBuildIdentity(value, armed = false) {
+  const kind = armed ? 'armed' : 'disabled'
+  if (!exact(value, ['status', 'schema', 'sourceSha256', 'fixtureSha256', 'binarySha256',
+    'architecture', 'signingIdentifier', 'signingKind'])
+    || value.status !== `${armed ? 'ARMED' : 'DISABLED'}_FIXTURE_BINARY_VERIFIED`
+    || value.schema !== `tll-${kind}-disposable-keychain-build/v1`
+    || value.architecture !== 'arm64' || value.signingKind !== 'adhoc'
+    || value.signingIdentifier !== `tll-provider-keychain-fixture-${kind}-v1`
+    || [value.sourceSha256, value.fixtureSha256, value.binarySha256]
+      .some(hash => typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash))) return null
+  return Object.freeze({ sourceSha256: value.sourceSha256,
+    fixtureSha256: value.fixtureSha256, binarySha256: value.binarySha256 })
+}
+
 export function classifyFixtureNative({ status, signal, error, stdout, stderr } = {}) {
   if (error || signal) return fixed('UNCERTAIN', 'NATIVE')
   if (![0, 30, 31, 32].includes(status) || !Buffer.isBuffer(stdout)

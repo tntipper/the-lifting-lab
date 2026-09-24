@@ -5,6 +5,7 @@ import * as fs from 'node:fs'
 import { homedir } from 'node:os'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseFixtureBuildIdentity } from './staging-provider-keychain-fixture-session.mjs'
 
 export const TLL_FIXTURE_LIVE_ENABLED = false
 const root = resolve(import.meta.dirname, '..')
@@ -12,11 +13,10 @@ const privateRoot = resolve(root, '../implementation-state')
 const privateDirectory = resolve(privateRoot, 'staging')
 const journalPath = resolve(privateDirectory, 'tll-provider-keychain-fixture-v1.json')
 const nativeJournalPath = resolve(privateDirectory, 'tll-provider-keychain-fixture-native-v1.json')
-const binary = resolve(privateDirectory, 'tll-provider-keychain-fixture-disabled-v1')
+const buildKind = TLL_FIXTURE_LIVE_ENABLED ? 'armed' : 'disabled'
+const binary = resolve(privateDirectory, `tll-provider-keychain-fixture-${buildKind}-v1`)
 const fixtureDirectory = resolve(homedir(), 'Library/Caches/tll-stage3-keychain-fixture')
 const environment = Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' })
-const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
-  && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 const held = () => Object.freeze({ status: 'HOLD', category: 'PREFLIGHT' })
 
 function privateState() {
@@ -66,21 +66,12 @@ function checkedCommand(path, args) {
 
 function buildIdentity() {
   const result = spawnSync(process.execPath,
-    [resolve(import.meta.dirname, 'staging-provider-keychain-fixture-build.mjs'), '--check'],
+    [resolve(import.meta.dirname, `staging-provider-keychain-fixture-${buildKind === 'armed' ? 'armed-build' : 'build'}.mjs`), '--check'],
     { cwd: root, env: environment, stdio: ['ignore', 'pipe', 'pipe'], timeout: 15_000, maxBuffer: 4_096 })
   try {
     if (result.error || result.signal || result.status !== 0 || result.stderr?.length !== 0) return null
     const value = JSON.parse(result.stdout.toString('utf8'))
-    if (!exact(value, ['status', 'schema', 'sourceSha256', 'fixtureSha256', 'binarySha256',
-      'architecture', 'signingIdentifier', 'signingKind'])
-      || value.status !== 'DISABLED_FIXTURE_BINARY_VERIFIED'
-      || value.schema !== 'tll-disabled-disposable-keychain-build/v1'
-      || value.architecture !== 'arm64' || value.signingKind !== 'adhoc'
-      || value.signingIdentifier !== 'tll-provider-keychain-fixture-disabled-v1'
-      || [value.sourceSha256, value.fixtureSha256, value.binarySha256]
-        .some(hash => typeof hash !== 'string' || !/^[a-f0-9]{64}$/.test(hash))) return null
-    return Object.freeze({ sourceSha256: value.sourceSha256,
-      fixtureSha256: value.fixtureSha256, binarySha256: value.binarySha256 })
+    return parseFixtureBuildIdentity(value, TLL_FIXTURE_LIVE_ENABLED)
   } catch { return null }
   finally { result.stdout?.fill?.(0); result.stderr?.fill?.(0) }
 }

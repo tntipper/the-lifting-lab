@@ -1,6 +1,24 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { assessFixtureNativeReceipt, classifyFixtureNative, runFixtureSession } from '../scripts/staging-provider-keychain-fixture-session.mjs'
+import { assessFixtureNativeReceipt, classifyFixtureNative, parseFixtureBuildIdentity,
+  runFixtureSession } from '../scripts/staging-provider-keychain-fixture-session.mjs'
+
+test('fixture launcher accepts only the exact source-bound build identity for its gate', () => {
+  const hashes = { sourceSha256: 'a'.repeat(64), fixtureSha256: 'b'.repeat(64),
+    binarySha256: 'c'.repeat(64) }
+  const value = armed => ({ status: `${armed ? 'ARMED' : 'DISABLED'}_FIXTURE_BINARY_VERIFIED`,
+    schema: `tll-${armed ? 'armed' : 'disabled'}-disposable-keychain-build/v1`,
+    ...hashes, architecture: 'arm64', signingKind: 'adhoc',
+    signingIdentifier: `tll-provider-keychain-fixture-${armed ? 'armed' : 'disabled'}-v1` })
+  assert.deepEqual(parseFixtureBuildIdentity(value(false)), hashes)
+  assert.deepEqual(parseFixtureBuildIdentity(value(true), true), hashes)
+  assert.equal(parseFixtureBuildIdentity(value(false), true), null)
+  assert.equal(parseFixtureBuildIdentity(value(true), false), null)
+  assert.equal(parseFixtureBuildIdentity({ ...value(true), binarySha256: 'bad' }, true), null)
+  assert.equal(parseFixtureBuildIdentity({ ...value(true), signingKind: 'none' }, true), null)
+  assert.equal(parseFixtureBuildIdentity({ ...value(true), signingIdentifier: 'other' }, true), null)
+  assert.equal(parseFixtureBuildIdentity({ ...value(true), extra: true }, true), null)
+})
 
 const start = Date.parse('2026-09-24T18:00:00.000Z')
 function fixture({ existing = false, preflight = () => true, runNative = () => ({ status: 'PASS' }),
