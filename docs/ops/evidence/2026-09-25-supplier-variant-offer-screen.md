@@ -1,0 +1,41 @@
+# TropShip terms, product identities and proposed offer: read-only screen
+
+Status: **research and conditional economics only**. No Shopify price, shipping rule, discount, affiliate code, supplier order or customer message changed. Reviewed 25 September 2026.
+
+## 1. Account-specific supplier terms
+
+The direct account email from `CS@tropicanawholesale.com`, dated 14 September 2026, says: TropShip dropshipping is currently limited to mainland UK; parcels go direct to TLL customers via DPD; the TLL TropShip account has a standard **£5 plus VAT delivery charge for each order**; the free delivery threshold above £100 plus VAT applies to a **separate wholesale account** shipping to TLL. This is stronger evidence for TLL's own account than the generic public delivery page. The email does not say that two separately submitted supplier orders to one customer become one fee, so the calculator rightly charges each supplier order.
+
+The current public [TropShip page](https://www.tropicanawholesale.com/TROPSHIP/) describes an hourly stock feed, manual or API ordering, a 4pm next-day target and DPD tracking, but does not specify a TropShip free-delivery threshold. The [general delivery page](https://www.tropicanawholesale.com/help/delivery/) advertises the wholesale threshold without clearly separating account types. **Do not switch to the general-page threshold.** The account email is a usable provisional tariff for disabled cost planning; a fresh account-specific written confirmation remains required before price publication.
+
+The supplied FTP setup document is access guidance, not commercial terms. Its secret was not used or copied into this repository. Before an automated stock feed is connected, use a credential handled outside Git and consider rotating the plaintext credential supplied in the document.
+
+Ask Tropicana to confirm in writing: (a) £5+VAT for every TropShip order regardless of order value and destination within mainland UK; (b) whether split consignments, multiple parcels, remote mainland postcodes, failed delivery and returns have extra charges; (c) whether feed `ProductPrice` is VAT-inclusive or exclusive, how `Tax` maps to a rate, and whether `Size` is the exact charged sellable unit; (d) stock-feed freshness and unavailable-item handling; (e) order cut-off, cancellation, return and damage processes. These are missing account facts, not choices for the owner to guess.
+
+## 2. Historical identity reconciliation
+
+The [dated joined register](../../research/data/comparison-shopify-supplier-reconciliation-2026-09-25.csv) combines the 229 live Supabase product IDs observed on 25 September with the **14 September** developer `wire-61-shopify-map.csv` and `DropshipProductFeed.csv`. The joined register is explicitly historical on its Shopify and supplier side; the browser connection did not provide a fresh Shopify Admin export in this work unit.
+
+| Finding | Count | Meaning |
+| --- | ---: | --- |
+| Current comparison product IDs | 229 | Read-only Supabase identity snapshot, not Shopify variants |
+| IDs present in the historical Shopify map | 61 | 26.6% of comparison IDs had a historical link |
+| IDs without a historical map row | 168 | Not proof they must all be sold; decide shop scope before mapping |
+| Distinct historical Shopify product/variant IDs | 60 | Two `EssentialMax` comparison IDs share one variant and one supplier SKU |
+| Mapped supplier SKUs found in supplied feed | 61/61 | Feed presence does not prove current stock or exact pack match |
+| Distinct mapped variants with explicit multipack supplier units | 9 | Single-unit-looking retail prices can be invalid against carton costs |
+| Map rows without feed nutrition text | 19/61 | Even the supplier text cannot support a formula audit for these |
+
+The nine explicit multipacks include 8× drinks/tablet packs and 12×/16× bar cartons. For example, a historical £2.30 bar price is paired with a 12×55g supplier carton; it must not be treated as a profitable £2.30 carton or a valid direct supplier-order unit. Supplier feed nutrition text, when present, is not independently verified manufacturer-label evidence. The map also notes a Warrior creatine size conflict (300g feed versus an older 500g buy URL). Every match needs a fresh Shopify SKU/option/pack/price/status read and exact current label or manufacturer document before promotion or scientific approval.
+
+## 3. Free-postage and affiliate economics
+
+The owner proposed free **customer** postage at £100 retail and, later, an affiliate offer of 10% customer discount, 10% first-order commission and 5% subsequent-order commission. The free-postage threshold should be measured against **after-discount eligible merchandise**: a £100 pre-discount basket with a 10% code becomes £90 and would not qualify. This is a recommendation for owner approval, not a live shipping rule. The threshold should be mainland-UK only until the supplier service area is confirmed. Every separately placed TropShip order still consumes £6 gross supplier delivery, regardless of what the customer pays.
+
+At exactly **£100 collected merchandise revenue** after a 10% code and with free customer postage, the first-order commission is £10 if its base is post-discount merchandise. To retain the existing 25% minimum contribution margin, all other economic costs together may total at most **£65**; to hit the 35% target, at most **£55**. After one £6 TropShip order, that leaves at most **£59** or **£49**, respectively, for wholesale, unrecoverable product VAT, payment fees, returns reserve and any other cost. Two supplier orders reduce those amounts to **£53** and **£43**. A 5% repeat-order commission raises the one-order limits to **£64** and **£54**. These are upper bounds, not approved prices; the separate £3-per-item cash and standalone line safeguards also apply. At a £100 list-price basket discounted to £90, a pre-discount free-postage rule would reduce the first-order one-shipment minimum-margin headroom for all non-delivery costs to **£52.50**.
+
+The 14 September map's 60 distinct variants were screened under the deliberately favourable assumptions that `ProductPrice` already includes all supplier product VAT, each non-multipack feed item is the exact Shopify sellable unit, the old retail price remains current, a sale gets free customer postage, commission is charged on after-discount merchandise, and **payment/returns/advertising costs are zero**. The 9 explicit multipacks were excluded. Of the remaining 51 historical variants, **25** would miss the 25%/£3 standalone safeguards even with no promotion; **42** would miss them with a 10% discount plus 10% first-order commission; **39** would miss with the same discount plus 5% repeat commission. If the `VAT`-flagged feed prices are instead VAT-exclusive and standard 20% VAT is added, the respective warning counts rise to **38, 47 and 43**. These are conditional warning counts, **not** current Shopify fail counts or permission to price the others: old prices, unit identity, VAT basis and all omitted costs are unverified. The standard VAT sensitivity uses the current [GOV.UK VAT rate](https://www.gov.uk/vat-rates/); each product's actual treatment must still be evidenced.
+
+Example of narrow headroom: historical Applied Nutrition 900g casein is £49.99 retail and £19.29 feed wholesale. With 10% customer discount, 10% first-order commission and £6 supplier delivery, contribution before payment/returns is approximately **£15.20** (33.8% margin) if wholesale includes VAT, but **£11.34** (25.2%) if VAT is extra at 20%. In the latter case a real payment fee or reserve could push it below the 25% minimum. This example is not an approved product price or pack match.
+
+**Decision:** Do not activate a £100 free-postage threshold or the proposed affiliate rates from these files. First obtain the supplier's VAT/pack/fee confirmation, a current Shopify variant export, the actual payment tariff and returns reserve, and owner-approved after-discount threshold/commission terms. Then run the existing pricing engine on exact variants and realistic one-/two-supplier-order baskets. Keep price and promotion writes disabled until every eligible line passes its own floor and the whole basket passes.
