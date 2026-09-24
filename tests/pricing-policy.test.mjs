@@ -192,6 +192,7 @@ for (const [label, mutate, code] of [
   ['oversized amount', v => v.cost.wholesale.amountPence = MAX_PENCE + 1, 'OVERFLOW'],
   ['calculated floor overflow', v => v.cost.wholesale.amountPence = MAX_PENCE - 550, 'OVERFLOW'],
   ['changed delivery fee', v => v.supplierDeliveryTariff.quotedExVatPence = 499, 'DELIVERY_FEE_MISMATCH'],
+  ['obsolete free-delivery threshold with a new version', v => v.supplierDeliveryTariff.freeAboveWholesaleExVatPence = 10000, 'DELIVERY_FEE_MISMATCH'],
   ['zero minimum cash', v => v.policy.minimumCashPerItemPence = 0, 'INVALID_INPUT'],
   ['zero margin', v => v.policy.minimumMarginBps = 0, 'INVALID_INPUT'],
   ['target below minimum', v => v.policy.targetMarginBps = 2000, 'INVALID_INPUT'],
@@ -348,26 +349,25 @@ test('a profitable neighbour and lower order minimum cannot conceal a line below
   assert.equal(evaluateBasket(value).eligible, true)
 })
 
-for (const [wholesale, state, charged, eligible] of [[9999,'charged',600,true],[10000,'boundary_hold',600,false],[10001,'free',0,true]]) {
-  test(`standalone order threshold ${wholesale}p ex VAT is ${state}`, () => {
+for (const wholesale of [9999,10000,10001]) {
+  test(`TropShip standalone order at ${wholesale}p ex VAT still costs 600p delivery`, () => {
     const value=input(); value.cost.wholesale={amountPence:wholesale,tax:{approved:true,basis:'exclusive',vatBps:2000,inputVatRecoverable:false}}
     const result=calculatePriceFloor(value)
-    assert.equal(result.eligible,eligible)
+    assert.equal(result.eligible,true)
     assert.equal(result.calculation.supplierDeliveryBasis,'one_item_supplier_order')
-    assert.equal(result.calculation.supplierDeliveryStatus,state)
-    assert.equal(result.calculation.supplierDeliveryGrossCashPence,charged)
-    assert.equal(result.calculation.supplierDeliveryQuotedExVatPence,charged?500:0)
-    equalFraction(result.calculation.supplierDeliveryEconomicPence,charged)
+    assert.equal(result.calculation.supplierDeliveryStatus,'charged')
+    assert.equal(result.calculation.supplierDeliveryGrossCashPence,600)
+    assert.equal(result.calculation.supplierDeliveryQuotedExVatPence,500)
+    equalFraction(result.calculation.supplierDeliveryEconomicPence,600)
     equalFraction(result.calculation.wholesaleExVatPence,wholesale)
-    if(!eligible) hold(result,'DELIVERY_THRESHOLD_BOUNDARY')
   })
 }
-for (const [gross,state] of [[11999,'charged'],[12000,'boundary_hold'],[12001,'free']]) test(`inclusive wholesale ${gross}p uses exact ex-VAT threshold`,()=>{
+for (const gross of [11999,12000,12001]) test(`inclusive wholesale ${gross}p retains exact ex-VAT accounting and charged delivery`,()=>{
   const value=input(); value.cost.wholesale={amountPence:gross,tax:{approved:true,basis:'inclusive',vatBps:2000,inputVatRecoverable:false}}
   const result=calculatePriceFloor(value)
-  assert.equal(result.calculation.supplierDeliveryStatus,state)
+  assert.equal(result.calculation.supplierDeliveryStatus,'charged')
   equalFraction(result.calculation.wholesaleExVatPence,BigInt(gross)*5n,6)
-  equalFraction(result.calculation.nonVariableEconomicCostPence,gross+75+(state==='free'?0:600))
+  equalFraction(result.calculation.nonVariableEconomicCostPence,gross+75+600)
 })
 test('exclusive and inclusive approved wholesale agree on economic cost and threshold',()=>{
   const exclusive=input(),inclusive=input()
@@ -376,7 +376,7 @@ test('exclusive and inclusive approved wholesale agree on economic cost and thre
   const a=calculatePriceFloor(exclusive).calculation,b=calculatePriceFloor(inclusive).calculation
   assert.deepEqual(a,b)
 })
-test('unknown product tax does not become a threshold exemption or cost estimate',()=>{
+test('unknown product tax does not become an approved cost estimate',()=>{
   for(const mutate of [v=>v.cost.wholesale.tax.approved=false,v=>v.cost.wholesale.tax.basis='unknown',v=>delete v.cost.wholesale.tax.vatBps,v=>v.cost.wholesale.tax.inputVatRecoverable=true,v=>v.cost.outputVat.rateBps=2000]) {
     const value=input(); value.cost.wholesale.amountPence=10001; mutate(value)
     const result=calculatePriceFloor(value); assert.equal(result.eligible,false); assert.equal(result.calculation,undefined)
@@ -386,22 +386,22 @@ test('superseded per-item delivery inputs are explicitly rejected',()=>{
   const value=input(); value.cost.supplierDelivery={amountPence:500,tax:tax()}
   hold(calculatePriceFloor(value),'DELIVERY_FEE_MISMATCH')
 })
-test('wholesale sums include repeated quantities with one charge per supplier order',()=>{
-  for(const [quantity,status,charge] of [[5,'charged',600],[10,'boundary_hold',600],[11,'free',0]]) {
+test('repeated quantities incur one charge per TropShip supplier order at every wholesale total',()=>{
+  for(const quantity of [5,10,11]) {
     const result=evaluateBasket(basket([line('repeat',quantity)]))
-    assert.equal(result.calculation.supplierOrders[0].deliveryStatus,status)
-    assert.equal(result.calculation.supplierDeliveryGrossCashPence,charge)
+    assert.equal(result.calculation.supplierOrders[0].deliveryStatus,'charged')
+    assert.equal(result.calculation.supplierDeliveryGrossCashPence,600)
     equalFraction(result.calculation.supplierOrders[0].wholesaleExVatPence,quantity*1000)
-    if(status==='boundary_hold') hold(result,'DELIVERY_THRESHOLD_BOUNDARY'); else assert.equal(result.eligible,true)
-    assert.equal(result.calculation.lines[0].supplierDeliveryGrossCashPence,charge)
+    assert.equal(result.eligible,true)
+    assert.equal(result.calculation.lines[0].supplierDeliveryGrossCashPence,600)
   }
 })
-test('multiple line wholesale totals qualify within the approved supplier order only',()=>{
+test('multiple lines share one TropShip charge only when routed to one supplier order',()=>{
   const a=line('a',1,15000),b=line('b',1,15000)
   a.cost.wholesale.amountPence=5000; b.cost.wholesale.amountPence=5001
-  const together=basket([a,b]),free=evaluateBasket(together)
-  assert.equal(free.eligible,true); assert.equal(free.calculation.supplierDeliveryGrossCashPence,0)
-  equalFraction(free.calculation.supplierOrders[0].wholesaleExVatPence,10001)
+  const together=basket([a,b]),shared=evaluateBasket(together)
+  assert.equal(shared.eligible,true); assert.equal(shared.calculation.supplierDeliveryGrossCashPence,600)
+  equalFraction(shared.calculation.supplierOrders[0].wholesaleExVatPence,10001)
   const split=structuredClone(together); split.supplierOrders.push({...group('order-b'),customerDeliveryId:'delivery-b'})
   split.lines[1].supplierOrderId='order-b'; split.lines[1].customerDeliveryId='delivery-b'
   const charged=evaluateBasket(split)
@@ -415,19 +415,19 @@ test('separate supplier orders to the same customer delivery still do not pool t
   const result=evaluateBasket(value)
   assert.equal(result.eligible,true); assert.equal(result.calculation.supplierDeliveryGrossCashPence,1200)
 })
-test('retail totals, customer shipping and discounts cannot set the supplier free-delivery threshold',()=>{
+test('retail totals and customer shipping cannot erase a supplier delivery charge',()=>{
   const value=basket([line('a',1,50000)])
   value.customerShipping.grossPence=10000; value.policy.maxDiscountBps=1000; value.lines[0].percentageDiscountBps=1000
   const result=evaluateBasket(value)
   assert.equal(result.eligible,true); assert.equal(result.calculation.supplierDeliveryGrossCashPence,600)
   equalFraction(result.calculation.supplierOrders[0].wholesaleExVatPence,1000)
   value.lines[0].cost.wholesale.amountPence=10001
-  assert.equal(evaluateBasket(value).calculation.supplierDeliveryGrossCashPence,0)
+  assert.equal(evaluateBasket(value).calculation.supplierDeliveryGrossCashPence,600)
 })
-test('actual boundary order preserves calculations and £6 estimate without authorizing it',()=>{
+test('an order at exactly £100 wholesale retains its £6 TropShip charge',()=>{
   const value=basket([line('a',5),line('b',5)])
-  const result=evaluateBasket(value); hold(result,'DELIVERY_THRESHOLD_BOUNDARY')
-  assert.equal(result.calculation.supplierOrders[0].deliveryStatus,'boundary_hold')
+  const result=evaluateBasket(value); assert.equal(result.eligible,true)
+  assert.equal(result.calculation.supplierOrders[0].deliveryStatus,'charged')
   assert.equal(result.calculation.supplierDeliveryQuotedExVatPence,500)
   assert.equal(result.calculation.supplierDeliveryGrossCashPence,600)
   assert.equal(result.liveEnabled,false); assert.equal(result.checkoutVerified,false)
@@ -472,10 +472,10 @@ test('basket provenance intersects tariff, group and all cost/fee/shipping appro
   assert.deepEqual(result.calculation.approvalVersions.supplierOrders,[{id:'order-a',version:'fixture-v1'}])
   value.nowMs=NOW+1;hold(evaluateBasket(value),'EXPIRED')
 })
-test('free delivery on a large basket cannot reduce a standalone publication floor',()=>{
+test('a large basket cannot reduce a standalone publication floor',()=>{
   const alone=calculatePriceFloor(input()).calculation.minimumListPricePence
   const result=evaluateBasket(basket([line('a',11,alone-1)]))
-  assert.equal(result.calculation.supplierDeliveryGrossCashPence,0)
+  assert.equal(result.calculation.supplierDeliveryGrossCashPence,600)
   hold(result,'BELOW_ITEM_FLOOR')
   assert.equal(result.calculation.lines[0].conservativeItemListFloorPence,alone)
 })

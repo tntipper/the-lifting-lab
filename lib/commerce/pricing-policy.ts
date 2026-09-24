@@ -1,8 +1,8 @@
 /** Pure GBP pricing assessment. No IO, side effects, checkout enforcement or price writes. */
-export const SUPPLIER_DELIVERY_TARIFF_VERSION = 'tll-tropship-standard-uk-order-2026-09-15-v2'
+export const SUPPLIER_DELIVERY_TARIFF_VERSION = 'tll-tropship-standard-uk-order-2026-09-24-v3'
 export const SUPPLIER_DELIVERY_TARIFF_VALUES = Object.freeze({ service: 'tropship_standard_uk' as const,
   quotedExVatPence: 500, vatBps: 2000, inputVatRecoverable: false as const,
-  freeAboveWholesaleExVatPence: 10000, equalityPolicy: 'hold_with_charge' as const,
+  chargeEverySupplierOrder: true as const,
   businessVatStatus: 'not_registered' as const })
 export const PRICE_WRITES_ENABLED = false
 export const TLL_POLICY_VALUES = Object.freeze({ targetMarginBps: 3500, minimumMarginBps: 2500, minimumCashPerItemPence: 300 })
@@ -225,6 +225,8 @@ function context(input: PricingContext): void {
   required(input.supplierDeliveryTariff, 'supplierDeliveryTariff')
   approval(input.supplierDeliveryTariff.approval, 'supplierDeliveryTariff.approval', input.nowMs)
   if (input.supplierDeliveryTariff.approval.version !== SUPPLIER_DELIVERY_TARIFF_VERSION) fail('STALE_VERSION', 'supplierDeliveryTariff')
+  const tariffKeys = [...Object.keys(SUPPLIER_DELIVERY_TARIFF_VALUES), 'approval'].sort()
+  if (Object.keys(input.supplierDeliveryTariff).sort().join(',') !== tariffKeys.join(',')) fail('DELIVERY_FEE_MISMATCH', 'supplierDeliveryTariff')
   for (const key of Object.keys(SUPPLIER_DELIVERY_TARIFF_VALUES) as (keyof typeof SUPPLIER_DELIVERY_TARIFF_VALUES)[]) {
     if (input.supplierDeliveryTariff[key] !== SUPPLIER_DELIVERY_TARIFF_VALUES[key]) fail('DELIVERY_FEE_MISMATCH', 'supplierDeliveryTariff.' + key)
   }
@@ -274,18 +276,17 @@ function floorValue(C: Rational, tax: Rational, margin: number, input: PricingCo
     (TWO * (SCALE - BigInt(input.policy.maxDiscountBps))) + ONE
   return { pence: bounded(price, 'calculatedFloor'), limiting: comparison > 0 ? 'margin' : comparison < 0 ? 'cash' : 'both' }
 }
-function deliveryFor(wholesaleExVat: Rational, tariff: SupplierDeliveryTariff) {
-  const threshold = compare(wholesaleExVat, money(tariff.freeAboveWholesaleExVatPence))
-  const quoted = threshold > 0 ? 0 : tariff.quotedExVatPence
+function deliveryFor(tariff: SupplierDeliveryTariff) {
+  const quoted = tariff.quotedExVatPence
   const gross = bounded(ceil(mul(money(quoted), add(money(1), rate(tariff.vatBps)))), 'delivery.gross')
-  return { quoted, gross, economic: money(gross), status: threshold === 0 ? 'boundary_hold' as const : threshold > 0 ? 'free' as const : 'charged' as const }
+  return { quoted, gross, economic: money(gross), status: 'charged' as const }
 }
 function validity(approvals: Approval[]): PricingValidityWindow {
   return { validFromMs: Math.max(...approvals.map(a => a.validFromMs)), expiresAtMs: Math.min(...approvals.map(a => a.expiresAtMs)) }
 }
 function calculateFloor(input: FloorInput): FloorCalculation {
   const cost = costs(input.cost, input.nowMs)
-  const delivery = deliveryFor(cost.wholesaleExVat, input.supplierDeliveryTariff)
+  const delivery = deliveryFor(input.supplierDeliveryTariff)
   const C = add(add(cost.perItem, delivery.economic), money(input.payment.fixedPence))
   const minimum = floorValue(C, cost.taxFactor, input.policy.minimumMarginBps, input)
   const target = floorValue(C, cost.taxFactor, input.policy.targetMarginBps, input)
@@ -313,7 +314,7 @@ function assess<T>(calculate: () => { calculation: T; holds?: Hold[] }): Assessm
   }
 }
 export function calculatePriceFloor(input: FloorInput): Assessment<FloorCalculation> {
-  return assess(() => { context(input); const calculation = calculateFloor(input); return { calculation, holds: calculation.supplierDeliveryStatus === 'boundary_hold' ? [{ code: 'DELIVERY_THRESHOLD_BOUNDARY', field: 'standaloneSupplierOrder' }] : [] } })
+  return assess(() => { context(input); const calculation = calculateFloor(input); return { calculation } })
 }
 export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation> {
   return assess(() => {
@@ -353,12 +354,11 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
       if (line.percentageDiscountBps > input.policy.maxDiscountBps || BigInt(discount) > halfUp(mul(money(before), rate(input.policy.maxDiscountBps)))) holds.push({ code: 'EXCESS_DISCOUNT', field: line.id })
       const gross = before - discount, net = div(money(gross), cost.taxFactor)
       const floor = calculateFloor({ ...input, cost: line.cost }), itemFloor = floor.minimumListPricePence
-      if (floor.supplierDeliveryStatus === 'boundary_hold') holds.push({ code: 'DELIVERY_THRESHOLD_BOUNDARY', field: line.id + '.standaloneSupplierOrder' })
       if (line.listUnitPricePence < itemFloor) holds.push({ code: 'BELOW_ITEM_FLOOR', field: line.id })
       const lineCost = mul(cost.perItem, money(line.quantity))
       // Independent publication gate models every item sold alone, including its
       // standalone delivery and full fixed payment fee. This is not a basket charge.
-      const standaloneDelivery = deliveryFor(cost.wholesaleExVat, input.supplierDeliveryTariff)
+      const standaloneDelivery = deliveryFor(input.supplierDeliveryTariff)
       const conservativeCost = add(lineCost, mul(add(standaloneDelivery.economic, money(input.payment.fixedPence)), money(line.quantity)))
       const conservativeContribution = sub(sub(net, conservativeCost), mul(money(gross), rate(input.payment.variableBps)))
       const minimumLineCash = bounded(BigInt(input.policy.minimumCashPerItemPence) * BigInt(line.quantity), line.id + '.minimumLineCash')
@@ -375,8 +375,7 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
     for (const [id, group] of groups) {
       if (!group.lines.length) fail('INVALID_DELIVERY_GROUP', 'supplierOrders.' + id)
       bounded(ceil(group.wholesale), id + '.wholesaleExVat')
-      const delivery = deliveryFor(group.wholesale, input.supplierDeliveryTariff)
-      if (delivery.status === 'boundary_hold') holds.push({ code: 'DELIVERY_THRESHOLD_BOUNDARY', field: 'supplierOrders.' + id })
+      const delivery = deliveryFor(input.supplierDeliveryTariff)
       // Largest remainder by quantity, tie-broken by line ID: penny-exact and
       // stable under input reordering. No thresholds pool across group IDs.
       const shares = group.lines.map(line => ({ ...line, pence: Number(BigInt(delivery.gross) * BigInt(line.quantity) / BigInt(group.quantity)), remainder: Number(BigInt(delivery.gross) * BigInt(line.quantity) % BigInt(group.quantity)) }))

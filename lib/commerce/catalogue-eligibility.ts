@@ -74,8 +74,7 @@ function standaloneDeliveryValid(cost: ApprovedCostGate | null | undefined): boo
   if (!value || typeof value.numerator !== 'string' || typeof value.denominator !== 'string' || !/^[1-9][0-9]{0,24}$/.test(value.numerator) || !/^[1-9][0-9]{0,24}$/.test(value.denominator)) return false
   const n = BigInt(value.numerator), d = BigInt(value.denominator)
   if (n > BigInt(1_000_000_000) * d) return false
-  return cost.supplierDeliveryStatus === 'charged' && cost.supplierDeliveryGrossCashPence === 600 && n < BigInt(10000) * d
-    || cost.supplierDeliveryStatus === 'free' && cost.supplierDeliveryGrossCashPence === 0 && n > BigInt(10000) * d
+  return cost.supplierDeliveryStatus === 'charged' && cost.supplierDeliveryGrossCashPence === 600
 }
 export type ApprovedPrice = {
   review: CatalogueReview

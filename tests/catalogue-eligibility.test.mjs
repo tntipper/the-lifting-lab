@@ -366,14 +366,16 @@ for(const [label,mutate,code] of [
   ['obsolete delivery tariff',v=>v.cost.supplierDeliveryTariffVersion='old-per-item','IDENTITY_MISMATCH'],
   ['missing current delivery tariff',v=>delete v.policy.expectedSupplierDeliveryTariffVersion,'INVALID_INPUT'],
   ['basket-dependent floor',v=>v.cost.supplierDeliveryBasis='shared_basket','DELIVERY_COST_MISSING'],
-  ['boundary HOLD floor',v=>{v.cost.wholesaleExVatPence={numerator:'10000',denominator:'1'};v.cost.supplierDeliveryStatus='boundary_hold'},'DELIVERY_COST_MISSING'],
+  ['obsolete boundary HOLD floor',v=>{v.cost.wholesaleExVatPence={numerator:'10000',denominator:'1'};v.cost.supplierDeliveryStatus='boundary_hold'},'DELIVERY_COST_MISSING'],
   ['free inferred at equality',v=>{v.cost.wholesaleExVatPence={numerator:'10000',denominator:'1'};v.cost.supplierDeliveryStatus='free';v.cost.supplierDeliveryGrossCashPence=0},'DELIVERY_COST_MISSING'],
   ['free at subthreshold',v=>{v.cost.supplierDeliveryStatus='free';v.cost.supplierDeliveryGrossCashPence=0},'DELIVERY_COST_MISSING'],
   ['malformed exact wholesale',v=>v.cost.wholesaleExVatPence={numerator:'NaN',denominator:'1'},'DELIVERY_COST_MISSING'],
 ]) test(`standalone delivery projection HOLD: ${label}`,()=>{const value=fixture();mutate(value);held(evaluateCatalogueEligibility(value).commerce,code)})
-test('approved above-threshold standalone floor records free delivery',()=>{
+test('approved above-threshold standalone floor retains charged TropShip delivery',()=>{
   const value=fixture(),pricing=pricingInputs();pricing.cost.wholesale.amountPence=10001
   const assessment=calculatePriceFloor(pricing);assert.equal(assessment.eligible,true)
+  assert.equal(assessment.calculation.supplierDeliveryStatus,'charged')
+  assert.equal(assessment.calculation.supplierDeliveryGrossCashPence,600)
   bindCalculatedFloor(value,assessment.calculation);value.price.amountPence=assessment.calculation.minimumListPricePence
   assert.equal(evaluateCatalogueEligibility(value).commerce.status,'eligible')
 })

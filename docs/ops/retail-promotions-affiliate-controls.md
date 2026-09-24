@@ -6,6 +6,16 @@ campaign. Every price and campaign remains held until the product cost,
 supplier tax treatment, stock, mapping, payment tariff, TropShip tariff and
 margin policy are current and approved.
 
+The owner's 24 September proposal is **invite-only affiliate approval** with a
+public registration-of-interest path, a 10% customer discount, 10% commission
+on a referred customer's first eligible order and 5% on subsequent eligible
+orders during the agreement term. These rates are not activated or yet proven
+affordable. The agreement still needs a precise customer/order identity rule,
+attribution period, eligible merchandise base, code stacking, refund reversal,
+budget, payout timing and termination/notice terms. A reserved right to change
+terms must be implemented through a new agreement version and notice process;
+it cannot rewrite commission already accrued under an earlier agreement.
+
 ## Retail price records
 
 Every Shopify variant must have one versioned retail-pricing record containing:

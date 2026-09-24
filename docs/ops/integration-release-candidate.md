@@ -4,7 +4,7 @@ This candidate combines the reviewed catalogue, pricing, accessible UI, retailer
 
 ## Resulting behaviour
 
-- Product identity, stock observations and cost evidence have explicit eligibility states. Unknown wholesale VAT treatment cannot authorize a price. The current TropShip tariff charges £5 ex VAT / £6 unrecoverable gross once per approved supplier order below £100 ex-VAT wholesale goods, and zero strictly above it. Exactly £100 is held with a conservative £6 estimate. Separate supplier orders cannot pool thresholds. Standalone product floors preserve the approved 35% target, 25% minimum and £3 cash safeguards; customer shipping charges are unchanged. See the [pricing policy](pricing-policy-calculator.md).
+- Product identity, stock observations and cost evidence have explicit eligibility states. Unknown wholesale VAT treatment cannot authorize a price. The revised account-specific TropShip tariff budgets £5 ex VAT / £6 unrecoverable gross once per approved supplier order at every wholesale total. This supersedes the earlier threshold assumption; a direct TropShip welcome email distinguishes its fee from the wholesale account's free-delivery rule. Separate supplier orders each incur the fee. Standalone product floors preserve the approved 35% target, 25% minimum and £3 cash safeguards; customer shipping charges are unchanged. See the [pricing policy](pricing-policy-calculator.md).
 - Future retail pricing, flash sales and TLL affiliate-specific codes must use
   versioned campaign and attribution records. Customer discount, affiliate
   commission, fixed sponsorship, advertising spend, payment fees and supplier
