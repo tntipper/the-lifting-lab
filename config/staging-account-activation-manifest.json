@@ -707,6 +707,10 @@
         "sha256": "a5c242c0f83e6d88dc68ebbbc8a9f479f976895967d3568deb1b33c4f7449fc5"
       },
       {
+        "path": "scripts/staging-preview-git-publish-coordinator.mjs",
+        "sha256": "07989489e1f36a8c970833625d5966ad7ae11da1d17f24bd96f39e80bb488de9"
+      },
+      {
         "path": "scripts/staging-preview-source-journal.mjs",
         "sha256": "4b379f4f4ebd9af642807a37593ac9a12803db509d51bb963d2241ddc1d7de75"
       },
@@ -817,6 +821,10 @@
       {
         "path": "tests/staging-preview-git-publish-journal.test.mjs",
         "sha256": "694ccbf5891ecc18d37ca862ab7dad01ce1948526f20e157097a8bbb5b707001"
+      },
+      {
+        "path": "tests/staging-preview-git-publish-coordinator.test.mjs",
+        "sha256": "896744988a25d74022a3299095b2a2ba51269a8cd7fcc8d5f3508ae56f4391e7"
       },
       {
         "path": "tests/staging-preview-source-observer.test.mjs",
