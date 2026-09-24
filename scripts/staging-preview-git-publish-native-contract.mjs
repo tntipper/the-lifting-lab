@@ -71,19 +71,41 @@ const fixedReads = new Set([
   ['status', '--porcelain=v1', '--untracked-files=no'], ['rev-parse', 'HEAD'],
   ['ls-remote', '--heads', origin, ref],
 ].map(args => args.join('\0')))
+export function captureStagingPreviewGitArguments(args) {
+  try {
+    if (!Array.isArray(args)) return null
+    const length = Object.getOwnPropertyDescriptor(args, 'length')?.value
+    if (!Number.isSafeInteger(length) || length < 1 || length > 9
+      || Reflect.ownKeys(args).length !== length + 1) return null
+    const captured = []
+    for (let index = 0; index < length; index++) {
+      const descriptor = Object.getOwnPropertyDescriptor(args, String(index))
+      if (!descriptor || !Object.hasOwn(descriptor, 'value') || typeof descriptor.value !== 'string'
+        || descriptor.value.includes('\0')) return null
+      captured.push(descriptor.value)
+    }
+    return Object.freeze(captured)
+  } catch { return null }
+}
+const commandKey = args => {
+  let result = ''
+  for (let index = 0; index < args.length; index++) result += (index ? '\0' : '') + args[index]
+  return result
+}
 /** Returns options only; a separate reviewed launcher must supply the pinned executable. */
 export function stagingPreviewGitPublishProcessOptions(args, maxBuffer) {
-  if (!Array.isArray(args) || !args.every(value => typeof value === 'string')) throw Error('Git publication command unavailable')
-  const command = args.join('\0')
-  const config = command === ['config', '--null', '--list', '--show-origin'].join('\0')
+  const captured = captureStagingPreviewGitArguments(args)
+  if (!captured) throw Error('Git publication command unavailable')
+  const command = commandKey(captured)
+  const config = command === 'config\0--null\0--list\0--show-origin'
   const show = /^show\0[a-f0-9]{40}:config\/staging-account-activation-manifest\.json$/.test(command)
   const ancestor = /^merge-base\0--is-ancestor\0[a-f0-9]{40}\0[a-f0-9]{40}$/.test(command)
   let push = false
-  if (args.length === 9 && args[2] === 'push') {
+  if (captured.length === 9 && captured[2] === 'push') {
     try {
       push = command === stagingPreviewGitPushCommand({
-        selectedCommit: /^([a-f0-9]{40}):refs\/heads\/codex\/tll-integration$/.exec(args[8])?.[1],
-        predecessorCommit: /^--force-with-lease=refs\/heads\/codex\/tll-integration:([a-f0-9]{40})$/.exec(args[5])?.[1],
+        selectedCommit: /^([a-f0-9]{40}):refs\/heads\/codex\/tll-integration$/.exec(captured[8])?.[1],
+        predecessorCommit: /^--force-with-lease=refs\/heads\/codex\/tll-integration:([a-f0-9]{40})$/.exec(captured[5])?.[1],
       }).join('\0')
     } catch { /* malformed command rejected below */ }
   }
@@ -91,7 +113,7 @@ export function stagingPreviewGitPublishProcessOptions(args, maxBuffer) {
   if ((!fixedReads.has(command) && !show && !ancestor && !push) || maxBuffer !== limit) {
     throw Error('Git publication command unavailable')
   }
-  const remote = args[0] === 'ls-remote'
+  const remote = captured[0] === 'ls-remote'
   return Object.freeze({ cwd: remote ? '/' : root,
     env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C', HOME: '/var/empty', XDG_CONFIG_HOME: '/var/empty',
       GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null',

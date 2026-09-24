@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { selectStagingPreviewGitPublication, stagingPreviewGitPublishConfigAccepted,
-  stagingPreviewGitPushCommand, stagingPreviewGitPublishProcessOptions,
+  stagingPreviewGitPushCommand, stagingPreviewGitPublishProcessOptions, captureStagingPreviewGitArguments,
   STAGING_PREVIEW_GIT_PUSH_NATIVE_ENABLED } from '../scripts/staging-preview-git-publish-native-contract.mjs'
 
 const root = resolve(import.meta.dirname, '..')
@@ -118,6 +118,16 @@ test('one fixed lease/refspec has no arbitrary URL, force flag, hook execution o
     [...args.slice(0, 3), '--force', ...args.slice(3)],
   ]) assert.throws(() => stagingPreviewGitPublishProcessOptions(changed, 4_096), /Git publication command unavailable/)
   assert.throws(() => stagingPreviewGitPushCommand({ selectedCommit: predecessorCommit, predecessorCommit }), /unavailable/)
+  const spoofed = ['push', 'https://unreviewed.invalid/repo.git', 'HEAD:refs/heads/main']
+  spoofed.every = () => true
+  spoofed.join = () => 'rev-parse\0--show-toplevel'
+  assert.equal(captureStagingPreviewGitArguments(spoofed), null)
+  assert.throws(() => stagingPreviewGitPublishProcessOptions(spoofed, 4_096), /command unavailable/)
+  const accessor = ['rev-parse', '--show-toplevel']
+  let reads = 0
+  Object.defineProperty(accessor, '0', { enumerable: true, configurable: true, get() { reads++; return 'rev-parse' } })
+  assert.equal(captureStagingPreviewGitArguments(accessor), null)
+  assert.equal(reads, 0)
 })
 
 test('contract has no process, token, fetch or live Git push capability', () => {

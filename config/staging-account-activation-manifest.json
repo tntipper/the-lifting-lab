@@ -712,7 +712,11 @@
       },
       {
         "path": "scripts/staging-preview-git-publish-native-contract.mjs",
-        "sha256": "97f4e8538e6c6b7ef2e1bdca460c2dc1f3309f6615f8e746c894de0eaaf3c36d"
+        "sha256": "5cd5c1213dbba07c1ac449524a9bc8311895e971d614e2c2f0e00329813e1e52"
+      },
+      {
+        "path": "scripts/staging-preview-git-publish-native-read.mjs",
+        "sha256": "504df40e7491c5608af45fa05a806cfc321aae27346825a0500439e300fff651"
       },
       {
         "path": "scripts/staging-preview-source-journal.mjs",
@@ -832,7 +836,11 @@
       },
       {
         "path": "tests/staging-preview-git-publish-native-contract.test.mjs",
-        "sha256": "b96dd9c3d1f2068a36946edb45894978c13fdf806616e1ffed4959710b044563"
+        "sha256": "01d9a10288df3d2f018d1986344af3ee837aec13c276f16775151d7567b43156"
+      },
+      {
+        "path": "tests/staging-preview-git-publish-native-read.test.mjs",
+        "sha256": "a7445fe9258253ec029df464cf4a470f2ea1a4e92467f6823f9bf61cef4ff145"
       },
       {
         "path": "tests/staging-preview-source-observer.test.mjs",
