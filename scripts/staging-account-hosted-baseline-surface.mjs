@@ -234,7 +234,7 @@ export function createStagingPreviewSourceReadbackBinding ({ fetch: fetcher, ver
   })
 }
 
-/** Classify exact project/source evidence without treating metadata as byte proof. */
+/** Classify Vercel Git identity against a separately proven immutable Git manifest. */
 export function assessStagingPreviewSourceReadback ({ project, deployment, sourceProof } = {}) {
   const expectedRepoId = 1264363509
   if (!project || project.target?.projectId !== VERCEL_PROJECT_ID || project.target?.teamId !== VERCEL_TEAM_ID
@@ -247,13 +247,17 @@ export function assessStagingPreviewSourceReadback ({ project, deployment, sourc
     sourceCommit: deployment.gitSourceCommit, applicationManifestSha256: deployment.applicationManifestSha256 }
   if (sourceProof?.status !== 'SOURCE_PROOF_VERIFIED' || !isSha(sourceProof.sourceCommit)
     || !isManifest(sourceProof.manifestSha256)) return Object.freeze({ status: 'CURRENT_SOURCE_UNPROVEN', ...base })
-  if (sourceProof.sourceCommit !== deployment.gitSourceCommit
-    || sourceProof.manifestSha256 !== deployment.applicationManifestSha256) {
+  if (sourceProof.sourceCommit !== deployment.gitSourceCommit) {
     return Object.freeze({ status: 'CURRENT_SOURCE_NOT_DEPLOYED', ...base })
   }
-  // Even a matching metadata claim requires independent committed-byte and
-  // runtime verification before deployment or provider activation.
-  return Object.freeze({ status: 'SOURCE_AND_METADATA_MATCH_CLAIMS', ...base })
+  if (deployment.applicationManifestSha256 !== null
+    && sourceProof.manifestSha256 !== deployment.applicationManifestSha256) {
+    return Object.freeze({ status: 'SOURCE_METADATA_CONFLICT', ...base })
+  }
+  // Git source provenance is not a byte-for-byte attestation of Vercel's build.
+  // A separate deployment-bound runtime and stable-alias check is still required.
+  return Object.freeze({ status: 'SOURCE_COMMIT_AND_GIT_MANIFEST_MATCH', ...base,
+    gitManifestSha256: sourceProof.manifestSha256 })
 }
 
 /**

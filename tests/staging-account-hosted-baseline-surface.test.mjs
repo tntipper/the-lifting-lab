@@ -109,12 +109,24 @@ test('source assessment requires fixed numeric repository identity and committed
   assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt, deployment: deploymentReceipt,
     sourceProof: { ...sourceProof, sourceCommit: 'c'.repeat(40) } }).status, 'CURRENT_SOURCE_NOT_DEPLOYED')
   assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt, deployment: deploymentReceipt,
-    sourceProof }).status, 'SOURCE_AND_METADATA_MATCH_CLAIMS')
+    sourceProof }).status, 'SOURCE_COMMIT_AND_GIT_MANIFEST_MATCH')
   assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt,
-    deployment: { ...deploymentReceipt, applicationManifestSha256: null }, sourceProof }).status, 'CURRENT_SOURCE_NOT_DEPLOYED')
+    deployment: { ...deploymentReceipt, applicationManifestSha256: null }, sourceProof }).status, 'SOURCE_COMMIT_AND_GIT_MANIFEST_MATCH')
+  assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt,
+    deployment: { ...deploymentReceipt, applicationManifestSha256: null }, sourceProof }).gitManifestSha256, 'b'.repeat(64))
+  const noMetadata = { ...deploymentReceipt, applicationManifestSha256: null }
+  assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt,
+    deployment: noMetadata }).status, 'CURRENT_SOURCE_UNPROVEN')
+  assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt,
+    deployment: noMetadata, sourceProof: { ...sourceProof, manifestSha256: 'invalid' } }).status, 'CURRENT_SOURCE_UNPROVEN')
+  assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt,
+    deployment: noMetadata, sourceProof: { ...sourceProof, sourceCommit: 'c'.repeat(40) } }).status, 'CURRENT_SOURCE_NOT_DEPLOYED')
+  assert.equal(assessStagingPreviewSourceReadback({ project: projectReceipt,
+    deployment: { ...deploymentReceipt, applicationManifestSha256: 'c'.repeat(64) }, sourceProof }).status, 'SOURCE_METADATA_CONFLICT')
   for (const bad of [
     { project: { ...projectReceipt, repository: { ...projectReceipt.repository, repoId: 998877 } }, deployment: deploymentReceipt },
     { project: projectReceipt, deployment: { ...deploymentReceipt, repositoryId: '998877' } },
+    { project: projectReceipt, deployment: { ...noMetadata, branch: 'main' }, sourceProof },
   ]) assert.throws(() => assessStagingPreviewSourceReadback(bad), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
 })
 
