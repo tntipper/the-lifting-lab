@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createStagingProviderNormalizationPreflight, STAGING_PROVIDER_NORMALIZATION_PREFLIGHT_ENABLED } from '../scripts/staging-provider-normalization-preflight.mjs'
+import { createStagingProviderNormalizationPreflight, STAGING_PROVIDER_NORMALIZATION_PREFLIGHT_ENABLED, STAGING_PROVIDER_NORMALIZATION_PREVIEW } from '../scripts/staging-provider-normalization-preflight.mjs'
 import { STAGING_PROVIDER_TARGET, BROKER_SECRET_NAME } from '../scripts/staging-provider-broker-rotation.mjs'
 import { createStagingAccountHostedBaselineVercelBinding, HOSTED_BASELINE_VERCEL_TARGET } from '../scripts/staging-account-hosted-baseline-vercel.mjs'
 import { STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_QUERY_ID } from '../scripts/staging-account-hosted-baseline-database.mjs'
@@ -19,7 +19,8 @@ const surface = () => ({ surface: { edge: { target: STAGING_SURFACE_TARGET, func
   flags: { target: STAGING_SURFACE_TARGET, privateCustomer: false, privateCart: false, publicCustomer: false, publicCart: false } },
   deployment: { projectId: HOSTED_BASELINE_VERCEL_TARGET.projectId, teamId: HOSTED_BASELINE_VERCEL_TARGET.teamId,
     alias: STAGING_SURFACE_TARGET.alias, project: STAGING_PROVIDER_TARGET.vercelProject, scope: STAGING_PROVIDER_TARGET.vercelScope,
-    branch: STAGING_PROVIDER_TARGET.branch, gitProvider: 'github', repositoryId: '1264363509' } })
+    branch: STAGING_PROVIDER_TARGET.branch, gitProvider: 'github', repositoryId: '1264363509',
+    ...STAGING_PROVIDER_NORMALIZATION_PREVIEW } })
 
 function fixture(change = {}) {
   const signal = new AbortController().signal, calls = []
@@ -63,6 +64,9 @@ test('unsafe database, secret, surface, project and freshness evidence fails clo
     { surface: { ...surface(), surface: { ...surface().surface, flags: { ...surface().surface.flags, privateCart: true } } } },
     { surface: { ...surface(), surface: { ...surface().surface, edge: { ...surface().surface.edge, enabled: true } } } },
     { surface: { ...surface(), deployment: { ...surface().deployment, repositoryId: '2' } } },
+    { surface: { ...surface(), deployment: { ...surface().deployment, deploymentId: 'dpl_Other123' } } },
+    { surface: { ...surface(), deployment: { ...surface().deployment, immutableUrl: 'https://other.vercel.app' } } },
+    { surface: { ...surface(), deployment: { ...surface().deployment, gitSourceCommit: 'b'.repeat(40) } } },
     { project: { ...project(), target: { ...HOSTED_BASELINE_VERCEL_TARGET, projectId: 'production' } } },
     { delay: 30_001 },
   ]) {

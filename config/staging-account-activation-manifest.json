@@ -644,7 +644,7 @@
       },
       {
         "path": "scripts/staging-provider-normalization-preflight.mjs",
-        "sha256": "e2dcf19c53587205f39bf7705274f999067860e5ec60c3079b81c2f54b30ddc2"
+        "sha256": "75afcb8af732ca59726d701f490bb47e53fa0e199d441e3e7030f138bc248dbe"
       },
       {
         "path": "scripts/staging-provider-normalization-phase-journal.mjs",
@@ -656,7 +656,7 @@
       },
       {
         "path": "scripts/staging-provider-normalization-live-launcher.mjs",
-        "sha256": "a48853408a6a92523c0a149a236647c7dffd178eb84b736bdfa8413235de2904"
+        "sha256": "8b6d140ea56186eaeef6d4a42e9db4efc13e764b4cee6bc06a93f485884dbd51"
       },
       {
         "path": "scripts/staging-provider-normalization-keychain.py",
@@ -796,7 +796,7 @@
       },
       {
         "path": "tests/staging-provider-normalization-preflight.test.mjs",
-        "sha256": "637471fbd3e781bc63f402523957ee9f0613c005a1eb415c39fa47945a762ff6"
+        "sha256": "e8fb33086946ccf64f832dace68d40743c12386164a767c2143b3815c8162516"
       },
       {
         "path": "tests/staging-provider-normalization-phase-journal.test.mjs",
@@ -804,7 +804,7 @@
       },
       {
         "path": "tests/staging-provider-normalization-session.test.mjs",
-        "sha256": "5868b3831fb161aceb3bd86b3dd956120fdf0448745e39b7adfec4b0c5ad2b81"
+        "sha256": "f84cd759cd21c5ff13e76110d86f693de06597d95905f1a021cd7db5c8f79700"
       },
       {
         "path": "tests/staging-provider-readonly-probe.test.mjs",

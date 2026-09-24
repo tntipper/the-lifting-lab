@@ -6,6 +6,11 @@ import { STAGING_EDGE_FUNCTION } from './staging-surface-activation-native-adapt
 import { STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_QUERY_ID } from './staging-account-hosted-baseline-database.mjs'
 
 export const STAGING_PROVIDER_NORMALIZATION_PREFLIGHT_ENABLED = false
+export const STAGING_PROVIDER_NORMALIZATION_PREVIEW = Object.freeze({
+  deploymentId: 'dpl_9CFPQG6JChoGrkWidhh73BY1Qj1b',
+  immutableUrl: 'https://the-lifting-7kom7bvbo-my-lifting-lab-s-projects.vercel.app',
+  gitSourceCommit: 'abd5a5258dd1072daf83a4447ce7110465f445e1',
+})
 const unavailable = () => { throw new Error('Staging provider normalization preflight unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
@@ -54,6 +59,8 @@ function validateSurface(value, project) {
     || value.deployment.branch !== STAGING_PROVIDER_TARGET.branch
     || value.deployment.gitProvider !== 'github'
     || value.deployment.repositoryId !== String(project.repository.repoId)) unavailable()
+  if (['deploymentId', 'immutableUrl', 'gitSourceCommit'].some(key =>
+    value.deployment[key] !== STAGING_PROVIDER_NORMALIZATION_PREVIEW[key])) unavailable()
 }
 
 function validateBinding(binding, target, methods) {

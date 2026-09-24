@@ -58,7 +58,7 @@ function readCredentials({ signal }) {
 export async function runStagingProviderNormalizationLiveOnce() {
   if (PROVIDER_NORMALIZATION_LIVE_ENABLED !== true) return disabled()
   checkManifests()
-  const [session, phase, intent, supabase, vercel, surface, native] = await Promise.all([
+  const [session, phase, intent, supabase, vercel, surface, native, preflight] = await Promise.all([
     import('./staging-provider-normalization-session.mjs'),
     import('./staging-provider-normalization-phase-journal.mjs'),
     import('./staging-provider-normalization-journal.mjs'),
@@ -66,6 +66,7 @@ export async function runStagingProviderNormalizationLiveOnce() {
     import('./staging-account-hosted-baseline-vercel.mjs'),
     import('./staging-account-hosted-baseline-surface.mjs'),
     import('./staging-provider-normalization-native-port.mjs'),
+    import('./staging-provider-normalization-preflight.mjs'),
   ])
   const fetcher = globalThis.fetch
   if (typeof fetcher !== 'function') unavailable()
@@ -73,7 +74,10 @@ export async function runStagingProviderNormalizationLiveOnce() {
     readCredentials,
     openSupabase: managementToken => supabase.createStagingAccountHostedBaselineSupabaseBinding({ fetch: fetcher, managementToken }),
     openVercel: vercelToken => vercel.createStagingAccountHostedBaselineVercelBinding({ fetch: fetcher, vercelToken }),
-    openSurface: (vercelToken, protectionBypassToken) => surface.createStagingAccountHostedBaselineSurfaceBinding({ fetch: fetcher, vercelToken, protectionBypassToken }),
+    openSurface: (vercelToken, protectionBypassToken) => surface.createStagingAccountHostedBaselineSurfaceBinding({
+      fetch: fetcher, vercelToken, protectionBypassToken,
+      expectedDeployment: preflight.STAGING_PROVIDER_NORMALIZATION_PREVIEW,
+    }),
     makeNativePort: ({ projectSecret, execute }) => native.createStagingProviderNormalizationNativePort({ projectSecret, execute, fetcher }),
     phaseJournal: phase.createProviderNormalizationPhaseJournal(),
     intentJournal: intent.createProviderNormalizationJournal(),

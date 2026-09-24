@@ -13,6 +13,7 @@ import { createProviderNormalizationJournal } from '../scripts/staging-provider-
 import { createProviderNormalizationPhaseJournal } from '../scripts/staging-provider-normalization-phase-journal.mjs'
 import { runStagingProviderNormalizationSession, PROVIDER_NORMALIZATION_SESSION_ENABLED } from '../scripts/staging-provider-normalization-session.mjs'
 import { createStagingProviderNormalizationNativePort } from '../scripts/staging-provider-normalization-native-port.mjs'
+import { STAGING_PROVIDER_NORMALIZATION_PREVIEW } from '../scripts/staging-provider-normalization-preflight.mjs'
 
 const nowMs = 1_789_000_000_000
 const runId = 'f80746e1-7a8b-4b1a-9c2d-22cd94aaaf31'
@@ -53,7 +54,7 @@ function fixture(change = {}) {
     }, deployment: { projectId: HOSTED_BASELINE_VERCEL_TARGET.projectId, teamId: HOSTED_BASELINE_VERCEL_TARGET.teamId,
       alias: STAGING_SURFACE_TARGET.alias, project: STAGING_PROVIDER_TARGET.vercelProject,
       scope: STAGING_PROVIDER_TARGET.vercelScope, branch: STAGING_PROVIDER_TARGET.branch,
-      gitProvider: 'github', repositoryId: '1264363509' } }), dispose: () => {} }),
+      gitProvider: 'github', repositoryId: '1264363509', ...STAGING_PROVIDER_NORMALIZATION_PREVIEW } }), dispose: () => {} }),
     makeNativePort: change.realNative ? ({ projectSecret, execute }) => createStagingProviderNormalizationNativePort({
       projectSecret, execute, fetcher: async (url, init) => {
         assert.equal(url, `https://qdmvngjwkcsilzmqksme.supabase.co/auth/v1/admin/custom-providers/${PROVIDER_IDENTIFIER}`)

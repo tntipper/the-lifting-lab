@@ -264,8 +264,12 @@ export function assessStagingPreviewSourceReadback ({ project, deployment, sourc
  * Reads the pinned surface in exactly one ordered pass. It accepts no caller
  * URL, target, deployment, request headers, or credential callback.
  */
-export function createStagingAccountHostedBaselineSurfaceBinding ({ fetch: fetcher, vercelToken, protectionBypassToken } = {}) {
+export function createStagingAccountHostedBaselineSurfaceBinding ({ fetch: fetcher, vercelToken, protectionBypassToken, expectedDeployment } = {}) {
   if (typeof fetcher !== 'function') unavailable()
+  if (expectedDeployment !== undefined && (!exact(expectedDeployment, ['deploymentId', 'immutableUrl', 'gitSourceCommit'])
+    || !isDeploymentId(expectedDeployment.deploymentId) || !isImmutableUrl(expectedDeployment.immutableUrl)
+    || !isSha(expectedDeployment.gitSourceCommit))) unavailable()
+  const expected = expectedDeployment === undefined ? null : Object.freeze({ ...expectedDeployment })
   const token = copyToken(vercelToken)
   let bypass
   try { bypass = copyToken(protectionBypassToken) } catch { token.fill(0); unavailable() }
@@ -300,11 +304,18 @@ export function createStagingAccountHostedBaselineSurfaceBinding ({ fetch: fetch
         const deploymentResponse = await read(DEPLOYMENT_URL(alias.deploymentId), Object.freeze({ method: 'GET', redirect: 'error', headers: vercelHeaders(), signal }), [200], signal)
         const deployment = deploymentReceipt(deploymentResponse.value, alias.deploymentId)
         if (deployment.immutableUrl !== alias.immutableUrl) unavailable()
+        // The mutation path pins the reviewed source before its bypass-bearing request.
+        if (expected && ['deploymentId', 'immutableUrl', 'gitSourceCommit'].some(key => deployment[key] !== expected[key])) unavailable()
         const readyUrl = `${deployment.immutableUrl}/api/staging/readiness`
         const readinessResponse = await read(readyUrl, Object.freeze({ method: 'GET', redirect: 'error', headers: Object.freeze({ accept: 'application/json', 'accept-encoding': 'identity', 'x-tll-deployment-id': deployment.deploymentId, 'x-vercel-protection-bypass': bypass.toString('utf8') }), signal }), [200], signal)
         const flags = readinessReceipt(readinessResponse.value, deployment)
         const edgeResponse = await read(EDGE_URL, Object.freeze({ method: 'POST', redirect: 'error', headers: Object.freeze({ accept: 'application/json', 'accept-encoding': 'identity' }), signal }), [401, 503], signal)
         const edge = edgeReceipt(edgeResponse.response, edgeResponse.value)
+        if (expected) {
+          const finalAliasResponse = await read(ALIAS_URL, Object.freeze({ method: 'GET', redirect: 'error', headers: vercelHeaders(), signal }), [200], signal)
+          const finalAlias = aliasReceipt(finalAliasResponse.value)
+          if (finalAlias.deploymentId !== deployment.deploymentId || finalAlias.immutableUrl !== deployment.immutableUrl) unavailable()
+        }
         return Object.freeze({ surface: Object.freeze({ edge, flags }), deployment: Object.freeze({
           projectId: VERCEL_PROJECT_ID, project: VERCEL_PROJECT, teamId: VERCEL_TEAM_ID, scope: VERCEL_SCOPE,
           branch: STAGING_BRANCH, alias: STAGING_ALIAS, ...deployment,

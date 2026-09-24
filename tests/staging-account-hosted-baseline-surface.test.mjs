@@ -160,6 +160,40 @@ test('stays disabled and performs one fixed ordered read-only pass', async () =>
   await assert.rejects(oneShot.readBaseline({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
 })
 
+test('normalization pin rejects source drift before bypass and alias movement after observation', async () => {
+  const expectedDeployment = { deploymentId, immutableUrl, gitSourceCommit: 'a'.repeat(40) }
+  const options = { vercelToken: token(), protectionBypassToken: bypassToken(), expectedDeployment }
+  let calls = [], aliases = 0
+  const stable = createStagingAccountHostedBaselineSurfaceBinding({ ...options, fetch: async (url, request) => {
+    calls.push({ url, request })
+    return response(url === aliasUrl ? alias() : url === deploymentUrl ? deployment()
+      : url === readinessUrl ? readiness() : { error: 'temporarily_unavailable' }, url === edgeUrl ? 503 : 200)
+  } })
+  await stable.readBaseline({ signal: new AbortController().signal })
+  assert.deepEqual(calls.map(call => call.url), [aliasUrl, deploymentUrl, readinessUrl, edgeUrl, aliasUrl])
+
+  for (const source of [
+    { ...deployment(), gitSource: { ...deployment().gitSource, sha: 'b'.repeat(40) } },
+    { ...deployment(), url: 'other.vercel.app' },
+  ]) {
+    calls = []
+    const changed = createStagingAccountHostedBaselineSurfaceBinding({ ...options, fetch: async (url, request) => {
+      calls.push({ url, request })
+      return response(url === aliasUrl ? alias() : source)
+    } })
+    await assert.rejects(changed.readBaseline({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+    assert.deepEqual(calls.map(call => call.url), [aliasUrl, deploymentUrl])
+    assert.equal(calls.some(call => call.request.headers['x-vercel-protection-bypass']), false)
+  }
+
+  const moved = createStagingAccountHostedBaselineSurfaceBinding({ ...options, fetch: async url => {
+    if (url === aliasUrl) return response(++aliases === 1 ? alias() : { ...alias(), deploymentId: 'dpl_Moved123', deployment: { id: 'dpl_Moved123', url: 'other.vercel.app' } })
+    return response(url === deploymentUrl ? deployment() : url === readinessUrl ? readiness() : { error: 'temporarily_unavailable' }, url === edgeUrl ? 503 : 200)
+  } })
+  await assert.rejects(moved.readBaseline({ signal: new AbortController().signal }), new RegExp(HOSTED_BASELINE_SURFACE_ERROR))
+  assert.equal(aliases, 2)
+})
+
 test('uses only protocol-approved Edge states and rejects target, source, URL, and deployment drift', async () => {
   const cases = [
     { url: aliasUrl, mutate: value => ({ ...value, alias: 'other.vercel.app' }) },
