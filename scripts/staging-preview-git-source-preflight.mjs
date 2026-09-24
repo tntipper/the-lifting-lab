@@ -2,6 +2,7 @@
 /** Fixed, read-only Git proof for a future staging Preview source. No deployment. */
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
+import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,6 +10,10 @@ const root = resolve(import.meta.dirname, '..')
 const branch = 'codex/tll-integration'
 const origin = 'https://github.com/tntipper/the-lifting-lab.git'
 const manifestPath = 'config/staging-account-activation-manifest.json'
+const gitBinary = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'
+const gitBinarySha256 = 'ee73b116cc37f44ecdaa9e3fdfbc25ce827675859f5f966ec671112fd5caf074'
+const gitExecPath = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core'
+const gitHttpsHelperSha256 = '20dbe4b0aa0c95e234158aef05c706cd88c23a0d84b8cf7810cec4502551491f'
 const hold = () => Object.freeze({ status: 'SOURCE_PROOF_UNAVAILABLE' })
 const notRemote = () => Object.freeze({ status: 'SOURCE_NOT_AT_REMOTE' })
 const line = bytes => {
@@ -65,13 +70,40 @@ export function stagingPreviewGitProcessOptions(args, maxBuffer) {
     cwd: remote ? '/' : root,
     env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C', HOME: '/var/empty', XDG_CONFIG_HOME: '/var/empty',
       GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null',
-      GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: '/usr/bin/false', GIT_NO_REPLACE_OBJECTS: '1' }),
+      GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: '/usr/bin/false', GIT_NO_REPLACE_OBJECTS: '1',
+      GIT_EXEC_PATH: gitExecPath }),
     stdio: Object.freeze(['ignore', 'pipe', 'ignore']), timeout: 15_000, maxBuffer,
   })
 }
 
+/** The live read runner supplies neither path nor digest from caller input. */
+export function stagingPreviewGitExecutableReady({ path = gitBinary, sha256 = gitBinarySha256 } = {}) {
+  try {
+    if (typeof path !== 'string' || typeof sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(sha256)) return false
+    const stat = lstatSync(path)
+    if (!stat.isFile() || stat.isSymbolicLink() || realpathSync(path) !== path
+      || stat.uid !== process.getuid() || (stat.mode & 0o022) !== 0) return false
+    const bytes = readFileSync(path)
+    try { return createHash('sha256').update(bytes).digest('hex') === sha256 } finally { bytes.fill(0) }
+  } catch { return false }
+}
+
+export function stagingPreviewGitHttpsHelperReady() {
+  try {
+    const directory = lstatSync(gitExecPath)
+    const link = lstatSync(`${gitExecPath}/git-remote-https`)
+    if (!directory.isDirectory() || directory.isSymbolicLink() || realpathSync(gitExecPath) !== gitExecPath
+      || directory.uid !== process.getuid() || (directory.mode & 0o022) !== 0
+      || !link.isSymbolicLink() || readlinkSync(`${gitExecPath}/git-remote-https`) !== 'git-remote-http') return false
+    return stagingPreviewGitExecutableReady({ path: `${gitExecPath}/git-remote-http`, sha256: gitHttpsHelperSha256 })
+  } catch { return false }
+}
+
 function fixedGit(args, maxBuffer) {
-  const result = spawnSync('/usr/bin/git', args, stagingPreviewGitProcessOptions(args, maxBuffer))
+  if (!stagingPreviewGitExecutableReady() || !stagingPreviewGitHttpsHelperReady()) {
+    throw new Error('Git source proof unavailable')
+  }
+  const result = spawnSync(gitBinary, args, stagingPreviewGitProcessOptions(args, maxBuffer))
   if (result.error || result.status !== 0 || result.signal || !Buffer.isBuffer(result.stdout)) {
     result.stdout?.fill?.(0)
     throw new Error('Git source proof unavailable')

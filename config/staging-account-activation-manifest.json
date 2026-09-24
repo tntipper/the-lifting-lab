@@ -696,7 +696,7 @@
       },
       {
         "path": "scripts/staging-preview-git-source-preflight.mjs",
-        "sha256": "95b4fa41a775555a8f9d5119da99c49ce0e4bc3ad0f372d00b525a1f5721e4bb"
+        "sha256": "2188640d0f4143b756f5275bee36b2e92667a251dfc5a7203d5d33b563a157d5"
       },
       {
         "path": "scripts/staging-preview-git-acceptance.mjs",
@@ -804,7 +804,7 @@
       },
       {
         "path": "tests/staging-preview-git-source-preflight.test.mjs",
-        "sha256": "63ba389b7d9ee3c0dc1ac9620d6d0b5004514760e09beb05729af16ff042bb6c"
+        "sha256": "83eb250aa9f6c1d364589e1c1493b6cf906e97822192e89e2895ee156436e31f"
       },
       {
         "path": "tests/staging-preview-git-acceptance.test.mjs",

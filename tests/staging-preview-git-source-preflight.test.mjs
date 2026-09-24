@@ -1,8 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
+import { spawnSync } from 'node:child_process'
+import { chmodSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import { readStagingPreviewGitSourceProof, stagingPreviewGitProcessOptions } from '../scripts/staging-preview-git-source-preflight.mjs'
+import { readStagingPreviewGitSourceProof, stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady, stagingPreviewGitProcessOptions } from '../scripts/staging-preview-git-source-preflight.mjs'
 
 const sha = 'a'.repeat(40)
 const branch = 'codex/tll-integration'
@@ -77,6 +80,7 @@ test('actual Git runner policy isolates the fixed remote URL and rejects config 
   assert.equal(remote.env.GIT_NO_REPLACE_OBJECTS, '1')
   assert.equal(remote.env.GIT_TERMINAL_PROMPT, '0')
   assert.equal(remote.env.GIT_ASKPASS, '/usr/bin/false')
+  assert.equal(remote.env.GIT_EXEC_PATH, '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
   assert.equal(Object.keys(remote.env).some(name => name.startsWith('GIT_CONFIG_KEY_')), false)
   const local = stagingPreviewGitProcessOptions(['show', `${sha}:config/staging-account-activation-manifest.json`], 262_144)
   assert.equal(local.cwd, resolve(import.meta.dirname, '..'))
@@ -85,4 +89,36 @@ test('actual Git runner policy isolates the fixed remote URL and rejects config 
     ['show', 'HEAD:config/staging-account-activation-manifest.json'],
     ['push', 'origin', branch],
   ]) assert.throws(() => stagingPreviewGitProcessOptions(args, 4_096), /Git source proof unavailable/)
+})
+
+test('pinned executable validation rejects changed bytes, symlinks and writable files', () => {
+  const directory = realpathSync(mkdtempSync(resolve(tmpdir(), 'tll-git-bin-')))
+  try {
+    const path = resolve(directory, 'git'), link = resolve(directory, 'git-link')
+    const bytes = Buffer.from('local test binary')
+    const sha256 = createHash('sha256').update(bytes).digest('hex')
+    writeFileSync(path, bytes, { mode: 0o500 })
+    assert.equal(stagingPreviewGitExecutableReady({ path, sha256 }), true)
+    assert.equal(stagingPreviewGitExecutableReady({ path, sha256: '0'.repeat(64) }), false)
+    symlinkSync(path, link)
+    assert.equal(stagingPreviewGitExecutableReady({ path: link, sha256 }), false)
+    chmodSync(path, 0o522)
+    assert.equal(stagingPreviewGitExecutableReady({ path, sha256 }), false)
+    assert.equal(stagingPreviewGitExecutableReady({ path: '/missing/git', sha256 }), false)
+  } finally { rmSync(directory, { recursive: true, force: true }) }
+})
+
+test('the pinned native Git executes the fixed local read with scrubbed options when installed', t => {
+  if (!stagingPreviewGitExecutableReady() || !stagingPreviewGitHttpsHelperReady()) return t.skip('pinned native Git or HTTPS helper is unavailable on this host')
+  const path = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'
+  const args = ['rev-parse', '--show-toplevel']
+  const result = spawnSync(path, args, stagingPreviewGitProcessOptions(args, 4_096))
+  assert.equal(result.error, undefined)
+  assert.equal(result.status, 0)
+  assert.equal(result.stdout.toString('utf8'), `${resolve(import.meta.dirname, '..')}\n`)
+  const helper = spawnSync(path, ['remote-https'], { ...stagingPreviewGitProcessOptions(args, 4_096),
+    stdio: ['ignore', 'pipe', 'pipe'], timeout: 2_000 })
+  assert.equal(helper.status, 1)
+  assert.match(helper.stderr.toString('utf8'), /remote-curl: usage:/)
+  assert.doesNotMatch(helper.stderr.toString('utf8'), /not a git command/)
 })
