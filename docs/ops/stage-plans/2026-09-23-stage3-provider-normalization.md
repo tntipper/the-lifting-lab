@@ -1,5 +1,11 @@
 # Stage 3 staging provider normalization — planned, not armed
 
+## 24 September V2 preflight result and next gate
+
+The separately approved read-only V2 probe passed once at 16:40 UTC. It returned `READONLY_PROVIDER_PRECONDITION_VERIFIED` and strict database receipt hash `04ee2fe8a104a319c44ababed0faed0737b6d983fb724567da6b50c4f5ea0670`. Its official provider contract accepted the complete expected enabled/JWKS-present shape; broker secret name was absent; strict database invariants passed. The journal is terminal, the local worktree is disarmed and a separate dashboard read still showed the provider enabled and the three expected custom secret names. See `docs/ops/evidence/2026-09-24-stage3-provider-readonly-refresh-v2-result.md`. **Do not rerun V2.**
+
+The next unit is a reviewed, one-shot **mutation** package, not another identical observer. Before arming it, refresh the hosted baseline and compare every relevant provider field against the V2 contract, confirm Preview identity and disabled controls, verify nine source gates and both mutation journals, and review the exact two-field update plus full-field readback. A new short-lived Vercel access window may be needed. Obtain a separate action-time owner approval only after the exact diff and recovery path are reviewable. No mutation is authorized by the V2 approval.
+
 ## 24 September action-gate update
 
 The planned mutation remains **unarmed**. Its earlier Preview-behind-source blocker is narrowed: Git branch `codex/tll-integration` and protected Ready Vercel deployment `dpl_9CFPQG6JChoGrkWidhh73BY1Qj1b` were proved at immutable source `abd5a5258dd1072daf83a4447ce7110465f445e1`. A separately approved, one-use protected read returned the exact disabled `/api/staging/readiness` response at alias-before, immutable and alias-after; see `docs/ops/evidence/2026-09-24-stage3-preview-disabled-runtime-result.md`. Local evidence and disabled-launcher commits are newer than that deployed source. Do not infer that a local HEAD can be activated on the deployed Preview.
