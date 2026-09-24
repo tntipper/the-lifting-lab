@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createStagingPreviewGitPublishNativeReadPort } from '../scripts/staging-preview-git-publish-native-read.mjs'
-import { stagingPreviewGitPublishConfigAccepted, stagingPreviewGitPushCommand } from '../scripts/staging-preview-git-publish-native-contract.mjs'
+import { stagingPreviewGitPublishConfigAccepted, stagingPreviewGitPushCommand,
+  stagingPreviewGitPublishProcessOptions } from '../scripts/staging-preview-git-publish-native-contract.mjs'
 import { stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady } from '../scripts/staging-preview-git-source-preflight.mjs'
 
 const root = resolve(import.meta.dirname, '..')
@@ -22,6 +23,8 @@ test('pinned native read port observes the exact checkout and allowed effective 
   const config = port.runGit(['config', '--null', '--list', '--show-origin'], 65_536)
   assert.equal(config.status, 0)
   assert.equal(stagingPreviewGitPublishConfigAccepted(config.stdout), true)
+  assert.equal(stagingPreviewGitPublishProcessOptions(['show',
+    `${'a'.repeat(40)}:config/staging-account-activation-manifest.json`], 262_144).env.GIT_NO_LAZY_FETCH, '1')
   config.stdout.fill(0)
 })
 

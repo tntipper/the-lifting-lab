@@ -111,6 +111,7 @@ test('one fixed lease/refspec has no arbitrary URL, force flag, hook execution o
   const options = stagingPreviewGitPublishProcessOptions(args, 4_096)
   assert.equal(options.env.GIT_CONFIG_GLOBAL, '/dev/null')
   assert.equal(options.env.GIT_TERMINAL_PROMPT, '0')
+  assert.equal(options.env.GIT_NO_LAZY_FETCH, '1')
   assert.equal(options.env.HOME, '/Users/tobiastipper')
   assert.equal(options.env.GH_CONFIG_DIR, '/Users/tobiastipper/.config/gh')
   assert.deepEqual(options.stdio, ['ignore', 'ignore', 'ignore'])

@@ -121,6 +121,7 @@ export function stagingPreviewGitPublishProcessOptions(args, maxBuffer) {
       XDG_CONFIG_HOME: '/var/empty', ...(push ? { GH_CONFIG_DIR: '/Users/tobiastipper/.config/gh' } : {}),
       GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null',
       GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: '/usr/bin/false', GIT_NO_REPLACE_OBJECTS: '1',
+      GIT_NO_LAZY_FETCH: '1',
       GIT_EXEC_PATH: '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core' }),
     stdio: Object.freeze(['ignore', push ? 'ignore' : 'pipe', 'ignore']),
     timeout: push ? 45_000 : 15_000, maxBuffer })

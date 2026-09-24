@@ -78,6 +78,7 @@ test('actual Git runner policy isolates the fixed remote URL and rejects config 
   assert.equal(remote.env.GIT_CONFIG_NOSYSTEM, '1')
   assert.equal(remote.env.GIT_CONFIG_GLOBAL, '/dev/null')
   assert.equal(remote.env.GIT_NO_REPLACE_OBJECTS, '1')
+  assert.equal(remote.env.GIT_NO_LAZY_FETCH, '1')
   assert.equal(remote.env.GIT_TERMINAL_PROMPT, '0')
   assert.equal(remote.env.GIT_ASKPASS, '/usr/bin/false')
   assert.equal(remote.env.GIT_EXEC_PATH, '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')

@@ -74,6 +74,7 @@ export function stagingPreviewGitProcessOptions(args, maxBuffer) {
     env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C', HOME: '/var/empty', XDG_CONFIG_HOME: '/var/empty',
       GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null',
       GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: '/usr/bin/false', GIT_NO_REPLACE_OBJECTS: '1',
+      GIT_NO_LAZY_FETCH: '1',
       GIT_EXEC_PATH: gitExecPath }),
     stdio: Object.freeze(['ignore', 'pipe', 'ignore']), timeout: 15_000, maxBuffer,
   })
