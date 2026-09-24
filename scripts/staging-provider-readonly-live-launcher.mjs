@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 export const STAGING_PROVIDER_READONLY_LIVE_ENABLED = false
 const root = resolve(import.meta.dirname, '..')
 const helper = resolve(import.meta.dirname, 'staging-provider-normalization-keychain.py')
-const journalPath = resolve(root, '../implementation-state/staging/tll-provider-readonly-probe-v1.json')
+const journalPath = resolve(root, '../implementation-state/staging/tll-provider-readonly-probe-v2.json')
 const unavailable = () => { throw new Error('Staging provider read-only launcher unavailable') }
 
 function checkedChild(executable, args, maxBuffer) {
@@ -27,7 +27,8 @@ function checkManifest() {
 
 function readCredential({ signal }) {
   if (signal.aborted) unavailable()
-  const output = checkedChild('/usr/bin/python3', ['-I', '-S', helper, 'supabase'], 4_097)
+  const output = checkedChild('/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3',
+    ['-I', '-S', helper, 'supabase'], 4_097)
   try {
     if (signal.aborted || !Buffer.isBuffer(output) || output.length < 8 || output.length > 4_096 || output.includes(0)) unavailable()
     return Buffer.from(output)
