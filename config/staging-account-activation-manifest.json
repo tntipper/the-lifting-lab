@@ -688,7 +688,7 @@
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-native.swift",
-        "sha256": "a1ab8034afd8b26d44d6c5274e987212840ddd897caf7de378fdd64ac4f74614"
+        "sha256": "0d1a94b35c04a158c86c5af694b0b711ad5283263803a0dd90e2da29059703d6"
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-build.mjs",
@@ -708,7 +708,7 @@
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-live-launcher.mjs",
-        "sha256": "bf81f025d866acfb2ceb7734c2080430d3eec84bc5619bad4ecc8493e6a9b889"
+        "sha256": "712637c58a288c461d55e391e7d278f26cf1ae26e0124509977aa7bc91045d67"
       },
       {
         "path": "scripts/staging-provider-readonly-probe.mjs",

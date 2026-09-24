@@ -7,7 +7,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseFixtureBuildIdentity } from './staging-provider-keychain-fixture-session.mjs'
 
-export const TLL_FIXTURE_LIVE_ENABLED = false
+export const TLL_FIXTURE_LIVE_ENABLED = true
 const root = resolve(import.meta.dirname, '..')
 const privateRoot = resolve(root, '../implementation-state')
 const privateDirectory = resolve(privateRoot, 'staging')
