@@ -31,7 +31,8 @@ function checkManifests() {
 }
 
 function readCredential(selector) {
-  const output = checkedChild('/usr/bin/python3', ['-I', '-S', helper, selector], 4_097)
+  const output = checkedChild('/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3',
+    ['-I', '-S', helper, selector], 4_097)
   try {
     if (!Buffer.isBuffer(output) || output.length < 8 || output.length > 4_096 || output.includes(0)) unavailable()
     return Buffer.from(output)

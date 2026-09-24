@@ -656,7 +656,7 @@
       },
       {
         "path": "scripts/staging-provider-normalization-live-launcher.mjs",
-        "sha256": "22e5ed7d61432f95f3b446a2019d4b5eab5d3f70dd29c6081878dd8749e3f4d2"
+        "sha256": "a48853408a6a92523c0a149a236647c7dffd178eb84b736bdfa8413235de2904"
       },
       {
         "path": "scripts/staging-provider-normalization-keychain.py",
