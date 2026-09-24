@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "234b6fc37bfd09c37027eea99baa90ab97c6397668195fc1055cb159e22309f8"
+        "sha256": "bd1407227afb48644a946f3cce74342e329cadbb038215dad2747f678bbecd50"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -161,7 +161,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "d14ea27aa1fd11d5c7f3171e336e71196b6cda259b49178bb0954bfcef3cf9a0"
+        "sha256": "b2f1c0697d6176fa05295b296d89e800fdf264461c8c8c76beff415d32a0cc6a"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -735,6 +735,10 @@
         "sha256": "0d2957d226b27ef58c72e2eff938475d447b680ea898aa36c3ce446c978cdfa9"
       },
       {
+        "path": "scripts/staging-preview-git-publish-live-launcher.mjs",
+        "sha256": "0f304a723009729cde2740a11e27bdf2f585ba52f5932ac5c96366a2f0ad34be"
+      },
+      {
         "path": "scripts/staging-preview-source-journal.mjs",
         "sha256": "4b379f4f4ebd9af642807a37593ac9a12803db509d51bb963d2241ddc1d7de75"
       },
@@ -873,6 +877,10 @@
       {
         "path": "tests/staging-preview-git-publish-arm-native-read.test.mjs",
         "sha256": "397da624efcb9c87ecd8bbf368e1b20aea881abebafbcf6d11573c5658ec3397"
+      },
+      {
+        "path": "tests/staging-preview-git-publish-live-launcher.test.mjs",
+        "sha256": "2984e2a1e0379257a2311f142465b9a362f37d3d0a28b0b62c2c35a0c1a1ebce"
       },
       {
         "path": "tests/staging-preview-source-observer.test.mjs",

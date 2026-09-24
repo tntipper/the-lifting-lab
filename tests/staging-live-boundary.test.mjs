@@ -84,6 +84,15 @@ test('boundary rejects an armed focused provider read-only launcher', () => {
   ])
 })
 
+test('boundary rejects an armed staging Git publication launcher', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-preview-git-publish-live-launcher.mjs'),
+    'const createPreviewGitPublishJournal = null\nexport const STAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-preview-git-publish-live-launcher.mjs',
+  ])
+})
+
 test('provider normalization arming is isolated from the consumed hosted observer gates', () => {
   const launcher = readFileSync('scripts/staging-provider-normalization-live-launcher.mjs', 'utf8')
   const helper = readFileSync('scripts/staging-provider-normalization-keychain.py', 'utf8')
