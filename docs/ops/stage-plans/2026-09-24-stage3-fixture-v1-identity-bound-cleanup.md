@@ -31,6 +31,8 @@ Prepare injected/offline tests for positive and negative identity checks, symlin
 
 After fresh baseline, exact independent review and owner action-time approval, commit the reviewed arming diff locally and invoke the direct launcher once. Do not push. Preserve the new recovery journal regardless of PASS/HOLD/UNCERTAIN. On known failure, reconcile read-only and retain any remaining file. On timeout, do not start a second child or delete anything until a separate investigation. Disarm, verify all live gates false, commit the evidence and update `.agent/HANDOVER.md`.
 
+The fixed native loader requires the launcher's working-directory basename to be `implementation-integration`. A sibling checkout may hold a temporary copy of the arming patch for build verification, but **must never run the live launcher**. Apply and run the reviewed patch only in `implementation-integration` after the final gate checks and owner approval. Do not work around this by changing only the child working directory, which would split source and build identity checks across checkouts.
+
 The pathname-based sidecar and directory removal cannot atomically require a particular inode. Execute only in an exclusive recovery window with no other fixture process or cleanup attempt, and recheck the anchored identities immediately before each removal. A replacement or unexpected entry is a HOLD.
 
 No cleanup is authorized by this document alone. The existing fixture remains preserved until the disabled code, tests, independent review and action-time permission are complete.
