@@ -13,7 +13,7 @@ import Security
 #error("Compile this recovery helper only with TLL_KEYCHAIN_FIXTURE_RECOVERY")
 #endif
 
-private let TLL_FIXTURE_RECOVERY_ENABLED = true
+private let TLL_FIXTURE_RECOVERY_ENABLED = false
 private let tllRecoveryCachesDirectory = NSHomeDirectory() + "/Library/Caches"
 private let tllRecoveryDirectoryLeaf = "tll-stage3-keychain-fixture"
 private let tllRecoveryDirectory = tllRecoveryCachesDirectory + "/" + tllRecoveryDirectoryLeaf

@@ -10,7 +10,7 @@ import { assessRecoverySnapshot, captureRecoverySnapshot,
 import { classifyRecoveryChild,
   runFixtureRecoverySession } from './staging-provider-keychain-fixture-recovery-session.mjs'
 
-export const TLL_FIXTURE_RECOVERY_LIVE_ENABLED = true
+export const TLL_FIXTURE_RECOVERY_LIVE_ENABLED = false
 const root = resolve(import.meta.dirname, '..')
 const privateRoot = resolve(root, '../implementation-state')
 const privateDirectory = resolve(privateRoot, 'staging')
