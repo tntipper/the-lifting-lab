@@ -727,6 +727,10 @@
         "sha256": "d533ae09e8095a3fcf6a4db1be913df4426f4ace6336bc6c92c3825800de011e"
       },
       {
+        "path": "scripts/staging-preview-git-publish-arm-preflight.mjs",
+        "sha256": "f8a0324e7fe744fc80322b59886b5a639b0320932af05308580382778f27071b"
+      },
+      {
         "path": "scripts/staging-preview-source-journal.mjs",
         "sha256": "4b379f4f4ebd9af642807a37593ac9a12803db509d51bb963d2241ddc1d7de75"
       },
@@ -857,6 +861,10 @@
       {
         "path": "tests/staging-preview-git-publish-native-push.test.mjs",
         "sha256": "ed3099cf73876f6054cb408bad69d24526fd9c57b69fb4e17f02a86e1cef1d42"
+      },
+      {
+        "path": "tests/staging-preview-git-publish-arm-preflight.test.mjs",
+        "sha256": "dcb8ba992625a288b01df8905b14043e7a9073774f6e77e0579352a5e8948bcf"
       },
       {
         "path": "tests/staging-preview-source-observer.test.mjs",
