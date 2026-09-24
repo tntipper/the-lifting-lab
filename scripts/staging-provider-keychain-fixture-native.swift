@@ -340,6 +340,59 @@ private struct TLLFixtureFileIdentity: Equatable {
     }
 }
 
+// Security.framework may create a new file with 0644 permissions. The parent
+// directory is private; tighten only the regular file just created, after
+// checking the same inode through a no-follow file descriptor.
+private func tllTightenFixtureFile(_ path: String, directory: String,
+                                   directoryIdentity: TLLFixtureFileIdentity,
+                                   beforeLeafLookup: (() -> Void)? = nil) -> TLLFixtureFileIdentity? {
+    let prefix = directory + "/"
+    guard path.hasPrefix(prefix) else { return nil }
+    let leaf = String(path.dropFirst(prefix.count))
+    guard !leaf.isEmpty, leaf != ".", leaf != "..", !leaf.contains("/") else { return nil }
+    let directoryFD = directory.withCString { Darwin.open($0, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC) }
+    guard directoryFD >= 0 else { return nil }
+    let checked: TLLFixtureFileIdentity? = {
+        var openedDirectory = stat()
+        guard fstat(directoryFD, &openedDirectory) == 0,
+              TLLFixtureFileIdentity(device: openedDirectory.st_dev, inode: openedDirectory.st_ino,
+                                     owner: openedDirectory.st_uid, kind: openedDirectory.st_mode & mode_t(S_IFMT),
+                                     permissions: openedDirectory.st_mode & 0o777,
+                                     links: openedDirectory.st_nlink) == directoryIdentity else { return nil }
+        beforeLeafLookup?() // Injected only by the offline directory-replacement test.
+        var before = stat()
+        guard leaf.withCString({ Darwin.fstatat(directoryFD, $0, &before, AT_SYMLINK_NOFOLLOW) }) == 0,
+              (before.st_mode & mode_t(S_IFMT)) == mode_t(S_IFREG),
+              before.st_uid == getuid(), before.st_nlink == 1 else { return nil }
+        let descriptor = leaf.withCString { Darwin.openat(directoryFD, $0, O_RDONLY | O_NOFOLLOW | O_CLOEXEC) }
+        guard descriptor >= 0 else { return nil }
+        let fileIdentity: TLLFixtureFileIdentity? = {
+            var opened = stat()
+            guard fstat(descriptor, &opened) == 0,
+                  (opened.st_mode & mode_t(S_IFMT)) == mode_t(S_IFREG),
+                  opened.st_uid == getuid(), opened.st_nlink == 1,
+                  opened.st_dev == before.st_dev, opened.st_ino == before.st_ino,
+                  fchmod(descriptor, mode_t(0o600)) == 0,
+                  fsync(descriptor) == 0 else { return nil }
+            var after = stat()
+            guard fstat(descriptor, &after) == 0,
+                  (after.st_mode & mode_t(S_IFMT)) == mode_t(S_IFREG),
+                  after.st_uid == getuid(), after.st_nlink == 1,
+                  after.st_dev == before.st_dev, after.st_ino == before.st_ino,
+                  (after.st_mode & 0o777) == 0o600 else { return nil }
+            return TLLFixtureFileIdentity(device: after.st_dev, inode: after.st_ino,
+                                          owner: after.st_uid, kind: mode_t(S_IFREG),
+                                          permissions: after.st_mode & 0o777, links: after.st_nlink)
+        }()
+        guard Darwin.close(descriptor) == 0 else { return nil }
+        return fileIdentity
+    }()
+    guard Darwin.close(directoryFD) == 0, let checked,
+          TLLFixtureFileIdentity.read(directory, kind: mode_t(S_IFDIR)) == directoryIdentity,
+          TLLFixtureFileIdentity.read(path, kind: mode_t(S_IFREG)) == checked else { return nil }
+    return checked
+}
+
 private func tllKeychainPath(_ keychain: SecKeychain) -> String? {
     var bytes = [CChar](repeating: 0, count: 4_096)
     var length = UInt32(bytes.count)
@@ -566,7 +619,9 @@ private func tllFixtureUnlock(_ keychain: SecKeychain) -> Bool {
                                   false, nil, &keychain)
             }
             guard status == errSecSuccess, let keychain, tllKeychainPath(keychain) == tllFixturePath,
-                  let identity = TLLFixtureFileIdentity.read(tllFixturePath, kind: mode_t(S_IFREG)),
+                  let directoryIdentity,
+                  let identity = tllTightenFixtureFile(tllFixturePath, directory: tllFixtureDirectory,
+                                                       directoryIdentity: directoryIdentity),
                   TLLFixtureFileIdentity.read(tllFixtureDirectory, kind: mode_t(S_IFDIR)) == directoryIdentity
             else { return false }
             fixtureIdentity = identity
@@ -698,7 +753,20 @@ private func tllFixtureUnlock(_ keychain: SecKeychain) -> Bool {
         let original = testDirectory.appendingPathComponent("fixture")
         let moved = testDirectory.appendingPathComponent("preserved")
         try! Data("synthetic".utf8).write(to: original)
-        _ = chmod(original.path, 0o600)
+        _ = chmod(original.path, 0o644)
+        let directoryIdentity = TLLFixtureFileIdentity.read(testDirectory.path, kind: mode_t(S_IFDIR))!
+        let wrongDirectoryIdentity = TLLFixtureFileIdentity(device: directoryIdentity.device,
+            inode: directoryIdentity.inode + 1, owner: directoryIdentity.owner,
+            kind: directoryIdentity.kind, permissions: directoryIdentity.permissions,
+            links: directoryIdentity.links)
+        check(tllTightenFixtureFile(original.path, directory: testDirectory.path,
+                                    directoryIdentity: wrongDirectoryIdentity) == nil,
+              "changed directory identity blocks chmod")
+        check(TLLFixtureFileIdentity.read(original.path, kind: mode_t(S_IFREG)) == nil,
+              "framework-style 0644 mode is rejected before tightening")
+        check(tllTightenFixtureFile(original.path, directory: testDirectory.path,
+                                    directoryIdentity: directoryIdentity) != nil,
+              "owned framework-style file tightens to 0600")
         let first = TLLFixtureFileIdentity.read(original.path, kind: mode_t(S_IFREG))
         check(first != nil, "owned fixture identity captured")
         try! FileManager.default.moveItem(at: original, to: moved)
@@ -710,10 +778,34 @@ private func tllFixtureUnlock(_ keychain: SecKeychain) -> Bool {
         try! FileManager.default.createSymbolicLink(at: original, withDestinationURL: moved)
         check(TLLFixtureFileIdentity.read(original.path, kind: mode_t(S_IFREG)) == nil,
               "same-path symlink identity refused")
+        check(tllTightenFixtureFile(original.path, directory: testDirectory.path,
+                                    directoryIdentity: directoryIdentity) == nil,
+              "symlink is never chmodded")
+        let raceDirectory = testDirectory.appendingPathComponent("race", isDirectory: true)
+        let preservedDirectory = testDirectory.appendingPathComponent("preserved-dir", isDirectory: true)
+        try! FileManager.default.createDirectory(at: raceDirectory, withIntermediateDirectories: false,
+                                                 attributes: [.posixPermissions: 0o700])
+        let raceFile = raceDirectory.appendingPathComponent("fixture")
+        try! Data("synthetic-original".utf8).write(to: raceFile)
+        _ = chmod(raceFile.path, 0o644)
+        let raceIdentity = TLLFixtureFileIdentity.read(raceDirectory.path, kind: mode_t(S_IFDIR))!
+        let resultAfterReplacement = tllTightenFixtureFile(raceFile.path, directory: raceDirectory.path,
+            directoryIdentity: raceIdentity, beforeLeafLookup: {
+                try! FileManager.default.moveItem(at: raceDirectory, to: preservedDirectory)
+                try! FileManager.default.createDirectory(at: raceDirectory, withIntermediateDirectories: false,
+                                                         attributes: [.posixPermissions: 0o700])
+                try! Data("synthetic-replacement".utf8).write(to: raceFile)
+                _ = chmod(raceFile.path, 0o644)
+            })
+        check(resultAfterReplacement == nil, "directory replacement is detected")
+        var replacementStat = stat()
+        check(lstat(raceFile.path, &replacementStat) == 0
+              && (replacementStat.st_mode & 0o777) == 0o644,
+              "replacement file is never chmodded")
         check(tllAuthorizationGrantsRead(kSecACLAuthorizationDecrypt), "decrypt string grants read")
         check(tllAuthorizationGrantsRead(kSecACLAuthorizationAny), "any string grants read")
         check(!tllAuthorizationGrantsRead(kSecACLAuthorizationEncrypt), "encrypt string is not read")
-        print("PASS 23 offline native fixture journal groups")
+        print("PASS 29 offline native fixture journal groups")
     }
 }
 #endif

@@ -688,7 +688,7 @@
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-native.swift",
-        "sha256": "a1ab8034afd8b26d44d6c5274e987212840ddd897caf7de378fdd64ac4f74614"
+        "sha256": "7fb2673160069e91e9a6f07b0403f6a302eaf59627758d40dceadc6115445532"
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-build.mjs",
