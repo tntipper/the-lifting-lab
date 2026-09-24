@@ -7,13 +7,20 @@ const phases = Object.freeze([
 ])
 const fixed = (status, category = null) => Object.freeze({ status, category })
 const fail = () => { throw Error('Synthetic fixture recovery session unavailable') }
+const childCategories = new Set(['PHASE', 'CHILD_TIMEOUT', 'CHILD_SPAWN', 'CHILD_SIGNAL',
+  'NATIVE_HOLD_UNCLASSIFIED', 'NATIVE_GUARD', 'NATIVE_UNKNOWN_EXIT', 'CHILD_OUTPUT'])
 
 export function classifyRecoveryChild({ status, signal, error, stdout, stderr } = {}, phase) {
-  if (!phases.some(item => item[0] === phase) || error || signal) return fixed('UNCERTAIN', 'CHILD')
+  if (!phases.some(item => item[0] === phase)) return fixed('UNCERTAIN', 'PHASE')
+  if (error) return fixed('UNCERTAIN', error.code === 'ETIMEDOUT' ? 'CHILD_TIMEOUT' : 'CHILD_SPAWN')
+  if (signal) return fixed('UNCERTAIN', 'CHILD_SIGNAL')
+  if (status === 30) return fixed('UNCERTAIN', 'NATIVE_HOLD_UNCLASSIFIED')
+  if (status === 31) return fixed('UNCERTAIN', 'NATIVE_GUARD')
+  if (status !== 0) return fixed('UNCERTAIN', 'NATIVE_UNKNOWN_EXIT')
   if (!Buffer.isBuffer(stdout) || !Buffer.isBuffer(stderr) || stderr.length !== 0
-    || stdout.length > 128 || status !== 0) return fixed('UNCERTAIN', 'CHILD')
+    || stdout.length > 128) return fixed('UNCERTAIN', 'CHILD_OUTPUT')
   const expected = `${phase}_PASS\n`
-  return stdout.toString('utf8') === expected ? fixed('PASS') : fixed('UNCERTAIN', 'OUTPUT')
+  return stdout.toString('utf8') === expected ? fixed('PASS') : fixed('UNCERTAIN', 'CHILD_OUTPUT')
 }
 
 export function runFixtureRecoverySession({ journal, identity, preflight, preDispatch, runNative,
@@ -54,7 +61,8 @@ export function runFixtureRecoverySession({ journal, identity, preflight, preDis
       const after = now()
       if (result?.status !== 'PASS' || !Number.isFinite(after) || after < afterIntent
         || after > Date.parse(record.phaseDeadlineAt) || after > Date.parse(record.runDeadlineAt)) {
-        return terminal('UNCERTAIN', 'CHILD')
+        return terminal('UNCERTAIN', result?.status !== 'PASS'
+          ? childCategories.has(result?.category) ? result.category : 'CHILD_RESULT' : 'DEADLINE')
       }
       childMayHaveStarted = false
       if (index < reconciliations.length && reconciliations[index]() !== true) {
@@ -73,6 +81,6 @@ export function runFixtureRecoverySession({ journal, identity, preflight, preDis
   } catch {
     const outcome = childMayHaveStarted ? 'UNCERTAIN' : 'HOLD'
     try { if (record?.outcome === null) journal.finish(record, outcome) } catch { /* preserve intent */ }
-    return fixed(outcome, childMayHaveStarted ? 'CHILD' : 'PREFLIGHT')
+    return fixed(outcome, childMayHaveStarted ? 'CHILD_EXCEPTION' : 'PREFLIGHT')
   }
 }

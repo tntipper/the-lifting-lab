@@ -1,0 +1,11 @@
+# Mid-build reset and disabled Stage 3 child classification
+
+Repository baseline: `codex/tll-integration` at `ea9dd7d8f8eab9577a3f90a485af9b14d73d594b`. The six pre-existing unrelated untracked paths and terminal private journals were preserved. No hosted setting, credential, fixture, customer, supplier or production state was changed.
+
+The [discovery delta](../mid-build-discovery-delta-2026-09-24.md) and [revised remaining-work plan](../revised-remaining-work-plan-2026-09-24.md) separate verified local code from dated hosted observations. Stage 3 remains HOLD under the [uncertain fixture incident](2026-09-24-stage3-fixture-v1-recovery-uncertain-incident.md).
+
+The first disabled implementation slice follows [its stage plan](../stage-plans/2026-09-24-stage3-fixture-recovery-child-classification.md): the injected cleanup coordinator now reports fixed categories for child spawn/timeout/signal, native guard/HOLD/unknown exits and malformed output, while every such result still stops as UNCERTAIN. It accepts only a category from an explicit allowlist, so arbitrary child-supplied text cannot appear in its result. The native helper's broad exit 30 is deliberately labelled `NATIVE_HOLD_UNCLASSIFIED`; the specific failure in the consumed V1 run remains unknown. No native helper, live launcher, gate, journal format or deletion behavior was changed.
+
+Verification on this source: 17 focused manifest/launcher/session tests passed, `npm run typecheck` passed, targeted ESLint passed, activation-manifest `--check` passed, `npm run check:live-boundaries` passed with zero violations, and `git diff --check` passed. The generated manifest changed only the two SHA-256 pins for the coordinator and its test. Earlier 409 local commerce/identity/scoring tests and the full suite at the same baseline are recorded in the handover; this slice did not change their production modules.
+
+Next safe action: independently review this disabled classification, then design and test a separate metadata-only native diagnostic that cannot call `SecKeychainDelete` or read credential values. Do not start a new fixture cleanup until the native cause or the exact uncertainty boundary is established and independently reviewed. No new one-run authorization has been sought.

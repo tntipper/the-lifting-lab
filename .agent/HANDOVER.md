@@ -2,6 +2,8 @@
 
 Updated: 2026-09-24. Verify Git and hosted state before acting. This is the current recovery entry point; historical evidence is linked below.
 
+**Mid-build reset checkpoint (24 September):** The limited [discovery delta](../docs/ops/mid-build-discovery-delta-2026-09-24.md) and [revised remaining-work plan](../docs/ops/revised-remaining-work-plan-2026-09-24.md) now govern remaining sequencing; the original plan remains the finding register. A small, disabled Stage 3 parent child-result classification is prepared and locally verified; see [evidence](../docs/ops/evidence/2026-09-24-mid-build-reset-and-child-classification.md). It does not explain the consumed native failure or lift the HOLD. Continue with independent review and a separate read-only native diagnostic plan. Preserve the terminal journal and fixture. Two owner decisions on first-opening scope (unassessed scores; manual pricing versus automation/affiliates) were requested and remain pending as of this checkpoint. Verify the current Git HEAD/status before further edits; this checkpoint was written over baseline `ea9dd7d8f8eab9577a3f90a485af9b14d73d594b` with only its named code/manifest/docs changes intended.
+
 ## Objective and release boundary
 
 Complete the staged comparison-site/Shopify integration under `docs/ops/integration-release-candidate.md` and `docs/ops/project-stage-execution-protocol.md`. The immediate gate is Stage 3 staging account/cart acceptance. Production deployment, public launch, purchases, supplier orders and promotional customer messages are outside the current authorization. Every credential window, connected-branch push and provider change needs its own reviewed exact plan and action-time approval.

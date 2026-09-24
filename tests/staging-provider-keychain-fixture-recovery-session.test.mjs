@@ -68,7 +68,7 @@ test('a slow binary recheck cannot dispatch the native child', () => {
 
 test('failed or uncertain API deletion blocks every later mutation', () => {
   const bad = fixture({ runNative: () => ({ status: 'UNCERTAIN' }) })
-  assert.deepEqual(bad.result, { status: 'UNCERTAIN', category: 'CHILD' })
+  assert.deepEqual(bad.result, { status: 'UNCERTAIN', category: 'CHILD_RESULT' })
   assert.deepEqual(bad.calls, ['start', 'preflight', 'API_DELETE', 'native:API_DELETE', 'UNCERTAIN'])
   const drift = fixture({ reconcileMain: () => false })
   assert.deepEqual(drift.result, { status: 'HOLD', category: 'RECONCILIATION' })
@@ -91,4 +91,22 @@ test('child output classifier accepts only the exact fixed phase receipt', () =>
   assert.equal(classifyRecoveryChild({ status: 0, stdout: output,
     stderr: Buffer.from('unexpected') }, phase).status, 'UNCERTAIN')
   assert.equal(classifyRecoveryChild({ signal: 'SIGTERM' }, phase).status, 'UNCERTAIN')
+  assert.deepEqual(classifyRecoveryChild({ status: 30 }, phase),
+    { status: 'UNCERTAIN', category: 'NATIVE_HOLD_UNCLASSIFIED' })
+  assert.deepEqual(classifyRecoveryChild({ status: 31 }, phase),
+    { status: 'UNCERTAIN', category: 'NATIVE_GUARD' })
+  assert.deepEqual(classifyRecoveryChild({ error: { code: 'ETIMEDOUT' } }, phase),
+    { status: 'UNCERTAIN', category: 'CHILD_TIMEOUT' })
+  assert.deepEqual(classifyRecoveryChild({ error: { code: 'ENOENT' } }, phase),
+    { status: 'UNCERTAIN', category: 'CHILD_SPAWN' })
+  assert.deepEqual(classifyRecoveryChild({ status: 42 }, phase),
+    { status: 'UNCERTAIN', category: 'NATIVE_UNKNOWN_EXIT' })
+  assert.deepEqual(classifyRecoveryChild({ signal: 'SIGTERM' }, phase),
+    { status: 'UNCERTAIN', category: 'CHILD_SIGNAL' })
+  assert.deepEqual(fixture({ runNative: () => ({ status: 'UNCERTAIN',
+    category: 'NATIVE_HOLD_UNCLASSIFIED' }) }).result,
+  { status: 'UNCERTAIN', category: 'NATIVE_HOLD_UNCLASSIFIED' })
+  assert.deepEqual(fixture({ runNative: () => ({ status: 'UNCERTAIN',
+    category: 'secret from untrusted child' }) }).result,
+  { status: 'UNCERTAIN', category: 'CHILD_RESULT' })
 })

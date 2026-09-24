@@ -724,7 +724,7 @@
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-recovery-session.mjs",
-        "sha256": "5c422868389ea36f644a3eee4786d3e28455621b8a4e447e3695be9dfe426849"
+        "sha256": "934803be28fe702e2c2dca9fa02f1e498dc98167864155c3ef479df6d28ac2f7"
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-recovery-preflight.mjs",
@@ -928,7 +928,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-session.test.mjs",
-        "sha256": "a8c3cd5d214471778e290286945c47992e41c04f63dc5482290395076c7c120f"
+        "sha256": "2db3dbebd58fe0a12c7fb44766c5ab07dc92fee4408cdb85cafe58319fe03302"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-preflight.test.mjs",
