@@ -1039,6 +1039,10 @@
         "sha256": "4293e0c3fa7ade587c632e0235d8ee7b634f70f3c19ae0d2c317007f768aaaf4"
       },
       {
+        "path": "tests/staging-provider-broker-rotation-composition.test.mjs",
+        "sha256": "04abc3e796e1b8547da685a9a83532bf47eb39f42ae418cd21dfa39f20c1b4a3"
+      },
+      {
         "path": "tests/staging-provider-broker-reconciliation.test.mjs",
         "sha256": "9ff66af3699848b8a2e351f368b11a2d1b9a78baa35ede70f8c754aa8f0057e7"
       },

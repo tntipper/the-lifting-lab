@@ -656,6 +656,7 @@ const disabledActivationToolingSources = [
   'tests/staging-provider-broker-rotation-process-control.test.mjs',
   'tests/staging-provider-broker-rotation-keychain.test.mjs',
   'tests/staging-provider-broker-rotation-readiness.test.mjs',
+  'tests/staging-provider-broker-rotation-composition.test.mjs',
   'tests/staging-provider-broker-reconciliation.test.mjs',
   'tests/staging-provider-broker-recovery-collection.test.mjs',
   'tests/staging-provider-broker-recovery-read-journal.test.mjs',
