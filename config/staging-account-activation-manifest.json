@@ -972,7 +972,7 @@
       },
       {
         "path": "tests/staging-provider-normalization-native-port.test.mjs",
-        "sha256": "35a2323fcfab3066460d3b8df983842f302975854c82974e5fd3e0b2dc6d5f9d"
+        "sha256": "2dff45d66307b420d9685e5e6e85714c66e7a86d875171623519a9fc08da2975"
       },
       {
         "path": "tests/staging-provider-normalization-journal.test.mjs",

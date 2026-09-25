@@ -1,6 +1,6 @@
 # Stage 3: protected Preview read, then Supabase-only provider disable
 
-Status: preparation only. Both launchers and the shared Keychain reader are disabled. No provider update is authorised by this document.
+Status: superseded after the one-run partial result. Both launchers and the shared Keychain reader are disabled. The consumed provider journal must never be replayed. See the [incident and revised next gate](../evidence/2026-09-25-stage3-provider-two-field-incident.md).
 
 ## Fixed target and purpose
 

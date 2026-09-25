@@ -72,6 +72,20 @@ test('target, pre-update state, transport errors and malformed response fail clo
   await assert.rejects(() => make(async () => response(changed)).updateProvider(STAGING_PROVIDER_TARGET, provider()), /unavailable/)
 })
 
+test('server retaining JWKS after disabling fails closed after one update', async () => {
+  const before = provider(), after = provider({ enabled: false, updated_at: '2026-09-23T10:00:00.000Z' })
+  const methods = []
+  const port = createStagingProviderNormalizationNativePort({ projectSecret: Buffer.from(secret), execute: completed,
+    fetcher: async (_url, init) => {
+      methods.push(init.method)
+      return response(init.method === 'PUT' ? after : before)
+    } })
+  const preread = await port.readProvider(STAGING_PROVIDER_TARGET)
+  await assert.rejects(() => port.updateProvider(STAGING_PROVIDER_TARGET, preread), /unavailable/)
+  await assert.rejects(() => port.updateProvider(STAGING_PROVIDER_TARGET, preread), /unavailable/)
+  assert.deepEqual(methods, ['GET', 'PUT'])
+})
+
 test('normalization port has no ambient credential source, process runner or launcher', () => {
   const source = readFileSync(new URL('../scripts/staging-provider-normalization-native-port.mjs', import.meta.url), 'utf8')
   assert.doesNotMatch(source, /child_process|process\.env|keychain|spawn\(|exec\(/i)
