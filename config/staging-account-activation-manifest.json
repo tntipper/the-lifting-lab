@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "99853f880aeb57d899a18565694c683e1d988ef98a32eecdb5f114cb6a34b56a"
+        "sha256": "14fcb41e3dc49b5329b3d5a4f56ecb06c3d6b47b7d8f9c895ca77929466876e0"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -643,6 +643,18 @@
         "sha256": "8f087dfea46a5f214cef69efeff7ef89d4a22cda6e76e0ce8361e45aabbb8204"
       },
       {
+        "path": "scripts/staging-provider-broker-recovery-read-live-launcher.mjs",
+        "sha256": "9882bdd45f0fa873a34456a95758139ce48dfd4366a49a2b0a6469fad038f0a2"
+      },
+      {
+        "path": "scripts/staging-provider-broker-recovery-read-keychain.py",
+        "sha256": "26ddbdea95efa15d0c58bf180c4c38477ea8e400a11876a019b9f73a130af7e0"
+      },
+      {
+        "path": "scripts/staging-provider-broker-recovery-process-control.mjs",
+        "sha256": "e8909ec713840b97636107d9973920f8735cef229ba973f1c542dbfe6ab3d5bf"
+      },
+      {
         "path": "scripts/staging-provider-broker-native-adapter.mjs",
         "sha256": "da559899e9dc353b98d7dc08b10178d24195be9eed142d1d3de8a17f77eb6ae5"
       },
@@ -1013,6 +1025,10 @@
       {
         "path": "tests/staging-provider-broker-recovery-read-bindings.test.mjs",
         "sha256": "02a4654b1a3f223fd69bb4d4cbbc547d949d743939daf7b33028633f31429bbe"
+      },
+      {
+        "path": "tests/staging-provider-broker-recovery-process-control.test.mjs",
+        "sha256": "ba3a419990ba6b911046d4e2887870f2ca07160c5851c5fd6e5c75db3bf4e9b0"
       },
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",
