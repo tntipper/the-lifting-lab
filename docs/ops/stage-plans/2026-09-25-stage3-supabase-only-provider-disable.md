@@ -10,7 +10,7 @@ The protected Preview must be the pinned Ready deployment `dpl_9CFPQG6JChoGrkWid
 
 ## Gates before any live read
 
-1. Verify repository HEAD/status, absent new journals, private state directory, pinned Python binary hash, and generated activation manifest. Preserve unrelated untracked files.
+1. Verify repository HEAD/status, absent new journals, private state directory, pinned Python binary hash, and generated activation manifest. In the exact worktree that will run, resolve every dynamic import used by the launcher before arming; a fresh Git worktree does not inherit `node_modules`. Preserve unrelated untracked files.
 2. Run focused tests, typecheck, targeted lint, disabled-launcher checks, and live-boundary check with every native switch `false`.
 3. Obtain independent review of the disabled connection, Preview reader and exact arming change. Fix any blocking finding before proposing an access window.
 4. Ask the owner for fresh action-time approval for the one protected Preview read. Apply only the reviewed launcher and Keychain-reader switch changes in an isolated local checkout, regenerate/check the manifest, make one bounded run, then disarm and verify the consumed journal. Do not read a Keychain secret before this approval.
