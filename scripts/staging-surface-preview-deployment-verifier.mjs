@@ -50,14 +50,14 @@ export function createStagingPreviewDeploymentVerifier({ postHost, journal, bind
     || typeof pause !== 'function' || typeof now !== 'function' || typeof stopWorkerGroup !== 'function') unavailable()
   let consumed = false
   return Object.freeze({
-    async verify(input, { signal } = {}) {
+    async verify(input, { signal, priorClaim } = {}) {
       if (consumed || !validSignal(signal)) unavailable()
       buildStagingPreviewDeploymentRequest(input)
       consumed = true
       const started = now()
       if (!Number.isFinite(started)) unavailable()
       let claim
-      try { claim = journal.claim(input) }
+      try { claim = priorClaim ?? journal.claim(input) }
       catch (error) { postHost.dispose(); throw error }
       // A rejected preflight is still pre-POST. After an accepted ID, every
       // uncertain outcome must stop the worker so a parent can reconcile it.

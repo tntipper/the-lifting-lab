@@ -77,7 +77,8 @@ function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit
 test('one accepted Preview is polled, source-pinned and proved through the protected alias and runtime', async () => {
   assert.equal(STAGING_PREVIEW_DEPLOYMENT_VERIFIER_ENABLED, false)
   const f = fixture()
-  assert.deepEqual(await f.verifier.verify(input, { signal }), {
+  const priorClaim = f.journal.claim(input)
+  assert.deepEqual(await f.verifier.verify(input, { signal, priorClaim }), {
     status: 'PROTECTED_PREVIEW_VERIFIED', deploymentId: id, immutableUrl,
     sourceCommit: input.sourceCommit, manifestSha256: input.manifestSha256,
     customerEnabled: false, cartEnabled: false,
