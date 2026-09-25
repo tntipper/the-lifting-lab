@@ -93,6 +93,24 @@ test('boundary rejects an armed native Swift Keychain reader', () => {
   ])
 })
 
+test('boundary rejects an armed search-domain diagnostic', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-provider-keychain-search-domain-diagnostic.swift'),
+    'private let tllSearchDomainDiagnosticEnabled = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-provider-keychain-search-domain-diagnostic.swift',
+  ])
+})
+
+test('boundary rejects an armed search-domain launcher', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-provider-keychain-search-domain-live-launcher.mjs'),
+    'const createSearchDomainJournal = null\nexport const TLL_SEARCH_DOMAIN_LIVE_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-native-gate:scripts/staging-provider-keychain-search-domain-live-launcher.mjs',
+  ])
+})
+
 test('boundary rejects armed synthetic fixture recovery gates', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-provider-keychain-fixture-recovery-native.swift'),

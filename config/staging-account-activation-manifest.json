@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "3e40a88a9b1429306e4d49b3d4f40cac70b75411646d997bb40ec519fd45801b"
+        "sha256": "88d385fde7aa898fc610d376a189c0f74e25d9e817d28ed6a4efbaf16c58b17f"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -161,7 +161,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "4c0335aec566a6b870bdb37a07d5fea36a9e5f8c85d6cb4856dbc2fd7fad865c"
+        "sha256": "b57b3dcc94d15fd8e126bdd5f29274855253a5b4995a390c2063b7820553af3d"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -769,6 +769,34 @@
       {
         "path": "tests/staging-provider-keychain-fixture-metadata-session.test.mjs",
         "sha256": "0136077e5a9f17a281969c18ba95ebbe0dc805bfdf2e213e58cc88cd890d9303"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-search-domain-diagnostic.swift",
+        "sha256": "49e04ddc4e08f9604a4711e0d9cb2f7fe731679fcb7ef7125c8ae2e979ace75e"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-search-domain-build.mjs",
+        "sha256": "a5320bf9848ad1094cdd03ad80a2de50425c999ce86edac71ab552173da48cec"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-search-domain-journal.mjs",
+        "sha256": "8139bd6ac40943cee27122554cc2b81d2b748310e17212ae44ae6586a0b8cd66"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-search-domain-session.mjs",
+        "sha256": "ad45dca9a6d58a7ca0e43407ca90358db361d4a08da89ddaff5cad43d9da8335"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-search-domain-live-launcher.mjs",
+        "sha256": "cd0c5b9de1e126bb8dfb90373e29c562e0f5dc7a3518abcf942c0e81bb594c83"
+      },
+      {
+        "path": "tests/staging-provider-keychain-search-domain-diagnostic.test.mjs",
+        "sha256": "a13b2ca9b83a0d3c8a272d3934540dca728ae342d4ef1aa8c85e35bf902e54ce"
+      },
+      {
+        "path": "tests/staging-provider-keychain-search-domain-runner.test.mjs",
+        "sha256": "775ef37d05f8d0238793315401262af0331caed6ea015eb51c7d1a95207ed8bc"
       },
       {
         "path": "scripts/staging-provider-readonly-probe.mjs",

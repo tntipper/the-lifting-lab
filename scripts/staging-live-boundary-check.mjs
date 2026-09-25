@@ -62,7 +62,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       violations.push(`embedded-live-launcher:${display(path)}`)
     }
     if (/-live-launcher\.mjs$/.test(path)
-      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal|createFixtureRecoveryJournal|createFixtureMetadataJournal/.test(source)) {
+      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal|createFixtureRecoveryJournal|createFixtureMetadataJournal|createSearchDomainJournal/.test(source)) {
       violations.push(`live-launcher-missing-phase-journal:${display(path)}`)
     }
     if (/\bNATIVE(?:_[A-Z0-9]+)*_(?:TRANSPORT_)?ENABLED\s*=\s*true\b/.test(source)
@@ -76,6 +76,8 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       || /\bTLL_FIXTURE_RECOVERY_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bTLL_FIXTURE_METADATA_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\btllMetadataDiagnosticEnabled\s*=\s*true\b/.test(source)
+      || /\btllSearchDomainDiagnosticEnabled\s*=\s*true\b/.test(source)
+      || /\bTLL_SEARCH_DOMAIN_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_PROVIDER_READONLY_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bPREVIEW_SOURCE_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED\s*=\s*true\b/.test(source)
