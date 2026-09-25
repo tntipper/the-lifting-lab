@@ -1,8 +1,8 @@
 # Stage 3 Keychain search-domain check
 
-Status: **DISABLED PACKAGE REVIEWED; LIVE RUN NOT AUTHORISED**. The previous metadata V1 journal is consumed and must not be replayed. Stage 3 account, cart and provider changes remain HOLD.
+Status: **CONSUMED / DISARMED**. The approved one-run check completed and returned a two-entry effective search list against a one-entry explicit user list. Read the [result](../evidence/2026-09-25-stage3-search-domain-v1-result.md). Both this journal and the previous metadata V1 journal are consumed and must not be replayed. Stage 3 account, cart and provider changes remain HOLD.
 
-The separate disabled native source, one-use journal, source-bound build/check, bounded launcher and offline tests are prepared. The independent reviewer returned GO for disabled preparation and the exact **unapplied** [four-line arming patch](../arming-previews/2026-09-25-stage3-search-domain-v1.patch), a zero-context patch with SHA-256 `2ecb413361787b9357db36dad473bda42cc8de05c91a709e8c1783b26d4a1b53`. The review does not approve execution. Because zero-context patches are less resistant to later source drift, recheck the complete disabled source hashes and patch digest before applying it, then inspect the exact four-line result. The focused group passed 38 tests; the full suite passed 2,517 with two skipped; typecheck, targeted lint, generated-manifest check and live-boundary check passed while both gates were false.
+The separate disabled native source, one-use journal, source-bound build/check, bounded launcher and offline tests passed review. The independently reviewed [four-line arming patch](../arming-previews/2026-09-25-stage3-search-domain-v1.patch), SHA-256 `2ecb413361787b9357db36dad473bda42cc8de05c91a709e8c1783b26d4a1b53`, was applied once and then reversed. **Do not reapply it.** Before the run, the focused group passed 38 tests; the full suite passed 2,517 with two skipped; typecheck, targeted lint, generated-manifest check and live-boundary check passed while both gates were false.
 
 ## Decision this check must answer
 
@@ -14,7 +14,7 @@ The cheapest read-only CLI comparison on 25 September found: explicit user list 
 
 The disabled Swift source `scripts/staging-provider-keychain-search-domain-diagnostic.swift` calls only `SecKeychainGetPreferenceDomain`, `SecKeychainCopySearchList`, `SecKeychainCopyDomainSearchList(.user)`, `SecKeychainGetPath`, `SecKeychainGetTypeID`, and read-only `fstatat` for file identity. It must not open a Keychain, read an item, print a path, change settings or delete a file. Its output has fixed fields for active domain, bounded list counts, exact login-path matches, same-file login matches, exact user-domain login matches, current/user list equality and whether file identities were readable. The current list is an effective list that macOS may merge from saved, common and dynamic entries; a `USER` active domain therefore does not imply the current and explicit user lists must be equal. The explicit user list is compared by exact path only; an alternate spelling of the same user-list file is not classified there. A failed read produces only `READ_UNAVAILABLE`. The observation is local to this Mac; no network or customer system is involved.
 
-## Before any real run
+## Executed one-run protocol; historical record only
 
 1. Completed: independent source/package review, separate one-use controls, offline proof and exact arming-patch review.
 2. Refresh the repository, fixture and Keychain read-only baseline immediately before arming. Check all unrelated gates remain off and that the new journal, binary and receipt are absent.
