@@ -23,7 +23,7 @@ In the staging project `qdmvngjwkcsilzmqksme` only, create one matching broker s
 4. Read the protected Preview readiness route at alias, immutable URL and alias again, checking deployment identity and all four private/public account/cart flags are false. Browser UI alone is insufficient for the protected runtime proof.
 5. Confirm both new journals remain absent, both gates remain false, the generated activation manifest matches source, the pinned Python executable exists, and no production target can be selected by the launcher.
 
-These checks are read-only but may require a separately approved credential window. The retained one-hour Vercel API token may have expired; do not create or replace a credential as a speculative retry. Establish the exact access path, scope and expiry before opening a window. A dashboard view is useful context, not a substitute for an official API or protected runtime receipt.
+These checks are read-only but require a separately approved credential window. Vercel's token list confirms the 24 September one-hour token is **expired**. A new one-hour token limited to `the-lifting-lab` is required for the official project/variable API read; its creation and local storage need a separately controlled user action. Do not create or replace it as a speculative retry. The existing Supabase CLI and Preview-bypass Keychain items also require a fresh, bounded read approval. A dashboard view is useful context, not a substitute for an official API or protected runtime receipt.
 
 ## Proposed arming and execution sequence, not yet authorised
 
