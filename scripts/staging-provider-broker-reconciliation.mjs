@@ -77,7 +77,7 @@ function validProvider(value, rotated) {
  * is returned before inspecting evidence, so a caller must stop the old run
  * before gathering hosted observations in a separate process.
  */
-export function assessBrokerRecovery({ phase, rotation, evidence, nowMs = Date.now() } = {}) {
+export function assessBrokerRecoveryReceipts({ phase, rotation, nowMs = Date.now() } = {}) {
   let progress
   try { progress = assessBrokerPhase(phase, nowMs) } catch { return fixed('PHASE_RECORD_UNAVAILABLE') }
   if (progress.status === 'ACTIVE_WITHIN_PHASE_BOUND') return fixed('ACTIVE_WINDOW_HOLD')
@@ -89,6 +89,13 @@ export function assessBrokerRecovery({ phase, rotation, evidence, nowMs = Date.n
   if (phase.outcome === 'VERIFIED' && !validRotation(rotation, expectedRotation, phase)
     || phase.outcome === 'STOPPED_BEFORE_UPDATE' && (dispatched || has(phase, 'INTENT_RECORDED')
       ? !validRotation(rotation, expectedRotation, phase) : rotation !== null)) return fixed('RECONCILIATION_REQUIRED')
+
+  return fixed('READY_FOR_OBSERVATION')
+}
+
+export function assessBrokerRecovery({ phase, rotation, evidence, nowMs = Date.now() } = {}) {
+  const receipts = assessBrokerRecoveryReceipts({ phase, rotation, nowMs })
+  if (receipts.status !== 'READY_FOR_OBSERVATION') return receipts
 
   try {
     if (!exact(evidence, ['provider', 'names', 'database', 'preview'])

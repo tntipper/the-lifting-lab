@@ -624,7 +624,11 @@
       },
       {
         "path": "scripts/staging-provider-broker-reconciliation.mjs",
-        "sha256": "73b0a287ab756615b8ffacbe751f84f0974750f65da4f819a41440e67d655583"
+        "sha256": "b1c51a8b95c75a6457f123acfb4cec7e219ba97c1ea85a005e5ca2ad0c9c5931"
+      },
+      {
+        "path": "scripts/staging-provider-broker-recovery-collection.mjs",
+        "sha256": "b9b6347a74122157046a01ebab54a21403f3dc5c444599000f3bb6ac0edd3d46"
       },
       {
         "path": "scripts/staging-provider-broker-native-adapter.mjs",
@@ -981,6 +985,10 @@
       {
         "path": "tests/staging-provider-broker-reconciliation.test.mjs",
         "sha256": "9ff66af3699848b8a2e351f368b11a2d1b9a78baa35ede70f8c754aa8f0057e7"
+      },
+      {
+        "path": "tests/staging-provider-broker-recovery-collection.test.mjs",
+        "sha256": "11abc48070d2cfb3d33a80dc8c80e8f651023cde2d381f619f6ed4a6c5b5000a"
       },
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",
