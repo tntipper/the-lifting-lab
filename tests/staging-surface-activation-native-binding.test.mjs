@@ -10,7 +10,8 @@ const token = () => Buffer.from('private-vercel-token')
 const signal = new AbortController().signal
 const deploymentId = 'dpl_abc123'
 const deployment = Object.freeze({ id: deploymentId, url: 'tll-abc.vercel.app', projectId: VERCEL_PROJECT_ID,
-  ownerId: VERCEL_TEAM_ID, readyState: 'READY', createdAt: Date.parse('2026-09-22T12:00:00.000Z'),
+  ownerId: VERCEL_TEAM_ID, readyState: 'READY', target: null, createdAt: Date.parse('2026-09-22T12:00:00.000Z'),
+  gitSource: { type: 'github', repoId: 1264363509, ref: 'codex/tll-integration', sha: 'a'.repeat(40) },
   meta: { githubCommitRef: 'codex/tll-integration', githubCommitSha: 'a'.repeat(40), tllManifestSha256: 'b'.repeat(64) } })
 const jsonResponse = (status, body, _url, length = null) => new Response(JSON.stringify(body), { status,
   headers: length === null ? undefined : { 'content-length': length } })
@@ -112,7 +113,7 @@ test('alias, readiness and deployment calls use fixed URLs, headers, and reject 
   const read = await ports.readDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal })
   assert.equal(read.sourceCommit, 'a'.repeat(40)); assert.equal(read.manifestSha256, 'b'.repeat(64))
   const deploymentCall = calls.find(call => call.url.includes('/v13/deployments/'))
-  assert.equal(deploymentCall.url, `https://api.vercel.com/v13/deployments/${deploymentId}?teamId=${VERCEL_TEAM_ID}`)
+  assert.equal(deploymentCall.url, `https://api.vercel.com/v13/deployments/${deploymentId}?withGitRepoInfo=true&teamId=${VERCEL_TEAM_ID}`)
   await assert.rejects(ports.readDeployment({ ...STAGING_SURFACE_TARGET, projectRef: 'wrhgscovsgsudtedbljr' }, deploymentId, { signal }), /unavailable/)
   await assert.rejects(ports.createDeployment(), /unavailable/)
 })
@@ -158,6 +159,16 @@ test('redirects, actual oversized JSON, dishonest or missing lengths, malformed 
   await assert.rejects(badSource.readDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal }), /unavailable/)
   const badOwner = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }), fetch: async url => jsonResponse(200, { ...deployment, ownerId: 'team_unexpected' }, url) })
   await assert.rejects(badOwner.readDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal }), /unavailable/)
+  for (const changed of [
+    { gitSource: { ...deployment.gitSource, sha: 'c'.repeat(40) } },
+    { gitSource: { ...deployment.gitSource, repoId: 999 } },
+    { gitSource: { ...deployment.gitSource, ref: 'main' } },
+    { target: 'production' },
+  ]) {
+    const wrongSource = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+      fetch: async url => jsonResponse(200, { ...deployment, ...changed }, url) })
+    await assert.rejects(wrongSource.readDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal }), /unavailable/)
+  }
   const controller = new AbortController(); controller.abort()
   await assert.rejects(binding().readDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal: controller.signal }), /unavailable/)
   const source = await (await import('node:fs/promises')).readFile('scripts/staging-surface-activation-native-binding.mjs', 'utf8')

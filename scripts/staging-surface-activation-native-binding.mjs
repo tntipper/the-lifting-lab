@@ -28,6 +28,7 @@ const exact = (value, keys) => value && typeof value === 'object' && !Array.isAr
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 const validDeploymentId = value => typeof value === 'string' && /^dpl_[A-Za-z0-9]+$/.test(value)
 const validUrl = value => typeof value === 'string' && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(value)
+const pinnedRepositoryId = value => value === 1264363509 || value === '1264363509'
 
 function validateTarget(value) {
   if (!same(value, STAGING_SURFACE_TARGET) || value.projectRef === PRODUCTION_PROJECT_REF) unavailable()
@@ -105,8 +106,13 @@ function sourceMetadata(value) {
 function deploymentReceipt(value, deploymentId) {
   if (!value || typeof value !== 'object' || Array.isArray(value)
     || value.id !== deploymentId || !validUrl(`https://${value.url ?? ''}`) || value.projectId !== VERCEL_PROJECT_ID
-    || value.ownerId !== VERCEL_TEAM_ID || value.readyState !== 'READY' || !Number.isFinite(value.createdAt)) unavailable()
+    || value.ownerId !== VERCEL_TEAM_ID || value.readyState !== 'READY' || value.target !== null
+    || !Number.isFinite(value.createdAt) || !value.gitSource || typeof value.gitSource !== 'object'
+    || Array.isArray(value.gitSource) || value.gitSource.type !== 'github'
+    || !pinnedRepositoryId(value.gitSource.repoId) || value.gitSource.ref !== STAGING_BRANCH
+    || !/^[a-f0-9]{40}$/.test(value.gitSource.sha ?? '')) unavailable()
   const meta = sourceMetadata(value.meta)
+  if (meta.githubCommitSha !== value.gitSource.sha) unavailable()
   return Object.freeze({ deploymentId, immutableUrl: `https://${value.url}`,
     sourceCommit: meta.githubCommitSha, manifestSha256: meta.tllManifestSha256, ready: true,
     createdAt: new Date(value.createdAt).toISOString() })
@@ -237,7 +243,7 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher, verc
     },
     async readDeployment(target, deploymentId, { signal } = {}) {
       validateTarget(target); validateSignal(signal); if (!validDeploymentId(deploymentId)) unavailable()
-      const url = `${VERCEL_API}/v13/deployments/${deploymentId}?teamId=${VERCEL_TEAM_ID}`
+      const url = `${VERCEL_API}/v13/deployments/${deploymentId}?withGitRepoInfo=true&teamId=${VERCEL_TEAM_ID}`
       const value = await fetchJson(url, Object.freeze({ method: 'GET', redirect: 'error', headers: headersForVercel(token), signal }))
       const receipt = deploymentReceipt(value, deploymentId); deployments.set(deploymentId, receipt.immutableUrl)
       return receipt

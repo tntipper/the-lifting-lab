@@ -964,7 +964,7 @@
       },
       {
         "path": "scripts/staging-surface-activation-native-binding.mjs",
-        "sha256": "8fa88cb9bd2c4027582e42da8dc318f86414e743d90d941795693ddb1f21d973"
+        "sha256": "dfd1bfc0eec97ce98b9b96a240716796127d1a27c4c339ecc475bd4abd867e03"
       },
       {
         "path": "scripts/staging-surface-preview-deployment-request.mjs",
@@ -973,6 +973,10 @@
       {
         "path": "scripts/staging-surface-preview-deployment-post.mjs",
         "sha256": "c822097b5516aa0a21ca8ba9bf3df21c60741f0d2b09c0333695a6b24938b436"
+      },
+      {
+        "path": "scripts/staging-surface-preview-deployment-verifier.mjs",
+        "sha256": "f1777d94b7c1c33104c18f9dc9f1e4cd54163a24c6a26551cf71895cc189c66e"
       },
       {
         "path": "scripts/staging-preview-git-source-preflight.mjs",
@@ -1300,7 +1304,7 @@
       },
       {
         "path": "tests/staging-surface-activation-native-binding.test.mjs",
-        "sha256": "85be3b38921223279a4c3d47d74c9dcdb599f8ca9e775f62f14fc1d63d27d096"
+        "sha256": "53543ba1b29bde1f19c4df0a7320745b557ce595d2661fb3215ae7692bd3a940"
       },
       {
         "path": "tests/staging-surface-preview-deployment-request.test.mjs",
@@ -1309,6 +1313,10 @@
       {
         "path": "tests/staging-surface-preview-deployment-post.test.mjs",
         "sha256": "7b6006fc91860f1c78816f2052140ab1bcde6a35d689f3bb2039fcff053f4526"
+      },
+      {
+        "path": "tests/staging-surface-preview-deployment-verifier.test.mjs",
+        "sha256": "91973517edefbfd652b068bbbcd495ee1d0e654babd93343b16f9f76cf4c4dba"
       },
       {
         "path": "tests/staging-preview-git-source-preflight.test.mjs",
@@ -1384,7 +1392,7 @@
     "providerBindingsImplemented": true,
     "surfaceReadBindingsImplemented": true,
     "deploymentCreationBindingImplemented": false,
-    "deploymentCreationHoldReason": "PREVIEW_POST_NOT_CONNECTED_OR_VERIFIED",
+    "deploymentCreationHoldReason": "PREVIEW_VERIFIER_NOT_JOURNALED_OR_CONNECTED",
     "nativeLaunchersImplemented": false,
     "boundedExecutorsRequiredBeforeArming": true,
     "hostedExecutionApproved": false,

@@ -68,7 +68,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.disabledActivationTooling.providerBindingsImplemented, true)
   assert.equal(manifest.disabledActivationTooling.surfaceReadBindingsImplemented, true)
   assert.equal(manifest.disabledActivationTooling.deploymentCreationBindingImplemented, false)
-  assert.equal(manifest.disabledActivationTooling.deploymentCreationHoldReason, 'PREVIEW_POST_NOT_CONNECTED_OR_VERIFIED')
+  assert.equal(manifest.disabledActivationTooling.deploymentCreationHoldReason, 'PREVIEW_VERIFIER_NOT_JOURNALED_OR_CONNECTED')
   assert.equal(manifest.disabledActivationTooling.nativeLaunchersImplemented, false)
   assert.equal(manifest.disabledActivationTooling.boundedExecutorsRequiredBeforeArming, true)
   assert.equal(manifest.disabledActivationTooling.hostedExecutionApproved, false)
@@ -156,6 +156,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
     'scripts/staging-surface-activation-transport.mjs','scripts/staging-surface-activation-native-adapter.mjs','scripts/staging-surface-activation-native-binding.mjs',
     'scripts/staging-surface-preview-deployment-request.mjs',
     'scripts/staging-surface-preview-deployment-post.mjs',
+    'scripts/staging-surface-preview-deployment-verifier.mjs',
     'scripts/staging-preview-git-source-preflight.mjs',
     'scripts/staging-preview-git-acceptance.mjs',
     'scripts/staging-preview-git-publish-journal.mjs',
@@ -221,6 +222,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
     'tests/staging-surface-activation-transport.test.mjs','tests/staging-surface-activation-native-adapter.test.mjs','tests/staging-surface-activation-native-binding.test.mjs',
     'tests/staging-surface-preview-deployment-request.test.mjs',
     'tests/staging-surface-preview-deployment-post.test.mjs',
+    'tests/staging-surface-preview-deployment-verifier.test.mjs',
     'tests/staging-preview-git-source-preflight.test.mjs',
     'tests/staging-preview-git-acceptance.test.mjs',
     'tests/staging-preview-git-publish-journal.test.mjs',
