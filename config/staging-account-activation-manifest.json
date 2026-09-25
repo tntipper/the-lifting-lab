@@ -1091,6 +1091,10 @@
         "sha256": "6a34489d3a21eb66661e92aebf80ff294c9db81dab9c9e9063762ba7d92aa483"
       },
       {
+        "path": "tests/staging-provider-broker-rest-worker-boundary.test.mjs",
+        "sha256": "30538c07d24787a2e76f11010284b5a881dbb7d962b617354eb9218d78599579"
+      },
+      {
         "path": "tests/staging-provider-broker-native-binding.test.mjs",
         "sha256": "1000eefd2b1369d1cb63059a9e962dd6ed087f6a97e18251d527ff65fc096170"
       },

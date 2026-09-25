@@ -669,6 +669,7 @@ const disabledActivationToolingSources = [
   'tests/staging-provider-broker-vercel-rest-host.test.mjs',
   'tests/staging-provider-broker-supabase-rest-host.test.mjs',
   'tests/staging-provider-broker-rest-composition.test.mjs',
+  'tests/staging-provider-broker-rest-worker-boundary.test.mjs',
   'tests/staging-provider-broker-native-binding.test.mjs',
   'tests/staging-provider-normalization-contract.test.mjs',
   'tests/staging-provider-normalization-native-port.test.mjs',
