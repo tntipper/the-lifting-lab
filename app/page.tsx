@@ -144,8 +144,8 @@ export default function Home() {
             href="/best"
             className="flex items-center gap-3 w-full bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5 hover:border-lab-lime/40 transition-colors"
           >
-            <span className="text-lg">🏆</span>
-            <span className="text-sm font-bold text-white">Best Supplements 2026</span>
+            <span className="text-lg">📚</span>
+            <span className="text-sm font-bold text-white">Supplement research</span>
             <span className="ml-auto text-lab-lime text-sm font-bold">→</span>
           </Link>
 

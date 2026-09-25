@@ -182,7 +182,7 @@ export default function FormsPage() {
               href="/best"
               className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
             >
-              Best of 2026
+              Product research
             </Link>
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">

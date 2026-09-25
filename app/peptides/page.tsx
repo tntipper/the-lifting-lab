@@ -216,7 +216,7 @@ export default function PeptidesPage() {
               href="/best"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best supplements 2026 →
+              Product research →
             </Link>
             <Link
               href="/wizard"
