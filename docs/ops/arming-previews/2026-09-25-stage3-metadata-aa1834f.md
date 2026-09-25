@@ -1,5 +1,7 @@
 # Stage 3 fixture metadata: unapplied arming preview
 
+**SUPERSEDED / DO NOT APPLY.** Independent review found two safety gaps in the base package. The corrected build and launcher have different hashes. Preserve this only as a record of the rejected first preview.
+
 Base disabled source commit: `aa1834f0d22a1a6fb185bfa4bbc5610cbb75a4ce`.
 
 This is a review specification, **not permission to apply it**. Only the following four line changes are proposed:

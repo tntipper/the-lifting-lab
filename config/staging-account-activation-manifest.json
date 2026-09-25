@@ -740,7 +740,7 @@
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-metadata-build.mjs",
-        "sha256": "4057034876765d2f63dd359501abd337b64549f2d10658994935434bd93a12a2"
+        "sha256": "c57666c3c4590a822bf23069708d2f903b65bb219cc7ec8ac4bccae2baff8cea"
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-metadata-journal.mjs",
@@ -752,7 +752,7 @@
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-metadata-live-launcher.mjs",
-        "sha256": "ede834ef60fac30559ca053b2826d8cac1c9df74456f212a0a8ea1de4e1ac9ec"
+        "sha256": "3069dea0e2284e160ac7e8a841ad458bd9cfbab1b560f1632d59a49143bb92a4"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-metadata-diagnostic.test.mjs",
@@ -764,7 +764,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-fixture-metadata-build.test.mjs",
-        "sha256": "8f39afe3dce7ca4ce4c936cf9654b44191e5c8ee9d232b48db9513b4b1dc40f1"
+        "sha256": "1a3aed2675bd909550adf19ae40ff3b327f511a4ad18db8d812cee5c18201d8b"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-metadata-session.test.mjs",

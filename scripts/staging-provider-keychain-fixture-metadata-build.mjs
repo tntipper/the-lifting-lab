@@ -41,9 +41,11 @@ function inspectBinary(path) {
     timeout: 10_000, maxBuffer: 4_096 }
   const architecture = spawnSync('/usr/bin/lipo', ['-archs', path], options)
   const signature = spawnSync('/usr/bin/codesign', ['-dv', '--verbose=2', path], options)
+  const verified = spawnSync('/usr/bin/codesign', ['--verify', '--strict', path], options)
   try {
     if (architecture.error || architecture.signal || architecture.status !== 0
-      || signature.error || signature.signal || signature.status !== 0) fail()
+      || signature.error || signature.signal || signature.status !== 0
+      || verified.error || verified.signal || verified.status !== 0) fail()
     const arch = architecture.stdout.toString('utf8').trim()
     const metadata = signature.stderr.toString('utf8')
     const identifier = /^Identifier=([^\r\n]+)$/m.exec(metadata)?.[1]
@@ -53,6 +55,42 @@ function inspectBinary(path) {
   } finally {
     architecture.stdout?.fill?.(0); architecture.stderr?.fill?.(0)
     signature.stdout?.fill?.(0); signature.stderr?.fill?.(0)
+    verified.stdout?.fill?.(0); verified.stderr?.fill?.(0)
+  }
+}
+
+/** Open without following links; reject wrong objects before reading any bytes. */
+export function readVerifiedArtifact(path, permissions, maxBytes, io = fs) {
+  if (typeof path !== 'string' || !path || ![0o700, 0o600].includes(permissions)
+    || !Number.isSafeInteger(maxBytes) || maxBytes < 1
+    || !Number.isInteger(io.constants.O_NOFOLLOW) || !Number.isInteger(io.constants.O_NONBLOCK)) fail()
+  let fd, bytes
+  try {
+    fd = io.openSync(path, io.constants.O_RDONLY | io.constants.O_NOFOLLOW
+      | io.constants.O_NONBLOCK | io.constants.O_CLOEXEC)
+    const stat = io.fstatSync(fd)
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.uid !== process.getuid()
+      || stat.nlink !== 1 || (stat.mode & 0o777) !== permissions
+      || stat.size < 1 || stat.size > maxBytes) fail()
+    bytes = Buffer.alloc(stat.size)
+    for (let offset = 0; offset < bytes.length;) {
+      const read = io.readSync(fd, bytes, offset, bytes.length - offset, offset)
+      if (!Number.isSafeInteger(read) || read <= 0 || read > bytes.length - offset) fail()
+      offset += read
+    }
+    const after = io.fstatSync(fd), named = io.lstatSync(path)
+    for (const current of [after, named]) {
+      if (!current.isFile() || current.isSymbolicLink() || current.dev !== stat.dev
+        || current.ino !== stat.ino || current.uid !== stat.uid
+        || current.nlink !== stat.nlink || current.size !== stat.size
+        || (current.mode & 0o777) !== permissions) fail()
+    }
+    const result = { bytes, stat }
+    bytes = undefined
+    return result
+  } finally {
+    if (fd !== undefined) io.closeSync(fd)
+    bytes?.fill(0)
   }
 }
 
@@ -75,12 +113,24 @@ export function validMetadataArtifact(record, actual, binaryStat, receiptStat, u
 function check() {
   privateDirectory(privateRoot); privateDirectory(directory)
   if (!armedMetadataSource(fs.readFileSync(source, 'utf8'))) fail()
-  const record = JSON.parse(fs.readFileSync(receipt, 'utf8'))
-  const actual = { sourceSha256: fileHash(source), binarySha256: fileHash(binary),
-    ...inspectBinary(binary) }
-  if (!validMetadataArtifact(record, actual, fs.lstatSync(binary), fs.lstatSync(receipt),
-    process.getuid())) fail()
-  return Object.freeze({ status: 'ARMED_METADATA_BINARY_VERIFIED', ...record })
+  let receiptArtifact, binaryArtifact, scratch
+  try {
+    receiptArtifact = readVerifiedArtifact(receipt, 0o600, 4_096)
+    binaryArtifact = readVerifiedArtifact(binary, 0o700, 32_000_000)
+    scratch = resolve(directory, `.tll-fixture-metadata-check-${randomUUID()}`)
+    fs.mkdirSync(scratch, { mode: 0o700 })
+    const record = JSON.parse(receiptArtifact.bytes.toString('utf8'))
+    const snapshot = resolve(scratch, name)
+    fs.writeFileSync(snapshot, binaryArtifact.bytes, { flag: 'wx', mode: 0o700 })
+    const actual = { sourceSha256: fileHash(source), binarySha256: sha(binaryArtifact.bytes),
+      ...inspectBinary(snapshot) }
+    if (!validMetadataArtifact(record, actual, binaryArtifact.stat, receiptArtifact.stat,
+      process.getuid())) fail()
+    return Object.freeze({ status: 'ARMED_METADATA_BINARY_VERIFIED', ...record })
+  } finally {
+    if (scratch) fs.rmSync(scratch, { recursive: true, force: true })
+    receiptArtifact?.bytes.fill(0); binaryArtifact?.bytes.fill(0)
+  }
 }
 
 function build() {
