@@ -48,7 +48,8 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
     const source = read(path)
     if (/runNativeGeneration\d*CredentialWindow\s*\(/.test(source)) violations.push(`test-native-call:${display(path)}`)
     if (/from\s+['"][^'"]*live-launcher[^'"]*['"]/.test(source)) violations.push(`test-live-launcher-import:${display(path)}`)
-    if (display(path) === 'tests/staging-provider-keychain-fixture-recovery-launcher.test.mjs'
+    if (['tests/staging-provider-keychain-fixture-recovery-launcher.test.mjs',
+      'tests/staging-provider-keychain-fixture-recovery-v2-launcher.test.mjs'].includes(display(path))
       && /\b(?:spawn|spawnSync|execFile|execFileSync)\s*\(/.test(source)) {
       violations.push(`test-fixture-recovery-live-launcher-call:${display(path)}`)
     }
@@ -62,7 +63,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       violations.push(`embedded-live-launcher:${display(path)}`)
     }
     if (/-live-launcher\.mjs$/.test(path)
-      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal|createFixtureRecoveryJournal|createFixtureMetadataJournal|createSearchDomainJournal/.test(source)) {
+      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal|createFixtureRecoveryJournal|createFixtureRecoveryV2Journal|createFixtureMetadataJournal|createSearchDomainJournal/.test(source)) {
       violations.push(`live-launcher-missing-phase-journal:${display(path)}`)
     }
     if (/\bNATIVE(?:_[A-Z0-9]+)*_(?:TRANSPORT_)?ENABLED\s*=\s*true\b/.test(source)
@@ -74,6 +75,8 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       || /\bTLL_FIXTURE_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bTLL_FIXTURE_RECOVERY_ENABLED\s*=\s*true\b/.test(source)
       || /\bTLL_FIXTURE_RECOVERY_LIVE_ENABLED\s*=\s*true\b/.test(source)
+      || /\bTLL_FIXTURE_RECOVERY_V2_ENABLED\s*=\s*true\b/.test(source)
+      || /\bTLL_FIXTURE_RECOVERY_V2_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bTLL_FIXTURE_METADATA_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\btllMetadataDiagnosticEnabled\s*=\s*true\b/.test(source)
       || /\btllSearchDomainDiagnosticEnabled\s*=\s*true\b/.test(source)

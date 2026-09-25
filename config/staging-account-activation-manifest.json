@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "88d385fde7aa898fc610d376a189c0f74e25d9e817d28ed6a4efbaf16c58b17f"
+        "sha256": "99853f880aeb57d899a18565694c683e1d988ef98a32eecdb5f114cb6a34b56a"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -735,6 +735,34 @@
         "sha256": "56663c432e34e3ed4b90a538016fd80714f1176e59baa8a8e0f544e59776022a"
       },
       {
+        "path": "scripts/staging-provider-keychain-fixture-recovery-v2-native.swift",
+        "sha256": "a883a26309563ed36292bd55c52bc1d9c015ce6f03962892a4a90f64e0d2e66a"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-recovery-v2-build.mjs",
+        "sha256": "236547eaedaa5509471e7b083ff9fdc3d9d87006c716d5143493700eb35a19e6"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-recovery-v2-baseline.mjs",
+        "sha256": "15008b29e6b68a762ab0631eeb0e3102af6ffee36c758885facf8c7f5938d0c5"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-recovery-v2-journal.mjs",
+        "sha256": "84ba0ad32d90bb32dcc46f99caee8a205f5702a59e36b4b32135e4a83fc973fc"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-recovery-v2-session.mjs",
+        "sha256": "df90ce03a1d3668995e41fb607c9b3770605ee4520fbda7323736e19c0fe0e14"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-recovery-v2-preflight.mjs",
+        "sha256": "762be769c6f8b1a45ee94e43246bdd941909a89cfa1ad9f872ea0f780f0afa2b"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-recovery-v2-live-launcher.mjs",
+        "sha256": "09ed734588d1dc69a9f0457061b3ef4f06b1a6f776bd44a77579944bb23bafbf"
+      },
+      {
         "path": "scripts/staging-provider-keychain-fixture-metadata-diagnostic.swift",
         "sha256": "0f76d1e8eb81c606cbd014e4b6e18c4d68ef2e7d40ca4c0d850e1d10d2637392"
       },
@@ -1001,6 +1029,34 @@
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-launcher.test.mjs",
         "sha256": "0a01ae24bc12b74ef980b36c901f13a69d77a33af0fe6a6ea63681867af9e169"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-recovery-v2-native-offline.test.mjs",
+        "sha256": "197d1da1241aa0af65e764eeb9999861c1d582cffdb31577fbb5887902ddb114"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-recovery-v2-build.test.mjs",
+        "sha256": "e735d1e3c4911dd106c891c0bf2a1c1ae787c2abb1bd893988c9ada5d9470ac1"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-recovery-v2-baseline.test.mjs",
+        "sha256": "8a7e60e49f484fe800a03e5bb51a71c5309c643b69e9c4f7f5d323b8872c6533"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-recovery-v2-journal.test.mjs",
+        "sha256": "351f1efc8b2430290a7777e6736e4d08922cc33ed8a6dc81dde1e56dcad2e4f5"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-recovery-v2-session.test.mjs",
+        "sha256": "bdb13868d147172e55817251fce7349b981d750cf8b2f0fce2f2c705998611c7"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-recovery-v2-preflight.test.mjs",
+        "sha256": "e1ed4decb8f4056adc45c122aabe26ba850bfc1ad853767a96fdf7de8b2e03fd"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-recovery-v2-launcher.test.mjs",
+        "sha256": "2d6772af53d9ae7c1f1e353f39ac93f6eac9657929c812d2dee2aedafe7eed8e"
       },
       {
         "path": "tests/staging_provider_normalization_keychain_test.py",
