@@ -691,6 +691,10 @@
         "sha256": "665ebc1208bb4a3d78a216b84070242e38a7a3001d153b500314501f52d38b49"
       },
       {
+        "path": "scripts/staging-provider-broker-rest-worker-core.mjs",
+        "sha256": "e6bde8110f177b17c4eae6d098513f76e44beecdf00f3ba58156101d285d9eee"
+      },
+      {
         "path": "scripts/staging-provider-broker-native-binding.mjs",
         "sha256": "a6c22f8465d000fecfd77edc1d01545ccebfd18bb17e1e62623cdca9929d273b"
       },
@@ -1109,6 +1113,10 @@
       {
         "path": "tests/staging-provider-broker-rest-ports.test.mjs",
         "sha256": "ea080fdba45f04c33cf1ae060b248262b2c85bc76d40f4a5e03556896ea7077e"
+      },
+      {
+        "path": "tests/staging-provider-broker-rest-worker-core.test.mjs",
+        "sha256": "979840603975df10ffdf7538d6dd1fa109ca4f165f88ff7c0212b8a5c5d523fe"
       },
       {
         "path": "tests/staging-provider-broker-native-binding.test.mjs",
