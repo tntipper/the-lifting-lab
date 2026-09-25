@@ -77,3 +77,54 @@ test('unrelated provider field drift rejects success and cannot retry', async ()
   assert.equal(f.journal.read().state, 'RECONCILIATION_REQUIRED')
   assert.deepEqual(f.counts(), { reads: 2, updates: 1 })
 })
+
+test('failed independent readback preserves uncertainty and cannot retry', async () => {
+  const f = fixture(), read = f.port.readProvider
+  let calls = 0
+  f.port.readProvider = async target => {
+    if (++calls === 2) throw Error('offline simulated readback failure')
+    return read(target)
+  }
+  assert.equal((await disableStagingProviderSupabaseOnly(f)).status, 'RECONCILIATION_REQUIRED')
+  assert.equal(f.journal.read().state, 'RECONCILIATION_REQUIRED')
+  assert.equal((await disableStagingProviderSupabaseOnly(f)).status, 'REPLAY_REJECTED')
+  assert.deepEqual(f.counts(), { reads: 1, updates: 1 })
+})
+
+test('failed durable acknowledgement never counts an update as verified', async () => {
+  const f = fixture(), original = f.journal
+  let rejectAck = true
+  f.journal = { ...original, transition(receipt, state) {
+    if (state === 'UPDATE_ACKNOWLEDGED' && rejectAck) {
+      rejectAck = false
+      throw Error('offline simulated journal failure')
+    }
+    return original.transition(receipt, state)
+  } }
+  assert.equal((await disableStagingProviderSupabaseOnly(f)).status, 'RECONCILIATION_REQUIRED')
+  assert.equal(original.read().state, 'RECONCILIATION_REQUIRED')
+  assert.deepEqual(f.counts(), { reads: 1, updates: 1 })
+})
+
+test('invalid update acknowledgement cannot be mistaken for success', async () => {
+  const f = fixture(), update = f.port.updateProvider
+  f.port.updateProvider = async (target, before) => {
+    await update(target, before)
+    return { status: 'UPDATED', target, providerIdentifier: PROVIDER_IDENTIFIER }
+  }
+  assert.equal((await disableStagingProviderSupabaseOnly(f)).status, 'RECONCILIATION_REQUIRED')
+  assert.equal(f.journal.read().state, 'RECONCILIATION_REQUIRED')
+  assert.deepEqual(f.counts(), { reads: 1, updates: 1 })
+})
+
+test('native port cannot mutate the saved provider baseline through its argument', async () => {
+  const f = fixture(), update = f.port.updateProvider
+  f.port.updateProvider = async (target, before) => {
+    const result = await update(target, before)
+    before.client_id = 'mutated-local-copy'
+    return result
+  }
+  assert.equal((await disableStagingProviderSupabaseOnly(f)).status, 'NORMALIZED_VERIFIED')
+  assert.equal(f.journal.read().state, 'NORMALIZED_VERIFIED')
+  assert.deepEqual(f.counts(), { reads: 2, updates: 1 })
+})
