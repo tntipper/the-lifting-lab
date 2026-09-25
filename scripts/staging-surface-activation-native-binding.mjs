@@ -133,6 +133,21 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher, verc
   if (typeof runCli !== 'function' || typeof fetcher !== 'function') unavailable()
   const token = validateVercelToken(vercelToken)
   const deployments = new Map()
+  const readPinnedRepository = async signal => {
+    validateSignal(signal)
+    let reader
+    try {
+      // The existing baseline reader imports this module's fixed target constants;
+      // load it after module initialization to avoid a circular ESM initializer.
+      const { createStagingAccountHostedBaselineVercelBinding } = await import('./staging-account-hosted-baseline-vercel.mjs')
+      reader = createStagingAccountHostedBaselineVercelBinding({ fetch: fetcher, vercelToken: token })
+      const project = await reader.readProject({ signal })
+      const repository = project.repository
+      if (repository.repoId !== 1264363509 || repository.org !== 'tntipper'
+        || repository.repo !== 'the-lifting-lab' || repository.sourceless !== false) unavailable()
+      return Object.freeze({ repoId: repository.repoId, org: repository.org, repo: repository.repo })
+    } catch { unavailable() } finally { reader?.dispose() }
+  }
   const withSignal = (signal, operation) => {
     validateSignal(signal)
     return operation()
@@ -206,6 +221,9 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher, verc
         publicCustomer: value.publicCustomer, publicCart: value.publicCart })
     },
     async createDeployment() { unavailable() },
+    // This must be called anew inside the eventual POST operation; a saved
+    // receipt cannot prove that the connected repository is still unchanged.
+    readPinnedRepository,
     async readDeployment(target, deploymentId, { signal } = {}) {
       validateTarget(target); validateSignal(signal); if (!validDeploymentId(deploymentId)) unavailable()
       const url = `${VERCEL_API}/v13/deployments/${deploymentId}?teamId=${VERCEL_TEAM_ID}`

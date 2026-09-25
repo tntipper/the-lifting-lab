@@ -35,6 +35,43 @@ test('binding stays disabled and requires explicit injected dependencies', () =>
   assert.throws(() => createStagingSurfaceNativeBinding({ runCli: () => {}, fetch: () => {}, vercelToken: Buffer.alloc(0) }), /unavailable/)
 })
 
+test('read-only deployment preflight checks the fixed connected GitHub repository afresh', async () => {
+  const calls = []
+  const project = { id: VERCEL_PROJECT_ID, name: 'the-lifting-lab', accountId: VERCEL_TEAM_ID,
+    link: { type: 'github', repoId: 1264363509, repoOwnerId: 12345, org: 'tntipper',
+      repo: 'the-lifting-lab', productionBranch: 'main', sourceless: false } }
+  const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async (url, options) => { calls.push({ url, options }); return jsonResponse(200, project, url) } })
+  const expected = { repoId: 1264363509, org: 'tntipper', repo: 'the-lifting-lab' }
+  assert.deepEqual(await host.readPinnedRepository(signal), expected)
+  assert.deepEqual(await host.readPinnedRepository(signal), expected)
+  assert.equal(calls.length, 2, 'the check must not reuse a previous project read')
+  for (const call of calls) {
+    assert.equal(call.url, `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_TEAM_ID}`)
+    assert.equal(call.options.method, 'GET')
+    assert.equal(call.options.signal, signal)
+  }
+  await assert.rejects(host.createDeployment(), /unavailable/)
+  assert.equal(calls.length, 2, 'disabled deployment must never dispatch a POST')
+})
+
+test('deployment preflight rejects a changed repository, project, or aborted signal', async () => {
+  const base = { id: VERCEL_PROJECT_ID, name: 'the-lifting-lab', accountId: VERCEL_TEAM_ID,
+    link: { type: 'github', repoId: 1264363509, repoOwnerId: 12345, org: 'tntipper',
+      repo: 'the-lifting-lab', productionBranch: 'main', sourceless: false } }
+  for (const changed of [
+    { ...base, link: { ...base.link, repoId: 999 } },
+    { ...base, link: { ...base.link, sourceless: true } },
+    { ...base, accountId: 'team_other' },
+  ]) {
+    const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+      fetch: async (url) => jsonResponse(200, changed, url) })
+    await assert.rejects(host.readPinnedRepository(signal), /unavailable/)
+  }
+  const aborted = new AbortController(); aborted.abort()
+  await assert.rejects(binding().readPinnedRepository(aborted.signal), /unavailable/)
+})
+
 test('Vercel mutations accept only the four fixed commands and forward the abort signal', async () => {
   const calls = [], ports = binding({ onCli: (args, input, fd, options) => { calls.push({ args, input: input.toString(), fd, options }); return { status: 'COMPLETED' } } })
   await ports.runVercel(['--yes', 'vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('true'), 0, { signal })

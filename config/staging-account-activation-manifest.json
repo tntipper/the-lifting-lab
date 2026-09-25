@@ -964,7 +964,7 @@
       },
       {
         "path": "scripts/staging-surface-activation-native-binding.mjs",
-        "sha256": "7401e44647cbb6844d73fe64450dffe94d25e8dc3e0e3affd5c1bdbe801d8e6a"
+        "sha256": "86599156e3bb3653871cbdd3dd7550e2c66e6b6efb10e14db18b8dd572b028b9"
       },
       {
         "path": "scripts/staging-surface-preview-deployment-request.mjs",
@@ -1296,7 +1296,7 @@
       },
       {
         "path": "tests/staging-surface-activation-native-binding.test.mjs",
-        "sha256": "91a3ebb3a53d820ea3d956316068511c6e63a4ea533abde89a7d38036a089ec5"
+        "sha256": "37f5f4e3acfab514fcb3595b36567d5b1350f77435c3ac81f1813cbcde4aa3b8"
       },
       {
         "path": "tests/staging-surface-preview-deployment-request.test.mjs",
