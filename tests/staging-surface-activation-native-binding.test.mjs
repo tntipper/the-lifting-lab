@@ -117,6 +117,36 @@ test('alias, readiness and deployment calls use fixed URLs, headers, and reject 
   await assert.rejects(ports.createDeployment(), /unavailable/)
 })
 
+test('deployment state read distinguishes pending, ready and failed builds without claiming source proof', async () => {
+  const calls = []
+  for (const readyState of ['QUEUED', 'INITIALIZING', 'BUILDING', 'READY', 'ERROR']) {
+    const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+      fetch: async (url, options) => { calls.push({ url, options }); return jsonResponse(200, {
+        id: deploymentId, projectId: VERCEL_PROJECT_ID, ownerId: VERCEL_TEAM_ID, readyState, target: null }, url) } })
+    assert.deepEqual(await host.readDeploymentState(STAGING_SURFACE_TARGET, deploymentId, { signal }), { deploymentId, readyState })
+  }
+  assert.equal(calls.length, 5)
+  for (const call of calls) {
+    assert.equal(call.url, `https://api.vercel.com/v13/deployments/${deploymentId}?teamId=${VERCEL_TEAM_ID}`)
+    assert.equal(call.options.method, 'GET')
+    assert.equal(call.options.signal, signal)
+  }
+})
+
+test('deployment state read rejects changed identity, production target and unknown state', async () => {
+  for (const changed of [
+    { id: 'dpl_other', readyState: 'READY' },
+    { id: deploymentId, readyState: 'READY', projectId: 'prj_other' },
+    { id: deploymentId, readyState: 'READY', ownerId: 'team_other' },
+    { id: deploymentId, readyState: 'READY', target: 'production' },
+    { id: deploymentId, readyState: 'NOT_FOUND' },
+  ]) {
+    const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+      fetch: async url => jsonResponse(200, changed, url) })
+    await assert.rejects(host.readDeploymentState(STAGING_SURFACE_TARGET, deploymentId, { signal }), /unavailable/)
+  }
+})
+
 test('redirects, actual oversized JSON, dishonest or missing lengths, malformed source evidence, aborted calls, and ambient escape hatches fail closed', async () => {
   const malformed = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }), fetch: async url => ({ ...jsonResponse(200, deployment, url), redirected: true }) })
   await assert.rejects(malformed.readDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal }), /unavailable/)

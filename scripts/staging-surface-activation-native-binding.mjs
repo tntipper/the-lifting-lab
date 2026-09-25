@@ -224,6 +224,17 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher, verc
     // This must be called anew inside the eventual POST operation; a saved
     // receipt cannot prove that the connected repository is still unchanged.
     readPinnedRepository,
+    async readDeploymentState(target, deploymentId, { signal } = {}) {
+      validateTarget(target); validateSignal(signal); if (!validDeploymentId(deploymentId)) unavailable()
+      const url = `${VERCEL_API}/v13/deployments/${deploymentId}?teamId=${VERCEL_TEAM_ID}`
+      const value = await fetchJson(url, Object.freeze({ method: 'GET', redirect: 'error', headers: headersForVercel(token), signal }))
+      if (!value || typeof value !== 'object' || Array.isArray(value) || value.id !== deploymentId
+        || !['QUEUED', 'INITIALIZING', 'BUILDING', 'READY', 'ERROR'].includes(value.readyState)
+        || (value.projectId !== undefined && value.projectId !== VERCEL_PROJECT_ID)
+        || (value.ownerId !== undefined && value.ownerId !== VERCEL_TEAM_ID)
+        || (value.target !== undefined && value.target !== null)) unavailable()
+      return Object.freeze({ deploymentId, readyState: value.readyState })
+    },
     async readDeployment(target, deploymentId, { signal } = {}) {
       validateTarget(target); validateSignal(signal); if (!validDeploymentId(deploymentId)) unavailable()
       const url = `${VERCEL_API}/v13/deployments/${deploymentId}?teamId=${VERCEL_TEAM_ID}`
