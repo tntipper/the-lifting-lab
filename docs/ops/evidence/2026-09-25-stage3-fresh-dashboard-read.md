@@ -13,6 +13,7 @@ Read-only observation through the newly connected Chrome profile. No provider se
 
 - Signed-in Vercel dashboard for My Lifting Lab's projects showed deployment `dpl_9CFPQG6JChoGrkWidhh73BY1Qj1b` Ready in Preview, linked to project `the-lifting-lab`, branch `codex/tll-integration`, source commit `abd5a5258dd1072daf83a4447ce7110465f445e1`, immutable URL `https://the-lifting-7kom7bvbo-my-lifting-lab-s-projects.vercel.app` and branch alias `https://the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app`.
 - A direct browser visit to the immutable deployment's `/api/staging/readiness` was blocked by the client before page content appeared (`net::ERR_BLOCKED_BY_CLIENT`). This is **not** a readiness result and does not prove current feature flags. No bypass credential was used.
+- The signed-in project Environment Variables page displayed the Preview entries for `codex/tll-integration`; none of the displayed names was a broker secret or customer/cart activation flag. Its Shared tab said **No shared variables linked**. Values were not revealed. This is a useful name-level check, not a runtime-readiness or effective-value proof.
 
 ## Decision and next proof
 
