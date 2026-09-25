@@ -628,7 +628,19 @@
       },
       {
         "path": "scripts/staging-provider-broker-recovery-collection.mjs",
-        "sha256": "b9b6347a74122157046a01ebab54a21403f3dc5c444599000f3bb6ac0edd3d46"
+        "sha256": "1013ad79d2b2275e5f33dae92d4868da8b29aea7fbcc09a8173c3436820157cf"
+      },
+      {
+        "path": "scripts/staging-provider-broker-recovery-read-journal.mjs",
+        "sha256": "23bff7c9384f14997f9acc25d0dcb9b53c8255f2ba1782b61910d39d91a85705"
+      },
+      {
+        "path": "scripts/staging-provider-broker-recovery-read-session.mjs",
+        "sha256": "23d20e9cff831e9563e6f661377606c817b366a667b16bfa763b7140fff596dc"
+      },
+      {
+        "path": "scripts/staging-provider-broker-recovery-read-bindings.mjs",
+        "sha256": "8f087dfea46a5f214cef69efeff7ef89d4a22cda6e76e0ce8361e45aabbb8204"
       },
       {
         "path": "scripts/staging-provider-broker-native-adapter.mjs",
@@ -988,7 +1000,19 @@
       },
       {
         "path": "tests/staging-provider-broker-recovery-collection.test.mjs",
-        "sha256": "11abc48070d2cfb3d33a80dc8c80e8f651023cde2d381f619f6ed4a6c5b5000a"
+        "sha256": "43772e579e7f177b2e3cd6a8fb920fe2d4a696d649752f0fb59b3941f5cb5e66"
+      },
+      {
+        "path": "tests/staging-provider-broker-recovery-read-journal.test.mjs",
+        "sha256": "e47911d04e5402069eeb9efbce01b621bee7c12852d628c42ad3f98a48f7ab64"
+      },
+      {
+        "path": "tests/staging-provider-broker-recovery-read-session.test.mjs",
+        "sha256": "a36242833b38caf010ed56a832faa90daa487dd1fc2fabf2921732cdbcca5d7b"
+      },
+      {
+        "path": "tests/staging-provider-broker-recovery-read-bindings.test.mjs",
+        "sha256": "02a4654b1a3f223fd69bb4d4cbbc547d949d743939daf7b33028633f31429bbe"
       },
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",

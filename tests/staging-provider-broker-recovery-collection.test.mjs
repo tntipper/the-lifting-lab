@@ -89,3 +89,28 @@ test('a non-returning protected Preview reader is bounded by the deadline', asyn
   assert.equal((await collector.observe()).status, 'READ_UNAVAILABLE')
   assert.deepEqual(calls, ['preview'])
 })
+
+test('parent cancellation during receipt reads never reaches Preview', async () => {
+  const parent = new AbortController(), calls = [], record = safePhase()
+  const collector = createBrokerRecoveryCollection({ timeoutMs: 10, now: () => nowMs,
+    readPhase: () => { calls.push('phase'); parent.abort(); return record },
+    readRotation: () => { calls.push('rotation'); return null },
+    readPinnedPreview: () => { calls.push('preview'); return new Promise(() => {}) },
+    readProvider: () => provider(), readSupabaseNames: () => [],
+    readVercelNames: () => [], readDatabase: () => database(),
+  })
+  assert.equal((await collector.observe({ signal: parent.signal })).status, 'READ_UNAVAILABLE')
+  assert.deepEqual(calls, ['phase'])
+})
+
+test('a non-returning receipt read is also bounded before any hosted port', async () => {
+  const calls = []
+  const collector = createBrokerRecoveryCollection({ timeoutMs: 10, now: () => nowMs,
+    readPhase: () => new Promise(() => {}), readRotation: () => null,
+    readPinnedPreview: () => { calls.push('preview') },
+    readProvider: () => provider(), readSupabaseNames: () => [],
+    readVercelNames: () => [], readDatabase: () => database(),
+  })
+  assert.equal((await collector.observe()).status, 'READ_UNAVAILABLE')
+  assert.deepEqual(calls, [])
+})

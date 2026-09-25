@@ -27,27 +27,35 @@ export function createBrokerRecoveryCollection({ readPhase, readRotation, readPi
   }
   let consumed = false
   return Object.freeze({
-    async observe() {
+    async observe({ signal } = {}) {
       if (consumed) return fixed('REPLAY_REJECTED')
       consumed = true
+      if (signal !== undefined && (!signal || typeof signal.aborted !== 'boolean'
+        || typeof signal.addEventListener !== 'function' || typeof signal.removeEventListener !== 'function')) return unavailable()
+      if (signal?.aborted) return unavailable()
+      const controller = new AbortController()
+      const timeout = Symbol('expired')
+      const expired = new Promise(resolve => controller.signal.addEventListener('abort', () => resolve(timeout), { once: true }))
+      const parentAbort = () => controller.abort()
+      signal?.addEventListener('abort', parentAbort, { once: true })
+      if (signal?.aborted) controller.abort()
+      const timer = setTimeout(() => controller.abort(), timeoutMs)
       let phase, rotation
       try {
-        phase = await readPhase()
-        rotation = await readRotation()
-      } catch { return unavailable() }
-      // This assessment deliberately runs before any hosted port. Active and
-      // stale windows must be resolved through a separate process first.
-      const preflight = assessBrokerRecoveryReceipts({ phase, rotation, nowMs: now() })
-      if (preflight.status !== 'READY_FOR_OBSERVATION') return preflight
-      const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), timeoutMs)
-      const expired = new Promise(resolve => controller.signal.addEventListener('abort', () => resolve(null), { once: true }))
-      try {
+        phase = await Promise.race([Promise.resolve().then(readPhase), expired])
+        if (controller.signal.aborted || phase === timeout) return unavailable()
+        rotation = await Promise.race([Promise.resolve().then(readRotation), expired])
+        if (controller.signal.aborted) return unavailable()
+        // This assessment deliberately runs before any hosted port. Active
+        // and stale windows must be resolved through a separate process first.
+        const preflight = assessBrokerRecoveryReceipts({ phase, rotation, nowMs: now() })
+        if (preflight.status !== 'READY_FOR_OBSERVATION') return preflight
+        if (controller.signal.aborted) return unavailable()
         const surface = await Promise.race([readPinnedPreview({ signal: controller.signal,
           expectedDeployment: Object.freeze({ deploymentId: PREVIEW_READINESS_TARGET.deploymentId,
             immutableUrl: PREVIEW_READINESS_TARGET.immutableUrl,
             gitSourceCommit: BROKER_RECOVERY_EXPECTED_SOURCE }) }), expired])
-        if (controller.signal.aborted || surface === null) return unavailable()
+        if (controller.signal.aborted || surface === timeout) return unavailable()
         if (!exact(surface, ['preview', 'deployment'])
           || !exact(surface.deployment, ['deploymentId', 'immutableUrl', 'gitSourceCommit'])
           || surface.deployment.deploymentId !== PREVIEW_READINESS_TARGET.deploymentId
@@ -57,13 +65,16 @@ export function createBrokerRecoveryCollection({ readPhase, readRotation, readPi
           readProvider({ signal: controller.signal }), readSupabaseNames({ signal: controller.signal }),
           readVercelNames({ signal: controller.signal }), readDatabase({ signal: controller.signal }),
         ]), expired])
-        if (controller.signal.aborted || observations === null) return unavailable()
+        if (controller.signal.aborted || observations === timeout) return unavailable()
         const [provider, supabase, vercel, database] = observations
         return assessBrokerRecovery({ phase, rotation, evidence: {
           provider, names: { target: STAGING_PROVIDER_TARGET, supabase, vercel },
           database, preview: surface.preview,
         }, nowMs: now() })
-      } catch { return unavailable() } finally { clearTimeout(timer); controller.abort() }
+      } catch { return unavailable() } finally {
+        clearTimeout(timer); controller.abort()
+        signal?.removeEventListener('abort', parentAbort)
+      }
     },
   })
 }
