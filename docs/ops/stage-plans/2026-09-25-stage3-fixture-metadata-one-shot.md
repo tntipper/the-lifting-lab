@@ -1,6 +1,6 @@
 # Stage 3 preserved-fixture metadata: one read-only diagnostic gate
 
-Status: **PLAN ONLY / DISABLED**. This is a successor to the disabled source plan, not an authorization or an executable instruction to run now.
+Status: **CONSUMED / DISABLED**. The reviewed one-run diagnostic completed with `SEARCH_PATH_MISMATCH`; see the [result](../evidence/2026-09-25-stage3-metadata-v1-result.md). Both switches are false again. Do not replay this plan or journal.
 
 **Disabled preparation checkpoint:** The fixed-target build/check, one-use journal, injected coordinator and disabled launcher are present. The Swift and launcher gates are both false. The new journal, armed binary and build receipt are absent. The activation manifest pins these sources and the live-boundary checker rejects either gate being true during ordinary tests. Twelve metadata-focused tests, the 20-test manifest/metadata group, TypeScript, lint, live-boundary and the full suite (2,506 pass, 2 skip) passed after correcting the manifest test's expected source list. No live binary was built and no real fixture or Keychain metadata was read by this preparation. Independent review, fresh action-time baseline and approval remain outstanding.
 

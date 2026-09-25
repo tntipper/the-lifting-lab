@@ -1,5 +1,7 @@
 # Stage 3 fixture metadata: revised unapplied arming preview
 
+**CONSUMED / DO NOT REAPPLY.** This exact preview was applied once for the owner-approved read-only run, then reversed. The new journal is terminal `SEARCH_PATH_MISMATCH`; see the [result](../evidence/2026-09-25-stage3-metadata-v1-result.md).
+
 Corrected disabled source commit: `ffd509afe646c6298625332ca33e1c15975ef508`.
 
 This is the proposed **review package**, not permission to apply or run it. The only proposed source changes are:
