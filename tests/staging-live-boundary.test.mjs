@@ -70,6 +70,18 @@ test('boundary rejects the new REST rotation launcher if its live switch is arme
   }
 })
 
+test('boundary keeps both Preview deployment gates disabled in ordinary work', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-surface-preview-deployment-live-launcher.mjs'),
+    'const createStagingPreviewDeploymentJournal = null\nexport const STAGING_PREVIEW_DEPLOYMENT_LIVE_ENABLED = (true)\n')
+  writeFileSync(join(root, 'scripts/staging-surface-preview-deployment-keychain.py'),
+    'APPROVED_PREVIEW_DEPLOYMENT_READ = True\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-keychain-read:scripts/staging-surface-preview-deployment-keychain.py',
+    'enabled-native-gate:scripts/staging-surface-preview-deployment-live-launcher.mjs',
+  ])
+})
+
 test('boundary rejects an armed database rehearsal launcher', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-account-hosted-baseline-db-rehearsal-live-launcher.mjs'),

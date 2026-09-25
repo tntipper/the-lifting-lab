@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "4dca54fe1bb033804db83b047aee172a5c71bc8b812b331c51edcf308a3ce00d"
+        "sha256": "350454493f923767084841daa9550283d8dbcdf20e50bbf43c3382b6db69d701"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -161,7 +161,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "3d8e31f5e529c578c86635c945c18b7fd971d1f5b5f60eb22c07fc3f89a7ab4a"
+        "sha256": "0c8693a45c32c07fc21afd7e22960e53d9732213bc91856e46ba1c6d1fc50e3f"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -980,7 +980,7 @@
       },
       {
         "path": "scripts/staging-surface-preview-deployment-verifier.mjs",
-        "sha256": "209c1fa6ed58128a2f64824558fc50a771770d00ab41d1ab84eea4bff696971a"
+        "sha256": "0fcec45ff0fc852e276758c3783c66a62abfa090edc012427d283ae0f5e8551d"
       },
       {
         "path": "scripts/staging-surface-preview-deployment-supervisor.mjs",
@@ -988,7 +988,23 @@
       },
       {
         "path": "scripts/staging-surface-preview-deployment-worker.mjs",
-        "sha256": "403d7997686aa805d4d788568d43d68093ffc8f5a18e956c52df0e47ebdeae24"
+        "sha256": "1d153b74cdaff7b5f63567def4b5e8e550ff32264d1dc2cc9ce9d68c08f52b8c"
+      },
+      {
+        "path": "scripts/staging-surface-preview-deployment-credentials.mjs",
+        "sha256": "2a69b6153cbd80636b3d6e3de717ffe0c0cefe8f0ea4e5e2a418f33e4e0627b0"
+      },
+      {
+        "path": "scripts/staging-surface-preview-deployment-keychain.py",
+        "sha256": "a6f98d15fc7664a239d5f2e8d8e95a5ac3540afde828d7bda9e716b3c9729582"
+      },
+      {
+        "path": "scripts/staging-surface-preview-deployment-live-launcher.mjs",
+        "sha256": "cb686c78efa44887060eec9b230fa10d06c18755a9e7571f20d2d364c7912fa1"
+      },
+      {
+        "path": "scripts/staging-surface-preview-protection-probe.mjs",
+        "sha256": "d9d133ca3750ebaf9842eed1d2c010d97c45300012800b994547e003066053ec"
       },
       {
         "path": "scripts/staging-preview-git-source-preflight.mjs",
@@ -1332,7 +1348,7 @@
       },
       {
         "path": "tests/staging-surface-preview-deployment-verifier.test.mjs",
-        "sha256": "1ecc99749ff472e209cb21cbaed9511a635f702debd5dd13c07d7516568d7985"
+        "sha256": "1adce0242f260d1b9e0b63a81531f929dbd4d6ae54695f7d1f0deb64d847fbc9"
       },
       {
         "path": "tests/staging-surface-preview-deployment-supervisor.test.mjs",
@@ -1341,6 +1357,26 @@
       {
         "path": "tests/staging-surface-preview-deployment-worker.test.mjs",
         "sha256": "22496d83a4e72c6322a8d2273256fa231ff2775118cc088c41c3afe9f7cd6d81"
+      },
+      {
+        "path": "tests/staging-surface-preview-deployment-credentials.test.mjs",
+        "sha256": "5d529fbb1ae0312099f003a8f18dcdfaf5f38f313ad9e4b42caba9bffd4b07d8"
+      },
+      {
+        "path": "tests/staging-surface-preview-deployment-live-launcher.test.mjs",
+        "sha256": "50880c3864ba4623c38177f07d7af88ae61daf20cb7b9cd662d7a5fb5d713157"
+      },
+      {
+        "path": "tests/staging-surface-preview-protection-probe.test.mjs",
+        "sha256": "c3ca2ab46c067f9a6319420aa842620e25d2303c6adb5d2e9c8e16c60ff5d2e8"
+      },
+      {
+        "path": "tests/staging-surface-preview-deployment-process-boundary.test.mjs",
+        "sha256": "e30de15504b98098150b312f77f396ded6ec9b622646708aeed33268aa04585c"
+      },
+      {
+        "path": "tests/fixtures/staging-preview-worker-offline.mjs",
+        "sha256": "632d99581cfef59e53e4b21511dbc3e35da2167a497c9bccfb16551c49b8b002"
       },
       {
         "path": "tests/staging-preview-git-source-preflight.test.mjs",

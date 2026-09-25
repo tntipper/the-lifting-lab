@@ -40,13 +40,14 @@ function verifyProtectedResult(value, identity, input) {
  * an observer factory that uses the protected Preview bypass, and a bounded
  * supervisor. This module has no credentials, launcher or ambient network.
  */
-export function createStagingPreviewDeploymentVerifier({ postHost, journal, binding, createProtectedReader,
+export function createStagingPreviewDeploymentVerifier({ postHost, journal, binding, createProtectedReader, protectionProbe,
   pause, now = Date.now, stopWorkerGroup } = {}) {
   if (typeof postHost?.submit !== 'function' || typeof postHost?.dispose !== 'function'
     || typeof journal?.claim !== 'function' || typeof journal?.holdBeforeDispatch !== 'function'
     || typeof journal?.verified !== 'function'
     || typeof binding?.readDeploymentState !== 'function'
-    || typeof binding?.readDeployment !== 'function' || typeof createProtectedReader !== 'function'
+    || typeof binding?.readDeployment !== 'function' || typeof binding?.resolveAlias !== 'function'
+    || typeof createProtectedReader !== 'function' || typeof protectionProbe?.verify !== 'function'
     || typeof pause !== 'function' || typeof now !== 'function' || typeof stopWorkerGroup !== 'function') unavailable()
   let consumed = false
   return Object.freeze({
@@ -102,6 +103,17 @@ export function createStagingPreviewDeploymentVerifier({ postHost, journal, bind
         if (!validSignal(signal) || !Number.isFinite(afterProof)
           || afterProof < started || afterProof - started > PREVIEW_BUILD_DEADLINE_MS) unavailable()
         verifyProtectedResult(protectedResult, identity, input)
+        const protection = await protectionProbe.verify({ immutableUrl: identity.immutableUrl, signal })
+        if (protection?.status !== 'PUBLIC_ACCESS_DENIED' || protection.immutableUrl !== identity.immutableUrl
+          || protection.alias !== STAGING_ALIAS) unavailable()
+        const finalAlias = await binding.resolveAlias(STAGING_SURFACE_TARGET,
+          { project: 'the-lifting-lab', scope: 'my-lifting-lab-s-projects', alias: STAGING_ALIAS,
+            branch: STAGING_BRANCH }, { signal })
+        if (finalAlias?.deploymentId !== identity.deploymentId
+          || finalAlias.immutableUrl !== identity.immutableUrl || finalAlias.alias !== STAGING_ALIAS) unavailable()
+        const afterProtection = now()
+        if (!validSignal(signal) || !Number.isFinite(afterProtection)
+          || afterProtection < started || afterProtection - started > PREVIEW_BUILD_DEADLINE_MS) unavailable()
         journal.verified(accepted.journal)
         postHost.dispose()
         return Object.freeze({ status: 'PROTECTED_PREVIEW_VERIFIED', deploymentId: identity.deploymentId,

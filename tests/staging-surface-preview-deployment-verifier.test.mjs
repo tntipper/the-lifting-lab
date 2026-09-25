@@ -9,6 +9,7 @@ import { createStagingPreviewDeploymentJournal } from '../scripts/staging-surfac
 import { createStagingSurfaceNativeBinding, VERCEL_PROJECT_ID, VERCEL_TEAM_ID } from '../scripts/staging-surface-activation-native-binding.mjs'
 import { createStagingAccountHostedBaselineSurfaceBinding } from '../scripts/staging-account-hosted-baseline-surface.mjs'
 import { STAGING_ALIAS } from '../scripts/staging-surface-activation-transport.mjs'
+import { createStagingPreviewProtectionProbe } from '../scripts/staging-surface-preview-protection-probe.mjs'
 
 const input = Object.freeze({ branch: 'codex/tll-integration', sourceCommit: 'a'.repeat(40),
   manifestSha256: 'b'.repeat(64), publicCustomer: false, publicCart: false })
@@ -18,8 +19,9 @@ const started = Date.parse('2026-09-25T12:00:00.000Z')
 const signal = new AbortController().signal
 
 function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit, runtimeCustomer = false,
+  publicPreview = false, brokenAlias = false, advanceOnProtectionMs = 0, abortOnFinalAlias = null,
   aliasId = id, repoId = 1264363509, states = ['QUEUED', 'BUILDING', 'READY'] } = {}) {
-  let clock = started, posts = 0, stateReads = 0, aliasReads = 0, stops = 0
+  let clock = started, posts = 0, stateReads = 0, aliasReads = 0, stops = 0, publicChallenges = 0
   const calls = [], apiToken = Buffer.from('private-api-test-token')
   const deployment = { id, projectId: VERCEL_PROJECT_ID, ownerId: VERCEL_TEAM_ID, target: null,
     readyState: 'READY', url: new URL(immutableUrl).hostname, createdAt: started,
@@ -31,6 +33,16 @@ function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit
       repo: 'the-lifting-lab', productionBranch: 'main', sourceless: false } }
   const fetcher = async (url, options) => {
     calls.push({ url, method: options.method, headers: options.headers })
+    if (options.redirect === 'manual' && url.endsWith('/api/staging/readiness')) {
+      publicChallenges++
+      if (publicChallenges === 2) clock += advanceOnProtectionMs
+      assert.equal(options.headers['x-vercel-protection-bypass'], undefined)
+      if (brokenAlias && url.startsWith(STAGING_ALIAS)) throw Error('alias unavailable')
+      if (publicPreview) return new Response('{}', { status: 200 })
+      return new Response(JSON.stringify({ error: { message: 'Protected deployment', code: '401' },
+        protection: { vercel_auth_callback: `https://vercel.com/sso-api?url=${encodeURIComponent(url)}&nonce=testnonce` } }),
+      { status: 401, headers: { 'content-type': 'application/json', server: 'Vercel' } })
+    }
     if (url.includes('/v9/projects/')) return new Response(JSON.stringify(project), { status: 200 })
     if (options.method === 'POST' && url.includes('/v13/deployments')) {
       posts++
@@ -43,6 +55,7 @@ function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit
     }
     if (url.includes('/v4/aliases/')) {
       aliasReads++
+      if (aliasReads === 3) abortOnFinalAlias?.abort()
       return new Response(JSON.stringify({ alias: aliasHost, projectId: VERCEL_PROJECT_ID, deploymentId: aliasId,
         deployment: { id: aliasId, url: new URL(immutableUrl).hostname } }), { status: 200 })
     }
@@ -64,6 +77,7 @@ function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit
   const postHost = createStagingPreviewDeploymentPost({ fetch: fetcher, vercelToken: apiToken, journal,
     readPinnedRepository: binding.readPinnedRepository, stopWorkerGroup })
   const verifier = createStagingPreviewDeploymentVerifier({ postHost, journal, binding, stopWorkerGroup,
+    protectionProbe: createStagingPreviewProtectionProbe({ fetch: fetcher }),
     pause: async (milliseconds, passedSignal) => { assert.equal(milliseconds, 2000); assert.equal(passedSignal, signal); clock += milliseconds },
     now: () => clock,
     createProtectedReader: expectedDeployment => createStagingAccountHostedBaselineSurfaceBinding({
@@ -71,7 +85,7 @@ function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit
     }),
   })
   return { verifier, journal, calls, postHost, get posts() { return posts }, get stateReads() { return stateReads },
-    get aliasReads() { return aliasReads }, get stops() { return stops } }
+    get aliasReads() { return aliasReads }, get stops() { return stops }, get publicChallenges() { return publicChallenges } }
 }
 
 test('one accepted Preview is polled, source-pinned and proved through the protected alias and runtime', async () => {
@@ -83,7 +97,8 @@ test('one accepted Preview is polled, source-pinned and proved through the prote
     sourceCommit: input.sourceCommit, manifestSha256: input.manifestSha256,
     customerEnabled: false, cartEnabled: false,
   })
-  assert.equal(f.posts, 1); assert.equal(f.stateReads, 3); assert.equal(f.aliasReads, 2); assert.equal(f.stops, 0)
+  assert.equal(f.posts, 1); assert.equal(f.stateReads, 3); assert.equal(f.aliasReads, 3); assert.equal(f.stops, 0)
+  assert.equal(f.publicChallenges, 2)
   assert.equal(f.journal.read().phase, 'VERIFIED')
   assert.equal(f.calls[0].method, 'GET')
   assert.equal(f.calls[1].method, 'POST')
@@ -134,6 +149,32 @@ test('failed or never-ready build has bounded reads and stops without a second P
     assert.equal(f.posts, 1); assert.equal(f.stops, 1)
     assert.equal(f.journal.read().phase, 'POST_ACK')
     assert.ok(f.stateReads <= 90)
+    f.postHost.dispose()
+  }
+})
+
+test('a public Preview or unavailable alias cannot receive a verified result', async () => {
+  for (const options of [{ publicPreview: true }, { brokenAlias: true }]) {
+    const f = fixture(options)
+    const pending = f.verifier.verify(input, { signal })
+    assert.equal(await Promise.race([pending.then(() => 'settled', () => 'rejected'),
+      new Promise(resolve => setTimeout(() => resolve('held'), 20))]), 'held')
+    assert.equal(f.posts, 1); assert.equal(f.stops, 1)
+    assert.equal(f.journal.read().phase, 'POST_ACK')
+    f.postHost.dispose()
+  }
+})
+
+test('protection checks cannot finish after the deadline or an abort', async () => {
+  for (const options of [{ advanceOnProtectionMs: 181_000 },
+    { abortOnFinalAlias: new AbortController() }]) {
+    const f = fixture({ ...options, states: ['READY'] })
+    const selectedSignal = options.abortOnFinalAlias?.signal ?? signal
+    const pending = f.verifier.verify(input, { signal: selectedSignal })
+    assert.equal(await Promise.race([pending.then(() => 'settled', () => 'rejected'),
+      new Promise(resolve => setTimeout(() => resolve('held'), 20))]), 'held')
+    assert.equal(f.posts, 1); assert.equal(f.stops, 1)
+    assert.equal(f.journal.read().phase, 'POST_ACK')
     f.postHost.dispose()
   }
 })

@@ -4,6 +4,7 @@ import { createStagingSurfaceNativeBinding } from './staging-surface-activation-
 import { createStagingAccountHostedBaselineSurfaceBinding } from './staging-account-hosted-baseline-surface.mjs'
 import { createStagingPreviewDeploymentPost } from './staging-surface-preview-deployment-post.mjs'
 import { createStagingPreviewDeploymentVerifier } from './staging-surface-preview-deployment-verifier.mjs'
+import { createStagingPreviewProtectionProbe } from './staging-surface-preview-protection-probe.mjs'
 
 export const STAGING_PREVIEW_DEPLOYMENT_WORKER_ENABLED = false
 const unavailable = () => { throw new Error('Staging Preview deployment worker unavailable') }
@@ -49,6 +50,7 @@ export async function runStagingPreviewDeploymentWorker({ input, journal, acquir
     postHost = createPost({ fetch: fetcher, vercelToken: credentials.vercelToken,
       readPinnedRepository: binding.readPinnedRepository, journal, stopWorkerGroup })
     const verifier = createVerifier({ postHost, journal, binding, pause, now, stopWorkerGroup,
+      protectionProbe: createStagingPreviewProtectionProbe({ fetch: fetcher }),
       createProtectedReader: expectedDeployment => createProtectedBinding({ fetch: fetcher,
         vercelToken: credentials.vercelToken, protectionBypassToken: credentials.protectionBypassToken,
         expectedDeployment }) })
