@@ -29,7 +29,7 @@ export function buildStagingPreviewDeploymentRequest(input) {
   if (values.branch !== STAGING_BRANCH || typeof values.sourceCommit !== 'string'
     || !/^[a-f0-9]{40}$/.test(values.sourceCommit)
     || typeof values.manifestSha256 !== 'string' || !/^[a-f0-9]{64}$/.test(values.manifestSha256)
-    || values.publicCustomer !== false || values.publicCart !== false) unavailable()
+    || typeof values.publicCustomer !== 'boolean' || values.publicCustomer !== values.publicCart) unavailable()
   const gitSource = Object.freeze({ type: 'github', org: STAGING_GITHUB_ORG,
     repo: STAGING_GITHUB_REPO, ref: STAGING_BRANCH, sha: values.sourceCommit })
   const meta = Object.freeze({ githubCommitRef: STAGING_BRANCH, githubCommitSha: values.sourceCommit,

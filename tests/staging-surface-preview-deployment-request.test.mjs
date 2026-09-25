@@ -34,7 +34,15 @@ test('request fixes the team, project, repository, commit, manifest and Preview 
   assert.equal(Object.isFrozen(request.body.meta), true)
 })
 
-test('request cannot select another source, production, enabled public flags or arbitrary metadata', () => {
+test('enabled Preview uses the same pinned source shape and requires both public flags together', () => {
+  const enabled = buildStagingPreviewDeploymentRequest({ ...valid, publicCustomer: true, publicCart: true })
+  const held = buildStagingPreviewDeploymentRequest(valid)
+  assert.deepEqual(enabled, held)
+  assert.equal(Object.hasOwn(enabled.body, 'target'), false)
+  assert.equal(Object.hasOwn(enabled.body.gitSource, 'repoId'), false)
+})
+
+test('request cannot select another source, production, mixed or non-Boolean public flags, or arbitrary metadata', () => {
   for (const invalid of [
     { ...valid, branch: 'main' }, { ...valid, sourceCommit: 'a'.repeat(39) },
     { ...valid, sourceCommit: 'A'.repeat(40) }, { ...valid, manifestSha256: 'b'.repeat(63) },
@@ -42,6 +50,8 @@ test('request cannot select another source, production, enabled public flags or 
     { ...valid, sourceCommit: new String('a'.repeat(40)) },
     { ...valid, manifestSha256: new String('b'.repeat(64)) },
     { ...valid, publicCustomer: true }, { ...valid, publicCart: true },
+    { ...valid, publicCustomer: 'enabled', publicCart: 'enabled' },
+    { ...valid, publicCustomer: 1, publicCart: 1 },
     { ...valid, target: 'production' }, { ...valid, project: 'another-project' },
     { ...valid, gitSource: { ref: 'main' } }, { ...valid, meta: { arbitrary: 'value' } },
     null, {}, [],
