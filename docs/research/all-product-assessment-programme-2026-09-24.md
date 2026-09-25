@@ -1,6 +1,6 @@
-# All-product scientific assessment before launch
+# Progressive product-by-product scientific assessment
 
-The owner has chosen a stronger public-opening condition: complete an evidence-backed assessment for **every current product** before launch. This is research work, separate from a product being safe and commercially eligible to sell. No historical numerical score is approved for display as a recommendation while this programme is unfinished.
+**Owner revision, 25 September 2026:** Neutral or clearly unassessed comparison products may remain visible at public opening. The earlier requirement to complete evidence-backed assessment for **every current product before launch** is superseded. Continue the scientific programme product by product; do not display an unapproved assessment as a recommendation or use it for rankings. Being visible in research is separate from being approved for a TLL sale: any sold variant still needs accurate pack, ingredient/allergen, stock and commercial evidence.
 
 ## What is actually known
 
@@ -20,4 +20,4 @@ The owner has chosen a stronger public-opening condition: complete an evidence-b
 5. Reject unsupported precision. Start with an explainable assessment category and context; a numerical score is optional only if the method and calibration support it. A changed label or formula invalidates the previous assessment.
 6. Publish only from a single approved record to comparison pages, product pages, stacks, search metadata and the shop. Verify that no old value leaks into rankings or recommendations.
 
-**Launch proof:** the current reconciled product register has no missing or expired assessment for any product in public launch scope; each approval binds exact variant/formula, sources, method, reviewer and date; independent sampling catches no label or claim mismatch; public UI/API/metadata show the same result. Any product lacking this evidence must remain unassessed and outside the owner's chosen public-opening scope until resolved. The sub-agent audit that scoped this programme was read-only and performed no product approvals.
+**Launch proof:** every public comparison product without a current approved assessment is clearly labelled unassessed or under review, has no effectiveness ranking, award, dose judgement or endorsement, and cannot leak an old score into recommendation text, metadata or social previews. Existing public pages still display some numerical values labelled “Legacy score” or “Unverified”; review and remove those public numbers before claiming the new neutral-opening rule is met. Each later approved assessment must bind an exact variant/formula, sources, method, reviewer and date; independent sampling must catch no label or claim mismatch, and public UI/API/metadata must agree. A product lacking scientific assessment may remain visible but not scientifically recommended. The prior research audit was read-only and performed no product approvals.
