@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "14fcb41e3dc49b5329b3d5a4f56ecb06c3d6b47b7d8f9c895ca77929466876e0"
+        "sha256": "2b08fa96f5f245add716cd3513c50eeb7438a360ebd4977a4b6e41efea3e53aa"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -161,7 +161,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "b57b3dcc94d15fd8e126bdd5f29274855253a5b4995a390c2063b7820553af3d"
+        "sha256": "831a678f9e367d96e2138cf56575573668beef1f3e7034197e2f2d1f8cbf9754"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -631,6 +631,10 @@
         "sha256": "2f7ca20ad652f273294862fb327713243b1df65ab5c1121268cb319fdcdf5aac"
       },
       {
+        "path": "scripts/staging-provider-broker-rotation-keychain.py",
+        "sha256": "57908b1ad41a6b8848d080f67274286e780d8c6e737d594544d1e1a9ead2562d"
+      },
+      {
         "path": "scripts/staging-provider-broker-reconciliation.mjs",
         "sha256": "b1c51a8b95c75a6457f123acfb4cec7e219ba97c1ea85a005e5ca2ad0c9c5931"
       },
@@ -1023,6 +1027,10 @@
         "sha256": "c903746e0278fa86aa24e21560f0b48707b94b4634a9a89e5576223691560afb"
       },
       {
+        "path": "tests/staging-provider-broker-rotation-keychain.test.mjs",
+        "sha256": "87d5e0be01cc68c93a4b1e498e024dd276b621efd26a069a713952e82e377b8f"
+      },
+      {
         "path": "tests/staging-provider-broker-reconciliation.test.mjs",
         "sha256": "9ff66af3699848b8a2e351f368b11a2d1b9a78baa35ede70f8c754aa8f0057e7"
       },
@@ -1044,7 +1052,7 @@
       },
       {
         "path": "tests/staging-provider-broker-recovery-process-control.test.mjs",
-        "sha256": "ba3a419990ba6b911046d4e2887870f2ca07160c5851c5fd6e5c75db3bf4e9b0"
+        "sha256": "aab5f1d1bdbd094cc58017d9bb66492a9cd14c88436d8776091f3a863e89ed4e"
       },
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",

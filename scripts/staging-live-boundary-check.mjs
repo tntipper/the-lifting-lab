@@ -86,11 +86,18 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       || /\bSTAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_TRANSPORT_ENABLED\s*=\s*true\b/.test(source)
       || /\bBROKER_RECOVERY_READ_LIVE_ENABLED\s*=\s*true\b/.test(source)
+      || /\bBROKER_ROTATION_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_DATABASE_TRANSPORT_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_ACCESS_APPROVED\s*=\s*true\b/.test(source)) violations.push(`enabled-native-gate:${display(path)}`)
     if (/^APPROVED_BROKER_RECOVERY_READ\s*=\s*True\s*$/m.test(source)
       || /^APPROVED_NATIVE_READ\s*=\s*True\s*$/m.test(source)
       || /^APPROVED_PREVIEW_SOURCE_READ\s*=\s*True\s*$/m.test(source)) violations.push(`enabled-keychain-read:${display(path)}`)
+    if (path.endsWith('/staging-provider-broker-rotation-keychain.py')) {
+      const assignments = source.match(/^[ \t]*APPROVED_BROKER_ROTATION[ \t]*=.*$/gm) ?? []
+      if (assignments.length !== 1 || assignments[0] !== 'APPROVED_BROKER_ROTATION = False') {
+        violations.push(`enabled-keychain-read:${display(path)}`)
+      }
+    }
   }
   return Object.freeze(violations.sort())
 }

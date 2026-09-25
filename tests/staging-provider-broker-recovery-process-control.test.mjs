@@ -64,7 +64,8 @@ test('an interrupted supervisor causes its worker to stop its own process group'
     + `await m.acceptSupervisorPipe({proof:'OFFLINE_TEST_PROOF'});`
     + `const {spawn}=await import('node:child_process');const fs=await import('node:fs');`
     + `const child=spawn('/bin/sleep',['30'],{stdio:'ignore'});`
-    + `fs.writeFileSync(process.argv[1],JSON.stringify({worker:process.pid,descendant:child.pid}));`
+    + `fs.writeFileSync(process.argv[1]+'.tmp',JSON.stringify({worker:process.pid,descendant:child.pid}));`
+    + `fs.renameSync(process.argv[1]+'.tmp',process.argv[1]);`
     + `setInterval(()=>{},1000)})`
   const supervisorCode = `import(${JSON.stringify(moduleUrl)}).then(m => m.runBoundedDetachedWorker({`
     + `executable:process.execPath,args:['-e',${JSON.stringify(worker)},process.argv[1]],`

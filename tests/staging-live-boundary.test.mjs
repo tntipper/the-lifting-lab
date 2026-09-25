@@ -48,6 +48,17 @@ test('boundary rejects enabled JavaScript and Keychain gates', () => {
   ])
 })
 
+test('boundary rejects rotation credential access if its separate gates are armed', () => {
+  const root = fixture({ scriptSource: 'export const BROKER_ROTATION_LIVE_ENABLED = true\n' })
+  for (const assignment of ['True', 'True # approved one-run window', '(True)', 'False\nAPPROVED_BROKER_ROTATION = True']) {
+    writeFileSync(join(root, 'scripts/staging-provider-broker-rotation-keychain.py'), `APPROVED_BROKER_ROTATION = ${assignment}\n`)
+    assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+      'enabled-keychain-read:scripts/staging-provider-broker-rotation-keychain.py',
+      'enabled-native-gate:scripts/example.mjs',
+    ])
+  }
+})
+
 test('boundary rejects an armed database rehearsal launcher', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-account-hosted-baseline-db-rehearsal-live-launcher.mjs'),
