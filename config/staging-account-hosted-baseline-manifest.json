@@ -44,7 +44,7 @@
     },
     {
       "path": "scripts/staging-provider-broker-rotation.mjs",
-      "sha256": "6df69683a1e011b2754ab762189a47ce30899bbc71b689f93eb23cefe0f1f4bb"
+      "sha256": "f33df7f6dd1238193054185e07c4baa49209d44842d79b14f0f0fdeb3a4aed93"
     },
     {
       "path": "scripts/staging-surface-activation-transport.mjs",

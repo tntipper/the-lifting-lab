@@ -616,7 +616,7 @@
       },
       {
         "path": "scripts/staging-provider-broker-rotation.mjs",
-        "sha256": "6df69683a1e011b2754ab762189a47ce30899bbc71b689f93eb23cefe0f1f4bb"
+        "sha256": "f33df7f6dd1238193054185e07c4baa49209d44842d79b14f0f0fdeb3a4aed93"
       },
       {
         "path": "scripts/staging-provider-broker-native-adapter.mjs",
@@ -964,7 +964,7 @@
       },
       {
         "path": "tests/staging-provider-broker-rotation.test.mjs",
-        "sha256": "c439a4c22e6f231dcadcfa6a4e6e820b537bcf4f2481fe0995905c5fc2608fec"
+        "sha256": "dc5f23a9903335e61505f269b94618a120e63674886e6a6d005ecdda7c587dde"
       },
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",

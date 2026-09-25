@@ -127,11 +127,26 @@ export function createProviderBrokerRotationJournal({ path = DEFAULT_JOURNAL_PAT
 }
 
 function validateExistingProvider(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value) || value.identifier !== PROVIDER_IDENTIFIER
-    || value.clientId !== BROKER_CLIENT_ID || value.enabled !== false) unavailable()
-  // Only the exact observed legacy value is accepted. An arbitrary address is
-  // drift, even though the published OAuth2 runtime does not use JWKS.
-  if (value.jwksUrl !== RETAINED_STAGING_JWKS_URI) unavailable()
+  const extra = ['id', 'providerType', 'name', 'acceptableClientIds', 'attributeMappingPresent',
+    'authorizationParamsPresent', 'issuer', 'discoveryUrl', 'skipNonceCheck',
+    'discoveryDocumentPresent', 'createdAt', 'updatedAt']
+  if (!exactKeys(value, [...Object.keys(STAGING_BROKER_PROVIDER).filter(key => key !== 'callbackUrl'), ...extra])
+    || typeof value.id !== 'string' || value.id.length < 1 || value.id.length > 128
+    || value.providerType !== 'oauth2' || !['TLL staging subject broker', BROKER_CLIENT_ID].includes(value.name)
+    || !Array.isArray(value.acceptableClientIds) || value.acceptableClientIds.length !== 0
+    || value.attributeMappingPresent !== false || value.authorizationParamsPresent !== false
+    || value.issuer !== '' || value.discoveryUrl !== '' || value.skipNonceCheck !== false
+    || value.discoveryDocumentPresent !== false
+    || typeof value.createdAt !== 'string' || !Number.isFinite(Date.parse(value.createdAt))
+    || typeof value.updatedAt !== 'string' || !Number.isFinite(Date.parse(value.updatedAt))) unavailable()
+  // The official safe-held read permits an empty scope list or the intended
+  // subject scope. All other provider settings must already match before a
+  // new credential is generated; a changed JWKS address is never repaired.
+  if (!Array.isArray(value.scopes) || !(value.scopes.length === 0
+    || value.scopes.length === 1 && value.scopes[0] === 'subject')) unavailable()
+  for (const [key, expected] of Object.entries(STAGING_BROKER_PROVIDER)) {
+    if (key !== 'scopes' && key !== 'callbackUrl' && value[key] !== expected) unavailable()
+  }
 }
 
 function projectProviderReadback(value) {

@@ -7,6 +7,12 @@ import { BROKER_SECRET_NAME, createProviderBrokerRotationJournal, PROVIDER_IDENT
 
 const journal = () => createProviderBrokerRotationJournal({ path: join(mkdtempSync(join(tmpdir(), 'tll-provider-rotation-')), 'journal.json'), makeRunId: () => 'reviewed-rotation-run' })
 const provider = ({ jwksUrl = STAGING_BROKER_PROVIDER.jwksUrl } = {}) => ({ ...STAGING_BROKER_PROVIDER, scopes: [...STAGING_BROKER_PROVIDER.scopes], jwksUrl })
+const startingProvider = (override = {}) => ({ ...Object.fromEntries(Object.entries(provider()).filter(([key]) => key !== 'callbackUrl')),
+  id: 'custom-provider-id', providerType: 'oauth2',
+  name: 'TLL staging subject broker', acceptableClientIds: [], attributeMappingPresent: false,
+  authorizationParamsPresent: false, issuer: '', discoveryUrl: '', skipNonceCheck: false,
+  discoveryDocumentPresent: false, createdAt: '2026-09-22T10:00:00.000Z',
+  updatedAt: '2026-09-22T10:00:00.000Z', ...override })
 
 function fixture({ failAt, afterUpdateReadback } = {}) {
   const events = [], staged = { vercel: false, supabase: false }, copies = []
@@ -15,7 +21,7 @@ function fixture({ failAt, afterUpdateReadback } = {}) {
   const ports = {
     preflight: async value => { events.push('preflight'); target(value); if (failAt === 'preflight') throw Error('held'); return { target: STAGING_PROVIDER_TARGET,
       providerIdentifier: PROVIDER_IDENTIFIER, providerEnabled: false, edgeEnabled: false, privateEnabled: false, publicEnabled: false, supabase: [], vercel: [] } },
-    getProvider: async (value, identifier) => { events.push('getProvider'); target(value); assert.equal(identifier, PROVIDER_IDENTIFIER); if (failAt === 'get') throw Error('held'); return { target: STAGING_PROVIDER_TARGET, provider: provider() } },
+    getProvider: async (value, identifier) => { events.push('getProvider'); target(value); assert.equal(identifier, PROVIDER_IDENTIFIER); if (failAt === 'get') throw Error('held'); return { target: STAGING_PROVIDER_TARGET, provider: startingProvider() } },
     stageVercelBrokerSecret: async (value, name, material) => { events.push('stageVercel'); target(value); assert.equal(name, BROKER_SECRET_NAME); copies.push(Buffer.from(material)); staged.vercel = true; if (failAt === 'vercel') throw Error('lost acknowledgement'); return receipt('STAGED') },
     stageSupabaseBrokerSecret: async (value, name, material) => { events.push('stageSupabase'); target(value); assert.equal(name, BROKER_SECRET_NAME); copies.push(Buffer.from(material)); staged.supabase = true; if (failAt === 'supabase') throw Error('lost acknowledgement'); return receipt('STAGED') },
     updateProvider: async (value, settings, material) => { events.push('updateProvider'); target(value); assert.deepEqual(settings, STAGING_BROKER_PROVIDER); copies.push(Buffer.from(material)); if (failAt === 'update') throw Error('lost response'); return { status: 'UPDATED', target: STAGING_PROVIDER_TARGET, providerIdentifier: PROVIDER_IDENTIFIER } },
@@ -63,7 +69,7 @@ test('a provider-update or post-update readback uncertainty retains values and r
 
 test('missing or unexpected JWKS is held before generating, journaling, or staging a value', async () => {
   for (const jwksUrl of ['', 'https://unexpected.example/jwks.json', `${STAGING_BROKER_PROVIDER.jwksUrl}/`]) {
-    const f = fixture(); f.ports.getProvider = async () => ({ target: STAGING_PROVIDER_TARGET, provider: provider({ jwksUrl }) })
+    const f = fixture(); f.ports.getProvider = async () => ({ target: STAGING_PROVIDER_TARGET, provider: startingProvider({ jwksUrl }) })
     const j = journal(); const result = await rotateStagingProviderBroker({ ports: f.ports, journal: j, randomBytes: () => { throw Error('must not generate') } })
     assert.equal(result.status, 'STOPPED_BEFORE_PROVIDER_UPDATE'); assert.deepEqual(f.events, ['preflight']); assert.equal(j.read(), null)
   }
@@ -124,7 +130,36 @@ test('a concurrent journal winner is never downgraded to a safe pre-update stop'
 
 test('provider evidence contradicting the frozen preflight stops before generation or writes', async () => {
   const f = fixture(); let generations = 0
-  f.ports.getProvider = async () => ({ target: STAGING_PROVIDER_TARGET, provider: { ...provider(), enabled: true } })
+  f.ports.getProvider = async () => ({ target: STAGING_PROVIDER_TARGET, provider: startingProvider({ enabled: true }) })
   const j = journal(), result = await rotateStagingProviderBroker({ ports: f.ports, journal: j, randomBytes: size => { generations++; return Buffer.alloc(size) } })
   assert.equal(result.status, 'STOPPED_BEFORE_PROVIDER_UPDATE'); assert.equal(generations, 0); assert.equal(j.read(), null); assert.deepEqual(f.events, ['preflight'])
+})
+
+test('every unexpected starting-provider setting stops before generating or staging a credential', async () => {
+  const drifts = [
+    { scopes: ['other'] }, { scopes: ['subject', 'other'] }, { authorizationUrl: 'https://other.example/auth' },
+    { tokenUrl: 'https://other.example/token' }, { userinfoUrl: 'https://other.example/userinfo' },
+    { callbackUrl: 'https://other.example/callback' }, { pkce: false }, { emailOptional: false },
+    { acceptableClientIds: ['other'] }, { providerType: 'oidc' }, { name: 'Other provider' },
+    { issuer: 'https://other.example' }, { discoveryUrl: 'https://other.example/.well-known' },
+    { discoveryDocumentPresent: true }, { attributeMappingPresent: true },
+    { authorizationParamsPresent: true }, { skipNonceCheck: true }, { unknown: true },
+  ]
+  for (const drift of drifts) {
+    const f = fixture(), j = journal(); let generations = 0
+    f.ports.getProvider = async () => ({ target: STAGING_PROVIDER_TARGET, provider: startingProvider(drift) })
+    const result = await rotateStagingProviderBroker({ ports: f.ports, journal: j, randomBytes: () => { generations++; return Buffer.alloc(48) } })
+    assert.equal(result.status, 'STOPPED_BEFORE_PROVIDER_UPDATE', JSON.stringify(drift))
+    assert.equal(generations, 0, JSON.stringify(drift))
+    assert.equal(j.read(), null, JSON.stringify(drift))
+    assert.deepEqual(f.events, ['preflight'], JSON.stringify(drift))
+  }
+})
+
+test('the observed empty-scope starting state may be repaired after all other fields match', async () => {
+  const f = fixture(), j = journal()
+  f.ports.getProvider = async () => ({ target: STAGING_PROVIDER_TARGET, provider: startingProvider({ scopes: [] }) })
+  const result = await rotateStagingProviderBroker({ ports: f.ports, journal: j, randomBytes: size => Buffer.alloc(size, 5) })
+  assert.equal(result.status, 'ROTATION_VERIFIED')
+  assert.equal(j.read().state, 'ROTATION_VERIFIED')
 })
