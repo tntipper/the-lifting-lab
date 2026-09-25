@@ -84,6 +84,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.disabledActivationTooling.surfaces.ambiguousEnabledDeploymentState, 'RECONCILIATION_REQUIRED')
   assert.deepEqual(manifest.disabledActivationTooling.sources.map(item => item.path), [
     'scripts/staging-bounded-executor.mjs','scripts/staging-provider-broker-rotation.mjs','scripts/staging-provider-broker-phase-journal.mjs','scripts/staging-provider-broker-phased-session.mjs','scripts/staging-provider-broker-rotation-process-control.mjs','scripts/staging-provider-broker-rotation-keychain.py','scripts/staging-provider-broker-rotation-readiness.mjs','scripts/staging-provider-broker-reconciliation.mjs','scripts/staging-provider-broker-recovery-collection.mjs','scripts/staging-provider-broker-recovery-read-journal.mjs','scripts/staging-provider-broker-recovery-read-session.mjs','scripts/staging-provider-broker-recovery-read-bindings.mjs','scripts/staging-provider-broker-recovery-read-live-launcher.mjs','scripts/staging-provider-broker-recovery-read-keychain.py','scripts/staging-provider-broker-recovery-process-control.mjs','scripts/staging-provider-broker-native-adapter.mjs',
+    'scripts/staging-provider-broker-vercel-rest-host.mjs',
     'scripts/staging-provider-broker-native-binding.mjs',
     'scripts/staging-provider-normalization-contract.mjs',
     'scripts/staging-provider-normalization-native-port.mjs',
@@ -165,6 +166,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
     'scripts/staging-preview-source-keychain.py',
     'app/api/staging/readiness/contract.ts','app/api/staging/readiness/route.ts',
     'tests/staging-bounded-executor.test.mjs','tests/staging-provider-broker-rotation.test.mjs','tests/staging-provider-broker-phase-journal.test.mjs','tests/staging-provider-broker-phased-session.test.mjs','tests/staging-provider-broker-rotation-process-control.test.mjs','tests/staging-provider-broker-rotation-keychain.test.mjs','tests/staging-provider-broker-rotation-readiness.test.mjs','tests/staging-provider-broker-rotation-composition.test.mjs','tests/staging-provider-broker-reconciliation.test.mjs','tests/staging-provider-broker-recovery-collection.test.mjs','tests/staging-provider-broker-recovery-read-journal.test.mjs','tests/staging-provider-broker-recovery-read-session.test.mjs','tests/staging-provider-broker-recovery-read-bindings.test.mjs','tests/staging-provider-broker-recovery-process-control.test.mjs','tests/staging-provider-broker-native-adapter.test.mjs',
+    'tests/staging-provider-broker-vercel-rest-host.test.mjs',
     'tests/staging-provider-broker-native-binding.test.mjs',
     'tests/staging-provider-normalization-contract.test.mjs',
     'tests/staging-provider-normalization-native-port.test.mjs',

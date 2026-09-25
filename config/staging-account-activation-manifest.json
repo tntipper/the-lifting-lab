@@ -675,6 +675,10 @@
         "sha256": "da559899e9dc353b98d7dc08b10178d24195be9eed142d1d3de8a17f77eb6ae5"
       },
       {
+        "path": "scripts/staging-provider-broker-vercel-rest-host.mjs",
+        "sha256": "8594353371ac86cb1c2c145b5352b0499c7b0a5a409d9fe6728e199df0241ef2"
+      },
+      {
         "path": "scripts/staging-provider-broker-native-binding.mjs",
         "sha256": "a6c22f8465d000fecfd77edc1d01545ccebfd18bb17e1e62623cdca9929d273b"
       },
@@ -1069,6 +1073,10 @@
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",
         "sha256": "a8f96b616ec618b41333619e393b7c14abfc577553ace49c93552c2bc33d2433"
+      },
+      {
+        "path": "tests/staging-provider-broker-vercel-rest-host.test.mjs",
+        "sha256": "27a26d63e7076ce928fa12f79b03dd1c0de33a766e69e6f4bba0aac3e640b842"
       },
       {
         "path": "tests/staging-provider-broker-native-binding.test.mjs",
