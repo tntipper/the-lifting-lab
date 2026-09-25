@@ -222,9 +222,8 @@ export default function CaffeinePage() {
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">Now find your pre-workout</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Know your number? See which pre-workouts actually hit an effective, sensible caffeine dose —
-            and which ones bury an under-dosed scoop behind a huge proprietary blend. Every product is
-            scored 0–100 on exactly that.
+            Know your number? Review the caffeine amounts and other available label details for
+            pre-workouts. Product assessments are still under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link

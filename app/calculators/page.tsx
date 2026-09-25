@@ -446,15 +446,15 @@ export default function CalculatorsPage() {
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">Know your numbers?</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Now find the products that hit them. Every supplement we track is scored 0–100 on how
-            closely its doses match the evidence — or let the wizard build your whole stack.
+            Now explore products and check their available label information against your needs.
+            Product assessments are still under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/wizard"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Build my stack →
+              Explore my stack →
             </Link>
             <Link
               href="/products"

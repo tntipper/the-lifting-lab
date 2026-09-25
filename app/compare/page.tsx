@@ -7,8 +7,8 @@ import { fetchCompareProducts, parseCompareIds } from '@/lib/product-data'
 // on the server per request (Next.js treats searchParams as dynamic). The
 // trade-off is deliberate: the alternative — a static shell that fetches
 // client-side — is exactly the spinner that in-app browsers (LIFT / Safari
-// webviews) and crawlers get stuck on. Every product's name, brand, score,
-// true cost, serving info, nutrients, buy CTA and image are in the HTML.
+// webviews) and crawlers get stuck on. Product names, brands, listed costs,
+// serving info, nutrients, offer status and images are in the HTML.
 type Props = { searchParams: Promise<{ ids?: string | string[] }> }
 
 const SITE = 'https://www.theliftinglab.co.uk'
@@ -18,7 +18,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const products = await fetchCompareProducts(ids)
   const base = {
     description:
-      'Head-to-head supplement comparison. See dosing side by side and get an evidence-based verdict on which product wins.',
+      'Compare recorded supplement labels and listed prices side by side. No approved effectiveness winner is available.',
     alternates: { canonical: `${SITE}/compare` },
   }
   if (!products.length) return { title: 'Compare Supplements — The Lifting Lab', ...base }
@@ -26,7 +26,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   return {
     title: `${names} — Compare | The Lifting Lab`,
     ...base,
-    description: `${names}: side-by-side dosing, Effectiveness Match scores and True Cost per serving.`,
+    description: `${names}: compare recorded label amounts and listed cost per serving. Effectiveness assessments are unavailable.`,
   }
 }
 
@@ -57,10 +57,10 @@ export default async function ComparePage({ searchParams }: Props) {
             )}
           </h1>
           <p className="text-lab-muted text-sm mt-2">
-            Side-by-side dosing and Effectiveness Match scores. Pick up to 3 products from the browser.
+            Compare recorded label amounts and listed prices for up to 3 products.
           </p>
           <p className="text-lab-muted/50 text-xs mt-1">
-            Scores are for informational purposes only and do not constitute medical advice.
+            No approved effectiveness assessment or winner is available.
           </p>
         </div>
         <CompareView products={products} />

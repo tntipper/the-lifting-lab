@@ -212,14 +212,15 @@ export default function BmiPage() {
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
             BMI does not move a physique; training, protein and consistency do. The two supplements
             with real evidence behind them — whey to hit your protein target and creatine to support
-            the work — are each scored 0–100 on how closely they match that evidence.
+            the work — can be explored through their available label information. Product assessments
+            are still under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/whey"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best whey 2026 →
+              Whey research →
             </Link>
             <Link
               href="/calculators"

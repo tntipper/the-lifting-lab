@@ -235,16 +235,15 @@ export default function RpePage() {
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">Training near your limit?</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Hard RPE work is where creatine and a solid pre-workout earn their place — the two
-            supplements with real evidence behind them. Every product we track is scored 0–100 on how
-            closely its doses match that evidence.
+            Training near your limit starts with a sound programme and recovery. Explore the
+            available creatine product labels and research while assessments remain under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/creatine"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best creatine 2026 →
+              Creatine research →
             </Link>
             <Link
               href="/calculators"

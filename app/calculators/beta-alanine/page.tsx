@@ -226,14 +226,14 @@ export default function BetaAlaninePage() {
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
             The beta-alanine tucked into most pre-workouts is underdosed and only taken on training days,
             so it never saturates. A cheap standalone tub, or a genuinely well-dosed pre-workout, is how you
-            actually reach an effective dose. Every product we track is scored 0–100 on exactly that.
+            actually reach an effective dose. Check the label details yourself while product assessments are under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/pre-workout"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best pre-workout 2026 →
+              Pre-workout research →
             </Link>
             <Link
               href="/calculators"
