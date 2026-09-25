@@ -983,6 +983,10 @@
         "sha256": "9c2da78b4ba377f7a579d7ba9d9028b1c800375d08973b19108b2d9499f22bda"
       },
       {
+        "path": "scripts/staging-surface-preview-deployment-supervisor.mjs",
+        "sha256": "7b6c4759a089eb6d3fb9ab7736a660f96e2db16b29363f4bfbc37079dcd248b0"
+      },
+      {
         "path": "scripts/staging-preview-git-source-preflight.mjs",
         "sha256": "5a4e0994eeec7b5bc26644c0ebd97683b62f68c0b547510441cc2d28725da02d"
       },
@@ -1325,6 +1329,10 @@
       {
         "path": "tests/staging-surface-preview-deployment-verifier.test.mjs",
         "sha256": "f08a8530f66739c144df57dd2db03e0ddd2a637010ee22fd96ef7b73153f8974"
+      },
+      {
+        "path": "tests/staging-surface-preview-deployment-supervisor.test.mjs",
+        "sha256": "7a15f2005e9c47dfb831a0971d4f40e9885ba567b2b19edb5334c55e7c2887c0"
       },
       {
         "path": "tests/staging-preview-git-source-preflight.test.mjs",
