@@ -169,6 +169,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
     'tests/staging-bounded-executor.test.mjs','tests/staging-provider-broker-rotation.test.mjs','tests/staging-provider-broker-phase-journal.test.mjs','tests/staging-provider-broker-phased-session.test.mjs','tests/staging-provider-broker-rotation-process-control.test.mjs','tests/staging-provider-broker-rotation-keychain.test.mjs','tests/staging-provider-broker-rotation-readiness.test.mjs','tests/staging-provider-broker-rotation-composition.test.mjs','tests/staging-provider-broker-reconciliation.test.mjs','tests/staging-provider-broker-recovery-collection.test.mjs','tests/staging-provider-broker-recovery-read-journal.test.mjs','tests/staging-provider-broker-recovery-read-session.test.mjs','tests/staging-provider-broker-recovery-read-bindings.test.mjs','tests/staging-provider-broker-recovery-process-control.test.mjs','tests/staging-provider-broker-native-adapter.test.mjs',
     'tests/staging-provider-broker-vercel-rest-host.test.mjs',
     'tests/staging-provider-broker-supabase-rest-host.test.mjs',
+    'tests/staging-provider-broker-rest-composition.test.mjs',
     'tests/staging-provider-broker-native-binding.test.mjs',
     'tests/staging-provider-normalization-contract.test.mjs',
     'tests/staging-provider-normalization-native-port.test.mjs',

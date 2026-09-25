@@ -1087,6 +1087,10 @@
         "sha256": "4f84e3b22164df3f128df6f11f47d9bf72cffa77a08b9cdc5b113507ee5e446a"
       },
       {
+        "path": "tests/staging-provider-broker-rest-composition.test.mjs",
+        "sha256": "6a34489d3a21eb66661e92aebf80ff294c9db81dab9c9e9063762ba7d92aa483"
+      },
+      {
         "path": "tests/staging-provider-broker-native-binding.test.mjs",
         "sha256": "1000eefd2b1369d1cb63059a9e962dd6ed087f6a97e18251d527ff65fc096170"
       },
