@@ -1,6 +1,6 @@
 # Stage 3 REST broker rotation: one-run preparation
 
-**Status: completed for this one-run staging rotation.** The owner separately approved and the independently reviewed launcher ran once. The result, separate read-only reconciliation, consumed journals and clean disarm are in `docs/ops/evidence/2026-09-25-stage3-rest-broker-rotation-result.md`. This plan did not authorise account/cart activation, customer messaging, purchases, deployment or production change. The next gate is a separately planned staging sign-in journey.
+**Status: completed for this one-run staging rotation.** The owner separately approved and the independently reviewed launcher ran once. The result, separate read-only reconciliation, consumed journals and clean disarm are in `docs/ops/evidence/2026-09-25-stage3-rest-broker-rotation-result.md`. This plan did not authorise account/cart activation, customer messaging, purchases, deployment or production change. The next gate is the separately planned protected activation prerequisite check, followed by a bounded staging sign-in journey only if those prerequisites pass.
 
 ## Intended result
 
