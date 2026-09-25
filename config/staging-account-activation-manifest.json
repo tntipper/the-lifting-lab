@@ -635,6 +635,10 @@
         "sha256": "57908b1ad41a6b8848d080f67274286e780d8c6e737d594544d1e1a9ead2562d"
       },
       {
+        "path": "scripts/staging-provider-broker-rotation-readiness.mjs",
+        "sha256": "90649a89260c7d5f4ba2d185862b141075887bd6efe3e738792764f32b5891a2"
+      },
+      {
         "path": "scripts/staging-provider-broker-reconciliation.mjs",
         "sha256": "b1c51a8b95c75a6457f123acfb4cec7e219ba97c1ea85a005e5ca2ad0c9c5931"
       },
@@ -1029,6 +1033,10 @@
       {
         "path": "tests/staging-provider-broker-rotation-keychain.test.mjs",
         "sha256": "87d5e0be01cc68c93a4b1e498e024dd276b621efd26a069a713952e82e377b8f"
+      },
+      {
+        "path": "tests/staging-provider-broker-rotation-readiness.test.mjs",
+        "sha256": "4293e0c3fa7ade587c632e0235d8ee7b634f70f3c19ae0d2c317007f768aaaf4"
       },
       {
         "path": "tests/staging-provider-broker-reconciliation.test.mjs",
