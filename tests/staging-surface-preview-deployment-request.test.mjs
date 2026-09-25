@@ -19,7 +19,7 @@ test('request fixes the team, project, repository, commit, manifest and Preview 
   assert.equal(STAGING_GITHUB_REPO, 'the-lifting-lab')
   const request = buildStagingPreviewDeploymentRequest(valid)
   assert.equal(request.method, 'POST')
-  assert.equal(request.url, 'https://api.vercel.com/v13/deployments?teamId=team_gf7cgIkkoeMLtODFDDT5MrW4')
+  assert.equal(request.url, 'https://api.vercel.com/v13/deployments?forceNew=1&teamId=team_gf7cgIkkoeMLtODFDDT5MrW4')
   assert.deepEqual(request.body, {
     name: 'the-lifting-lab', project: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4',
     gitSource: { type: 'github', org: 'tntipper', repo: 'the-lifting-lab', ref: valid.branch, sha: valid.sourceCommit },

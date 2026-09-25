@@ -968,7 +968,11 @@
       },
       {
         "path": "scripts/staging-surface-preview-deployment-request.mjs",
-        "sha256": "c1291d9bb8ee9628b4c96865526a98063e4943edfed957a1159da1bf8cbd101e"
+        "sha256": "d68c3aa7a7fa174e089faf1d4e8f1c7e0a3605387883a3b37b9b56b287ec8a7a"
+      },
+      {
+        "path": "scripts/staging-surface-preview-deployment-post.mjs",
+        "sha256": "c822097b5516aa0a21ca8ba9bf3df21c60741f0d2b09c0333695a6b24938b436"
       },
       {
         "path": "scripts/staging-preview-git-source-preflight.mjs",
@@ -1300,7 +1304,11 @@
       },
       {
         "path": "tests/staging-surface-preview-deployment-request.test.mjs",
-        "sha256": "b399705be2e6209b9f18c022968ab03daffec2d642a3e0bb4730a868daf1fb7d"
+        "sha256": "334f6e82529e933b7ce0e4a9ec362e2e17e6a66a135ae863d752127485ee4f51"
+      },
+      {
+        "path": "tests/staging-surface-preview-deployment-post.test.mjs",
+        "sha256": "7b6006fc91860f1c78816f2052140ab1bcde6a35d689f3bb2039fcff053f4526"
       },
       {
         "path": "tests/staging-preview-git-source-preflight.test.mjs",
@@ -1376,7 +1384,7 @@
     "providerBindingsImplemented": true,
     "surfaceReadBindingsImplemented": true,
     "deploymentCreationBindingImplemented": false,
-    "deploymentCreationHoldReason": "VERCEL_CONNECTED_REPOSITORY_ID_NOT_PINNED",
+    "deploymentCreationHoldReason": "PREVIEW_POST_NOT_CONNECTED_OR_VERIFIED",
     "nativeLaunchersImplemented": false,
     "boundedExecutorsRequiredBeforeArming": true,
     "hostedExecutionApproved": false,

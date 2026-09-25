@@ -35,5 +35,5 @@ export function buildStagingPreviewDeploymentRequest(input) {
   const meta = Object.freeze({ githubCommitRef: STAGING_BRANCH, githubCommitSha: values.sourceCommit,
     tllManifestSha256: values.manifestSha256 })
   const body = Object.freeze({ name: VERCEL_PROJECT, project: VERCEL_PROJECT_ID, gitSource, meta })
-  return Object.freeze({ method: 'POST', url: `https://api.vercel.com/v13/deployments?teamId=${VERCEL_TEAM_ID}`, body })
+  return Object.freeze({ method: 'POST', url: `https://api.vercel.com/v13/deployments?forceNew=1&teamId=${VERCEL_TEAM_ID}`, body })
 }
