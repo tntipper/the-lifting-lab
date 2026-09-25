@@ -663,6 +663,10 @@
         "sha256": "dde7e8c31e6cba2634b65e9207abac05dcbf8e1db5fc49a1cfd4a07c96beb0a2"
       },
       {
+        "path": "scripts/staging-provider-supabase-only-coordinator.mjs",
+        "sha256": "2774dd29f49e2939819facc257cfaf7641bde6a7ecd3f7755e27d4b075b4265e"
+      },
+      {
         "path": "scripts/staging-provider-credential-readiness-phase-journal.mjs",
         "sha256": "4d0212f172d7599e086b748a51b8160a7d19c749b06ee8c36430af3ef1b3768f"
       },
@@ -969,6 +973,10 @@
       {
         "path": "tests/staging-provider-normalization-session.test.mjs",
         "sha256": "f84cd759cd21c5ff13e76110d86f693de06597d95905f1a021cd7db5c8f79700"
+      },
+      {
+        "path": "tests/staging-provider-supabase-only-coordinator.test.mjs",
+        "sha256": "c71b1a1958289e1bef5b85f3f4775465161986d8ee60c0c4b0b73d54f74e0a42"
       },
       {
         "path": "tests/staging-provider-credential-readiness.test.mjs",
