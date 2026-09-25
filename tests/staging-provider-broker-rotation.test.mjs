@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { BROKER_SECRET_NAME, createProviderBrokerRotationJournal, PROVIDER_IDENTIFIER, rotateStagingProviderBroker, STAGING_BROKER_PROVIDER, STAGING_PROJECT_REF, STAGING_PROVIDER_TARGET } from '../scripts/staging-provider-broker-rotation.mjs'
 
 const journal = () => createProviderBrokerRotationJournal({ path: join(mkdtempSync(join(tmpdir(), 'tll-provider-rotation-')), 'journal.json'), makeRunId: () => 'reviewed-rotation-run' })
-const provider = ({ jwksUrl = '' } = {}) => ({ ...STAGING_BROKER_PROVIDER, scopes: [...STAGING_BROKER_PROVIDER.scopes], jwksUrl })
+const provider = ({ jwksUrl = STAGING_BROKER_PROVIDER.jwksUrl } = {}) => ({ ...STAGING_BROKER_PROVIDER, scopes: [...STAGING_BROKER_PROVIDER.scopes], jwksUrl })
 
 function fixture({ failAt, afterUpdateReadback } = {}) {
   const events = [], staged = { vercel: false, supabase: false }, copies = []
@@ -61,10 +61,12 @@ test('a provider-update or post-update readback uncertainty retains values and r
   }
 })
 
-test('unexpected configured JWKS is held before generating, journaling, or staging a value', async () => {
-  const f = fixture(); f.ports.getProvider = async () => ({ target: STAGING_PROVIDER_TARGET, provider: provider({ jwksUrl: 'https://unexpected.example/jwks.json' }) })
-  const j = journal(); const result = await rotateStagingProviderBroker({ ports: f.ports, journal: j, randomBytes: () => { throw Error('must not generate') } })
-  assert.equal(result.status, 'STOPPED_BEFORE_PROVIDER_UPDATE'); assert.deepEqual(f.events, ['preflight']); assert.equal(j.read(), null)
+test('missing or unexpected JWKS is held before generating, journaling, or staging a value', async () => {
+  for (const jwksUrl of ['', 'https://unexpected.example/jwks.json', `${STAGING_BROKER_PROVIDER.jwksUrl}/`]) {
+    const f = fixture(); f.ports.getProvider = async () => ({ target: STAGING_PROVIDER_TARGET, provider: provider({ jwksUrl }) })
+    const j = journal(); const result = await rotateStagingProviderBroker({ ports: f.ports, journal: j, randomBytes: () => { throw Error('must not generate') } })
+    assert.equal(result.status, 'STOPPED_BEFORE_PROVIDER_UPDATE'); assert.deepEqual(f.events, ['preflight']); assert.equal(j.read(), null)
+  }
 })
 
 test('readback requires one exact name per staging surface and the exact disabled provider projection', async () => {
@@ -72,6 +74,16 @@ test('readback requires one exact name per staging surface and the exact disable
   const result = await rotateStagingProviderBroker({ ports: f.ports, journal: j, randomBytes: size => Buffer.alloc(size, 4) })
   assert.equal(result.status, 'RECONCILIATION_REQUIRED'); assert.equal(j.read().state, 'RECONCILIATION_REQUIRED')
   assert.ok(!f.events.includes('removeVercel'))
+})
+
+test('changed JWKS after update requires reconciliation and retains staged host values', async () => {
+  const f = fixture(), j = journal()
+  f.ports.readProvider = async () => ({ target: STAGING_PROVIDER_TARGET, provider: provider({ jwksUrl: 'https://unexpected.example/jwks.json' }) })
+  const result = await rotateStagingProviderBroker({ ports: f.ports, journal: j, randomBytes: size => Buffer.alloc(size, 4) })
+  assert.equal(result.status, 'RECONCILIATION_REQUIRED')
+  assert.equal(j.read().state, 'RECONCILIATION_REQUIRED')
+  assert.ok(f.staged.vercel && f.staged.supabase)
+  assert.ok(!f.events.includes('removeVercel') && !f.events.includes('removeSupabase'))
 })
 
 test('preflight rejects existing entries, active surfaces and target drift before generating or journaling', async () => {

@@ -15,7 +15,7 @@ const provider = Object.freeze({
   id: 'provider-id', provider_type: 'oauth2', identifier: PROVIDER_IDENTIFIER, name: 'TLL staging subject broker', client_id: STAGING_BROKER_PROVIDER.clientId,
   acceptable_client_ids: [], scopes: ['subject'], pkce_enabled: true, attribute_mapping: {}, authorization_params: {}, enabled: false, email_optional: true,
   issuer: '', discovery_url: '', skip_nonce_check: false, authorization_url: STAGING_BROKER_PROVIDER.authorizationUrl, token_url: STAGING_BROKER_PROVIDER.tokenUrl,
-  userinfo_url: STAGING_BROKER_PROVIDER.userinfoUrl, jwks_uri: '', discovery_document: null, created_at: '2026-09-22T12:00:00.000Z', updated_at: '2026-09-22T12:00:00.000Z',
+  userinfo_url: STAGING_BROKER_PROVIDER.userinfoUrl, jwks_uri: STAGING_BROKER_PROVIDER.jwksUrl, discovery_document: null, created_at: '2026-09-22T12:00:00.000Z', updated_at: '2026-09-22T12:00:00.000Z',
 })
 const surfaceObservation = Object.freeze({
   surface: Object.freeze({
@@ -76,7 +76,7 @@ test('Git-linked staging project with sourceless metadata still yields an honest
   const f = fixture({ projectOverride: observedProject, providerOverride: stagingProvider, surfaceOverride: stagingSurface })
   const result = await f.composition.observe({ signal: signal() })
   assert.equal(result.status, 'HOLD')
-  assert.deepEqual(result.reasonCodes, ['provider_enabled', 'provider_jwks_configured', 'application_manifest_evidence_absent'])
+  assert.deepEqual(result.reasonCodes, ['provider_enabled', 'provider_jwks_drift', 'application_manifest_evidence_absent'])
   assert.equal(result.vercel.repositoryId, '998877')
   assert.equal(f.surfaceReads, 1)
 })
@@ -108,7 +108,7 @@ test('staging-shaped successful reads produce the same HOLD across concurrent co
     for (const name of order) { gates[name].release(); await Promise.resolve() }
     const result = await pending
     assert.equal(result.status, 'HOLD')
-    assert.deepEqual(result.reasonCodes, ['provider_enabled', 'provider_jwks_configured', 'application_manifest_evidence_absent'])
+    assert.deepEqual(result.reasonCodes, ['provider_enabled', 'provider_jwks_drift', 'application_manifest_evidence_absent'])
     assert.equal(surfaceReads, 1)
     assert.deepEqual(disposals.sort(), ['supabase', 'surface', 'vercel'])
     assert.doesNotMatch(JSON.stringify(result), /privateToken|client_secret/)

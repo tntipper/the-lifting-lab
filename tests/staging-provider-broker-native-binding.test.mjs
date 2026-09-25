@@ -18,7 +18,7 @@ const provider = ({ enabled = false, ...overrides } = {}) => ({
   client_id: STAGING_BROKER_PROVIDER.clientId, acceptable_client_ids: [], scopes: ['subject'], pkce_enabled: true,
   attribute_mapping: {}, authorization_params: {}, enabled, email_optional: true, issuer: '', discovery_url: '', skip_nonce_check: false,
   authorization_url: STAGING_BROKER_PROVIDER.authorizationUrl, token_url: STAGING_BROKER_PROVIDER.tokenUrl,
-  userinfo_url: STAGING_BROKER_PROVIDER.userinfoUrl, jwks_uri: '', discovery_document: null,
+  userinfo_url: STAGING_BROKER_PROVIDER.userinfoUrl, jwks_uri: STAGING_BROKER_PROVIDER.jwksUrl, discovery_document: null,
   created_at: '2026-09-22T10:00:00.000Z', updated_at: '2026-09-22T10:00:00.000Z', ...overrides,
 })
 const completed = async operation => ({ status: 'COMPLETED', value: await operation(new AbortController().signal) })

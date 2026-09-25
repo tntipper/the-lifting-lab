@@ -1,11 +1,11 @@
 /** Injected-only, read-only reconciliation after the consumed provider update. */
-import { BROKER_CLIENT_ID, BROKER_SECRET_NAME, PROVIDER_IDENTIFIER, STAGING_BROKER_PROVIDER,
+import { BROKER_CLIENT_ID, BROKER_SECRET_NAME, PROVIDER_IDENTIFIER, RETAINED_STAGING_JWKS_URI, STAGING_BROKER_PROVIDER,
   STAGING_PROJECT_REF } from './staging-provider-broker-rotation.mjs'
 import { STAGING_PROVIDER_NAME, projectOfficialProviderSchema } from './staging-provider-broker-native-adapter.mjs'
 import { STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_QUERY_ID } from './staging-account-hosted-baseline-database.mjs'
 
 export const PROVIDER_SAFE_HELD_RECONCILIATION_ENABLED = false
-export const RETAINED_STAGING_JWKS_URI = `${STAGING_BROKER_PROVIDER.authorizationUrl}/.well-known/jwks.json`
+export { RETAINED_STAGING_JWKS_URI }
 const unavailable = () => { throw new Error('Staging provider read-only reconciliation unavailable') }
 const fixed = status => Object.freeze({ status, projectRef: STAGING_PROJECT_REF, providerIdentifier: PROVIDER_IDENTIFIER })
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

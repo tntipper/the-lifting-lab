@@ -62,10 +62,13 @@ and Supabase Edge. A provider-update attempt with a lost or malformed
 acknowledgement is `RECONCILIATION_REQUIRED`; retain the staged destinations
 and do not retry or guess the old write-only value.
 
-The adapter can inspect and disable the documented blank-scope provider before
-rotation, but the final disabled readback must be fresh. The pre-update read may
-contain repairable scope/configuration drift; a configured JWKS remains a hard
-stop. The post-update read must equal the exact desired provider projection.
+The adapter can inspect the documented blank-scope provider before rotation,
+but the final disabled readback must be fresh. The pre-update read may contain
+repairable scope/configuration drift. Only the exact staging JWKS address
+verified in the 25 September safe-held read is accepted; a blank, changed or
+unknown address is a hard stop. The broker is OAuth2 and returns no ID token,
+so the future update leaves this retained address unchanged and verifies it
+again after the update. See the [compatibility plan](stage-plans/2026-09-25-stage3-retained-jwks-compatibility.md).
 
 ## 6. Activate in dependency order
 

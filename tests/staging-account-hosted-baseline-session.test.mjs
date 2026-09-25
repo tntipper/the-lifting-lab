@@ -349,13 +349,19 @@ test('cleanup rejection preserves intent for reconciliation', async () => {
 })
 
 test('projection rejects numeric and overlong identifiers from an otherwise valid rehashed PASS receipt', () => {
-  const base = { schema: 'tll-staging-account-hosted-baseline/v1', target: 'qdmvngjwkcsilzmqksme', status: 'PASS', reasonCodes: [],
+  const base = { schema: 'tll-staging-account-hosted-baseline/v2', target: 'qdmvngjwkcsilzmqksme', status: 'PASS', reasonCodes: [],
     database: { migrations: 15, controlsEnabled: 0, runtimeRoles: 5, runtimeSessions: 0, executionEdges: 0, operatorEdges: 5, receiptHash: 'c'.repeat(64) },
-    provider: { name: 'TLL staging subject broker', enabled: false, pkce: true, emailOptional: true, clientId: STAGING_BROKER_PROVIDER.clientId, acceptableClientIds: [], scopes: [...STAGING_BROKER_PROVIDER.scopes], attributeMappingPresent: false, authorizationParamsPresent: false, skipNonceCheck: false, authorizationEndpointMatches: true, tokenEndpointMatches: true, userinfoEndpointMatches: true, jwksConfigured: false, issuerConfigured: false },
+    provider: { name: 'TLL staging subject broker', enabled: false, pkce: true, emailOptional: true, clientId: STAGING_BROKER_PROVIDER.clientId, acceptableClientIds: [], scopes: [...STAGING_BROKER_PROVIDER.scopes], attributeMappingPresent: false, authorizationParamsPresent: false, skipNonceCheck: false, authorizationEndpointMatches: true, tokenEndpointMatches: true, userinfoEndpointMatches: true, jwksMatchesExpected: true, discoveryDocumentPresent: false, issuerConfigured: false },
     brokerSecrets: { supabasePresent: false, vercelPresent: false }, surface: { edge: false, privateCustomer: false, privateCart: false, publicCustomer: false, publicCart: false },
     vercel: { deploymentId: 'dpl_x', immutableUrl: 'https://x.vercel.app', gitSourceCommit: 'a'.repeat(40), applicationManifestSha256: 'b'.repeat(64), repositoryId: '1', gitProvider: 'github' } }
   const rehash = value => { delete value.observationHash; value.observationHash = createHash('sha256').update(JSON.stringify(value)).digest('hex'); return value }
   assert.doesNotThrow(() => projectHostedBaselineObservation(rehash(structuredClone(base))))
+  const changedJwks = structuredClone(base); changedJwks.provider.jwksMatchesExpected = false
+  assert.throws(() => projectHostedBaselineObservation(rehash(changedJwks)), /unavailable/)
+  const discovery = structuredClone(base); discovery.provider.discoveryDocumentPresent = true
+  assert.throws(() => projectHostedBaselineObservation(rehash(discovery)), /unavailable/)
+  const oldSchema = structuredClone(base); oldSchema.schema = 'tll-staging-account-hosted-baseline/v1'
+  assert.throws(() => projectHostedBaselineObservation(rehash(oldSchema)), /unavailable/)
   const numeric = structuredClone(base); numeric.vercel.repositoryId = 1
   assert.throws(() => projectHostedBaselineObservation(rehash(numeric)), /unavailable/)
   const overlongDeployment = structuredClone(base); overlongDeployment.vercel.deploymentId = `dpl_${'x'.repeat(257)}`

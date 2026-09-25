@@ -18,7 +18,7 @@ const safeString = value => typeof value === 'string' && value.length > 0 && val
 const cleanProviderString = (value, maximum) => typeof value === 'string' && value.length >= 1 && value.length <= maximum && !/[\x00-\x1f\x7f]/.test(value)
 const validRunId = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 const sha256 = value => createHash('sha256').update(value).digest('hex')
-const HOLD_REASONS = new Set(['provider_name_drift','provider_enabled','provider_pkce_disabled','provider_client_id_drift','provider_acceptable_client_ids_drift','provider_scopes_drift','provider_email_policy_drift','provider_attribute_mapping_drift','provider_authorization_params_drift','provider_skip_nonce_check_enabled','provider_authorization_endpoint_drift','provider_token_endpoint_drift','provider_userinfo_endpoint_drift','provider_jwks_configured','provider_issuer_configured','broker_secret_present_supabase','broker_secret_present_vercel','surface_enabled','application_manifest_evidence_absent'])
+const HOLD_REASONS = new Set(['provider_name_drift','provider_enabled','provider_pkce_disabled','provider_client_id_drift','provider_acceptable_client_ids_drift','provider_scopes_drift','provider_email_policy_drift','provider_attribute_mapping_drift','provider_authorization_params_drift','provider_skip_nonce_check_enabled','provider_authorization_endpoint_drift','provider_token_endpoint_drift','provider_userinfo_endpoint_drift','provider_jwks_drift','provider_issuer_configured','broker_secret_present_supabase','broker_secret_present_vercel','surface_enabled','application_manifest_evidence_absent'])
 const OBSERVATION_FAILURE_REASONS = new Set(['database_read_unavailable', 'provider_read_unavailable', 'supabase_secret_names_read_unavailable', 'vercel_environment_read_unavailable', 'surface_read_unavailable', 'vercel_project_read_unavailable', 'database_validation_unavailable', 'provider_validation_unavailable', 'secret_inventory_validation_unavailable', 'surface_validation_unavailable', 'vercel_validation_unavailable', 'vercel_merge_unavailable', 'observation_validation_unavailable'])
 const FAILED_REASONS = new Set(['deadline_or_abort', 'composition_construction_unavailable', 'observation_projection_unavailable', 'observation_unavailable', ...OBSERVATION_FAILURE_REASONS])
 function observationFailureReason(error, phase, aborted) {
@@ -142,7 +142,7 @@ function canonicalReasons (value) {
   if (!p.authorizationEndpointMatches) reasons.push('provider_authorization_endpoint_drift')
   if (!p.tokenEndpointMatches) reasons.push('provider_token_endpoint_drift')
   if (!p.userinfoEndpointMatches) reasons.push('provider_userinfo_endpoint_drift')
-  if (p.jwksConfigured) reasons.push('provider_jwks_configured')
+  if (!p.jwksMatchesExpected || p.discoveryDocumentPresent) reasons.push('provider_jwks_drift')
   if (p.issuerConfigured) reasons.push('provider_issuer_configured')
   if (s.supabasePresent) reasons.push('broker_secret_present_supabase')
   if (s.vercelPresent) reasons.push('broker_secret_present_vercel')
@@ -161,7 +161,7 @@ function safePlain (value, depth = 0) {
 /** Validate only the immutable core receipt and return no provider payload. */
 export function projectHostedBaselineObservation (value) {
   const keys = ['schema', 'target', 'status', 'reasonCodes', 'database', 'provider', 'brokerSecrets', 'surface', 'vercel', 'observationHash']
-  if (!exact(value, keys) || !safePlain(value) || value.schema !== 'tll-staging-account-hosted-baseline/v1'
+  if (!exact(value, keys) || !safePlain(value) || value.schema !== 'tll-staging-account-hosted-baseline/v2'
     || value.target !== HOSTED_BASELINE_SESSION_TARGET || value.target === HOSTED_BASELINE_SESSION_PRODUCTION_EXCLUDED
     || !['PASS', 'HOLD'].includes(value.status) || !Array.isArray(value.reasonCodes) || value.reasonCodes.length > 19
     || value.reasonCodes.some(code => !HOLD_REASONS.has(code)) || new Set(value.reasonCodes).size !== value.reasonCodes.length
@@ -172,10 +172,10 @@ export function projectHostedBaselineObservation (value) {
     || value.database.migrations !== 15 || value.database.controlsEnabled !== 0 || value.database.runtimeRoles !== 5 || value.database.runtimeSessions !== 0 || value.database.executionEdges !== 0 || value.database.operatorEdges !== 5 || !/^[a-f0-9]{64}$/.test(value.database.receiptHash)) unavailable()
   if (!exact(value.brokerSecrets, ['supabasePresent', 'vercelPresent']) || typeof value.brokerSecrets.supabasePresent !== 'boolean' || typeof value.brokerSecrets.vercelPresent !== 'boolean'
     || !exact(value.surface, ['edge', 'privateCustomer', 'privateCart', 'publicCustomer', 'publicCart']) || Object.values(value.surface).some(item => typeof item !== 'boolean')
-    || !exact(value.provider, ['name', 'enabled', 'pkce', 'emailOptional', 'clientId', 'acceptableClientIds', 'scopes', 'attributeMappingPresent', 'authorizationParamsPresent', 'skipNonceCheck', 'authorizationEndpointMatches', 'tokenEndpointMatches', 'userinfoEndpointMatches', 'jwksConfigured', 'issuerConfigured'])
+    || !exact(value.provider, ['name', 'enabled', 'pkce', 'emailOptional', 'clientId', 'acceptableClientIds', 'scopes', 'attributeMappingPresent', 'authorizationParamsPresent', 'skipNonceCheck', 'authorizationEndpointMatches', 'tokenEndpointMatches', 'userinfoEndpointMatches', 'jwksMatchesExpected', 'discoveryDocumentPresent', 'issuerConfigured'])
     || !cleanProviderString(value.provider.name, 128) || !cleanProviderString(value.provider.clientId, 256) || !Array.isArray(value.provider.acceptableClientIds) || !Array.isArray(value.provider.scopes)
     || value.provider.acceptableClientIds.length > 32 || value.provider.scopes.length > 32 || value.provider.acceptableClientIds.some(item => !cleanProviderString(item, 256)) || value.provider.scopes.some(item => !cleanProviderString(item, 256))
-    || ['enabled','pkce','emailOptional','attributeMappingPresent','authorizationParamsPresent','skipNonceCheck','authorizationEndpointMatches','tokenEndpointMatches','userinfoEndpointMatches','jwksConfigured','issuerConfigured'].some(key => typeof value.provider[key] !== 'boolean')
+    || ['enabled','pkce','emailOptional','attributeMappingPresent','authorizationParamsPresent','skipNonceCheck','authorizationEndpointMatches','tokenEndpointMatches','userinfoEndpointMatches','jwksMatchesExpected','discoveryDocumentPresent','issuerConfigured'].some(key => typeof value.provider[key] !== 'boolean')
     || !exact(value.vercel, ['deploymentId','immutableUrl','gitSourceCommit','applicationManifestSha256','repositoryId','gitProvider']) || typeof value.vercel.deploymentId !== 'string' || value.vercel.deploymentId.length > 256 || !/^dpl_[A-Za-z0-9]+$/.test(value.vercel.deploymentId) || typeof value.vercel.immutableUrl !== 'string' || value.vercel.immutableUrl.length > 256 || !/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(value.vercel.immutableUrl) || typeof value.vercel.gitSourceCommit !== 'string' || value.vercel.gitSourceCommit.length !== 40 || !/^[a-f0-9]{40}$/.test(value.vercel.gitSourceCommit) || !(value.vercel.applicationManifestSha256 === null || typeof value.vercel.applicationManifestSha256 === 'string' && value.vercel.applicationManifestSha256.length === 64 && /^[a-f0-9]{64}$/.test(value.vercel.applicationManifestSha256)) || typeof value.vercel.repositoryId !== 'string' || value.vercel.repositoryId.length > 256 || !/^[1-9][0-9]*$/.test(value.vercel.repositoryId) || value.vercel.gitProvider !== 'github') unavailable()
   const expectedReasons = canonicalReasons(value)
   if (JSON.stringify(value.reasonCodes) !== JSON.stringify(expectedReasons) || (value.status === 'PASS') !== (expectedReasons.length === 0)) unavailable()

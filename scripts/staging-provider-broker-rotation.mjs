@@ -14,6 +14,9 @@ export const STAGING_PROJECT_REF = 'qdmvngjwkcsilzmqksme'
 export const PROVIDER_IDENTIFIER = 'custom:tll-staging-subject-broker-v1'
 export const BROKER_CLIENT_ID = 'tll-staging-subject-broker-v1'
 export const BROKER_SECRET_NAME = 'TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET'
+// Exact already-stored staging address. Supabase's OAuth2 runtime uses userinfo,
+// not this address; keep it pinned rather than attempting an ignored empty update.
+export const RETAINED_STAGING_JWKS_URI = 'https://the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.vercel.app/auth/customer/authorize/.well-known/jwks.json'
 export const STAGING_PROVIDER_TARGET = Object.freeze({
   projectRef: STAGING_PROJECT_REF,
   vercelProject: 'the-lifting-lab',
@@ -30,7 +33,7 @@ export const STAGING_BROKER_PROVIDER = Object.freeze({
   emailOptional: true,
   enabled: false,
   identifier: PROVIDER_IDENTIFIER,
-  jwksUrl: '',
+  jwksUrl: RETAINED_STAGING_JWKS_URI,
   pkce: true,
   scopes: Object.freeze(['subject']),
   tokenUrl: 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-token',
@@ -126,9 +129,9 @@ export function createProviderBrokerRotationJournal({ path = DEFAULT_JOURNAL_PAT
 function validateExistingProvider(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || value.identifier !== PROVIDER_IDENTIFIER
     || value.clientId !== BROKER_CLIENT_ID || value.enabled !== false) unavailable()
-  // OAuth2 broker responses do not issue an ID token. A configured JWKS endpoint
-  // would be both unused and a hidden upstream dependency, so hold before writes.
-  if (!(value.jwksUrl === undefined || value.jwksUrl === null || value.jwksUrl === '')) unavailable()
+  // Only the exact observed legacy value is accepted. An arbitrary address is
+  // drift, even though the published OAuth2 runtime does not use JWKS.
+  if (value.jwksUrl !== RETAINED_STAGING_JWKS_URI) unavailable()
 }
 
 function projectProviderReadback(value) {
@@ -203,8 +206,7 @@ export async function rotateStagingProviderBroker({ ports, journal = createProvi
   }
 
   try {
-    // The fully loaded existing-provider projection must prove that there is no
-    // unexpected JWKS dependency before even an otherwise-disabled rotation.
+    // Prove the exact retained value before generating or staging credentials.
     validateFrozenPreflight(await ports.preflight(STAGING_PROVIDER_TARGET))
     const existing = await ports.getProvider(STAGING_PROVIDER_TARGET, PROVIDER_IDENTIFIER)
     if (!exactKeys(existing, ['target', 'provider'])) unavailable()

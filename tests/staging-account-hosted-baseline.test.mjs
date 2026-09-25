@@ -11,7 +11,7 @@ const provider = Object.freeze({
   id: 'provider-id', provider_type: 'oauth2', identifier: PROVIDER_IDENTIFIER, name: 'TLL staging subject broker', client_id: STAGING_BROKER_PROVIDER.clientId,
   acceptable_client_ids: [], scopes: ['subject'], pkce_enabled: true, attribute_mapping: {}, authorization_params: {}, enabled: false, email_optional: true,
   issuer: '', discovery_url: '', skip_nonce_check: false, authorization_url: STAGING_BROKER_PROVIDER.authorizationUrl, token_url: STAGING_BROKER_PROVIDER.tokenUrl,
-  userinfo_url: STAGING_BROKER_PROVIDER.userinfoUrl, jwks_uri: '', discovery_document: null, created_at: '2026-09-22T12:00:00.000Z', updated_at: '2026-09-22T12:00:00.000Z',
+  userinfo_url: STAGING_BROKER_PROVIDER.userinfoUrl, jwks_uri: STAGING_BROKER_PROVIDER.jwksUrl, discovery_document: null, created_at: '2026-09-22T12:00:00.000Z', updated_at: '2026-09-22T12:00:00.000Z',
 })
 const surface = Object.freeze({ edge: Object.freeze({ target: STAGING_SURFACE_TARGET, functionName: 'customer-subject-broker', enabled: false }), flags: Object.freeze({ target: STAGING_SURFACE_TARGET, privateCustomer: false, privateCart: false, publicCustomer: false, publicCart: false }) })
 const vercel = Object.freeze({ projectId: VERCEL_PROJECT_ID, project: VERCEL_PROJECT, teamId: VERCEL_TEAM_ID, scope: VERCEL_SCOPE, branch: 'codex/tll-integration', alias: STAGING_ALIAS, deploymentId: 'dpl_A1b2c3', immutableUrl: 'https://the-lifting-lab-abc123.vercel.app', gitSourceCommit: 'b'.repeat(40), applicationManifestSha256: 'c'.repeat(64), repositoryId: '987654321', gitProvider: 'github' })
@@ -39,8 +39,18 @@ test('safe completed observation retains classified provider, secret and surface
     readSurface: async () => ({ ...surface, edge: { ...surface.edge, enabled: true } }),
   }).observe({ signal: signal() })
   assert.equal(result.status, 'HOLD')
-  assert.deepEqual(result.reasonCodes, ['provider_enabled', 'provider_jwks_configured', 'broker_secret_present_supabase', 'broker_secret_present_vercel', 'surface_enabled'])
+  assert.deepEqual(result.reasonCodes, ['provider_enabled', 'provider_jwks_drift', 'broker_secret_present_supabase', 'broker_secret_present_vercel', 'surface_enabled'])
   assert.equal(result.brokerSecrets.supabasePresent, true); assert.equal(result.surface.edge, true)
+})
+
+test('only the exact retained JWKS without discovery document is accepted', async () => {
+  for (const override of [{ jwks_uri: '' }, { jwks_uri: 'https://example.invalid/jwks' },
+    { jwks_uri: `${STAGING_BROKER_PROVIDER.jwksUrl}/` }, { discovery_document: {} }]) {
+    const result = await baseline({ readProvider: async () => ({ ...provider, ...override }) }).observe({ signal: signal() })
+    assert.equal(result.status, 'HOLD')
+    assert.deepEqual(result.reasonCodes, ['provider_jwks_drift'])
+    assert.doesNotMatch(JSON.stringify(result), /example\.invalid/)
+  }
 })
 
 test('missing application manifest metadata is retained as an explicit HOLD rather than invented evidence', async () => {

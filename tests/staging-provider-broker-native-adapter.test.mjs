@@ -12,7 +12,7 @@ const rawProvider = ({ enabled = false, ...override } = {}) => ({
   client_id: STAGING_BROKER_PROVIDER.clientId, acceptable_client_ids: [], scopes: ['subject'], pkce_enabled: true,
   attribute_mapping: {}, authorization_params: {}, enabled, email_optional: true, issuer: '', discovery_url: '', skip_nonce_check: false,
   authorization_url: STAGING_BROKER_PROVIDER.authorizationUrl, token_url: STAGING_BROKER_PROVIDER.tokenUrl,
-  userinfo_url: STAGING_BROKER_PROVIDER.userinfoUrl, jwks_uri: '', discovery_document: null,
+  userinfo_url: STAGING_BROKER_PROVIDER.userinfoUrl, jwks_uri: STAGING_BROKER_PROVIDER.jwksUrl, discovery_document: null,
   created_at: '2026-09-22T10:00:00.000Z', updated_at: '2026-09-22T10:00:00.000Z', ...override,
 })
 
@@ -29,7 +29,7 @@ function fixture({ provider = rawProvider(), hostFailure, clientFailure, disable
     calls.push('client'); assert.equal(input.authUrl, STAGING_AUTH_URL); assert.deepEqual(input.target, STAGING_PROVIDER_TARGET); assert.ok(Buffer.isBuffer(input.projectSecret)); assert.equal(input.signal.aborted, false); seenProjectSecret = input.projectSecret
     return { auth: { admin: { customProviders: {
       getProvider: async id => { calls.push('get'); assert.equal(id, PROVIDER_IDENTIFIER); if (clientFailure === 'get') throw Error('private response'); return { data: currentProvider, error: null } },
-      updateProvider: async (id, payload) => { calls.push('update'); assert.equal(id, PROVIDER_IDENTIFIER); if (clientFailure === 'update') return { data: null, error: { message: 'private provider response' } }; if (Object.keys(payload).length === 1) { assert.equal(payload.enabled, false); if (!disableUpdateStale) currentProvider = { ...currentProvider, enabled: false } } else { assert.equal(payload.client_secret.includes('private'), false); assert.deepEqual(payload.scopes, ['subject']); assert.equal(payload.enabled, false); currentProvider = { ...rawProvider(), id: currentProvider.id, created_at: currentProvider.created_at, updated_at: currentProvider.updated_at } } return { data: currentProvider, error: null } },
+      updateProvider: async (id, payload) => { calls.push('update'); assert.equal(id, PROVIDER_IDENTIFIER); if (clientFailure === 'update') return { data: null, error: { message: 'private provider response' } }; if (Object.keys(payload).length === 1) { assert.equal(payload.enabled, false); if (!disableUpdateStale) currentProvider = { ...currentProvider, enabled: false } } else { assert.equal(payload.client_secret.includes('private'), false); assert.deepEqual(payload.scopes, ['subject']); assert.equal(payload.enabled, false); assert.equal(Object.hasOwn(payload, 'jwks_uri'), false); currentProvider = { ...rawProvider(), id: currentProvider.id, created_at: currentProvider.created_at, updated_at: currentProvider.updated_at, jwks_uri: currentProvider.jwks_uri } } return { data: currentProvider, error: null } },
     } } } }
   }
   const adapter = createStagingProviderBrokerNativeAdapter({ projectSecret, createProviderClient,
@@ -49,10 +49,10 @@ test('native adapter remains disabled and uses only injected official admin-clie
   assert.deepEqual(await f.adapter.readbackSecretNames(STAGING_PROVIDER_TARGET), { target: STAGING_PROVIDER_TARGET, supabase: [BROKER_SECRET_NAME], vercel: [BROKER_SECRET_NAME] })
 })
 
-test('strict rotation projection maps the documented snake_case desired state and rejects credentials, unknown fields, blank scopes, enabled state and JWKS', () => {
+test('strict rotation projection maps the documented snake_case desired state and rejects credentials, unknown fields, blank scopes, enabled state and JWKS drift', () => {
   const projected = projectOfficialStagingProvider(rawProvider())
   assert.equal(projected.clientId, STAGING_BROKER_PROVIDER.clientId); assert.equal(projected.authorizationUrl, STAGING_BROKER_PROVIDER.authorizationUrl)
-  for (const override of [{ client_secret: 'must-never-accept' }, { unknown: true }, { scopes: [] }, { enabled: true }, { jwks_uri: 'https://bad.example/jwks' }, { authorization_params: { secret: 'bad' } }]) {
+  for (const override of [{ client_secret: 'must-never-accept' }, { unknown: true }, { scopes: [] }, { enabled: true }, { jwks_uri: '' }, { jwks_uri: 'https://bad.example/jwks' }, { authorization_params: { secret: 'bad' } }]) {
     assert.throws(() => projectOfficialStagingProvider(rawProvider(override)), /unavailable/)
   }
 })

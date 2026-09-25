@@ -616,11 +616,11 @@
       },
       {
         "path": "scripts/staging-provider-broker-rotation.mjs",
-        "sha256": "c8fcabc7306bf68974f7b4f92990983ad41d601389141c1e3695da7b5f510f2f"
+        "sha256": "6df69683a1e011b2754ab762189a47ce30899bbc71b689f93eb23cefe0f1f4bb"
       },
       {
         "path": "scripts/staging-provider-broker-native-adapter.mjs",
-        "sha256": "a36da1f91c2e589c9ec8de6175e5d4605183c6c743ec0422ddaf4d3ade35cd10"
+        "sha256": "da559899e9dc353b98d7dc08b10178d24195be9eed142d1d3de8a17f77eb6ae5"
       },
       {
         "path": "scripts/staging-provider-broker-native-binding.mjs",
@@ -676,7 +676,7 @@
       },
       {
         "path": "scripts/staging-provider-safe-held-reconciliation.mjs",
-        "sha256": "352e9e3ce9912f24df945c09d8d92b4745fc73bcd079da4c470bfb2e99b77b6e"
+        "sha256": "e7bafce8b2228dc4708145981a54372a1cc10d205d85f99d0e108849f8150669"
       },
       {
         "path": "scripts/staging-provider-safe-held-live-launcher.mjs",
@@ -964,15 +964,15 @@
       },
       {
         "path": "tests/staging-provider-broker-rotation.test.mjs",
-        "sha256": "fbc52ad6b4e86326c72474307a07315de252ab454796c36edd1c1cdc49bc0863"
+        "sha256": "c439a4c22e6f231dcadcfa6a4e6e820b537bcf4f2481fe0995905c5fc2608fec"
       },
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",
-        "sha256": "53382ecaef0d095be27561b34b06f0c13c194dd0676b11c37c8022e8f773b9e4"
+        "sha256": "a8f96b616ec618b41333619e393b7c14abfc577553ace49c93552c2bc33d2433"
       },
       {
         "path": "tests/staging-provider-broker-native-binding.test.mjs",
-        "sha256": "f53988bf88d7253ae7d3f4bb6b7f7a562835ebdcca12a9696eb8e4ffbc95cb15"
+        "sha256": "1000eefd2b1369d1cb63059a9e962dd6ed087f6a97e18251d527ff65fc096170"
       },
       {
         "path": "tests/staging-provider-normalization-contract.test.mjs",

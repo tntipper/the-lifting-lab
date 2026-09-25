@@ -123,7 +123,7 @@ export function projectOfficialStagingProvider(value) {
     || !exactStringArray(projected.acceptableClientIds, []) || !exactStringArray(projected.scopes, ['subject'])
     || projected.pkce !== true || projected.enabled !== false || projected.emailOptional !== true
     || projected.attributeMappingPresent || projected.authorizationParamsPresent || projected.issuer !== '' || projected.discoveryUrl !== ''
-    || projected.skipNonceCheck !== false || projected.jwksUrl !== '' || projected.discoveryDocumentPresent
+    || projected.skipNonceCheck !== false || projected.jwksUrl !== STAGING_BROKER_PROVIDER.jwksUrl || projected.discoveryDocumentPresent
     || projected.authorizationUrl !== STAGING_BROKER_PROVIDER.authorizationUrl || projected.tokenUrl !== STAGING_BROKER_PROVIDER.tokenUrl
     || projected.userinfoUrl !== STAGING_BROKER_PROVIDER.userinfoUrl) unavailable()
   return projected
@@ -212,7 +212,6 @@ function providerUpdatePayload(secret) {
       authorization_url: STAGING_BROKER_PROVIDER.authorizationUrl,
       token_url: STAGING_BROKER_PROVIDER.tokenUrl,
       userinfo_url: STAGING_BROKER_PROVIDER.userinfoUrl,
-      jwks_uri: '',
     }),
   })
 }

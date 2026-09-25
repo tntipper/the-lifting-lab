@@ -8,7 +8,7 @@ import { PROJECT_REF, PRODUCTION_PROJECT_REF } from './staging-account-hosted-ba
 
 export { PROJECT_REF, PRODUCTION_PROJECT_REF }
 export const STAGING_ACCOUNT_HOSTED_BASELINE_ENABLED = false
-export const STAGING_ACCOUNT_HOSTED_BASELINE_SCHEMA = 'tll-staging-account-hosted-baseline/v1'
+export const STAGING_ACCOUNT_HOSTED_BASELINE_SCHEMA = 'tll-staging-account-hosted-baseline/v2'
 
 const unavailable = () => { throw new Error('Staging hosted baseline unavailable') }
 const VALIDATION_CODES = new Set(['database_validation_unavailable', 'provider_validation_unavailable', 'secret_inventory_validation_unavailable', 'surface_validation_unavailable', 'vercel_validation_unavailable', 'vercel_merge_unavailable'])
@@ -66,7 +66,9 @@ function providerObservation(raw) {
     authorizationEndpointMatches: provider.authorizationUrl === STAGING_BROKER_PROVIDER.authorizationUrl,
     tokenEndpointMatches: provider.tokenUrl === STAGING_BROKER_PROVIDER.tokenUrl,
     userinfoEndpointMatches: provider.userinfoUrl === STAGING_BROKER_PROVIDER.userinfoUrl,
-    jwksConfigured: provider.jwksUrl !== '' || provider.discoveryDocumentPresent, issuerConfigured: provider.issuer !== '' || provider.discoveryUrl !== '' })
+    jwksMatchesExpected: provider.jwksUrl === STAGING_BROKER_PROVIDER.jwksUrl,
+    discoveryDocumentPresent: provider.discoveryDocumentPresent,
+    issuerConfigured: provider.issuer !== '' || provider.discoveryUrl !== '' })
 }
 
 function addProviderHoldReasons(reasons, value) {
@@ -83,7 +85,7 @@ function addProviderHoldReasons(reasons, value) {
   if (!value.authorizationEndpointMatches) reasons.push('provider_authorization_endpoint_drift')
   if (!value.tokenEndpointMatches) reasons.push('provider_token_endpoint_drift')
   if (!value.userinfoEndpointMatches) reasons.push('provider_userinfo_endpoint_drift')
-  if (value.jwksConfigured) reasons.push('provider_jwks_configured')
+  if (!value.jwksMatchesExpected || value.discoveryDocumentPresent) reasons.push('provider_jwks_drift')
   if (value.issuerConfigured) reasons.push('provider_issuer_configured')
 }
 
