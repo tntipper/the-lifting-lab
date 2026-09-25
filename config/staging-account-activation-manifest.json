@@ -972,11 +972,15 @@
       },
       {
         "path": "scripts/staging-surface-preview-deployment-post.mjs",
-        "sha256": "c822097b5516aa0a21ca8ba9bf3df21c60741f0d2b09c0333695a6b24938b436"
+        "sha256": "f203a551f8222957a5153ccc55b09afdc4b69bcaf5b5014d08545e25f161554f"
+      },
+      {
+        "path": "scripts/staging-surface-preview-deployment-journal.mjs",
+        "sha256": "110db69390bc4a9ceea276f64cd6421a55c042e9782a49a2b63af78cb3cf3909"
       },
       {
         "path": "scripts/staging-surface-preview-deployment-verifier.mjs",
-        "sha256": "f1777d94b7c1c33104c18f9dc9f1e4cd54163a24c6a26551cf71895cc189c66e"
+        "sha256": "9c2da78b4ba377f7a579d7ba9d9028b1c800375d08973b19108b2d9499f22bda"
       },
       {
         "path": "scripts/staging-preview-git-source-preflight.mjs",
@@ -1312,11 +1316,15 @@
       },
       {
         "path": "tests/staging-surface-preview-deployment-post.test.mjs",
-        "sha256": "7b6006fc91860f1c78816f2052140ab1bcde6a35d689f3bb2039fcff053f4526"
+        "sha256": "7d9049b6171dc3249201f3ebc0c17891ab50f00b7f24639ba85b3e404eda60af"
+      },
+      {
+        "path": "tests/staging-surface-preview-deployment-journal.test.mjs",
+        "sha256": "2ad406f206db521eb4bb4ba9350f5cc8123d3a330f6c8a8bbb8419275a16a886"
       },
       {
         "path": "tests/staging-surface-preview-deployment-verifier.test.mjs",
-        "sha256": "91973517edefbfd652b068bbbcd495ee1d0e654babd93343b16f9f76cf4c4dba"
+        "sha256": "f08a8530f66739c144df57dd2db03e0ddd2a637010ee22fd96ef7b73153f8974"
       },
       {
         "path": "tests/staging-preview-git-source-preflight.test.mjs",

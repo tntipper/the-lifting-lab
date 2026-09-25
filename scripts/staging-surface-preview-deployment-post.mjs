@@ -60,16 +60,21 @@ async function uncertain(stopWorkerGroup) {
  * A successful POST only proves Vercel accepted an ID; callers must separately
  * prove source, project, immutable URL, alias, TLS and runtime state.
  */
-export function createStagingPreviewDeploymentPost({ fetch: fetcher, vercelToken, readPinnedRepository, stopWorkerGroup } = {}) {
+export function createStagingPreviewDeploymentPost({ fetch: fetcher, vercelToken, readPinnedRepository,
+  journal, stopWorkerGroup } = {}) {
   if (typeof fetcher !== 'function' || typeof readPinnedRepository !== 'function' || typeof stopWorkerGroup !== 'function'
+    || typeof journal?.dispatch !== 'function' || typeof journal?.accepted !== 'function'
     || !Buffer.isBuffer(vercelToken) || vercelToken.length < 8 || vercelToken.length > 1024
     || !/^[\x21-\x7e]+$/.test(vercelToken.toString('utf8'))) unavailable()
   const token = Buffer.from(vercelToken)
   let dispatched = false, disposed = false
   return Object.freeze({
-    async submit(input, { signal } = {}) {
+    async submit(input, { signal, claim } = {}) {
       if (disposed || dispatched || !validSignal(signal)) unavailable()
       const request = buildStagingPreviewDeploymentRequest(input)
+      if (!claim || claim.phase !== 'CLAIMED' || claim.branch !== input.branch
+        || claim.sourceCommit !== input.sourceCommit || claim.manifestSha256 !== input.manifestSha256
+        || claim.publicCustomer !== input.publicCustomer || claim.publicCart !== input.publicCart) unavailable()
       let link
       try { link = await readPinnedRepository(signal) } catch { unavailable() }
       if (!link || link.repoId !== 1264363509 || link.org !== 'tntipper' || link.repo !== 'the-lifting-lab'
@@ -78,6 +83,9 @@ export function createStagingPreviewDeploymentPost({ fetch: fetcher, vercelToken
         headers: Object.freeze({ authorization: `Bearer ${token.toString('utf8')}`, accept: 'application/json',
           'accept-encoding': 'identity', 'content-type': 'application/json' }),
         body: JSON.stringify(request.body), signal })
+      // The durable marker must reach disk before any network POST. A failed
+      // marker leaves the operation pre-dispatch and cannot send anything.
+      const dispatchRecord = journal.dispatch(claim)
       // After this point an acknowledgement can be lost. Stop the supervised
       // worker and leave its one-use journal for read-only reconciliation.
       dispatched = true
@@ -92,7 +100,8 @@ export function createStagingPreviewDeploymentPost({ fetch: fetcher, vercelToken
           || !/^dpl_[A-Za-z0-9]+$/.test(value.id ?? '')
           || !['QUEUED', 'INITIALIZING', 'BUILDING', 'READY'].includes(value.readyState)
           || (value.target !== undefined && value.target !== null)) return uncertain(stopWorkerGroup)
-        return Object.freeze({ status: 'ACCEPTED_UNVERIFIED', deploymentId: value.id })
+        const acceptedRecord = journal.accepted(dispatchRecord, value.id)
+        return Object.freeze({ status: 'ACCEPTED_UNVERIFIED', deploymentId: value.id, journal: acceptedRecord })
       } catch { discard(response); return uncertain(stopWorkerGroup) }
     },
     dispose() { if (!disposed) { disposed = true; token.fill(0) } },

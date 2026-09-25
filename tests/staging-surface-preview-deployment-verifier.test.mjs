@@ -1,7 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { createStagingPreviewDeploymentVerifier, STAGING_PREVIEW_DEPLOYMENT_VERIFIER_ENABLED } from '../scripts/staging-surface-preview-deployment-verifier.mjs'
 import { createStagingPreviewDeploymentPost } from '../scripts/staging-surface-preview-deployment-post.mjs'
+import { createStagingPreviewDeploymentJournal } from '../scripts/staging-surface-preview-deployment-journal.mjs'
 import { createStagingSurfaceNativeBinding, VERCEL_PROJECT_ID, VERCEL_TEAM_ID } from '../scripts/staging-surface-activation-native-binding.mjs'
 import { createStagingAccountHostedBaselineSurfaceBinding } from '../scripts/staging-account-hosted-baseline-surface.mjs'
 import { STAGING_ALIAS } from '../scripts/staging-surface-activation-transport.mjs'
@@ -14,7 +18,7 @@ const started = Date.parse('2026-09-25T12:00:00.000Z')
 const signal = new AbortController().signal
 
 function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit, runtimeCustomer = false,
-  aliasId = id, states = ['QUEUED', 'BUILDING', 'READY'] } = {}) {
+  aliasId = id, repoId = 1264363509, states = ['QUEUED', 'BUILDING', 'READY'] } = {}) {
   let clock = started, posts = 0, stateReads = 0, aliasReads = 0, stops = 0
   const calls = [], apiToken = Buffer.from('private-api-test-token')
   const deployment = { id, projectId: VERCEL_PROJECT_ID, ownerId: VERCEL_TEAM_ID, target: null,
@@ -23,7 +27,7 @@ function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit
     meta: { githubCommitRef: selectedInput.branch, githubCommitSha: selectedInput.sourceCommit,
       tllManifestSha256: selectedInput.manifestSha256 } }
   const project = { id: VERCEL_PROJECT_ID, name: 'the-lifting-lab', accountId: VERCEL_TEAM_ID,
-    link: { type: 'github', repoId: 1264363509, repoOwnerId: 12345, org: 'tntipper',
+    link: { type: 'github', repoId, repoOwnerId: 12345, org: 'tntipper',
       repo: 'the-lifting-lab', productionBranch: 'main', sourceless: false } }
   const fetcher = async (url, options) => {
     calls.push({ url, method: options.method, headers: options.headers })
@@ -53,16 +57,20 @@ function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit
   }
   const binding = createStagingSurfaceNativeBinding({ runCli: async () => { throw Error('no CLI allowed') }, fetch: fetcher, vercelToken: apiToken })
   const stopWorkerGroup = () => { stops++ }
-  const postHost = createStagingPreviewDeploymentPost({ fetch: fetcher, vercelToken: apiToken,
+  const journal = createStagingPreviewDeploymentJournal({
+    path: join(mkdtempSync(join(tmpdir(), 'tll-preview-verify-')), 'private', 'journal.json'),
+    makeRunId: () => '85af5555-aaaa-4bbb-8ccc-777777777777', now: () => clock,
+  })
+  const postHost = createStagingPreviewDeploymentPost({ fetch: fetcher, vercelToken: apiToken, journal,
     readPinnedRepository: binding.readPinnedRepository, stopWorkerGroup })
-  const verifier = createStagingPreviewDeploymentVerifier({ postHost, binding, stopWorkerGroup,
+  const verifier = createStagingPreviewDeploymentVerifier({ postHost, journal, binding, stopWorkerGroup,
     pause: async (milliseconds, passedSignal) => { assert.equal(milliseconds, 2000); assert.equal(passedSignal, signal); clock += milliseconds },
     now: () => clock,
     createProtectedReader: expectedDeployment => createStagingAccountHostedBaselineSurfaceBinding({
       fetch: fetcher, vercelToken: apiToken, protectionBypassToken: Buffer.from('private-bypass-test-token'), expectedDeployment,
     }),
   })
-  return { verifier, calls, postHost, get posts() { return posts }, get stateReads() { return stateReads },
+  return { verifier, journal, calls, postHost, get posts() { return posts }, get stateReads() { return stateReads },
     get aliasReads() { return aliasReads }, get stops() { return stops } }
 }
 
@@ -75,6 +83,7 @@ test('one accepted Preview is polled, source-pinned and proved through the prote
     customerEnabled: false, cartEnabled: false,
   })
   assert.equal(f.posts, 1); assert.equal(f.stateReads, 3); assert.equal(f.aliasReads, 2); assert.equal(f.stops, 0)
+  assert.equal(f.journal.read().phase, 'VERIFIED')
   assert.equal(f.calls[0].method, 'GET')
   assert.equal(f.calls[1].method, 'POST')
   assert.ok(f.calls.some(call => call.url === `${immutableUrl}/api/staging/readiness`
@@ -90,7 +99,16 @@ test('paired enabled public flags require the protected runtime and Edge to be e
   assert.equal(result.status, 'PROTECTED_PREVIEW_VERIFIED')
   assert.equal(result.customerEnabled, true); assert.equal(result.cartEnabled, true)
   assert.equal(f.posts, 1); assert.equal(f.stops, 0)
+  assert.equal(f.journal.read().phase, 'VERIFIED')
   f.postHost.dispose()
+})
+
+test('a changed repository records a terminal pre-dispatch hold without sending a POST', async () => {
+  const f = fixture({ repoId: 999 })
+  await assert.rejects(f.verifier.verify(input, { signal }), /unavailable/)
+  assert.equal(f.posts, 0); assert.equal(f.stops, 0)
+  assert.equal(f.journal.read().phase, 'HOLD_PRE_DISPATCH')
+  await assert.rejects(f.verifier.verify(input, { signal }), /unavailable/)
 })
 
 test('wrong actual Git source, alias or protected runtime flags stop after one POST without a success receipt', async () => {
@@ -100,6 +118,7 @@ test('wrong actual Git source, alias or protected runtime flags stop after one P
     assert.equal(await Promise.race([pending.then(() => 'settled', () => 'rejected'),
       new Promise(resolve => setTimeout(() => resolve('held'), 20))]), 'held')
     assert.equal(f.posts, 1); assert.equal(f.stops, 1)
+    assert.equal(f.journal.read().phase, 'POST_ACK')
     await assert.rejects(f.verifier.verify(input, { signal }), /unavailable/)
     f.postHost.dispose()
   }
@@ -112,6 +131,7 @@ test('failed or never-ready build has bounded reads and stops without a second P
     assert.equal(await Promise.race([pending.then(() => 'settled', () => 'rejected'),
       new Promise(resolve => setTimeout(() => resolve('held'), 20))]), 'held')
     assert.equal(f.posts, 1); assert.equal(f.stops, 1)
+    assert.equal(f.journal.read().phase, 'POST_ACK')
     assert.ok(f.stateReads <= 90)
     f.postHost.dispose()
   }

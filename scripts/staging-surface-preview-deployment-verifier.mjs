@@ -40,9 +40,11 @@ function verifyProtectedResult(value, identity, input) {
  * an observer factory that uses the protected Preview bypass, and a bounded
  * supervisor. This module has no credentials, launcher or ambient network.
  */
-export function createStagingPreviewDeploymentVerifier({ postHost, binding, createProtectedReader,
+export function createStagingPreviewDeploymentVerifier({ postHost, journal, binding, createProtectedReader,
   pause, now = Date.now, stopWorkerGroup } = {}) {
   if (typeof postHost?.submit !== 'function' || typeof postHost?.dispose !== 'function'
+    || typeof journal?.claim !== 'function' || typeof journal?.holdBeforeDispatch !== 'function'
+    || typeof journal?.verified !== 'function'
     || typeof binding?.readDeploymentState !== 'function'
     || typeof binding?.readDeployment !== 'function' || typeof createProtectedReader !== 'function'
     || typeof pause !== 'function' || typeof now !== 'function' || typeof stopWorkerGroup !== 'function') unavailable()
@@ -54,12 +56,19 @@ export function createStagingPreviewDeploymentVerifier({ postHost, binding, crea
       consumed = true
       const started = now()
       if (!Number.isFinite(started)) unavailable()
+      let claim
+      try { claim = journal.claim(input) }
+      catch (error) { postHost.dispose(); throw error }
       // A rejected preflight is still pre-POST. After an accepted ID, every
       // uncertain outcome must stop the worker so a parent can reconcile it.
       let accepted
-      try { accepted = await postHost.submit(input, { signal }) }
-      catch (error) { postHost.dispose(); throw error }
-      if (!accepted || accepted.status !== 'ACCEPTED_UNVERIFIED' || !validId(accepted.deploymentId)) {
+      try { accepted = await postHost.submit(input, { signal, claim }) }
+      catch (error) {
+        try { journal.holdBeforeDispatch(claim) } catch { return uncertain(stopWorkerGroup) }
+        postHost.dispose(); throw error
+      }
+      if (!accepted || accepted.status !== 'ACCEPTED_UNVERIFIED' || !validId(accepted.deploymentId)
+        || accepted.journal?.phase !== 'POST_ACK' || accepted.journal.deploymentId !== accepted.deploymentId) {
         return uncertain(stopWorkerGroup)
       }
       let reader
@@ -93,6 +102,7 @@ export function createStagingPreviewDeploymentVerifier({ postHost, binding, crea
         if (!validSignal(signal) || !Number.isFinite(afterProof)
           || afterProof < started || afterProof - started > PREVIEW_BUILD_DEADLINE_MS) unavailable()
         verifyProtectedResult(protectedResult, identity, input)
+        journal.verified(accepted.journal)
         postHost.dispose()
         return Object.freeze({ status: 'PROTECTED_PREVIEW_VERIFIED', deploymentId: identity.deploymentId,
           immutableUrl: identity.immutableUrl, sourceCommit: input.sourceCommit,
