@@ -22,9 +22,9 @@ export async function GET() {
     openapi: '3.1.0',
     info: {
       title: 'The Lifting Lab — Supplement Value Comparison',
-      version: '0.3.0',
+      version: '0.4.0',
       description:
-        'Supplement research records and listed-price arithmetic. No approved effectiveness assessment exists. Historical scores are unverified, not product recommendations.',
+        'Supplement research records and listed-price arithmetic. No approved effectiveness assessment exists; historical scores are withheld.',
       contact: { name: 'The Lifting Lab', url: SITE_URL, email: 'hello@theliftinglab.co.uk' },
     },
     servers: [{ url: SITE_URL }],
@@ -97,8 +97,8 @@ export async function GET() {
             brand: { type: 'string' },
             category: { type: 'string' },
             score: {
-              type: ['integer', 'null'],
-              description: 'Unverified historical formula value, never approval or recommendation eligibility. Null when no usable historical value exists. assessment_state describes historical availability or a review hold, not approval.',
+              type: 'null',
+              description: 'Always null until a reviewed, versioned product assessment is approved. Historical source values are withheld.',
             },
             retail_price_gbp: { type: ['number', 'null'] },
             cost_per_serving_gbp: { type: ['number', 'null'] },

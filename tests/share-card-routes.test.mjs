@@ -89,7 +89,7 @@ test('stack route rejects arbitrary card content before any catalogue lookup', a
   assert.equal(f.lookups.length, 0)
 })
 
-test('stack image renders stored data and individual scores from explicitly active lookup', async () => {
+test('stack image renders stored identity without unapproved scores', async () => {
   const f = fixture()
   const { GET } = f.load('app/api/stack/sharecard/route.tsx')
   const response = await GET(new Request(`https://fixture.invalid/card?ids=${A}`))
@@ -98,8 +98,8 @@ test('stack image renders stored data and individual scores from explicitly acti
   const text = visibleText(response.element)
   assert.match(text, /Stored Brand/)
   assert.match(text, /Stored Product/)
-  assert.match(text, /61/)
-  assert.match(text, /Historical catalogue values/)
+  assert.doesNotMatch(text, /61/)
+  assert.match(text, /Research records/)
   assert.match(text, /not been assessed as a combined stack/)
   assert.deepEqual(f.lookups[0], {
     table: 'products', columns: 'id, name, brand, category, status',
@@ -144,13 +144,13 @@ test('share reward route rejects malformed IDs and passes a canonical UUID to ex
 })
 
 test('stack image withholds quality grades for held, zero and missing assessments', async () => {
-  for (const [category, score, label] of [['zma', 99, 'Under review'], ['creatine', 0, 'Not assessed'], ['creatine', null, 'Not assessed'], ['creatine', 80, 'Legacy score']]) {
+  for (const [category, score, label] of [['zma', 99, 'Under review'], ['creatine', 0, 'Not assessed'], ['creatine', null, 'Not assessed'], ['creatine', 80, 'Not assessed']]) {
     const f = fixture({ rows: [{ ...product, category, score: 100 }], scoreFor: () => score })
     const response = await f.load('app/api/stack/sharecard/route.tsx').GET(new Request(`https://fixture.invalid/card?ids=${A}`))
     const text = visibleText(response.element)
     assert.match(text, new RegExp(label)); assert.doesNotMatch(text, /Excellent|Good|Poor|Stack Score/)
     assert.match(text, /Scientific review incomplete/)
-    if (category === 'zma') assert.match(text, /99/)
+    assert.doesNotMatch(text, /99|80/)
     assert.doesNotMatch(text, /100/, 'Incidental score property on a DB row is not authoritative')
   }
 })
@@ -163,7 +163,7 @@ test('JSON assessment projection resolves active identities and rejects supplied
   assert.equal(f.lookups.length, 0)
   const response = await GET(new Request(`https://fixture.invalid/assessment?ids=${A}`))
   assert.equal(response.headers.get('cache-control'), 'no-store')
-  assert.deepEqual((await response.json()).products, [{ id: A, brand: product.brand, name: product.name, category: 'zma', score: 61 }])
+  assert.deepEqual((await response.json()).products, [{ id: A, brand: product.brand, name: product.name, category: 'zma', score: null }])
   assert.deepEqual(f.lookups[0].filter, ['status', 'active'])
   assert.equal((await GET(new Request(`https://fixture.invalid/assessment?ids=${UNKNOWN}`))).status, 404)
   assert.equal((await fixture({ fail: true }).load('app/api/stack/assessments/route.ts').GET(new Request(`https://fixture.invalid/assessment?ids=${A}`))).status, 503)

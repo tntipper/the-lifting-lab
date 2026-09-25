@@ -114,7 +114,7 @@ export default async function AlternativesHubPage() {
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
           Supplement <span className="text-lab-lime">Alternatives</span>
         </h1>
-        <p className="text-lg text-white/90 leading-relaxed mb-4">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
+        <p className="text-lg text-white/90 leading-relaxed mb-4">No approved effectiveness assessment is available. Products remain visible for label and listed-price research without a quality ranking or recommendation.</p>
         <p className="text-lab-muted text-sm mb-10">
           Prefer a straight two-product face-off?{' '}
           <Link href="/vs" className="text-lab-lime hover:underline underline-offset-2">
@@ -141,11 +141,7 @@ export default async function AlternativesHubPage() {
                       <p className="text-sm font-bold leading-snug text-white">
                         Alternatives to {t.brand} {t.name}
                       </p>
-                      {t.score != null && (
-                        <p className="text-[11px] text-lab-muted mt-1">
-                          Historical value {t.score}/100 is unverified — compare labels and listed prices
-                        </p>
-                      )}
+                      <p className="text-[11px] text-lab-muted mt-1">Not assessed — compare labels and listed prices</p>
                     </Link>
                   ))}
                 </div>

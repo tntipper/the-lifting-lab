@@ -617,7 +617,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
                   <div className="text-[8px] text-lab-muted uppercase tracking-wide">Match</div>
                   <div className="text-xs font-bold text-white mt-0.5">
-                    {assessment.state === 'legacy' ? 'Not assessed' : assessment.label}
+                    {assessment.label}
                   </div>
                 </div>
                 <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">

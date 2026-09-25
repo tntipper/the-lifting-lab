@@ -26,7 +26,8 @@ function fixture(rows = [make()]) {
   const sb = { from(table) {
     let data = table === 'reviews' ? [] : rows
     return { select() { return this }, eq(field, value) { if (field === 'category') data = data.filter(p => p.category === value); return this },
-      in() { return this }, then(done) { return Promise.resolve({ data, error: null }).then(done) } }
+      in() { return this }, order() { return this }, single() { return Promise.resolve({ data: data[0], error: null }) },
+      then(done) { return Promise.resolve({ data, error: null }).then(done) } }
   } }
   function load(relative) {
     const filename = path.resolve(root, relative)
@@ -176,7 +177,7 @@ test('public API sends null ranks and explicit status for research records; Open
   assert.ok(json.results.every(p => p.buy_url === null && p.retailer_url === null))
   const held = fixture([make({ category: 'zma', score: 99 })])
   const heldJson = await (await held.load('app/api/ard/compare/route.ts').GET(new Request('https://fixture.invalid/api/ard/compare?category=zma&sort=score'))).json()
-  assert.equal(heldJson.results[0].rank, null); assert.equal(heldJson.results[0].score, 99)
+  assert.equal(heldJson.results[0].rank, null); assert.equal(heldJson.results[0].score, null)
   assert.equal(heldJson.results[0].assessment_state, 'under_review')
   const spec = await (await f.load('app/api/ard/openapi.json/route.ts').GET()).json()
   assert.equal(spec.components.schemas.RankedProduct.properties.rank.type, 'null'); assert.ok(json.results.every(p => p.recommendation_status === 'unavailable'))
@@ -255,7 +256,7 @@ test('positive product metadata and social images never certify a frozen formula
   assert.equal(schema.review, undefined); assert.equal(schema.aggregateRating, undefined)
   assert.doesNotMatch(JSON.stringify(await page.generateMetadata({ params })), /Dose-for-dose|EFSA|scores 95/i)
   const image = render((await f.load('app/products/[id]/opengraph-image.tsx').default({ params })).element)
-  assert.match(image, /95/); assert.match(image, /Unverified Historical/); assert.doesNotMatch(image, /#a6e22e[^>]*>95/)
+  assert.match(image, /Not assessed/); assert.doesNotMatch(image, /95|Unverified Historical|#a6e22e[^>]*>95/)
   for (const file of ['app/opengraph-image.tsx', 'app/best/opengraph-image.tsx', 'app/value/opengraph-image.tsx', 'app/watch-outs/opengraph-image.tsx']) {
     const social = render((await f.load(file).default()).element)
     assert.doesNotMatch(social, /ranked 0–100|top-scoring|still actually works|effective doses — not marketing|lowest-scoring/)
@@ -290,8 +291,20 @@ test('product API retains its array contract and explicitly denies recommendatio
   const response = await f.load('app/api/products/route.ts').GET(new Request('https://fixture.invalid/api/products?sort=value'))
   assert.equal(response.status, 200)
   const products = await response.json()
-  assert.equal(products[0].score, 95); assert.equal(products[0].assessment_state, 'legacy')
-  assert.equal(products[0].recommendation_status, 'unavailable'); assert.match(products[0].assessment_note, /unverified/i)
+  assert.equal(products[0].score, null); assert.equal(products[0].assessment_state, 'legacy')
+  assert.equal(products[0].recommendation_status, 'unavailable'); assert.match(products[0].assessment_note, /withheld/i)
+})
+
+test('detail and comparison APIs withhold frozen scores while preserving product identity', async () => {
+  const p = make({ score: 95 }), f = fixture([p])
+  const detail = await f.load('app/api/products/[id]/route.ts').GET(new Request('https://fixture.invalid/api/products/research'),
+    { params: Promise.resolve({ id: 'research' }) })
+  assert.equal(detail.status, 200)
+  assert.equal((await detail.json()).score, null)
+  const compare = await f.load('app/api/products/compare/route.ts').GET(new Request('https://fixture.invalid/api/products/compare?ids=research'))
+  assert.equal(compare.status, 200)
+  const rows = await compare.json()
+  assert.equal(rows[0].id, 'research'); assert.equal(rows[0].score, null)
 })
 
 test('listed price ordering retains subpenny precision instead of ranking rounded penny ties', async () => {

@@ -66,7 +66,7 @@ export async function GET(request: Request) {
             My Supplement Selection
           </span>
           <span style={{ color: '#9ca3af', fontSize: 22, marginTop: 24 }}>
-            {items.length} product{items.length === 1 ? '' : 's'} · Historical catalogue values
+            {items.length} product{items.length === 1 ? '' : 's'} · Research records
           </span>
           <span style={{ color: '#9ca3af', fontSize: 20, marginTop: 16, textAlign: 'center' }}>
             This selection has not been assessed as a combined stack.
@@ -77,7 +77,6 @@ export async function GET(request: Request) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
           {items.slice(0, maxItems).map((item, idx) => {
             const assessment = assessmentDisplayFor(item)
-            const sc = assessment.score
             const c = '#9ca3af'
             return (
               <div
@@ -106,7 +105,7 @@ export async function GET(request: Request) {
                   }}
                 >
                   <span style={{ color: c, fontSize: 22, fontWeight: 900 }}>
-                    {sc != null ? sc : '?'}
+                    —
                   </span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>

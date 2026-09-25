@@ -5,20 +5,21 @@ type AssessmentInput = { category?: string | null; score?: number | null }
 // Interim containment of the frozen legacy scores, not an evidence approval.
 // There is no versioned assessment/provenance field yet. In particular, zero
 // cannot distinguish an intentional failed assessment from missing evidence.
-// Keep the source value intact, but withhold its ranking and recommendation.
+// Keep the source value intact internally, but withhold it from public display,
+// ranking and recommendation until a reviewed assessment record exists.
 export function assessmentDisplayFor(product: AssessmentInput) {
   const review = claimsReviewFor(product.category)
   const score = typeof product.score === 'number' && Number.isFinite(product.score)
     && product.score > 0 && product.score <= 100 ? product.score : null
   if (review) return {
-    state: 'under_review' as const, score, label: 'Under review',
+    state: 'under_review' as const, score: null, label: 'Under review',
     explanation: `${review.title}. Existing score is not a validated health-benefit assessment.`,
   }
   if (score === null) return {
     state: 'unassessed' as const, score: null, label: 'Not assessed',
     explanation: 'Not assessed — no usable assessment is available. Label information remains available for research; no dosing or benefit recommendation is made.',
   }
-  return { state: 'legacy' as const, score, label: 'Legacy score', explanation: 'Unverified historical formula value. No approved effectiveness or dosing assessment is available; this value must not drive a recommendation.' }
+  return { state: 'legacy' as const, score: null, label: 'Not assessed', explanation: 'A historical formula value exists but is withheld because no approved effectiveness or dosing assessment is available.' }
 }
 
 export function hasApprovedAssessment<T extends AssessmentInput>(product: T): product is T & { score: number } {

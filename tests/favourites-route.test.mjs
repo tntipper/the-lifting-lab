@@ -61,6 +61,7 @@ function fixture({ signedIn = true, insertFails = false } = {}) {
       if (name === 'next/headers') return { cookies: async () => ({ getAll: () => [], set() {} }) }
       if (name === '@/lib/preview-mode') return { guardedSupabaseFetch: () => assert.fail('Unexpected transport') }
       if (name === '@/lib/products') return {}
+      if (name === '@/lib/assessment-display') return { assessmentDisplayFor: () => ({ score: null }) }
       if (name === '@/lib/points') return load('lib/points.ts')
       return require(name)
     }

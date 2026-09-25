@@ -150,7 +150,7 @@ test('affected product pages hide historical numbers and retain review notice wi
     const card = await f.load('app/products/[id]/opengraph-image.tsx').default({ params })
     const cardHtml = render(card.element)
     assert.match(cardHtml, /Claims Under Review/)
-    assert.match(cardHtml, /95/)
+    assert.doesNotMatch(cardHtml, /95/)
     assert.doesNotMatch(cardHtml, /EFSA|Evidence-Based Scoring/)
   }
 })

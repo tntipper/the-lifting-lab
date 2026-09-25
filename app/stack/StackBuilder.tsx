@@ -302,14 +302,14 @@ export default function StackBuilder() {
         <p>Serving amounts need review. These saved items are excluded from totals and stack analysis until corrected; no default dose has been substituted.</p>
         {unresolved.map(item => <div key={item.product_id} className="flex justify-between gap-3"><span>{item.products?.brand} {item.products?.name || 'Unavailable saved product'} — amount unresolved</span><button type="button" className="underline" disabled={state.busy} onClick={() => remove(item.product_id)}>Remove</button></div>)}
       </div>}
-      {/* Historical product summary, not an assessment of the combined stack */}
+      {/* No combined-stack or product effectiveness assessment is approved. */}
       {!loading && stackItems.length > 0 && (
         <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5">
-          <div className="shrink-0 text-2xl font-bold text-lab-muted" aria-label="Historical average">
+          <div className="shrink-0 text-2xl font-bold text-lab-muted" aria-label="Assessment unavailable">
             {assessmentSummary.average === null ? '—' : `${assessmentSummary.average}/100`}
           </div>
           <div>
-            <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Historical product average</p>
+            <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Product assessment unavailable</p>
             <p className="text-white text-sm mt-1">{assessmentSummary.text}</p>
           </div>
         </div>

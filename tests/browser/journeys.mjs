@@ -26,7 +26,7 @@ export async function verifyShareResults(page) {
   const outcomes = [
     { name: 'success', category: 'zma', score: 99, assessment: 'Under review', status: 200, body: { pointsAwarded: 25 }, message: '+25 points claimed!' },
     { name: 'zero', category: 'creatine', score: 0, assessment: 'Not assessed', status: 200, body: { pointsAwarded: 0 }, message: 'No points were awarded.' },
-    { name: 'http-error', category: 'creatine', score: 80, assessment: 'Legacy score 80/100', status: 503, body: {}, message: 'Your share claim could not be recorded.' },
+    { name: 'http-error', category: 'creatine', score: 80, assessment: 'Not assessed; no benefit recommendation', status: 503, body: {}, message: 'Your share claim could not be recorded.' },
     { name: 'network-error', category: 'creatine', score: null, assessment: 'Not assessed', message: 'Your share claim could not be recorded.' },
   ]
   for (const outcome of outcomes) {

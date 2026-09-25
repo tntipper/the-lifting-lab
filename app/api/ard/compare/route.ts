@@ -65,7 +65,7 @@ export async function GET(request: Request) {
       name: p.name,
       brand: p.brand,
       category: p.category,
-      score: assessment.score, // Unverified historical value only; never an approval.
+      score: assessment.score, // Null until a versioned assessment is approved.
       retail_price_gbp: p.retail_price,
       cost_per_serving_gbp: p.cost_per_serving,
       servings_per_container: p.servings_per_container,

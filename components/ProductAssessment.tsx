@@ -9,7 +9,7 @@ export default function ProductAssessment({ product, size = 'md' }: {
   const assessment = assessmentDisplayFor(product)
   return <div className="max-w-24 text-center text-lab-muted" data-assessment={assessment.state} title={assessment.explanation}>
     <span className={`block font-bold leading-tight ${size === 'lg' ? 'text-sm' : 'text-[10px]'}`}>
-      {assessment.state === 'legacy' ? 'Not assessed' : assessment.label}
+      {assessment.label}
     </span>
   </div>
 }

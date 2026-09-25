@@ -95,7 +95,7 @@ export default async function VsHubPage() {
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
           Supplement <span className="text-lab-lime">Comparisons</span>
         </h1>
-        <p className="text-lg text-white/90 leading-relaxed mb-4">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
+        <p className="text-lg text-white/90 leading-relaxed mb-4">No approved effectiveness assessment is available. Products remain visible for label and listed-price research without a quality winner or recommendation.</p>
         <p className="text-lab-muted text-sm mb-10">
           Want a custom matchup of any three products?{' '}
           <Link href="/compare" className="text-lab-lime hover:underline underline-offset-2">
@@ -124,11 +124,7 @@ export default async function VsHubPage() {
                         <span className="text-lab-lime mx-1.5">vs</span>
                         <span className="text-white">{m.b.brand} {m.b.name}</span>
                       </p>
-                      {m.a.score != null && m.b.score != null && (
-                        <p className="text-[11px] text-lab-muted mt-1">
-                          Unverified historical values: {m.a.score} and {m.b.score}
-                        </p>
-                      )}
+                      <p className="text-[11px] text-lab-muted mt-1">Not assessed — compare labels and listed prices</p>
                     </Link>
                   ))}
                 </div>

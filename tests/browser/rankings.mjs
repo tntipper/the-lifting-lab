@@ -26,7 +26,7 @@ export async function verifyRankings(page, origin, width, resultDir) {
       if (pathname === '/rankings') {
         for (const id of ['legacy-high', 'legacy-value']) {
           const legacy = page.locator(`[data-product-id="${id}"]`)
-          assert.match(await legacy.innerText(), /Legacy score/); assert.match(await legacy.innerText(), /Unverified/)
+          assert.match(await legacy.innerText(), /Not assessed/); assert.doesNotMatch(await legacy.innerText(), /80\/100|60\/100|80%|60%/)
           assert.equal(await legacy.locator('[data-assessment="legacy"]').count(), 1)
         }
       }

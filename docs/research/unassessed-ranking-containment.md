@@ -4,16 +4,16 @@ This is an implementation hold, not scientific approval. It supersedes the earli
 
 ## Separate history from approval
 
-`assessmentDisplayFor` describes a historical value; it does not grant recommendation eligibility. `hasApprovedAssessment` currently returns false for every input. Positive scores, categories and caller-provided `approved` or status/version properties cannot bypass it. A future reviewed projection must replace this gate with authoritative formulation, label, methodology, evidence, uncertainty and review approval bindings; it must not add a legacy fallback.
+`assessmentDisplayFor` classifies whether a historical value exists but withholds its number from the public projection; it does not grant recommendation eligibility. `hasApprovedAssessment` currently returns false for every input. Positive scores, categories and caller-provided `approved` or status/version properties cannot bypass it. A future reviewed projection must replace this gate with authoritative formulation, label, methodology, evidence, uncertainty and review approval bindings; it must not add a legacy fallback.
 
-| Input | Visible historical state | Effectiveness recommendation |
+| Input | Public assessment state | Effectiveness recommendation |
 | --- | --- | --- |
 | Missing, null, zero, negative, nonfinite or greater-than-100 value | Not assessed | Unavailable |
-| Cycle-support, liver-health, hormone-support or ZMA | Under review; usable historical value remains inspectable | Unavailable |
-| Positive finite value up to 100 outside those holds | Legacy score; unverified, neutral colour | Unavailable |
+| Cycle-support, liver-health, hormone-support or ZMA | Under review; frozen number withheld | Unavailable |
+| Positive finite value up to 100 outside those holds | Not assessed; frozen number withheld | Unavailable |
 | Caller-provided approval/status/version | Does not change authority | Unavailable |
 
-Historical values are neutral text, not coloured quality rings or grades. Account-stack averages are descriptive historical summaries only: their coverage and exclusions remain explicit, no combined-stack assessment is claimed, and they cannot select or endorse a product. Held/unknown/unresolved values do not contribute to those averages. Share, export and email-to-self text retain the same restrictions and canonical server lookup.
+Historical values remain in the frozen source, but the reviewed public displays and named JSON projections do not present them as customer-facing numbers, coloured quality rings or grades. Some server-rendered page data and bundled client code still contain frozen values; they are not a secret-data boundary and must not be described as such. Account stacks report that no approved average exists; no combined-stack assessment is claimed and no product is selected or endorsed. Share, export and email-to-self text retain the same display restrictions and canonical server lookup.
 
 ## Public behavior
 
@@ -22,7 +22,7 @@ Historical values are neutral text, not coloured quality rings or grades. Accoun
 - Product/brand comparison and alternatives routes preserve records independently of assessment eligibility. Alternative discovery is alphabetical, not a scientific replacement ranking. Brand score aggregates and winner claims are unavailable. Product-detail editorial rating schema is withheld; ordinary customer-review data remains separate.
 - Guide and ingredient pages preserve underlying research, labels, citations and cautions while withholding product picks. Goal research pages remain available; wizard and static goal-stack selection return no automatic products, including for unlimited budgets. The manual stack, favourite and compare controls, F09 retry/outbox behavior, serving resolution, accessible dialogs and existing offer holds remain intact.
 - Generated metadata, structured data, social images, methodology explanations and affected scoring-related links state the same limitations. The methodology still exposes historical formula rows/weights for inspection, without “perfect dose”, traffic-light quality or winner claims. This does not re-audit unrelated ingredient articles or create replacement scientific ratings.
-- `/api/ard/compare` returns `rank: null` and `recommendation_status: "unavailable"` for every result. `assessment_state` describes legacy availability or review, not approval. Score/value orders are alphabetical; budget order is price-only. OpenAPI documents these exact semantics. `/api/products` retains its array response and adds the explicit historical state/note and unavailable recommendation status.
+- `/api/ard/compare` returns `rank: null`, `score: null` and `recommendation_status: "unavailable"` for every result. `assessment_state` describes legacy availability or review, not approval. Score/value orders are alphabetical; budget order is price-only. OpenAPI documents these exact semantics. `/api/products` retains its array response, now with `score: null`, and adds the explicit historical state/note and unavailable recommendation status. Detail, compare, favourites and stack assessment API projections also withhold frozen numbers.
 
 ## Retained numerical comparisons
 
