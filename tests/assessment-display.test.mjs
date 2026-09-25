@@ -79,7 +79,7 @@ for (const score of invalid) test(`unknown score ${String(score)} has no public 
     assert.match(html, /Shop offer under review/, 'Assessment changes must not release own-shop holds')
   }
 })
-for (const category of holds) test(`${category} retains historical values without awards or dose flags`, async () => {
+for (const category of holds) test(`${category} withholds historical values without awards or dose flags`, async () => {
   const p = make({ category, score: 99 }), f = fixture([p])
   for (const [file, props] of [
     ['app/products/ProductGrid.tsx', { initialProducts: [p] }],
@@ -88,17 +88,17 @@ for (const category of holds) test(`${category} retains historical values withou
     ['components/FavouriteCard.tsx', { product: p }],
   ]) {
     const html = f.html(file, props)
-    assert.match(html, /Under review/); assert.match(html, /99\/100/)
+    assert.match(html, /Under review/); assert.doesNotMatch(html, /99\/100/)
     assert.doesNotMatch(html, /🥇|Top Pick|Best rated|wins on|full 5g effective|Green = meets dose/)
   }
   const best = render(await f.load('app/best/page.tsx').default())
   assert.doesNotMatch(best, /Research formula|🏆|🥇/)
   assert.match(best, /No approved effectiveness/)
 })
-test('positive legacy display survives with an explicit label; no new scientific approval', () => {
+test('positive legacy value stays in research data but not the public catalogue card', () => {
   const p = make({ score: 80 }), f = fixture([p])
   const html = f.html('app/products/ProductGrid.tsx', { initialProducts: [p] })
-  assert.match(html, /80\/100/); assert.match(html, /Legacy score/); assert.match(html, /Unverified/); assert.doesNotMatch(html, /Top Pick|🥇|Excellent dosing|Good dosing|ATP resynthesis/)
+  assert.match(html, /Not assessed/); assert.doesNotMatch(html, /80\/100|80%|Legacy score|Top Pick|🥇|Excellent dosing|Good dosing|ATP resynthesis/)
   assert.equal(f.load('lib/assessment-display.ts').assessmentDisplayFor(p).state, 'legacy')
   assert.doesNotMatch(html, /scientifically approved|verified assessment/i)
 })
@@ -218,7 +218,7 @@ test('positive history stays neutral across actual public components and preserv
     ['components/FavouriteCard.tsx', { product: p }],
   ]) {
     const html = f.html(file, props)
-    assert.match(html, /95\/100/); assert.match(html, /Legacy score|historical/i)
+    assert.match(html, /Not assessed/); assert.doesNotMatch(html, /95\/100|95%/)
     assert.doesNotMatch(html, /🥇|🥈|🥉|🏆|Top Pick|Best rated|wins on|Excellent dosing|Good dosing|full 5g effective|Green = meets dose|ATP resynthesis|Only available legacy scores/)
     const assessment = html.match(/<[^>]*data-assessment="legacy"[^>]*>/)?.[0]
     assert.ok(assessment, file); assert.match(assessment, /text-lab-muted/)

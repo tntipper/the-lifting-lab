@@ -329,7 +329,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
             </span>
           </h2>
           <p className="text-[11px] text-white/40 mt-1 uppercase tracking-widest">
-            {claimsReviewFor(category) ? 'Existing scores · Claims under review' : 'Legacy scores · Unassessed products are not ranked'}
+            {claimsReviewFor(category) ? 'Claims under review · Products are not ranked' : 'Unassessed products are not ranked'}
           </p>
         </div>
         <div className="shrink-0 pt-1">
@@ -617,7 +617,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
                   <div className="text-[8px] text-lab-muted uppercase tracking-wide">Match</div>
                   <div className="text-xs font-bold text-white mt-0.5">
-                    {assessment.state === 'legacy' ? `${assessment.score}%` : assessment.label}
+                    {assessment.state === 'legacy' ? 'Not assessed' : assessment.label}
                   </div>
                 </div>
                 <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">

@@ -132,7 +132,7 @@ test('ordinary guide retains research while withholding all unapproved product p
   assert.deepEqual(f.lookups, ['products'])
 })
 
-test('affected product pages retain the score with an honest notice and no editorial health-rating schema', async () => {
+test('affected product pages hide historical numbers and retain review notice without editorial rating schema', async () => {
   for (const category of categories) {
     const f = fixture({ category })
     const page = f.load('app/products/[id]/page.tsx')
@@ -140,7 +140,7 @@ test('affected product pages retain the score with an honest notice and no edito
     const html = render(await page.default({ params }))
     const metadata = await page.generateMetadata({ params })
     assert.match(html, /under review/i)
-    assert.match(html, /95\/100/)
+    assert.doesNotMatch(html, /95\/100/)
     assert.match(metadata.description, /under review/i)
     assert.doesNotMatch(metadata.description, /EFSA|Dose-for-dose/)
     assert.doesNotMatch(html, /Excellent Effectiveness Match|Strong Effectiveness Match|Green = meets dose/)
@@ -161,7 +161,7 @@ test('ordinary positive historical value does not publish an approved editorial 
   const html = render(await page.default({ params: Promise.resolve({ id: product.id }) }))
   const productSchema = schemas(html).find(s => s['@type'] === 'Product')
   assert.equal(productSchema.review, undefined)
-  assert.doesNotMatch(html, /Excellent Effectiveness Match/); assert.match(html, /95\/100/)
+  assert.doesNotMatch(html, /Excellent Effectiveness Match|95\/100/); assert.match(html, /Not assessed/)
 })
 
 test('open methodology modal presents legacy weights and sources, without perfect-dose promises for review categories', () => {
@@ -194,7 +194,7 @@ test('catalogue cards show review status in the all-products view without effect
     const Grid = f.load('app/products/ProductGrid.tsx').default
     const html = render(React.createElement(Grid, { initialProducts: [f.item] }))
     assert.match(html, /under review/i)
-    assert.match(html, /95\/100/)
+    assert.doesNotMatch(html, /95\/100/)
     assert.doesNotMatch(html, /Excellent dosing|Good dosing|🥇|Liver &amp; organ protection|Hormonal balance|Testosterone &amp; growth hormone/)
   }
 })

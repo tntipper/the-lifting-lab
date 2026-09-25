@@ -8,8 +8,8 @@ import type { ScoredProduct } from '@/lib/products'
 
 // Shared favourited-product card. Used on the /favourites page and the
 // dashboard so both surfaces render saved products with identical structure
-// (score, brand/name, category, heart, retailer reference). ProductAssessment shows
-// the legacy formula value or its review status — customer reviews remain separate.
+// (assessment status, brand/name, category, heart, retailer reference).
+// ProductAssessment hides unapproved legacy numbers; customer reviews remain separate.
 export default function FavouriteCard({
   product: p,
   onRemove,
