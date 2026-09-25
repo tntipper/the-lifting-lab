@@ -1,20 +1,21 @@
-# Draft enquiry to Tropicana — not sent
+# Draft email to Tropicana — not sent
 
 To: `CS@tropicanawholesale.com`  
-Subject: The Lifting Lab TropShip account — delivery, feed prices and order terms
+Subject: The Lifting Lab TropShip account — product data, prices and fulfilment terms
 
-Hello,
+Hello Tropicana team,
 
-Thank you for your 14 September welcome email. Before we make our TropShip product prices and automated stock updates live, could you please confirm the following for **The Lifting Lab's TropShip account**?
+Thank you for your TropShip welcome email of 14 September. We are preparing The Lifting Lab's first range around products supplied through TropShip. Could you please confirm the points below for **our TropShip account**, rather than the separate wholesale account? A current terms sheet, feed specification and sample invoice would be very helpful; brief answers by number are fine.
 
-1. Is delivery £5 plus VAT for **every** TropShip order, including those above £100, with the £100 free-delivery threshold applying only to a separate wholesale account? Is one charge made per submitted order, and are there extra charges for multiple parcels, split consignments, particular mainland postcodes, failed deliveries or returns?
-2. Are the `ProductPrice` values in `DropshipProductFeed.csv` VAT-inclusive or VAT-exclusive? Does `Tax = VAT` always mean the standard 20% rate, and does `Tax = Zero` mean 0%? Is the quoted price for one exact `Size` unit, including cartons such as `12x55g`?
-3. How often is the stock feed updated in practice, and what should we do if stock changes between reading it and submitting an order? Are there order minimums, API or handling fees, or account-specific restrictions?
-4. Which mainland UK destinations are supported, what is the 4pm cut-off rule on working days and bank holidays, and which service or delivery times are targets rather than guarantees?
-5. What are the TropShip-specific procedures and charges for cancellation, damaged or missing goods, customer returns, refunds and unsuccessful delivery? Can orders be placed and cancelled through the API, and how are uncertain submissions reconciled?
+1. **Delivery charge and service area.** Your welcome email says £5 plus VAT per TropShip order, while the public delivery page mentions free delivery above £100. Is £5 plus VAT charged on every TropShip order regardless of basket value, with the £100 threshold applying only to our wholesale account? Is the charge per submitted order, parcel or delivery address? Please identify any surcharge for split consignments, multiple parcels, remote mainland postcodes, failed delivery, redelivery or returns, and confirm the exact supported mainland UK postcodes/areas.
+2. **Product costs and VAT.** Is `ProductPrice` in `DropshipProductFeed.csv` the price our TropShip account will actually be charged? Is it inclusive or exclusive of VAT? Does `Tax = VAT` always mean 20% and `Tax = Zero` always mean 0% for our account, or is there a separate per-product tax amount/rate? Does the price apply to one exact `Size` unit, including multipacks such as `12x55g`? How are price changes notified, and when does a new feed price take effect? Are there handling fees, minimum order values, account charges or card/API fees?
+3. **Recommended retail price.** Can you provide a current manufacturer RRP or recommended selling price for each SKU, ideally as a feed column? Is that RRP VAT-inclusive and for the exact same pack/flavour as the wholesale item? If RRP is unavailable or only indicative, please say so; we will calculate our own retail prices rather than assume a figure.
+4. **Identity, labels and content.** For each `ProductCode`, can you supply or link a current manufacturer-approved barcode, pack size, flavour, ingredients, allergens, nutrition panel, serving directions, warnings and label/pack images or product specification? Is there a version/date showing when that information changed? Which fields in your feed are manufacturer-verified, and which are supplier descriptions? May we use your product images and factual product descriptions on our site, and are there restrictions on editing or displaying them? We intend to write our own concise product-page copy and avoid unapproved health or performance claims.
+5. **Stock feed and availability.** Is the hourly feed still the recommended source, what is its actual update cadence and timestamp/time zone, and how are discontinued, unavailable or back-order items represented? Are stock figures available to all TropShip accounts or reserved? What should we do if an item sells out after we read the feed but before you accept an order? Is there an API stock/price check at order time?
+6. **Orders and fulfilment.** Please share current API documentation or a test environment if available. Can we submit, check status, cancel and reconcile orders by our own unique reference? What response confirms an order was accepted, and how should we handle a timeout without sending a duplicate? What are the 4pm working-day cut-off, bank-holiday rules, dispatch targets and tracking-data timing? Please distinguish delivery targets from guarantees.
+7. **Problems, returns and refunds.** What are the TropShip procedures, deadlines and charges for cancellation, damaged or missing goods, incorrect items, customer returns, failed delivery, refunds and non-delivery? Who supplies return labels, where do goods go, and how are we notified and credited? Are any supplement categories or opened/sealed products treated differently?
 
-Please send or link the current account-specific written terms and a sample invoice showing a product with its VAT treatment and delivery charge. We are not placing an order with this request.
+Please send current account-specific written terms and, if possible, a sample invoice or redacted example showing one VAT-rated product, one zero-rated product, delivery VAT and the charged sellable unit. We are requesting information only; **please do not place an order**.
 
 Kind regards,
-
 The Lifting Lab
