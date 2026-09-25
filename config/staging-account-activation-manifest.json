@@ -675,6 +675,14 @@
         "sha256": "5cd7c0697a211c29181c6bbad521185d0662365fa0f1745b01f5b61ae4683f65"
       },
       {
+        "path": "scripts/staging-provider-safe-held-reconciliation.mjs",
+        "sha256": "352e9e3ce9912f24df945c09d8d92b4745fc73bcd079da4c470bfb2e99b77b6e"
+      },
+      {
+        "path": "scripts/staging-provider-safe-held-live-launcher.mjs",
+        "sha256": "da48df97ce6d02cb003479cf0b5cb135179b6851e7efb732d5a44ed8bb1d0143"
+      },
+      {
         "path": "scripts/staging-provider-preview-readiness-session.mjs",
         "sha256": "ee73a7fa0ce9300c774d60db417679f2eb2c92f51cdc2d908dc9033e3f30cd32"
       },
@@ -1001,6 +1009,10 @@
       {
         "path": "tests/staging-provider-supabase-only-session.test.mjs",
         "sha256": "38c241e522f539cb186c93ee44c21ae8f8f44b9a65a72fffd91e91ad0fc5c9b2"
+      },
+      {
+        "path": "tests/staging-provider-safe-held-reconciliation.test.mjs",
+        "sha256": "0e498965498773c26429ad6109ffa7ce76a8d6a1f207eb32b9da5bc216c043bd"
       },
       {
         "path": "tests/staging-provider-preview-readiness-session.test.mjs",
