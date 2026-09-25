@@ -1,6 +1,6 @@
 # Stage 3 REST broker rotation: one-run preparation
 
-**Status: HOLD.** This plan does not arm either switch or authorise a credential read, secret write, provider change, deployment, customer message, purchase or production change. It narrows the next gate under `docs/ops/project-stage-execution-protocol.md`.
+**Status: completed for this one-run staging rotation.** The owner separately approved and the independently reviewed launcher ran once. The result, separate read-only reconciliation, consumed journals and clean disarm are in `docs/ops/evidence/2026-09-25-stage3-rest-broker-rotation-result.md`. This plan did not authorise account/cart activation, customer messaging, purchases, deployment or production change. The next gate is a separately planned staging sign-in journey.
 
 ## Intended result
 
