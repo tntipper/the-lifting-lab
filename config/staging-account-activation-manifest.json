@@ -667,6 +667,26 @@
         "sha256": "2774dd29f49e2939819facc257cfaf7641bde6a7ecd3f7755e27d4b075b4265e"
       },
       {
+        "path": "scripts/staging-provider-supabase-only-session.mjs",
+        "sha256": "24c175e05f8dfd98e66e8bd749f27b7c39aad97ee7e7959b3f3b1c2c3c03df86"
+      },
+      {
+        "path": "scripts/staging-provider-supabase-only-live-launcher.mjs",
+        "sha256": "5cd7c0697a211c29181c6bbad521185d0662365fa0f1745b01f5b61ae4683f65"
+      },
+      {
+        "path": "scripts/staging-provider-preview-readiness-session.mjs",
+        "sha256": "ee73a7fa0ce9300c774d60db417679f2eb2c92f51cdc2d908dc9033e3f30cd32"
+      },
+      {
+        "path": "scripts/staging-provider-preview-readiness-reader.mjs",
+        "sha256": "b798b39d7ee830605d43f916df9ffe91e14a99e08092c6273062e55be62bfcd9"
+      },
+      {
+        "path": "scripts/staging-provider-preview-readiness-live-launcher.mjs",
+        "sha256": "39574cf74ec54257a0ae7be528ffebfc15dd65c4f1bf04adb4810808807d02a8"
+      },
+      {
         "path": "scripts/staging-provider-credential-readiness-phase-journal.mjs",
         "sha256": "4d0212f172d7599e086b748a51b8160a7d19c749b06ee8c36430af3ef1b3768f"
       },
@@ -977,6 +997,14 @@
       {
         "path": "tests/staging-provider-supabase-only-coordinator.test.mjs",
         "sha256": "c71b1a1958289e1bef5b85f3f4775465161986d8ee60c0c4b0b73d54f74e0a42"
+      },
+      {
+        "path": "tests/staging-provider-supabase-only-session.test.mjs",
+        "sha256": "38c241e522f539cb186c93ee44c21ae8f8f44b9a65a72fffd91e91ad0fc5c9b2"
+      },
+      {
+        "path": "tests/staging-provider-preview-readiness-session.test.mjs",
+        "sha256": "3c86e0efc4e42979fed49c4b3a821795b6b242317acd01d6c826deba1a00b354"
       },
       {
         "path": "tests/staging-provider-credential-readiness.test.mjs",
