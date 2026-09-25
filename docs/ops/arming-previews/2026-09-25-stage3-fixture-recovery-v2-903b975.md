@@ -1,8 +1,8 @@
 # Stage 3 synthetic fixture recovery V2 — one-run review proposal
 
-**Status: PREPARED, NOT APPLIED IN THE MAIN CHECKOUT. NO CLEANUP AUTHORISED.** This proposal is limited to the preserved synthetic Keychain fixture on this Mac. It does not change Shopify, Supabase, Vercel, customer accounts, orders, email, or production.
+**Status: CONSUMED — DO NOT REAPPLY OR RERUN.** The owner approved one build and one launcher attempt. It returned PASS, the exact patch was reversed, both switches are false, and the V2 one-use journal is terminal. See the [one-run result](../evidence/2026-09-25-stage3-fixture-recovery-v2-one-run-result.md). This proposal was limited to the preserved synthetic Keychain fixture on this Mac. It did not change Shopify, Supabase, Vercel, customer accounts, orders, email, or production.
 
-Disabled source commit: `903b975315c55960d9013508a9d52738b3c088c2`. The proposed patch was saved temporarily at `/tmp/tll-stage3-fixture-recovery-v2-arming-903b975.patch`, with SHA-256 `e19427655b95df63b1e212ca0a84c7f90257d84b7fea0758df1525cccd15c06c`. It is not a durable project artifact; regenerate and independently compare it with this record if it is missing. It changes exactly four values in three files:
+Disabled source commit: `903b975315c55960d9013508a9d52738b3c088c2`. The consumed patch was saved temporarily at `/tmp/tll-stage3-fixture-recovery-v2-arming-903b975.patch`, with SHA-256 `e19427655b95df63b1e212ca0a84c7f90257d84b7fea0758df1525cccd15c06c`. That temporary file is historical evidence, not an instruction to regenerate or apply it. It changed exactly four values in three files:
 
 | Value | Disabled | One-run proposal |
 | --- | --- | --- |
@@ -11,7 +11,7 @@ Disabled source commit: `903b975315c55960d9013508a9d52738b3c088c2`. The proposed
 | Manifest pin for native V2 source | `a883a26309563ed36292bd55c52bc1d9c015ce6f03962892a4a90f64e0d2e66a` | `c39bec70c0167a0e8778f930829bf714f8ea07ab31fbbcd0d746208e1d2a2cf8` |
 | Manifest pin for V2 launcher | `09ed734588d1dc69a9f0457061b3ef4f06b1a6f776bd44a77579944bb23bafbf` | `f9aaf76b6d5cdc03a84b0a6f7c24b47debe968dc6e17b29099e806245b21988f` |
 
-The proposed patch was generated in a detached review checkout from that exact commit. `git apply --check` passed against the still-disabled main checkout. The review checkout must **not** execute the launcher: the native program is bound to the `implementation-integration` checkout name.
+The proposed patch was generated in a detached review checkout from that exact commit. `git apply --check` passed against the still-disabled main checkout. The review checkout did not execute the launcher; it was restored and removed before the approved run. The patch is now consumed and must not be reapplied.
 
 ## Fresh read-only baseline — 2026-09-25 12:02 UTC
 
@@ -19,7 +19,7 @@ The main checkout was at the disabled commit above, with only six preserved unre
 
 The disabled native source compiled to a temporary arm64 executable and `codesign --verify --strict` passed. This did not build or save an armed binary and did not invoke the native program. Existing disabled preparation passed 25 focused tests, the full suite (2,534 passed, 2 skipped), TypeScript/Swift typechecks, targeted lint and the live-boundary check; see the [preparation result](../evidence/2026-09-25-stage3-fixture-recovery-v2-disabled-result.md).
 
-## Proposed one-run sequence, only after independent review and explicit owner approval
+## Historical one-run sequence — completed, not repeatable
 
 1. In the main checkout, recheck branch, exact source contents, clean tracked files, the six unrelated untracked paths, absence of V2 artifacts, fixed fixture identities, default/user Keychain settings, and both terminal V1 records. Any mismatch is HOLD. Recheck patch hash and `git apply --check`.
 2. Apply only the reviewed patch to the main checkout. Verify the diff is exactly the two switches and two manifest hashes; verify `staging-account-activation-manifest.mjs --check`. Do not run ordinary tests while either switch is on.

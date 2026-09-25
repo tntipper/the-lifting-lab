@@ -1,6 +1,6 @@
 # Stage 3 synthetic fixture recovery V2
 
-Status: **DISABLED IMPLEMENTATION COMPLETE; EXECUTION HOLD**. The separate V2 package was independently reviewed and passed offline checks on 25 September. This is a new package, not a retry of any V1 cleanup or diagnostic. The preserved fixture, terminal journals and Keychain settings remain untouched. Stage 3 provider/account/cart stays HOLD. See [verification](../evidence/2026-09-25-stage3-fixture-recovery-v2-disabled-result.md).
+Status: **ONE-RUN CLEANUP PASS; JOURNAL CONSUMED; BOTH SWITCHES DISABLED**. The separate V2 package passed offline review and checks, then its one owner-approved cleanup attempt succeeded on 25 September. The preserved synthetic fixture is now absent; the login/default and explicit user Keychain settings remain intact. See the [one-run result](../evidence/2026-09-25-stage3-fixture-recovery-v2-one-run-result.md). Stage 3 provider/account/cart remains HOLD.
 
 ## Why V2 is required
 
@@ -22,4 +22,4 @@ V1 rejected this Mac's normal two-entry effective search list because it expecte
 3. Add a distinct hard-disabled V2 launcher/session with exact phase order, timeouts and a read-only final native check. Test failures and uncertain results block every later destructive callback. Pin new files in the activation manifest and live-boundary checker.
 4. Obtain independent review of the disabled package and fix findings. Run focused tests, native typecheck, full suite, manifest and boundary checks. Record only the verified result.
 
-No live arming patch or action-time approval is prepared by this plan. Any future cleanup attempt needs a fresh read-only baseline, exact reviewed arming diff, independent execution review and explicit owner approval. The V1 terminal records remain consumed.
+The reviewed V2 arming patch was used once and reversed. The V1 and V2 terminal records are consumed; do not replay either cleanup.
