@@ -83,7 +83,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
   assert.equal(manifest.disabledActivationTooling.surfaces.runtimeProofIncludesPublicFlags, true)
   assert.equal(manifest.disabledActivationTooling.surfaces.ambiguousEnabledDeploymentState, 'RECONCILIATION_REQUIRED')
   assert.deepEqual(manifest.disabledActivationTooling.sources.map(item => item.path), [
-    'scripts/staging-bounded-executor.mjs','scripts/staging-provider-broker-rotation.mjs','scripts/staging-provider-broker-native-adapter.mjs',
+    'scripts/staging-bounded-executor.mjs','scripts/staging-provider-broker-rotation.mjs','scripts/staging-provider-broker-phase-journal.mjs','scripts/staging-provider-broker-native-adapter.mjs',
     'scripts/staging-provider-broker-native-binding.mjs',
     'scripts/staging-provider-normalization-contract.mjs',
     'scripts/staging-provider-normalization-native-port.mjs',
@@ -164,7 +164,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
     'scripts/staging-preview-source-live-launcher.mjs',
     'scripts/staging-preview-source-keychain.py',
     'app/api/staging/readiness/contract.ts','app/api/staging/readiness/route.ts',
-    'tests/staging-bounded-executor.test.mjs','tests/staging-provider-broker-rotation.test.mjs','tests/staging-provider-broker-native-adapter.test.mjs',
+    'tests/staging-bounded-executor.test.mjs','tests/staging-provider-broker-rotation.test.mjs','tests/staging-provider-broker-phase-journal.test.mjs','tests/staging-provider-broker-native-adapter.test.mjs',
     'tests/staging-provider-broker-native-binding.test.mjs',
     'tests/staging-provider-normalization-contract.test.mjs',
     'tests/staging-provider-normalization-native-port.test.mjs',

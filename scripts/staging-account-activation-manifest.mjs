@@ -551,6 +551,7 @@ const reviewedPreview = {
 const disabledActivationToolingSources = [
   'scripts/staging-bounded-executor.mjs',
   'scripts/staging-provider-broker-rotation.mjs',
+  'scripts/staging-provider-broker-phase-journal.mjs',
   'scripts/staging-provider-broker-native-adapter.mjs',
   'scripts/staging-provider-broker-native-binding.mjs',
   'scripts/staging-provider-normalization-contract.mjs',
@@ -638,6 +639,7 @@ const disabledActivationToolingSources = [
   'app/api/staging/readiness/route.ts',
   'tests/staging-bounded-executor.test.mjs',
   'tests/staging-provider-broker-rotation.test.mjs',
+  'tests/staging-provider-broker-phase-journal.test.mjs',
   'tests/staging-provider-broker-native-adapter.test.mjs',
   'tests/staging-provider-broker-native-binding.test.mjs',
   'tests/staging-provider-normalization-contract.test.mjs',
