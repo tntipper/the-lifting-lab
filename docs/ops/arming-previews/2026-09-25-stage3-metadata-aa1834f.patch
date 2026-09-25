@@ -1,0 +1,42 @@
+--- a/scripts/staging-provider-keychain-fixture-metadata-diagnostic.swift
++++ b/scripts/staging-provider-keychain-fixture-metadata-diagnostic.swift
+@@ -6,7 +6,7 @@
+ import Security
+ #endif
+ 
+-private let tllMetadataDiagnosticEnabled = false
++private let tllMetadataDiagnosticEnabled = true
+ private let tllLoginPath = NSHomeDirectory() + "/Library/Keychains/login.keychain-db"
+ private let tllFixtureDirectory = NSHomeDirectory() + "/Library/Caches/tll-stage3-keychain-fixture"
+ private let tllFixtureMain = "tll-stage3-fixture.keychain-db"
+--- a/scripts/staging-provider-keychain-fixture-metadata-live-launcher.mjs
++++ b/scripts/staging-provider-keychain-fixture-metadata-live-launcher.mjs
+@@ -8,7 +8,7 @@
+ import { createFixtureMetadataJournal } from './staging-provider-keychain-fixture-metadata-journal.mjs'
+ import { runMetadataSession } from './staging-provider-keychain-fixture-metadata-session.mjs'
+ 
+-export const TLL_FIXTURE_METADATA_LIVE_ENABLED = false
++export const TLL_FIXTURE_METADATA_LIVE_ENABLED = true
+ const root = resolve(import.meta.dirname, '..')
+ const privateRoot = resolve(root, '../implementation-state')
+ const directory = resolve(privateRoot, 'staging')
+--- a/config/staging-account-activation-manifest.json
++++ b/config/staging-account-activation-manifest.json
+@@ -736,7 +736,7 @@
+       },
+       {
+         "path": "scripts/staging-provider-keychain-fixture-metadata-diagnostic.swift",
+-        "sha256": "0f76d1e8eb81c606cbd014e4b6e18c4d68ef2e7d40ca4c0d850e1d10d2637392"
++        "sha256": "c496af448c15b2165716b061c528ad0e713efd26f2f84c9e5f781d33ee7046e7"
+       },
+       {
+         "path": "scripts/staging-provider-keychain-fixture-metadata-build.mjs",
+@@ -752,7 +752,7 @@
+       },
+       {
+         "path": "scripts/staging-provider-keychain-fixture-metadata-live-launcher.mjs",
+-        "sha256": "ede834ef60fac30559ca053b2826d8cac1c9df74456f212a0a8ea1de4e1ac9ec"
++        "sha256": "8ae76458ea4bd3187fa4b40baa34a6b7a409c1fb6f22370f2d6c1ed058b49e55"
+       },
+       {
+         "path": "tests/staging-provider-keychain-fixture-metadata-diagnostic.test.mjs",
