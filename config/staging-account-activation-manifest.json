@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "8f43d6e9bf32b52988f171d1f6d5ee0625c78d021045b1728d7780f4a7d4c443"
+        "sha256": "3e40a88a9b1429306e4d49b3d4f40cac70b75411646d997bb40ec519fd45801b"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -733,6 +733,42 @@
       {
         "path": "scripts/staging-provider-keychain-fixture-recovery-live-launcher.mjs",
         "sha256": "56663c432e34e3ed4b90a538016fd80714f1176e59baa8a8e0f544e59776022a"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-metadata-diagnostic.swift",
+        "sha256": "0f76d1e8eb81c606cbd014e4b6e18c4d68ef2e7d40ca4c0d850e1d10d2637392"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-metadata-build.mjs",
+        "sha256": "4057034876765d2f63dd359501abd337b64549f2d10658994935434bd93a12a2"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-metadata-journal.mjs",
+        "sha256": "ef99e14ef84264d799d04b66104fa2d2103b90ff9cebead4504b1d31f995df6c"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-metadata-session.mjs",
+        "sha256": "d492f163c4bbdedea2bb8b93a42d9c7a1af039ad38926fcccef72fdacd49b33e"
+      },
+      {
+        "path": "scripts/staging-provider-keychain-fixture-metadata-live-launcher.mjs",
+        "sha256": "ede834ef60fac30559ca053b2826d8cac1c9df74456f212a0a8ea1de4e1ac9ec"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-metadata-diagnostic.test.mjs",
+        "sha256": "0d17877e383fa92b597f5469f18c173c0c57081cc2922fafd724066323672aa4"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-metadata-journal.test.mjs",
+        "sha256": "834dd722f3a4e6c9c0ac99b6531b9c4ce9ffcc1add7699950190a19266ce0322"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-metadata-build.test.mjs",
+        "sha256": "8f39afe3dce7ca4ce4c936cf9654b44191e5c8ee9d232b48db9513b4b1dc40f1"
+      },
+      {
+        "path": "tests/staging-provider-keychain-fixture-metadata-session.test.mjs",
+        "sha256": "0136077e5a9f17a281969c18ba95ebbe0dc805bfdf2e213e58cc88cd890d9303"
       },
       {
         "path": "scripts/staging-provider-readonly-probe.mjs",

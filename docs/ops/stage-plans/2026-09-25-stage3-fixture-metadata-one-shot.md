@@ -2,6 +2,8 @@
 
 Status: **PLAN ONLY / DISABLED**. This is a successor to the disabled source plan, not an authorization or an executable instruction to run now.
 
+**Disabled preparation checkpoint:** The fixed-target build/check, one-use journal, injected coordinator and disabled launcher are present. The Swift and launcher gates are both false. The new journal, armed binary and build receipt are absent. The activation manifest pins these sources and the live-boundary checker rejects either gate being true during ordinary tests. Twelve metadata-focused tests, the 20-test manifest/metadata group, TypeScript, lint, live-boundary and the full suite (2,506 pass, 2 skip) passed after correcting the manifest test's expected source list. No live binary was built and no real fixture or Keychain metadata was read by this preparation. Independent review, fresh action-time baseline and approval remain outstanding.
+
 ## Question and expected evidence
 
 The V1 cleanup journal ended `API_DELETE/UNCERTAIN/CHILD` and did not identify the native failure. The fixture main file, zero-byte sidecar, parent directory, default login Keychain and sole user search-list entry were preserved. A read-only diagnostic can distinguish an unexpected native Keychain path representation from changed fixture identity. A `METADATA_MATCHED` result would reject those two hypotheses only; it would **not** prove what happened in `SecKeychainOpen`, `SecKeychainDelete`, post-delete verification or restoration. The old journal remains terminal and must not be replayed.
