@@ -10,6 +10,8 @@ The consumed V1 cleanup stopped at `API_DELETE/UNCERTAIN` without identifying th
 2. Keep classification as a pure function driven by an injected snapshot. Offline tests compile a test-only entry point and prove exact expected, missing, replacement and path-mismatch cases without touching a real Keychain or fixture.
 3. Statically verify the source contains no deletion, item-read, permission-write or network call. Compile and run the offline tests, then check the repository's normal type/test and live-boundary checks. No live binary is built or invoked in this slice.
 
+**Review correction:** The first independent review found that pathname-based enumeration could follow a replaced directory and that present-but-wrong identities were not tested. The reader now opens the pinned directory with `O_NOFOLLOW`, reads children relative to that descriptor using `fstatat(..., AT_SYMLINK_NOFOLLOW)` and enumerates that descriptor, then checks the named directory again. Offline cases include replacement, ownership, type, link-count and size mismatches, plus a guard proving rejected directories trigger no child read. A second independent review returned PASS for disabled preparation only. These changes do not prove a simultaneous snapshot or the cause of the old cleanup failure.
+
 ## Stop and next gate
 
 If the offline compiler or checks fail, diagnose before further changes. A later real read requires an independent code/security review, fresh read-only fixture identity and Keychain baseline, exact source/build proof, a separate one-use plan and action-time owner approval. An inconclusive read remains HOLD; it never authorises deletion or provider activation.

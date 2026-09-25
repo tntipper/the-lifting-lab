@@ -24,6 +24,6 @@ test('fixture diagnostic is disabled, read-only, and classifies injected metadat
     assert.equal(compile.status, 0, compile.stderr)
     const run = spawnSync(executable, [], { encoding: 'utf8', timeout: 5_000, maxBuffer: 1024 })
     assert.equal(run.status, 0, run.stderr)
-    assert.equal(run.stdout.trim(), 'PASS 9 offline metadata categories; live diagnostic disabled')
+    assert.equal(run.stdout.trim(), 'PASS 16 offline metadata cases; live diagnostic disabled')
   } finally { rmSync(directory, { recursive: true, force: true }) }
 })
