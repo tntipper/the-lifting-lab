@@ -59,6 +59,17 @@ test('boundary rejects rotation credential access if its separate gates are arme
   }
 })
 
+test('boundary rejects the new REST rotation launcher if its live switch is armed', () => {
+  const root = fixture()
+  for (const assignment of ['true', '(true)', 'false\nexport const STAGING_BROKER_REST_LIVE_ENABLED = true']) {
+    writeFileSync(join(root, 'scripts/staging-provider-broker-rest-live-launcher.mjs'),
+      `const createStagingProviderBrokerRestJournals = null\nexport const STAGING_BROKER_REST_LIVE_ENABLED = ${assignment}\n`)
+    assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+      'enabled-native-gate:scripts/staging-provider-broker-rest-live-launcher.mjs',
+    ])
+  }
+})
+
 test('boundary rejects an armed database rehearsal launcher', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-account-hosted-baseline-db-rehearsal-live-launcher.mjs'),

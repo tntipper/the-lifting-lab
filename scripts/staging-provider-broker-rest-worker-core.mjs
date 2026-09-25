@@ -1,5 +1,7 @@
 /** Disabled worker core: the durable phase owns credential acquisition. */
-import { randomBytes } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
+import { createBrokerPhaseJournal } from './staging-provider-broker-phase-journal.mjs'
+import { createProviderBrokerRotationJournal } from './staging-provider-broker-rotation.mjs'
 import { runPhasedBrokerRotation } from './staging-provider-broker-phased-session.mjs'
 import { createStagingProviderBrokerRestPorts } from './staging-provider-broker-rest-ports.mjs'
 
@@ -11,6 +13,16 @@ const exactCredentials = value => value && typeof value === 'object' && !Array.i
 const wipe = value => {
   if (!value || typeof value !== 'object') return
   for (const item of Object.values(value)) if (Buffer.isBuffer(item)) item.fill(0)
+}
+
+/** Both durable records must identify one attempt with the same run ID. */
+export function createStagingProviderBrokerRestJournals({ phasePath, rotationPath } = {}) {
+  const runId = randomUUID()
+  return Object.freeze({
+    phaseJournal: createBrokerPhaseJournal({ ...(phasePath === undefined ? {} : { path: phasePath }), makeRunId: () => runId }),
+    rotationJournal: createProviderBrokerRotationJournal({ ...(rotationPath === undefined ? {} : { path: rotationPath }),
+      makeRunId: () => runId }),
+  })
 }
 
 /**

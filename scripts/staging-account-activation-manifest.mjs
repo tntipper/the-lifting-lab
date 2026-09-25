@@ -571,6 +571,7 @@ const disabledActivationToolingSources = [
   'scripts/staging-provider-broker-rest-ports.mjs',
   'scripts/staging-provider-broker-rest-worker-core.mjs',
   'scripts/staging-provider-broker-rest-credential-reader.mjs',
+  'scripts/staging-provider-broker-rest-live-launcher.mjs',
   'scripts/staging-provider-broker-native-binding.mjs',
   'scripts/staging-provider-normalization-contract.mjs',
   'scripts/staging-provider-normalization-native-port.mjs',

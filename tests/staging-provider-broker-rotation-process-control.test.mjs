@@ -79,7 +79,8 @@ test('loss of the supervisor stops the worker and its descendant', async () => {
     + `await m.acceptSupervisorPipe({proof:'OFFLINE_ROTATION_PROOF'});`
     + `const {spawn}=await import('node:child_process');const fs=await import('node:fs');`
     + `const child=spawn('/bin/sleep',['30'],{stdio:'ignore'});`
-    + `fs.writeFileSync(process.argv[1],JSON.stringify({worker:process.pid,descendant:child.pid}));`
+    + `fs.writeFileSync(process.argv[1]+'.tmp',JSON.stringify({worker:process.pid,descendant:child.pid}));`
+    + `fs.renameSync(process.argv[1]+'.tmp',process.argv[1]);`
     + `setInterval(()=>{},1000)})`
   const supervisorCode = `import(${JSON.stringify(controlUrl)}).then(m => m.runBoundedBrokerRotationWorker({`
     + `executable:process.execPath,args:['-e',${JSON.stringify(worker)},process.argv[1]],`

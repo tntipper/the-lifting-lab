@@ -6,7 +6,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createBrokerPhaseJournal } from '../scripts/staging-provider-broker-phase-journal.mjs'
 import { createProviderBrokerRotationJournal } from '../scripts/staging-provider-broker-rotation.mjs'
-import { runStagingProviderBrokerRestWorker, STAGING_BROKER_REST_WORKER_CORE_ENABLED } from '../scripts/staging-provider-broker-rest-worker-core.mjs'
+import { createStagingProviderBrokerRestJournals, runStagingProviderBrokerRestWorker,
+  STAGING_BROKER_REST_WORKER_CORE_ENABLED } from '../scripts/staging-provider-broker-rest-worker-core.mjs'
 
 function fixture(t) {
   const directory = mkdtempSync(join(tmpdir(), 'tll-rest-worker-core-'))
@@ -53,4 +54,15 @@ test('malformed credential bundle is rejected and every provided token is wiped'
   assert.equal(result.status, 'RECONCILIATION_REQUIRED')
   assert.equal(f.calls.includes('ports'), false)
   assert.ok(Object.values(partial).every(value => value.every(byte => byte === 0)))
+})
+
+test('the launcher journal pair uses one run ID for phase and rotation intent', t => {
+  const directory = mkdtempSync(join(tmpdir(), 'tll-rest-journal-pair-'))
+  t.after(() => rmSync(directory, { recursive: true, force: true }))
+  const { phaseJournal, rotationJournal } = createStagingProviderBrokerRestJournals({
+    phasePath: join(directory, 'phase.json'), rotationPath: join(directory, 'rotation.json'),
+  })
+  const phase = phaseJournal.start()
+  const intent = rotationJournal.recordIntent({ nowMs: Date.parse(phase.history[0].at) })
+  assert.equal(intent.runId, phase.runId)
 })
