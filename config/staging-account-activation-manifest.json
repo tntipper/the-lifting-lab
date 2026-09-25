@@ -712,7 +712,7 @@
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-recovery-native.swift",
-        "sha256": "243e3523b72775406eeb367e27101389c3f457b1df5ba34523981d5a868d668a"
+        "sha256": "e6f91a07fb5d96da1ab6b8ad40385762575e5584912efe373cd18578fae084c1"
       },
       {
         "path": "scripts/staging-provider-keychain-fixture-recovery-build.mjs",
@@ -980,7 +980,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-native-offline.test.mjs",
-        "sha256": "76b80586ab722b341e60f5075b15d25b175e5b12f741d5f09bfc5f13e5cb3568"
+        "sha256": "d660b75818e7ba9a6778fa8d9cbe12191cd1b032553b5871cbb1ca93f59d8f2c"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-build.test.mjs",

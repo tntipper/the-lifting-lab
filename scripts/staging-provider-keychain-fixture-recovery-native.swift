@@ -328,15 +328,60 @@ private struct TLLRecoveryJournal {
     }
 }
 
+private let tllLoginPath = NSHomeDirectory() + "/Library/Keychains/login.keychain-db"
+private struct TLLKeychainEntry: Equatable {
+    let path: String
+    let device: dev_t
+    let inode: ino_t
+}
+private struct TLLKeychainBaseline: Equatable {
+    let defaultPath: String
+    let effectiveSearch: [TLLKeychainEntry]
+    let userSearch: [TLLKeychainEntry]
+}
+
+// The effective list may contain common or dynamic entries.  Accept those
+// only as an immutable before/after snapshot, never as permission to edit them.
+private func tllValidKeychainBaseline(_ value: TLLKeychainBaseline,
+                                      login: TLLKeychainEntry) -> Bool {
+    let effective = value.effectiveSearch
+    let identities = effective.map { "\($0.device):\($0.inode)" }
+    return value.defaultPath == tllLoginPath && login.path == tllLoginPath
+        && value.userSearch == [login] && !effective.isEmpty && effective.count <= 32
+        && effective.filter { $0 == login }.count == 1
+        && effective.filter { $0.device == login.device && $0.inode == login.inode }.count == 1
+        && !effective.contains { ($0.device == TLLPinnedIdentity.main.device
+            && $0.inode == TLLPinnedIdentity.main.inode)
+            || ($0.device == TLLPinnedIdentity.sidecar.device
+            && $0.inode == TLLPinnedIdentity.sidecar.inode) }
+        && Set(effective.map(\.path)).count == effective.count
+        && Set(identities).count == effective.count
+}
+
 #if !TLL_FIXTURE_RECOVERY_NATIVE_TEST
-private struct TLLKeychainBaseline: Equatable { let defaultPath: String; let searchPaths: [String] }
-private let tllExpectedBaseline = TLLKeychainBaseline(
-    defaultPath: NSHomeDirectory() + "/Library/Keychains/login.keychain-db",
-    searchPaths: [NSHomeDirectory() + "/Library/Keychains/login.keychain-db"])
 private func tllKeychainPath(_ keychain: SecKeychain) -> String? {
     var buffer = [CChar](repeating: 0, count: 4096); var length = UInt32(buffer.count)
     guard SecKeychainGetPath(keychain, &length, &buffer) == errSecSuccess, length < UInt32(buffer.count) else { return nil }
     return String(cString: buffer)
+}
+private func tllKeychainEntry(_ path: String) -> TLLKeychainEntry? {
+    var info = stat()
+    guard path.withCString({ Darwin.fstatat(AT_FDCWD, $0, &info, 0) }) == 0,
+          (info.st_mode & mode_t(S_IFMT)) == mode_t(S_IFREG) else { return nil }
+    return TLLKeychainEntry(path: path, device: info.st_dev, inode: info.st_ino)
+}
+private func tllKeychainEntries(_ list: CFArray) -> [TLLKeychainEntry]? {
+    guard CFArrayGetCount(list) <= 32 else { return nil }
+    var entries: [TLLKeychainEntry] = []
+    for index in 0..<CFArrayGetCount(list) {
+        let raw = CFArrayGetValueAtIndex(list, index)
+        let object = unsafeBitCast(raw, to: CFTypeRef.self)
+        guard CFGetTypeID(object) == SecKeychainGetTypeID(),
+              let path = tllKeychainPath(unsafeBitCast(raw, to: SecKeychain.self)),
+              let entry = tllKeychainEntry(path) else { return nil }
+        entries.append(entry)
+    }
+    return entries
 }
 private func tllWithInteractionDisabled<T>(_ body: () -> T?) -> T? {
     var prior: DarwinBoolean = false
@@ -357,27 +402,27 @@ private func tllWithInteractionDisabled<T>(_ body: () -> T?) -> T? {
     return value
 }
 private func tllBaseline() -> TLLKeychainBaseline? { tllWithInteractionDisabled {
-    var current: SecKeychain?; var list: CFArray?
-    guard SecKeychainCopyDefault(&current) == errSecSuccess, let current, let path = tllKeychainPath(current),
-          SecKeychainCopySearchList(&list) == errSecSuccess, let list else { return nil }
-    var paths: [String] = []
-    for index in 0..<CFArrayGetCount(list) {
-        let raw = CFArrayGetValueAtIndex(list, index)
-        let object = unsafeBitCast(raw, to: CFTypeRef.self)
-        guard CFGetTypeID(object) == SecKeychainGetTypeID() else { return nil }
-        let item = unsafeBitCast(raw, to: SecKeychain.self)
-        guard let itemPath = tllKeychainPath(item) else { return nil }
-        paths.append(itemPath)
-    }
-    return TLLKeychainBaseline(defaultPath: path, searchPaths: paths)
+    var domain: SecPreferencesDomain = .user
+    var current: SecKeychain?; var effectiveList: CFArray?; var userList: CFArray?
+    guard SecKeychainGetPreferenceDomain(&domain) == errSecSuccess, domain == .user,
+          SecKeychainCopyDefault(&current) == errSecSuccess, let current,
+          let defaultPath = tllKeychainPath(current),
+          SecKeychainCopySearchList(&effectiveList) == errSecSuccess, let effectiveList,
+          SecKeychainCopyDomainSearchList(.user, &userList) == errSecSuccess, let userList,
+          let effective = tllKeychainEntries(effectiveList),
+          let user = tllKeychainEntries(userList),
+          let login = tllKeychainEntry(tllLoginPath) else { return nil }
+    let baseline = TLLKeychainBaseline(defaultPath: defaultPath,
+        effectiveSearch: effective, userSearch: user)
+    return tllValidKeychainBaseline(baseline, login: login) ? baseline : nil
 } }
 private func tllApiDelete() -> Bool {
-    guard let before = tllBaseline(), before == tllExpectedBaseline, tllSyntheticObjectsMatch() else { return false }
+    guard let before = tllBaseline(), tllSyntheticObjectsMatch() else { return false }
     return tllWithInteractionDisabled {
         var keychain: SecKeychain?
         guard SecKeychainOpen(tllRecoveryDirectory + "/" + tllRecoveryMain, &keychain) == errSecSuccess,
               let keychain, tllKeychainPath(keychain) == tllRecoveryDirectory + "/" + tllRecoveryMain,
-              tllSyntheticObjectsMatch(), tllBaseline() == tllExpectedBaseline,
+              tllSyntheticObjectsMatch(), tllBaseline() == before,
               SecKeychainDelete(keychain) == errSecSuccess else { return false }
         // No unlink fallback: a surviving main Keychain is a HOLD.
         return !FileManager.default.fileExists(atPath: tllRecoveryDirectory + "/" + tllRecoveryMain)
@@ -385,7 +430,7 @@ private func tllApiDelete() -> Bool {
     } == true
 }
 private func tllRemoveSidecar() -> Bool {
-    guard let before = tllBaseline(), before == tllExpectedBaseline else { return false }
+    guard let before = tllBaseline() else { return false }
     let mainPath = tllRecoveryDirectory + "/" + tllRecoveryMain
     let result = tllWithPinnedDirectory { fd -> Bool in
         let filesystem = TLLRecoveryFilesystem.real
@@ -399,7 +444,7 @@ private func tllRemoveSidecar() -> Bool {
         }
         return tllReconcileSidecar(TLLSidecarRecoveryPort(
             mainAbsent: { !FileManager.default.fileExists(atPath: mainPath) },
-            directoryPinned: { tllPinnedDirectoryFD(fd, filesystem) && tllBaseline() == tllExpectedBaseline },
+            directoryPinned: { tllPinnedDirectoryFD(fd, filesystem) && tllBaseline() == before },
             entries: { tllExactDirectoryEntries() }, sidecar: { state },
             unlinkSidecar: {
                 // POSIX unlinkat addresses a name, not an open file descriptor.
@@ -415,9 +460,9 @@ private func tllRemoveSidecar() -> Bool {
     return result && tllBaseline() == before
 }
 private func tllRemoveEmptyDirectory() -> Bool {
-    guard let before = tllBaseline(), before == tllExpectedBaseline else { return false }
+    guard let before = tllBaseline() else { return false }
     let result = tllRemoveEmptyDirectoryWithPort(TLLDirectoryRemovalPort(
-        directoryPinned: { tllWithPinnedDirectory(.real, { _ in true }) == true && tllBaseline() == tllExpectedBaseline },
+        directoryPinned: { tllWithPinnedDirectory(.real, { _ in true }) == true && tllBaseline() == before },
         entries: { tllExactDirectoryEntries() },
         removeDirectory: {
             // Deletion is anchored to a no-follow descriptor for Library/Caches,
@@ -483,6 +528,41 @@ private func tllRemoveEmptyDirectory() -> Bool {
         expect(tllRemoveEmptyDirectoryWithPort(TLLDirectoryRemovalPort(directoryPinned: { true }, entries: { [] }, removeDirectory: { directoryDeletes += 1; return true })) && directoryDeletes == 1); groups += 1
         expect(TLLRecoveryPhase.allCases.map(\.rawValue) == ["API_DELETE", "SIDECAR_RECONCILE", "DIRECTORY_REMOVE"]); groups += 1
         expect(TLLRecoveryPhase.allCases.map(\.expectedSequence) == [1, 2, 3]); groups += 1
+        let login = TLLKeychainEntry(path: tllLoginPath, device: 1, inode: 2)
+        let extra = TLLKeychainEntry(path: "/synthetic/common.keychain-db", device: 1, inode: 3)
+        let baseline = TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [login, extra], userSearch: [login])
+        expect(tllValidKeychainBaseline(baseline, login: login)); groups += 1
+        expect(tllValidKeychainBaseline(TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [login], userSearch: [login]), login: login)); groups += 1
+        expect(!tllValidKeychainBaseline(TLLKeychainBaseline(defaultPath: "/other",
+            effectiveSearch: [login, extra], userSearch: [login]), login: login)); groups += 1
+        expect(!tllValidKeychainBaseline(TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [login, extra], userSearch: [login, extra]), login: login)); groups += 1
+        expect(!tllValidKeychainBaseline(TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [extra], userSearch: [login]), login: login)); groups += 1
+        expect(!tllValidKeychainBaseline(TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [login, login], userSearch: [login]), login: login)); groups += 1
+        expect(!tllValidKeychainBaseline(TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [login, TLLKeychainEntry(path: "/alias", device: 1, inode: 2)],
+            userSearch: [login]), login: login)); groups += 1
+        expect(!tllValidKeychainBaseline(TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [login, TLLKeychainEntry(path: "/fixture",
+                device: TLLPinnedIdentity.main.device, inode: TLLPinnedIdentity.main.inode)],
+            userSearch: [login]), login: login)); groups += 1
+        expect(!tllValidKeychainBaseline(TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [login, TLLKeychainEntry(path: "/sidecar-alias",
+                device: TLLPinnedIdentity.sidecar.device, inode: TLLPinnedIdentity.sidecar.inode)],
+            userSearch: [login]), login: login)); groups += 1
+        let changedExtra = TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [login, TLLKeychainEntry(path: extra.path, device: 1, inode: 4)],
+            userSearch: [login])
+        expect(tllValidKeychainBaseline(changedExtra, login: login)
+            && changedExtra != baseline); groups += 1
+        let reordered = TLLKeychainBaseline(defaultPath: tllLoginPath,
+            effectiveSearch: [extra, login], userSearch: [login])
+        expect(tllValidKeychainBaseline(reordered, login: login)
+            && reordered != baseline); groups += 1
         expect(!TLL_FIXTURE_RECOVERY_ENABLED); groups += 1
         print("PASS \(groups) offline native fixture recovery groups")
     }

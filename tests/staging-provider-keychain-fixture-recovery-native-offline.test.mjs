@@ -18,7 +18,9 @@ test('native fixture recovery mechanics pass in the offline-only test main', { s
   assert.match(body, /tllHashOpenFile\(leafFD, expected:/)
   assert.match(body, /tllHashBoundRegularPath\(executable\.path\) == binary/)
   assert.match(body, /object\["sequence"\] as\? Int == expected\.expectedSequence/)
-  assert.match(body, /tllBaseline\(\) == tllExpectedBaseline/)
+  assert.doesNotMatch(body, /tllExpectedBaseline/)
+  assert.match(body, /SecKeychainCopyDomainSearchList\(\.user, &userList\)/)
+  assert.match(body, /tllBaseline\(\) == before/)
   const directory = mkdtempSync(join(tmpdir(), 'tll-native-fixture-recovery-offline-'))
   try {
     const binary = join(directory, 'offline-test-main')
