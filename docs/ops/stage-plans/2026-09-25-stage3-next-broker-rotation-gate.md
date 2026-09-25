@@ -2,6 +2,8 @@
 
 **Status:** HOLD for execution. This plan does not authorize a credential window, provider update, account/cart activation, or Git publication.
 
+**Completed offline slice (25 September):** The new injected-only phased session connects the existing rotation to the durable phase journal. It starts the phase record before acquiring any adapter, records each host/provider dispatch before invoking that adapter, validates the acknowledgement before recording it, binds both journals to one run ID, and closes adapters before a verified terminal record. Failed dispatch recording prevents the corresponding effect. Lost acknowledgements trigger the existing cleanup path; provider-update uncertainty preserves host values and requires reconciliation. Independent review found a timestamp mismatch between the two journals; the rotation intent now uses the durable phase intent timestamp, and advancing/backwards-clock tests check the actual records through the recovery assessor. Rereview returned GO for disabled preparation only. This has no Keychain reader, live launcher, process deadline, network transport or enabled switch. The next slice is a separate bounded launcher and exact disabled arming diff; only after its review, fresh hosted baseline and action-time approval may a credential window be considered.
+
 ## What is established
 
 - The official one-use staging read on 25 September returned `SAFE_HELD_PROVIDER_OBSERVED`: the custom OAuth2 provider is disabled, the exact retained JWKS address is present, the broker secret name is absent, and database controls are off. Its journal is consumed. The earlier two-field update did not satisfy its acceptance condition and must not be replayed.
