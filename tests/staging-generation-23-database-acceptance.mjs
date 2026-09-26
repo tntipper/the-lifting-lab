@@ -146,6 +146,10 @@ export async function createStagingGeneration23LocalDatabaseFixture() {
       built = credentials.consumeStagingGeneration23PreparedSql(packet)
       return executeSetup(built)
     },
+    executeSetupSql(input) {
+      built = input
+      return executeSetup(input)
+    },
     proveRestrictedConnections() {
       assert.equal(state, 'ACTIVE')
       assert.equal(sql('postgres', `SELECT count(*) FROM pg_roles WHERE rolname IN
@@ -206,6 +210,10 @@ COMMIT;`)
     postRetirementPacket(packet) {
       recoverySql = recovery.consumeStagingGeneration23PreparedRecoverySql(packet).sql
       return executeRetirement(recoverySql)
+    },
+    executeRetirementSql(input) {
+      recoverySql = input
+      return executeRetirement(input)
     },
     proveRetired() {
       assert.equal(state, 'RETIRED')

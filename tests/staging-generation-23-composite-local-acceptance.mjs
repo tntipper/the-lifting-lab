@@ -1,6 +1,7 @@
 /** Opt-in, networkless composite rehearsal. Hosted APIs remain injected. */
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
+import { EventEmitter } from 'node:events'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -48,7 +49,7 @@ const settingsCoordinatorModule = await arm('staging-generation-23-settings-coor
   'STAGING_GENERATION_23_SETTINGS_COORDINATOR_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
 let existingCartFixtureStarted = false
-let databaseJournalDirectory, settingsDirectory, providerDirectory
+let databaseJournalDirectory, settingsDirectory, providerDirectory, syntheticToken
 function ensureCartFixture() {
   if (run('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres']).trim() === 'false') {
     run('docker', ['start', 'tll-stage0-postgres'])
@@ -63,6 +64,12 @@ const shutdownUrl = await armedUrl('staging-generation-23-control-shutdown.mjs',
     "from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`,
   ]])
 const shutdownControl = await import(shutdownUrl)
+const databaseQuery = await arm('staging-generation-23-supabase-query.mjs',
+  'STAGING_GENERATION_23_SUPABASE_QUERY_ENABLED', [
+    ["from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`],
+    ["from './staging-generation-23-recovery.mjs'", `from '${database.recoveryUrl}'`],
+    ["from './staging-generation-23-control-shutdown.mjs'", `from '${shutdownUrl}'`],
+  ])
 const databaseHostModule = await arm('staging-generation-23-database-host.mjs',
   'STAGING_GENERATION_23_DATABASE_HOST_ENABLED', [
     ["from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`],
@@ -78,36 +85,71 @@ const databaseJournal = action => databaseJournalModule.createStagingGeneration2
 const setupJournal = databaseJournal('SETUP')
 const shutdownJournal = databaseJournal('SHUTDOWN')
 const retirementJournal = databaseJournal('RETIRE')
+syntheticToken = Buffer.from(`sbp_${'a'.repeat(40)}`)
+const httpRequests = []
+const localRequest = action => (options, callback) => {
+  assert.equal(options.hostname, 'api.supabase.com')
+  assert.equal(options.path, `/v1/projects/${PROJECT_REF}/database/query`)
+  assert.equal(options.method, 'POST')
+  assert.equal(options.rejectUnauthorized, true)
+  const req = new EventEmitter()
+  req.destroyed = false
+  req.destroy = () => { req.destroyed = true }
+  req.end = body => {
+    httpRequests.push(action)
+    queueMicrotask(() => {
+      if (req.destroyed) return
+      try {
+        const parsed = JSON.parse(body.toString('utf8'))
+        assert.equal(parsed.read_only, false)
+        assert.match(parsed.query, /^BEGIN;/)
+        let rows
+        if (action === 'SETUP') rows = database.executeSetupSql(parsed.query)
+        else if (action === 'RETIRE') rows = database.executeRetirementSql(parsed.query)
+        else {
+          assert.match(parsed.query, /operator_set_enabled\(false/)
+          assert.equal(database.disableControls().status, 'PASS_CONTROLS_DISABLED')
+          rows = [{ tll_generation_23_control_shutdown: {
+            status: 'PASS_CONTROLS_DISABLED', shutdownId: shutdownControl.SHUTDOWN_ID,
+            projectRef: PROJECT_REF, generation: 23,
+            windowId: '7d0e8f17-eac4-40e1-a5b5-8a8597d502a9',
+            expiresAt: database.expiresAt, controlsEnabled: 0,
+          } }]
+        }
+        if ((action === 'SETUP' && mode === '--fail-setup-reply-once')
+          || (action === 'SHUTDOWN' && mode === '--fail-shutdown-reply-once')
+          || (action === 'RETIRE' && mode === '--fail-retirement-reply-once')) {
+          req.emit('error', Error('injected lost reply after local commit'))
+          return
+        }
+        const res = new EventEmitter()
+        res.statusCode = 201
+        res.headers = { 'content-type': 'application/json' }
+        res.destroy = () => { res.destroyed = true }
+        callback(res)
+        if (!res.destroyed) {
+          res.emit('data', Buffer.from(JSON.stringify(rows)))
+          res.emit('end')
+        }
+      } catch { req.emit('error', Error('local query rejected')) }
+    })
+  }
+  return req
+}
+const postDatabase = action => (packet, { signal }) =>
+  databaseQuery.postStagingGeneration23DatabaseSql(packet, { action,
+    token: syntheticToken, signal, request: localRequest(action) })
 const setupHost = databaseHostModule.createStagingGeneration23DatabaseHost({
   action: 'SETUP', journal: setupJournal,
-  post: packet => {
-    const rows = database.postSetupPacket(packet)
-    if (mode === '--fail-setup-reply-once') throw Error('injected lost setup reply after commit')
-    return rows
-  },
+  post: postDatabase('SETUP'),
 })
 const retirementHost = databaseHostModule.createStagingGeneration23DatabaseHost({
   action: 'RETIRE', journal: retirementJournal,
-  post: packet => {
-    const rows = database.postRetirementPacket(packet)
-    if (mode === '--fail-retirement-reply-once') throw Error('injected lost retirement reply after commit')
-    return rows
-  },
+  post: postDatabase('RETIRE'),
 })
 const shutdownHost = databaseHostModule.createStagingGeneration23DatabaseHost({
   action: 'SHUTDOWN', journal: shutdownJournal,
-  post: packet => {
-    assert.match(shutdownControl.consumeStagingGeneration23PreparedShutdownSql(packet),
-      /operator_set_enabled\(false/)
-    assert.equal(database.disableControls().status, 'PASS_CONTROLS_DISABLED')
-    if (mode === '--fail-shutdown-reply-once') throw Error('injected lost shutdown reply after commit')
-    return [{ tll_generation_23_control_shutdown: {
-      status: 'PASS_CONTROLS_DISABLED', shutdownId: shutdownControl.SHUTDOWN_ID,
-      projectRef: PROJECT_REF, generation: 23,
-      windowId: '7d0e8f17-eac4-40e1-a5b5-8a8597d502a9',
-      expiresAt: database.expiresAt, controlsEnabled: 0,
-    } }]
-  },
+  post: postDatabase('SHUTDOWN'),
 })
 settingsDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-settings-'))
 const settingsTargets = VERCEL_PASSWORD_NAMES.map((name, index) => ({ name,
@@ -283,6 +325,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
       assert.equal(active || databaseEnabled || provider.enabled, false)
       assert.deepEqual(surface.events, ['edge:true', 'private:true', 'public:true', 'create',
         'edge:false', 'private:false', 'public:false', 'create'])
+      assert.deepEqual(httpRequests, ['SETUP', 'SHUTDOWN', 'RETIRE'])
       break
     default: throw Error('Unrecognised phase')
   }
@@ -342,6 +385,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
     try { run('docker', ['stop', 'tll-stage0-postgres']) } catch { /* preserve primary failure */ }
   }
   database.dispose()
+  syntheticToken?.fill(0)
   for (const directory of [providerDirectory, settingsDirectory, databaseJournalDirectory]) {
     if (directory) rmSync(directory, { recursive: true, force: true })
   }
