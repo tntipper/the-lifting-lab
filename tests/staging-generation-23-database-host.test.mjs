@@ -41,12 +41,17 @@ async function fixture(action, post, requestTimeoutMs = 1000) {
     'STAGING_GENERATION_23_RECOVERY_ENABLED', [[
       "from './staging-generation-23-credentials.mjs'", `from '${credentials.url}'`,
     ]])
+  const shutdown = await arm('staging-generation-23-control-shutdown.mjs',
+    'STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED', [[
+      "from './staging-generation-23-credentials.mjs'", `from '${credentials.url}'`,
+    ]])
   const journalModule = await arm('staging-generation-23-database-journal.mjs',
     'STAGING_GENERATION_23_DATABASE_JOURNAL_ENABLED')
   const host = await arm('staging-generation-23-database-host.mjs',
     'STAGING_GENERATION_23_DATABASE_HOST_ENABLED', [
       ["from './staging-generation-23-credentials.mjs'", `from '${credentials.url}'`],
       ["from './staging-generation-23-recovery.mjs'", `from '${recovery.url}'`],
+      ["from './staging-generation-23-control-shutdown.mjs'", `from '${shutdown.url}'`],
     ])
   const path = join(mkdtempSync(join(tmpdir(), 'tll-gen23-database-journal-')), `${action}.json`)
   const journal = journalModule.module.createStagingGeneration23DatabaseJournal({ action, path,
@@ -54,7 +59,7 @@ async function fixture(action, post, requestTimeoutMs = 1000) {
   const fresh = () => host.module.createStagingGeneration23DatabaseHost({ action, journal,
     post, now: () => start, requestTimeoutMs })
   return { instance: fresh(), fresh, journal, credentials: credentials.module,
-    recovery: recovery.module }
+    recovery: recovery.module, shutdown: shutdown.module }
 }
 
 const setupReceipt = { status: 'PASS', packageId: 'tll-staging-generation-23-credentials/v1',
@@ -63,6 +68,10 @@ const setupReceipt = { status: 'PASS', packageId: 'tll-staging-generation-23-cre
 const retirementReceipt = { status: 'PASS_RETIRED', recoveryId: 'tll-staging-generation-23-recovery/v1',
   projectRef: PROJECT_REF, generation: GENERATION, windowId, expiresAt,
   controlsEnabled: false, runtimeCount: 5 }
+const shutdownReceipt = { status: 'PASS_CONTROLS_DISABLED',
+  shutdownId: 'tll-staging-generation-23-control-shutdown/v1',
+  projectRef: PROJECT_REF, generation: GENERATION, windowId, expiresAt,
+  controlsEnabled: 0 }
 
 test('database journal and host are both off in ordinary source', () => {
   assert.throws(() => createStagingGeneration23DatabaseJournal({ action: 'SETUP' }), /unavailable/)
@@ -116,6 +125,29 @@ test('a mismatched receipt cannot be labelled installed or retired', async () =>
   assert.deepEqual(await instance.run({ expiresAt, deadlineAt,
     signal: new AbortController().signal }), { status: 'HOLD_RECONCILE', action: 'RETIRE' })
   assert.equal(journal.read().state, 'HOLD')
+})
+
+test('shutdown has its own exact packet, record and lost-reply HOLD', async () => {
+  let calls = 0
+  const shutdown = await fixture('SHUTDOWN', async packet => {
+    calls++
+    assert.match(shutdown.shutdown.consumeStagingGeneration23PreparedShutdownSql(packet),
+      /operator_set_enabled\(false/)
+    return [{ tll_generation_23_control_shutdown: shutdownReceipt }]
+  })
+  assert.equal((await shutdown.instance.run({ expiresAt, deadlineAt,
+    signal: new AbortController().signal })).status, 'SHUTDOWN_VERIFIED')
+  assert.equal(shutdown.journal.read().state, 'FINISHED')
+  assert.equal(calls, 1)
+
+  let lostCalls = 0
+  const lost = await fixture('SHUTDOWN', async () => { lostCalls++; throw Error('lost reply') })
+  assert.deepEqual(await lost.instance.run({ expiresAt, deadlineAt,
+    signal: new AbortController().signal }), { status: 'HOLD_RECONCILE', action: 'SHUTDOWN' })
+  assert.equal(lost.journal.read().state, 'HOLD')
+  assert.deepEqual(await lost.fresh().run({ expiresAt, deadlineAt,
+    signal: new AbortController().signal }), { status: 'HOLD_RECONCILE', action: 'SHUTDOWN' })
+  assert.equal(lostCalls, 1)
 })
 
 test('a never-replying setup request times out, aborts and cannot be replayed', async () => {

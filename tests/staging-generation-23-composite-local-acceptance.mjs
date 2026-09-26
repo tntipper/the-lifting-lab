@@ -16,7 +16,8 @@ import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/
 
 const mode = process.argv.slice(2).join(' ')
 if (!['--run-offline-once', '--fail-first-setting-once',
-  '--fail-setup-reply-once', '--fail-retirement-reply-once'].includes(mode)) {
+  '--fail-setup-reply-once', '--fail-shutdown-reply-once',
+  '--fail-retirement-reply-once'].includes(mode)) {
   throw Error('Explicit local test mode required')
 }
 
@@ -27,7 +28,7 @@ const run = (program, args, env = process.env) => execFileSync(program, args, {
 const surface = surfaceFixture()
 const { PHASES, REQUIRED_RESULTS, rehearseStagingGeneration23WholeRun } = await rehearsal()
 const scriptDir = new URL('../scripts/', import.meta.url)
-async function arm(filename, flag, replacements = []) {
+async function armedUrl(filename, flag, replacements = []) {
   let source = await readFile(new URL(filename, scriptDir), 'utf8')
   const declaration = `export const ${flag} = false`
   assert.equal(source.split(declaration).length, 2)
@@ -35,8 +36,10 @@ async function arm(filename, flag, replacements = []) {
   for (const [from, to] of replacements) source = source.replace(from, to)
   source = source.replaceAll("from './", `from '${scriptDir.href}`)
     .replaceAll('resolve(import.meta.dirname,', `resolve(${JSON.stringify(fileURLToPath(scriptDir))},`)
-  return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
+  return `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`
 }
+const arm = async (filename, flag, replacements = []) =>
+  import(await armedUrl(filename, flag, replacements))
 const providerControl = await arm('staging-generation-23-provider-control.mjs',
   'STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED')
 const settingsJournalModule = await arm('staging-generation-23-settings-journal.mjs',
@@ -55,10 +58,16 @@ function ensureCartFixture() {
 try {
 const databaseJournalModule = await arm('staging-generation-23-database-journal.mjs',
   'STAGING_GENERATION_23_DATABASE_JOURNAL_ENABLED')
+const shutdownUrl = await armedUrl('staging-generation-23-control-shutdown.mjs',
+  'STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED', [[
+    "from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`,
+  ]])
+const shutdownControl = await import(shutdownUrl)
 const databaseHostModule = await arm('staging-generation-23-database-host.mjs',
   'STAGING_GENERATION_23_DATABASE_HOST_ENABLED', [
     ["from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`],
     ["from './staging-generation-23-recovery.mjs'", `from '${database.recoveryUrl}'`],
+    ["from './staging-generation-23-control-shutdown.mjs'", `from '${shutdownUrl}'`],
   ])
 databaseJournalDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-database-'))
 const databaseJournal = action => databaseJournalModule.createStagingGeneration23DatabaseJournal({
@@ -67,6 +76,7 @@ const databaseJournal = action => databaseJournalModule.createStagingGeneration2
     : '7f532f58-e750-42f7-9e83-0a7ec82f3732',
 })
 const setupJournal = databaseJournal('SETUP')
+const shutdownJournal = databaseJournal('SHUTDOWN')
 const retirementJournal = databaseJournal('RETIRE')
 const setupHost = databaseHostModule.createStagingGeneration23DatabaseHost({
   action: 'SETUP', journal: setupJournal,
@@ -82,6 +92,21 @@ const retirementHost = databaseHostModule.createStagingGeneration23DatabaseHost(
     const rows = database.postRetirementPacket(packet)
     if (mode === '--fail-retirement-reply-once') throw Error('injected lost retirement reply after commit')
     return rows
+  },
+})
+const shutdownHost = databaseHostModule.createStagingGeneration23DatabaseHost({
+  action: 'SHUTDOWN', journal: shutdownJournal,
+  post: packet => {
+    assert.match(shutdownControl.consumeStagingGeneration23PreparedShutdownSql(packet),
+      /operator_set_enabled\(false/)
+    assert.equal(database.disableControls().status, 'PASS_CONTROLS_DISABLED')
+    if (mode === '--fail-shutdown-reply-once') throw Error('injected lost shutdown reply after commit')
+    return [{ tll_generation_23_control_shutdown: {
+      status: 'PASS_CONTROLS_DISABLED', shutdownId: shutdownControl.SHUTDOWN_ID,
+      projectRef: PROJECT_REF, generation: 23,
+      windowId: '7d0e8f17-eac4-40e1-a5b5-8a8597d502a9',
+      expiresAt: database.expiresAt, controlsEnabled: 0,
+    } }]
   },
 })
 settingsDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-settings-'))
@@ -217,7 +242,16 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
       break
     case 'backendDisable':
       assert.equal(ownerChecks, true)
-      assert.equal(database.disableControls().status, 'PASS_CONTROLS_DISABLED')
+      const shutdownResult = await shutdownHost.run({ expiresAt: database.expiresAt,
+        deadlineAt: database.expiresAt,
+        signal: new AbortController().signal })
+      if (mode === '--fail-shutdown-reply-once') {
+        assert.equal(shutdownResult.status, 'HOLD_RECONCILE')
+        assert.equal(shutdownJournal.read().state, 'HOLD')
+        return { status: 'HOLD_BACKEND_DISABLE' }
+      }
+      assert.equal(shutdownResult.status, 'SHUTDOWN_VERIFIED')
+      assert.equal(shutdownJournal.read().state, 'FINISHED')
       databaseEnabled = false
       assert.equal((await providerControl.runStagingGeneration23ProviderControl({ action: 'DISABLE',
         port: providerPort, journal: providerJournal('DISABLE'),
@@ -283,6 +317,14 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
     assert.equal(surface.events.length, 8)
     console.log(JSON.stringify({ status: 'PASS_LOCAL_RETIREMENT_LOST_REPLY_STOP',
       phaseCount: calls.length, provider: 'off', surface: 'off', purchase: 'none' }))
+  } else if (mode === '--fail-shutdown-reply-once') {
+    assert.equal(result.status, 'HOLD')
+    assert.equal(result.failedPhase, 'backendDisable')
+    assert.deepEqual(calls, PHASES.slice(0, PHASES.indexOf('surfaceFreeze')))
+    assert.equal(provider.enabled, true)
+    assert.equal(surface.events.length, 4)
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_SHUTDOWN_LOST_REPLY_STOP',
+      phaseCount: calls.length, nextAction: result.nextAction, purchase: 'none' }))
   } else {
   if (result.status !== 'LOCAL_SEQUENCE_PASS') console.error(JSON.stringify({
     status: result.status, failedPhase: result.failedPhase, nextAction: result.nextAction,

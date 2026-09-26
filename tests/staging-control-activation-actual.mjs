@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { buildStagingControlActivationSql } from '../scripts/staging-control-activation.mjs'
+import { EXACT_MIGRATIONS } from '../scripts/staging-generation-21-retirement-preflight.mjs'
 import { admin, assertFixture } from './account-operations/local-pg.mjs'
 
 // Actual PostgreSQL 17 proof in the existing isolated local fixture. Every
@@ -14,6 +16,20 @@ const WINDOW = GENERATION === 23
 const expiry = new Date(Date.now() + 10 * 60 * 1000); expiry.setMilliseconds(0)
 const EXPIRES = expiry.toISOString()
 const context = { generation: GENERATION, windowId: WINDOW, expiresAt: EXPIRES }
+async function armedShutdown() {
+  const scripts = new URL('../scripts/', import.meta.url)
+  const credentialSource = readFileSync(new URL('staging-generation-23-credentials.mjs', scripts), 'utf8')
+    .replace("export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'",
+      `export const ACTIVE_WINDOW_EXPIRES_AT = '${EXPIRES}'`)
+    .replaceAll("from './", `from '${scripts.href}`)
+  const credentialUrl = `data:text/javascript;base64,${Buffer.from(credentialSource).toString('base64')}`
+  const shutdownSource = readFileSync(new URL('staging-generation-23-control-shutdown.mjs', scripts), 'utf8')
+    .replace('export const STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED = false',
+      'export const STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED = true')
+    .replace("from './staging-generation-23-credentials.mjs'", `from '${credentialUrl}'`)
+    .replaceAll("from './", `from '${scripts.href}`)
+  return import(`data:text/javascript;base64,${Buffer.from(shutdownSource).toString('base64')}`)
+}
 const aliases = {
   tll_customer_owner: 'tll_ao1_customer_owner', tll_cart_owner: 'tll_ca_cart_owner',
   tll_broker_owner: 'tll_ao1_broker_owner', tll_provisional_owner: 'tll_ao1_provisional_owner', tll_bridge_owner: 'tll_ao1_bridge_owner',
@@ -66,11 +82,23 @@ try {
     GRANT pg_read_all_data,pg_read_all_stats TO ${OPERATOR}; GRANT SELECT ON pg_authid TO ${OPERATOR};
     GRANT USAGE ON SCHEMA tll_customer_private,tll_broker_private,tll_provisional_private,tll_bridge_private TO ${OPERATOR};
     GRANT EXECUTE ON FUNCTION tll_customer_private.operator_status(),tll_broker_private.operator_status(),
-      tll_provisional_private.operator_status(),tll_bridge_private.operator_status() TO ${OPERATOR};
+      tll_provisional_private.operator_status(),tll_bridge_private.operator_status(),
+      tll_customer_private.operator_set_enabled(boolean,text),tll_broker_private.operator_set_enabled(boolean,text),
+      tll_provisional_private.operator_set_enabled(boolean,text),tll_bridge_private.operator_set_enabled(boolean,text) TO ${OPERATOR};
     CREATE ROLE ${aliases.tll_cart_owner} NOLOGIN NOINHERIT; CREATE ROLE ${aliases.tll_cart_gateway} NOLOGIN NOINHERIT;
-    CREATE SCHEMA tll_ca_staging_private; CREATE TABLE tll_ca_staging_private.environment(singleton boolean PRIMARY KEY,environment text NOT NULL,operator_project_ref text NOT NULL);
-    INSERT INTO tll_ca_staging_private.environment VALUES(true,'tll-hosted-staging-v1','qdmvngjwkcsilzmqksme');
-    GRANT USAGE ON SCHEMA tll_ca_staging_private TO ${OPERATOR}; GRANT SELECT ON tll_ca_staging_private.environment TO ${OPERATOR};
+    CREATE SCHEMA tll_ca_staging_private; CREATE TABLE tll_ca_staging_private.environment(
+      singleton boolean PRIMARY KEY,environment text NOT NULL,operator_project_ref text NOT NULL,
+      operator_context text,identity_basis text,bootstrap_version text,source_commit text,integrity_sha256 text);
+    INSERT INTO tll_ca_staging_private.environment VALUES(true,'tll-hosted-staging-v1','qdmvngjwkcsilzmqksme',
+      'supabase-dashboard:qdmvngjwkcsilzmqksme:staging-bootstrap:reviewed',
+      'explicit-operator-dashboard-binding','2026-09-15-v2',
+      'a50e37ff05d8e731dc8ffceea1e96492079e5ff3',
+      '2d5175eb47a891ca626d635281fbb28237b16bec0d89eebe168455935117922c');
+    CREATE TABLE tll_ca_staging_private.applied_migrations(version text PRIMARY KEY,source_sha256 text);
+    INSERT INTO tll_ca_staging_private.applied_migrations VALUES
+      ${EXACT_MIGRATIONS.map(([version, hash]) => `(${q(version)},${q(hash)})`).join(',')};
+    GRANT USAGE ON SCHEMA tll_ca_staging_private TO ${OPERATOR};
+    GRANT SELECT ON tll_ca_staging_private.environment,tll_ca_staging_private.applied_migrations TO ${OPERATOR};
     CREATE SCHEMA tll_cart_private AUTHORIZATION ${OPERATOR};
     CREATE TABLE tll_cart_private.control(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),enabled boolean NOT NULL DEFAULT false,operator_oid oid NOT NULL DEFAULT current_user::regrole::oid);
     INSERT INTO tll_cart_private.control(singleton,enabled) VALUES(true,false); ALTER TABLE tll_cart_private.control OWNER TO ${OPERATOR};
@@ -115,7 +143,36 @@ try {
     WHERE g.rolname IN (${owners.map(q).join(',')}) AND e.member='${OPERATOR}'::regrole AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option`), '5')
   assert.equal(admin(`SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid
     WHERE g.rolname IN (${owners.map(q).join(',')}) AND e.member='${OPERATOR}'::regrole AND (e.inherit_option OR e.set_option OR NOT e.admin_option)`), '0')
-  console.log('PASS: PostgreSQL 17 rejected cart-role and runtime-attribute drift, rolled back a partial failure, enabled five controls atomically and restored ADMIN-only owner edges')
+  if (GENERATION === 23) {
+    const shutdown = await armedShutdown()
+    const shutdownSql = adapt(shutdown.buildStagingGeneration23ControlShutdownSql({ expiresAt: EXPIRES }))
+    admin("UPDATE tll_ca_staging_private.environment SET operator_project_ref='wrong-project'")
+    assert.equal(managed(shutdownSql, { allowFailure: true }), null)
+    admin("UPDATE tll_ca_staging_private.environment SET operator_project_ref='qdmvngjwkcsilzmqksme'")
+    admin(`UPDATE tll_ca_staging_private.applied_migrations SET source_sha256='wrong-hash'
+      WHERE version=${q(EXACT_MIGRATIONS[0][0])}`)
+    assert.equal(managed(shutdownSql, { allowFailure: true }), null)
+    admin(`UPDATE tll_ca_staging_private.applied_migrations SET source_sha256=${q(EXACT_MIGRATIONS[0][1])}
+      WHERE version=${q(EXACT_MIGRATIONS[0][0])}`)
+    admin(`ALTER ROLE ${runtimes[0]} BYPASSRLS`)
+    assert.equal(managed(shutdownSql, { allowFailure: true }), null)
+    admin(`ALTER ROLE ${runtimes[0]} NOBYPASSRLS`)
+    admin('ALTER TABLE tll_cart_private.control DISABLE ROW LEVEL SECURITY')
+    assert.equal(managed(shutdownSql, { allowFailure: true }), null)
+    admin('ALTER TABLE tll_cart_private.control ENABLE ROW LEVEL SECURITY')
+    assert.equal(admin(controls), 'true,true,true,true,true')
+    const forcedShutdownFailure = shutdownSql.replace(
+      "PERFORM tll_broker_private.operator_set_enabled(false,'generation_23_shutdown');",
+      "RAISE EXCEPTION 'synthetic shutdown failure';")
+    assert.notEqual(forcedShutdownFailure, shutdownSql)
+    assert.equal(managed(forcedShutdownFailure, { allowFailure: true }), null)
+    assert.equal(admin(controls), 'true,true,true,true,true')
+    const shutdownRows = [{ tll_generation_23_control_shutdown: JSON.parse(managed(shutdownSql)) }]
+    assert.equal(shutdown.validateStagingGeneration23ControlShutdownReceipt(shutdownRows,
+      { expiresAt: EXPIRES }).status, 'CONTROLS_DISABLED')
+    assert.equal(admin(controls), 'false,false,false,false,false')
+  }
+  console.log(`PASS: PostgreSQL 17 generation ${GENERATION} rejected privilege drift, rolled back a partial failure, enabled five controls atomically${GENERATION === 23 ? ', then disabled them through the operator controls' : ''}`)
 } finally {
   if (installed) admin(`${controlSchemas.map(schema => `DELETE FROM ${schema}.control;
     INSERT INTO ${schema}.control SELECT * FROM json_populate_record(NULL::${schema}.control,${q(originalControls[schema])}::json);`).join('\n')}
@@ -125,6 +182,8 @@ try {
     DROP ROLE IF EXISTS ${aliases.tll_cart_gateway}; DROP ROLE IF EXISTS ${aliases.tll_cart_owner};
     REVOKE USAGE ON SCHEMA tll_customer_private,tll_broker_private,tll_provisional_private,tll_bridge_private FROM ${OPERATOR};
     REVOKE EXECUTE ON FUNCTION tll_customer_private.operator_status(),tll_broker_private.operator_status(),
-      tll_provisional_private.operator_status(),tll_bridge_private.operator_status() FROM ${OPERATOR};
+      tll_provisional_private.operator_status(),tll_bridge_private.operator_status(),
+      tll_customer_private.operator_set_enabled(boolean,text),tll_broker_private.operator_set_enabled(boolean,text),
+      tll_provisional_private.operator_set_enabled(boolean,text),tll_bridge_private.operator_set_enabled(boolean,text) FROM ${OPERATOR};
     REVOKE SELECT ON pg_authid FROM ${OPERATOR}; REVOKE pg_read_all_data,pg_read_all_stats FROM ${OPERATOR}; DROP ROLE IF EXISTS ${OPERATOR};`)
 }

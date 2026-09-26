@@ -1171,12 +1171,16 @@
         "sha256": "30f5144d6ef8657cda4bb4d0f2689145165b7e3f4284520224ba1292ba7d78a9"
       },
       {
+        "path": "scripts/staging-generation-23-control-shutdown.mjs",
+        "sha256": "f1323aa0ea55d248a2cde89f60d8ce471ec76f8788491e960650f7d26ba553ce"
+      },
+      {
         "path": "scripts/staging-generation-23-database-journal.mjs",
-        "sha256": "84994403deffe0ed68770a068f1b54c7ba12128dbf5da51a5a645f12e0efda38"
+        "sha256": "935565f40a4320b29acb6667eb2bceb379fa4a7f7e9558aaf56ead1c1364cd8a"
       },
       {
         "path": "scripts/staging-generation-23-database-host.mjs",
-        "sha256": "e74b1eca8138cde18258c50483048023642755c4c5f9f8e867faab28f87d74c5"
+        "sha256": "f69fc52f62586bf6fa91ccd416b07c0832423a570940e5d5eea215cb39186c23"
       },
       {
         "path": "scripts/staging-generation-23-provider-control.mjs",
@@ -1572,7 +1576,7 @@
       },
       {
         "path": "tests/staging-control-activation-actual.mjs",
-        "sha256": "706f309eecc6b69348df74be2956e9c36e47bf646a85d4bef304a94074baf996"
+        "sha256": "08ea61d14dcdf8cd9436abf2b351964acb0db2030213cdd1354d6e0332c38616"
       },
       {
         "path": "tests/staging-database-native-adapter.test.mjs",
@@ -1779,8 +1783,12 @@
         "sha256": "de28b876d38dfce749841e0fde6036ed35f41af8e7475997e00e13bb7fc71da5"
       },
       {
+        "path": "tests/staging-generation-23-control-shutdown.test.mjs",
+        "sha256": "3cfbe80f4e8049fe0e97b261a209210e7ce0df658bcb919e6bde38e331aa6a60"
+      },
+      {
         "path": "tests/staging-generation-23-database-host.test.mjs",
-        "sha256": "931a36386fcbf2cb6798e6c0f68afedce67d16a5754c03e71b305e77e0d15c74"
+        "sha256": "7b575220caaee6e95e6d95bb9ed296e9ee652eeb9637807bc1ecbfec99b41a29"
       },
       {
         "path": "tests/staging-generation-23-provider-control.test.mjs",
@@ -1792,7 +1800,7 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "bed76ed9ee59a0a32246b2ce6aa11cc596aa914237e66cbce7dfa64568f6295e"
+        "sha256": "bc2c6d14b0343ef965d426d16167ba255f8e1bdcfec0b33d4dbd2c41c9464e94"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
