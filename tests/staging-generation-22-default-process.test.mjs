@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync,
   writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -28,7 +28,8 @@ const activeFiles = Object.freeze([
   'vercel-host', 'edge-host', 'vercel-config-host', 'poststage-readback',
   'connection-proof', 'setup-coordinator', 'recovery-host',
   'recovery-coordinator', 'worker-core', 'worker-assembly', 'recovery',
-  'active-check', 'retired-check', 'readback',
+  'active-check', 'retired-check', 'readback', 'worker-entry',
+  'process-binding', 'process-supervisor',
 ])
 
 function isolatedSources(t) {
@@ -148,4 +149,45 @@ for (const [mode, expected] of [
     'staging', 'tll-generation-22-recovery-dispatch-v1.json'), 'utf8'))
   assert.equal(setup.state, expected.setupState)
   assert.equal(recovery.state, expected.recoveryState)
+})
+
+for (const [mode, expectedStatus, expectedSetup, expectedRecovery] of [
+  ['entry-success', 'VERIFIED_CONTROLS_DISABLED', 'FINISHED', 'FINISHED'],
+  ['entry-lost-middle', 'CHILD_EXIT_RECONCILIATION_REQUIRED', 'HOLD', 'CLAIMED'],
+]) test(`fixed parent and child accept ${mode} only after their local proof`, async t => {
+  const fixture = isolatedSources(t)
+  const runner = fileURLToPath(new URL('./fixtures/staging-generation-22-default-success.mjs', import.meta.url))
+  const [{ createStagingGeneration22FixedSpawner: createSpawner,
+    GENERATION_22_WORKER_ARGS },
+  { createStagingGeneration22ProcessSupervisor: createSupervisor }] = await Promise.all([
+    import(pathToFileURL(join(fixture.directory, 'scripts',
+      'staging-generation-22-process-binding.mjs')).href),
+    import(pathToFileURL(join(fixture.directory, 'scripts',
+      'staging-generation-22-process-supervisor.mjs')).href),
+  ])
+  let workerPid, childStderr = ''
+  t.after(() => { if (workerPid) { try { process.kill(-workerPid, 'SIGKILL') } catch {} } })
+  const spawnWorker = createSpawner({ spawnProcess(executable, args, options) {
+    assert.equal(executable, process.execPath)
+    assert.deepEqual(args, GENERATION_22_WORKER_ARGS)
+    assert.equal(options.detached, true)
+    assert.deepEqual(options.stdio, ['ignore', 'pipe', 'pipe', 'pipe'])
+    assert.deepEqual(options.env, { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' })
+    const child = spawn(executable,
+      [GENERATION_22_WORKER_ARGS[0], '--import', networkDeny,
+        runner, fixture.directory, mode], options)
+    child.stderr.on('data', chunk => { childStderr += chunk.toString('utf8').slice(0, 1000) })
+    workerPid = child.pid
+    return child
+  } })
+  const supervisor = createSupervisor({ spawnWorker, timeoutMs: 20_000,
+    termGraceMs: 100 })
+  const result = await supervisor.supervise({ signal: new AbortController().signal })
+  assert.equal(result.status, expectedStatus, childStderr)
+  const setup = JSON.parse(readFileSync(join(fixture.directory, 'implementation-state',
+    'staging', 'tll-generation-22-dispatch-v1.json'), 'utf8'))
+  const recovery = JSON.parse(readFileSync(join(fixture.directory, 'implementation-state',
+    'staging', 'tll-generation-22-recovery-dispatch-v1.json'), 'utf8'))
+  assert.equal(setup.state, expectedSetup)
+  assert.equal(recovery.state, expectedRecovery)
 })

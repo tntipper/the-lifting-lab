@@ -9,7 +9,8 @@ import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 import { createStagingGeneration22FixedSpawner,
-  GENERATION_22_WORKER_PATH, GENERATION_22_WORKER_PROOF } from '../scripts/staging-generation-22-process-binding.mjs'
+  GENERATION_22_WORKER_ARGS, GENERATION_22_WORKER_PATH,
+  GENERATION_22_WORKER_PROOF } from '../scripts/staging-generation-22-process-binding.mjs'
 import { acceptStagingGeneration22Supervisor } from '../scripts/staging-generation-22-worker-entry.mjs'
 
 const scripts = new URL('../scripts/', import.meta.url)
@@ -91,7 +92,9 @@ test('binding uses only the fixed worker, detached group and secret-free process
   }, killGroup(pid) { stoppedGroups.push(pid) } })
   assert.equal(spawnWorker(), child)
   assert.equal(spawnOptions.executable, process.execPath)
-  assert.deepEqual(spawnOptions.args, [GENERATION_22_WORKER_PATH])
+  assert.deepEqual(spawnOptions.args, GENERATION_22_WORKER_ARGS)
+  assert.deepEqual(GENERATION_22_WORKER_ARGS,
+    ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON', GENERATION_22_WORKER_PATH])
   assert.deepEqual(spawnOptions.options, {
     cwd: root, env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, detached: true,
     stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
@@ -121,7 +124,9 @@ test('loss of the bound parent stops its real worker group and child helper', as
   const parentCode = `const [m,cp]=await Promise.all([import(${JSON.stringify(bindingUrl)}),`
     + `import('node:child_process')]);`
     + `const spawnWorker=m.createStagingGeneration22FixedSpawner({spawnProcess(executable,args,options){`
-    + `if(executable!==process.execPath||args.length!==1||args[0]!==m.GENERATION_22_WORKER_PATH`
+    + `if(executable!==process.execPath||args.length!==2`
+    + `||args[0]!=='--disable-warning=MODULE_TYPELESS_PACKAGE_JSON'`
+    + `||args[1]!==m.GENERATION_22_WORKER_PATH`
     + `||options.detached!==true||options.stdio[3]!=='pipe'||Object.keys(options.env).sort().join('|')!=='LANG|PATH')`
     + `throw Error('wrong fixed child binding');`
     + `return cp.spawn(process.execPath,['--input-type=module','-e',${JSON.stringify(fixture)},process.argv[1]],options)}});`

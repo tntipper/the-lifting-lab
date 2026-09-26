@@ -1148,7 +1148,7 @@
       },
       {
         "path": "scripts/staging-generation-22-process-binding.mjs",
-        "sha256": "5e42fa4b1011bdb2b75813d0502e7a6654f8d036256b635a959aefd624826e3d"
+        "sha256": "3187c67d6c8dcc965388d43fd008b274b1b93a835aa5e3ddb8b5d6a92b5b43ed"
       },
       {
         "path": "scripts/staging-generation-22-worker-entry.mjs",
@@ -1652,7 +1652,7 @@
       },
       {
         "path": "tests/staging-generation-22-process-binding.test.mjs",
-        "sha256": "720f994ce986ba59d14f58bd9eaeb0d9e294e5b0ae403039a706f02ebdc82f25"
+        "sha256": "d77e6e3e78fff9ec7d673867d7fc42024048a7abefb395e8996ee4ae7e36def0"
       },
       {
         "path": "tests/staging-generation-22-worker-entry.test.mjs",
@@ -1664,11 +1664,11 @@
       },
       {
         "path": "tests/staging-generation-22-default-process.test.mjs",
-        "sha256": "0e569f55e4feb4101cab134682701f76cf070793ac70f3a015bef205941d08f5"
+        "sha256": "0a77a2b830f83f243eb35b914731fd05878a9f80aacd5f0fdd4ade97ab8f1a27"
       },
       {
         "path": "tests/fixtures/staging-generation-22-default-success.mjs",
-        "sha256": "953c809007278ff64df56c29dbe7a58c48e7e5f3c52611e470f045af73dfd40d"
+        "sha256": "c716b3b5a3134038fe544b5754d4f841126c75117369ab3ce9e672cb4167f409"
       },
       {
         "path": "tests/fixtures/staging-generation-22-network-deny.mjs",

@@ -7,6 +7,11 @@ export const STAGING_GENERATION_22_PROCESS_BINDING_ENABLED = false
 export const GENERATION_22_WORKER_PROOF = 'TLL_STAGING_GENERATION_22_SUPERVISOR_V1'
 export const GENERATION_22_WORKER_PATH = fileURLToPath(
   new URL('./staging-generation-22-worker-entry.mjs', import.meta.url))
+// The imported staging-postgres.ts is valid Node code but has no package module type.
+// Suppress only Node's module-type warning; every other stderr byte remains fatal.
+export const GENERATION_22_WORKER_ARGS = Object.freeze([
+  '--disable-warning=MODULE_TYPELESS_PACKAGE_JSON', GENERATION_22_WORKER_PATH,
+])
 const ROOT = resolve(import.meta.dirname, '..')
 const unavailable = () => { throw new Error('Generation 22 process binding unavailable') }
 
@@ -19,7 +24,7 @@ export function createStagingGeneration22FixedSpawner({ spawnProcess = spawn,
   return () => {
     if (used) unavailable()
     used = true
-    const child = spawnProcess(process.execPath, [GENERATION_22_WORKER_PATH], {
+    const child = spawnProcess(process.execPath, GENERATION_22_WORKER_ARGS, {
       cwd: ROOT, env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, detached: true,
       stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
     })

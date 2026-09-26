@@ -6,7 +6,8 @@ import { join } from 'node:path'
 const directory = process.argv[2]
 const mode = process.argv[3] ?? 'success'
 if (!directory) throw Error('isolated fixture directory required')
-if (!['success', 'lost-middle', 'lost-retirement'].includes(mode)) throw Error('unknown fixture mode')
+if (!['success', 'lost-middle', 'lost-retirement', 'entry-success',
+  'entry-lost-middle'].includes(mode)) throw Error('unknown fixture mode')
 const load = async name => import(pathToFileURL(join(directory, 'scripts', name)).href)
 const [{ createStagingGeneration22WorkerAssembly: assemble, FIXED_GENERATION_22_PARTS: fixed },
   credential, recovery, active, retired, material, baseline, verifier, identities] = await Promise.all([
@@ -41,7 +42,8 @@ const fetcher = async (url, options) => {
       target: ['preview'], type: body.type, visibility: body.visibility }
     environment.push(item); byId.set(id, item)
     events.push(body.type === 'sensitive' ? 'vercel-secret' : 'vercel-disabled')
-    if (mode === 'lost-middle' && body.type === 'sensitive' && environment.length === 3) {
+    if (['lost-middle', 'entry-lost-middle'].includes(mode)
+      && body.type === 'sensitive' && environment.length === 3) {
       throw Error('synthetic accepted write lost its reply')
     }
     return response({ failed: [], created: item }, 201)
@@ -147,15 +149,29 @@ const parts = { ...fixed, createRuntime,
   },
 }
 
-let assembly, result
-try {
-  assembly = assemble({ managementToken, vercelToken, parts, fetcher })
-  result = await assembly.core.run({ signal: new AbortController().signal })
-} finally {
-  assembly?.dispose()
-  managementToken.fill(0); vercelToken.fill(0)
-}
-process.stdout.write(JSON.stringify({ status: result.status,
+if (mode.startsWith('entry-')) {
+  const entry = await load('staging-generation-22-worker-entry.mjs')
+  const passed = await entry.runStagingGeneration22Worker({
+    signal: new AbortController().signal,
+    readCredentials: async () => ({ managementToken, vercelToken }),
+    createWorker: credentials => assemble({ ...credentials, parts, fetcher }),
+    write: value => new Promise((resolveWrite, rejectWrite) => {
+      process.stdout.write(value, error => error ? rejectWrite(error) : resolveWrite())
+    }),
+  })
+  assert.equal(managementToken.every(byte => byte === 0), true)
+  assert.equal(vercelToken.every(byte => byte === 0), true)
+  process.exitCode = passed ? 0 : 1
+} else {
+  let assembly, result
+  try {
+    assembly = assemble({ managementToken, vercelToken, parts, fetcher })
+    result = await assembly.core.run({ signal: new AbortController().signal })
+  } finally {
+    assembly?.dispose()
+    managementToken.fill(0); vercelToken.fill(0)
+  }
+  process.stdout.write(JSON.stringify({ status: result.status,
   writes: events.filter(event => ['database-install', 'vercel-secret', 'edge-secret', 'vercel-disabled']
     .includes(event)).length,
   logins: events.filter(event => event.startsWith('login:')).length,
@@ -166,4 +182,5 @@ process.stdout.write(JSON.stringify({ status: result.status,
   readbackCompleted: events.includes('disabled-value-read'),
   activeReadCompleted: events.includes('active-read'),
   finalReadCompleted: events.includes('retired-read'),
-}))
+  }))
+}
