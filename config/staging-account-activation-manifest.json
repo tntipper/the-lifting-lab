@@ -1784,7 +1784,7 @@
       },
       {
         "path": "tests/helpers/staging-generation-23-surface-fixture.mjs",
-        "sha256": "9d2634f415fb89e94772da7e97bc5d433d2188b002fdb225ec069cd853a0c6d6"
+        "sha256": "f6cdb07d7a5859dc11d8f423e346f05645308a63944ecb70ba3ce38a587f596b"
       },
       {
         "path": "tests/staging-generation-22-credentials.test.mjs",
