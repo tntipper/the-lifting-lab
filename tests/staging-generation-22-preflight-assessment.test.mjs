@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { HOSTED_BASELINE_VERCEL_TARGET } from '../scripts/staging-account-hosted-baseline-vercel.mjs'
 import { DISABLED_VERCEL_CONFIGURATION, MISSING_VERCEL_SECRET_NAMES } from '../scripts/staging-generation-22-material.mjs'
 import { assessStagingGeneration22PreflightVercel,
+  stagingGeneration22PreflightExitCode,
   STAGING_GENERATION_22_PREFLIGHT_ASSESSMENT_ENABLED } from '../scripts/staging-generation-22-preflight-assessment.mjs'
 
 const project = { target: HOSTED_BASELINE_VERCEL_TARGET, repository: { provider: 'github', repoId: 1264363509,
@@ -35,4 +36,14 @@ test('wrong project, branch, duplicate or value-bearing entry fails closed', () 
     { ...base, inventory: inventory([entry('UNRELATED_NAME'), entry('UNRELATED_NAME')]) },
     { ...base, inventory: inventory([{ ...entry('UNRELATED_NAME'), value: 'secret' }]) },
   ]) assert.throws(() => assessStagingGeneration22PreflightVercel(input), /unavailable/)
+})
+
+test('only exact successful baselines give the stage command a zero exit', () => {
+  assert.equal(stagingGeneration22PreflightExitCode('vercel', 'GENERATION_22_NAMES_ABSENT'), 0)
+  assert.equal(stagingGeneration22PreflightExitCode('supabase', 'DISABLED_BASELINE_OBSERVED'), 0)
+  for (const mode of ['vercel', 'supabase']) for (const status of ['HOLD', 'READ_UNAVAILABLE',
+    'RECONCILIATION_REQUIRED', 'GENERATION_22_PREFLIGHT_DISABLED']) {
+    assert.equal(stagingGeneration22PreflightExitCode(mode, status), 1)
+  }
+  assert.equal(stagingGeneration22PreflightExitCode('production', 'GENERATION_22_NAMES_ABSENT'), 1)
 })

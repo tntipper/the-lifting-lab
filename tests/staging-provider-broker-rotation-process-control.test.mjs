@@ -47,6 +47,34 @@ test('a successful leader cannot leave an unawaited CLI descendant running', asy
   result.output.fill(0)
   assert.equal(await stopped(Number(readFileSync(file, 'utf8'))), true)
 })
+
+test('strict cleanup removes a pipe-free descendant before reporting success', async () => {
+  const file = join(mkdtempSync(join(tmpdir(), 'tll-preflight-success-')), 'child.pid')
+  const moduleUrl = new URL('../scripts/staging-provider-broker-recovery-process-control.mjs', import.meta.url).href
+  const program = `import(${JSON.stringify(moduleUrl)}).then(async m => {`
+    + `const release=await m.acceptSupervisorPipe({proof:'OFFLINE_ROTATION_PROOF'});`
+    + `const {spawn}=await import('node:child_process');const fs=await import('node:fs');`
+    + `const child=spawn('/bin/sleep',['30'],{stdio:'ignore'});child.unref();`
+    + `fs.writeFileSync(process.argv[1],String(child.pid));release();process.stdout.write('OK')})`
+  const result = await runBoundedBrokerRotationWorker({ ...options(['-e', program, file]),
+    strictGroupCleanup: true })
+  try {
+    assert.equal(result.status, 'EXITED')
+    assert.equal(result.output.toString('utf8'), 'OK')
+    assert.equal(await stopped(Number(readFileSync(file, 'utf8'))), true)
+  } finally { result.output?.fill(0) }
+})
+
+test('strict cleanup cannot report success when process-group stop fails', async () => {
+  const moduleUrl = new URL('../scripts/staging-provider-broker-recovery-process-control.mjs', import.meta.url).href
+  const program = `import(${JSON.stringify(moduleUrl)}).then(async m => {`
+    + `const release=await m.acceptSupervisorPipe({proof:'OFFLINE_ROTATION_PROOF'});`
+    + `release();process.stdout.write('OK')})`
+  const result = await runBoundedBrokerRotationWorker({ ...options(['-e', program]),
+    strictGroupCleanup: true, killGroup: () => { throw Object.assign(Error('denied'), { code: 'EPERM' }) } })
+  assert.equal(result.status, 'UNCERTAIN')
+  assert.equal(result.output, null)
+})
 test('an inherited stdout pipe cannot keep a descendant alive after leader exit', async () => {
   const file = join(mkdtempSync(join(tmpdir(), 'tll-rotation-inherited-pipe-')), 'child.pid')
   const moduleUrl = new URL('../scripts/staging-provider-broker-recovery-process-control.mjs', import.meta.url).href

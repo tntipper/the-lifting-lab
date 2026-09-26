@@ -13,24 +13,29 @@ const unavailable = () => { throw Error('Staging broker rotation process control
  * A clean leader exit also kills any child that escaped its awaited command.
  */
 export function runBoundedBrokerRotationWorker({ executable, args, cwd, env, proof,
-  deadlineMs, maxOutputBytes = 1024, stopGraceMs = 2_000, spawnProcess = spawn } = {}) {
+  deadlineMs, maxOutputBytes = 1024, stopGraceMs = 2_000, spawnProcess = spawn,
+  strictGroupCleanup = false, killGroup = terminateProcessGroup } = {}) {
   if (!isAbsolute(executable) || !Array.isArray(args) || args.some(value => typeof value !== 'string')
     || !isAbsolute(cwd) || !env || typeof env !== 'object' || typeof proof !== 'string'
     || proof.length < 8 || proof.length > 128 || !Number.isSafeInteger(deadlineMs)
     || deadlineMs < 1 || deadlineMs > BROKER_ROTATION_MAX_WORKER_MS
     || !Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1 || maxOutputBytes > 4096
     || !Number.isSafeInteger(stopGraceMs) || stopGraceMs < 1 || stopGraceMs > 5_000
-    || typeof spawnProcess !== 'function') unavailable()
+    || typeof spawnProcess !== 'function' || typeof strictGroupCleanup !== 'boolean'
+    || typeof killGroup !== 'function') unavailable()
   return new Promise(resolveResult => {
     let child
     try {
       child = spawnProcess(executable, args, { cwd, env, detached: true,
         stdio: ['ignore', 'pipe', 'ignore', 'pipe'] })
     } catch { resolveResult(Object.freeze({ status: 'UNCERTAIN', code: null, output: null })); return }
-    let settled = false, stopping = false, size = 0, deadline, grace
+    let settled = false, stopping = false, cleanupProven = false, size = 0, deadline, grace
     const chunks = []
     const stopGroup = () => {
-      try { terminateProcessGroup(child.pid) } catch { try { child.kill('SIGKILL') } catch {} }
+      try { killGroup(child.pid); cleanupProven = true } catch (error) {
+        if (error?.code === 'ESRCH') cleanupProven = true
+        else { try { child.kill('SIGKILL') } catch {} }
+      }
     }
     const onSignal = () => { process.exitCode = 1; stop() }
     const onExit = () => { if (!settled) stopGroup() }
@@ -43,10 +48,11 @@ export function runBoundedBrokerRotationWorker({ executable, args, cwd, env, pro
       process.removeListener('exit', onExit)
       child.stdout?.removeAllListeners('data'); child.stdout?.destroy()
       child.stdio?.[3]?.destroy()
-      const output = status === 'EXITED' && code === 0 && size <= maxOutputBytes
+      const finalStatus = strictGroupCleanup && !cleanupProven ? 'UNCERTAIN' : status
+      const output = finalStatus === 'EXITED' && code === 0 && size <= maxOutputBytes
         ? Buffer.concat(chunks, size) : null
       for (const chunk of chunks) chunk.fill(0)
-      resolveResult(Object.freeze({ status, code, output }))
+      resolveResult(Object.freeze({ status: finalStatus, code, output }))
     }
     const stop = () => {
       if (stopping || settled) return

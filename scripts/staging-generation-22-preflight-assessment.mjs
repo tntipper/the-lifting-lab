@@ -3,6 +3,8 @@ import { assessStagingPreviewEnvironment } from './staging-preview-environment-a
 import { DISABLED_VERCEL_CONFIGURATION, MISSING_VERCEL_SECRET_NAMES } from './staging-generation-22-material.mjs'
 
 export const STAGING_GENERATION_22_PREFLIGHT_ASSESSMENT_ENABLED = false
+const GOOD = Object.freeze({ vercel: 'GENERATION_22_NAMES_ABSENT',
+  supabase: 'DISABLED_BASELINE_OBSERVED' })
 const unavailable = () => { throw Error('Generation 22 preflight assessment unavailable') }
 const absentNames = Object.freeze([...MISSING_VERCEL_SECRET_NAMES,
   ...Object.keys(DISABLED_VERCEL_CONFIGURATION)].sort())
@@ -21,4 +23,9 @@ export function assessStagingGeneration22PreflightVercel({ project, inventory } 
   return Object.freeze({ status: present.length ? 'HOLD' : 'GENERATION_22_NAMES_ABSENT',
     projectId: envelope.projectId, branch: envelope.branch,
     requiredAbsentCount: absentNames.length, present: Object.freeze(present) })
+}
+
+/** A held or uncertain preflight must fail the command-line stage gate. */
+export function stagingGeneration22PreflightExitCode(mode, status) {
+  return Object.hasOwn(GOOD, mode) && status === GOOD[mode] ? 0 : 1
 }

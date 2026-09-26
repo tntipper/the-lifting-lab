@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "a718a18ad1540eb43450dbed6882459bee5e15bb33fa8b0ed840ac8d29f9e112"
+        "sha256": "993975e7c8d76c7bb73be7df2be9d41aae7e9795eb97997e67e1ae50df0d6be3"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -628,7 +628,7 @@
       },
       {
         "path": "scripts/staging-provider-broker-rotation-process-control.mjs",
-        "sha256": "2f7ca20ad652f273294862fb327713243b1df65ab5c1121268cb319fdcdf5aac"
+        "sha256": "6dd43678245e2b00329d8178f21feea20ee91fdc10403fdf81bc2b1f68d66d78"
       },
       {
         "path": "scripts/staging-provider-broker-rotation-keychain.py",
@@ -1112,7 +1112,19 @@
       },
       {
         "path": "scripts/staging-generation-22-preflight-assessment.mjs",
-        "sha256": "e991ffe743b8c88aa5649051580cda69c5befc33a9d65e57674615664b70ca9d"
+        "sha256": "462c6bdadf236303387ae67d3a3f217558591ede2e4a9f573894fdb9eadd0304"
+      },
+      {
+        "path": "scripts/staging-generation-22-preflight-journal.mjs",
+        "sha256": "4ba44d140c681273efbf60cd0a67afd5d6c0c96d707828c132b0c6f26fefad09"
+      },
+      {
+        "path": "scripts/staging-generation-22-preflight-observer.mjs",
+        "sha256": "6fbd0e8fecd15cf58d29ec09891e7294f0146be3de30f43d83cb51aa86e13deb"
+      },
+      {
+        "path": "scripts/staging-generation-22-preflight-live-launcher.mjs",
+        "sha256": "49d5396db305cbb10722d8b78c5c20aebe0f88b96cfd60428aa290379c4822ac"
       },
       {
         "path": "scripts/staging-generation-22-credentials.mjs",
@@ -1252,7 +1264,7 @@
       },
       {
         "path": "tests/staging-provider-broker-rotation-process-control.test.mjs",
-        "sha256": "75aa6d64f4e641918e52c1349537924c5b0b44dd804ab97cebb732fd710fd0d0"
+        "sha256": "925b5320e3da0959df057f2aa7df520c9de47b72be2fc5fcb9f77f18b53c7fd3"
       },
       {
         "path": "tests/staging-provider-broker-rotation-keychain.test.mjs",
@@ -1688,7 +1700,19 @@
       },
       {
         "path": "tests/staging-generation-22-preflight-assessment.test.mjs",
-        "sha256": "50bf7da9615ef4cac57cad59dd6248c5cdbd3039d124d3623ce754db2f734bb5"
+        "sha256": "67e7430254d3cc44313f5b0efbf801750d336ff4c6f3c97661fb42da49f74bc1"
+      },
+      {
+        "path": "tests/staging-generation-22-preflight-journal.test.mjs",
+        "sha256": "13ab0d7fc09cd2b8a75aae9fa7b9e32b7fab2ff31d4ccdefa6f7de341d36e2bd"
+      },
+      {
+        "path": "tests/staging-generation-22-preflight-observer.test.mjs",
+        "sha256": "6e0aa3abf6c6960b8745577d0f1286b14adf715fd6e89bfc17eecdbb3dae609b"
+      },
+      {
+        "path": "tests/staging-generation-22-preflight-live-launcher.test.mjs",
+        "sha256": "fc1b14be14491bf2282b5f9a5eda449a7a36a4f7693d930c87534c9e324ca06a"
       },
       {
         "path": "tests/staging-generation-22-retired-query.test.mjs",
