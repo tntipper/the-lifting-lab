@@ -1135,6 +1135,10 @@
         "sha256": "dd5528b68dae93db4da1319d2b8e1b1ce9641f40c9b52bba96ae1ac2fac75993"
       },
       {
+        "path": "scripts/staging-generation-23-vercel-targets.mjs",
+        "sha256": "5ab27197a94890462afdbd4a5b5cd48db5ec30e8e4deab80c6a4f4a5c64308b6"
+      },
+      {
         "path": "scripts/staging-generation-22-preflight-assessment.mjs",
         "sha256": "462c6bdadf236303387ae67d3a3f217558591ede2e4a9f573894fdb9eadd0304"
       },
@@ -1689,6 +1693,10 @@
       {
         "path": "tests/staging-generation-23-predecessor-observer.test.mjs",
         "sha256": "92e7930796cc466ab3c4f453e679f16aaf1773f7d9891d26a8ab13fca1ebda43"
+      },
+      {
+        "path": "tests/staging-generation-23-vercel-targets.test.mjs",
+        "sha256": "a6a2b87926c186852db4ffe2cdb8c5bd4a92316bea9e4fa5e220a7c4ed77acda"
       },
       {
         "path": "tests/staging-generation-22-credentials.test.mjs",
