@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync,
   writeFileSync } from 'node:fs'
@@ -57,6 +58,16 @@ test('isolated armed preflight reaches each reader while write gates and Keychai
       'scripts/staging-account-hosted-baseline-manifest.mjs']) {
       const result = command(root, script)
       assert.equal(result.status, 0, `${script}: ${result.stderr}`)
+    }
+    for (const [manifest, source, section] of [
+      ['config/staging-account-activation-manifest.json', file, 'disabledActivationTooling'],
+      ['config/staging-account-hosted-baseline-manifest.json', 'scripts/staging-account-hosted-baseline-vercel.mjs', null],
+    ]) {
+      const data = JSON.parse(readFileSync(join(root, manifest), 'utf8'))
+      const pins = section ? data[section].sources : data.sources
+      const pin = pins.find(entry => entry.path === source)
+      assert.equal(pin?.sha256,
+        createHash('sha256').update(readFileSync(join(root, source))).digest('hex'))
     }
     for (const mode of ['vercel', 'supabase']) {
       const result = command(root, file, [mode])
