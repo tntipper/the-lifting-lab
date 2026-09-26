@@ -202,12 +202,12 @@ export async function enableStagingSurfaces({ ports, heldEvidence, requirements,
     validateRequirements(requirements, now()); journal.transition(intent, 'ENABLE_VERIFIED')
     return stableResult('SURFACES_ENABLED_VERIFIED', { deployment: identity, runtime })
   } catch {
+    if (enabledDeploymentDispatched) {
+      try { journal.transition(intent, 'RECONCILIATION_REQUIRED') } catch { /* preserve durable state */ }
+      return stableResult('HOLD_RECONCILIATION_REQUIRED', { activationAttempted })
+    }
     try {
       const { identity, runtime } = await recoverHeld(ports, requirements, held, startedAt, now)
-      if (enabledDeploymentDispatched) {
-        journal.transition(intent, 'RECONCILIATION_REQUIRED')
-        return stableResult('HOLD_RECONCILIATION_REQUIRED', { activationAttempted, deployment: identity, runtime })
-      }
       journal.transition(intent, 'HOLD'); return stableResult('HOLD', { activationAttempted, deployment: identity, runtime })
     } catch {
       try { journal.transition(intent, 'RECONCILIATION_REQUIRED') } catch { /* preserve durable state */ }

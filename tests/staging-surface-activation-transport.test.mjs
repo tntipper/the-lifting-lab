@@ -29,7 +29,7 @@ function fixture({ failAt, sameDeployment = false, runtimeDrift = false, nowValu
     createPreviewDeployment: async (value, input) => { target(value); events.push('create'); created++; if (failAt === 'create' || (failAt === 'firstCreate' && created === 1)) throw Error('lost acknowledgement')
       assert.deepEqual(input, { branch: STAGING_BRANCH, sourceCommit: requirements.sourceCommit, manifestSha256: requirements.manifestSha256,
         publicCustomer: flags.publicCustomer, publicCart: flags.publicCart }); active = sameDeployment ? oldDeployment : { ...freshDeployment, deploymentId: `dpl_fresh${created}A` }; return { ...active } },
-    readDeployment: async (value, id) => { target(value); events.push('readDeployment'); assert.equal(id, active.deploymentId); return { ...active } },
+    readDeployment: async (value, id) => { target(value); events.push('readDeployment'); if (failAt === 'readDeployment') throw Error('readback unavailable'); assert.equal(id, active.deploymentId); return { ...active } },
     resolveAlias: async (value, alias) => { target(value); events.push('alias'); return { target: STAGING_SURFACE_TARGET, alias, deploymentId: active.deploymentId, immutableUrl: active.immutableUrl } },
     probeTls: async (value, url) => { target(value); events.push('tls'); return { target: STAGING_SURFACE_TARGET, url, tls: true } },
     readRuntimeReadiness: async (value, id) => { target(value); events.push('runtime'); return runtime(id) },
@@ -66,17 +66,42 @@ test('same or runtime-drifted deployment evidence cannot produce a verified stat
   }
 })
 
-test('lost deployment acknowledgement freezes once and never retries enable', async () => {
-  const f = fixture({ failAt: 'create' }), result = await enableStagingSurfaces({ ports: f.ports, heldEvidence: oldDeployment, requirements, journal: journal(), now: f.now })
-  assert.equal(result.status, 'HOLD_RECONCILIATION_REQUIRED'); assert.equal(f.events.filter(value => value === 'create').length, 2)
-  assert.equal(f.events.filter(value => value === 'edge:true').length, 1); assert.equal(f.events.filter(value => value === 'edge:false').length, 1)
+test('lost enabled-build acknowledgement stops without a second build or automatic flag changes', async () => {
+  const f = fixture({ failAt: 'create' }), j = journal()
+  const result = await enableStagingSurfaces({ ports: f.ports, heldEvidence: oldDeployment, requirements, journal: j, now: f.now })
+  assert.equal(result.status, 'HOLD_RECONCILIATION_REQUIRED')
+  assert.equal(f.events.filter(value => value === 'create').length, 1)
+  assert.equal(f.events.filter(value => value === 'edge:true').length, 1)
+  assert.equal(f.events.filter(value => value === 'edge:false').length, 0)
+  assert.equal(j.read().state, 'RECONCILIATION_REQUIRED')
+  assert.equal((await enableStagingSurfaces({ ports: f.ports, heldEvidence: oldDeployment, requirements, journal: j, now: f.now })).status,
+    'HOLD_RECONCILIATION_REQUIRED')
+  assert.equal(f.events.filter(value => value === 'create').length, 1)
 })
 
-test('a held recovery build cannot clear uncertainty from a lost enabled-build acknowledgement', async () => {
+test('a lost enabled-build acknowledgement stays uncertain without an automatic recovery build', async () => {
   const f = fixture({ failAt: 'firstCreate' }), j = journal()
   const result = await enableStagingSurfaces({ ports: f.ports, heldEvidence: oldDeployment, requirements, journal: j, now: f.now })
-  assert.equal(result.status, 'HOLD_RECONCILIATION_REQUIRED'); assert.equal(f.events.filter(value => value === 'create').length, 2)
-  assert.equal(result.runtime.publicCustomerEnabled, false); assert.equal(j.read().state, 'RECONCILIATION_REQUIRED')
+  assert.equal(result.status, 'HOLD_RECONCILIATION_REQUIRED'); assert.equal(f.events.filter(value => value === 'create').length, 1)
+  assert.equal(result.deployment, undefined); assert.equal(j.read().state, 'RECONCILIATION_REQUIRED')
+})
+
+test('failed readback after an accepted enabled build also stops without a second build', async () => {
+  const f = fixture({ failAt: 'readDeployment' }), j = journal()
+  const result = await enableStagingSurfaces({ ports: f.ports, heldEvidence: oldDeployment, requirements, journal: j, now: f.now })
+  assert.equal(result.status, 'HOLD_RECONCILIATION_REQUIRED')
+  assert.equal(f.events.filter(value => value === 'create').length, 1)
+  assert.equal(f.events.filter(value => value === 'edge:false').length, 0)
+  assert.equal(j.read().state, 'RECONCILIATION_REQUIRED')
+})
+
+test('failure before a deployment request retains the existing held recovery path', async () => {
+  const f = fixture({ failAt: 'public:true' }), j = journal()
+  const result = await enableStagingSurfaces({ ports: f.ports, heldEvidence: oldDeployment, requirements, journal: j, now: f.now })
+  assert.equal(result.status, 'HOLD')
+  assert.equal(f.events.filter(value => value === 'create').length, 1)
+  assert.equal(result.runtime.publicCustomerEnabled, false)
+  assert.equal(j.read().state, 'HOLD')
 })
 
 test('a deployment created after operation start but before flag-write completion is rejected', async () => {

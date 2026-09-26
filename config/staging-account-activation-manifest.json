@@ -956,7 +956,7 @@
       },
       {
         "path": "scripts/staging-surface-activation-transport.mjs",
-        "sha256": "a85ecae35ec2cbf5091157726cc18c2e4baaa2986ef0afc6711ae5371d0d9a4c"
+        "sha256": "b044ea4c48f040877cf0c33246d107f90d7d1d9a61d020e6da39ba49d2e90db7"
       },
       {
         "path": "scripts/staging-surface-activation-native-adapter.mjs",
@@ -1324,7 +1324,7 @@
       },
       {
         "path": "tests/staging-surface-activation-transport.test.mjs",
-        "sha256": "6afc591b134b462457cedd91882a937bce147ed2e7042c85a9b6618d8ebdaba8"
+        "sha256": "e7259c3bf0e02b397f72bb2e7634fba25a083ed4be37d33ce09dc210c17387f9"
       },
       {
         "path": "tests/staging-surface-activation-native-adapter.test.mjs",
