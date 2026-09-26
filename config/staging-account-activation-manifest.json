@@ -1143,6 +1143,10 @@
         "sha256": "0c8f4a9605cb827d4f9f5e7ae3eebdfcf9aa236de3d782ebd07ea1ef3cf13141"
       },
       {
+        "path": "scripts/staging-generation-22-process-supervisor.mjs",
+        "sha256": "a10428363afdacb27723271cc6f2ce70acd557c54c885d1af6c3665290f5c8c7"
+      },
+      {
         "path": "scripts/staging-generation-22-retired-query.mjs",
         "sha256": "bb427e147dceee62d545c315eff5ad9ef81f63325a5d2b22214237a4ab95a960"
       },
@@ -1613,6 +1617,10 @@
       {
         "path": "tests/staging-generation-22-recovery-coordinator.test.mjs",
         "sha256": "a6c952af83f42ce813bd95d9f824ae7f5a747d0b75e384d4b4fb4a3047b9ceb6"
+      },
+      {
+        "path": "tests/staging-generation-22-process-supervisor.test.mjs",
+        "sha256": "ec0d7a9a4601bb846a801588535c9bf7d35b46d5c68891374da785a7992fd1d1"
       },
       {
         "path": "tests/staging-generation-22-retired-query.test.mjs",
