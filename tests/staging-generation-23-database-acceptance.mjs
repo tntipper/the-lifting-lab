@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import { EXACT_MIGRATIONS } from '../scripts/staging-generation-21-retirement-preflight.mjs'
 import { IDENTITIES } from '../scripts/staging-generation-21-credentials.mjs'
 import { PASSWORD_PURPOSES } from '../scripts/staging-generation-22-material.mjs'
@@ -83,13 +84,14 @@ async function armedModules() {
     recovery: await import(`data:text/javascript;base64,${Buffer.from(recoveryArmed).toString('base64')}`) }
 }
 
-if (process.argv.slice(2).join(' ') !== '--run-offline-once') throw Error('Explicit local test mode required')
-assert.match(docker(['context', 'inspect', '--format', '{{(index .Endpoints "docker").Host}}']), /^unix:\/\//)
-assert.equal(docker(['ps', '-a', '--filter', `name=^/${name}$`, '--format', '{{.Names}}']), '')
-docker(['run', '--rm', '-d', '--name', name, '--network', 'none',
-  '-e', 'POSTGRES_USER=tll_local_admin', '-e', 'POSTGRES_PASSWORD=synthetic-local-admin',
-  '-e', 'POSTGRES_HOST_AUTH_METHOD=scram-sha-256', 'postgres:17-alpine'])
-try {
+/** One disposable, networkless fixture shared by the standalone and joined tests. */
+export async function createStagingGeneration23LocalDatabaseFixture() {
+  assert.match(docker(['context', 'inspect', '--format', '{{(index .Endpoints "docker").Host}}']), /^unix:\/\//)
+  assert.equal(docker(['ps', '-a', '--filter', `name=^/${name}$`, '--format', '{{.Names}}']), '')
+  docker(['run', '--rm', '-d', '--name', name, '--network', 'none',
+    '-e', 'POSTGRES_USER=tll_local_admin', '-e', 'POSTGRES_PASSWORD=synthetic-local-admin',
+    '-e', 'POSTGRES_HOST_AUTH_METHOD=scram-sha-256', 'postgres:17-alpine'])
+  try {
   let ready = false
   for (let index = 0; index < 100; index++) {
     try {
@@ -103,55 +105,97 @@ try {
   assert.match(docker(['inspect', '--format', '{{.Config.Image}} {{.HostConfig.NetworkMode}}', name]), /^postgres:17-alpine none$/)
   sql('tll_local_admin', fixtureSql())
   const { credentials, recovery } = await armedModules()
-  const { buildStagingGeneration23CredentialSql, validateStagingGeneration23CredentialReceipt } = credentials
-  const built = buildStagingGeneration23CredentialSql({ expiresAt, verifiers })
-  const rows = [{ tll_generation_23_credential_receipt: JSON.parse(sql('postgres', built)) }]
-  const result = validateStagingGeneration23CredentialReceipt(rows, { expiresAt })
-  assert.equal(result.status, 'PASS')
-  assert.equal(sql('postgres', `SELECT count(*) FROM pg_roles WHERE rolname IN
+  let state = 'READY', built, recoverySql, removed = false
+  return Object.freeze({
+    expiresAt,
+    setup() {
+      assert.equal(state, 'READY')
+      state = 'SETUP_DISPATCHED'
+      built = credentials.buildStagingGeneration23CredentialSql({ expiresAt, verifiers })
+      const rows = [{ tll_generation_23_credential_receipt: JSON.parse(sql('postgres', built)) }]
+      const result = credentials.validateStagingGeneration23CredentialReceipt(rows, { expiresAt })
+      assert.equal(result.status, 'PASS')
+      state = 'ACTIVE'
+      return result
+    },
+    proveRestrictedConnections() {
+      assert.equal(state, 'ACTIVE')
+      assert.equal(sql('postgres', `SELECT count(*) FROM pg_roles WHERE rolname IN
     (${PASSWORD_PURPOSES.map(purpose => quote(IDENTITIES[purpose].login)).join(',')})
     AND rolcanlogin AND rolvaliduntil=${quote(expiresAt)}::timestamptz`), '5')
-  assert.equal(sql('postgres', `SELECT count(*) FROM pg_authid WHERE rolname IN
+      assert.equal(sql('postgres', `SELECT count(*) FROM pg_authid WHERE rolname IN
     (${PASSWORD_PURPOSES.map(purpose => quote(IDENTITIES[purpose].login)).join(',')})
     AND rolpassword IS NOT NULL`), '5')
-  docker(['exec', '-i', name, 'sh', '-c', 'cat > "$PGDATA/pg_hba.conf"'],
+      docker(['exec', '-i', name, 'sh', '-c', 'cat > "$PGDATA/pg_hba.conf"'],
     'local all all trust\nhost all all 127.0.0.1/32 scram-sha-256\nhost all all ::1/128 scram-sha-256\n')
-  assert.equal(sql('tll_local_admin', 'SELECT pg_reload_conf()'), 't')
-  for (const purpose of PASSWORD_PURPOSES) {
-    const login = IDENTITIES[purpose].login
-    assert.equal(docker(['exec', '-e', `PGPASSWORD=${passwords[purpose]}`, name, 'psql', '-XqAt',
+      assert.equal(sql('tll_local_admin', 'SELECT pg_reload_conf()'), 't')
+      for (const purpose of PASSWORD_PURPOSES) {
+        const login = IDENTITIES[purpose].login
+        assert.equal(docker(['exec', '-e', `PGPASSWORD=${passwords[purpose]}`, name, 'psql', '-XqAt',
       '-h', '127.0.0.1', '-U', login, '-d', 'postgres', '-v', 'ON_ERROR_STOP=1',
       '-c', 'SELECT current_user']), login)
-    assert.throws(() => docker(['exec', '-e', 'PGPASSWORD=wrong-synthetic-password', name,
+        assert.throws(() => docker(['exec', '-e', 'PGPASSWORD=wrong-synthetic-password', name,
       'psql', '-XqAt', '-h', '127.0.0.1', '-U', login, '-d', 'postgres', '-v', 'ON_ERROR_STOP=1',
       '-c', 'SELECT 1']), /Command failed/)
-    assert.throws(() => docker(['exec', '-e', `PGPASSWORD=${passwords[purpose]}`, name,
+        assert.throws(() => docker(['exec', '-e', `PGPASSWORD=${passwords[purpose]}`, name,
       'psql', '-XqAt', '-h', '127.0.0.1', '-U', login, '-d', 'postgres', '-v', 'ON_ERROR_STOP=1',
       '-c', `SELECT * FROM tll_${purpose}_private.control`]), /Command failed/)
-  }
-  assert.throws(() => sql('postgres', built), /Command failed/,
+      }
+      assert.throws(() => sql('postgres', built), /Command failed/,
     'the same installation must be rejected after roles become active')
-  const recoverySql = recovery.buildStagingGeneration23RecoverySql({ expiresAt })
-  const recoveryRows = [{ tll_generation_23_recovery_receipt: JSON.parse(sql('postgres', recoverySql)) }]
-  assert.equal(recovery.validateStagingGeneration23RecoveryReceipt(recoveryRows, { expiresAt }).status,
-    'PASS_RETIRED')
-  assert.equal(sql('postgres', `SELECT count(*) FROM pg_roles WHERE rolname IN
+      state = 'CONNECTIONS_PROVED'
+      return { status: 'PASS', runtimeCount: 5 }
+    },
+    retire() {
+      assert.equal(state, 'CONNECTIONS_PROVED')
+      state = 'RETIRE_DISPATCHED'
+      recoverySql = recovery.buildStagingGeneration23RecoverySql({ expiresAt })
+      const rows = [{ tll_generation_23_recovery_receipt: JSON.parse(sql('postgres', recoverySql)) }]
+      const result = recovery.validateStagingGeneration23RecoveryReceipt(rows, { expiresAt })
+      assert.equal(result.status, 'PASS_RETIRED')
+      state = 'RETIRED'
+      return result
+    },
+    proveRetired() {
+      assert.equal(state, 'RETIRED')
+      assert.equal(sql('postgres', `SELECT count(*) FROM pg_roles WHERE rolname IN
     (${PASSWORD_PURPOSES.map(purpose => quote(IDENTITIES[purpose].login)).join(',')})
     AND NOT rolcanlogin AND rolvaliduntil='infinity'::timestamptz`), '5')
-  assert.equal(sql('postgres', `SELECT count(*) FROM pg_authid WHERE rolname IN
+      assert.equal(sql('postgres', `SELECT count(*) FROM pg_authid WHERE rolname IN
     (${PASSWORD_PURPOSES.map(purpose => quote(IDENTITIES[purpose].login)).join(',')})
     AND rolpassword IS NOT NULL`), '0')
-  for (const purpose of PASSWORD_PURPOSES) {
-    assert.throws(() => docker(['exec', '-e', `PGPASSWORD=${passwords[purpose]}`, name,
+      for (const purpose of PASSWORD_PURPOSES) {
+        assert.throws(() => docker(['exec', '-e', `PGPASSWORD=${passwords[purpose]}`, name,
       'psql', '-XqAt', '-h', '127.0.0.1', '-U', IDENTITIES[purpose].login,
       '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-c', 'SELECT 1']), /Command failed/)
-  }
-  assert.throws(() => sql('postgres', recoverySql), /Command failed/,
+      }
+      assert.throws(() => sql('postgres', recoverySql), /Command failed/,
     'retirement cannot be replayed after roles are already retired')
-  console.log(JSON.stringify({ status: 'PASS_LOCAL_GEN23_DATABASE_LIFECYCLE',
+      state = 'RETIREMENT_PROVED'
+      return Object.freeze({ status: 'PASS_LOCAL_GEN23_DATABASE_LIFECYCLE',
     project: 'isolated-networkless-docker', runtimeCount: 5, passwordProof: 'SCRAM',
     wrongPasswordRejected: true, privateControlReadDenied: true,
-    setupReplayRejected: true, retiredLoginRejected: true, recoveryReplayRejected: true }))
-} finally {
-  try { docker(['rm', '-f', name]) } catch { /* preserve original failure */ }
+    setupReplayRejected: true, retiredLoginRejected: true, recoveryReplayRejected: true })
+    },
+    dispose() {
+      if (removed) return
+      removed = true
+      try { docker(['rm', '-f', name]) } catch { /* preserve original failure */ }
+    },
+  })
+  } catch (error) {
+    try { docker(['rm', '-f', name]) } catch { /* preserve original failure */ }
+    throw error
+  }
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  if (process.argv.slice(2).join(' ') !== '--run-offline-once') throw Error('Explicit local test mode required')
+  const fixture = await createStagingGeneration23LocalDatabaseFixture()
+  try {
+    fixture.setup()
+    fixture.proveRestrictedConnections()
+    fixture.retire()
+    console.log(JSON.stringify(fixture.proveRetired()))
+  } finally { fixture.dispose() }
 }
