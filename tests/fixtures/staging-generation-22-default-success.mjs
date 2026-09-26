@@ -1,5 +1,7 @@
 /** Runs only against an isolated, locally armed source copy with synthetic I/O. */
 import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
+import { PassThrough } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { join } from 'node:path'
 
@@ -7,7 +9,8 @@ const directory = process.argv[2]
 const mode = process.argv[3] ?? 'success'
 if (!directory) throw Error('isolated fixture directory required')
 if (!['success', 'lost-middle', 'lost-retirement', 'entry-success',
-  'entry-lost-middle'].includes(mode)) throw Error('unknown fixture mode')
+  'entry-lost-middle', 'entry-transport-success',
+  'entry-transport-lost-first', 'entry-reader-second-fail'].includes(mode)) throw Error('unknown fixture mode')
 const load = async name => import(pathToFileURL(join(directory, 'scripts', name)).href)
 const [{ createStagingGeneration22WorkerAssembly: assemble, FIXED_GENERATION_22_PARTS: fixed },
   credential, recovery, active, retired, material, baseline, verifier, identities] = await Promise.all([
@@ -149,7 +152,120 @@ const parts = { ...fixed, createRuntime,
   },
 }
 
-if (mode.startsWith('entry-')) {
+if (mode.startsWith('entry-transport-') || mode === 'entry-reader-second-fail') {
+  const [entry, reader, credentialQuery, activeQuery, recoveryQuery, retiredQuery] = await Promise.all([
+    load('staging-generation-22-worker-entry.mjs'),
+    load('staging-generation-22-keychain-reader.mjs'),
+    load('staging-generation-22-supabase-query.mjs'),
+    load('staging-generation-22-active-query.mjs'),
+    load('staging-generation-22-recovery-query.mjs'),
+    load('staging-generation-22-retired-query.mjs'),
+  ])
+  let owned
+  const requestFor = (operation, payload, readOnly) => (options, callback) => {
+    assert.equal(options.hostname, 'api.supabase.com')
+    assert.equal(options.path, `/v1/projects/${material.PROJECT_REF}/database/query`)
+    assert.equal(options.method, 'POST')
+    assert.equal(options.rejectUnauthorized, true)
+    assert.equal(options.minVersion, 'TLSv1.2')
+    assert.equal(options.headers.Authorization,
+      `Bearer ${owned.managementToken.toString('utf8')}`)
+    const req = new EventEmitter()
+    req.destroy = () => { req.destroyed = true }
+    req.end = body => {
+      const input = JSON.parse(body.toString('utf8'))
+      assert.equal(input.read_only, readOnly)
+      assert.match(input.query, readOnly ? /^BEGIN READ ONLY;/ : /^BEGIN;/)
+      events.push(operation)
+      if (mode === 'entry-transport-lost-first' && operation === 'database-install') {
+        queueMicrotask(() => req.emit('error', Error('synthetic accepted request lost its reply')))
+        return
+      }
+      queueMicrotask(() => {
+        const res = new EventEmitter()
+        res.statusCode = 201
+        res.headers = { 'content-type': 'application/json' }
+        res.destroy = () => { res.destroyed = true }
+        callback(res)
+        if (!res.destroyed) {
+          res.emit('data', Buffer.from(JSON.stringify(payload)))
+          res.emit('end')
+        }
+      })
+    }
+    return req
+  }
+  const transportParts = { ...parts,
+    postCredential: (packet, { token, signal }) => credentialQuery.postStagingGeneration22CredentialSql(
+      packet, { token, signal, request: requestFor('database-install',
+        [{ tll_generation_22_credential_receipt: receipt('PASS',
+          { kind: 'packageId', value: credential.PACKAGE_ID }, credential.ACTIVE_WINDOW_EXPIRES_AT) }], false) }),
+    postActive: (expiresAt, { token, signal }) => activeQuery.postStagingGeneration22ActiveCheck(
+      expiresAt, { token, signal, request: requestFor('active-read',
+        [{ tll_generation_22_active_check: {
+          ...receipt('PASS_ACTIVE', { kind: 'queryId', value: active.QUERY_ID }, expiresAt),
+          runtimeSessions: 0,
+        } }], true) }),
+    postRecovery: (packet, { token, signal }) => recoveryQuery.postStagingGeneration22RecoverySql(
+      packet, { token, signal, request: requestFor('retirement',
+        [{ tll_generation_22_recovery_receipt: receipt('PASS_RETIRED',
+          { kind: 'recoveryId', value: recovery.RECOVERY_ID }, credential.ACTIVE_WINDOW_EXPIRES_AT) }], false) }),
+    postRetired: (expiresAt, { token, signal }) => retiredQuery.postStagingGeneration22RetiredCheck(
+      expiresAt, { token, signal, request: requestFor('retired-read',
+        [{ tll_generation_22_retired_check: {
+          ...receipt('PASS_RETIRED', { kind: 'queryId', value: retired.QUERY_ID }, expiresAt),
+          runtimeSessions: 0,
+        } }], true) }),
+  }
+  const passed = await entry.runStagingGeneration22Worker({
+    signal: new AbortController().signal,
+    readCredentials: async ({ signal }) => {
+      owned = await reader.readStagingGeneration22Credentials({ signal,
+        stopWorkerGroup() { throw Error('unexpected group stop') },
+        spawnProcess(executable, args, options) {
+          assert.equal(executable, reader.GENERATION_22_PYTHON)
+          assert.deepEqual(args.slice(0, 3), ['-I', '-S', reader.GENERATION_22_KEYCHAIN_HELPER])
+          assert.deepEqual(options.env, { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' })
+          assert.ok(['supabase', 'vercel'].includes(args[3]))
+          const child = new EventEmitter()
+          child.stdout = new PassThrough()
+          child.kill = () => { throw Error('unexpected helper kill') }
+          queueMicrotask(() => {
+            child.stdout.write(Buffer.from(args[3] === 'supabase' ? managementToken
+              : mode === 'entry-reader-second-fail' ? 'bad' : vercelToken))
+            child.stdout.end()
+            child.emit('close', 0)
+          })
+          events.push(`helper:${args[3]}`)
+          return child
+        },
+      })
+      return owned
+    },
+    createWorker: credentials => assemble({ ...credentials, parts: transportParts, fetcher }),
+    write: value => new Promise((resolveWrite, rejectWrite) => {
+      process.stdout.write(value, error => error ? rejectWrite(error) : resolveWrite())
+    }),
+  })
+  if (mode === 'entry-reader-second-fail') {
+    assert.equal(owned, undefined)
+    assert.equal(events.some(event => event === 'database-install'), false)
+  } else {
+    assert.equal(owned.managementToken.every(byte => byte === 0), true)
+    assert.equal(owned.vercelToken.every(byte => byte === 0), true)
+  }
+  assert.deepEqual(events.slice(0, 2), ['helper:supabase', 'helper:vercel'])
+  if (mode === 'entry-transport-success') {
+    assert.deepEqual(events.filter(event => ['database-install', 'active-read',
+      'retirement', 'retired-read'].includes(event)),
+    ['database-install', 'active-read', 'retirement', 'retired-read'])
+  } else if (mode === 'entry-transport-lost-first') assert.deepEqual(events.filter(event => [
+    'database-install', 'active-read', 'retirement', 'retired-read'].includes(event)),
+  ['database-install'])
+  if (mode === 'entry-transport-lost-first') assert.equal(environment.length, 0)
+  managementToken.fill(0); vercelToken.fill(0)
+  process.exitCode = passed ? 0 : 1
+} else if (mode.startsWith('entry-')) {
   const entry = await load('staging-generation-22-worker-entry.mjs')
   const passed = await entry.runStagingGeneration22Worker({
     signal: new AbortController().signal,

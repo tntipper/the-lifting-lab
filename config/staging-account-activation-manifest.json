@@ -1664,11 +1664,11 @@
       },
       {
         "path": "tests/staging-generation-22-default-process.test.mjs",
-        "sha256": "0a77a2b830f83f243eb35b914731fd05878a9f80aacd5f0fdd4ade97ab8f1a27"
+        "sha256": "f08a43413495f09504321dd448f9aa210876c02504e7eae01c5020fe2bb12d68"
       },
       {
         "path": "tests/fixtures/staging-generation-22-default-success.mjs",
-        "sha256": "c716b3b5a3134038fe544b5754d4f841126c75117369ab3ce9e672cb4167f409"
+        "sha256": "0c09cdcbee9f7f0b1456e710bfc54b90df5617b809dd4b3e4c47be09e99a3f24"
       },
       {
         "path": "tests/fixtures/staging-generation-22-network-deny.mjs",

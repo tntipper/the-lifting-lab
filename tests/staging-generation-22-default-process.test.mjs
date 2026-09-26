@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
-import { cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync,
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync,
   writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -29,7 +29,8 @@ const activeFiles = Object.freeze([
   'connection-proof', 'setup-coordinator', 'recovery-host',
   'recovery-coordinator', 'worker-core', 'worker-assembly', 'recovery',
   'active-check', 'retired-check', 'readback', 'worker-entry',
-  'process-binding', 'process-supervisor',
+  'process-binding', 'process-supervisor', 'keychain-reader',
+  'supabase-query', 'recovery-query', 'active-query', 'retired-query',
 ])
 
 function isolatedSources(t) {
@@ -154,6 +155,9 @@ for (const [mode, expected] of [
 for (const [mode, expectedStatus, expectedSetup, expectedRecovery] of [
   ['entry-success', 'VERIFIED_CONTROLS_DISABLED', 'FINISHED', 'FINISHED'],
   ['entry-lost-middle', 'CHILD_EXIT_RECONCILIATION_REQUIRED', 'HOLD', 'CLAIMED'],
+  ['entry-transport-success', 'VERIFIED_CONTROLS_DISABLED', 'FINISHED', 'FINISHED'],
+  ['entry-transport-lost-first', 'CHILD_EXIT_RECONCILIATION_REQUIRED', 'HOLD', 'CLAIMED'],
+  ['entry-reader-second-fail', 'CHILD_EXIT_RECONCILIATION_REQUIRED', null, null],
 ]) test(`fixed parent and child accept ${mode} only after their local proof`, async t => {
   const fixture = isolatedSources(t)
   const runner = fileURLToPath(new URL('./fixtures/staging-generation-22-default-success.mjs', import.meta.url))
@@ -183,11 +187,20 @@ for (const [mode, expectedStatus, expectedSetup, expectedRecovery] of [
   const supervisor = createSupervisor({ spawnWorker, timeoutMs: 20_000,
     termGraceMs: 100 })
   const result = await supervisor.supervise({ signal: new AbortController().signal })
-  assert.equal(result.status, expectedStatus, childStderr)
-  const setup = JSON.parse(readFileSync(join(fixture.directory, 'implementation-state',
-    'staging', 'tll-generation-22-dispatch-v1.json'), 'utf8'))
-  const recovery = JSON.parse(readFileSync(join(fixture.directory, 'implementation-state',
-    'staging', 'tll-generation-22-recovery-dispatch-v1.json'), 'utf8'))
+  const setupPath = join(fixture.directory, 'implementation-state',
+    'staging', 'tll-generation-22-dispatch-v1.json')
+  const recoveryPath = join(fixture.directory, 'implementation-state',
+    'staging', 'tll-generation-22-recovery-dispatch-v1.json')
+  if (expectedSetup === null) {
+    assert.equal(result.status, expectedStatus, childStderr)
+    assert.equal(existsSync(setupPath), false)
+    assert.equal(existsSync(recoveryPath), false)
+    return
+  }
+  const setup = JSON.parse(readFileSync(setupPath, 'utf8'))
+  const recovery = JSON.parse(readFileSync(recoveryPath, 'utf8'))
+  assert.equal(result.status, expectedStatus,
+    `${childStderr}\nsetup=${setup.state}/${setup.pending} recovery=${recovery.state}/${recovery.pending}`)
   assert.equal(setup.state, expectedSetup)
   assert.equal(recovery.state, expectedRecovery)
 })
