@@ -101,6 +101,25 @@ test('boundary keeps the Preview environment inventory gates disabled and requir
   ])
 })
 
+test('boundary keeps the minimum Supabase read gates disabled and requires its journal', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-minimum-configuration-live-launcher.mjs'),
+    'const createStagingMinimumConfigurationJournal = null\nexport const STAGING_MINIMUM_CONFIGURATION_LIVE_ENABLED = (true)\n')
+  writeFileSync(join(root, 'scripts/staging-minimum-configuration-keychain.py'),
+    'APPROVED_MINIMUM_SUPABASE_READ = True\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-keychain-read:scripts/staging-minimum-configuration-keychain.py',
+    'enabled-native-gate:scripts/staging-minimum-configuration-live-launcher.mjs',
+  ])
+  writeFileSync(join(root, 'scripts/staging-minimum-configuration-live-launcher.mjs'),
+    'export const STAGING_MINIMUM_CONFIGURATION_LIVE_ENABLED = false\n')
+  writeFileSync(join(root, 'scripts/staging-minimum-configuration-keychain.py'),
+    'APPROVED_MINIMUM_SUPABASE_READ = False\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'live-launcher-missing-phase-journal:scripts/staging-minimum-configuration-live-launcher.mjs',
+  ])
+})
+
 test('boundary rejects an armed database rehearsal launcher', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-account-hosted-baseline-db-rehearsal-live-launcher.mjs'),
