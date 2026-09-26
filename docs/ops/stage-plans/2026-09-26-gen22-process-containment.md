@@ -13,3 +13,35 @@ Keep the existing disabled setup and recovery components. Put all password-beari
 Build in order: (1) disabled parent state machine and synthetic child-process tests; (2) fixed child binding with existing setup/recovery journals, credentials and hosts; (3) connection proof within the child before its passwords are erased; (4) whole-sequence fake-network success and failure tests; (5) independent review, fresh staging baselines, exact arming diff and separate action-time approval. Do not arm after only step 1.
 
 The parent tests must cover no child while disabled, exact success after child close, a child ignoring TERM followed by group KILL and observed close, oversized or secret-bearing output never forwarded, failure to close never presented as success, and no parent-side recovery before exit. The child tests must cover runtime close rejection/hang, no post-abort host step, five-login success, and one-use recovery after any uncertain setup.
+
+## Whole-run map before the next connector
+
+This section is the review checklist for the complete run. A component-level PASS does not satisfy a later row. No row authorises hosted access.
+
+| Point in the run | Proof before continuing | Failure handling |
+| --- | --- | --- |
+| Before worker creation | Fresh Supabase and Vercel disabled-state baseline; exact one-use identities, deadlines and unconsumed records; reviewed fixed worker path | Stop without creating passwords or a worker if any input drifts |
+| Parent starts worker | One fixed absolute script, detached process group, minimal secret-free arguments and environment; supervisor-loss pipe held open | Kill the whole process group on timeout, parent loss, invalid output or worker error; no automatic replay |
+| Worker begins | Claim setup and reserve recovery record before credential generation or hosted side effect | A claim failure stops before any host call; preserve both records for reconciliation |
+| Setup | One credential installation and 21 setting writes in journal order, exact receipt after each; controls remain OFF | Uncertain write stops further writes, marks HOLD where durable, and preserves evidence; never repeat a spent capability |
+| Settings readback | Exact staging project/branch, 16 secret names and classifications, Edge name and four OFF values | Do not call this a completed setup merely because the 22 write receipts exist |
+| Five restricted logins | Each temporary password works against the pinned staging database with the expected identity and limited permissions; all five connections and their runtimes close before password erasure | Failure, rejected close or hung close cannot yield success; parent kills the group at the hard deadline and reports reconciliation |
+| Recovery | Fresh exact active-state read, at most one reserved retirement write, then a separate retired-state read after confirmed write | Lost or uncertain retirement response stays HOLD; read-only reconciliation only, never repeat the write |
+| Child terminal | Only after drained connections, erased password buffers, disposed hosts and verified recovery: exact small secret-free JSON and zero exit | Any missing proof, output anomaly or nonzero exit is reconciliation, not success |
+| Parent close | Observe child close and ensure no descendant in its process group can survive a successful leader exit | Kill residual group members; if group containment cannot be established, do not accept success |
+
+### Failure cases to rehearse end to end with fake services
+
+1. Claim or recovery reservation fails before the first host call.
+2. Database installation is accepted but its reply is lost; no later setting write or automatic retry occurs.
+3. A middle setting write is uncertain; later writes stop and the one-use records remain attributable.
+4. Settings readback disagrees with receipts; no restricted-login or success claim follows without reconciliation.
+5. Login 1–5 succeeds or fails independently; a connection that ignores abort, rejects close or hangs close cannot outlive the worker group.
+6. Parent dies while the worker or a subprocess is active; the worker's supervisor-loss watcher kills its group.
+7. Worker exits while a helper has no inherited output pipe; the parent still kills the group before accepting a terminal.
+8. Active-state precheck is wrong, retirement response is lost, or final retired-state read fails; no retirement replay and no success terminal.
+9. Clock moves backwards, deadline expires, output is too large or contains extra fields, or the terminal is duplicated; parent reports reconciliation.
+
+The first child-binding slice should prove process-group ownership and cases 6–7 before credential or hosted code is added. The worker slice then proves cases 1–5 and 8–9 in a complete fake-service rehearsal. The fixed Storefront-token classification and protected Preview build remain separate later gates.
+
+The first whole-run review exposed case 7 in the existing disabled parent: child `close` alone did not stop a helper with no inherited pipe. The parent now kills residual process-group members on leader exit or close and refuses success if that group stop fails for a reason other than the group already being absent. A real local worker-plus-helper test proves this containment; the fixed child binding and supervisor-loss pipe are still absent. This is a corrected offline safety slice, not a completed Gen22 worker or staging gate.

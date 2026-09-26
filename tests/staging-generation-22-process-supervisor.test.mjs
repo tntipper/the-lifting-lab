@@ -2,6 +2,10 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { EventEmitter } from 'node:events'
+import { spawn, execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 import { createStagingGeneration22ProcessSupervisor } from '../scripts/staging-generation-22-process-supervisor.mjs'
@@ -52,9 +56,9 @@ test('disabled parent starts no worker', () => {
 })
 
 test('exact secret-free terminal and zero exit are accepted only after child close', async () => {
-  const create = await armed(), worker = child()
+  const create = await armed(), worker = child(), signals = []
   const supervisor = create({ spawnWorker: () => worker, now, timeoutMs: 100,
-    killGroup() { throw new Error('unexpected kill') } })
+    killGroup(pid, signal) { signals.push([pid, signal]) } })
   const pending = supervisor.supervise({ signal: new AbortController().signal })
   worker.stdout.write(Buffer.from(JSON.stringify(terminal) + '\n'))
   let settled = false
@@ -63,7 +67,54 @@ test('exact secret-free terminal and zero exit are accepted only after child clo
   assert.equal(settled, false)
   worker.emit('close', 0, null)
   assert.equal((await pending).status, 'VERIFIED_CONTROLS_DISABLED')
+  assert.deepEqual(signals, [[worker.pid, 'SIGKILL']])
   await assert.rejects(supervisor.supervise({ signal: new AbortController().signal }), /unavailable/)
+})
+
+test('normal worker exit kills a pipe-free descendant before accepting success', async t => {
+  const create = await armed()
+  const directory = mkdtempSync(join(tmpdir(), 'tll-gen22-group-'))
+  const marker = join(directory, 'pid')
+  let leaderPid, descendantPid
+  const running = pid => {
+    try {
+      return !/^[Z]/.test(execFileSync('/bin/ps', ['-o', 'stat=', '-p', String(pid)],
+        { encoding: 'utf8' }).trim())
+    } catch { return false }
+  }
+  t.after(() => {
+    if (leaderPid) { try { process.kill(-leaderPid, 'SIGKILL') } catch {} }
+    if (descendantPid && running(descendantPid)) { try { process.kill(descendantPid, 'SIGKILL') } catch {} }
+    rmSync(directory, { recursive: true, force: true })
+  })
+  const code = `const {spawn}=require('node:child_process');const fs=require('node:fs');`
+    + `const child=spawn('/bin/sleep',['30'],{stdio:'ignore'});`
+    + `child.unref();child.once('spawn',()=>{fs.writeFileSync(process.argv[1],String(child.pid));`
+    + `process.stdout.write(${JSON.stringify(JSON.stringify(terminal) + '\n')});});`
+  const supervisor = create({ spawnWorker() {
+    const worker = spawn(process.execPath, ['-e', code, marker], {
+      detached: true, env: { PATH: '/usr/bin:/bin', LANG: 'C' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    leaderPid = worker.pid
+    return worker
+  }, now, timeoutMs: 2_000 })
+  const result = await supervisor.supervise({ signal: new AbortController().signal })
+  assert.equal(existsSync(marker), true)
+  descendantPid = Number(readFileSync(marker, 'utf8'))
+  assert.equal(result.status, 'VERIFIED_CONTROLS_DISABLED')
+  assert.equal(running(descendantPid), false)
+})
+
+test('failed residual-group stop cannot be reported as success', async () => {
+  const create = await armed(), worker = child()
+  const supervisor = create({ spawnWorker: () => worker, now, timeoutMs: 100,
+    killGroup() { throw Object.assign(new Error('group not stopped'), { code: 'EPERM' }) } })
+  const pending = supervisor.supervise({ signal: new AbortController().signal })
+  worker.stdout.write(Buffer.from(JSON.stringify(terminal) + '\n'))
+  worker.emit('exit', 0, null)
+  worker.emit('close', 0, null)
+  assert.equal((await pending).status, 'CHILD_EXIT_RECONCILIATION_REQUIRED')
 })
 
 test('child ignoring TERM is KILLed as a group and parent waits for close', async () => {
@@ -107,7 +158,7 @@ test('abort prevents a late PASS even if the child prints a valid terminal and e
   worker.stdout.write(Buffer.from(JSON.stringify(terminal) + '\n'))
   worker.emit('close', 0, null)
   assert.equal((await pending).status, 'CHILD_EXIT_RECONCILIATION_REQUIRED')
-  assert.deepEqual(signals, ['SIGTERM'])
+  assert.deepEqual(signals, ['SIGTERM', 'SIGKILL'])
 })
 
 test('oversized and duplicate-key output cannot become a terminal receipt', async () => {

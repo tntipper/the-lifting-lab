@@ -50,6 +50,7 @@ export function createStagingGeneration22ProcessSupervisor({ spawnWorker,
         || typeof child.stderr?.on !== 'function') unavailable()
       return new Promise(resolve => {
         let closed = false, terminated = false, outputUnsafe = false, outputBytes = 0
+        let groupStopped = false
         let deadlineTimer, killTimer
         const output = []
         const requestStop = () => {
@@ -76,8 +77,20 @@ export function createStagingGeneration22ProcessSupervisor({ spawnWorker,
           requestStop()
         }
         const onError = () => { outputUnsafe = true; requestStop() }
+        const stopRemainingGroup = () => {
+          if (groupStopped) return
+          try { killGroup(child.pid, 'SIGKILL'); groupStopped = true }
+          catch (error) {
+            if (error?.code === 'ESRCH') groupStopped = true
+            else outputUnsafe = true
+          }
+        }
+        // A descendant without an inherited pipe can survive leader exit and
+        // otherwise be invisible to the child's close event.
+        const onExit = () => stopRemainingGroup()
         const onClose = (code, exitSignal) => {
           if (closed) return
+          stopRemainingGroup()
           const finishedAt = now(), finishedMono = monotonicNow()
           const withinTime = Number.isFinite(finishedAt) && finishedAt >= startedAt
             && finishedAt < recoveryDeadline && Number.isFinite(finishedMono)
@@ -104,6 +117,7 @@ export function createStagingGeneration22ProcessSupervisor({ spawnWorker,
         child.stdout.on('data', onOutput)
         child.stderr.on('data', onErrorOutput)
         child.once('error', onError)
+        child.once('exit', onExit)
         child.once('close', onClose)
         signal.addEventListener('abort', requestStop, { once: true })
         if (signal.aborted) requestStop()
