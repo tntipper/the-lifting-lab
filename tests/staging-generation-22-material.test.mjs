@@ -5,7 +5,9 @@ import {
   MISSING_SUPABASE_SECRET_NAMES, DISABLED_VERCEL_CONFIGURATION,
   generateStagingGeneration22Material, eraseStagingGeneration22Material,
   projectStagingGeneration22Material, clearStagingGeneration22Projection,
+  deriveStagingGeneration22Verifiers,
 } from '../scripts/staging-generation-22-material.mjs'
+import { deriveScramVerifier } from '../scripts/staging-generation-6-transport.mjs'
 
 const expected = [
   'TLL_STAGING_BRIDGE_DATABASE_PASSWORD', 'TLL_STAGING_BROKER_DATABASE_PASSWORD',
@@ -73,4 +75,21 @@ test('duplicate vault identifiers fail and wipe material', () => {
     randomUUID: () => '00000000-0000-4000-8000-000000000001',
   }), /unavailable/)
   assert.equal(buffers.every(buffer => buffer.every(byte => byte === 0)), true)
+})
+
+test('database verifiers derive from the exact hosted password text', () => {
+  const material = generateStagingGeneration22Material(fixture())
+  const projected = projectStagingGeneration22Material(material)
+  let saltNo = 1
+  const verifiers = deriveStagingGeneration22Verifiers(projected,
+    { randomBytes: size => Buffer.alloc(size, saltNo++) })
+  for (const [index, purpose] of ['customer', 'cart', 'broker', 'provisional', 'bridge'].entries()) {
+    const hostedPassword = projected.vercel[`TLL_STAGING_${purpose.toUpperCase()}_DATABASE_PASSWORD`]
+    assert.equal(verifiers[purpose], deriveScramVerifier(hostedPassword, Buffer.alloc(18, index + 1)))
+    assert.notEqual(verifiers[purpose], deriveScramVerifier(Buffer.from(hostedPassword, 'base64url'), Buffer.alloc(18, index + 1)))
+  }
+  projected.supabase.TLL_STAGING_BROKER_DATABASE_PASSWORD = 'different'
+  assert.throws(() => deriveStagingGeneration22Verifiers(projected), /unavailable/)
+  clearStagingGeneration22Projection(projected)
+  eraseStagingGeneration22Material(material)
 })

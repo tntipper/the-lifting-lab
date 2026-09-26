@@ -1,6 +1,7 @@
 /** Disabled, offline-only material for the 16 missing staging credentials. */
 import { randomBytes as systemRandomBytes, randomUUID as systemRandomUUID } from 'node:crypto'
 import { STAGING_PROJECT_REF } from './staging-provider-broker-rotation.mjs'
+import { deriveScramVerifier } from './staging-generation-6-transport.mjs'
 
 export const STAGING_GENERATION_22_MATERIAL_ENABLED = false
 export const GENERATION = 22
@@ -102,4 +103,23 @@ export function clearStagingGeneration22Projection(projection) {
     if (!group || typeof group !== 'object') continue
     for (const key of Object.keys(group)) group[key] = undefined
   }
+}
+
+/** Derive database checks from the exact encoded passwords sent to Vercel. */
+export function deriveStagingGeneration22Verifiers(projection, { randomBytes = systemRandomBytes } = {}) {
+  if (!projection || !exact(projection.vercel, MISSING_VERCEL_SECRET_NAMES)
+    || !exact(projection.supabase, MISSING_SUPABASE_SECRET_NAMES)
+    || typeof randomBytes !== 'function') unavailable()
+  const verifiers = {}
+  for (const purpose of PASSWORD_PURPOSES) {
+    const name = `TLL_STAGING_${purpose.toUpperCase()}_DATABASE_PASSWORD`
+    const password = projection.vercel[name]
+    if (typeof password !== 'string' || !/^[A-Za-z0-9_-]{64}$/.test(password)
+      || (purpose === 'broker' && projection.supabase.TLL_STAGING_BROKER_DATABASE_PASSWORD !== password)) unavailable()
+    const salt = randomBytes(18)
+    if (!Buffer.isBuffer(salt) || salt.length !== 18) unavailable()
+    try { verifiers[purpose] = deriveScramVerifier(password, salt) }
+    finally { salt.fill(0) }
+  }
+  return verifiers
 }
