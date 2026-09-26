@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "7cd58a2b166c6aee16f638d74b37f5fb290965bf89ae35fe1f3bccece35c4b78"
+        "sha256": "90389082ae48148eeef8e9a73a0213aa76a38b0675c6ca1ca73b592b8754c20b"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -1143,6 +1143,10 @@
         "sha256": "323ff7086c002c73c46014d82697bf849bb240c4c33374173d567320b2bbe158"
       },
       {
+        "path": "scripts/staging-generation-23-predecessor-live-launcher.mjs",
+        "sha256": "02a171719d13554f0407102dd38fcb56521a2548be9ea40b98deb515d2c8b0f4"
+      },
+      {
         "path": "scripts/staging-generation-22-preflight-assessment.mjs",
         "sha256": "462c6bdadf236303387ae67d3a3f217558591ede2e4a9f573894fdb9eadd0304"
       },
@@ -1705,6 +1709,10 @@
       {
         "path": "tests/staging-generation-23-vercel-inventory-reader.test.mjs",
         "sha256": "eb60be29ce845806e6edb190ad3736596f2d779517a59646ee4a0f2946792587"
+      },
+      {
+        "path": "tests/staging-generation-23-predecessor-live-launcher.test.mjs",
+        "sha256": "40abcf60f73ca16d2294f246c055308e1099ca103f9c6880fcbb9d0bbbce1094"
       },
       {
         "path": "tests/staging-generation-22-credentials.test.mjs",
