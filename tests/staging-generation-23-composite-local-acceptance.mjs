@@ -17,7 +17,7 @@ import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/
 
 const mode = process.argv.slice(2).join(' ')
 if (!['--run-offline-once', '--fail-first-setting-once',
-  '--fail-setup-reply-once', '--fail-shutdown-reply-once',
+  '--fail-setup-reply-once', '--abort-setup-once', '--fail-shutdown-reply-once',
   '--fail-retirement-reply-once'].includes(mode)) {
   throw Error('Explicit local test mode required')
 }
@@ -87,6 +87,7 @@ const shutdownJournal = databaseJournal('SHUTDOWN')
 const retirementJournal = databaseJournal('RETIRE')
 syntheticToken = Buffer.from(`sbp_${'a'.repeat(40)}`)
 const httpRequests = []
+let parent
 const localRequest = action => (options, callback) => {
   assert.equal(options.hostname, 'api.supabase.com')
   assert.equal(options.path, `/v1/projects/${PROJECT_REF}/database/query`)
@@ -97,6 +98,7 @@ const localRequest = action => (options, callback) => {
   req.destroy = () => { req.destroyed = true }
   req.end = body => {
     httpRequests.push(action)
+    if (action === 'SETUP' && mode === '--abort-setup-once') parent.abort()
     queueMicrotask(() => {
       if (req.destroyed) return
       try {
@@ -210,8 +212,10 @@ const providerPort = {
   },
 }
 const calls = []
-const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
+const phaseErrors = []
+const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signal }) => {
   calls.push(phase)
+  try {
   switch (phase) {
     case 'baseline':
       assert.equal(active, undefined)
@@ -221,7 +225,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
     case 'settings':
       const settingResult = await settingsCoordinator.run({ targets: settingsTargets,
         projection: database.passwordProjection(), expiresAt: database.expiresAt,
-        signal: new AbortController().signal })
+        signal })
       if (mode === '--fail-first-setting-once') {
         assert.deepEqual(settingResult, { status: 'HOLD_RECONCILE', completedCount: 0 })
         assert.equal(settingsJournal.read().state, 'HOLD')
@@ -235,7 +239,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
     case 'databaseSetup':
       const setupResult = await setupHost.run({ expiresAt: database.expiresAt,
         deadlineAt: database.expiresAt, verifiers: database.verifiers,
-        signal: new AbortController().signal })
+        signal })
       if (mode === '--fail-setup-reply-once') {
         assert.equal(setupResult.status, 'HOLD_RECONCILE')
         assert.equal(setupJournal.read().state, 'HOLD')
@@ -252,7 +256,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
     case 'providerEnable':
       assert.equal((await providerControl.runStagingGeneration23ProviderControl({ action: 'ENABLE',
         port: providerPort, journal: providerJournal('ENABLE'),
-        signal: new AbortController().signal })).status, 'PROVIDER_ENABLED_VERIFIED')
+        signal })).status, 'PROVIDER_ENABLED_VERIFIED')
       break
     case 'databaseEnable':
       assert.equal(databaseEnabled, false)
@@ -286,7 +290,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
       assert.equal(ownerChecks, true)
       const shutdownResult = await shutdownHost.run({ expiresAt: database.expiresAt,
         deadlineAt: database.expiresAt,
-        signal: new AbortController().signal })
+        signal })
       if (mode === '--fail-shutdown-reply-once') {
         assert.equal(shutdownResult.status, 'HOLD_RECONCILE')
         assert.equal(shutdownJournal.read().state, 'HOLD')
@@ -297,7 +301,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
       databaseEnabled = false
       assert.equal((await providerControl.runStagingGeneration23ProviderControl({ action: 'DISABLE',
         port: providerPort, journal: providerJournal('DISABLE'),
-        signal: new AbortController().signal })).status, 'PROVIDER_DISABLED_VERIFIED')
+        signal })).status, 'PROVIDER_DISABLED_VERIFIED')
       break
     case 'surfaceFreeze': {
       assert.equal(databaseEnabled || provider.enabled, false)
@@ -310,7 +314,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
     case 'databaseRetire':
       const retirementResult = await retirementHost.run({ expiresAt: database.expiresAt,
         deadlineAt: database.expiresAt,
-        signal: new AbortController().signal })
+        signal })
       if (mode === '--fail-retirement-reply-once') {
         assert.equal(retirementResult.status, 'HOLD_RECONCILE')
         assert.equal(retirementJournal.read().state, 'HOLD')
@@ -330,10 +334,15 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
     default: throw Error('Unrecognised phase')
   }
   return { status: REQUIRED_RESULTS[phase] }
+  } catch (error) {
+    phaseErrors.push({ phase, message: String(error?.message ?? error).slice(0, 300) })
+    throw error
+  }
 }]))
 
+  parent = new AbortController()
   const result = await rehearseStagingGeneration23WholeRun({ operations, now: Date.now,
-    windowExpiresAt: database.expiresAt, signal: new AbortController().signal })
+    windowExpiresAt: database.expiresAt, signal: parent.signal })
   if (mode === '--fail-first-setting-once') {
     assert.equal(result.status, 'HOLD')
     assert.equal(result.failedPhase, 'settings')
@@ -344,17 +353,19 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
     console.log(JSON.stringify({ status: 'PASS_LOCAL_SETTINGS_LOST_REPLY_STOP',
       phaseCount: calls.length, databaseSetup: 'not_dispatched',
       provider: 'off', surface: 'off', purchase: 'none' }))
-  } else if (mode === '--fail-setup-reply-once') {
+  } else if (mode === '--fail-setup-reply-once' || mode === '--abort-setup-once') {
     assert.equal(result.status, 'HOLD')
     assert.equal(result.failedPhase, 'databaseSetup')
     assert.deepEqual(calls, ['baseline', 'settings', 'databaseSetup'])
     assert.equal(provider.enabled, false)
     assert.equal(surface.events.length, 0)
-    console.log(JSON.stringify({ status: 'PASS_LOCAL_SETUP_LOST_REPLY_STOP',
+    console.log(JSON.stringify({ status: mode === '--abort-setup-once'
+      ? 'PASS_LOCAL_PARENT_ABORT_STOPS_SETUP' : 'PASS_LOCAL_SETUP_LOST_REPLY_STOP',
       phaseCount: calls.length, provider: 'off', surface: 'off', purchase: 'none' }))
   } else if (mode === '--fail-retirement-reply-once') {
     assert.equal(result.status, 'HOLD')
-    assert.equal(result.failedPhase, 'databaseRetire')
+    assert.equal(result.failedPhase, 'databaseRetire', JSON.stringify({ phaseErrors,
+      failedPhase: result.failedPhase, nextAction: result.nextAction }))
     assert.deepEqual(calls, PHASES.slice(0, PHASES.indexOf('finalReadback')))
     assert.equal(provider.enabled || databaseEnabled, false)
     assert.equal(surface.events.length, 8)
