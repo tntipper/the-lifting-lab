@@ -1155,6 +1155,14 @@
         "sha256": "8147dbe125613b1d7051bbeb21474b51bed0b81266fbb0aca6d7363857011882"
       },
       {
+        "path": "scripts/staging-generation-22-keychain-reader.mjs",
+        "sha256": "5d23e3e0005499eaf8f3feac080618c7534b58299f26227d920c5c9764ef6135"
+      },
+      {
+        "path": "scripts/staging-generation-22-keychain.py",
+        "sha256": "d38afb70d23b88ea6f77a3a3c9b5afb214c279aaa94aed8a0f9ee65f0f906bfe"
+      },
+      {
         "path": "scripts/staging-generation-22-retired-query.mjs",
         "sha256": "bb427e147dceee62d545c315eff5ad9ef81f63325a5d2b22214237a4ab95a960"
       },
@@ -1645,6 +1653,10 @@
       {
         "path": "tests/staging-generation-22-worker-entry.test.mjs",
         "sha256": "a63f86c59eef4f32b4b538ca73b70ca6a2a3684f3a47483f56ba57d2595b0146"
+      },
+      {
+        "path": "tests/staging-generation-22-keychain-reader.test.mjs",
+        "sha256": "e5fb2e56e47c453106f20c66d64389768f35a49a1e3ec273db74775b7792762b"
       },
       {
         "path": "tests/staging-generation-22-retired-query.test.mjs",
