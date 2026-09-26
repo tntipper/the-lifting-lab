@@ -1136,15 +1136,15 @@
       },
       {
         "path": "scripts/staging-generation-22-vercel-host.mjs",
-        "sha256": "682bbd2bd0f19a88e97d7a515d77741f04d0e2842a481a10e8aec82f7e9dfaaf"
+        "sha256": "d3ffa89bace4fd4cc58e7656f184fbd95cb1430d1299f00f276caa02773c5911"
       },
       {
         "path": "scripts/staging-generation-22-edge-host.mjs",
-        "sha256": "4a727dc9ac06160a91062894f04e00d9e3ac5d28e5355eac4145b424990a2a6f"
+        "sha256": "fc6d1448ab2127fdcb84d9b47da9b662fd4fe6385eaadaba29258cb14473ff71"
       },
       {
         "path": "scripts/staging-generation-22-vercel-config-host.mjs",
-        "sha256": "9b0e1599604ec3e387a5480b066c6f2d721f6301eefaeb121d0967242bcbb59d"
+        "sha256": "c5ddbc18bfa3eb62ce23422851ecfe906b40a1da6af432d27dcd9722c716f540"
       },
       {
         "path": "scripts/staging-generation-22-readback.mjs",
@@ -1580,7 +1580,7 @@
       },
       {
         "path": "tests/staging-generation-22-vercel-config-host.test.mjs",
-        "sha256": "fe10f6c7bc8902512490aff596ecc3d4ed0314260f6888e41a98c5f80a4aa7e2"
+        "sha256": "aa51fe04843177874fc80183c26b0d1ee26a061e6771b7f7b5ac6bfe7503177b"
       },
       {
         "path": "tests/staging-generation-22-readback.test.mjs",

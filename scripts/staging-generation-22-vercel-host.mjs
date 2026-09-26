@@ -58,7 +58,8 @@ async function boundedJson(response, signal) {
       const item = await abortRace(pending, signal)
       if (signal.aborted || !item || typeof item.done !== 'boolean') unavailable()
       if (item.done) break
-      if (!(item.value instanceof Uint8Array) || size + item.value.byteLength > MAX_RESPONSE_BYTES) unavailable()
+      if (!(item.value instanceof Uint8Array)) unavailable()
+      if (size + item.value.byteLength > MAX_RESPONSE_BYTES) { item.value.fill(0); unavailable() }
       size += item.value.byteLength
       chunks.push(Buffer.from(item.value))
       item.value.fill(0)

@@ -111,3 +111,85 @@ test('abort before a queued config write sends no request', async () => {
   await assert.rejects(pending, /unavailable/)
   assert.equal(calls, 0)
 })
+
+test('readback can only fetch an ID this host actually created for an OFF control', async () => {
+  const { host: { createStagingGeneration22VercelConfigHost: create }, journal } = await armedFixture()
+  const { name, capability } = capabilityFor(journal, 18)
+  const id = created(name).created.id
+  const calls = []
+  const host = create({ token, now, fetch: async (url, options) => {
+    calls.push({ url, options })
+    return options.method === 'POST'
+      ? new Response(JSON.stringify(created(name)), { status: 201 })
+      : new Response(JSON.stringify({ id, key: name, value: DISABLED_VERCEL_CONFIGURATION[name],
+        decrypted: true, gitBranch: 'codex/tll-integration', target: ['preview'],
+        type: 'encrypted', visibility: 'config' }), { status: 200 })
+  } })
+  const signal = new AbortController().signal
+  await assert.rejects(host.readDisabled({ name, signal }), /unavailable/)
+  await assert.rejects(host.readDisabled({ name: 'TLL_STAGING_CUSTOMER_DATABASE_PASSWORD',
+    id: 'env_other_secret', signal }), /unavailable/)
+  assert.equal(calls.length, 0)
+  await host.stageDisabled({ name, value: DISABLED_VERCEL_CONFIGURATION[name], capability, signal })
+  const result = await host.readDisabled({ name, id: 'env_other_secret', signal })
+  assert.deepEqual(result, { id, key: name, value: DISABLED_VERCEL_CONFIGURATION[name],
+    decrypted: true, gitBranch: 'codex/tll-integration', target: 'preview',
+    type: 'encrypted', visibility: 'config' })
+  assert.equal(calls.length, 2)
+  assert.match(calls[1].url, new RegExp(`/v1/projects/.*/env/${id}\\?teamId=`))
+  assert.equal(calls[1].options.method, 'GET')
+  await assert.rejects(host.readDisabled({ name, signal }), /unavailable/)
+  assert.equal(calls.length, 2)
+  host.dispose()
+})
+
+test('readback rejects missing or enabled value and never retries that ID', async () => {
+  const { host: { createStagingGeneration22VercelConfigHost: create }, journal } = await armedFixture()
+  const { name, capability } = capabilityFor(journal, 18)
+  let reads = 0
+  const host = create({ token, now, fetch: async (_url, options) => {
+    if (options.method === 'POST') return new Response(JSON.stringify(created(name)), { status: 201 })
+    reads++
+    return new Response(JSON.stringify({ ...created(name).created, decrypted: true,
+      value: 'enabled' }), { status: 200 })
+  } })
+  const signal = new AbortController().signal
+  await host.stageDisabled({ name, value: DISABLED_VERCEL_CONFIGURATION[name], capability, signal })
+  await assert.rejects(host.readDisabled({ name, signal }), /unavailable/)
+  await assert.rejects(host.readDisabled({ name, signal }), /unavailable/)
+  assert.equal(reads, 1)
+  host.dispose()
+})
+
+test('aborted queued readback sends no GET and an oversized response is wiped', async () => {
+  const { host: { createStagingGeneration22VercelConfigHost: create }, journal } = await armedFixture()
+  const { name, capability } = capabilityFor(journal, 18)
+  let reads = 0
+  const host = create({ token, now, fetch: async (_url, options) => {
+    if (options.method === 'POST') return new Response(JSON.stringify(created(name)), { status: 201 })
+    reads++
+    return null
+  } })
+  await host.stageDisabled({ name, value: DISABLED_VERCEL_CONFIGURATION[name], capability,
+    signal: new AbortController().signal })
+  const controller = new AbortController()
+  const pending = host.readDisabled({ name, signal: controller.signal })
+  controller.abort()
+  await assert.rejects(pending, /unavailable/)
+  assert.equal(reads, 0)
+
+  const second = capabilityFor(journal, 18)
+  const bytes = Buffer.alloc(65_537, 65)
+  let readCount = 0
+  const oversized = create({ token, now, fetch: async (_url, options) => options.method === 'POST'
+    ? new Response(JSON.stringify(created(second.name)), { status: 201 })
+    : { status: 200, headers: { get: () => null }, body: { getReader: () => ({
+      read: async () => readCount++ ? { done: true } : { done: false, value: bytes },
+      cancel: () => Promise.resolve(), releaseLock: () => {},
+    }) } } })
+  await oversized.stageDisabled({ name: second.name, value: DISABLED_VERCEL_CONFIGURATION[second.name],
+    capability: second.capability, signal: new AbortController().signal })
+  await assert.rejects(oversized.readDisabled({ name: second.name,
+    signal: new AbortController().signal }), /unavailable/)
+  assert.deepEqual(bytes, Buffer.alloc(bytes.length))
+})
