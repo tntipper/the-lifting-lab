@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto'
 import { ACTIVE_WINDOW_EXPIRES_AT, WINDOW_ID } from './staging-generation-22-credentials.mjs'
 import { OPERATION_IDS } from './staging-generation-22-journal.mjs'
+import { RECOVERY_WINDOW_EXPIRES_AT } from './staging-generation-22-recovery-journal.mjs'
 import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
 import { DISABLED_VERCEL_CONFIGURATION, GENERATION, MISSING_SUPABASE_SECRET_NAMES,
   MISSING_VERCEL_SECRET_NAMES, PROJECT_REF, generateStagingGeneration22Material,
@@ -24,11 +25,12 @@ function stageReceipt(value, name, classification) {
   return digest(value)
 }
 
-export function createStagingGeneration22SetupCoordinator({ journal, database, vercel, edge, config,
+export function createStagingGeneration22SetupCoordinator({ journal, recoveryJournal, database, vercel, edge, config,
   readback, now = Date.now, timeoutMs = 600_000 } = {}) {
   if (!STAGING_GENERATION_22_SETUP_COORDINATOR_ENABLED
     || !journal || ['claim', 'dispatch', 'databaseCapability', 'operationCapability', 'confirm', 'hold']
       .some(method => typeof journal[method] !== 'function')
+    || !recoveryJournal || typeof recoveryJournal.claim !== 'function'
     || typeof database?.install !== 'function' || typeof vercel?.stageSecret !== 'function'
     || typeof edge?.stageSecret !== 'function' || typeof config?.stageDisabled !== 'function'
     || typeof readback?.prove !== 'function' || typeof now !== 'function'
@@ -53,6 +55,7 @@ export function createStagingGeneration22SetupCoordinator({ journal, database, v
         onAbort = () => reject(new Error('Generation 22 setup expired'))
         controller.signal.addEventListener('abort', onAbort, { once: true })
       })
+      void aborted.catch(() => {})
       const run = operation => Promise.race([Promise.resolve().then(() => {
         const current = now()
         if (controller.signal.aborted || !Number.isFinite(current) || current >= deadline) unavailable()
@@ -60,6 +63,19 @@ export function createStagingGeneration22SetupCoordinator({ journal, database, v
       }), aborted])
       try {
         state = journal.claim()
+        const recoveryReservation = recoveryJournal.claim()
+        if (!exact(recoveryReservation, ['schema', 'projectRef', 'generation', 'windowId',
+          'expiresAt', 'recoveryExpiresAt', 'runId', 'createdAt', 'updatedAt', 'state', 'receiptDigest'])
+          || recoveryReservation.schema !== 'tll-staging-generation-22-recovery-dispatch/v1'
+          || recoveryReservation.state !== 'CLAIMED' || recoveryReservation.generation !== GENERATION
+          || recoveryReservation.projectRef !== PROJECT_REF
+          || recoveryReservation.windowId !== WINDOW_ID
+          || recoveryReservation.expiresAt !== ACTIVE_WINDOW_EXPIRES_AT
+          || recoveryReservation.recoveryExpiresAt !== RECOVERY_WINDOW_EXPIRES_AT
+          || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(recoveryReservation.runId)
+          || typeof recoveryReservation.createdAt !== 'string'
+          || recoveryReservation.updatedAt !== recoveryReservation.createdAt
+          || recoveryReservation.receiptDigest !== null) unavailable()
         material = generateStagingGeneration22Material()
         projection = projectStagingGeneration22Material(material)
         verifiers = deriveStagingGeneration22Verifiers(projection)

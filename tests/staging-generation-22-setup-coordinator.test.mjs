@@ -11,6 +11,7 @@ import { createStagingGeneration22SetupCoordinator } from '../scripts/staging-ge
 
 const scripts = new URL('../scripts/', import.meta.url)
 const expiry = '2026-09-26T10:50:00.000Z'
+const recoveryExpiry = '2026-09-26T11:30:00.000Z'
 async function armed() {
   let material = await readFile(new URL('staging-generation-22-material.mjs', scripts), 'utf8')
   material = material.replace('export const STAGING_GENERATION_22_MATERIAL_ENABLED = false',
@@ -31,6 +32,15 @@ async function armed() {
     .replaceAll("from './", `from '${scripts.href}`)
     .replace('resolve(import.meta.dirname,', `resolve(${JSON.stringify(fileURLToPath(scripts))},`)
   const journalUrl = `data:text/javascript;base64,${Buffer.from(journal).toString('base64')}`
+  let recoveryJournal = await readFile(new URL('staging-generation-22-recovery-journal.mjs', scripts), 'utf8')
+  recoveryJournal = recoveryJournal.replace('export const STAGING_GENERATION_22_RECOVERY_JOURNAL_ENABLED = false',
+    'export const STAGING_GENERATION_22_RECOVERY_JOURNAL_ENABLED = true')
+    .replace("export const RECOVERY_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'",
+      `export const RECOVERY_WINDOW_EXPIRES_AT = '${recoveryExpiry}'`)
+    .replace("from './staging-generation-22-credentials.mjs'", `from '${credentialsUrl}'`)
+    .replaceAll("from './", `from '${scripts.href}`)
+    .replace('resolve(import.meta.dirname,', `resolve(${JSON.stringify(fileURLToPath(scripts))},`)
+  const recoveryJournalUrl = `data:text/javascript;base64,${Buffer.from(recoveryJournal).toString('base64')}`
   let databaseHost = await readFile(new URL('staging-generation-22-database-host.mjs', scripts), 'utf8')
   databaseHost = databaseHost.replace('export const STAGING_GENERATION_22_DATABASE_HOST_ENABLED = false',
     'export const STAGING_GENERATION_22_DATABASE_HOST_ENABLED = true')
@@ -44,10 +54,11 @@ async function armed() {
     .replace("from './staging-generation-22-material.mjs'", `from '${materialUrl}'`)
     .replace("from './staging-generation-22-credentials.mjs'", `from '${credentialsUrl}'`)
     .replace("from './staging-generation-22-journal.mjs'", `from '${journalUrl}'`)
+    .replace("from './staging-generation-22-recovery-journal.mjs'", `from '${recoveryJournalUrl}'`)
     .replaceAll("from './", `from '${scripts.href}`)
   return { ...await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`),
     journalModule: await import(journalUrl), credentialsModule: await import(credentialsUrl),
-    databaseHostModule: await import(databaseHostUrl) }
+    databaseHostModule: await import(databaseHostUrl), recoveryJournalModule: await import(recoveryJournalUrl) }
 }
 
 function fixture({ failAt, failReadback = false } = {}) {
@@ -69,6 +80,16 @@ function fixture({ failAt, failReadback = false } = {}) {
     },
     hold(previous) { calls.push(`hold:${previous.pending ?? 'none'}`); return { state: 'HOLD' } },
   }
+  const recoveryJournal = { claim() {
+    calls.push('claim:recovery')
+    return { schema: 'tll-staging-generation-22-recovery-dispatch/v1', state: 'CLAIMED',
+      projectRef: 'qdmvngjwkcsilzmqksme', generation: 22,
+      windowId: '9a539def-bf3c-442c-bf06-c4bd1df39543',
+      expiresAt: expiry, recoveryExpiresAt: recoveryExpiry,
+      runId: '5f5bf963-3d2c-4f37-b489-d5047e0ebdc9',
+      createdAt: '2026-09-26T10:00:00.000Z', updatedAt: '2026-09-26T10:00:00.000Z',
+      receiptDigest: null }
+  } }
   const stageReceipt = (name, classification) => ({ status: 'STAGED', name,
     id: `env_${name.toLowerCase()}`, branch: 'codex/tll-integration', target: 'preview', classification })
   const database = { async install({ verifiers }) {
@@ -101,11 +122,32 @@ function fixture({ failAt, failReadback = false } = {}) {
       branch: 'codex/tll-integration', vercelSecretCount: 16,
       disabledControlCount: 4, edgePasswordNamePresent: true }
   } }
-  return { journal, database, vercel, edge, config, readback, calls }
+  return { journal, recoveryJournal, database, vercel, edge, config, readback, calls }
 }
 
 test('setup coordinator remains disconnected by default', () => {
   assert.throws(() => createStagingGeneration22SetupCoordinator(fixture()), /unavailable/)
+})
+
+test('setup never reaches a host when recovery reservation cannot be claimed', async () => {
+  const { createStagingGeneration22SetupCoordinator: create } = await armed()
+  const input = fixture()
+  input.recoveryJournal.claim = () => { throw new Error('synthetic recovery record unavailable') }
+  const result = await create({ ...input, now: () => Date.parse('2026-09-26T10:00:00.000Z') })
+    .stage({ signal: new AbortController().signal })
+  assert.equal(result.status, 'HOLD_RECONCILE')
+  assert.deepEqual(input.calls, ['claim', 'hold:none'])
+})
+
+test('wrong-generation recovery reservation blocks setup before material or host access', async () => {
+  const { createStagingGeneration22SetupCoordinator: create } = await armed()
+  const input = fixture()
+  const claim = input.recoveryJournal.claim
+  input.recoveryJournal.claim = () => ({ ...claim(), generation: 21 })
+  const result = await create({ ...input, now: () => Date.parse('2026-09-26T10:00:00.000Z') })
+    .stage({ signal: new AbortController().signal })
+  assert.equal(result.status, 'HOLD_RECONCILE')
+  assert.deepEqual(input.calls, ['claim', 'claim:recovery', 'hold:none'])
 })
 
 test('coordinator stages all 22 writes in journal order, then reads back OFF state', async () => {
@@ -113,7 +155,7 @@ test('coordinator stages all 22 writes in journal order, then reads back OFF sta
   const input = fixture()
   const coordinator = create({ ...input, now: () => Date.parse('2026-09-26T10:00:00.000Z') })
   const result = await coordinator.stage({ signal: new AbortController().signal })
-  assert.equal(result.status, 'SETTINGS_STAGED_OFF_VERIFIED')
+  assert.equal(result.status, 'SETTINGS_STAGED_OFF_VERIFIED', JSON.stringify(input.calls.slice(0, 6)))
   assert.equal(result.operationCount, 22)
   assert.equal(input.calls.filter(value => value.startsWith('dispatch:')).length, 22)
   assert.equal(input.calls.filter(value => value.startsWith('confirm:')).length, 22)
@@ -182,10 +224,12 @@ test('caller cancellation aborts the first database write and stops the sequence
 
 test('coordinator composes with real journal and database capability once', async () => {
   const { createStagingGeneration22SetupCoordinator: create, journalModule,
-    credentialsModule, databaseHostModule } = await armed()
+    credentialsModule, databaseHostModule, recoveryJournalModule } = await armed()
   const now = () => Date.parse('2026-09-26T10:00:00.000Z')
   const path = join(mkdtempSync(join(tmpdir(), 'tll-gen22-setup-compose-')), 'private', 'record.json')
   const journal = journalModule.createStagingGeneration22Journal({ path, now })
+  const recoveryPath = join(mkdtempSync(join(tmpdir(), 'tll-gen22-recovery-reserve-')), 'private', 'record.json')
+  const recoveryJournal = recoveryJournalModule.createStagingGeneration22RecoveryJournal({ path: recoveryPath, now })
   let databaseCalls = 0
   const database = databaseHostModule.createStagingGeneration22DatabaseHost({ now,
     post: async (packet, { signal }) => {
@@ -215,11 +259,12 @@ test('coordinator composes with real journal and database capability once', asyn
   const readback = { async prove() { return { status: 'DISABLED_SETTINGS_VERIFIED',
     projectRef: 'qdmvngjwkcsilzmqksme', branch: 'codex/tll-integration',
     vercelSecretCount: 16, disabledControlCount: 4, edgePasswordNamePresent: true } } }
-  const result = await create({ journal, database, vercel, edge, config, readback, now })
+  const result = await create({ journal, recoveryJournal, database, vercel, edge, config, readback, now })
     .stage({ signal: new AbortController().signal })
   assert.equal(result.status, 'SETTINGS_STAGED_OFF_VERIFIED')
   assert.equal(databaseCalls, 1)
   assert.equal(journal.read().state, 'FINISHED')
+  assert.equal(recoveryJournal.read().state, 'CLAIMED')
   assert.equal(journal.read().receiptDigests.length, 22)
   assert.doesNotMatch(readFileSync(path, 'utf8'), /SCRAM-SHA-256|vault|password/i)
 })

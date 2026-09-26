@@ -1172,7 +1172,7 @@
       },
       {
         "path": "scripts/staging-generation-22-setup-coordinator.mjs",
-        "sha256": "86ead51ae831ca208677954b673131a8c23810c33016f17d591ed50f05366900"
+        "sha256": "c4ed662c93387e48c3c14fd89f6a5762997d5399bff84ca74e37bf56db4b8d52"
       },
       {
         "path": "app/api/staging/readiness/contract.ts",
@@ -1632,7 +1632,7 @@
       },
       {
         "path": "tests/staging-generation-22-setup-coordinator.test.mjs",
-        "sha256": "4a15ac3cb989fa4d7d91c763fd04954eaa0551e09d6afd1412c99e57726370a6"
+        "sha256": "f31979b7e36c852336ffd26eb3873419eb28907bd9da0198a54e2644e5d48c0d"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",
