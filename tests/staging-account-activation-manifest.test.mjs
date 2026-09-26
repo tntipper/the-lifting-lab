@@ -200,6 +200,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
     'scripts/staging-generation-22-recovery-coordinator.mjs',
     'scripts/staging-generation-22-process-supervisor.mjs',
     'scripts/staging-generation-22-process-binding.mjs',
+    'scripts/staging-generation-22-parent-launcher.mjs',
     'scripts/staging-generation-22-worker-entry.mjs',
     'scripts/staging-generation-22-worker-assembly.mjs',
     'scripts/staging-generation-22-keychain-reader.mjs',

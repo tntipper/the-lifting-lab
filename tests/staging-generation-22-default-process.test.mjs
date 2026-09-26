@@ -1,14 +1,58 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
-import { chmodSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync,
+import { chmodSync, cpSync, existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync,
   writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { runStagingGeneration22Parent } from '../scripts/staging-generation-22-parent-launcher.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const networkDeny = fileURLToPath(new URL('./fixtures/staging-generation-22-network-deny.mjs', import.meta.url))
+
+test('repository parent launcher exits disabled before creating a worker', async () => {
+  let calls = 0
+  await assert.rejects(runStagingGeneration22Parent({ signal: new AbortController().signal,
+    createSpawner() { calls++ }, createSupervisor() { calls++ },
+  }), /unavailable/)
+  assert.equal(calls, 0)
+  const path = join(root, 'scripts', 'staging-generation-22-parent-launcher.mjs')
+  const child = spawnSync(process.execPath, [path], { encoding: 'utf8', timeout: 3_000,
+    env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' } })
+  assert.equal(child.status, 1)
+  assert.equal(child.stdout, '')
+  assert.equal(child.stderr, '')
+})
+
+test('copied parent launcher accepts only the fixed supervisor result shape', async t => {
+  const fixture = isolatedSources(t)
+  const { runStagingGeneration22Parent: run } = await import(pathToFileURL(join(
+    fixture.directory, 'scripts', 'staging-generation-22-parent-launcher.mjs')).href)
+  let started = 0
+  const result = await run({ signal: new AbortController().signal,
+    createSpawner() { return () => { started++ } },
+    createSupervisor({ spawnWorker }) { spawnWorker(); return { async supervise() {
+      return { status: 'VERIFIED_CONTROLS_DISABLED', projectRef: 'qdmvngjwkcsilzmqksme',
+        generation: 22 }
+    } } },
+  })
+  assert.equal(started, 1)
+  assert.deepEqual(result, { status: 'VERIFIED_CONTROLS_DISABLED',
+    projectRef: 'qdmvngjwkcsilzmqksme', generation: 22 })
+  await assert.rejects(run({ signal: new AbortController().signal,
+    createSpawner: () => () => {},
+    createSupervisor: () => ({ supervise: async () => ({ ...result, unexpected: true }) }),
+  }), /unavailable/)
+  const cancelled = new AbortController()
+  await assert.rejects(run({ signal: cancelled.signal,
+    createSpawner: () => () => {},
+    createSupervisor: () => ({ async supervise() {
+      cancelled.abort()
+      return result
+    } }),
+  }), /unavailable/)
+})
 
 test('rehearsal child denies unmocked fetch and socket connections', () => {
   const source = `import net from 'node:net';let denied=0;`
@@ -31,6 +75,7 @@ const activeFiles = Object.freeze([
   'active-check', 'retired-check', 'readback', 'worker-entry',
   'process-binding', 'process-supervisor', 'keychain-reader',
   'supabase-query', 'recovery-query', 'active-query', 'retired-query',
+  'parent-launcher',
 ])
 
 function isolatedSources(t) {
@@ -274,4 +319,33 @@ exit 9
       'staging', 'tll-generation-22-recovery-dispatch-v1.json'), 'utf8'))
     assert.equal(recovery.state, 'CLAIMED')
   }
+})
+
+test('copied fixed parent CLI reports reconciliation after its disabled child exits', t => {
+  const fixture = isolatedSources(t)
+  const parentPath = realpathSync(join(fixture.directory, 'scripts',
+    'staging-generation-22-parent-launcher.mjs'))
+  const source = readFileSync(parentPath, 'utf8')
+  assert.ok(source.includes('export const STAGING_GENERATION_22_PARENT_CLI_ENABLED = false'))
+  writeFileSync(parentPath, source.replace('export const STAGING_GENERATION_22_PARENT_CLI_ENABLED = false',
+    'export const STAGING_GENERATION_22_PARENT_CLI_ENABLED = true'))
+  const child = spawnSync(process.execPath, ['--import', networkDeny, parentPath], {
+    cwd: fixture.directory, encoding: 'utf8', timeout: 5_000,
+    env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
+  })
+  assert.equal(child.status, 1, `${child.stdout}\n${child.stderr.slice(-1_000)}`)
+  assert.equal(child.stderr, '')
+  assert.deepEqual(JSON.parse(child.stdout), {
+    status: 'CHILD_EXIT_RECONCILIATION_REQUIRED',
+    projectRef: 'qdmvngjwkcsilzmqksme', generation: 22,
+  })
+  assert.equal(existsSync(join(fixture.directory, 'implementation-state', 'staging',
+    'tll-generation-22-dispatch-v1.json')), false)
+  const extra = spawnSync(process.execPath, ['--import', networkDeny, parentPath, 'unexpected'], {
+    cwd: fixture.directory, encoding: 'utf8', timeout: 5_000,
+    env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
+  })
+  assert.equal(extra.status, 1)
+  assert.equal(extra.stdout, '')
+  assert.equal(extra.stderr, '')
 })

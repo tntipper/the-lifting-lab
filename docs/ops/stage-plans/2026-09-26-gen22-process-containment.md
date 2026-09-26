@@ -2,6 +2,12 @@
 
 This is a local design gate, not permission to contact a hosted service. All Generation 22 switches remain off.
 
+## Current gate: fixed parent command, disabled
+
+The prior process rehearsals connected the child, fixed spawner and supervisor only inside tests. There was no single production command joining the fixed spawner to the supervisor. `scripts/staging-generation-22-parent-launcher.mjs` now supplies that missing entry point, with both of its switches OFF. It accepts only the supervisor's exact secret-free result, reports reconciliation as failure, and handles interruption through the existing process supervisor. A disposable-copy test runs the actual parent command and fixed process binding with the worker disabled: it fails safely without claiming a setup record. The activation manifest now pins this source. The full suite passes 2,909 tests with two skipped; typecheck and focused lint pass. Independent review returned GO for committing this disabled preparation only.
+
+The parent command does **not** itself check the current hosted baselines, source identity or unused one-use records before it spawns. Turning its switches on alone would therefore be unsafe. Before any arming: obtain fresh read-only Supabase and protected Preview observations; confirm the exact staging project, deployment, branch, source and OFF controls; check that both parent-level one-use records are absent; pin the intended source and deadlines; independently review the complete, minimal arming diff and operating procedure; obtain separate action-time owner approval. Stop if any input drifts. Do not replay consumed records or describe this disabled command as a complete staging run.
+
 ## Finding
 
 The setup coordinator currently erases generated passwords on exit and has no five-login proof. A first attempt to add that proof in-process failed independent review: a database runtime can reject or hang while closing, so an in-process timeout cannot both prove the connection has stopped and safely return a normal result. The attempted change was withdrawn before commit. No Gen22 credential or hosted request was made.
