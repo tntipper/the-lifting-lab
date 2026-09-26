@@ -2,6 +2,14 @@
 
 This plan supersedes the Gen22 setup order for the next staging attempt. It does not authorize a hosted write, branch push, deployment or activation. Production, purchases and customer messages remain out of scope.
 
+## One customer-journey result, not another sequence of preparatory generations
+
+The acceptance unit is **one protected staging run** with a clear before, customer journey and after. Count progress when a customer-facing step works in the real Preview and when the temporary access is proved retired; do not count another helper, journal or generation as customer progress. The disabled components below exist solely to make that run safe. Reuse the verified Gen22 retirement controls and existing source rather than redesigning them. If one prerequisite fails, diagnose that exact failure before adding a successor window.
+
+On 26 September, a signed-in Chrome visit to the held branch Preview showed the staging banner, three synthetic catalogue products and the synthetic protein detail at `/products/40000000-0000-4000-8000-000000000001`. Its shop area said `No verified offer`; the account link led to the legacy `/auth` Google/magic-link screen. These are **OFF-state observations**, not proof that the unified Shopify login or cart works. Source pins that synthetic product to staging Shopify variant `gid://shopify/ProductVariant/57160491139412`; its current live availability remains unproved. A separate unauthenticated visit reached Vercel login, confirming protection still gates the branch Preview.
+
+The minimum customer-facing pass is: protected build/source identified; staging owner starts Shopify customer sign-in; the same identity reaches account and isolated orders; the synthetic mapped product can be added to the staging cart; the cart survives the intended account transition and shows the correct amount; checkout handoff reaches Shopify without submitting payment. Fail or hold on any unexpected customer email, live product, external purchase or identity mismatch. The shutdown pass is: backend/provider/Edge disabled; four Preview controls OFF in a newly built protected deployment; branch alias points to that OFF build; five database logins/passwords/grants retired with no sessions; and a separate read confirms those facts. An old enabled immutable Preview must be unusable through the disabled backend.
+
 ## Starting evidence to preserve
 
 - Staging branch `codex/tll-integration` is published at `79f685c64f5ef67b19861d0beba9ddf18d77309c`. Protected Vercel Preview `dpl_FshKoWhQE6anmCajVB6MmqdStkKn` is Ready from that source. Three authenticated reads proved the four account/cart controls OFF; unauthenticated reads returned 401.
@@ -34,4 +42,4 @@ Run one protected staging account/cart test with fresh, temporary database login
 - The current account/cart deployment cannot see rotated Vercel values; a new protected Preview must be built and pinned. [Vercel environment variables](https://vercel.com/docs/environment-variables).
 - Provider behavior after the earlier partial JWKS-clear attempt is known only for the disabled state with retained URI. Do not infer that enabling it will work; use an official read and one bounded reviewed staging change. An optional provider-only protocol check may precede public controls, but the real customer login journey requires the protected enabled Preview with both public and private customer flags ON and must be proved before acceptance.
 
-The next development unit is the one-use Gen23 predecessor observer and journal, followed by the exact five-ID Vercel replacement contract. Keep both disconnected while the full window and recovery path are incomplete.
+The predecessor observer, its one-use record, the five-ID inventory reader and the exact-ID PATCH transport now exist locally and remain disabled. The remaining preparation is the **single operation record and coordinator for the complete run**, matching Supabase Edge/database actions, owner journey, and explicit shutdown and readback. Do not open another credential window for a partial setup. Review the whole runnable sequence and one minimal arming change before one coordinated staging-only run.
