@@ -1123,6 +1123,10 @@
         "sha256": "66c7646a04e3c602304d2ef79521c493670d3ad2d18a7a3f67877f2f02ac0d16"
       },
       {
+        "path": "scripts/staging-generation-22-journal.mjs",
+        "sha256": "7a9ebf504f93b8e2f5cd9bcc1ef1b25b485d2eb4c496d18e2779530aa01b5e6f"
+      },
+      {
         "path": "app/api/staging/readiness/contract.ts",
         "sha256": "4e598ef4dd00e7e0574cfe4f981e735fb0962fa14d9225b64055b76b52d72233"
       },
@@ -1529,6 +1533,10 @@
       {
         "path": "tests/staging-generation-22-retired-check.test.mjs",
         "sha256": "5778e158a69f786b7cf049e6e8c9fc4506a4412d87bd6c561671c7c3caaf265c"
+      },
+      {
+        "path": "tests/staging-generation-22-journal.test.mjs",
+        "sha256": "7b7883c9dde2758980789a4a3957c4f3868e2bb3ba2aa9263e5232954f7447b6"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",
