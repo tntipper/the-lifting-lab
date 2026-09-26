@@ -130,3 +130,45 @@ test('loss of the supervisor stops the worker and its descendant', async () => {
     if (workerPid) { try { process.kill(-workerPid, 'SIGKILL') } catch {} }
   }
 })
+
+for (const phase of ['keychain', 'post']) {
+  test(`loss of the supervisor during an asynchronous ${phase} cannot dispatch or report success`, async () => {
+    const moduleUrl = new URL('../scripts/staging-provider-broker-recovery-process-control.mjs', import.meta.url).href
+    const controlUrl = new URL('../scripts/staging-provider-broker-rotation-process-control.mjs', import.meta.url).href
+    const file = join(mkdtempSync(join(tmpdir(), `tll-gen23-${phase}-loss-`)), 'state.json')
+    const worker = `import(${JSON.stringify(moduleUrl)}).then(async m => {`
+      + `await m.acceptSupervisorPipe({proof:'OFFLINE_ROTATION_PROOF'});`
+      + `const {spawn}=await import('node:child_process');const fs=await import('node:fs');`
+      + `const child=spawn('/bin/sleep',['30'],{stdio:'ignore'});`
+      + (phase === 'post'
+        ? `const http=await import('node:http');let received;const receivedPromise=new Promise(resolve=>{received=resolve});`
+          + `const server=http.createServer((_request,_response)=>received());`
+          + `await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));`
+          + `const request=http.request({host:'127.0.0.1',port:server.address().port,method:'POST'});request.end();`
+          + `await receivedPromise;`
+        : '')
+      + `fs.writeFileSync(process.argv[1]+'.tmp',JSON.stringify({worker:process.pid,descendant:child.pid,phase:${JSON.stringify(phase)}}));`
+      + `fs.renameSync(process.argv[1]+'.tmp',process.argv[1]);`
+      + (phase === 'keychain' ? `await new Promise(resolve => child.once('close', resolve));` : `await new Promise(()=>{});`)
+      + `fs.writeFileSync(process.argv[1]+'.finished','unexpected');process.stdout.write('SUCCESS')})`
+    const supervisorCode = `import(${JSON.stringify(controlUrl)}).then(m => m.runBoundedBrokerRotationWorker({`
+      + `executable:process.execPath,args:['-e',${JSON.stringify(worker)},process.argv[1]],`
+      + `cwd:process.cwd(),env:{PATH:'/usr/bin:/bin',LANG:'C.UTF-8'},`
+      + `proof:'OFFLINE_ROTATION_PROOF',deadlineMs:10000,strictGroupCleanup:true}))`
+    const supervisor = spawn(process.execPath, ['-e', supervisorCode, file], { stdio: 'ignore' })
+    let workerPid
+    try {
+      for (let attempt = 0; attempt < 100 && !existsSync(file); attempt++) await new Promise(resolve => setTimeout(resolve, 10))
+      assert.equal(existsSync(file), true)
+      const pids = JSON.parse(readFileSync(file, 'utf8'))
+      workerPid = pids.worker
+      supervisor.kill('SIGKILL')
+      assert.equal(await stopped(pids.worker), true)
+      assert.equal(await stopped(pids.descendant), true)
+      assert.equal(existsSync(`${file}.finished`), false)
+    } finally {
+      supervisor.kill('SIGKILL')
+      if (workerPid) { try { process.kill(-workerPid, 'SIGKILL') } catch {} }
+    }
+  })
+}

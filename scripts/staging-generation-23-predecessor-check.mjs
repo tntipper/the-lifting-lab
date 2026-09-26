@@ -50,9 +50,17 @@ BEGIN
     JOIN tll_staging_private.applied_migrations actual USING(version,source_sha256))<>${EXACT_MIGRATIONS.length} THEN
   RAISE EXCEPTION 'Generation 23 predecessor check migration mismatch'; END IF;
  IF (SELECT count(*) FROM pg_roles WHERE rolname IN(${roleList}) AND NOT rolcanlogin
+    AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
+    AND NOT rolreplication AND NOT rolbypassrls
     AND rolvaliduntil='infinity'::timestamptz)<>5
   OR EXISTS(SELECT 1 FROM pg_authid WHERE rolname IN(${roleList}) AND rolpassword IS NOT NULL) THEN
   RAISE EXCEPTION 'Generation 23 predecessor check credentials remain'; END IF;
+ -- PostgreSQL records object ownership as a shared dependency on the role.
+ -- An owned object grants authority even when its ACL has no explicit grant.
+ IF EXISTS(SELECT 1 FROM pg_shdepend d JOIN pg_roles g ON g.oid=d.refobjid
+   WHERE d.refclassid='pg_authid'::regclass AND d.deptype='o'
+     AND g.rolname IN(${roleList})) THEN
+  RAISE EXCEPTION 'Generation 23 predecessor check runtime ownership drift'; END IF;
  FOREACH r IN ARRAY ARRAY[${roleList}] LOOP
   SELECT shobj_description(oid,'pg_authid') INTO marker FROM pg_roles WHERE rolname=r;
   IF marker IS DISTINCT FROM ${quote(marker)} THEN RAISE EXCEPTION 'Generation 23 predecessor check marker mismatch'; END IF;

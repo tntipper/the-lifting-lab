@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Disabled parent/child boundary for one supervised Gen22-retired staging read. */
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -24,7 +24,7 @@ const PYTHON = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/
 const HELPER = resolve(import.meta.dirname, 'staging-provider-normalization-keychain.py')
 const unavailable = () => { throw new Error('Generation 23 predecessor live read unavailable') }
 
-function checkArming() {
+function checkArming({ verifyManifest = true } = {}) {
   if (!STAGING_GENERATION_23_PREDECESSOR_LIVE_ENABLED
     || !STAGING_GENERATION_23_PREDECESSOR_OBSERVER_ENABLED
     || !STAGING_GENERATION_23_PREDECESSOR_QUERY_ENABLED
@@ -32,28 +32,60 @@ function checkArming() {
   const helper = readFileSync(HELPER, 'utf8')
   if (!helper.includes('APPROVED_NATIVE_READ = True')
     || !helper.includes('selector != "supabase"')) unavailable()
-  const checked = spawnSync(process.execPath,
-    [resolve(import.meta.dirname, 'staging-account-activation-manifest.mjs'), '--check'],
-    { cwd: ROOT, env: ENV, stdio: ['ignore', 'pipe', 'ignore'], timeout: 15_000, maxBuffer: 4096 })
-  try { if (checked.error || checked.status !== 0 || checked.signal || checked.stdout?.length !== 0) unavailable() }
-  finally { checked.stdout?.fill?.(0) }
+  // The credential-free parent verifies the manifest before starting the worker.
+  // A synchronous child here would block the worker's supervisor-loss watcher.
+  if (verifyManifest) {
+    const checked = spawnSync(process.execPath,
+      [resolve(import.meta.dirname, 'staging-account-activation-manifest.mjs'), '--check'],
+      { cwd: ROOT, env: ENV, stdio: ['ignore', 'pipe', 'ignore'], timeout: 15_000,
+        killSignal: 'SIGKILL', maxBuffer: 4096 })
+    try { if (checked.error || checked.status !== 0 || checked.signal || checked.stdout?.length !== 0) unavailable() }
+    finally { checked.stdout?.fill?.(0) }
+  }
   if (createStagingGeneration23PredecessorJournal().read()) unavailable()
 }
 
-function readToken() {
-  const child = spawnSync(PYTHON, ['-I', '-S', HELPER, 'supabase'],
-    { cwd: ROOT, env: ENV, stdio: ['ignore', 'pipe', 'ignore'], timeout: 15_000, maxBuffer: 1024 })
-  if (child.error || child.status !== 0 || child.signal || !Buffer.isBuffer(child.stdout)) {
-    child.stdout?.fill?.(0); unavailable()
-  }
-  const token = Buffer.from(child.stdout)
-  child.stdout.fill(0)
-  if (!/^sbp_(?:oauth_|v0_)?[a-f0-9]{40}$/.test(token.toString('utf8'))) { token.fill(0); unavailable() }
-  return token
+function readToken({ signal } = {}) {
+  if (!signal || signal.aborted || typeof signal.addEventListener !== 'function') unavailable()
+  return new Promise((resolveToken, rejectToken) => {
+    let child
+    try {
+      child = spawn(PYTHON, ['-I', '-S', HELPER, 'supabase'],
+        { cwd: ROOT, env: ENV, stdio: ['ignore', 'pipe', 'ignore'] })
+      if (!child?.stdout || typeof child.kill !== 'function') unavailable()
+    } catch { try { child?.kill?.('SIGKILL') } catch {}; rejectToken(Error('Generation 23 Keychain unavailable')); return }
+    let settled = false, size = 0
+    const chunks = []
+    const wipe = () => { for (const chunk of chunks) chunk.fill(0); chunks.length = 0 }
+    const finish = success => {
+      if (settled) return
+      settled = true; clearTimeout(timer); signal.removeEventListener('abort', stop)
+      child.stdout.removeAllListeners('data'); child.stdout.removeAllListeners('error'); child.stdout.destroy()
+      const value = success && size <= 1024 ? Buffer.concat(chunks, size) : null
+      wipe()
+      if (Buffer.isBuffer(value) && /^sbp_(?:oauth_|v0_)?[a-f0-9]{40}$/.test(value.toString('utf8')))
+        resolveToken(value)
+      else { value?.fill(0); rejectToken(Error('Generation 23 Keychain unavailable')) }
+    }
+    const stop = () => { try { child.kill('SIGKILL') } catch {}; finish(false) }
+    const timer = setTimeout(stop, 15_000)
+    signal.addEventListener('abort', stop, { once: true })
+    if (signal.aborted) { stop(); return }
+    child.stdout.on('data', chunk => {
+      if (settled) { chunk.fill?.(0); return }
+      if (!Buffer.isBuffer(chunk) || size + chunk.length > 1024) {
+        chunk.fill?.(0); stop(); return
+      }
+      size += chunk.length; chunks.push(Buffer.from(chunk)); chunk.fill(0)
+    })
+    child.stdout.once('error', stop)
+    child.once('error', stop)
+    child.once('close', code => finish(code === 0 && !signal.aborted))
+  })
 }
 
 async function childRead() {
-  checkArming()
+  checkArming({ verifyManifest: false })
   const journal = createStagingGeneration23PredecessorJournal()
   const observer = createStagingGeneration23PredecessorObserver({ journal, readToken,
     post: ({ token, signal }) => postStagingGeneration23PredecessorCheck({ token, signal }),
