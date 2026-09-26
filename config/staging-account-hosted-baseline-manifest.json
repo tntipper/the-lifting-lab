@@ -24,7 +24,7 @@
     },
     {
       "path": "scripts/staging-account-hosted-baseline-vercel.mjs",
-      "sha256": "dc151dd9c60eb30f878fbce62cacb6b93eba74094a2204a78b9783de819bbca7"
+      "sha256": "b499588936d59555993dccf826cb36e54b349ee8f9260bdf80987895c82d8983"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-surface.mjs",

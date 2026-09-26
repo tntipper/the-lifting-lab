@@ -12,6 +12,7 @@ import {
 const token = () => Buffer.from('private-vercel-read-token')
 const projectUrl = 'https://api.vercel.com/v9/projects/prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4?teamId=team_gf7cgIkkoeMLtODFDDT5MrW4'
 const environmentUrl = 'https://api.vercel.com/v10/projects/prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4/env?target=preview&gitBranch=codex%2Ftll-integration&limit=100&teamId=team_gf7cgIkkoeMLtODFDDT5MrW4'
+const projectEnvironmentUrl = 'https://api.vercel.com/v10/projects/prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4/env?limit=100&teamId=team_gf7cgIkkoeMLtODFDDT5MrW4'
 const project = () => ({ id: HOSTED_BASELINE_VERCEL_TARGET.projectId, name: HOSTED_BASELINE_VERCEL_TARGET.project,
   accountId: HOSTED_BASELINE_VERCEL_TARGET.teamId, arbitraryAdditiveField: { permitted: true }, link: {
     type: 'github', repoId: 998877, repoOwnerId: 776655, org: 'tntipper', repo: 'the-lifting-lab',
@@ -69,6 +70,39 @@ test('complete preview inventory returns names and classifications but never val
   await assert.rejects(binding({ bodyFor: () => duplicate }).readPreviewEnvironmentInventory({ signal: new AbortController().signal }),
     new RegExp(HOSTED_BASELINE_VERCEL_ERROR))
   await assert.rejects(binding({ bodyFor: () => ({ envs: [], pagination: { next: 'more' } }) }).readPreviewEnvironmentInventory({ signal: new AbortController().signal }),
+    new RegExp(HOSTED_BASELINE_VERCEL_ERROR))
+})
+
+test('effective Preview inventory applies branch overrides and excludes other environments without returning values', async () => {
+  const calls = []
+  const fixture = { envs: [
+    { key: 'SHARED', target: ['preview', 'production'], type: 'encrypted', visibility: 'config', value: 'general-value' },
+    { key: 'SHARED', target: ['preview'], gitBranch: 'codex/tll-integration', type: 'sensitive', visibility: 'secret', value: 'branch-value' },
+    { key: 'GENERAL_ONLY', target: 'preview', type: 'sensitive', visibility: 'secret', value: 'general-secret' },
+    { key: 'OTHER_BRANCH', target: ['preview'], gitBranch: 'feature', type: 'encrypted', value: 'other-secret' },
+    { key: 'PRODUCTION_ONLY', target: ['production'], type: 'encrypted', value: 'prod-secret' },
+    { key: 'CUSTOM_ONLY', customEnvironmentIds: ['env_other'], type: 'sensitive', value: 'custom-secret' },
+  ], pagination: { next: null } }
+  const result = await binding({ onFetch: url => calls.push(url), bodyFor: () => fixture })
+    .readEffectivePreviewEnvironmentInventory({ signal: new AbortController().signal })
+  assert.deepEqual(calls, [projectEnvironmentUrl])
+  assert.deepEqual(result.entries, [
+    { key: 'GENERAL_ONLY', type: 'sensitive', visibility: 'secret', scope: 'preview' },
+    { key: 'SHARED', type: 'sensitive', visibility: 'secret', scope: 'branch' },
+  ])
+  assert.doesNotMatch(JSON.stringify(result), /general-value|branch-value|general-secret|other-secret|prod-secret|custom-secret|private-vercel-read-token/)
+})
+
+test('effective Preview inventory rejects incomplete pages, duplicate scope records and malformed classifications', async () => {
+  const base = { key: 'EXACT_NAME', target: ['preview'], type: 'encrypted' }
+  for (const body of [
+    { envs: [base], pagination: { next: 'more' } },
+    { envs: [base, { ...base }], pagination: { next: null } },
+    { envs: [{ ...base, visibility: 'public' }], pagination: { next: null } },
+    { envs: [{ ...base, gitBranch: 7 }], pagination: { next: null } },
+    { envs: [{ ...base, target: ['preview', 'unknown'] }], pagination: { next: null } },
+    { envs: [{ key: 'AMBIGUOUS', type: 'encrypted' }], pagination: { next: null } },
+  ]) await assert.rejects(binding({ bodyFor: () => body }).readEffectivePreviewEnvironmentInventory({ signal: new AbortController().signal }),
     new RegExp(HOSTED_BASELINE_VERCEL_ERROR))
 })
 

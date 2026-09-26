@@ -44,6 +44,7 @@ const PROJECT_URL = `${API}/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_TEA
 // page accepted here, and a non-terminal cursor fails rather than implying an
 // absence from a partial inventory.
 const ENVIRONMENT_URL = `${API}/v10/projects/${VERCEL_PROJECT_ID}/env?target=preview&gitBranch=codex%2Ftll-integration&limit=${ENVIRONMENT_PAGE_LIMIT}&teamId=${VERCEL_TEAM_ID}`
+const PROJECT_ENVIRONMENT_URL = `${API}/v10/projects/${VERCEL_PROJECT_ID}/env?limit=${ENVIRONMENT_PAGE_LIMIT}&teamId=${VERCEL_TEAM_ID}`
 const discardedResponses = new WeakSet()
 
 const unavailable = () => { throw new Error(HOSTED_BASELINE_VERCEL_ERROR) }
@@ -222,6 +223,37 @@ function environmentInventoryReceipt (value) {
     environment: 'preview', branch: STAGING_BRANCH, entries: Object.freeze(entries) })
 }
 
+function effectivePreviewInventoryReceipt (value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !Array.isArray(value.envs)
+    || value.envs.length > MAX_ENVIRONMENTS) unavailable()
+  if (Object.hasOwn(value, 'pagination')) {
+    if (!value.pagination || typeof value.pagination !== 'object' || Array.isArray(value.pagination)
+      || !Object.hasOwn(value.pagination, 'next') || value.pagination.next !== null) unavailable()
+  } else if (value.envs.length >= ENVIRONMENT_PAGE_LIMIT) unavailable()
+  const general = new Map(), branch = new Map()
+  for (const item of value.envs) {
+    if (!item || typeof item !== 'object' || Array.isArray(item) || !ENV_NAME.test(item.key)
+      || !ENV_TYPES.has(item.type) || (item.visibility !== undefined && !['config', 'secret'].includes(item.visibility))
+      || (item.gitBranch !== undefined && item.gitBranch !== null && typeof item.gitBranch !== 'string')) unavailable()
+    const targets = typeof item.target === 'string' ? [item.target] : item.target
+    const customOnly = (targets === undefined || (Array.isArray(targets) && targets.length === 0))
+      && Array.isArray(item.customEnvironmentIds) && item.customEnvironmentIds.length > 0
+      && item.customEnvironmentIds.every(id => typeof id === 'string' && id.length > 0)
+    if (customOnly) continue
+    if (!Array.isArray(targets) || targets.length === 0 || targets.some(target => !['preview', 'production', 'development'].includes(target))) unavailable()
+    if (!targets.includes('preview')) continue
+    const isGeneral = item.gitBranch === undefined || item.gitBranch === null || item.gitBranch === ''
+    if (!isGeneral && item.gitBranch !== STAGING_BRANCH) continue
+    const selected = isGeneral ? general : branch
+    if (selected.has(item.key)) unavailable()
+    selected.set(item.key, Object.freeze({ key: item.key, type: item.type,
+      visibility: item.visibility ?? 'unknown', scope: isGeneral ? 'preview' : 'branch' }))
+  }
+  const entries = [...new Map([...general, ...branch]).values()].sort((left, right) => left.key.localeCompare(right.key))
+  return Object.freeze({ target: HOSTED_BASELINE_VERCEL_TARGET,
+    environment: 'preview', branch: STAGING_BRANCH, entries: Object.freeze(entries) })
+}
+
 /**
  * Return closed, read-only Vercel baseline operations. Every call accepts the
  * same caller-owned abort signal and can request only one fixed endpoint.
@@ -261,6 +293,7 @@ export function createStagingAccountHostedBaselineVercelBinding ({ fetch: fetche
     async readProject ({ signal } = {}) { return projectReceipt(await read(PROJECT_URL, signal)) },
     async readPreviewEnvironmentPresence ({ signal } = {}) { return environmentReceipt(await read(ENVIRONMENT_URL, signal)) },
     async readPreviewEnvironmentInventory ({ signal } = {}) { return environmentInventoryReceipt(await read(ENVIRONMENT_URL, signal)) },
+    async readEffectivePreviewEnvironmentInventory ({ signal } = {}) { return effectivePreviewInventoryReceipt(await read(PROJECT_ENVIRONMENT_URL, signal)) },
     async readBaseline ({ signal } = {}) {
       const project = projectReceipt(await read(PROJECT_URL, signal))
       const environment = environmentReceipt(await read(ENVIRONMENT_URL, signal))
