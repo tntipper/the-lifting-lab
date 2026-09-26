@@ -1167,6 +1167,10 @@
         "sha256": "a1e264ceef55817ac0cafbd914d9e3f11632a972a348d38d5f3ca06fc6de6b5a"
       },
       {
+        "path": "scripts/staging-generation-22-poststage-readback.mjs",
+        "sha256": "327e9437a4a55b19fc6468c59c02d39a574abf94e13b920f5310e2c67550f855"
+      },
+      {
         "path": "app/api/staging/readiness/contract.ts",
         "sha256": "4e598ef4dd00e7e0574cfe4f981e735fb0962fa14d9225b64055b76b52d72233"
       },
@@ -1617,6 +1621,10 @@
       {
         "path": "tests/staging-generation-22-readback.test.mjs",
         "sha256": "f26c8e4164554a4f52f3fc173d5a69bb2e53006029fc0bad2c8b00dea1146a12"
+      },
+      {
+        "path": "tests/staging-generation-22-poststage-readback.test.mjs",
+        "sha256": "e1899f59fe0d7a346abdbf7597f6abe23b9a51cb3ee6e164ae91ad225a6eb927"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",
