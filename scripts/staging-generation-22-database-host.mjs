@@ -13,8 +13,10 @@ export function createStagingGeneration22DatabaseHost({ post, now = Date.now, re
     || requestTimeoutMs < 1 || requestTimeoutMs > 35_000) unavailable()
   let dispatched = false
   return Object.freeze({
-    async install({ capability, verifiers, expiresAt } = {}) {
-      if (dispatched || expiresAt !== ACTIVE_WINDOW_EXPIRES_AT) unavailable()
+    async install({ capability, verifiers, expiresAt, signal } = {}) {
+      if (dispatched || expiresAt !== ACTIVE_WINDOW_EXPIRES_AT
+        || (signal && (signal.aborted || typeof signal.addEventListener !== 'function'
+          || typeof signal.removeEventListener !== 'function'))) unavailable()
       const packet = prepareStagingGeneration22CredentialSql({ expiresAt, verifiers, nowMs: now() })
       if (now() >= Date.parse(expiresAt)) unavailable()
       consumeStagingGeneration22DatabaseCapability(capability)
@@ -22,6 +24,9 @@ export function createStagingGeneration22DatabaseHost({ post, now = Date.now, re
       // A transport error or invalid result is an uncertain external outcome.
       // The caller must HOLD the journal and reconcile; this host never retries.
       const controller = new AbortController()
+      const forwardAbort = () => controller.abort()
+      signal?.addEventListener('abort', forwardAbort, { once: true })
+      if (signal?.aborted) controller.abort()
       const timeout = setTimeout(() => controller.abort(),
         Math.min(requestTimeoutMs, Math.max(1, Date.parse(expiresAt) - now())))
       let onAbort
@@ -30,11 +35,15 @@ export function createStagingGeneration22DatabaseHost({ post, now = Date.now, re
         controller.signal.addEventListener('abort', onAbort, { once: true })
       })
       try {
-        const rows = await Promise.race([Promise.resolve().then(() => post(packet, { signal: controller.signal })), aborted])
+        const rows = await Promise.race([Promise.resolve().then(() => {
+          if (controller.signal.aborted) unavailable()
+          return post(packet, { signal: controller.signal })
+        }), aborted])
         if (controller.signal.aborted || now() >= Date.parse(expiresAt)) unavailable()
         return validateStagingGeneration22CredentialReceipt(rows, { expiresAt, nowMs: now() })
       } catch { unavailable() }
-      finally { clearTimeout(timeout); controller.signal.removeEventListener('abort', onAbort) }
+      finally { clearTimeout(timeout); controller.signal.removeEventListener('abort', onAbort)
+        signal?.removeEventListener('abort', forwardAbort) }
     },
   })
 }

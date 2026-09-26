@@ -121,3 +121,25 @@ test('an expired clock stops before consuming capability or calling transport', 
   await assert.rejects(expired.install({ capability, verifiers, expiresAt }), /unavailable/)
   assert.equal(calls, 0)
 })
+
+test('caller cancellation reaches a stalled database request', async () => {
+  const { host: { createStagingGeneration22DatabaseHost: create },
+    journal: { createStagingGeneration22Journal: createJournal } } = await armedFixture()
+  const { capability } = dispatchedCapability(createJournal)
+  const parent = new AbortController()
+  let reached, started
+  started = new Promise(resolve => { reached = resolve })
+  let childSignal
+  const host = create({ now, post: (_packet, { signal }) => {
+    childSignal = signal
+    reached()
+    return new Promise(() => {})
+  } })
+  const pending = host.install({ capability, verifiers, expiresAt, signal: parent.signal })
+  await started
+  parent.abort()
+  await assert.rejects(pending, /unavailable/)
+  assert.equal(childSignal.aborted, true)
+  await assert.rejects(host.install({ capability, verifiers, expiresAt,
+    signal: new AbortController().signal }), /unavailable/)
+})

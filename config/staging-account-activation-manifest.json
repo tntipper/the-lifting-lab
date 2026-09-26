@@ -1144,7 +1144,7 @@
       },
       {
         "path": "scripts/staging-generation-22-database-host.mjs",
-        "sha256": "fd51c06106756cd5d67cbe16003ff4beeee2002b6e7a5b4340b4243e6d8bbea4"
+        "sha256": "2cefb71e513f04dbf111fef13d3bcc8a888c55ccbef3785485c311b27e0e86dc"
       },
       {
         "path": "scripts/staging-generation-22-supabase-query.mjs",
@@ -1169,6 +1169,10 @@
       {
         "path": "scripts/staging-generation-22-poststage-readback.mjs",
         "sha256": "327e9437a4a55b19fc6468c59c02d39a574abf94e13b920f5310e2c67550f855"
+      },
+      {
+        "path": "scripts/staging-generation-22-setup-coordinator.mjs",
+        "sha256": "86ead51ae831ca208677954b673131a8c23810c33016f17d591ed50f05366900"
       },
       {
         "path": "app/api/staging/readiness/contract.ts",
@@ -1600,7 +1604,7 @@
       },
       {
         "path": "tests/staging-generation-22-database-host.test.mjs",
-        "sha256": "5c69778b8fe731d503384af20ce4f9bebbbe7c2a0845648b8fb0d3c13e8415c1"
+        "sha256": "2645d676d39f7c60df53f9ce974ba154102edcdf0aa4fbcba6bb4005942434c8"
       },
       {
         "path": "tests/staging-generation-22-supabase-query.test.mjs",
@@ -1625,6 +1629,10 @@
       {
         "path": "tests/staging-generation-22-poststage-readback.test.mjs",
         "sha256": "e1899f59fe0d7a346abdbf7597f6abe23b9a51cb3ee6e164ae91ad225a6eb927"
+      },
+      {
+        "path": "tests/staging-generation-22-setup-coordinator.test.mjs",
+        "sha256": "4a15ac3cb989fa4d7d91c763fd04954eaa0551e09d6afd1412c99e57726370a6"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",
