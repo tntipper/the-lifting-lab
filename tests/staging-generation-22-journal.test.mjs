@@ -111,3 +111,35 @@ test('a well-shaped alteration or interrupted rename cannot advance the same run
   assert.equal(interrupted.read().state, 'CLAIMED')
   assert.throws(() => create({ path: failPath, now }).claim(), /unavailable/)
 })
+
+test('each durable operation grants only its original one-use in-process capability', async () => {
+  const { createStagingGeneration22Journal: create, OPERATION_IDS: operations,
+    consumeStagingGeneration22DatabaseCapability: consumeDb,
+    consumeStagingGeneration22OperationCapability: consume } = await armedFixture()
+  const location = path(), journal = create({ path: location, now })
+  const dbPending = journal.dispatch(journal.claim(), operations[0])
+  const dbCapability = journal.databaseCapability(dbPending)
+  assert.deepEqual(Object.keys(dbCapability), [])
+  assert.throws(() => consumeDb({ ...dbCapability }), /unavailable/)
+  consumeDb(dbCapability)
+  assert.throws(() => consumeDb(dbCapability), /unavailable/)
+  assert.throws(() => journal.databaseCapability(dbPending), /unavailable/)
+  const ready = journal.confirm(dbPending, 'a'.repeat(64))
+  const secretPending = journal.dispatch(ready, operations[1])
+  const secretCapability = journal.operationCapability(secretPending)
+  assert.throws(() => consume(secretCapability, operations[2]), /unavailable/)
+  assert.throws(() => consume({ ...secretCapability }, operations[1]), /unavailable/)
+  consume(secretCapability, operations[1])
+  assert.throws(() => consume(secretCapability, operations[1]), /unavailable/)
+  assert.throws(() => create({ path: location, now }).operationCapability(secretPending), /unavailable/)
+})
+
+test('dispatch just before expiry cannot issue a capability after expiry', async () => {
+  const { createStagingGeneration22Journal: create, OPERATION_IDS: operations } = await armedFixture()
+  let clock = now()
+  const journal = create({ path: path(), now: () => clock })
+  const dbPending = journal.dispatch(journal.claim(), operations[0])
+  clock = Date.parse('2026-09-26T10:50:01.000Z')
+  assert.throws(() => journal.databaseCapability(dbPending), /unavailable/)
+  assert.throws(() => journal.operationCapability(dbPending), /unavailable/)
+})

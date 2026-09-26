@@ -1124,7 +1124,7 @@
       },
       {
         "path": "scripts/staging-generation-22-journal.mjs",
-        "sha256": "b350da43458b26526e5883483b484b4209787439a62a89323337bea010b89dbe"
+        "sha256": "4a74b9bbb474cc283b4b365cf8122841e360a19c518028e3401cd5b6301ec4ff"
       },
       {
         "path": "scripts/staging-generation-22-database-host.mjs",
@@ -1544,7 +1544,7 @@
       },
       {
         "path": "tests/staging-generation-22-journal.test.mjs",
-        "sha256": "7b7883c9dde2758980789a4a3957c4f3868e2bb3ba2aa9263e5232954f7447b6"
+        "sha256": "e004518f0dee7422ee4181a248ada5e33c1a2772a9e9adfdba75bc2879a7bbc8"
       },
       {
         "path": "tests/staging-generation-22-database-host.test.mjs",

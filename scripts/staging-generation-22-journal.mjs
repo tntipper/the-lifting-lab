@@ -16,7 +16,7 @@ export const OPERATION_IDS = Object.freeze([
   ...Object.keys(DISABLED_VERCEL_CONFIGURATION).sort().map(name => `VERCEL_DISABLED:${name}`),
 ])
 const SCHEMA = 'tll-staging-generation-22-dispatch/v1'
-const databaseCapabilities = new WeakSet()
+const operationCapabilities = new WeakMap()
 const unavailable = () => { throw new Error('Generation 22 journal unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
@@ -80,8 +80,13 @@ function write(path, record, fileSystem, exclusive) {
 
 /** A capability cannot be reconstructed from the durable record after a restart. */
 export function consumeStagingGeneration22DatabaseCapability(capability) {
-  if (!capability || !databaseCapabilities.has(capability)) unavailable()
-  databaseCapabilities.delete(capability)
+  consumeStagingGeneration22OperationCapability(capability, 'DATABASE_CREDENTIALS')
+}
+
+export function consumeStagingGeneration22OperationCapability(capability, operationId) {
+  if (!capability || operationCapabilities.get(capability) !== operationId
+    || !OPERATION_IDS.includes(operationId)) unavailable()
+  operationCapabilities.delete(capability)
 }
 
 export function createStagingGeneration22Journal({ path = JOURNAL_PATH, fileSystem = fs,
@@ -89,7 +94,7 @@ export function createStagingGeneration22Journal({ path = JOURNAL_PATH, fileSyst
   if (!STAGING_GENERATION_22_JOURNAL_ENABLED || typeof path !== 'string' || !path
     || typeof makeRunId !== 'function' || typeof now !== 'function') unavailable()
   let owned
-  let databaseCapabilityIssued = false
+  const issuedIndices = new Set()
   const time = () => { const value = now(); if (!Number.isFinite(value)) unavailable(); return new Date(value).toISOString() }
   const update = (previous, changed) => {
     if (!owned || previous.runId !== owned
@@ -97,6 +102,17 @@ export function createStagingGeneration22Journal({ path = JOURNAL_PATH, fileSyst
     const next = validate({ ...previous, ...changed, updatedAt: time() })
     write(path, next, fileSystem, false)
     return next
+  }
+  const issue = previous => {
+    if (Date.parse(ACTIVE_WINDOW_EXPIRES_AT) <= now()
+      || issuedIndices.has(previous?.nextIndex) || previous?.state !== 'DISPATCHED'
+      || previous.pending !== OPERATION_IDS[previous.nextIndex]
+      || previous.runId !== owned
+      || JSON.stringify(read(path, fileSystem)) !== JSON.stringify(previous)) unavailable()
+    const capability = Object.freeze({})
+    operationCapabilities.set(capability, previous.pending)
+    issuedIndices.add(previous.nextIndex)
+    return capability
   }
   return Object.freeze({
     read: () => read(path, fileSystem),
@@ -117,15 +133,10 @@ export function createStagingGeneration22Journal({ path = JOURNAL_PATH, fileSyst
       return update(previous, { state: 'DISPATCHED', pending: operationId })
     },
     databaseCapability(previous) {
-      if (databaseCapabilityIssued || previous?.state !== 'DISPATCHED'
-        || previous.pending !== 'DATABASE_CREDENTIALS' || previous.nextIndex !== 0
-        || previous.runId !== owned
-        || JSON.stringify(read(path, fileSystem)) !== JSON.stringify(previous)) unavailable()
-      const capability = Object.freeze({})
-      databaseCapabilities.add(capability)
-      databaseCapabilityIssued = true
-      return capability
+      if (previous?.pending !== 'DATABASE_CREDENTIALS') unavailable()
+      return issue(previous)
     },
+    operationCapability: issue,
     confirm(previous, receiptSha256) {
       if (previous?.state !== 'DISPATCHED' || !digest(receiptSha256)) unavailable()
       const nextIndex = previous.nextIndex + 1
