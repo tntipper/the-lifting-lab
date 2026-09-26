@@ -15,6 +15,26 @@ The next milestone is **one whole-run rehearsal**, not another separately counte
 
 The project gate policy still requires planning, independent review before arming, separate arming/execution processes, a phase record and no replay of uncertain windows. Group local proof into one rehearsal and keep owner interruptions to consequential hosted changes; these controls do not require a new approval for every offline test.
 
+## Run checklist (26 September repository check)
+
+**Available and to preserve:** local branch `codex/tll-integration` is at `cbc951714b0501028beba8e1ad37ce2f6f46ff23` before this checklist edit; remote branch remains `79f685c64f5ef67b19861d0beba9ddf18d77309c`. Six unrelated untracked paths and consumed one-use records must remain untouched. Node 24, installed dependencies and browser test assets are present. Existing local tests cover account/cart pieces, and disabled Gen23 predecessor, five-setting journal/coordinator, Vercel PATCH and Edge replacement code exists. The protected staging Preview was previously verified OFF; that remote fact must be refreshed before use. Docker CLI is installed but its local daemon is currently stopped, so local PostgreSQL tests cannot run until it starts.
+
+**Complete before any hosted credential window:**
+
+- Start/verify the local PostgreSQL fixture; build one runner that exercises setup, owner journey and shutdown using the existing code, local database/browser tests and simulated external responses. A simulated browser flow must never submit payment or contact a real customer.
+- Fill only missing connections: Gen23 guarded five-login transaction, restricted-connection proof, provider/Edge/private/public activation, protected Preview source/alias proof, backend-first disable, OFF Preview publication, separate retirement and final readback. Reuse existing Gen22 controls where their assumptions still hold; do not rewrite working areas merely for style.
+- Run full success and injected-failure rehearsals, record one nonsecret timeline, prove no replay on uncertainty, and measure whether the complete real exercise plus cleanup fits a one-hour login window with a safe reserve.
+- Pass focused regression checks, typecheck, build, manifest and live-boundary checks. Obtain one independent review of the connected package, the failure results and the exact temporary arming diff. Keep all ordinary source gates OFF.
+
+**Refresh immediately before the one protected staging exercise:**
+
+- Confirm Git source/remote predecessor; Vercel branch/immutable Preview identity and Require Log In protection; exact five branch-only Secret IDs and four OFF switches; Supabase staging project, retired five-role database state, disabled provider/Edge state and migrations; Shopify staging Storefront token scope and synthetic variant availability; and unused new journal paths. Do not infer these from the September evidence.
+- Confirm short-lived Vercel and Supabase access can be used privately on this Mac, the retained Preview bypass works only for the pinned protected build, and the operator has a functioning recovery route. Never paste tokens into chat or store them in a report.
+- Have the owner available for the staging Shopify sign-in/confirmation using `toby@theliftinglab.co.uk`, any Mac Keychain prompt and observation of the checkout handoff. The owner must not submit an order or payment. No owner action is required for the offline rehearsal.
+- Obtain the action-time approvals required by the reviewed Stage 3 policy for hosted settings, provider changes, branch publication and activation. Prior approvals for consumed windows do not authorise a new one.
+
+**Closeout required for a PASS:** one evidenced protected owner sign-in → account/orders isolation → mapped-product cart → correct amount → Shopify checkout handoff without payment, followed by backend/provider/Edge OFF, a new protected OFF Preview with the branch alias pinned to it, five logins/passwords/grants retired and sessions drained, and an independent final read of those facts. Any uncertain step is a HOLD for read-only reconciliation, not a retry or a pass.
+
 ## One customer-journey result, not another sequence of preparatory generations
 
 The acceptance unit is **one protected staging run** with a clear before, customer journey and after. Count progress when a customer-facing step works in the real Preview and when the temporary access is proved retired; do not count another helper, journal or generation as customer progress. The disabled components below exist solely to make that run safe. Reuse the verified Gen22 retirement controls and existing source rather than redesigning them. If one prerequisite fails, diagnose that exact failure before adding a successor window.
