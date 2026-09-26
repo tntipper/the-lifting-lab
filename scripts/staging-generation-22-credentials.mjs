@@ -30,6 +30,7 @@ const predecessorMarker = JSON.stringify({
   expiresAt: PREDECESSOR.expiresAt, generation: PREDECESSOR.generation,
   projectRef: PROJECT_REF, state: 'retired', windowId: PREDECESSOR.windowId,
 })
+const preparedSql = new WeakMap()
 const privateAclDrift = `SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(n.nspacl) a
     WHERE n.nspname LIKE 'tll\\_%\\_private' ESCAPE '\\' AND a.grantee=0 AND a.privilege_type='USAGE'
   UNION ALL SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(n.nspacl) a
@@ -173,6 +174,23 @@ SELECT jsonb_build_object('status','PASS','packageId','${PACKAGE_ID}',
  'expiresAt',${quote(expiresAt)},'controlsEnabled',false,'runtimeCount',5)
  AS tll_generation_22_credential_receipt;
 `
+}
+
+/** Issue one opaque, in-process dispatch packet for the exact SQL builder output. */
+export function prepareStagingGeneration22CredentialSql(input) {
+  const sql = buildStagingGeneration22CredentialSql(input)
+  const packet = Object.freeze({})
+  preparedSql.set(packet, sql)
+  return packet
+}
+
+/** Only the fixed staging transport should consume this, immediately before POST. */
+export function consumeStagingGeneration22PreparedSql(packet) {
+  if (!packet || typeof packet !== 'object' || Array.isArray(packet)) unavailable()
+  const sql = preparedSql.get(packet)
+  if (typeof sql !== 'string') unavailable()
+  preparedSql.delete(packet)
+  return sql
 }
 
 /** Accepts only the exact nonsecret result of the single Gen22 transaction. */

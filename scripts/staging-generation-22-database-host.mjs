@@ -1,6 +1,6 @@
 /** Injected-only bridge from the one-use Gen22 journal to exact staging SQL. */
 import { consumeStagingGeneration22DatabaseCapability } from './staging-generation-22-journal.mjs'
-import { ACTIVE_WINDOW_EXPIRES_AT, buildStagingGeneration22CredentialSql,
+import { ACTIVE_WINDOW_EXPIRES_AT, prepareStagingGeneration22CredentialSql,
   validateStagingGeneration22CredentialReceipt } from './staging-generation-22-credentials.mjs'
 
 export const STAGING_GENERATION_22_DATABASE_HOST_ENABLED = false
@@ -15,7 +15,7 @@ export function createStagingGeneration22DatabaseHost({ post, now = Date.now, re
   return Object.freeze({
     async install({ capability, verifiers, expiresAt } = {}) {
       if (dispatched || expiresAt !== ACTIVE_WINDOW_EXPIRES_AT) unavailable()
-      const sql = buildStagingGeneration22CredentialSql({ expiresAt, verifiers, nowMs: now() })
+      const packet = prepareStagingGeneration22CredentialSql({ expiresAt, verifiers, nowMs: now() })
       if (now() >= Date.parse(expiresAt)) unavailable()
       consumeStagingGeneration22DatabaseCapability(capability)
       dispatched = true
@@ -30,7 +30,7 @@ export function createStagingGeneration22DatabaseHost({ post, now = Date.now, re
         controller.signal.addEventListener('abort', onAbort, { once: true })
       })
       try {
-        const rows = await Promise.race([Promise.resolve().then(() => post(sql, { signal: controller.signal })), aborted])
+        const rows = await Promise.race([Promise.resolve().then(() => post(packet, { signal: controller.signal })), aborted])
         if (controller.signal.aborted || now() >= Date.parse(expiresAt)) unavailable()
         return validateStagingGeneration22CredentialReceipt(rows, { expiresAt, nowMs: now() })
       } catch { unavailable() }

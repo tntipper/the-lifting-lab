@@ -43,7 +43,7 @@ async function armedFixture() {
     .replace("from './staging-generation-22-journal.mjs'", `from '${journalUrl}'`)
     .replaceAll("from './", `from '${scripts.href}`)
   return { host: await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`),
-    journal: await import(journalUrl) }
+    journal: await import(journalUrl), credentials: await import(credentialUrl) }
 }
 
 function dispatchedCapability(createJournal) {
@@ -59,10 +59,10 @@ test('database host is disconnected and refuses creation by default', () => {
 
 test('synthetic host accepts only dispatched Gen22 SQL and exact receipt, once', async () => {
   const { host: { createStagingGeneration22DatabaseHost: create },
-    journal: { createStagingGeneration22Journal: createJournal } } = await armedFixture()
+    journal: { createStagingGeneration22Journal: createJournal }, credentials } = await armedFixture()
   const { capability } = dispatchedCapability(createJournal)
   const calls = []
-  const host = create({ post: async sql => { calls.push(sql); return [{ tll_generation_22_credential_receipt: receipt }] }, now })
+  const host = create({ post: async packet => { calls.push(credentials.consumeStagingGeneration22PreparedSql(packet)); return [{ tll_generation_22_credential_receipt: receipt }] }, now })
   await assert.rejects(host.install({ capability: { ...pending }, verifiers, expiresAt }), /unavailable/)
   assert.equal(calls.length, 0)
   const result = await host.install({ capability, verifiers, expiresAt })
