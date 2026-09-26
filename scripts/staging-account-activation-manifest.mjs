@@ -840,6 +840,7 @@ const disabledActivationToolingSources = [
   'tests/staging-generation-23-recovery.test.mjs',
   'tests/staging-generation-23-database-acceptance.mjs',
   'tests/staging-generation-23-whole-run.test.mjs',
+  'tests/staging-generation-23-surface-whole-run.test.mjs',
   'tests/staging-generation-22-credentials.test.mjs',
   'tests/staging-generation-22-recovery.test.mjs',
   'tests/staging-generation-22-recovery-journal.test.mjs',

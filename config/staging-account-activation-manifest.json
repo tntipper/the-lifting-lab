@@ -1775,6 +1775,10 @@
         "sha256": "5518ff42793262611978eee4a5ded3b2259efa940ce23d70ed472471af42ce19"
       },
       {
+        "path": "tests/staging-generation-23-surface-whole-run.test.mjs",
+        "sha256": "ab8cc567e3bfa826fd35eaf17609ed868c8249909d0875d867136639f800b59e"
+      },
+      {
         "path": "tests/staging-generation-22-credentials.test.mjs",
         "sha256": "7da9eb5a97fbfa893b8f7b87995901a8e64bfbc16ab989d618608d2e8dc92ae8"
       },
