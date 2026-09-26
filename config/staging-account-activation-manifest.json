@@ -896,7 +896,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-fixture-metadata-diagnostic.test.mjs",
-        "sha256": "0d17877e383fa92b597f5469f18c173c0c57081cc2922fafd724066323672aa4"
+        "sha256": "af0b1110989e76860b67c78009108878ad2e0a85856ead2e18dfd393e83ad885"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-metadata-journal.test.mjs",
@@ -932,7 +932,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-search-domain-diagnostic.test.mjs",
-        "sha256": "a13b2ca9b83a0d3c8a272d3934540dca728ae342d4ef1aa8c85e35bf902e54ce"
+        "sha256": "283f9d465d4228841972dd923207f474187109d20019092b6c0a641e311fe70a"
       },
       {
         "path": "tests/staging-provider-keychain-search-domain-runner.test.mjs",
@@ -1276,7 +1276,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-v2-native-offline.test.mjs",
-        "sha256": "197d1da1241aa0af65e764eeb9999861c1d582cffdb31577fbb5887902ddb114"
+        "sha256": "6ad0d009bbf6dd193811f7d7180c03d613d88549dcda5febf179e80071d4862d"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-v2-build.test.mjs",
@@ -1404,11 +1404,11 @@
       },
       {
         "path": "tests/staging-preview-git-publish-native-read.test.mjs",
-        "sha256": "cee804350cac7f5007b8b0443cb799f7752c53a38824b5fd714cbb01d140f7ff"
+        "sha256": "894b470d012efb1a9ac2901b065ce2bd628e0fb0d207744ca5b1dece2c24131d"
       },
       {
         "path": "tests/staging-preview-git-publish-native-push.test.mjs",
-        "sha256": "ed3099cf73876f6054cb408bad69d24526fd9c57b69fb4e17f02a86e1cef1d42"
+        "sha256": "ad5438a62c30b7b1216a1266da0ae4fc598f147ee644e18dc45dd12fc3c680e6"
       },
       {
         "path": "tests/staging-preview-git-publish-arm-preflight.test.mjs",

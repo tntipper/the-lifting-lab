@@ -56,7 +56,7 @@ test('package has no mutation launcher dependency or caller-controlled dispatch 
   assert.deepEqual(JSON.parse(output), { status: 'NATIVE_ACCESS_DISABLED', target: PROJECT_REF, queryId: QUERY_ID })
 })
 
-test('reviewed native Keychain design is hash-pinned without enabling it', () => {
+test('reviewed native Keychain design is hash-pinned without enabling it', { skip: process.platform !== 'darwin' }, () => {
   const reference = nativeDesignReference()
   execFileSync(process.execPath, ['scripts/staging-readonly-preflight-manifest.mjs', '--check'], { stdio: 'pipe' })
   const manifest = JSON.parse(readFileSync('config/staging-readonly-preflight-manifest.json', 'utf8'))

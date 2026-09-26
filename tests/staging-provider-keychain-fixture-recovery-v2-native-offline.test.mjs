@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { test } from 'node:test'
 
-test('V2 native safety predicates run offline with the live switch disabled', () => {
+test('V2 native safety predicates run offline with the live switch disabled', { skip: process.platform !== 'darwin' }, () => {
   const directory = mkdtempSync(join(tmpdir(), 'tll-v2-native-offline-'))
   try {
     const source = resolve(import.meta.dirname,

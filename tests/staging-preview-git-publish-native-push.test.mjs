@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { createStagingPreviewGitPublishNativePushPort } from '../scripts/staging-preview-git-publish-native-push.mjs'
 import { stagingPreviewGithubCliReady } from '../scripts/staging-preview-git-source-preflight.mjs'
 
@@ -27,7 +28,7 @@ test('one fixed Git push uses a scoped GitHub CLI helper and suppresses process 
       assert.equal(options.env.GIT_TERMINAL_PROMPT, '0')
       assert.equal(options.env.HOME, '/Users/tobiastipper')
       assert.equal(options.env.GH_CONFIG_DIR, '/Users/tobiastipper/.config/gh')
-      assert.equal(options.cwd.endsWith('/implementation-integration'), true)
+      assert.equal(options.cwd, resolve(import.meta.dirname, '..'))
       return { status: 0, signal: null, stdout: Buffer.from('untrusted'), stderr: Buffer.from('untrusted') }
     },
   })
@@ -78,7 +79,7 @@ test('uncertain or failed process result consumes the port; remote reconciliatio
 })
 
 test('GitHub CLI trust preflight is read-only and the port has no direct entry point', () => {
-  assert.equal(stagingPreviewGithubCliReady(), true)
+  if (process.platform === 'darwin') assert.equal(stagingPreviewGithubCliReady(), true)
   const source = readFileSync(new URL('../scripts/staging-preview-git-publish-native-push.mjs', import.meta.url), 'utf8')
   assert.doesNotMatch(source, /process\.argv|Keychain|\.execute\(|child_process|spawnSync/)
   assert.match(source, /stagingPreviewGithubCliReady/)

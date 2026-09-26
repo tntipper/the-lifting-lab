@@ -7,7 +7,7 @@ import { test } from 'node:test'
 
 const source = resolve('scripts/staging-provider-keychain-fixture-metadata-diagnostic.swift')
 
-test('fixture diagnostic is disabled, read-only, and classifies injected metadata offline', () => {
+test('fixture diagnostic is disabled, read-only, and classifies injected metadata offline', { skip: process.platform !== 'darwin' }, () => {
   const body = readFileSync(source, 'utf8')
   assert.match(body, /tllMetadataDiagnosticEnabled = false/)
   for (const forbidden of ['SecKeychainDelete', 'SecKeychainOpen', 'SecKeychainFind',

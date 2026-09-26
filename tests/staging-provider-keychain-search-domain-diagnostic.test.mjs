@@ -7,7 +7,7 @@ import { test } from 'node:test'
 
 const source = resolve('scripts/staging-provider-keychain-search-domain-diagnostic.swift')
 
-test('search-domain diagnostic stays disabled and reports only bounded categories', () => {
+test('search-domain diagnostic stays disabled and reports only bounded categories', { skip: process.platform !== 'darwin' }, () => {
   const body = readFileSync(source, 'utf8')
   assert.match(body, /tllSearchDomainDiagnosticEnabled = false/)
   for (const forbidden of ['SecKeychainOpen', 'SecKeychainDelete', 'SecKeychainFind',

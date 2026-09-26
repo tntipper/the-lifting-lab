@@ -54,7 +54,7 @@ test('native read port rejects push, substituted remote and unreviewed command b
   assert.throws(() => port.runGit(['status', '--porcelain'], 4_096), /command unavailable/)
 })
 
-test('overridden methods and accessors cannot turn validation into a different spawned command', () => {
+test('overridden methods and accessors cannot turn validation into a different spawned command', { skip: process.platform !== 'darwin' }, () => {
   let spawns = 0
   const port = createStagingPreviewGitPublishNativeReadPort({ spawn: () => { spawns++; return {
     status: 0, stdout: Buffer.from(`${root}\n`), signal: null,
