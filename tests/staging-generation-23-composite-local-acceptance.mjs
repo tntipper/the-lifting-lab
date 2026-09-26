@@ -1,4 +1,4 @@
-/** Opt-in, networkless composite rehearsal. Hosted provider/settings remain simulated. */
+/** Opt-in, networkless composite rehearsal. Hosted APIs remain injected. */
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
@@ -11,9 +11,13 @@ import { enableStagingSurfaces, freezeStagingSurfaces } from '../scripts/staging
 import { PROVIDER_IDENTIFIER, STAGING_BROKER_PROVIDER, STAGING_PROVIDER_TARGET,
   STAGING_PROJECT_REF } from '../scripts/staging-provider-broker-rotation.mjs'
 import { STAGING_PROVIDER_NAME } from '../scripts/staging-provider-broker-native-adapter.mjs'
+import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
 import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/staging-generation-23-surface-fixture.mjs'
 
-if (process.argv.slice(2).join(' ') !== '--run-offline-once') throw Error('Explicit local test mode required')
+const mode = process.argv.slice(2).join(' ')
+if (!['--run-offline-once', '--fail-first-setting-once'].includes(mode)) {
+  throw Error('Explicit local test mode required')
+}
 
 const run = (program, args, env = process.env) => execFileSync(program, args, {
   cwd: new URL('../', import.meta.url), encoding: 'utf8', timeout: 120_000,
@@ -21,16 +25,48 @@ const run = (program, args, env = process.env) => execFileSync(program, args, {
 })
 const surface = surfaceFixture()
 const { PHASES, REQUIRED_RESULTS, rehearseStagingGeneration23WholeRun } = await rehearsal()
-const scriptUrl = new URL('../scripts/staging-generation-23-provider-control.mjs', import.meta.url)
 const scriptDir = new URL('../scripts/', import.meta.url)
-let providerSource = await readFile(scriptUrl, 'utf8')
-assert.equal(providerSource.split('export const STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED = false').length, 2)
-providerSource = providerSource.replace('export const STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED = false',
-  'export const STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED = true')
-  .replaceAll("from './", `from '${scriptDir.href}`)
-  .replaceAll('resolve(import.meta.dirname,', `resolve(${JSON.stringify(fileURLToPath(scriptDir))},`)
-const providerControl = await import(`data:text/javascript;base64,${Buffer.from(providerSource).toString('base64')}`)
+async function arm(filename, flag) {
+  let source = await readFile(new URL(filename, scriptDir), 'utf8')
+  const declaration = `export const ${flag} = false`
+  assert.equal(source.split(declaration).length, 2)
+  source = source.replace(declaration, `export const ${flag} = true`)
+    .replaceAll("from './", `from '${scriptDir.href}`)
+    .replaceAll('resolve(import.meta.dirname,', `resolve(${JSON.stringify(fileURLToPath(scriptDir))},`)
+  return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
+}
+const providerControl = await arm('staging-generation-23-provider-control.mjs',
+  'STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED')
+const settingsJournalModule = await arm('staging-generation-23-settings-journal.mjs',
+  'STAGING_GENERATION_23_SETTINGS_JOURNAL_ENABLED')
+const settingsCoordinatorModule = await arm('staging-generation-23-settings-coordinator.mjs',
+  'STAGING_GENERATION_23_SETTINGS_COORDINATOR_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
+const settingsDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-settings-'))
+const settingsTargets = VERCEL_PASSWORD_NAMES.map((name, index) => ({ name,
+  id: `env_gen23_${index}`, branch: 'codex/tll-integration', target: 'preview',
+  classification: 'sensitive' }))
+const settingsJournal = settingsJournalModule.createStagingGeneration23SettingsJournal({
+  path: join(settingsDirectory, 'settings.json'), now: Date.now,
+  makeRunId: () => '224f77e4-c361-46ce-b357-1e0a740a7f77',
+})
+const installedSettings = new Map()
+let edgePassword
+const settingsCoordinator = settingsCoordinatorModule.createStagingGeneration23SettingsCoordinator({
+  journal: settingsJournal, now: Date.now,
+  makeReplacer: () => ({
+    async replace(target, value) {
+      installedSettings.set(target.name, value)
+      if (mode === '--fail-first-setting-once') throw Error('injected lost setting reply')
+      return { status: 'REPLACED', ...target }
+    }, dispose() {},
+  }),
+  edgeHost: { async stageSecret({ name, value }) {
+    assert.equal(name, EDGE_PASSWORD_NAME)
+    edgePassword = value
+    return { status: 'STAGED', name, projectRef: PROJECT_REF }
+  }, dispose() {} },
+})
 let active, databaseEnabled = false, enabledPreview, ownerChecks = false
 let provider = {
   id: 'synthetic-staging-provider', provider_type: 'oauth2', identifier: PROVIDER_IDENTIFIER,
@@ -75,14 +111,25 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
       assert.equal(provider.enabled, false)
       break
     case 'settings':
-      // The six remote password replacements are exercised separately with
-      // injected transports. They cannot run against this networkless Docker.
+      const settingResult = await settingsCoordinator.run({ targets: settingsTargets,
+        projection: database.passwordProjection(), expiresAt: database.expiresAt,
+        signal: new AbortController().signal })
+      if (mode === '--fail-first-setting-once') {
+        assert.deepEqual(settingResult, { status: 'HOLD_RECONCILE', completedCount: 0 })
+        assert.equal(settingsJournal.read().state, 'HOLD')
+        return { status: 'HOLD_SETTINGS' }
+      }
+      assert.deepEqual(settingResult, { status: 'SETTINGS_REPLACED_UNVERIFIED', operationCount: 6 })
+      assert.equal(settingsJournal.read().state, 'FINISHED')
+      assert.equal(installedSettings.size, 5)
+      assert.equal(edgePassword, installedSettings.get(EDGE_PASSWORD_NAME))
       break
     case 'databaseSetup':
       assert.equal(database.setup().status, 'PASS')
       active = true
       break
     case 'restrictedConnections':
+      // The fixture's SCRAM checks use the exact values sent to the injected hosts.
       assert.equal(database.proveRestrictedConnections().runtimeCount, 5)
       break
     case 'providerEnable':
@@ -151,6 +198,17 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
 try {
   const result = await rehearseStagingGeneration23WholeRun({ operations, now: Date.now,
     windowExpiresAt: database.expiresAt, signal: new AbortController().signal })
+  if (mode === '--fail-first-setting-once') {
+    assert.equal(result.status, 'HOLD')
+    assert.equal(result.failedPhase, 'settings')
+    assert.deepEqual(calls, ['baseline', 'settings'])
+    assert.equal(active, undefined)
+    assert.equal(provider.enabled, false)
+    assert.equal(surface.events.length, 0)
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_SETTINGS_LOST_REPLY_STOP',
+      phaseCount: calls.length, databaseSetup: 'not_dispatched',
+      provider: 'off', surface: 'off', purchase: 'none' }))
+  } else {
   if (result.status !== 'LOCAL_SEQUENCE_PASS') console.error(JSON.stringify({
     status: result.status, failedPhase: result.failedPhase, nextAction: result.nextAction,
   }))
@@ -159,8 +217,9 @@ try {
   console.log(JSON.stringify({ status: 'PASS_PARTIAL_LOCAL_COMPOSITE', phaseCount: PHASES.length,
     database: 'real_isolated_postgres', surface: 'real_controller_injected_services',
     customer: 'real_local_tests_and_browser', provider: 'real_control_injected_service',
-    backendControls: 'real_local_fixture_only', settings: 'simulated_not_ready',
+    backendControls: 'real_local_fixture_only', settings: 'real_coordinator_injected_services',
     hostedPreview: 'not_tested', purchase: 'none', elapsedMs: result.elapsedMs }))
+  }
 } finally {
   if (existingCartFixtureStarted) {
     try { run('docker', ['stop', 'tll-stage0-postgres']) } catch { /* preserve primary failure */ }

@@ -10,6 +10,7 @@ import { PASSWORD_PURPOSES } from '../scripts/staging-generation-22-material.mjs
 import { WINDOW_ID as PREDECESSOR_WINDOW_ID } from '../scripts/staging-generation-22-credentials.mjs'
 import { PREDECESSOR_EXPIRES_AT } from '../scripts/staging-generation-23-predecessor-check.mjs'
 import { deriveScramVerifier } from '../scripts/staging-generation-6-transport.mjs'
+import { EDGE_PASSWORD_NAME, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
 
 const name = `tll-gen23-offline-${randomUUID().slice(0, 8)}`
 const docker = (args, input) => execFileSync('docker', args, { input, encoding: 'utf8',
@@ -108,6 +109,14 @@ export async function createStagingGeneration23LocalDatabaseFixture() {
   let state = 'READY', built, recoverySql, removed = false
   return Object.freeze({
     expiresAt,
+    passwordProjection() {
+      assert.equal(state, 'READY')
+      const vercel = Object.fromEntries(PASSWORD_PURPOSES.map(purpose => [
+        `TLL_STAGING_${purpose.toUpperCase()}_DATABASE_PASSWORD`, passwords[purpose],
+      ]))
+      assert.deepEqual(Object.keys(vercel).sort(), [...VERCEL_PASSWORD_NAMES])
+      return { vercel, supabase: { [EDGE_PASSWORD_NAME]: vercel[EDGE_PASSWORD_NAME] } }
+    },
     setup() {
       assert.equal(state, 'READY')
       state = 'SETUP_DISPATCHED'
