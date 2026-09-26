@@ -1115,6 +1115,10 @@
         "sha256": "7b0789e4d2d8b9eb5304a8a370cd505108662278afb0ccca4abd80d8587b9f78"
       },
       {
+        "path": "scripts/staging-generation-22-recovery.mjs",
+        "sha256": "2f0a971476559550c78868157cdfb74eb44868c3f471e37c4e99a8b5f63364d5"
+      },
+      {
         "path": "app/api/staging/readiness/contract.ts",
         "sha256": "4e598ef4dd00e7e0574cfe4f981e735fb0962fa14d9225b64055b76b52d72233"
       },
@@ -1513,6 +1517,10 @@
       {
         "path": "tests/staging-generation-22-credentials.test.mjs",
         "sha256": "9127a774b784f5829eb4bd78fec3bfdccf27e90773dddc970f7bd8ca62d754c9"
+      },
+      {
+        "path": "tests/staging-generation-22-recovery.test.mjs",
+        "sha256": "9f2b5c1c3a63d638e99c25442c0ff4f96a03d33c6fa94ff5a7df7c733c74a836"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",
