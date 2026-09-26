@@ -100,7 +100,7 @@ BEGIN
  END LOOP;
   IF (SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
     WHERE g.rolname IN(${roleList}) AND m.rolname=session_user
-    AND e.grantor=session_user::regrole AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)<>5
+    AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)<>5
   OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
     WHERE (g.rolname IN(${roleList}) OR m.rolname IN(${roleList}))
     AND NOT (g.rolname IN(${roleList}) AND m.rolname=session_user

@@ -49,6 +49,8 @@ test('armed synthetic recovery is exact, finite, role-only, and checks retired s
   assert.match(sql, /private authority drift/)
   assert.match(sql, /private authority changed/)
   assert.match(sql, /execution edge remains/)
+  assert.equal(sql.split('e.grantor=operator_name::regrole').length, 2)
+  assert.doesNotMatch(sql, /e\.grantor=session_user::regrole/)
   assert.match(sql, /controls not disabled/)
   assert.match(sql, /controls changed/)
   assert.match(sql, /COMMIT;\nSELECT jsonb_build_object/)
