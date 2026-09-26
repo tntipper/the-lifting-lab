@@ -1715,6 +1715,10 @@
         "sha256": "fc1b14be14491bf2282b5f9a5eda449a7a36a4f7693d930c87534c9e324ca06a"
       },
       {
+        "path": "tests/staging-generation-22-preflight-armed-copy.test.mjs",
+        "sha256": "d25b53e78fab5cff13055d29ceccbdea6a1186328386d385f7c5a297c4098f53"
+      },
+      {
         "path": "tests/staging-generation-22-retired-query.test.mjs",
         "sha256": "c84081ca8f9c6a362880553ae5043d1ae9f82e0f249f4ca8dd3971bb949d31fb"
       },

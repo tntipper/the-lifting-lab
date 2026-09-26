@@ -322,6 +322,7 @@ test('staging account activation manifest pins reviewed sources and contains no 
     'tests/staging-generation-22-preflight-journal.test.mjs',
     'tests/staging-generation-22-preflight-observer.test.mjs',
     'tests/staging-generation-22-preflight-live-launcher.test.mjs',
+    'tests/staging-generation-22-preflight-armed-copy.test.mjs',
     'tests/staging-generation-22-retired-query.test.mjs',
     'tests/staging-generation-22-retired-check.test.mjs',
     'tests/staging-generation-22-journal.test.mjs',
