@@ -1119,6 +1119,10 @@
         "sha256": "bbf99624930c5d0cd5ee1d8ef895fbc26c5dd835d8e17eb8800a23099592606e"
       },
       {
+        "path": "scripts/staging-generation-22-recovery-journal.mjs",
+        "sha256": "7b43a86bd595c30a1549d04aea050fff58ae9a4e94b4e40157ded63ec1bd9dbd"
+      },
+      {
         "path": "scripts/staging-generation-22-retired-check.mjs",
         "sha256": "66c7646a04e3c602304d2ef79521c493670d3ad2d18a7a3f67877f2f02ac0d16"
       },
@@ -1553,6 +1557,10 @@
       {
         "path": "tests/staging-generation-22-recovery.test.mjs",
         "sha256": "8aafc987043f4c0e17e7f0e37da264464bb218d518eea4d0d7db0950137a278d"
+      },
+      {
+        "path": "tests/staging-generation-22-recovery-journal.test.mjs",
+        "sha256": "60a1f06e853da45f535f39a3eac6c3b126a58a30161cdd4085f4e38a494a54f8"
       },
       {
         "path": "tests/staging-generation-22-retired-check.test.mjs",
