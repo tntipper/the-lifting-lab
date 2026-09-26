@@ -1,4 +1,4 @@
-/** Fresh-session, read-only proof after a Generation 22 staging retirement. */
+/** Separate read-only transaction proof after a Generation 22 staging retirement. */
 import { createHash } from 'node:crypto'
 import { IDENTITIES } from './staging-generation-21-credentials.mjs'
 import { PRODUCTION_PROJECT_REF } from './staging-account-hosted-baseline-database.mjs'

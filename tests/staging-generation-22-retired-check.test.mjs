@@ -22,13 +22,13 @@ async function armedFixture() {
   return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
 }
 
-test('fresh retired check remains unavailable by default', () => {
+test('separate retired-state check remains unavailable by default', () => {
   assert.equal(STAGING_GENERATION_22_RETIRED_CHECK_ENABLED, false)
   assert.throws(() => buildStagingGeneration22RetiredCheckSql({ expiresAt }), /unavailable/)
   assert.throws(() => validateStagingGeneration22RetiredCheck([], { expiresAt }), /unavailable/)
 })
 
-test('armed fixture checks exact retired state in a fresh read-only session', async () => {
+test('armed fixture checks exact retired state in a separate read-only transaction', async () => {
   const { buildStagingGeneration22RetiredCheckSql: build } = await armedFixture()
   const sql = build({ expiresAt })
   assert.match(sql, /^BEGIN READ ONLY;\nSET LOCAL lock_timeout='5s';/)
@@ -46,7 +46,7 @@ test('armed fixture checks exact retired state in a fresh read-only session', as
   assert.throws(() => build({ expiresAt: '2026-09-26T10:49:00.000Z' }), /unavailable/)
 })
 
-test('fresh retired receipt requires exact fields and target', async () => {
+test('separate retired-state receipt requires exact fields and target', async () => {
   const { validateStagingGeneration22RetiredCheck: validate } = await armedFixture()
   const result = { status: 'PASS_RETIRED', queryId: 'tll-staging-generation-22-retired-check/v1',
     projectRef: 'qdmvngjwkcsilzmqksme', generation: 22,

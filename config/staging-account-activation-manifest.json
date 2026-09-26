@@ -1131,8 +1131,12 @@
         "sha256": "1cabde77bdc2b6618bcd4afac55edc16a283ff0417abb750d22a6a2a23fb4dbf"
       },
       {
+        "path": "scripts/staging-generation-22-retired-query.mjs",
+        "sha256": "bb427e147dceee62d545c315eff5ad9ef81f63325a5d2b22214237a4ab95a960"
+      },
+      {
         "path": "scripts/staging-generation-22-retired-check.mjs",
-        "sha256": "66c7646a04e3c602304d2ef79521c493670d3ad2d18a7a3f67877f2f02ac0d16"
+        "sha256": "d6671d8417531dd26b4ab38bad00dbd8c565ce003e8ae96f3e090450800fce3c"
       },
       {
         "path": "scripts/staging-generation-22-journal.mjs",
@@ -1579,8 +1583,12 @@
         "sha256": "f9bd3ea463bcbcba9effdf21d268f217ccce9d3d7f30e40b04320fce3834eb2d"
       },
       {
+        "path": "tests/staging-generation-22-retired-query.test.mjs",
+        "sha256": "c84081ca8f9c6a362880553ae5043d1ae9f82e0f249f4ca8dd3971bb949d31fb"
+      },
+      {
         "path": "tests/staging-generation-22-retired-check.test.mjs",
-        "sha256": "5778e158a69f786b7cf049e6e8c9fc4506a4412d87bd6c561671c7c3caaf265c"
+        "sha256": "44541c972d6993ee239527b59376447e775f89782b4a50d16624d34338a552e9"
       },
       {
         "path": "tests/staging-generation-22-journal.test.mjs",
