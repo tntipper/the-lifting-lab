@@ -1776,11 +1776,11 @@
       },
       {
         "path": "tests/staging-generation-23-database-acceptance.mjs",
-        "sha256": "71458ab0d4fca55f2e03b814ad3f89da6c58d945260fd755542f3ccec871a73b"
+        "sha256": "abc523790df078b818f8dc1afa7c2eefd4e6957c62494141642595dbcf59f5a2"
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "404597ce2ec8d7afc693034c1a52a8924af450785a2cd7cda8012efaa8cc72a6"
+        "sha256": "9e43dc086e63c62ec0a8a06b626604d74d0f6d941422fe0b2dea83c71c486d71"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
