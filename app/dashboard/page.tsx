@@ -106,6 +106,8 @@ export default async function DashboardPage() {
   const username = profile?.display_name || profile?.username || 'Lifter'
   const allTime = profile?.total_points ?? 0
   const progressPct = rank == null ? 0 : rank <= 10 ? 100 : tenthPts && tenthPts > 0 ? Math.min(99, Math.round((seasonPoints / tenthPts) * 100)) : 0
+  const unifiedCustomer = process.env.NEXT_PUBLIC_TLL_ENVIRONMENT === 'staging'
+    && process.env.NEXT_PUBLIC_TLL_STAGING_CUSTOMER === 'enabled'
 
   return (
     <div className="min-h-screen bg-lab-bg text-white">
@@ -120,12 +122,18 @@ export default async function DashboardPage() {
             <p className="text-lab-muted text-xs truncate">{user.email}</p>
             <div className="flex gap-3 mt-1">
               <Link href="/account/settings" className="text-[11px] font-bold uppercase tracking-widest text-lab-lime hover:underline">Edit profile →</Link>
-              <form action="/auth/signout" method="post">
+              <form action={unifiedCustomer ? '/auth/customer/logout' : '/auth/signout'} method="post">
                 <button className="text-[11px] font-bold uppercase tracking-widest text-lab-muted hover:text-white">Sign out</button>
               </form>
             </div>
           </div>
         </div>
+
+        {unifiedCustomer && <Link href="/account/orders" className="block bg-lab-panel border border-lab-border rounded-2xl p-4 hover:border-lab-lime/50 transition-colors">
+          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">TLL Shop</p>
+          <div className="flex items-center justify-between gap-4 mt-2"><p className="font-black text-lg">My orders</p><span className="text-lab-lime text-sm font-bold">View shop history →</span></div>
+          <p className="text-xs text-lab-muted mt-1">Your comparison tools and shop history use this account.</p>
+        </Link>}
 
         {/* Stat cards */}
         <div className="grid grid-cols-3 gap-3">

@@ -1,0 +1,36 @@
+# Stage 3 preserved-fixture metadata: one read-only diagnostic gate
+
+Status: **CONSUMED / DISABLED**. The reviewed one-run diagnostic completed with `SEARCH_PATH_MISMATCH`; see the [result](../evidence/2026-09-25-stage3-metadata-v1-result.md). Both switches are false again. Do not replay this plan or journal.
+
+**Disabled preparation checkpoint:** The fixed-target build/check, one-use journal, injected coordinator and disabled launcher are present. The Swift and launcher gates are both false. The new journal, armed binary and build receipt are absent. The activation manifest pins these sources and the live-boundary checker rejects either gate being true during ordinary tests. Twelve metadata-focused tests, the 20-test manifest/metadata group, TypeScript, lint, live-boundary and the full suite (2,506 pass, 2 skip) passed after correcting the manifest test's expected source list. No live binary was built and no real fixture or Keychain metadata was read by this preparation. Independent review, fresh action-time baseline and approval remain outstanding.
+
+The [first arming-change record](../arming-previews/2026-09-25-stage3-metadata-aa1834f.md) was generated from disabled source commit `aa1834f0d22a1a6fb185bfa4bbc5610cbb75a4ce`. It is now **superseded** by the review correction below. Never apply its temporary patch or rely on its hashes. Regenerate an exact two-gate-plus-two-hash preview from the corrected committed source before requesting a run.
+
+**Independent review and repair:** The first independent review returned HOLD: the launcher inspected fixture children via a replaceable pathname before journal creation, and the build checker read artifact contents before rejecting symlinks/non-regular files. The launcher no longer reads fixture children at all; the journalled native Swift diagnostic owns descriptor-bound fixture observation. The builder now opens artifacts without following symlinks, verifies opened object identity before bounded reads, checks a private copy's architecture and strict code signature, and the launcher executes a private copy of exactly the verified binary hash. Focused tests cover pre-read rejection and no pre-journal fixture child inspection. The corrected full suite passed 2,508 with two skipped; TypeScript, lint, manifest and live-boundary checks passed. **A second independent review is still required** before any new arming preview is accepted. This repair did not touch the fixture, Keychain, old journal or any live gate.
+
+The corrected [revised arming record](../arming-previews/2026-09-25-stage3-metadata-ffd509a.md) is based on `ffd509afe646c6298625332ca33e1c15975ef508`. Its temporary 42-line patch has SHA-256 `39aa4389087247e627ca40435817c11d9e96278bd08e81a5024be8165fa50d38` and passed `git apply --check`. It remains unapplied. The superseded `aa1834f` preview must not be used.
+
+## Question and expected evidence
+
+The V1 cleanup journal ended `API_DELETE/UNCERTAIN/CHILD` and did not identify the native failure. The fixture main file, zero-byte sidecar, parent directory, default login Keychain and sole user search-list entry were preserved. A read-only diagnostic can distinguish an unexpected native Keychain path representation from changed fixture identity. A `METADATA_MATCHED` result would reject those two hypotheses only; it would **not** prove what happened in `SecKeychainOpen`, `SecKeychainDelete`, post-delete verification or restoration. The old journal remains terminal and must not be replayed.
+
+## Fixed scope
+
+- One local Mac run only, against the pinned synthetic fixture. No Shopify, Supabase, Vercel, network, customer, order, purchase or production action.
+- Native calls limited to `SecKeychainCopyDefault`, `SecKeychainCopySearchList`, `SecKeychainGetPath` and read-only file metadata. Do not open a Keychain, read an item or file contents, change permissions, remove a file, or call `SecKeychainDelete`.
+- Report only one fixed result category. Never print paths, secrets, credentials, raw Security.framework errors or raw child output.
+- Use a **new**, exclusive, mode-0600 one-use journal under the existing owner-only `../implementation-state/staging` directory. Preserve it after any result. Do not use any V1 create/recovery journal.
+- The diagnostic Swift gate and its exact launcher gate stay false during ordinary tests. The run requires a reviewed minimal arming diff, a source-bound arm64 build to a new private filename, binary/source hashes, ad-hoc signing identity, and a fixed deadline. The source and launcher are disarmed immediately after the single attempt, regardless of outcome.
+
+## Preparation and proof before asking for run approval
+
+1. Implement the disabled, fixed-target build/check, one-use journal, coordinator and launcher. Add injected tests for mismatched source/binary, unexpected output, timeout, missing fixture, consumed journal, changed directory or child identity, disabled switches and no child dispatch on failed preflight. Ordinary tests must not call the live main. Add the new gates to the live-boundary checker and pin the new sources in the activation manifest.
+2. Run focused native offline cases, TypeScript, live-boundary and the full local suite while all gates are false. Inspect the exact proposed two-gate arming patch; review the source and diff independently before any run.
+3. Obtain a fresh read-only local baseline immediately before arming: checkout/branch/HEAD/status; fixture directory, main and sidecar identities (metadata only); default and sole search-list Keychain path; owner-only journal directory; absence of the new journal and binary; current source and manifest hashes; all unrelated live gates false. A mismatch means STOP and revise the plan, not an automatic fix.
+4. Present the exact source commit, diff, build identity, one-run command, read scope and stop/recovery behavior to the owner for **fresh action-time approval**. Prior cleanup approvals do not cover this diagnostic.
+
+## One run and interpretation
+
+Create the new journal before dispatch. Recheck source/build and fixture identity. Run one bounded native child with ignored stdin, a minimal environment and a fixed output limit; record dispatch intent before the call. Accept only the enumerated category and exact output grammar. Record a durable terminal result, then disarm and verify source/manifest boundaries. An interrupted or ambiguous child is `UNCERTAIN`, never replayed.
+
+If a path or fixture identity mismatch is reported, investigate the exact mismatch **read-only** and revise the cleanup design. If `METADATA_MATCHED`, keep Stage 3 HOLD and design a separate observable test for the remaining native failure points; do not try deletion again merely because the metadata matched. A missing journal terminal, unexpected UI, timeout, unreadable state or changed file identity remains HOLD/UNCERTAIN with the fixture preserved. No result from this diagnostic authorizes provider normalization or account/cart activation by itself.

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createServerSupabase } from '@/lib/supabase-server'
 import TopNav from '@/components/TopNav'
+import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +38,7 @@ export default async function RewardsPage() {
         </p>
 
         {!user && (
-          <Link href="/auth" className="inline-block mt-8 text-[11px] font-black uppercase tracking-widest bg-lab-lime text-black rounded-lg px-5 py-3 hover:brightness-110 transition-all">
+          <Link href={accountSignInHref()} className="inline-block mt-8 text-[11px] font-black uppercase tracking-widest bg-lab-lime text-black rounded-lg px-5 py-3 hover:brightness-110 transition-all">
             Sign in to start earning
           </Link>
         )}

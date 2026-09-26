@@ -205,15 +205,15 @@ export default function BodyFatPage() {
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">Ready to change the number?</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
             Body composition changes in the kitchen: a steady calorie deficit and enough protein to
-            hold your muscle. Set your calories with the TDEE tool, then use the products scored 0–100
-            on the evidence to close your protein gap.
+            hold your muscle. Set your calories with the TDEE tool, then explore the available whey
+            label information if you need help closing a protein gap.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/whey"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best whey 2026 →
+              Whey research →
             </Link>
             <Link
               href="/calculators"
@@ -224,8 +224,7 @@ export default function BodyFatPage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Body fat is an estimate from a field formula, not
-            a clinical measurement. Buy links are affiliate links; we may earn a commission at no extra
-            cost to you.
+            a clinical measurement. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

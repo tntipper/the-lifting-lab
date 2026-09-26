@@ -227,7 +227,7 @@ export default function CreatineCalculator() {
                 onClick={() => track('calculator_cta', { tab: 'creatine', target: 'best-creatine' })}
                 className="text-center text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-all"
               >
-                Best creatine 2026
+                Creatine research
               </Link>
               <Link
                 href="/guide/creatine"

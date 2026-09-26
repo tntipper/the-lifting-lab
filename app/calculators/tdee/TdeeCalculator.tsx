@@ -326,7 +326,7 @@ export default function TdeeCalculator() {
                 onClick={() => track('calculator_cta', { tab: 'tdee', target: 'wizard' })}
                 className="text-center text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-lg border border-lab-border text-lab-muted hover:text-white transition-all"
               >
-                Build my stack
+                Explore my stack
               </Link>
             </div>
           </>

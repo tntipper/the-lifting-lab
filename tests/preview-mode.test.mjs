@@ -90,16 +90,16 @@ test('synthetic retailer links stay local and analytics cannot fire', () => with
   assert.equal(affiliate.amazonSearch('fixture', 'fixture'), '/preview')
   assert.equal(affiliate.bulkSearch('fixture'), '/preview')
   assert.equal(affiliate.bulkDealsLink(), '/preview')
-  assert.equal(affiliate.buyLink('fixture', 'fixture', 'https://shop.fixture.invalid/cart'), '/preview')
+  assert.equal(affiliate.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').url, null)
   let calls = 0
   const gtag = loadSource('../lib/gtag.ts', resolve, { window: { gtag() { calls++ } } })
   gtag.track('fixture', {})
   assert.equal(calls, 0)
 }))
 
-test('production retailer links and analytics retain their existing behavior', () => withMode('production', async () => {
+test('production listing navigation stays available and analytics follows normal runtime', () => withMode('production', async () => {
   const affiliate = loadSource('../lib/affiliate.ts', resolve)
-  assert.equal(affiliate.buyLink('fixture', 'fixture', 'https://shop.fixture.invalid/product'), 'https://shop.fixture.invalid/product')
+  assert.equal(affiliate.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').state, 'listing')
   let calls = 0
   const gtag = loadSource('../lib/gtag.ts', resolve, { window: { gtag() { calls++ } } })
   gtag.track('fixture', {})
@@ -149,5 +149,5 @@ test('hosted staging never fires analytics or emits affiliate purchase destinati
   assert.equal(affiliate.amazonSearch('fixture', 'fixture'), '/preview')
   assert.equal(affiliate.bulkSearch('fixture'), '/preview')
   assert.equal(affiliate.bulkDealsLink(), '/preview')
-  assert.equal(affiliate.buyLink('fixture', 'fixture', 'https://shop.fixture.invalid/product'), '/preview')
+  assert.equal(affiliate.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').url, null)
 }))

@@ -1,0 +1,132 @@
+{
+  "schema": "tll-staging-hosted-baseline-manifest/v1",
+  "target": {
+    "projectRef": "qdmvngjwkcsilzmqksme",
+    "productionProjectRefExcluded": "wrhgscovsgsudtedbljr"
+  },
+  "nativeAccessApproved": false,
+  "sources": [
+    {
+      "path": "scripts/staging-account-hosted-baseline.mjs",
+      "sha256": "e2d188cb4034893a545c761ba88296f0a6d5edeca0f63eed8211407dc40d140f"
+    },
+    {
+      "path": "scripts/staging-account-hosted-baseline-database.mjs",
+      "sha256": "aef547858e4c86cce6fb57aaeeddbb762d51751d5522ffdc975079cb94103623"
+    },
+    {
+      "path": "scripts/staging-generation-21-credentials.mjs",
+      "sha256": "bd46f317bb06888edc74739f469eb62362f0e21ca7367afbbfd763a443aeb8c9"
+    },
+    {
+      "path": "scripts/staging-account-hosted-baseline-supabase.mjs",
+      "sha256": "fff75585ad5f9f8968ae8847b24e30aece1ae7284d61ca7290a6d5303b9642ca"
+    },
+    {
+      "path": "scripts/staging-account-hosted-baseline-vercel.mjs",
+      "sha256": "7a434e204380908661e2ffd57506a2cfaf3dc127cb55c3e66d4d82b847482fb9"
+    },
+    {
+      "path": "scripts/staging-account-hosted-baseline-surface.mjs",
+      "sha256": "0246d02fa86a85c39a8479f409b1b3edc35895a9790c98ea22ad58654c03de82"
+    },
+    {
+      "path": "scripts/staging-account-hosted-baseline-composition.mjs",
+      "sha256": "220979b09ac5b3838bc0070688afea2e9d932e2836c5d50201314417f882f7cc"
+    },
+    {
+      "path": "scripts/staging-provider-broker-native-binding.mjs",
+      "sha256": "a6c22f8465d000fecfd77edc1d01545ccebfd18bb17e1e62623cdca9929d273b"
+    },
+    {
+      "path": "scripts/staging-provider-broker-native-adapter.mjs",
+      "sha256": "da559899e9dc353b98d7dc08b10178d24195be9eed142d1d3de8a17f77eb6ae5"
+    },
+    {
+      "path": "scripts/staging-provider-broker-rotation.mjs",
+      "sha256": "f33df7f6dd1238193054185e07c4baa49209d44842d79b14f0f0fdeb3a4aed93"
+    },
+    {
+      "path": "scripts/staging-surface-activation-transport.mjs",
+      "sha256": "a85ecae35ec2cbf5091157726cc18c2e4baaa2986ef0afc6711ae5371d0d9a4c"
+    },
+    {
+      "path": "scripts/staging-surface-activation-native-binding.mjs",
+      "sha256": "dfd1bfc0eec97ce98b9b96a240716796127d1a27c4c339ecc475bd4abd867e03"
+    },
+    {
+      "path": "scripts/staging-surface-activation-native-adapter.mjs",
+      "sha256": "954a871b0da053418608676a6c421c55d6b8bae4255452e8684987f1f62f13f6"
+    },
+    {
+      "path": "scripts/staging-account-hosted-baseline-session.mjs",
+      "sha256": "0b70d72456bee39fdd3060a91a5e193dc842e03b45c510e447f603dc49468901"
+    },
+    {
+      "path": "scripts/staging-account-hosted-baseline-live-launcher.mjs",
+      "sha256": "4c99c5ea4f53df171d398eb1a8e8b3d496f946d5fb0d767133d4100da81a2ec3"
+    },
+    {
+      "path": "scripts/staging-account-hosted-baseline-keychain.py",
+      "sha256": "4fe9be1f0c232d2ba61eef279036ba18a0e70b9df1d992871bffba6a37670716"
+    },
+    {
+      "path": "scripts/staging-account-hosted-baseline-manifest.mjs",
+      "sha256": "c0231471c603204a6133c8e984e85e6cc5391f6272cdd80237d0c0b7d15d89ba"
+    },
+    {
+      "path": "tests/staging-account-hosted-baseline-session.test.mjs",
+      "sha256": "fdb60ee5562d04e97f99c168c0fcd2149dd740132c629f1788065a18cdfa4e17"
+    },
+    {
+      "path": "tests/staging-account-hosted-baseline-composition.test.mjs",
+      "sha256": "a321e964ac6f8ee08a2d706564772ae8e394594972615463a410846523e866b5"
+    },
+    {
+      "path": "tests/staging-account-hosted-baseline-manifest.test.mjs",
+      "sha256": "5d79cc127054ec7682cebdc4f3952ca3b5f5a672ff78ffcc5d8145de73bc4df2"
+    },
+    {
+      "path": "package.json",
+      "sha256": "f5e8c1e0f03894e1566369fc124d48d89f930ba6db64d5f46590213530d6c3a7"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "2063a3da32ae5154ecabc9693d272d088315a6f89ddfe17be9606b2299c0971f"
+    },
+    {
+      "path": "docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md",
+      "sha256": "bc85cbb7d8e08ba53af891f28c5baa12c3f2764d433261100982fe52df4297c7"
+    }
+  ],
+  "keychain": {
+    "supabase": {
+      "service": "Supabase CLI",
+      "account": "supabase"
+    },
+    "vercel": {
+      "service": "TLL Hosted Baseline Vercel API",
+      "account": "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"
+    },
+    "vercelBypass": {
+      "service": "TLL Hosted Baseline Preview Bypass",
+      "account": "prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4"
+    }
+  },
+  "endpoints": {
+    "supabaseManagement": "https://api.supabase.com/v1/projects/qdmvngjwkcsilzmqksme",
+    "vercel": "https://api.vercel.com",
+    "surface": "https://qdmvngjwkcsilzmqksme.supabase.co"
+  },
+  "journal": {
+    "path": "../implementation-state/staging/tll-hosted-baseline-observation-v8.json",
+    "exclusive": true,
+    "mode": "0600"
+  },
+  "execution": {
+    "deadlineMs": 60000,
+    "cleanupGraceMs": 5000,
+    "retries": 0,
+    "observationOnly": true
+  }
+}

@@ -38,11 +38,17 @@ type NutrientRow = { product_id: string; nutrient_name: string; amount: number; 
 const PRE_WORKOUT_CATEGORY = 'pre-workout'
 const ACTIVE_NUTRIENTS = ['Caffeine', 'Beta-Alanine', 'L-Citrulline', 'Citrulline Malate']
 
-function toMg(amount: number, unit: string): number {
-  return unit.trim().toLowerCase() === 'g' ? amount * 1000 : amount
+// Only explicit mass units are comparable. Unknown units remain in the raw
+// catalogue, but cannot silently become a mg/g comparison or caution amount.
+function toMg(amount: number, unit: string): number | null {
+  if (typeof amount !== 'number' || !Number.isFinite(amount) || amount < 0 || typeof unit !== 'string') return null
+  const factor = ({ mg: 1, g: 1000, 'µg': 0.001, 'μg': 0.001, mcg: 0.001 } as Record<string, number>)[unit.trim().toLowerCase()]
+  const converted = amount * factor
+  return Number.isFinite(converted) ? converted : null
 }
-function toG(amount: number, unit: string): number {
-  return unit.trim().toLowerCase() === 'mg' ? amount / 1000 : amount
+function toG(amount: number, unit: string): number | null {
+  const mg = toMg(amount, unit)
+  return mg === null ? null : mg / 1000
 }
 
 /** Build caffeine-led ranking rows from a product set + its nutrient rows. */
@@ -55,6 +61,8 @@ export function preWorkoutRows(products: Product[], nutrients: NutrientRow[]): P
     const caf = mine.find((n) => n.nutrient_name === 'Caffeine')
     // Caffeine-led ranking: a product with no caffeine data is noise here, skip it.
     if (!caf) continue
+    const caffeineMg = toMg(caf.amount, caf.unit)
+    if (caffeineMg === null) continue
     const ba = mine.find((n) => n.nutrient_name === 'Beta-Alanine')
     const citPure = mine.find((n) => n.nutrient_name === 'L-Citrulline')
     const citMalate = mine.find((n) => n.nutrient_name === 'Citrulline Malate')
@@ -66,15 +74,15 @@ export function preWorkoutRows(products: Product[], nutrients: NutrientRow[]): P
       brand: p.brand,
       score: p.score,
       costPerServing: p.cost_per_serving,
-      caffeineMg: Math.round(toMg(caf.amount, caf.unit)),
-      betaAlanineG: ba ? Math.round(toG(ba.amount, ba.unit) * 100) / 100 : null,
-      citrullineG: cit ? Math.round(toG(cit.amount, cit.unit) * 100) / 100 : null,
+      caffeineMg: caffeineMg,
+      betaAlanineG: ba ? toG(ba.amount, ba.unit) : null,
+      citrullineG: cit ? toG(cit.amount, cit.unit) : null,
       citrullineForm: cit ? (citPure ? 'citrulline' : 'malate') : null,
       buy_url: p.buy_url,
     })
   }
-  // Strongest first (caffeine desc), then by our score as a tiebreak.
-  rows.sort((a, b) => b.caffeineMg - a.caffeineMg || (b.score ?? -1) - (a.score ?? -1))
+  // Recorded caffeine descending; equal amounts use neutral alphabetical order.
+  rows.sort((a, b) => b.caffeineMg - a.caffeineMg || a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
   return rows
 }
 

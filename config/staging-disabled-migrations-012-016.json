@@ -1,0 +1,52 @@
+{
+  "schema": "tll-staging-disabled-migrations-012-016/v1/manifest",
+  "target": "qdmvngjwkcsilzmqksme",
+  "productionExcluded": "wrhgscovsgsudtedbljr",
+  "nativeAccessApproved": false,
+  "sourcePins": [
+    {
+      "version": "202609180012_customer_shopify_proof_repository",
+      "path": "supabase/migrations/202609180012_customer_shopify_proof_repository.sql",
+      "sha256": "c0b105293f01b79329c050a16702ad98123b744b63c85a63dbce8c1a2b7b6e61"
+    },
+    {
+      "version": "202609180013_customer_final_reconciliation",
+      "path": "supabase/migrations/202609180013_customer_final_reconciliation.sql",
+      "sha256": "4dc438d016fbe2f4e1a5cac7c76aa9f48f0bde369488702661f516fdd88841a6"
+    },
+    {
+      "version": "202609180014_staging_cart_account_transition",
+      "path": "supabase/migrations/202609180014_staging_cart_account_transition.sql",
+      "sha256": "99b3737bcffe7957e5eeb64d46566953ad2a9e8b4d045fdaf9e995a223a29061"
+    },
+    {
+      "version": "202609180015_customer_account_operations",
+      "path": "supabase/migrations/202609180015_customer_account_operations.sql",
+      "sha256": "dfaafaa6ee121c5f33e7f1aff6a83f14d972455ef5fdd0ed2a49411f8b15c0ee"
+    },
+    {
+      "version": "202609180016_customer_account_logout",
+      "path": "supabase/migrations/202609180016_customer_account_logout.sql",
+      "sha256": "b512d9d18599b60a18ea20d94b3502d94c5735c1ac20bbb76321efd46dea8349"
+    }
+  ],
+  "transactionSha256": "f355f7280b979966f665d691f267c999ebd51396c2062b196fc5a8208bdc3f48",
+  "sourcePinsForTransport": [
+    {
+      "path": "scripts/staging-disabled-migrations-012-016.mjs",
+      "sha256": "461ad2a582c805694bc9bb157ea982d13abe24d8a25016b694d6caa830e90fe5"
+    },
+    {
+      "path": "scripts/staging-disabled-migrations-012-016-keychain.py",
+      "sha256": "139e7e5194934da4471e31b0faf64176702d0ecb622908d31d363c00f225ed77"
+    }
+  ],
+  "transport": {
+    "hostname": "api.supabase.com",
+    "path": "/v1/projects/qdmvngjwkcsilzmqksme/database/query",
+    "method": "POST",
+    "redirects": false,
+    "maxAgeMs": 60000,
+    "maxRequests": 1
+  }
+}

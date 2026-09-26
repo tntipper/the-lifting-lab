@@ -1,0 +1,46 @@
+{
+  "schema": "tll-staging-readonly-preflight/v4",
+  "target": "qdmvngjwkcsilzmqksme",
+  "productionExcluded": "wrhgscovsgsudtedbljr",
+  "nativeAccessApproved": false,
+  "query": {
+    "id": "tll-staging-readonly-preflight/v1",
+    "sha256": "596d43c2371548f2eda32e8fcec0f467399e0328efff7cf7ec81292fa8915c28",
+    "beginsReadOnly": true,
+    "assertionsInReadOnlyTransaction": true,
+    "finalStatementLiteralReceipt": true
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/staging-readonly-preflight.mjs",
+      "sha256": "10dbc0760f89104d9094d1da23fbd076eea79982222e62f788bcb21d3fef1460"
+    },
+    {
+      "path": "scripts/staging-readonly-preflight-keychain.py",
+      "sha256": "a581bbd8fc224382238c4b50a76cd27f22c6efff5fa54e49328eca1862c4f859"
+    }
+  ],
+  "keychain": {
+    "service": "Supabase CLI",
+    "account": "supabase",
+    "reviewedDesignPath": "../../implementation-state/staging/generation-launcher-2026-09-18/native_adapter.py",
+    "reviewedDesignSha256": "835cc3394a3f01e18df91d2e111d384aa48592f10e8a239c603b59cd56627bed"
+  },
+  "transport": {
+    "hostname": "api.supabase.com",
+    "path": "/v1/projects/qdmvngjwkcsilzmqksme/database/query",
+    "method": "POST",
+    "redirects": false,
+    "maxAgeMs": 60000,
+    "nativeHelperTimeoutMs": 15000,
+    "maxRequests": 1
+  },
+  "output": [
+    "target",
+    "queryId",
+    "timestamp",
+    "status",
+    "counts",
+    "receiptHash"
+  ]
+}

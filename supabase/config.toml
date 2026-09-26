@@ -1,0 +1,7 @@
+# These OAuth machine endpoints perform their own Confidential Basic and one-use
+# Bearer authentication. They do not accept a Supabase user JWT or browser call.
+[functions.tll-broker-token]
+verify_jwt = false
+
+[functions.tll-broker-userinfo]
+verify_jwt = false

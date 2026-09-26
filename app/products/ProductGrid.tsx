@@ -1,9 +1,11 @@
 'use client'
+import { formatListedServingPrice } from '@/lib/products'
 
 import { Suspense, useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { assessmentDisplayFor, hasApprovedAssessment, isRankingCandidate } from '@/lib/assessment-display'
 import FavouriteButton from '@/components/FavouriteButton'
 import ProductImage from '@/components/ProductImage'
 import { createClient } from '@/lib/supabase'
@@ -14,16 +16,16 @@ import { useLocalStack } from '@/components/LocalStackContext'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
 import { cardHighlights } from '@/lib/card-highlights'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { GUIDE_SLUGS } from '@/lib/guides'
-import { track, trackBuyClick } from '@/lib/gtag'
+import { track } from '@/lib/gtag'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
 
 const SORTS: { key: SortKey; label: string }[] = [
-  { key: 'score', label: 'Best Rating' },
-  { key: 'value', label: 'Best Value for Score' },
-  { key: 'budget', label: 'Budget Pick' },
+  { key: 'score', label: 'Assessment unavailable (A–Z)' },
+  { key: 'value', label: 'Effectiveness value unavailable (A–Z)' },
+  { key: 'budget', label: 'Listed £/serving (low–high)' },
   { key: 'name', label: 'Name (A–Z)' },
   { key: 'brand', label: 'Brand (A–Z)' },
 ]
@@ -62,10 +64,12 @@ function PointerCard({
   children,
   className,
   style,
+  productId,
 }: {
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
+  productId: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
   function handleMouseMove(e: React.MouseEvent) {
@@ -78,6 +82,7 @@ function PointerCard({
   return (
     <div
       ref={ref}
+      data-product-id={productId}
       onMouseMove={handleMouseMove}
       className={`lab-card beam ${className ?? ''}`}
       style={{ '--mx': '50%', '--my': '30%', ...style } as React.CSSProperties}
@@ -324,7 +329,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
             </span>
           </h2>
           <p className="text-[11px] text-white/40 mt-1 uppercase tracking-widest">
-            {claimsReviewFor(category) ? 'Existing scores · Claims under review' : 'Ranked by effective dosing · not brand reputation'}
+            {claimsReviewFor(category) ? 'Claims under review · Products are not ranked' : 'Unassessed products are not ranked'}
           </p>
         </div>
         <div className="shrink-0 pt-1">
@@ -471,14 +476,15 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
       )}
 
       {/* sort + count */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-lab-muted text-xs uppercase tracking-widest font-bold shrink-0">
           {loading ? 'Loading…' : `${visible.length} product${visible.length === 1 ? '' : 's'}`}
         </span>
         <select
+          aria-label="Sort products"
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
-          className="bg-lab-panel text-white text-xs border border-lab-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-lab-lime"
+          className="min-w-0 max-w-full bg-lab-panel text-white text-xs border border-lab-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-lab-lime"
         >
           {SORTS.map((s) => (
             <option key={s.key} value={s.key}>{s.label}</option>
@@ -497,19 +503,21 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {visible.map((p, i) => {
           const isSel = selected.includes(p.id)
-          const isTop = !claimsReviewFor(p.category) && i === 0 && (sort === 'score' || sort === 'value' || sort === 'budget')
-          const medal = claimsReviewFor(p.category) ? null : MEDALS[i] ?? null
+          const assessment = assessmentDisplayFor(p)
+          const ranked = isRankingCandidate(p, sort)
+          const isTop = ranked && i === 0
+          const medal = ranked ? MEDALS[i] ?? null : null
           const stacked = inStack(p.id)
           const benefits = CATEGORY_BENEFITS[p.category] ?? null
-          const dosingNote = !claimsReviewFor(p.category) && p.score != null
+          const dosingNote = hasApprovedAssessment(p) && p.score != null
             ? p.score >= 70
               ? p.score >= 90 ? '· Excellent dosing' : '· Good dosing'
               : p.score >= 50
               ? '· Partially dosed'
               : '· Below effective dose'
             : ''
-          const scoreFlag = claimsReviewFor(p.category)
-            ? { color: '#f5b342', text: `${claimsReviewFor(p.category)!.title}. Existing score is not a validated health-benefit assessment.` }
+          const scoreFlag = !hasApprovedAssessment(p)
+            ? { color: '#9ca3af', text: assessment.explanation }
             : benefits
             ? {
                 color: p.score != null && p.score >= 70 ? '#a6e22e' : p.score != null && p.score >= 50 ? '#f5b342' : '#ff5c5c',
@@ -525,6 +533,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           return (
             <PointerCard
               key={p.id}
+              productId={p.id}
               className="p-4"
               style={isTop ? {
                 borderColor: 'rgba(166,226,46,0.45)',
@@ -574,7 +583,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
 
                 <div className="shrink-0 flex flex-col items-end gap-2">
                   <Link href={`/products/${p.id}`} className="shrink-0">
-                    <ScoreBadge score={p.score} size="sm" />
+                    <ProductAssessment product={p} size="sm" />
                   </Link>
                   <FavouriteButton
                     productId={p.id}
@@ -608,7 +617,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
                   <div className="text-[8px] text-lab-muted uppercase tracking-wide">Match</div>
                   <div className="text-xs font-bold text-white mt-0.5">
-                    {p.score != null ? `${p.score}%` : '—'}
+                    {assessment.label}
                   </div>
                 </div>
                 <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
@@ -618,7 +627,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                     title={trueCostReason(p) ?? undefined}
                     style={p.cost_per_serving != null ? { fontSize: '12px', fontWeight: 800, color: '#f2f2f2' } : { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}
                   >
-                    {p.cost_per_serving != null ? `£${p.cost_per_serving.toFixed(2)}` : '—'}
+                    {p.cost_per_serving != null ? `${formatListedServingPrice(p.cost_per_serving)}` : '—'}
                     {p.cost_per_serving == null && (
                       <span className="block text-[8px] normal-case tracking-normal leading-tight">{trueCostReason(p)}</span>
                     )}
@@ -694,20 +703,8 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 >
                   {isSel ? 'Added ✓' : 'Compare'}
                 </button>
-                <a
-                  href={buyLink(p.brand, p.name, p.buy_url)}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  onClick={() => {
-                    const href = buyLink(p.brand, p.name, p.buy_url)
-                    trackBuyClick({
-                      product_id: p.id,
-                      product_name: p.name,
-                      brand: p.brand,
-                      category: p.category,
-                      href,
-                    })
-                  }}
+                <ProductOfferLink
+                  product={p}
                   className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl transition-all"
                   style={isTop ? {
                     background: 'linear-gradient(145deg, color-mix(in srgb, #a6e22e 80%, #fff), #a6e22e 45%, color-mix(in srgb, #a6e22e 72%, #000))',
@@ -718,11 +715,9 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                     color: '#a6e22e',
                     border: '1px solid rgba(166,226,46,0.5)',
                   }}
-                >
-                  Buy{isTop ? ' 🏆' : ''}
-                </a>
+                />
               </div>
-              <p className="text-[9px] text-lab-muted/40 text-right mt-1">affiliate link</p>
+
             </PointerCard>
           )
         })}

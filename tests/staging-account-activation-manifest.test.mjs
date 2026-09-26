@@ -1,0 +1,691 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+
+test('staging account activation manifest pins reviewed sources and contains no secret values', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const raw = readFileSync('config/staging-account-activation-manifest.json', 'utf8'), manifest = JSON.parse(raw)
+  assert.equal(manifest.schema, 'tll-staging-account-activation/v1')
+  assert.deepEqual(manifest.migrations.map(item => item.path.match(/2026091800(1[2-6])_/)[1]), ['12','13','14','15','16'])
+  assert.deepEqual(manifest.edge.functions.map(item => item.name), ['tll-broker-token','tll-broker-userinfo'])
+  assert.equal(Object.keys(manifest.runtime.databaseIdentities).length, 5)
+  assert.equal(new Set(Object.values(manifest.runtime.databaseIdentities).map(item => item.login)).size, 5)
+  assert.equal(manifest.target.productionProjectRefExcluded, 'wrhgscovsgsudtedbljr')
+  assert.equal(manifest.stageSafety.policy, 'tll-project-stage-gate-policy/v1')
+  assert.equal(manifest.stageSafety.ordinaryTestsRequireAllNativeGatesDisabled, true)
+  assert.equal(manifest.stageSafety.ordinaryTestsMayInvokeNativeLaunchers, false)
+  assert.equal(manifest.stageSafety.ordinaryTransportModulesMayDefineLiveLaunchers, false)
+  assert.equal(manifest.stageSafety.ordinaryTestsMayRewriteGeneratedArtifacts, false)
+  assert.equal(manifest.stageSafety.independentReviewRequiredBeforeArming, true)
+  assert.equal(manifest.stageSafety.liveExecutionRequiresPhaseJournal, true)
+  assert.equal(manifest.stageSafety.generation10ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.generation11ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.generation11Armed, false)
+  assert.equal(manifest.stageSafety.generation12Armed, false)
+  assert.equal(manifest.stageSafety.generation13Armed, false)
+  assert.equal(manifest.stageSafety.generation14Armed, false)
+  assert.equal(manifest.stageSafety.generation15Armed, false)
+  assert.equal(manifest.stageSafety.generation16Armed, false)
+  assert.equal(manifest.stageSafety.generation17Armed, false)
+  assert.equal(manifest.stageSafety.generation18Armed, false)
+  assert.equal(manifest.stageSafety.generation19Armed, false)
+  assert.equal(manifest.stageSafety.generation20Armed, false)
+  assert.equal(manifest.stageSafety.generation21Armed, false)
+  assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.generation12ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.generation13ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.generation21ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.successorHeldPendingBoundaryReview, true)
+  assert.equal(manifest.runtime.reviewedPreview.stableOrigin, manifest.provider.reviewedPreviewOrigin)
+  assert.equal(manifest.target.vercelProject, 'the-lifting-lab')
+  assert.equal(manifest.target.vercelProjectId, 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4')
+  assert.equal(manifest.target.vercelScope, 'my-lifting-lab-s-projects')
+  assert.equal(manifest.target.vercelTeamId, 'team_gf7cgIkkoeMLtODFDDT5MrW4')
+  assert.equal(manifest.runtime.reviewedPreview.branch, 'codex/tll-integration')
+  assert.deepEqual(manifest.runtime.reviewedPreview.originConfiguration, ['TLL_STAGING_CUSTOMER_ORIGIN', 'TLL_STAGING_CART_ORIGIN'])
+  assert.deepEqual(manifest.runtime.reviewedPreview.immutableDeploymentEvidence.requiredForEachPhase, ['disabled', 'enabled'])
+  assert.deepEqual(manifest.runtime.reviewedPreview.immutableDeploymentEvidence.requiredFields,
+    ['deploymentId', 'immutableUrl', 'sourceCommit', 'manifestSha256'])
+  assert.equal(manifest.runtime.reviewedPreview.immutableDeploymentEvidence.aliasMustResolveToRecordedDeployment, true)
+  assert.equal('previewOriginPattern' in manifest.provider, false)
+  assert.equal(manifest.preflight.queryId, 'tll-staging-readonly-preflight/v1')
+  assert.equal(manifest.preflight.maximumRequests, 1)
+  assert.equal(manifest.preflight.productionExcluded, true)
+  assert.equal(manifest.preflight.actualPostgresAcceptanceRequired, true)
+  assert.equal(manifest.disabledMigrationInstall.installId, 'tll-staging-disabled-migrations-012-016/v1')
+  assert.match(manifest.disabledMigrationInstall.transactionSha256, /^[a-f0-9]{64}$/)
+  assert.equal(manifest.disabledMigrationInstall.nativeAccessApproved, false)
+  assert.equal(manifest.disabledMigrationInstall.maximumRequests, 1)
+  assert.equal(manifest.disabledMigrationInstall.executionPolicy, 'HOLD_UNTIL_ALL_REVIEWED_GATES_PASS')
+  assert.equal(manifest.disabledMigrationInstall.dispatchJournal.exclusiveClaimRequired, true)
+  assert.equal(manifest.disabledMigrationInstall.dispatchJournal.noRetryAfterDispatch, true)
+  assert.equal(manifest.disabledMigrationInstall.dispatchJournal.uncertainState, 'RECONCILIATION_REQUIRED')
+  assert.equal(manifest.disabledMigrationInstall.actualPostgresAcceptanceRequired, true)
+  assert.equal(manifest.disabledActivationTooling.status, 'REVIEWED_DISABLED_ONLY')
+  assert.equal(manifest.disabledActivationTooling.nativeAdaptersImplemented, true)
+  assert.equal(manifest.disabledActivationTooling.boundedExecutorImplemented, true)
+  assert.equal(manifest.disabledActivationTooling.providerBindingsImplemented, true)
+  assert.equal(manifest.disabledActivationTooling.surfaceReadBindingsImplemented, true)
+  assert.equal(manifest.disabledActivationTooling.deploymentCreationBindingImplemented, false)
+  assert.equal(manifest.disabledActivationTooling.deploymentCreationHoldReason, 'PREVIEW_VERIFIER_NOT_JOURNALED_OR_CONNECTED')
+  assert.equal(manifest.disabledActivationTooling.nativeLaunchersImplemented, false)
+  assert.equal(manifest.disabledActivationTooling.boundedExecutorsRequiredBeforeArming, true)
+  assert.equal(manifest.disabledActivationTooling.hostedExecutionApproved, false)
+  assert.equal(manifest.disabledActivationTooling.generation22Armed, false)
+  assert.equal(manifest.disabledActivationTooling.providerRotation.exactFrozenPreflightRequired, true)
+  assert.equal(manifest.disabledActivationTooling.providerRotation.existingSecretNamesMustBeAbsent, true)
+  assert.equal(manifest.disabledActivationTooling.providerRotation.ambiguousProviderUpdateState, 'RECONCILIATION_REQUIRED')
+  assert.equal(manifest.disabledActivationTooling.databaseControls.transactionCount, 1)
+  assert.equal(manifest.disabledActivationTooling.databaseControls.actualPostgres17AcceptanceRequired, true)
+  assert.deepEqual(manifest.disabledActivationTooling.surfaces.order, ['edge','private','public'])
+  assert.equal(manifest.disabledActivationTooling.surfaces.distinctImmutableBuildRequiredForEachState, true)
+  assert.equal(manifest.disabledActivationTooling.surfaces.runtimeProofIncludesPublicFlags, true)
+  assert.equal(manifest.disabledActivationTooling.surfaces.ambiguousEnabledDeploymentState, 'RECONCILIATION_REQUIRED')
+  assert.deepEqual(manifest.disabledActivationTooling.sources.map(item => item.path), [
+    'scripts/staging-bounded-executor.mjs','scripts/staging-provider-broker-rotation.mjs','scripts/staging-provider-broker-phase-journal.mjs','scripts/staging-provider-broker-phased-session.mjs','scripts/staging-provider-broker-rotation-process-control.mjs','scripts/staging-provider-broker-rotation-keychain.py','scripts/staging-provider-broker-rotation-readiness.mjs','scripts/staging-provider-broker-reconciliation.mjs','scripts/staging-provider-broker-recovery-collection.mjs','scripts/staging-provider-broker-recovery-read-journal.mjs','scripts/staging-provider-broker-recovery-read-session.mjs','scripts/staging-provider-broker-recovery-read-bindings.mjs','scripts/staging-provider-broker-recovery-read-live-launcher.mjs','scripts/staging-provider-broker-recovery-read-keychain.py','scripts/staging-provider-broker-recovery-process-control.mjs','scripts/staging-provider-broker-native-adapter.mjs',
+    'scripts/staging-provider-broker-vercel-rest-host.mjs',
+    'scripts/staging-provider-broker-supabase-rest-host.mjs',
+    'scripts/staging-provider-broker-rest-readiness.mjs',
+    'scripts/staging-provider-broker-rest-ports.mjs',
+    'scripts/staging-provider-broker-rest-worker-core.mjs',
+    'scripts/staging-provider-broker-rest-credential-reader.mjs',
+    'scripts/staging-provider-broker-rest-live-launcher.mjs',
+    'scripts/staging-provider-broker-native-binding.mjs',
+    'scripts/staging-provider-normalization-contract.mjs',
+    'scripts/staging-provider-normalization-native-port.mjs',
+    'scripts/staging-provider-normalization-journal.mjs',
+    'scripts/staging-provider-normalization-coordinator.mjs',
+    'scripts/staging-provider-normalization-preflight.mjs',
+    'scripts/staging-provider-normalization-phase-journal.mjs',
+    'scripts/staging-provider-normalization-session.mjs',
+    'scripts/staging-provider-normalization-live-launcher.mjs',
+    'scripts/staging-provider-normalization-keychain.py',
+    'scripts/staging-provider-supabase-only-coordinator.mjs',
+    'scripts/staging-provider-supabase-only-session.mjs',
+    'scripts/staging-provider-supabase-only-live-launcher.mjs',
+    'scripts/staging-provider-safe-held-reconciliation.mjs',
+    'scripts/staging-provider-safe-held-live-launcher.mjs',
+    'scripts/staging-provider-preview-readiness-session.mjs',
+    'scripts/staging-provider-preview-readiness-reader.mjs',
+    'scripts/staging-provider-preview-readiness-live-launcher.mjs',
+    'scripts/staging-provider-credential-readiness-phase-journal.mjs',
+    'scripts/staging-provider-credential-readiness-session.mjs',
+    'scripts/staging-provider-credential-readiness-native.mjs',
+    'scripts/staging-provider-credential-readiness-live-launcher.mjs',
+    'scripts/staging-provider-noninteractive-keychain.swift',
+    'scripts/staging-provider-noninteractive-keychain-build.mjs',
+    'scripts/staging-provider-keychain-fixture-native.swift',
+    'scripts/staging-provider-keychain-fixture-build.mjs',
+    'scripts/staging-provider-keychain-fixture-armed-build.mjs',
+    'scripts/staging-provider-keychain-fixture-phase-journal.mjs',
+    'scripts/staging-provider-keychain-fixture-session.mjs',
+    'scripts/staging-provider-keychain-fixture-live-launcher.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-native.swift',
+    'scripts/staging-provider-keychain-fixture-recovery-build.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-journal.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-session.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-preflight.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-live-launcher.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-v2-native.swift',
+    'scripts/staging-provider-keychain-fixture-recovery-v2-build.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-v2-baseline.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-v2-journal.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-v2-session.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-v2-preflight.mjs',
+    'scripts/staging-provider-keychain-fixture-recovery-v2-live-launcher.mjs',
+    'scripts/staging-provider-keychain-fixture-metadata-diagnostic.swift',
+    'scripts/staging-provider-keychain-fixture-metadata-build.mjs',
+    'scripts/staging-provider-keychain-fixture-metadata-journal.mjs',
+    'scripts/staging-provider-keychain-fixture-metadata-session.mjs',
+    'scripts/staging-provider-keychain-fixture-metadata-live-launcher.mjs',
+    'tests/staging-provider-keychain-fixture-metadata-diagnostic.test.mjs',
+    'tests/staging-provider-keychain-fixture-metadata-journal.test.mjs',
+    'tests/staging-provider-keychain-fixture-metadata-build.test.mjs',
+    'tests/staging-provider-keychain-fixture-metadata-session.test.mjs',
+    'scripts/staging-provider-keychain-search-domain-diagnostic.swift',
+    'scripts/staging-provider-keychain-search-domain-build.mjs',
+    'scripts/staging-provider-keychain-search-domain-journal.mjs',
+    'scripts/staging-provider-keychain-search-domain-session.mjs',
+    'scripts/staging-provider-keychain-search-domain-live-launcher.mjs',
+    'tests/staging-provider-keychain-search-domain-diagnostic.test.mjs',
+    'tests/staging-provider-keychain-search-domain-runner.test.mjs',
+    'scripts/staging-provider-readonly-probe.mjs',
+    'scripts/staging-provider-readonly-live-launcher.mjs',
+    'scripts/staging-control-activation.mjs','scripts/staging-database-native-adapter.mjs',
+    'scripts/staging-surface-activation-transport.mjs','scripts/staging-surface-activation-native-adapter.mjs','scripts/staging-surface-activation-native-binding.mjs',
+    'scripts/staging-surface-preview-deployment-request.mjs',
+    'scripts/staging-surface-preview-deployment-post.mjs',
+    'scripts/staging-surface-preview-deployment-journal.mjs',
+    'scripts/staging-surface-preview-deployment-verifier.mjs',
+    'scripts/staging-surface-preview-deployment-supervisor.mjs',
+    'scripts/staging-surface-preview-deployment-worker.mjs',
+    'scripts/staging-surface-preview-deployment-credentials.mjs',
+    'scripts/staging-surface-preview-deployment-keychain.py',
+    'scripts/staging-surface-preview-deployment-live-launcher.mjs',
+    'scripts/staging-surface-preview-protection-probe.mjs',
+    'scripts/staging-preview-git-source-preflight.mjs',
+    'scripts/staging-preview-git-acceptance.mjs',
+    'scripts/staging-preview-git-publish-journal.mjs',
+    'scripts/staging-preview-git-publish-coordinator.mjs',
+    'scripts/staging-preview-git-publish-binding.mjs',
+    'scripts/staging-preview-git-publish-native-contract.mjs',
+    'scripts/staging-preview-git-publish-native-read.mjs',
+    'scripts/staging-preview-git-publish-native-push.mjs',
+    'scripts/staging-preview-git-publish-arm-preflight.mjs',
+    'scripts/staging-preview-git-publish-arm-native-read.mjs',
+    'scripts/staging-preview-git-publish-live-launcher.mjs',
+    'scripts/staging-preview-source-journal.mjs',
+    'scripts/staging-preview-source-observer.mjs',
+    'scripts/staging-preview-source-live-launcher.mjs',
+    'scripts/staging-preview-source-keychain.py',
+    'app/api/staging/readiness/contract.ts','app/api/staging/readiness/route.ts',
+    'tests/staging-bounded-executor.test.mjs','tests/staging-provider-broker-rotation.test.mjs','tests/staging-provider-broker-phase-journal.test.mjs','tests/staging-provider-broker-phased-session.test.mjs','tests/staging-provider-broker-rotation-process-control.test.mjs','tests/staging-provider-broker-rotation-keychain.test.mjs','tests/staging-provider-broker-rotation-readiness.test.mjs','tests/staging-provider-broker-rotation-composition.test.mjs','tests/staging-provider-broker-reconciliation.test.mjs','tests/staging-provider-broker-recovery-collection.test.mjs','tests/staging-provider-broker-recovery-read-journal.test.mjs','tests/staging-provider-broker-recovery-read-session.test.mjs','tests/staging-provider-broker-recovery-read-bindings.test.mjs','tests/staging-provider-broker-recovery-process-control.test.mjs','tests/staging-provider-broker-native-adapter.test.mjs',
+    'tests/staging-provider-broker-vercel-rest-host.test.mjs',
+    'tests/staging-provider-broker-supabase-rest-host.test.mjs',
+    'tests/staging-provider-broker-rest-composition.test.mjs',
+    'tests/staging-provider-broker-rest-worker-boundary.test.mjs',
+    'tests/staging-provider-broker-rest-readiness.test.mjs',
+    'tests/staging-provider-broker-rest-ports.test.mjs',
+    'tests/staging-provider-broker-rest-worker-core.test.mjs',
+    'tests/staging-provider-broker-rest-credential-reader.test.mjs',
+    'tests/staging-provider-broker-native-binding.test.mjs',
+    'tests/staging-provider-normalization-contract.test.mjs',
+    'tests/staging-provider-normalization-native-port.test.mjs',
+    'tests/staging-provider-normalization-journal.test.mjs',
+    'tests/staging-provider-normalization-coordinator.test.mjs',
+    'tests/staging-provider-normalization-preflight.test.mjs',
+    'tests/staging-provider-normalization-phase-journal.test.mjs',
+    'tests/staging-provider-normalization-session.test.mjs',
+    'tests/staging-provider-supabase-only-coordinator.test.mjs',
+    'tests/staging-provider-supabase-only-session.test.mjs',
+    'tests/staging-provider-safe-held-reconciliation.test.mjs',
+    'tests/staging-provider-preview-readiness-session.test.mjs',
+    'tests/staging-provider-credential-readiness.test.mjs',
+    'tests/staging-provider-noninteractive-keychain.test.mjs',
+    'tests/staging-provider-noninteractive-keychain-build.test.mjs',
+    'tests/staging_provider_noninteractive_keychain_test.swift',
+    'tests/staging-provider-keychain-fixture-build.test.mjs',
+    'tests/staging-provider-keychain-fixture-armed-build.test.mjs',
+    'tests/staging-provider-keychain-fixture-phase-journal.test.mjs',
+    'tests/staging-provider-keychain-fixture-session.test.mjs',
+    'tests/staging-provider-keychain-fixture-native-offline.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-native-offline.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-build.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-journal.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-session.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-preflight.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-launcher.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-v2-native-offline.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-v2-build.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-v2-baseline.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-v2-journal.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-v2-session.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-v2-preflight.test.mjs',
+    'tests/staging-provider-keychain-fixture-recovery-v2-launcher.test.mjs',
+    'tests/staging_provider_normalization_keychain_test.py',
+    'tests/staging-provider-readonly-probe.test.mjs',
+    'tests/staging-control-activation.test.mjs','tests/staging-control-activation-actual.mjs','tests/staging-database-native-adapter.test.mjs',
+    'tests/staging-surface-activation-transport.test.mjs','tests/staging-surface-activation-native-adapter.test.mjs','tests/staging-surface-activation-native-binding.test.mjs',
+    'tests/staging-surface-preview-deployment-request.test.mjs',
+    'tests/staging-surface-preview-deployment-post.test.mjs',
+    'tests/staging-surface-preview-deployment-journal.test.mjs',
+    'tests/staging-surface-preview-deployment-verifier.test.mjs',
+    'tests/staging-surface-preview-deployment-supervisor.test.mjs',
+    'tests/staging-surface-preview-deployment-worker.test.mjs',
+    'tests/staging-surface-preview-deployment-credentials.test.mjs',
+    'tests/staging-surface-preview-deployment-live-launcher.test.mjs',
+    'tests/staging-surface-preview-protection-probe.test.mjs',
+    'tests/staging-surface-preview-deployment-process-boundary.test.mjs',
+    'tests/fixtures/staging-preview-worker-offline.mjs',
+    'tests/staging-preview-git-source-preflight.test.mjs',
+    'tests/staging-preview-git-acceptance.test.mjs',
+    'tests/staging-preview-git-publish-journal.test.mjs',
+    'tests/staging-preview-git-publish-coordinator.test.mjs',
+    'tests/staging-preview-git-publish-binding.test.mjs',
+    'tests/staging-preview-git-publish-native-contract.test.mjs',
+    'tests/staging-preview-git-publish-native-read.test.mjs',
+    'tests/staging-preview-git-publish-native-push.test.mjs',
+    'tests/staging-preview-git-publish-arm-preflight.test.mjs',
+    'tests/staging-preview-git-publish-arm-native-read.test.mjs',
+    'tests/staging-preview-git-publish-live-launcher.test.mjs',
+    'tests/staging-preview-source-observer.test.mjs',
+    'tests/staging-readiness-route.test.mjs','docs/ops/stage-plans/2026-09-22-disabled-activation-tooling.md',
+    'docs/ops/stage-plans/2026-09-22-disabled-native-activation-adapters.md',
+    'docs/ops/stage-plans/2026-09-22-disabled-concrete-activation-bindings.md',
+    'docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md'])
+  assert.deepEqual(manifest.recovery.requiredInstalledMigrations, ['012','013','014','015','016'])
+  assert.deepEqual(manifest.recovery.activationWindow, { generation: 6, windowId: '83888906-23fa-4653-a886-fe2733ed76a0' })
+  assert.deepEqual(manifest.recovery.disablesControls, ['customer','cart','broker','provisional','bridge'])
+  assert.equal(manifest.recovery.retiresRuntimeLogins.length, 5)
+  assert.equal(manifest.recovery.preservesEvidenceRows, true)
+  assert.equal(manifest.recovery.postCommitZeroSessionProof, true)
+  assert.deepEqual(manifest.recovery.requiresExistingOperatorAuthority, ['CREATEROLE','pg_read_all_data','pg_read_all_stats'])
+  assert.equal(manifest.recovery.requiredBeforeCredentialProvisioning, true)
+  assert.equal(manifest.recovery.maximumCredentialWindowMinutes, 60)
+  assert.deepEqual(manifest.recovery.activationPhases, ['deploy_edge_disabled','stage_secrets_flags_disabled','install_generation_6_once','verify_restricted_connections','verify_provider_readback','deploy_immutable_preview_disabled','enable_database_controls','enable_edge_then_server_then_public','run_one_no-purchase_journey','retire_generation_6'])
+  assert.ok(manifest.recovery.recoveryTriggers.includes('uncertain_database_acknowledgement'))
+  assert.ok(manifest.recovery.recoveryTriggers.includes('activation_interrupted'))
+  assert.equal(manifest.generation6Credentials.packageId, 'tll-staging-generation-6-credentials/v1')
+  assert.equal(manifest.generation6Credentials.target, 'qdmvngjwkcsilzmqksme')
+  assert.deepEqual(manifest.generation6Credentials.predecessor, { generation: 5, windowId: 'e8aeb142-d2f8-4a58-b0a5-8931d90a6952', expiresAt: '2026-09-18T14:24:02.000Z' })
+  assert.equal(manifest.generation6Credentials.maximumWindowMinutes, 60)
+  assert.equal(manifest.generation6Credentials.secretBearingSqlMustRemainInMemory, true)
+  assert.equal(manifest.generation6Credentials.exclusiveNonsecretJournal, true)
+  assert.equal(manifest.generation6Credentials.nativeTransportEnabled, false)
+  assert.equal(manifest.generation7Successor.packageId, 'tll-staging-generation-7-credentials/v1')
+  assert.equal(manifest.generation7Successor.generation, 7)
+  assert.equal(manifest.generation7Successor.predecessor.generation, 6)
+  assert.equal(manifest.generation7Successor.predecessor.journalState, 'RECONCILIATION_REQUIRED')
+  assert.equal(manifest.generation7Successor.predecessor.recoveryVerified, true)
+  assert.equal(manifest.generation7Successor.poolerConvergenceWaitMs, 16000)
+  assert.equal(manifest.generation7Successor.freshPoolRetryAttempts, 1)
+  assert.equal(manifest.generation7Successor.thirdAttemptPermitted, false)
+  assert.equal(manifest.generation7Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation7Successor.status, 'ENTRY_BASELINE_RECONCILIATION_REQUIRED')
+  assert.equal(manifest.generation8Successor.packageId, 'tll-staging-generation-8-credentials/v1')
+  assert.equal(manifest.generation8Successor.generation, 8)
+  assert.equal(manifest.generation8Successor.predecessor.generation, 6)
+  assert.equal(manifest.generation8Successor.supersedesAttempt.generation, 7)
+  assert.equal(manifest.generation8Successor.supersedesAttempt.journalExists, false)
+  assert.equal(manifest.generation8Successor.predecessorMarkerComparison, 'PARSED_JSON_SEMANTICS')
+  assert.equal(manifest.generation8Successor.freshPoolRetryAttempts, 1)
+  assert.equal(manifest.generation8Successor.thirdAttemptPermitted, false)
+  assert.equal(manifest.generation8Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation8Successor.status, 'ENTRY_BASELINE_RECONCILIATION_REQUIRED')
+  assert.equal(manifest.generation9Successor.packageId, 'tll-staging-generation-9-credentials/v1')
+  assert.equal(manifest.generation9Successor.generation, 9)
+  assert.equal(manifest.generation9Successor.predecessor.validUntil, manifest.generation9Successor.predecessor.expiresAt)
+  assert.deepEqual(manifest.generation9Successor.supersedesAttempts.map(item=>item.generation), [7,8])
+  assert.ok(manifest.generation9Successor.supersedesAttempts.every(item=>item.journalExists===false))
+  assert.equal(manifest.generation9Successor.predecessorMarkerComparison, 'PARSED_JSON_SEMANTICS')
+  assert.equal(manifest.generation9Successor.predecessorValidUntilComparison, 'EXACT_PREDECESSOR_EXPIRY')
+  assert.equal(manifest.generation9Successor.freshPoolRetryAttempts, 1)
+  assert.equal(manifest.generation9Successor.thirdAttemptPermitted, false)
+  assert.equal(manifest.generation9Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation9Successor.status, 'CONNECTION_RECOVERED_RECONCILIATION_REQUIRED')
+  assert.equal(manifest.generation10Successor.packageId, 'tll-staging-generation-10-credentials/v1')
+  assert.equal(manifest.generation10Successor.generation, 10)
+  assert.equal(manifest.generation10Successor.predecessor.generation, 9)
+  assert.equal(manifest.generation10Successor.predecessor.windowId, '08ceb448-c1e2-4641-85ff-bee536774466')
+  assert.equal(manifest.generation10Successor.predecessor.validUntil, manifest.generation10Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation10Successor.predecessor.liveReadOnlyConfirmed, true)
+  assert.deepEqual(manifest.generation10Successor.supersedesAttempts.map(item=>item.generation), [7,8])
+  assert.equal(manifest.generation10Successor.predecessorMarkerComparison, 'PARSED_JSON_SEMANTICS')
+  assert.equal(manifest.generation10Successor.predecessorValidUntilComparison, 'EXACT_PREDECESSOR_EXPIRY')
+  assert.equal(manifest.generation10Successor.connectionVerifier.usesPinnedSupabaseCa, true)
+  assert.equal(manifest.generation10Successor.connectionVerifier.source, 'scripts/staging-supabase-ca.mjs')
+  assert.equal(manifest.generation10Successor.recoveryPostcondition.independentProviderZeroReadbackRequired, true)
+  assert.equal(manifest.generation10Successor.recoveryPostcondition.verified, true)
+  assert.equal(manifest.generation10Successor.recoveryPostcondition.generatedVercelValuesPresent, 0)
+  assert.equal(manifest.generation10Successor.recoveryPostcondition.generatedSupabaseSecretsPresent, 0)
+  assert.equal(manifest.generation10Successor.execution.outcome, 'RECOVERY_VERIFIED_AFTER_INTERRUPTED_NATIVE_TEST')
+  assert.equal(manifest.generation10Successor.execution.journalState, 'INTENT_RECORDED')
+  assert.equal(manifest.generation10Successor.execution.journalLocksReplay, true)
+  assert.equal(manifest.generation10Successor.execution.replayPermitted, false)
+  assert.equal(manifest.generation10Successor.execution.connectionJourneyCompleted, false)
+  assert.equal(manifest.generation10Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation10Successor.status, 'INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY')
+  assert.equal(manifest.generation11Successor.packageId, 'tll-staging-generation-11-credentials/v1')
+  assert.equal(manifest.generation11Successor.generation, 11)
+  assert.equal(manifest.generation11Successor.windowId, '56ff2757-3e34-4cf0-a1dc-40999a713874')
+  assert.equal(manifest.generation11Successor.predecessor.generation, 10)
+  assert.equal(manifest.generation11Successor.predecessor.windowId, '04e1b5da-b3e1-430b-8247-caf1d46faa5a')
+  assert.equal(manifest.generation11Successor.predecessor.expiresAt, '2026-09-20T21:08:17.000Z')
+  assert.equal(manifest.generation11Successor.predecessor.validUntil, manifest.generation11Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation11Successor.predecessor.journalState, 'INTENT_RECORDED')
+  assert.equal(manifest.generation11Successor.predecessor.replayPermitted, false)
+  assert.equal(manifest.generation11Successor.liveLauncher.path, 'scripts/staging-generation-11-live-launcher.mjs')
+  assert.equal(manifest.generation11Successor.liveLauncher.phaseJournal, 'scripts/staging-window-phase-journal.mjs')
+  assert.equal(manifest.generation11Successor.liveLauncher.ordinaryTestsMayImportOrInvoke, false)
+  assert.equal(manifest.generation11Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation11Successor.status, 'INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY')
+  assert.equal(manifest.generation11Successor.execution.replayPermitted, false)
+  assert.ok(manifest.generation11Successor.sources.some(item => item.path === 'scripts/staging-generation-11-live-launcher.mjs'))
+  assert.equal(manifest.generation12Successor.packageId, 'tll-staging-generation-12-credentials/v1')
+  assert.equal(manifest.generation12Successor.generation, 12)
+  assert.equal(manifest.generation12Successor.windowId, '6d4c5ed4-08a3-4d20-b580-cd03ab000e83')
+  assert.equal(manifest.generation12Successor.predecessor.generation, 10)
+  assert.equal(manifest.generation12Successor.predecessor.windowId, '04e1b5da-b3e1-430b-8247-caf1d46faa5a')
+  assert.equal(manifest.generation12Successor.predecessor.expiresAt, '2026-09-20T21:08:17.000Z')
+  assert.equal(manifest.generation12Successor.predecessor.validUntil, manifest.generation12Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation12Successor.predecessor.replayPermitted, false)
+  assert.deepEqual(manifest.generation12Successor.supersedesAttempts.map(item => item.generation), [7, 8, 10, 11])
+  assert.ok(manifest.generation12Successor.supersedesAttempts.every(item => item.generation !== 11 || item.replayPermitted === false))
+  assert.equal(manifest.generation12Successor.liveLauncher.path, 'scripts/staging-generation-12-live-launcher.mjs')
+  assert.equal(manifest.generation12Successor.liveLauncher.phaseJournal, 'scripts/staging-window-phase-journal.mjs')
+  assert.equal(manifest.generation12Successor.liveLauncher.ordinaryTestsMayImportOrInvoke, false)
+  assert.equal(manifest.generation12Successor.liveLauncher.requiresLongLivedProcess, true)
+  assert.equal(manifest.generation12Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-12-journal-watch.mjs')
+  assert.equal(manifest.generation12Successor.liveLauncher.neverKillWhileActiveWithinPhaseBound, true)
+  assert.equal(manifest.generation12Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation12Successor.status, 'INTERRUPTED_RECOVERED_INTENT_LOCKED_NO_REPLAY')
+  assert.ok(manifest.generation12Successor.sources.some(item => item.path === 'scripts/staging-generation-12-live-launcher.mjs'))
+  assert.ok(manifest.generation12Successor.sources.some(item => item.path === 'scripts/staging-generation-12-journal-watch.mjs'))
+
+  assert.equal(manifest.generation13Successor.packageId, 'tll-staging-generation-13-credentials/v1')
+  assert.equal(manifest.generation13Successor.generation, 13)
+  assert.equal(manifest.generation13Successor.windowId, '866b0e78-7530-493a-8963-e8cf24cf3067')
+  assert.equal(manifest.generation13Successor.predecessor.generation, 10)
+  assert.equal(manifest.generation13Successor.predecessor.windowId, '04e1b5da-b3e1-430b-8247-caf1d46faa5a')
+  assert.equal(manifest.generation13Successor.predecessor.expiresAt, '2026-09-20T21:08:17.000Z')
+  assert.equal(manifest.generation13Successor.predecessor.validUntil, manifest.generation13Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation13Successor.predecessor.replayPermitted, false)
+  assert.deepEqual(manifest.generation13Successor.supersedesAttempts.map(item => item.generation), [7, 8, 10, 11, 12])
+  assert.ok(manifest.generation13Successor.supersedesAttempts.every(item => item.generation < 13 && (item.generation < 10 || item.replayPermitted === false)))
+  assert.equal(manifest.generation13Successor.liveLauncher.path, 'scripts/staging-generation-13-live-launcher.mjs')
+  assert.equal(manifest.generation13Successor.liveLauncher.phaseJournal, 'scripts/staging-window-phase-journal.mjs')
+  assert.equal(manifest.generation13Successor.liveLauncher.ordinaryTestsMayImportOrInvoke, false)
+  assert.equal(manifest.generation13Successor.liveLauncher.requiresLongLivedProcess, true)
+  assert.equal(manifest.generation13Successor.liveLauncher.requiresLongSessionContract, true)
+  assert.equal(manifest.generation13Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-13-run-live-once.mjs')
+  assert.equal(manifest.generation13Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-13-journal-watch.mjs')
+  assert.equal(manifest.generation13Successor.liveLauncher.neverKillWhileActiveWithinPhaseBound, true)
+  assert.equal(manifest.generation13Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation13Successor.status, 'CONNECTION_RECOVERY_VERIFIED_RECONCILIATION_REQUIRED_NO_REPLAY')
+  assert.ok(manifest.generation13Successor.sources.some(item => item.path === 'scripts/staging-generation-13-live-launcher.mjs'))
+  assert.ok(manifest.generation13Successor.sources.some(item => item.path === 'scripts/staging-generation-13-connection-failure-evidence.mjs'))
+  assert.ok(manifest.generation13Successor.sources.some(item => item.path === 'scripts/staging-generation-13-journal-watch.mjs'))
+  assert.ok(manifest.generation13Successor.sources.some(item => item.path === 'scripts/staging-generation-13-run-live-once.mjs'))
+  assert.ok(manifest.generation13Successor.sources.some(item => item.path === 'tests/staging-generation-13-connection-failure-evidence.test.mjs'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-13-connection-diagnosis.md'))
+
+  assert.equal(manifest.generation14Successor.packageId, 'tll-staging-generation-14-credentials/v1')
+  assert.equal(manifest.generation14Successor.generation, 14)
+  assert.equal(manifest.generation14Successor.windowId, 'a8955fc3-2347-4544-b04e-55a2cb6fe7aa')
+  assert.equal(manifest.generation14Successor.predecessor.generation, 13)
+  assert.equal(manifest.generation14Successor.predecessor.windowId, '866b0e78-7530-493a-8963-e8cf24cf3067')
+  assert.equal(manifest.generation14Successor.predecessor.expiresAt, '2026-09-21T06:36:08.000Z')
+  assert.equal(manifest.generation14Successor.predecessor.validUntil, manifest.generation14Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation14Successor.predecessor.replayPermitted, false)
+  assert.equal(manifest.generation14Successor.predecessor.liveReadOnlyConfirmed, true)
+  assert.deepEqual(manifest.generation14Successor.supersedesAttempts.map(item => item.generation), [7, 8, 10, 11, 12, 13])
+  assert.ok(manifest.generation14Successor.supersedesAttempts.every(item => item.generation < 14 && (item.generation < 10 || item.replayPermitted === false)))
+  assert.equal(manifest.generation14Successor.liveLauncher.path, 'scripts/staging-generation-14-live-launcher.mjs')
+  assert.equal(manifest.generation14Successor.liveLauncher.phaseJournal, 'scripts/staging-window-phase-journal.mjs')
+  assert.equal(manifest.generation14Successor.liveLauncher.ordinaryTestsMayImportOrInvoke, false)
+  assert.equal(manifest.generation14Successor.liveLauncher.requiresLongLivedProcess, true)
+  assert.equal(manifest.generation14Successor.liveLauncher.requiresLongSessionContract, true)
+  assert.equal(manifest.generation14Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-14-run-live-once.mjs')
+  assert.equal(manifest.generation14Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-14-journal-watch.mjs')
+  assert.equal(manifest.generation14Successor.liveLauncher.neverKillWhileActiveWithinPhaseBound, true)
+  assert.equal(manifest.generation14Successor.connectionVerifier.usesPinnedSupabaseCa, true)
+  assert.equal(manifest.generation14Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation14Successor.status, 'CONNECTION_RECOVERY_REQUIRED_RECONCILIATION_REQUIRED_NO_REPLAY')
+  assert.ok(manifest.generation14Successor.sources.some(item => item.path === 'scripts/staging-generation-14-live-launcher.mjs'))
+  assert.ok(manifest.generation14Successor.sources.some(item => item.path === 'scripts/staging-generation-14-connection-failure-evidence.mjs'))
+  assert.ok(manifest.generation14Successor.sources.some(item => item.path === 'scripts/staging-generation-14-journal-watch.mjs'))
+  assert.ok(manifest.generation14Successor.sources.some(item => item.path === 'scripts/staging-generation-14-run-live-once.mjs'))
+  assert.ok(manifest.generation14Successor.sources.some(item => item.path === 'tests/staging-generation-14-connection-failure-evidence.test.mjs'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-14-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-14-connection-recovery.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-14-bridge-own-probe-diagnosis.md'))
+  assert.ok(manifest.gates.indexOf('verify_post_016_recovery_package_before_credentials')
+    < manifest.gates.indexOf('install_distinct_runtime_credentials_and_secret_configuration'))
+  assert.ok(manifest.sourceTree.fileCount > 40); assert.match(manifest.sourceTree.sha256, /^[a-f0-9]{64}$/)
+  assert.ok(manifest.gates.indexOf('enable_database_controls_atomically_then_edge_then_private_then_public_with_fresh_build_proof')
+    > manifest.gates.indexOf('run_unavailable_route_and_cross_role_denial_checks'))
+  assert.ok(manifest.runtime.vercelSecrets.every(value => /^[A-Z][A-Z0-9_]+$/.test(value)))
+  assert.equal(JSON.stringify(manifest).includes('secretValue'), false)
+  assert.equal(JSON.stringify(manifest).includes('passwordValue'), false)
+  assert.equal(JSON.stringify(manifest).includes('keyHexValue'), false)
+  for (const pin of [...manifest.migrations,...manifest.stageSafety.sources,...manifest.edge.sources,...manifest.runtime.sources,...manifest.disabledActivationTooling.sources,...manifest.preflight.sources,...manifest.disabledMigrationInstall.sources,...manifest.recovery.sources,...manifest.generation6Credentials.sources,...manifest.generation7Successor.sources,...manifest.generation8Successor.sources,...manifest.generation9Successor.sources,...manifest.generation10Successor.sources,...manifest.generation11Successor.sources,...manifest.generation12Successor.sources,...manifest.generation13Successor.sources,...manifest.generation14Successor.sources,...manifest.generation15Successor.sources,...manifest.generation16Successor.sources,...manifest.generation17Successor.sources,...manifest.generation18Successor.sources,...manifest.generation19Successor.sources,...manifest.generation20Successor.sources,...manifest.generation21Successor.sources]) assert.match(pin.sha256,/^[a-f0-9]{64}$/)
+
+  const classified = new Set([...manifest.runtime.vercelSecrets,...manifest.runtime.vercelConfiguration])
+  const runtimeSource = ['lib/server/staging-customer.ts','lib/commerce/staging-cart-server.ts','app/auth/customer/logout/route.ts']
+    .map(path => readFileSync(path,'utf8')).join('\n')
+  const runtimeKeys = [...runtimeSource.matchAll(/(?:process\.env\.)?((?:NEXT_PUBLIC_)?TLL_STAGING_[A-Z0-9_]+|NEXT_PUBLIC_SUPABASE_[A-Z0-9_]+)/g)].map(match => match[1])
+  assert.deepEqual([...new Set(runtimeKeys)].filter(key => !classified.has(key)), [])
+  const edgeClassified = new Set([...manifest.edge.requiredSecrets,manifest.edge.enableLast,'SUPABASE_URL'])
+  const edgeSource = readFileSync('lib/identity/customer-subject-broker-edge.ts','utf8')
+  const edgeKeys = [...edgeSource.matchAll(/get\('([A-Z][A-Z0-9_]+)'\)/g)].map(match => match[1])
+  assert.deepEqual([...new Set(edgeKeys)].filter(key => !edgeClassified.has(key)), [])
+})
+
+test('generation 15 successor is pinned with Gen 14 predecessor and native gates disarmed after connection recovery', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
+  assert.equal(manifest.stageSafety.generation15Armed, false)
+  assert.equal(manifest.stageSafety.generation14ReplayPermitted, false)
+  assert.equal(manifest.generation15Successor.packageId, 'tll-staging-generation-15-credentials/v1')
+  assert.equal(manifest.generation15Successor.generation, 15)
+  assert.equal(manifest.generation15Successor.windowId, '2ec1dcbb-dd43-4a45-893b-3b4dc4140188')
+  assert.equal(manifest.generation15Successor.predecessor.generation, 14)
+  assert.equal(manifest.generation15Successor.predecessor.windowId, 'a8955fc3-2347-4544-b04e-55a2cb6fe7aa')
+  assert.equal(manifest.generation15Successor.predecessor.expiresAt, '2026-09-21T07:18:57.000Z')
+  assert.equal(manifest.generation15Successor.predecessor.validUntil, manifest.generation15Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation15Successor.predecessor.replayPermitted, false)
+  assert.equal(manifest.generation15Successor.predecessor.liveReadOnlyConfirmed, true)
+  assert.deepEqual(manifest.generation15Successor.supersedesAttempts.map(item => item.generation), [7, 8, 10, 11, 12, 13, 14])
+  assert.ok(manifest.generation15Successor.supersedesAttempts.every(item => item.generation < 15 && (item.generation < 10 || item.replayPermitted === false)))
+  assert.equal(manifest.generation15Successor.liveLauncher.path, 'scripts/staging-generation-15-live-launcher.mjs')
+  assert.equal(manifest.generation15Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-15-run-live-once.mjs')
+  assert.equal(manifest.generation15Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-15-journal-watch.mjs')
+  assert.equal(manifest.generation15Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation15Successor.status, 'CONNECTION_RECOVERY_REQUIRED_RECONCILIATION_REQUIRED_NO_REPLAY')
+  assert.equal(manifest.generation15Successor.connectionVerifier.bridgeOwnProbe.op, 'register')
+  assert.equal(manifest.generation15Successor.connectionVerifier.bridgeOwnProbe.expectedMode, 'error')
+  assert.ok(manifest.generation15Successor.sources.some(item => item.path === 'scripts/staging-generation-15-live-launcher.mjs'))
+  assert.ok(manifest.generation15Successor.sources.some(item => item.path === 'scripts/staging-generation-15-connection-failure-evidence.mjs'))
+  assert.ok(manifest.generation15Successor.sources.some(item => item.path === 'scripts/staging-generation-6-connection-verifier.mjs'))
+  assert.ok(manifest.generation15Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-15-disabled-successor.md') ||
+            manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-15-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-15-arming-diff.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-15-connection-recovery.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-15-recovery-diagnosis.md'))
+})
+
+
+test('generation 16 successor is pinned with Gen 15 predecessor and native gates disarmed after zero-sessions unavailable recovery', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
+  assert.equal(manifest.stageSafety.generation16Armed, false)
+  assert.equal(manifest.stageSafety.generation17Armed, false)
+  assert.equal(manifest.stageSafety.generation18Armed, false)
+  assert.equal(manifest.stageSafety.generation15Armed, false)
+  assert.equal(manifest.generation16Successor.packageId, 'tll-staging-generation-16-credentials/v1')
+  assert.equal(manifest.generation16Successor.generation, 16)
+  assert.equal(manifest.generation16Successor.windowId, '313afec9-46d0-41bb-af47-0be277c6fa4f')
+  assert.equal(manifest.generation16Successor.predecessor.generation, 15)
+  assert.equal(manifest.generation16Successor.predecessor.windowId, '2ec1dcbb-dd43-4a45-893b-3b4dc4140188')
+  assert.equal(manifest.generation16Successor.predecessor.expiresAt, '2026-09-21T07:47:28.000Z')
+  assert.equal(manifest.generation16Successor.predecessor.validUntil, manifest.generation16Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation16Successor.predecessor.replayPermitted, false)
+  assert.equal(manifest.generation16Successor.predecessor.liveReadOnlyConfirmed, true)
+  assert.deepEqual(manifest.generation16Successor.supersedesAttempts.map(item => item.generation), [7, 8, 10, 11, 12, 13, 14, 15])
+  assert.ok(manifest.generation16Successor.supersedesAttempts.every(item => item.generation < 16 && (item.generation < 10 || item.replayPermitted === false)))
+  assert.equal(manifest.generation16Successor.liveLauncher.path, 'scripts/staging-generation-16-live-launcher.mjs')
+  assert.equal(manifest.generation16Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-16-run-live-once.mjs')
+  assert.equal(manifest.generation16Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-16-journal-watch.mjs')
+  assert.equal(manifest.generation16Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation16Successor.status, 'CONNECTION_RECOVERY_REQUIRED_RECONCILIATION_REQUIRED_NO_REPLAY')
+  assert.equal(manifest.generation16Successor.connectionVerifier.bridgeOwnProbe.op, 'register')
+  assert.equal(manifest.generation16Successor.connectionVerifier.bridgeOwnProbe.expectedMode, 'error')
+  assert.ok(manifest.generation16Successor.sources.some(item => item.path === 'scripts/staging-generation-16-live-launcher.mjs'))
+  assert.ok(manifest.generation16Successor.sources.some(item => item.path === 'scripts/staging-generation-16-connection-failure-evidence.mjs'))
+  assert.ok(manifest.generation16Successor.sources.some(item => item.path === 'scripts/staging-generation-6-connection-verifier.mjs'))
+  assert.ok(manifest.generation16Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-disabled-successor.md') ||
+            manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-arming-diff.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-connection-recovery.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-16-zero-sessions-unavailable-diagnosis.md'))
+})
+
+test('generation 17 successor is pinned with Gen 16 predecessor, PR#37 mapping bake-in, and native gates disarmed after runtime_sessions_remain recovery', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
+  assert.equal(manifest.stageSafety.generation17Armed, false)
+  assert.equal(manifest.stageSafety.generation16Armed, false)
+  assert.equal(manifest.generation17Successor.packageId, 'tll-staging-generation-17-credentials/v1')
+  assert.equal(manifest.generation17Successor.generation, 17)
+  assert.equal(manifest.generation17Successor.windowId, '5728d807-701a-486b-a8c5-34bf89238275')
+  assert.equal(manifest.generation17Successor.predecessor.generation, 16)
+  assert.equal(manifest.generation17Successor.predecessor.windowId, '313afec9-46d0-41bb-af47-0be277c6fa4f')
+  assert.equal(manifest.generation17Successor.predecessor.expiresAt, '2026-09-21T08:42:01.000Z')
+  assert.equal(manifest.generation17Successor.predecessor.validUntil, manifest.generation17Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation17Successor.predecessor.replayPermitted, false)
+  assert.equal(manifest.generation17Successor.predecessor.liveReadOnlyConfirmed, true)
+  assert.deepEqual(manifest.generation17Successor.supersedesAttempts.map(item => item.generation), [7, 8, 10, 11, 12, 13, 14, 15, 16])
+  assert.ok(manifest.generation17Successor.supersedesAttempts.every(item => item.generation < 17 && (item.generation < 10 || item.replayPermitted === false)))
+  assert.equal(manifest.generation17Successor.liveLauncher.path, 'scripts/staging-generation-17-live-launcher.mjs')
+  assert.equal(manifest.generation17Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-17-run-live-once.mjs')
+  assert.equal(manifest.generation17Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-17-journal-watch.mjs')
+  assert.equal(manifest.generation17Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation17Successor.status, 'CONNECTION_RECOVERY_REQUIRED_RECONCILIATION_REQUIRED_NO_REPLAY')
+  assert.equal(manifest.generation17Successor.zeroSessionsDrainConvergenceMs, 30000)
+  assert.equal(manifest.generation17Successor.zeroSessionsDrainMaxAttempts, 5)
+  assert.equal(manifest.generation17Successor.connectionVerifier.bridgeOwnProbe.op, 'register')
+  assert.equal(manifest.generation17Successor.connectionVerifier.bridgeOwnProbe.expectedMode, 'error')
+  assert.ok(manifest.generation17Successor.sources.some(item => item.path === 'scripts/staging-generation-17-live-launcher.mjs'))
+  assert.ok(manifest.generation17Successor.sources.some(item => item.path === 'scripts/staging-generation-17-connection-failure-evidence.mjs'))
+  assert.ok(manifest.generation17Successor.sources.some(item => item.path === 'scripts/staging-generation-17-database-transport.mjs'))
+  assert.ok(manifest.generation17Successor.sources.some(item => item.path === 'scripts/staging-generation-6-connection-verifier.mjs'))
+  assert.ok(manifest.generation17Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-17-disabled-successor.md') ||
+            manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-17-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-17-arming-diff.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-17-connection-recovery.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-17-runtime-sessions-remain-diagnosis.md'))
+})
+
+test('generation 18 successor is pinned with Gen 17 predecessor, PR#40 drain bake-in, and native gates disarmed after entry-baseline failure', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
+  assert.equal(manifest.stageSafety.generation18Armed, false)
+  assert.equal(manifest.stageSafety.generation18ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.generation17Armed, false)
+  assert.equal(manifest.stageSafety.generation17ReplayPermitted, false)
+  assert.equal(manifest.generation18Successor.packageId, 'tll-staging-generation-18-credentials/v1')
+  assert.equal(manifest.generation18Successor.generation, 18)
+  assert.equal(manifest.generation18Successor.windowId, '44e3fff5-5dff-4183-af6b-3cdfb367f1af')
+  assert.equal(manifest.generation18Successor.predecessor.generation, 17)
+  assert.equal(manifest.generation18Successor.predecessor.windowId, '5728d807-701a-486b-a8c5-34bf89238275')
+  assert.equal(manifest.generation18Successor.predecessor.expiresAt, '2026-09-21T09:31:04.000Z')
+  assert.equal(manifest.generation18Successor.predecessor.validUntil, manifest.generation18Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation18Successor.predecessor.replayPermitted, false)
+  assert.equal(manifest.generation18Successor.predecessor.liveReadOnlyConfirmed, true)
+  assert.deepEqual(manifest.generation18Successor.supersedesAttempts.map(item => item.generation), [7, 8, 10, 11, 12, 13, 14, 15, 16, 17])
+  assert.ok(manifest.generation18Successor.supersedesAttempts.every(item => item.generation < 18 && (item.generation < 10 || item.replayPermitted === false)))
+  assert.equal(manifest.generation18Successor.liveLauncher.path, 'scripts/staging-generation-18-live-launcher.mjs')
+  assert.equal(manifest.generation18Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-18-run-live-once.mjs')
+  assert.equal(manifest.generation18Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-18-journal-watch.mjs')
+  assert.equal(manifest.generation18Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation18Successor.status, 'ENTRY_BASELINE_FAILED_NO_REPLAY')
+  assert.equal(manifest.generation18Successor.zeroSessionsDrainConvergenceMs, 30000)
+  assert.equal(manifest.generation18Successor.zeroSessionsDrainMaxAttempts, 5)
+  assert.equal(manifest.generation18Successor.connectionVerifier.bridgeOwnProbe.op, 'register')
+  assert.equal(manifest.generation18Successor.connectionVerifier.bridgeOwnProbe.expectedMode, 'error')
+  assert.ok(manifest.generation18Successor.sources.some(item => item.path === 'scripts/staging-generation-18-live-launcher.mjs'))
+  assert.ok(manifest.generation18Successor.sources.some(item => item.path === 'scripts/staging-generation-18-connection-failure-evidence.mjs'))
+  assert.ok(manifest.generation18Successor.sources.some(item => item.path === 'scripts/staging-generation-18-database-transport.mjs'))
+  assert.ok(manifest.generation18Successor.sources.some(item => item.path === 'scripts/staging-generation-6-connection-verifier.mjs'))
+  assert.ok(manifest.generation18Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-18-disabled-successor.md') ||
+            manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-18-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-18-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-18-arming-diff.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-18-entry-baseline-failed.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-18-entry-baseline-diagnosis.md'))
+  assert.ok(manifest.generation17Successor.sources.some(item => item.path === 'scripts/staging-generation-18-live-launcher.mjs'))
+  assert.ok(manifest.generation18Successor.sources.some(item => item.path === 'scripts/staging-generation-19-live-launcher.mjs'))
+})
+
+test('generation 19 successor is pinned with Gen 17 role predecessor, Gen 18 attempt superseded, prevention artefacts, and native gates disarmed after credentials verified', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
+  assert.equal(manifest.stageSafety.generation19Armed, false)
+  assert.equal(manifest.stageSafety.generation19ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.generation18Armed, false)
+  assert.equal(manifest.stageSafety.generation18ReplayPermitted, false)
+  assert.equal(manifest.stageSafety.generation17Armed, false)
+  assert.equal(manifest.generation19Successor.packageId, 'tll-staging-generation-19-credentials/v1')
+  assert.equal(manifest.generation19Successor.generation, 19)
+  assert.equal(manifest.generation19Successor.windowId, '51809dd4-bd4b-44c7-8609-7dd8ca063679')
+  assert.equal(manifest.generation19Successor.predecessor.generation, 17)
+  assert.equal(manifest.generation19Successor.predecessor.windowId, '5728d807-701a-486b-a8c5-34bf89238275')
+  assert.equal(manifest.generation19Successor.predecessor.expiresAt, '2026-09-21T09:31:04.000Z')
+  assert.equal(manifest.generation19Successor.predecessor.validUntil, manifest.generation19Successor.predecessor.expiresAt)
+  assert.equal(manifest.generation19Successor.predecessor.replayPermitted, false)
+  assert.equal(manifest.generation19Successor.predecessor.liveReadOnlyConfirmed, true)
+  assert.deepEqual(manifest.generation19Successor.supersedesAttempts.map(item => item.generation), [7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+  assert.ok(manifest.generation19Successor.supersedesAttempts.every(item => item.generation < 19 && (item.generation < 10 || item.replayPermitted === false)))
+  assert.equal(manifest.generation19Successor.liveLauncher.path, 'scripts/staging-generation-19-live-launcher.mjs')
+  assert.equal(manifest.generation19Successor.liveLauncher.supportedOperatorEntry, 'scripts/staging-generation-19-run-live-once.mjs')
+  assert.equal(manifest.generation19Successor.liveLauncher.separateReadOnlyObserver, 'scripts/staging-generation-19-journal-watch.mjs')
+  assert.equal(manifest.generation19Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation19Successor.status, 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED_NO_REPLAY')
+  assert.equal(manifest.generation19Successor.zeroSessionsDrainConvergenceMs, 30000)
+  assert.equal(manifest.generation19Successor.zeroSessionsDrainMaxAttempts, 5)
+  assert.equal(manifest.generation19Successor.connectionVerifier.bridgeOwnProbe.op, 'register')
+  assert.equal(manifest.generation19Successor.connectionVerifier.bridgeOwnProbe.expectedMode, 'error')
+  assert.equal(manifest.generation19Successor.preArmRequiresPredecessorRetirementOrReviewedCleanup, true)
+  assert.equal(manifest.generation19Successor.reviewedCleanupPath, 'docs/ops/stage-plans/2026-09-21-generation-17-correct-cleanup.md')
+  assert.ok(manifest.generation19Successor.sources.some(item => item.path === 'scripts/staging-generation-19-live-launcher.mjs'))
+  assert.ok(manifest.generation19Successor.sources.some(item => item.path === 'scripts/staging-generation-19-pre-arm-gate.mjs'))
+  assert.ok(manifest.generation19Successor.sources.some(item => item.path === 'scripts/staging-generation-recovery-pin-contract.mjs'))
+  assert.ok(manifest.generation19Successor.sources.some(item => item.path === 'scripts/staging-generation-19-database-transport.mjs'))
+  assert.ok(manifest.generation19Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-19-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-19-disabled-successor.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-19-pre-arm-checklist.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-19-arming-diff.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-19-credentials-verified.md'))
+  assert.ok(manifest.stageSafety.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-21-generation-17-correct-cleanup.md'))
+  assert.equal(manifest.generation18Successor.status, 'ENTRY_BASELINE_FAILED_NO_REPLAY')
+})
+
+test('generation 20 is pinned to the corrected retired Gen19 contract and consumed without replay', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
+  assert.equal(manifest.stageSafety.generation20Armed, false)
+  assert.equal(manifest.stageSafety.generation20ReplayPermitted, false)
+  assert.equal(manifest.generation20Successor.packageId, 'tll-staging-generation-20-credentials/v1')
+  assert.equal(manifest.generation20Successor.generation, 20)
+  assert.equal(manifest.generation20Successor.windowId, 'a009f2b4-86df-4701-a8bc-1112597e3c42')
+  assert.deepEqual(manifest.generation20Successor.predecessor, {
+    generation: 19, windowId: '51809dd4-bd4b-44c7-8609-7dd8ca063679', expiresAt: '2026-09-21T11:08:34.000Z',
+    validUntil: 'infinity', state: 'retired', replayPermitted: false,
+    note: 'Exact Gen19 retired marker plus canonical inert role contract. Generation 20 is consumed and cannot be re-armed.',
+  })
+  assert.equal(manifest.generation20Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation20Successor.status, 'ENTRY_BASELINE_FAILED_NO_REPLAY')
+  assert.equal(manifest.generation20Successor.predecessorValidUntilComparison, 'CANONICAL_RETIRED_INFINITY')
+  assert.deepEqual(manifest.generation20Successor.attemptOutcome, {
+    phase: 'ENTRY_PREFLIGHT_RETRY', recoveryOutcome: 'NOT_REQUIRED', databaseDispatchAttempted: false,
+    providerStagingAttempted: false, rootCause: 'RETIRED_VALID_UNTIL_CONTRACT_MISMATCH',
+    incident: 'docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md',
+  })
+  assert.equal(manifest.generation20Successor.preArmRequiresPredecessorRetirementEvidence, true)
+  assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'scripts/staging-generation-20-pre-arm-gate.mjs'))
+  assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-20-disabled-successor.md'))
+  assert.ok(manifest.generation20Successor.sources.some(item => item.path === 'docs/ops/evidence/2026-09-22-generation-20-entry-baseline-incident.md'))
+})
+
+test('generation 21 is retired and consumed using the canonical Gen19 contract', () => {
+  execFileSync(process.execPath, ['scripts/staging-account-activation-manifest.mjs', '--check'], { stdio: 'pipe' })
+  const manifest = JSON.parse(readFileSync('config/staging-account-activation-manifest.json', 'utf8'))
+  assert.equal(manifest.stageSafety.generation21Armed, false)
+  assert.equal(manifest.stageSafety.generation21ReplayPermitted, false)
+  assert.equal(manifest.generation21Successor.packageId, 'tll-staging-generation-21-credentials/v1')
+  assert.equal(manifest.generation21Successor.generation, 21)
+  assert.equal(manifest.generation21Successor.windowId, 'a5511645-77af-4fc9-9e4c-f5c8a474d5fa')
+  assert.equal(manifest.generation21Successor.predecessor.generation, 19)
+  assert.equal(manifest.generation21Successor.predecessor.validUntil, 'infinity')
+  assert.equal(manifest.generation21Successor.predecessorMarkerComparison, 'PARSED_JSON_SEMANTICS')
+  assert.equal(manifest.generation21Successor.predecessorValidUntilComparison, 'CANONICAL_RETIRED_INFINITY')
+  assert.deepEqual(manifest.generation21Successor.supersedesAttempt, {
+    generation: 20, windowId: 'a009f2b4-86df-4701-a8bc-1112597e3c42',
+    outcome: 'ENTRY_BASELINE_FAILED_NO_REPLAY', databaseDispatchAttempted: false,
+    providerStagingAttempted: false, replayPermitted: false,
+  })
+  assert.equal(manifest.generation21Successor.activeWindowExpiresAt, 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF')
+  assert.equal(manifest.generation21Successor.nativeTransportEnabled, false)
+  assert.equal(manifest.generation21Successor.status, 'RECOVERY_VERIFIED_CONSUMED_NO_REPLAY')
+  assert.deepEqual(manifest.generation21Successor.attemptOutcome, {
+    installerStatus: 'CREDENTIALS_VERIFIED_CONTROLS_DISABLED', recoveryOutcome: 'PASS_RETIRED',
+    databaseControlsEnabled: false, edgeEnabled: false, applicationFlagsEnabled: false,
+    generatedProviderValuesRetired: true, rootCause: 'EXISTING_PROVIDER_SECRET_AND_SCOPE_DRIFT',
+    incident: 'docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md',
+  })
+  assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'scripts/staging-generation-21-pre-arm-gate.mjs'))
+  assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-21-disabled-successor.md'))
+  assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'docs/ops/stage-plans/2026-09-22-generation-21-arming-diff.md'))
+  assert.ok(manifest.generation21Successor.sources.some(item => item.path === 'docs/ops/evidence/2026-09-22-generation-21-provider-readback-incident.md'))
+})

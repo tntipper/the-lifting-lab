@@ -1,29 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem, type SafetyFlag } from '@/lib/nutrient-limits'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { analyseStack, normaliseNutrientName, NUTRIENT_LIMITS, type StackItem } from '@/lib/nutrient-limits'
 import { rniFor, type Sex } from '@/lib/nutrient-rda'
-import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { catalogueAssessment, summariseStackAssessments, assessmentText, stackResearchText } from '@/lib/stack-assessment'
 import { scoreFor } from '@/lib/scores'
-import { buyLink } from '@/lib/affiliate'
-import { createClient } from '@/lib/supabase'
+import { resolveProductListing } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
+import { StagingCartAdd } from '@/components/StagingCartActions'
+import { analysisServings, validStackServings } from '@/lib/stack-sync'
 import { useLocalStack } from '@/components/LocalStackContext'
-import type { LocalStackProduct } from '@/lib/local-stack'
-import { track } from '@/lib/gtag'
-
-// Friendly retailer name from a buy URL hostname (for the Buy All panel).
-function retailerLabel(url: string): string {
-  try {
-    const h = new URL(url).hostname.replace(/^www\./, '')
-    if (h.includes('amazon')) return 'Amazon'
-    if (h.includes('awin') || h.includes('bulk')) return 'Bulk'
-    if (h.includes('myprotein')) return 'MyProtein'
-    const base = h.split('.')[0]
-    return base.charAt(0).toUpperCase() + base.slice(1)
-  } catch {
-    return 'Retailer'
-  }
-}
 
 // Batch product shape returned by /api/products/batch
 type BatchProduct = {
@@ -101,23 +88,27 @@ function getDailyTotals(stackItems: StackItem[], sex: Sex): DailyTotal[] {
     })
 }
 
-function buildEmailLink(score: number | null, items: StackItem[]): string {
-  const subject = `My Supplement Stack — Score ${score ?? '?'}/100 | The Lifting Lab`
+function buildEmailLink(items: StackItem[], listedCount: number): string {
+  const summary = summariseStackAssessments(items.flatMap(item => item.products ? [item.products] : []), listedCount)
+  const subject = 'My Supplement Research Stack | The Lifting Lab'
   const lines = [
     `MY SUPPLEMENT STACK`,
-    `Stack Score: ${score ?? '—'}/100`,
+    summary.text,
     ``,
     `Products:`,
     ...items
       .filter((i) => i.products)
       .map((i) => {
         const p = i.products!
-        const sc = scoreFor(p.brand, p.name)
-        const link = buyLink(p.brand, p.name, p.buy_url)
-        return `• ${p.brand} ${p.name}${sc != null ? ` (${sc}/100)` : ''}\n  Buy: ${link}`
+        const assessment = assessmentText(catalogueAssessment(p))
+        const listing = resolveProductListing(p.buy_url)
+        const destination = listing.state === 'listing' && listing.url
+          ? `Retailer listing at ${listing.retailer} (check product, pack and price${listing.relationship === 'affiliate' ? '; affiliate link' : '; external link'}): ${listing.url}`
+          : 'No verified offer.'
+        return `• ${p.brand} ${p.name} — ${assessment}\n  ${destination}`
       }),
     ``,
-    `Analysed at theliftinglab.co.uk`,
+    `Research records at theliftinglab.co.uk`,
     `Not medical advice.`,
   ]
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`
@@ -160,21 +151,20 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 export default function StackBuilder() {
-  const { stack: localStack, toggle: localToggle, remove: localRemove, clear: localClear } = useLocalStack()
+  const { stack, state, add, remove, retry } = useLocalStack()
   const [stackItems, setStackItems] = useState<StackItem[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Product[]>([])
   const [searching, setSearching] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [flags, setFlags] = useState<SafetyFlag[]>([])
+  const [detailsLoading, setDetailsLoading] = useState(true)
+  const [detailAttempt, setDetailAttempt] = useState(0)
+  const [detailsError, setDetailsError] = useState<string | null>(null)
+  const loading = state.loading || detailsLoading
+  const unresolved = (state.snapshot?.items || []).filter(item => !validStackServings(item.servings_per_day))
+  const flags = analyseStack(stackItems)
   const [showTotals, setShowTotals] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [sex, setSex] = useState<Sex>('male')
-  // null = auth unresolved. Drives single-source-of-truth: logged-out reads local
-  // (localStorage); logged-in reads server and merges any local items on first load.
-  const [signedIn, setSignedIn] = useState<boolean | null>(null)
-  const mergedRef = useRef(false)
-
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Persist the RDA baseline (gender toggle) so it survives reloads.
@@ -192,71 +182,38 @@ export default function StackBuilder() {
     }
   }
 
-  const loadServerStack = useCallback(async () => {
-    const res = await fetch('/api/stack')
-    const data = await res.json()
-    const items = data.items || []
-    setStackItems(items)
-    setFlags(analyseStack(items))
-    setLoading(false)
-  }, [])
-
-  const loadLocalStack = useCallback(async (items: LocalStackProduct[]) => {
-    if (!items.length) {
-      setStackItems([])
-      setFlags([])
-      setLoading(false)
-      return
-    }
-    const ids = items.map((i) => i.id).join(',')
-    try {
-      const res = await fetch(`/api/products/batch?ids=${encodeURIComponent(ids)}`)
-      const data = await res.json()
-      const mapped = (Array.isArray(data) ? data : []).map(toStackItem)
-      setStackItems(mapped)
-      setFlags(analyseStack(mapped))
-    } catch {
-      setStackItems([])
-      setFlags([])
-    }
-    setLoading(false)
-  }, [])
-
-  // resolve auth once
+  // Both the main page and floating panel use the provider's membership. Only
+  // product detail hydration lives here, and late responses cannot replace it.
+  const idsKey = stack.map(item => item.id).sort().join(',')
   useEffect(() => {
     let cancelled = false
-    createClient().auth.getUser()
-      .then(({ data }) => { if (!cancelled) setSignedIn(!!data.user) })
-      .catch(() => { if (!cancelled) setSignedIn(false) })
-    return () => { cancelled = true }
-  }, [])
-
-  // single source of truth: logged-out → local; logged-in → server (+ merge local once)
-  useEffect(() => {
-    if (signedIn == null) return
-    if (signedIn) {
-      if (!mergedRef.current && localStack.length) {
-        mergedRef.current = true
-        setLoading(true)
-        Promise.all(
-          localStack.map((p) =>
-            fetch('/api/stack', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ productId: p.id }),
-            }).catch(() => {}),
-          ),
-        ).then(() => {
-          localClear()
-          loadServerStack()
-        })
-      } else {
-        loadServerStack()
-      }
-    } else {
-      loadLocalStack(localStack)
-    }
-  }, [signedIn, localStack, loadServerStack, loadLocalStack, localClear])
+    const controller = new AbortController()
+    if (!idsKey) { setStackItems([]); setDetailsError(null); setDetailsLoading(false); return }
+    setDetailsLoading(true)
+    setDetailsError(null)
+    setStackItems([])
+    // The existing public batch route caps requests at 50 products.
+    const ids = idsKey.split(',')
+    const batches = Array.from({ length: Math.ceil(ids.length / 50) }, (_, i) => ids.slice(i * 50, i * 50 + 50))
+    void Promise.all(batches.map(async batch => {
+      const response = await fetch(`/api/products/batch?ids=${encodeURIComponent(batch.join(','))}`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) })
+      if (!response.ok) throw new Error('Product details unavailable')
+      const data: unknown = await response.json()
+      if (!Array.isArray(data)) throw new Error('Product details unavailable')
+      return data as BatchProduct[]
+    }))
+      .then(results => {
+        const data = results.flat()
+        if (cancelled) return
+        setStackItems(data.flatMap((p: BatchProduct) => {
+          const servings = analysisServings(state.snapshot, p.id)
+          return servings === null ? [] : [{ ...toStackItem(p), servings_per_day: servings }]
+        }))
+        setDetailsError(data.length < idsKey.split(',').length ? 'Some saved products are unavailable for analysis. They remain in your stack and can be managed in the floating panel.' : null)
+      }).catch(() => { if (!cancelled) setDetailsError('Product details could not be loaded. Your saved stack is kept; retry when connected.') })
+      .finally(() => { if (!cancelled) setDetailsLoading(false) })
+    return () => { cancelled = true; controller.abort() }
+  }, [idsKey, state.snapshot, detailAttempt])
 
   function handleSearchChange(value: string) {
     setSearchQuery(value)
@@ -274,84 +231,46 @@ export default function StackBuilder() {
     }, 300)
   }
 
-  async function addProduct(product: Product) {
+  function addProduct(product: Product) {
     setSearchQuery('')
     setSearchResults([])
-    if (signedIn) {
-      await fetch('/api/stack', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id }),
-      })
-      loadServerStack()
-    } else {
-      // local add — context change triggers the load effect to rehydrate detail
-      localToggle({
-        id: product.id,
-        name: product.name,
-        brand: product.brand,
-        category: product.category,
-        score: scoreFor(product.brand, product.name),
-      })
-    }
+    add({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: scoreFor(product.brand, product.name) })
   }
 
-  async function removeItem(item: StackItem) {
-    if (signedIn) {
-      await fetch('/api/stack', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stackProductId: item.id }),
-      })
-      loadServerStack()
-    } else if (item.products) {
-      localRemove(item.products.id) // context change triggers the load effect
-    }
+  function removeItem(item: StackItem) {
+    if (item.products) remove(item.products.id)
   }
 
-  const stackProductIds = new Set(stackItems.map((i) => i.products?.id))
+  const stackProductIds = new Set(stack.map(item => item.id))
 
-  // ---- clinical scoring (Path A scores, looked up by brand + name) ----
-  const scoredItems = stackItems
-    .map((i) => (i.products ? scoreFor(i.products.brand, i.products.name) : null))
-    .filter((s): s is number => s != null)
-  const avgScore =
-    scoredItems.length > 0
-      ? Math.round(scoredItems.reduce((a, b) => a + b, 0) / scoredItems.length)
-      : null
+  // Catalogue identities are hydrated separately from saved membership. A
+  // stored score, unresolved serving or unavailable record cannot affect this
+  // historical average; it is not a combined-stack assessment.
+  const assessmentProducts = stackItems.flatMap(item => item.products ? [item.products] : [])
+  const assessmentSummary = summariseStackAssessments(assessmentProducts, stack.length)
 
   const dailyTotals = getDailyTotals(stackItems, sex)
   const shareUrl = buildShareUrl(stackItems)
-  const emailUrl = buildEmailLink(avgScore, stackItems)
+  const emailUrl = buildEmailLink(stackItems, stack.length)
 
-  // Buy All — group products by retailer so each supplier opens in its own tab.
+  // Explicit listings only. A research stack does not create a cart or order.
   const retailerGroups = useMemo(() => {
-    const groups: Record<string, { label: string; urls: string[]; names: string[] }> = {}
+    const groups: Record<string, { label: string; products: NonNullable<StackItem['products']>[] }> = {}
     for (const it of stackItems) {
       const p = it.products
       if (!p) continue
-      const url = buyLink(p.brand, p.name, p.buy_url)
-      const label = retailerLabel(url)
-      if (!groups[label]) groups[label] = { label, urls: [], names: [] }
-      groups[label].urls.push(url)
-      groups[label].names.push(`${p.brand} ${p.name}`)
+      const listing = resolveProductListing(p.buy_url)
+      if (listing.state !== 'listing' || !listing.url || !listing.retailer) continue
+      const label = listing.retailer
+      if (!groups[label]) groups[label] = { label, products: [] }
+      groups[label].products.push(p)
     }
-    return Object.values(groups).sort((a, b) => b.urls.length - a.urls.length)
+    return Object.values(groups).sort((a, b) => b.products.length - a.products.length)
   }, [stackItems])
-
-  function openRetailer(urls: string[]) {
-    // Fire one tab per product for this supplier. Triggered by a direct click so
-    // the first opens reliably; grouping keeps the count per gesture small.
-    urls.forEach((u) => window.open(u, '_blank', 'noopener,noreferrer'))
-  }
 
   // Social share text for the whole stack.
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.theliftinglab.co.uk'
-  const shareText =
-    `My supplement stack${avgScore != null ? ` scored ${avgScore}/100` : ''} on The Lifting Lab` +
-    (stackItems.length
-      ? `: ${stackItems.filter((i) => i.products).map((i) => `${i.products!.brand} ${i.products!.name}`).join(', ')}.`
-      : '.')
+  const shareText = stackResearchText(assessmentProducts, stack.length)
   const xShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(siteUrl)}`
   const fbShare = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(siteUrl)}&quote=${encodeURIComponent(shareText)}`
   const waShare = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${siteUrl}`)}`
@@ -366,31 +285,32 @@ export default function StackBuilder() {
     }
   }
 
-  // RDA coverage summary: nutrients hitting 100% RNI without exceeding the UL.
+  // Reference percentages describe label totals; they do not establish an
+  // effective or recommended combined dose, including for legacy records.
   const rdaTracked = dailyTotals.filter((t) => t.rdaPercent != null)
-  const rdaMet = rdaTracked.filter((t) => t.rdaPercent! >= 100 && (t.ulPercent == null || t.ulPercent < 100))
 
   return (
     <div className="space-y-6">
-      {/* Stack score summary */}
+      <div role="status" aria-live="polite" className="text-sm text-lab-muted space-y-2">
+        {state.busy && <p>Saving stack…</p>}
+        {state.identity && state.guest.length > 0 && <p>{state.guest.length} browser item(s) awaiting confirmation in your account. <button type="button" className="underline" disabled={state.busy || state.loading} onClick={retry}>Save browser items</button></p>}
+        {Boolean(state.snapshot?.recoveryConflicts) && <p>Earlier saved stacks contain differing serving amounts. Original entries are preserved for support review; conflicting amounts have not been added together.</p>}
+        {state.error && <p className="text-amber-300">{state.error} {state.retryable && <button type="button" className="underline" disabled={state.busy} onClick={retry}>Retry sync</button>}</p>}
+        {detailsError && <p className="text-amber-300">{detailsError} <button type="button" className="underline" onClick={() => setDetailAttempt(n => n + 1)}>Retry details</button></p>}
+      </div>
+      {unresolved.length > 0 && <div className="border border-amber-400/40 rounded-xl p-4 text-sm text-amber-200 space-y-2">
+        <p>Serving amounts need review. These saved items are excluded from totals and stack analysis until corrected; no default dose has been substituted.</p>
+        {unresolved.map(item => <div key={item.product_id} className="flex justify-between gap-3"><span>{item.products?.brand} {item.products?.name || 'Unavailable saved product'} — amount unresolved</span><button type="button" className="underline" disabled={state.busy} onClick={() => remove(item.product_id)}>Remove</button></div>)}
+      </div>}
+      {/* No combined-stack or product effectiveness assessment is approved. */}
       {!loading && stackItems.length > 0 && (
         <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5">
-          <ScoreBadge score={avgScore} size="lg" />
+          <div className="shrink-0 text-2xl font-bold text-lab-muted" aria-label="Assessment unavailable">
+            {assessmentSummary.average === null ? '—' : `${assessmentSummary.average}/100`}
+          </div>
           <div>
-            <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Stack Score</p>
-            <p className="text-white text-sm mt-1">
-              {avgScore != null ? (
-                <>
-                  Average Effectiveness Match score across{' '}
-                  <span className="font-bold" style={{ color: scoreColor(avgScore) }}>
-                    {scoredItems.length}
-                  </span>{' '}
-                  scored product{scoredItems.length === 1 ? '' : 's'}.
-                </>
-              ) : (
-                'No Effectiveness Match scores available for these products yet.'
-              )}
-            </p>
+            <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Product assessment unavailable</p>
+            <p className="text-white text-sm mt-1">{assessmentSummary.text}</p>
           </div>
         </div>
       )}
@@ -487,33 +407,28 @@ export default function StackBuilder() {
         </div>
       )}
 
-      {/* Buy All — grouped by retailer */}
+      {/* Individual listings — grouped by retailer */}
       {!loading && retailerGroups.length > 0 && (
         <div className="bg-lab-panel border border-lab-border rounded-2xl p-5 space-y-3">
           <div>
-            <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Buy All</p>
+            <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Retailer listings</p>
             <p className="text-[10px] text-gray-600 mt-0.5">
-              Grouped by retailer — each opens that supplier&apos;s products in new tabs.
+              Open individual listings to check the product, pack, price and stock. Your research stack is not a retailer cart.
             </p>
           </div>
           <div className="space-y-2">
             {retailerGroups.map((g) => (
-              <button
-                key={g.label}
-                onClick={() => {
-                  openRetailer(g.urls)
-                  track('buy_all_click', { retailer: g.label, count: g.urls.length })
-                }}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-lab-border hover:border-lab-lime/50 hover:bg-lab-lime/5 transition-colors"
-              >
-                <span className="text-white text-sm font-bold">{g.label}</span>
-                <span className="text-lab-lime text-xs font-black uppercase tracking-widest">
-                  Buy {g.urls.length} →
-                </span>
-              </button>
+              <div key={g.label} className="space-y-2 rounded-xl border border-lab-border px-4 py-3">
+                <p className="text-white text-sm font-bold">{g.label}</p>
+                {g.products.map((product, index) => (
+                  <div key={`${product.id}-${index}`} className="flex items-center justify-between gap-3">
+                    <span className="text-lab-muted text-xs">{product.brand} {product.name}</span>
+                    <ProductOfferLink product={{ id: product.id, brand: product.brand, name: product.name, buy_url: product.buy_url ?? null }} className="text-lab-lime text-xs font-bold rounded-lg border border-lab-border py-2" />
+                  </div>
+                ))}
+              </div>
             ))}
           </div>
-          <p className="text-[10px] text-gray-600">We may earn a commission via affiliate links.</p>
         </div>
       )}
 
@@ -541,15 +456,13 @@ export default function StackBuilder() {
             </div>
           </div>
 
-          {/* RDA coverage summary */}
+          {/* Label-derived reference comparison, not a dose endorsement */}
           {rdaTracked.length > 0 && (
             <div className="px-4 py-2.5 border-b border-lab-border flex items-center gap-2">
-              <span className="text-sm" aria-hidden>🎯</span>
-              <span className="text-xs text-white/90">
-                Hitting 100% RDA on{' '}
-                <span className="font-black text-lab-lime">{rdaMet.length}</span>
-                <span className="text-lab-muted"> / {rdaTracked.length}</span> tracked nutrient{rdaTracked.length === 1 ? '' : 's'}
-                <span className="text-gray-600"> ({sex === 'male' ? 'adult male' : 'adult female'} baseline)</span>
+              <span className="text-xs text-lab-muted">
+                Label-derived reference percentages for {rdaTracked.length} nutrient{rdaTracked.length === 1 ? '' : 's'}
+                {' '}({sex === 'male' ? 'adult male' : 'adult female'} baseline).
+                {' '}These totals do not establish an effective or recommended dose.
               </span>
             </div>
           )}
@@ -558,12 +471,10 @@ export default function StackBuilder() {
             {dailyTotals.map((row) => {
               const ul = row.ulPercent
               const rda = row.rdaPercent
-              // Combined RAG: toxicity takes priority, then RDA achievement.
+              // Preserve explicit UL cautions; reference intake is descriptive.
               const dotColor =
                 ul != null && ul >= 100 ? '#ff5c5c'
                 : ul != null && ul >= 80 ? '#f5b342'
-                : rda != null && rda >= 100 ? '#a6e22e'
-                : rda != null ? '#2E8FE0'
                 : '#6b7280'
               return (
                 <div key={row.name} className="flex items-center gap-3 px-4 py-2.5">
@@ -576,7 +487,7 @@ export default function StackBuilder() {
                   {rda != null ? (
                     <span
                       className="text-[10px] font-bold shrink-0 w-14 text-right"
-                      style={{ color: rda >= 100 ? '#a6e22e' : '#2E8FE0' }}
+                      style={{ color: '#9ca3af' }}
                     >
                       {rda}% RDA
                     </span>
@@ -600,7 +511,7 @@ export default function StackBuilder() {
           </div>
           <div className="px-4 py-2 border-t border-lab-border">
             <p className="text-[10px] text-gray-600">
-              RDA = % of UK Reference Nutrient Intake (adult {sex}). <span style={{ color: '#a6e22e' }}>●</span> 100%+ RDA met.
+              RDA = % of UK Reference Nutrient Intake (adult {sex}).{' '}
               UL = EFSA Tolerable Upper Intake Level. <span style={{ color: '#f5b342' }}>●</span> ≥80% caution · <span style={{ color: '#ff5c5c' }}>●</span> ≥100% critical.
             </p>
           </div>
@@ -621,7 +532,7 @@ export default function StackBuilder() {
             {searching && <div className="px-4 py-3 text-lab-muted text-sm">Searching…</div>}
             {searchResults.map((product) => {
               const alreadyAdded = stackProductIds.has(product.id)
-              const score = scoreFor(product.brand, product.name)
+              const assessedProduct = catalogueAssessment(product)
               return (
                 <button
                   key={product.id}
@@ -630,14 +541,7 @@ export default function StackBuilder() {
                   className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-lab-panel-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-b border-lab-border last:border-0"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    {score != null && (
-                      <span
-                        className="text-xs font-black shrink-0 w-7 text-center"
-                        style={{ color: scoreColor(score) }}
-                      >
-                        {score}
-                      </span>
-                    )}
+                    <ProductAssessment product={assessedProduct} size="sm" />
                     <div className="min-w-0">
                       <p className="text-white text-sm font-medium truncate">{product.brand}</p>
                       <p className="text-lab-muted text-xs truncate">{product.name}</p>
@@ -663,7 +567,7 @@ export default function StackBuilder() {
       {/* Stack items */}
       {loading ? (
         <p className="text-lab-muted text-sm">Loading your stack…</p>
-      ) : stackItems.length === 0 ? (
+      ) : stack.length === 0 && !state.error && !detailsError ? (
         <div className="text-center py-12 text-gray-600">
           <p className="text-4xl mb-3">🧪</p>
           <p className="text-sm">Your stack is empty. Search above to add products.</p>
@@ -673,7 +577,7 @@ export default function StackBuilder() {
           {stackItems.map((item) => {
             const product = item.products
             if (!product) return null
-            const score = scoreFor(product.brand, product.name)
+            const assessedProduct = catalogueAssessment(product)
             const nutrientFlags = flags.filter((f) =>
               f.products.includes(product.brand + ' ' + product.name)
             )
@@ -682,7 +586,7 @@ export default function StackBuilder() {
                 key={item.id}
                 className="flex gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
               >
-                <ScoreBadge score={score} />
+                <ProductAssessment product={assessedProduct} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -705,6 +609,7 @@ export default function StackBuilder() {
                       </button>
                     </div>
                   </div>
+                  <StagingCartAdd productId={product.id} />
                   <div className="flex flex-wrap gap-1 mt-2">
                     {(product.product_nutrients || []).slice(0, 4).map((n) => (
                       <span

@@ -6,7 +6,7 @@ const green = '#a6e22e'
 const amber = '#f5b342'
 const red = '#ff5c5c'
 
-export type VerdictFlag = { color: string; text: string }
+export type VerdictFlag = { color: string; text: string; kind?: 'safety' }
 
 // Reference: minimum effective doses for green / amber thresholds
 const NUTRIENT_REFS: Record<string, { green: number; amber: number; maxRed?: number }> = {
@@ -74,7 +74,7 @@ export function verdictFlags(
 
     if (name.includes('caffeine')) {
       if (amt >= 200 && amt <= 400) flags.push({ color: green, text: `Caffeine ${amt}mg — in the effective sweet spot (200–400mg)` })
-      else if (amt > 400) flags.push({ color: red, text: `Caffeine ${amt}mg — above 400mg, potential side effects` })
+      else if (amt > 400) flags.push({ kind: 'safety', color: red, text: `Caffeine ${amt}mg — above 400mg, potential side effects` })
       else flags.push({ color: amber, text: `Caffeine ${amt}mg — below optimal range (200–400mg)` })
     }
     if (name.includes('citrulline')) {

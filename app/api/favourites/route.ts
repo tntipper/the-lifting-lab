@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product } from '@/lib/products'
+import { assessmentDisplayFor } from '@/lib/assessment-display'
 import { awardPoints } from '@/lib/points'
 
 async function getSupabase() {
@@ -46,7 +47,7 @@ export async function GET() {
     rows.filter((r) => r.products != null).map((r) => withScore(r.products as Product)),
     'score'
   )
-  return NextResponse.json({ ids, products })
+  return NextResponse.json({ ids, products: products.map(product => ({ ...product, score: assessmentDisplayFor(product).score })) })
 }
 
 // POST — favourite a product. Idempotent (ignores duplicates).

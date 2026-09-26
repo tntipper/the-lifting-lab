@@ -1,0 +1,23 @@
+# Customer delivery and returns wording research
+
+Status: **research and draft only**. Nothing here has been published to customers. The owner asked TLL to check Tropicana's documents and supplement retailers' customer-service practice before choosing wording. Reviewed 24 September 2026.
+
+## What can be said now
+
+- The owner's direct 14 September TropShip welcome email says dropshipping is limited to **mainland UK**, Tropicana sends directly to customers by DPD, and the TLL account pays £5 plus VAT delivery for each supplier order. It distinguishes a separate wholesale account's £100 free-delivery offer. The email contains access information; do not copy it into this repository or use it as an instruction to connect.
+- Tropicana's [TropShip page](https://www.tropicanawholesale.com/TROPSHIP/) advertises an hourly stock feed, branded packing paperwork if a logo is supplied, DPD tracking/insurance and next-working-day service for orders received by 4pm. Its [general delivery page](https://www.tropicanawholesale.com/help/delivery/) describes weekdays/bank-holiday limits and possible delays. Its [returns page](https://www.tropicanawholesale.com/help/returns/) sets supplier-side reporting and return procedures. Whether every term applies to this TropShip account needs written confirmation.
+- TLL is the customer-facing seller. [GOV.UK distance-selling guidance](https://www.gov.uk/online-and-distance-selling-for-businesses) requires contact details, tax-inclusive price, delivery cost/timing and cancellation information before order placement, followed by a durable order copy. It describes the usual 14-day cancellation right after delivery and a 30-day default delivery requirement unless another time is agreed. [GOV.UK refund guidance](https://www.gov.uk/accepting-returns-and-giving-refunds) says faulty, misdescribed or unfit goods require a remedy; online customers generally have another 14 days to return after telling the seller they cancel, and standard delivery charges are refunded where applicable. There are exceptions, including certain opened sealed hygiene goods. Have the final wording legally checked against TLL's exact products and selling setup.
+
+## Useful retailer practices, not terms to copy blindly
+
+[Holland & Barrett](https://www.hollandandbarrett.com/info/terms-and-conditions/) shows delivery charges at checkout, calls delivery dates estimates, explains split parcels and explicitly preserves statutory rights when handling damage or missing items. Its [delivery help](https://help.hollandandbarrett.com/hc/en-gb/articles/21141028842770-Home-delivery-options-UK) measures free-shipping thresholds after discounts. [Bulk](https://help.bulk.com/hc/en-gb/articles/23695220574481-Help-with-Lost-or-Damaged-Orders) asks customers for order details and sometimes photos promptly, then explains whether collection, replacement or refund is needed. For TLL, the reusable practice is clear checkout information, one visible contact route, prompt evidence collection, tracking, and explicit customer-rights protection. Their price thresholds, timelines and return windows are not TLL policies.
+
+## Draft for later review
+
+> **Delivery:** We currently deliver to mainland UK addresses. The delivery charge and estimated date will be shown before you pay. We aim to send eligible orders received before 4pm on a working day for next-working-day delivery, but dispatch and arrival dates can change during busy periods or courier disruption. We will send tracking information when your parcel is dispatched.
+>
+> **Problems with an order:** If your parcel is delayed, missing, damaged or contains the wrong item, contact The Lifting Lab with your order number and a description. Photos of the item and packaging help us investigate quickly. We will work with the delivery partner and explain the appropriate refund, replacement or other remedy. Reporting promptly helps the investigation; it does not remove your legal rights.
+>
+> **Changing your mind:** The full cancellation and return instructions, including any lawful product-specific exceptions, will be available before checkout and in your order confirmation. Contact TLL rather than the supplier for help with a return.
+
+Do not publish the draft until the owner selects a support contact/address, realistic response target, return route/address and label-cost policy, approves the customer delivery charge and threshold, and confirms how sealed supplement products and split shipments are handled. The proposed £100 **retail** free-postage offer needs after-discount margin examples; it is unrelated to Tropicana's separate wholesale threshold. Do not tell customers they lose rights after Tropicana's supplier-side 48-hour reporting period.

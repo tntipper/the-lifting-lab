@@ -1,17 +1,19 @@
 'use client'
+import { formatListedServingPrice } from '@/lib/products'
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { hasApprovedAssessment, hasPositiveServingCost } from '@/lib/assessment-display'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { track } from '@/lib/gtag'
 import { trueCostReason, type ComparedProduct } from '@/lib/products'
 
 // Products arrive fully resolved (with nutrients) from the server component in
 // page.tsx, so the comparison table is in the initial HTML — no client fetch,
-// no spinner. Only analytics + affiliate click handlers hydrate.
+// no spinner. Analytics and retailer navigation hydrate on top.
 export default function CompareView({ products }: { products: ComparedProduct[] }) {
   useEffect(() => {
     if (products.length) track('compare_view', { count: products.length })
@@ -47,14 +49,14 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
   }
 
   // verdict: best by score (rating)
-  const scored = products.filter((p) => p.score != null) as (ComparedProduct & { score: number })[]
+  const scored = products.filter(hasApprovedAssessment)
   const bestRated = scored.length
     ? scored.reduce((a, b) => (b.score > a.score ? b : a))
     : null
 
   // best value: highest score per £/serving among products that have both
   const valued = products.filter(
-    (p) => p.score != null && p.cost_per_serving != null && p.cost_per_serving > 0,
+    (p) => hasApprovedAssessment(p) && hasPositiveServingCost(p),
   ) as (ComparedProduct & { score: number; cost_per_serving: number })[]
   const bestValue = valued.length
     ? valued.reduce((a, b) => (b.score / b.cost_per_serving > a.score / a.cost_per_serving ? b : a))
@@ -66,6 +68,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
 
   return (
     <div className="space-y-8">
+      <p className="text-xs text-lab-muted">No approved effectiveness assessment is available. Historical scores cannot enter a comparison ranking. All research records remain visible without a recommendation.</p>
       {/* verdict */}
       {bestRated && (
         <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-5 lab-glow">
@@ -78,7 +81,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
             <p className="text-lab-muted text-xs mt-1">
               Best value per serving:{' '}
               <span className="text-white font-bold">{bestValue.brand} {bestValue.name}</span> at{' '}
-              <span className="text-lab-lime font-bold">£{bestValue.cost_per_serving.toFixed(2)}/serving</span>{' '}
+              <span className="text-lab-lime font-bold">{formatListedServingPrice(bestValue.cost_per_serving)}/serving</span>{' '}
               (score {bestValue.score}).
             </p>
           ) : priced.length ? (
@@ -103,7 +106,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
           <div key={p.id} className="bg-lab-panel border border-lab-border rounded-xl p-4 text-center">
             <div className="flex justify-center items-center gap-3 mb-2">
               <ProductImage src={p.image_url} alt={`${p.brand} ${p.name}`} size={56} />
-              <ScoreBadge score={p.score} />
+              <ProductAssessment product={p} />
             </div>
             <p className="text-white text-xs font-bold leading-tight">{p.brand}</p>
             <p className="text-lab-muted text-[11px] leading-tight mt-0.5">{p.name}</p>
@@ -136,12 +139,12 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
         ))}
 
         {/* true cost per serving */}
-        <Cell head>True Cost / serving</Cell>
+        <Cell head>listed price / serving</Cell>
         {products.map((p) => (
           <Cell key={p.id}>
             {p.cost_per_serving != null ? (
               <span className={bestValue?.id === p.id ? 'text-lab-lime font-black' : ''}>
-                £{p.cost_per_serving.toFixed(2)}
+                {formatListedServingPrice(p.cost_per_serving)}
               </span>
             ) : (
               <span title={trueCostReason(p) ?? undefined}>
@@ -184,23 +187,18 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
           </>
         )}
 
-        {/* buy row */}
+        {/* retailer reference row */}
         <div />
         {products.map((p) => (
           <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
-            <a
-              href={buyLink(p.brand, p.name, p.buy_url)}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              onClick={() => track('buy_click', { item_brand: p.brand, item_name: p.name, from: 'compare' })}
+            <ProductOfferLink
+              product={p}
               className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
-            >
-              Buy →
-            </a>
+            />
           </div>
         ))}
       </div>
-      <p className="text-[9px] text-lab-muted/40 text-right -mt-4">affiliate links · open in a new tab</p>
+
 
       <div className="text-center pt-2">
         <Link

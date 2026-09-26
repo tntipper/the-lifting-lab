@@ -1,0 +1,7 @@
+# Staging provider run stopped before access: isolated checkout dependency
+
+Date: 2026-09-25. The owner approved one Supabase-only staging-provider attempt after independent review of a three-file arming diff. The direct launcher returned `RECONCILIATION_REQUIRED` in about 0.01 seconds. Both new provider journals and both older mutation journals remained absent. The launcher was immediately disarmed; its manifest and live-boundary checks passed, direct disabled invocation returned `SUPABASE_ONLY_PROVIDER_LIVE_DISABLED`, and the isolated tracked tree was clean. No provider update is evidenced; the fresh Supabase dashboard still showed the provider enabled before the attempt.
+
+Root cause: the isolated Git worktree had no `node_modules` directory. Its dynamic import of `@supabase/supabase-js` failed with `ERR_MODULE_NOT_FOUND` before the session could read Keychain, create a journal or dispatch an update. The main checkout's imports succeeded. Linking the isolated worktree to the main checkout's already installed dependencies made an offline import of every launcher dependency pass. No second live run was made under the consumed approval.
+
+Prevention: the stage plan now requires an exact-worktree import-resolution check before arming. A future reviewed run must refresh the staging baseline and obtain **new** action-time approval; this failed window is not an authorisation to retry. If a future run returns an uncertain status with a journal present, reconcile by read-only means and never replay the update.

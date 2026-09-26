@@ -1,0 +1,13 @@
+# Stage 3 recovery baseline: disabled offline correction
+
+Status: **OFFLINE REVIEWED / NO CLEANUP AUTHORISED**. The preserved synthetic fixture and all terminal journals are untouched. This changes only disabled recovery source, its offline test and the generated source hash in the activation manifest.
+
+The earlier recovery code required the native effective Keychain list to equal exactly `[login]`. The separate one-run diagnostic observed an effective list with login plus one different file, while the explicit user list remained `[login]`. The old guard would therefore reject today's valid setting before deletion.
+
+The disabled recovery source now takes a complete phase-start snapshot: default path, ordered native effective-list entries and ordered explicit user-list entries, each entry including its path and file identity. It requires the user preference domain, login as the exact default and sole explicit user entry, exactly one login identity in the effective list, readable regular entries, no duplicate path or file identity, and no entry resolving to either pinned synthetic fixture file. It allows unrelated effective-list entries only if that complete snapshot remains identical before and after the phase. No raw path is printed.
+
+Offline cases cover the observed two-entry shape, the former one-entry shape, changed default/user list, missing or duplicate login, an alias of login, aliases of both synthetic fixture files, a replaced unrelated file and reordered entries. The last two prove structural equality detects drift. The existing three-phase recovery logic and its interaction-disable/restore code were otherwise left in place. The source remains hard-disabled; the V1 journal and launcher remain non-replayable.
+
+**Material limit:** each phase still captures its own starting snapshot. A list change **between** child phases could become the next accepted starting point. This is a blocker for any cleanup attempt. A separate V2 plan must pin the original ordered effective and explicit user lists in a new private one-use run record, compare that same baseline before and after every phase and in final reconciliation, and inject between-phase drift in offline tests to prove no later deletion is dispatched. The V2 plan must also use new journal/artifact names and undergo independent review and fresh owner approval before any live operation. Do not arm or reuse the V1 recovery package.
+
+The independent reviewer returned GO for this **phase-local offline checkpoint** after catching and verifying the sidecar-alias correction. This is not a GO for cleanup execution or Stage 3 activation.
