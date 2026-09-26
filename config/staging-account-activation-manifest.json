@@ -1152,7 +1152,7 @@
       },
       {
         "path": "scripts/staging-generation-22-active-query.mjs",
-        "sha256": "3e2d4acf3b8dcb9555e4fe6437a9dd3f2f6f3c76ec8d5b707d3d19e4b93a853f"
+        "sha256": "cef14f545fae7e529f54e8df90f25a4a249562d16713f30175966b8457dde748"
       },
       {
         "path": "scripts/staging-generation-22-recovery-coordinator.mjs",
@@ -1188,7 +1188,7 @@
       },
       {
         "path": "scripts/staging-generation-22-retired-query.mjs",
-        "sha256": "bb427e147dceee62d545c315eff5ad9ef81f63325a5d2b22214237a4ab95a960"
+        "sha256": "f7181c2c9a3661ae6ea51372257f62e2d1cb16c4e6366cbf0183a46af4fe7b29"
       },
       {
         "path": "scripts/staging-generation-22-retired-check.mjs",
@@ -1660,7 +1660,7 @@
       },
       {
         "path": "tests/staging-generation-22-active-query.test.mjs",
-        "sha256": "77d6b7ad75799869fd3a680d42fc17fb79a83d85a4bf82095eb686022e168215"
+        "sha256": "e1d1c640c9d85e73f0345de2f1537b3d56c121f3840aa32e815c92962808f1c9"
       },
       {
         "path": "tests/staging-generation-22-recovery-coordinator.test.mjs",
@@ -1720,7 +1720,7 @@
       },
       {
         "path": "tests/staging-generation-22-retired-query.test.mjs",
-        "sha256": "c84081ca8f9c6a362880553ae5043d1ae9f82e0f249f4ca8dd3971bb949d31fb"
+        "sha256": "35816d19c1b4871bb08a3ef8aa1df9aaf37f812af3929dfcd230fac3073eb5ab"
       },
       {
         "path": "tests/staging-generation-22-retired-check.test.mjs",

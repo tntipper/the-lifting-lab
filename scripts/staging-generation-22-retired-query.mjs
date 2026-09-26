@@ -18,7 +18,8 @@ export async function postStagingGeneration22RetiredCheck(expiresAt, { token, si
     || !signal || signal.aborted || typeof signal.addEventListener !== 'function') unavailable()
   const sql = buildStagingGeneration22RetiredCheckSql({ expiresAt })
   if (sql.length > 100_000) unavailable()
-  const body = Buffer.from(JSON.stringify({ query: sql, read_only: true }))
+  // Supabase's API read_only mode changes the database role. The SQL transaction itself is read-only.
+  const body = Buffer.from(JSON.stringify({ query: sql, read_only: false }))
   const chunks = []
   let req, response, timer, settled = false, size = 0
   try {
