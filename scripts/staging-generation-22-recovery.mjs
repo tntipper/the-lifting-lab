@@ -9,6 +9,7 @@ import { ACTIVE_WINDOW_EXPIRES_AT, WINDOW_ID } from './staging-generation-22-cre
 export const STAGING_GENERATION_22_RECOVERY_ENABLED = false
 export const RECOVERY_ID = 'tll-staging-generation-22-recovery/v1'
 const unavailable = () => { throw new Error('Generation 22 recovery unavailable') }
+const preparedSql = new WeakMap()
 const quote = value => `'${value.replaceAll("'", "''")}'`
 const roles = PASSWORD_PURPOSES.map(purpose => IDENTITIES[purpose].login)
 const roleList = roles.map(quote).join(',')
@@ -131,4 +132,22 @@ export function validateStagingGeneration22RecoveryReceipt(rows, { expiresAt } =
     || receipt.controlsEnabled !== false || receipt.runtimeCount !== 5) unavailable()
   return Object.freeze({ status: 'PASS_RETIRED', projectRef: PROJECT_REF, generation: GENERATION,
     windowId: WINDOW_ID, receiptSha256: createHash('sha256').update(JSON.stringify(receipt)).digest('hex') })
+}
+
+/** Issue one opaque, in-process packet for the exact recovery transaction. */
+export function prepareStagingGeneration22RecoverySql(input) {
+  const sql = buildStagingGeneration22RecoverySql(input)
+  const packet = Object.freeze({})
+  preparedSql.set(packet, Object.freeze({ sql, expiresAt: input.expiresAt }))
+  return packet
+}
+
+/** Only the fixed recovery transport may consume the original packet once. */
+export function consumeStagingGeneration22PreparedRecoverySql(packet) {
+  if (!packet || typeof packet !== 'object' || Array.isArray(packet)) unavailable()
+  const prepared = preparedSql.get(packet)
+  if (!prepared || typeof prepared.sql !== 'string'
+    || prepared.expiresAt !== ACTIVE_WINDOW_EXPIRES_AT) unavailable()
+  preparedSql.delete(packet)
+  return prepared
 }

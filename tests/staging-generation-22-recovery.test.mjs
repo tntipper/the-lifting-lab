@@ -75,3 +75,15 @@ test('Gen22 recovery receipt rejects wrong project, state, count, expiry and ext
   }
   assert.throws(() => validate([...rows, ...rows], { expiresAt }), /unavailable/)
 })
+
+test('recovery SQL packet is opaque and consumed only once', async () => {
+  const { prepareStagingGeneration22RecoverySql: prepare,
+    consumeStagingGeneration22PreparedRecoverySql: consume } = await armedFixture()
+  const packet = prepare({ expiresAt })
+  assert.deepEqual(Object.keys(packet), [])
+  assert.throws(() => consume({ ...packet }), /unavailable/)
+  const prepared = consume(packet)
+  assert.match(prepared.sql, /PASS_RETIRED/)
+  assert.equal(prepared.expiresAt, expiresAt)
+  assert.throws(() => consume(packet), /unavailable/)
+})
