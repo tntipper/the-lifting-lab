@@ -1704,7 +1704,7 @@
       },
       {
         "path": "tests/fixtures/staging-generation-22-default-success.mjs",
-        "sha256": "0c09cdcbee9f7f0b1456e710bfc54b90df5617b809dd4b3e4c47be09e99a3f24"
+        "sha256": "bbf83be74d50b9c4957b312793449961240a9ac263160627ca3e7cb96fbc62d3"
       },
       {
         "path": "tests/fixtures/staging-generation-22-network-deny.mjs",

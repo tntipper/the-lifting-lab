@@ -175,7 +175,8 @@ if (mode.startsWith('entry-transport-') || mode === 'entry-reader-second-fail') 
     req.end = body => {
       const input = JSON.parse(body.toString('utf8'))
       assert.equal(input.read_only, readOnly)
-      assert.match(input.query, readOnly ? /^BEGIN READ ONLY;/ : /^BEGIN;/)
+      assert.match(input.query, ['active-read', 'retired-read'].includes(operation)
+        ? /^BEGIN READ ONLY;/ : /^BEGIN;/)
       events.push(operation)
       if (mode === 'entry-transport-lost-first' && operation === 'database-install') {
         queueMicrotask(() => req.emit('error', Error('synthetic accepted request lost its reply')))
@@ -205,7 +206,7 @@ if (mode.startsWith('entry-transport-') || mode === 'entry-reader-second-fail') 
         [{ tll_generation_22_active_check: {
           ...receipt('PASS_ACTIVE', { kind: 'queryId', value: active.QUERY_ID }, expiresAt),
           runtimeSessions: 0,
-        } }], true) }),
+        } }], false) }),
     postRecovery: (packet, { token, signal }) => recoveryQuery.postStagingGeneration22RecoverySql(
       packet, { token, signal, request: requestFor('retirement',
         [{ tll_generation_22_recovery_receipt: receipt('PASS_RETIRED',
@@ -215,7 +216,7 @@ if (mode.startsWith('entry-transport-') || mode === 'entry-reader-second-fail') 
         [{ tll_generation_22_retired_check: {
           ...receipt('PASS_RETIRED', { kind: 'queryId', value: retired.QUERY_ID }, expiresAt),
           runtimeSessions: 0,
-        } }], true) }),
+        } }], false) }),
   }
   const passed = await entry.runStagingGeneration22Worker({
     signal: new AbortController().signal,
