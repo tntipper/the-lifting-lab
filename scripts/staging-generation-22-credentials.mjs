@@ -78,6 +78,8 @@ SET LOCAL statement_timeout='30s';
 DO $preflight$
 DECLARE r text; role_marker text; parsed_marker jsonb; operator_name name:=session_user;
 BEGIN
+ IF clock_timestamp() >= ${quote(expiresAt)}::timestamptz THEN
+  RAISE EXCEPTION 'Generation 22 credential window expired before install'; END IF;
  IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres' OR current_user<>session_user
   OR current_setting('server_version_num')::int<170000
   OR (SELECT rolsuper OR NOT rolcreaterole FROM pg_roles WHERE rolname=operator_name)
@@ -136,6 +138,8 @@ ${install}
 DO $postflight$
 DECLARE expected_marker text:=${quote(activeComment)};
 BEGIN
+ IF clock_timestamp() >= ${quote(expiresAt)}::timestamptz THEN
+  RAISE EXCEPTION 'Generation 22 credential window expired before commit'; END IF;
  IF (SELECT count(*) FROM pg_roles WHERE rolname IN(${roleList})
     AND rolcanlogin AND rolvaliduntil=${quote(expiresAt)}::timestamptz
     AND shobj_description(oid,'pg_authid')=expected_marker)<>5 THEN

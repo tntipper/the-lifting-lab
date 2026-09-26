@@ -44,6 +44,7 @@ test('Gen22 SQL is disconnected and pins the retired Gen21 predecessor', async (
   assert.match(sql, /validuntil IS DISTINCT FROM 'infinity'::timestamptz/)
   assert.match(sql, /rolpassword IS NOT NULL/)
   assert.match(sql, /runtime sessions remain/)
+  assert.equal(sql.split('clock_timestamp() >=').length, 3)
   assert.match(sql, /generation 22 requires disabled controls/i)
   assert.match(sql, /WHERE\s+\(granted\.rolname IN\([^)]+\) OR member\.rolname IN\([^)]+\)\) AND NOT/)
   assert.match(sql, /JOIN tll_staging_private\.applied_migrations actual USING\(version,source_sha256\)/)
