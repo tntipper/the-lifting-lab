@@ -10,12 +10,12 @@ const path = 'scripts/staging-preview-git-publish-live-launcher.mjs'
 test('staging publication launcher is disabled before any Git, manifest or journal work', () => {
   const source = readFileSync(path, 'utf8')
   const root = resolve(import.meta.dirname, '..')
-  const armScriptDir = resolve(root, '../implementation-preview-publish-arm-v1/scripts')
+  const armScriptDir = resolve(root, '../implementation-preview-publish-arm-v2/scripts')
   assert.match(source, /const sourceRoot = resolve\(import\.meta\.dirname, '\.\.\/\.\.\/implementation-integration'\)/)
   assert.equal(resolve(armScriptDir, '../../implementation-integration'), root)
   assert.match(source, /export const STAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED = false/)
   assert.match(source, /if \(STAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED !== true\)/)
-  assert.match(source, /createPreviewGitPublishJournal\(\)/)
+  assert.match(source, /createPreviewGitPublishJournalV2\(\)/)
   assert.match(source, /const approved = Object\.freeze\(\{ selectedCommit: '', predecessorCommit: '', manifestSha256: '' \}\)/)
   const body = source.slice(source.indexOf('export async function runStagingPreviewGitPublishLiveOnce()'))
   assert.ok(body.indexOf('if (STAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED !== true)')
@@ -23,7 +23,7 @@ test('staging publication launcher is disabled before any Git, manifest or journ
   assert.ok(body.indexOf('checkSourceBeforeImport()') < body.indexOf('checkCommittedBytes(sourceRoot, sourceCodePaths)'))
   assert.ok(body.indexOf('checkCommittedBytes(sourceRoot, sourceCodePaths)') < body.indexOf('checkManifest(sourceRoot)'))
   assert.ok(body.indexOf('checkCommittedBytes(armRoot, checkerPaths)') < body.indexOf('checkManifest(armRoot)'))
-  assert.ok(body.indexOf('checkManifest(armRoot)') < body.indexOf('createPreviewGitPublishJournal()'))
+  assert.ok(body.indexOf('checkManifest(armRoot)') < body.indexOf('createPreviewGitPublishJournalV2()'))
 
   const result = spawnSync(process.execPath, [path], {
     encoding: 'utf8', timeout: 5_000, env: { PATH: '/usr/bin:/bin', HOME: '/var/empty' },

@@ -5,7 +5,7 @@ import { verifyStagingPreviewGitPublishArm,
   STAGING_PREVIEW_GIT_PUBLISH_ARM_ROOT } from '../scripts/staging-preview-git-publish-arm-preflight.mjs'
 
 const selectedCommit = 'a'.repeat(40), executionCommit = 'b'.repeat(40)
-const branch = 'codex/tll-preview-publish-arm-v1'
+const branch = 'codex/tll-preview-publish-arm-v2'
 const paths = 'config/staging-account-activation-manifest.json\nscripts/staging-preview-git-publish-live-launcher.mjs\n'
 const names = paths.trimEnd().split('\n')
 const bytes = [Buffer.from('manifest\n'), Buffer.from('launcher\n')]

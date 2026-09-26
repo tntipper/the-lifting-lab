@@ -10,7 +10,7 @@ export const STAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED = false
 // Both the source checkout and its one-run arming checkout are fixed siblings.
 // Resolve from either script location so a parent-folder rename cannot strand publication.
 const sourceRoot = resolve(import.meta.dirname, '../../implementation-integration')
-const armRoot = resolve(sourceRoot, '../implementation-preview-publish-arm-v1')
+const armRoot = resolve(sourceRoot, '../implementation-preview-publish-arm-v2')
 const gitBinary = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'
 const gitBinarySha256 = 'ee73b116cc37f44ecdaa9e3fdfbc25ce827675859f5f966ec671112fd5caf074'
 const gitExecPath = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core'
@@ -25,6 +25,7 @@ const sourceCodePaths = Object.freeze([
   'scripts/staging-preview-git-publish-native-read.mjs',
   'scripts/staging-preview-git-publish-native-push.mjs',
   'scripts/staging-preview-git-publish-journal.mjs',
+  'scripts/staging-preview-git-publish-journal-v2.mjs',
   'scripts/staging-preview-git-publish-coordinator.mjs',
   'scripts/staging-preview-git-publish-native-contract.mjs',
   'scripts/staging-preview-git-source-preflight.mjs',
@@ -142,7 +143,7 @@ export async function runStagingPreviewGitPublishLiveOnce() {
       import(sourceModule('staging-preview-git-publish-binding.mjs')),
       import(sourceModule('staging-preview-git-publish-native-read.mjs')),
       import(sourceModule('staging-preview-git-publish-native-push.mjs')),
-      import(sourceModule('staging-preview-git-publish-journal.mjs')),
+      import(sourceModule('staging-preview-git-publish-journal-v2.mjs')),
     ])
     const armProof = await arm.verifyStagingPreviewGitPublishArm({
       runGit: armNative.createStagingPreviewGitArmNativeReadPort().runGit,
@@ -155,7 +156,7 @@ export async function runStagingPreviewGitPublishLiveOnce() {
     checkManifest(armRoot)
     const publication = binding.createStagingPreviewGitPublishBinding({
       runGit: nativeRead.createStagingPreviewGitPublishNativeReadPort().runGit,
-      journal: journal.createPreviewGitPublishJournal(),
+      journal: journal.createPreviewGitPublishJournalV2(),
       push: nativePush.createStagingPreviewGitPublishNativePushPort({ spawn: spawnSync }).push,
     })
     return await publication.execute(approved)

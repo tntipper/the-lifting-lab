@@ -2,8 +2,8 @@
 import { resolve } from 'node:path'
 import { closeSync, constants, fstatSync, lstatSync, openSync, readSync, realpathSync } from 'node:fs'
 
-export const STAGING_PREVIEW_GIT_PUBLISH_ARM_ROOT = resolve(import.meta.dirname, '../../implementation-preview-publish-arm-v1')
-const branch = 'codex/tll-preview-publish-arm-v1'
+export const STAGING_PREVIEW_GIT_PUBLISH_ARM_ROOT = resolve(import.meta.dirname, '../../implementation-preview-publish-arm-v2')
+const branch = 'codex/tll-preview-publish-arm-v2'
 const changed = ['config/staging-account-activation-manifest.json',
   'scripts/staging-preview-git-publish-live-launcher.mjs']
 const HOLD = Object.freeze({ status: 'ARMING_WORKTREE_HOLD' })

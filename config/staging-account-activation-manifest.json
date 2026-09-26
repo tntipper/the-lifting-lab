@@ -1019,6 +1019,10 @@
         "sha256": "a5c242c0f83e6d88dc68ebbbc8a9f479f976895967d3568deb1b33c4f7449fc5"
       },
       {
+        "path": "scripts/staging-preview-git-publish-journal-v2.mjs",
+        "sha256": "2beafd7a1befb0346804f691c0756d9539cc04a6a186a3474d39d983b090f3a3"
+      },
+      {
         "path": "scripts/staging-preview-git-publish-coordinator.mjs",
         "sha256": "42b5d1db95d7be59e085b1a2ebd4f51e8e6dd403a2d99c69ec4f6584689ab5b3"
       },
@@ -1040,7 +1044,7 @@
       },
       {
         "path": "scripts/staging-preview-git-publish-arm-preflight.mjs",
-        "sha256": "f8a0324e7fe744fc80322b59886b5a639b0320932af05308580382778f27071b"
+        "sha256": "63d14e71487d8421ffa242f90c8d12fcd0f3d5decf344c2f825761a3c190f0c4"
       },
       {
         "path": "scripts/staging-preview-git-publish-arm-native-read.mjs",
@@ -1048,7 +1052,7 @@
       },
       {
         "path": "scripts/staging-preview-git-publish-live-launcher.mjs",
-        "sha256": "e8cd5299f6c292ffaaeb09bb54621442511d9f023f3699eade94bf424fc48936"
+        "sha256": "c4ad4a49bcc3095e28703f800c6a40908795a5abdfea5c553b60dfb39678a200"
       },
       {
         "path": "scripts/staging-preview-source-journal.mjs",
@@ -1575,6 +1579,10 @@
         "sha256": "694ccbf5891ecc18d37ca862ab7dad01ce1948526f20e157097a8bbb5b707001"
       },
       {
+        "path": "tests/staging-preview-git-publish-journal-v2.test.mjs",
+        "sha256": "abaedcc58a30f06263a9fdc530977737cf2184b1a8e5ff368ed746eda60c615e"
+      },
+      {
         "path": "tests/staging-preview-git-publish-coordinator.test.mjs",
         "sha256": "45da00e5e89eeea9470a4bf3ee925bb3155aa4f0e8d8c717fdddbf1db6437b20"
       },
@@ -1596,7 +1604,7 @@
       },
       {
         "path": "tests/staging-preview-git-publish-arm-preflight.test.mjs",
-        "sha256": "dcb8ba992625a288b01df8905b14043e7a9073774f6e77e0579352a5e8948bcf"
+        "sha256": "4d5353e883a30c86eaff26f0015b8ee1afee60dd425163de0baab56befaa44d7"
       },
       {
         "path": "tests/staging-preview-git-publish-arm-native-read.test.mjs",
@@ -1604,7 +1612,7 @@
       },
       {
         "path": "tests/staging-preview-git-publish-live-launcher.test.mjs",
-        "sha256": "3f55f61c439d67f2985536a93ec14ef052d55813f40d3e7dacdf3509fa54b833"
+        "sha256": "316c5b6290db9b7741b7d747217ab59afe5734bc9bef8b77b9091789ef1f589f"
       },
       {
         "path": "tests/staging-preview-source-observer.test.mjs",
