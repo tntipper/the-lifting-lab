@@ -181,7 +181,7 @@ export async function freezeStagingSurfaces({ ports, currentEvidence, requiremen
 export async function enableStagingSurfaces({ ports, heldEvidence, requirements, journal = createSurfaceActivationJournal(), now = Date.now } = {}) {
   requirePorts(ports); validateJournal(journal); if (typeof now !== 'function') unavailable()
   const replay = existingStatus(journal); if (replay) return stableResult(replay)
-  const startedAt = now(); let held, intent, activationAttempted = false, enabledDeploymentDispatched = false
+  const startedAt = now(); let held, intent, activationAttempted = false
   try {
     validateRequirements(requirements, startedAt); held = validateIdentity(heldEvidence, requirements, { nowMs: startedAt })
     await readDeploymentProof(ports, held, HELD_SURFACE_FLAGS)
@@ -197,21 +197,14 @@ export async function enableStagingSurfaces({ ports, heldEvidence, requirements,
     activationAttempted = true; await writeFlags(ports, ENABLED_SURFACE_FLAGS)
     const enabledBuildBoundary = now()
     if (!Number.isFinite(enabledBuildBoundary) || enabledBuildBoundary < startedAt) unavailable()
-    const { identity, runtime } = await deployAndProve(ports, requirements, ENABLED_SURFACE_FLAGS, held, enabledBuildBoundary, now,
-      () => { enabledDeploymentDispatched = true })
+    const { identity, runtime } = await deployAndProve(ports, requirements, ENABLED_SURFACE_FLAGS, held, enabledBuildBoundary, now)
     validateRequirements(requirements, now()); journal.transition(intent, 'ENABLE_VERIFIED')
     return stableResult('SURFACES_ENABLED_VERIFIED', { deployment: identity, runtime })
   } catch {
-    if (enabledDeploymentDispatched) {
-      try { journal.transition(intent, 'RECONCILIATION_REQUIRED') } catch { /* preserve durable state */ }
-      return stableResult('HOLD_RECONCILIATION_REQUIRED', { activationAttempted })
-    }
-    try {
-      const { identity, runtime } = await recoverHeld(ports, requirements, held, startedAt, now)
-      journal.transition(intent, 'HOLD'); return stableResult('HOLD', { activationAttempted, deployment: identity, runtime })
-    } catch {
-      try { journal.transition(intent, 'RECONCILIATION_REQUIRED') } catch { /* preserve durable state */ }
-      return stableResult('HOLD_RECONCILIATION_REQUIRED', { activationAttempted })
-    }
+    // Any flag or deployment call may have succeeded despite a lost reply.
+    // Do not issue further writes; a separate read-only check must establish
+    // the actual state before an explicitly reviewed shutdown attempt.
+    try { journal.transition(intent, 'RECONCILIATION_REQUIRED') } catch { /* preserve durable state */ }
+    return stableResult('HOLD_RECONCILIATION_REQUIRED', { activationAttempted })
   }
 }

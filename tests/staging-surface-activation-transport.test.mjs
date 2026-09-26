@@ -95,13 +95,16 @@ test('failed readback after an accepted enabled build also stops without a secon
   assert.equal(j.read().state, 'RECONCILIATION_REQUIRED')
 })
 
-test('failure before a deployment request retains the existing held recovery path', async () => {
-  const f = fixture({ failAt: 'public:true' }), j = journal()
-  const result = await enableStagingSurfaces({ ports: f.ports, heldEvidence: oldDeployment, requirements, journal: j, now: f.now })
-  assert.equal(result.status, 'HOLD')
-  assert.equal(f.events.filter(value => value === 'create').length, 1)
-  assert.equal(result.runtime.publicCustomerEnabled, false)
-  assert.equal(j.read().state, 'HOLD')
+test('lost settings acknowledgement stops without a recovery write or build', async () => {
+  for (const failed of ['edge:true', 'private:true', 'public:true']) {
+    const f = fixture({ failAt: failed }), j = journal()
+    const result = await enableStagingSurfaces({ ports: f.ports, heldEvidence: oldDeployment, requirements, journal: j, now: f.now })
+    assert.equal(result.status, 'HOLD_RECONCILIATION_REQUIRED', failed)
+    assert.equal(f.events.filter(value => value === 'create').length, 0, failed)
+    assert.equal(f.events.filter(value => /^(edge|private|public):false$/.test(value)).length, 0, failed)
+    assert.equal(f.events.filter(value => /^(edge|private|public):true$/.test(value)).at(-1), failed)
+    assert.equal(j.read().state, 'RECONCILIATION_REQUIRED', failed)
+  }
 })
 
 test('a deployment created after operation start but before flag-write completion is rejected', async () => {
