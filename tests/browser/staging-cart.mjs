@@ -39,7 +39,11 @@ try {
     const context=await browser.newContext({viewport:{width,height:950},reducedMotion:'reduce'}),page=await context.newPage(),errors=[],calls=[]
     page.on('pageerror',e=>errors.push(e.stack ?? e.message))
     let view={state:'empty',revision:0,productId:'40000000-0000-4000-8000-000000000001',quantity:0,unitPricePence:null,subtotalPence:0,currency:'GBP',csrfToken:null,message:'Your test cart is empty.'}
-    let mode='normal',release,pending
+    let mode='normal',release,pending,resolvePending
+    const waitForPending=()=>pending?Promise.resolve():new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{resolvePending=undefined;reject(Error('Delayed cart request never reached the local test server'))},5000)
+      resolvePending=()=>{clearTimeout(timer);resolve()}
+    })
     const reply=(route,status=200,value=view)=>route.fulfill({status,json:value})
     await page.route('**/*',async route=>{
       const request=route.request(),url=new URL(request.url())
@@ -60,7 +64,7 @@ try {
         view={...view,state:view.quantity?'ready':'empty',message:'Using the cart already saved to this account.'};return reply(route)
       }
       assert.match(request.headers()['idempotency-key'],/^[a-f0-9-]{36}$/)
-      if(mode==='delayed'||mode==='switch'){pending=true;await new Promise(resolvePromise=>{release=resolvePromise})}
+      if(mode==='delayed'||mode==='switch'){pending=true;resolvePending?.();resolvePending=undefined;await new Promise(resolvePromise=>{release=resolvePromise})}
       const quantity=request.method()==='DELETE'?0:body.quantity
       view={...view,revision:view.revision+1,state:quantity?'ready':'empty',quantity,unitPricePence:quantity?1200:null,subtotalPence:quantity*1200,message:'Synthetic cart response.'}
       if(mode==='lost'){mode='normal';return route.abort('failed')}
@@ -77,7 +81,7 @@ try {
     await page.keyboard.press('Escape');assert.equal(await navCart.evaluate(el=>el===document.activeElement),true)
     if(width<1280)await page.locator('header button[aria-controls]').click()
     mode='delayed';await add.click();await page.waitForFunction(()=>document.querySelector('[role=status]')?.textContent.includes('Checking'))
-    await page.waitForTimeout(50);assert.equal(pending,true)
+    await waitForPending();assert.equal(pending,true)
     assert.equal(await dialog.getByRole('button',{name:'Refresh cart'}).isDisabled(),true)
     assert.equal(calls.filter(c=>c.method==='POST').length,1);assert.equal(calls.filter(c=>c.method==='PATCH').length,1)
     mode='normal';release();await dialog.getByRole('status').filter({hasText:'Test cart updated.'}).waitFor()
@@ -110,7 +114,7 @@ try {
     await dialog.getByRole('button',{name:'Refresh cart'}).click();await dialog.getByRole('region',{name:'Choose saved cart'}).waitFor()
     await dialog.getByRole('button',{name:'Connect guest cart'}).click();await dialog.getByRole('status').filter({hasText:'connected to this account'}).waitFor()
     assert.equal(calls.at(-1).body.action,'transfer');assert.equal(await dialog.getByRole('region',{name:'Choose saved cart'}).count(),0)
-    mode='switch';pending=false;await dialog.getByRole('button',{name:'Increase test product quantity'}).click();await page.waitForTimeout(50);assert.equal(pending,true)
+    mode='switch';pending=false;await dialog.getByRole('button',{name:'Increase test product quantity'}).click();await waitForPending();assert.equal(pending,true)
     await page.evaluate(()=>window.__cartUser('70000000-0000-4000-8000-000000000002'));release()
     await dialog.getByRole('status').filter({hasText:'Previous cart withheld.'}).waitFor()
     assert.equal(await dialog.getByRole('region',{name:'Test cart item'}).count(),0)
@@ -122,7 +126,7 @@ try {
     // A completed mutation from an unmounted provider must not start a new GET.
     view={state:'ready',revision:4,productId:'40000000-0000-4000-8000-000000000001',quantity:1,unitPricePence:1200,subtotalPence:1200,currency:'GBP',csrfToken:'a'.repeat(64),message:'Synthetic saved cart.'}
     await page.goto(origin);await add.waitFor();mode='delayed';pending=false;await add.click()
-    await page.waitForTimeout(50);assert.equal(pending,true)
+    await waitForPending();assert.equal(pending,true)
     const reads=calls.filter(c=>c.method==='GET').length
     await page.evaluate(()=>window.__unmountCart());mode='normal';release()
     await page.waitForTimeout(100)

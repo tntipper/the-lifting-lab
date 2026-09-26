@@ -7,7 +7,7 @@ import { GENERATION, PROJECT_REF, PASSWORD_PURPOSES } from './staging-generation
 import { WINDOW_ID } from './staging-generation-22-credentials.mjs'
 
 /** Fixed from the consumed Gen22 setup journal; never re-arm its old window. */
-const PREDECESSOR_EXPIRES_AT = '2026-09-26T19:52:00.000Z'
+export const PREDECESSOR_EXPIRES_AT = '2026-09-26T19:52:00.000Z'
 
 export const STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED = false
 export const QUERY_ID = 'tll-staging-generation-23-predecessor-check/v1'

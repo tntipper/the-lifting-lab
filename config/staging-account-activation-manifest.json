@@ -1120,7 +1120,7 @@
       },
       {
         "path": "scripts/staging-generation-23-predecessor-check.mjs",
-        "sha256": "6769f149b356a267b8bc8b955805e72d5b8eede9c7f156bd45d5d2b5e05a9427"
+        "sha256": "8d671ef833d73fdd414dc6e11b8d941c841db28daaf2c0c5b31777e14731a148"
       },
       {
         "path": "scripts/staging-generation-23-predecessor-query.mjs",
@@ -1161,6 +1161,14 @@
       {
         "path": "scripts/staging-generation-23-edge-replacer.mjs",
         "sha256": "2073bfa7e0f6eafbdf7a9722963edc9f4965115b56b91fee35ffa3f9dbd3b56b"
+      },
+      {
+        "path": "scripts/staging-generation-23-credentials.mjs",
+        "sha256": "69e66d2e898ff4cd3b84fdeb7bd7e26136027bb8a9164d80db403cf95169ca81"
+      },
+      {
+        "path": "scripts/staging-generation-23-recovery.mjs",
+        "sha256": "30f5144d6ef8657cda4bb4d0f2689145165b7e3f4284520224ba1292ba7d78a9"
       },
       {
         "path": "scripts/staging-generation-22-preflight-assessment.mjs",
@@ -1745,6 +1753,18 @@
       {
         "path": "tests/staging-generation-23-edge-replacer.test.mjs",
         "sha256": "88276537a90bdd559fb30ddb5c0a8e682985e171fbc8540da73c3ffc7e37e380"
+      },
+      {
+        "path": "tests/staging-generation-23-credentials.test.mjs",
+        "sha256": "855e1081c6dd02f5dc46d722f96e4d5d2380f7235d5047053d426e55b5d13651"
+      },
+      {
+        "path": "tests/staging-generation-23-recovery.test.mjs",
+        "sha256": "de28b876d38dfce749841e0fde6036ed35f41af8e7475997e00e13bb7fc71da5"
+      },
+      {
+        "path": "tests/staging-generation-23-database-acceptance.mjs",
+        "sha256": "bcb10980760031e1357f7d28204038adb5d91fb1ea1520f9552cd9e738452777"
       },
       {
         "path": "tests/staging-generation-22-credentials.test.mjs",
