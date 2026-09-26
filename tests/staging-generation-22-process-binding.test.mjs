@@ -28,6 +28,7 @@ async function armedUrls() {
     .replace("from './staging-provider-broker-recovery-process-control.mjs'",
       `from '${new URL('staging-provider-broker-recovery-process-control.mjs', scripts).href}'`)
     .replace("from './staging-generation-22-process-binding.mjs'", `from '${bindingUrl}'`)
+    .replaceAll("from './", `from '${scripts.href}`)
   const entryUrl = `data:text/javascript;base64,${Buffer.from(entry).toString('base64')}`
   return { bindingUrl, entryUrl }
 }

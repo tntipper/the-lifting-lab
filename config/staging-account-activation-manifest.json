@@ -1152,7 +1152,7 @@
       },
       {
         "path": "scripts/staging-generation-22-worker-entry.mjs",
-        "sha256": "4da009fbfb224faf3fe7efce2063edf4dd1e4a88c46cd71635fc19d8dd89122c"
+        "sha256": "0a4cb2cf9743ce9faa8a659c76a6f6821c3ad897b38051ddfdef5594b6345ea2"
       },
       {
         "path": "scripts/staging-generation-22-retired-query.mjs",
@@ -1640,7 +1640,11 @@
       },
       {
         "path": "tests/staging-generation-22-process-binding.test.mjs",
-        "sha256": "e2f39b896e37688f0d71d6503231b3568c3d34b2fa84da7e10416ad4e00ed238"
+        "sha256": "720f994ce986ba59d14f58bd9eaeb0d9e294e5b0ae403039a706f02ebdc82f25"
+      },
+      {
+        "path": "tests/staging-generation-22-worker-entry.test.mjs",
+        "sha256": "0750c6be925f87cf37dbb7dbfa82ce4a5e7e510753fd1180ecef93cc073f6d55"
       },
       {
         "path": "tests/staging-generation-22-retired-query.test.mjs",

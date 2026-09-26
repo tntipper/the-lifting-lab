@@ -807,6 +807,7 @@ const disabledActivationToolingSources = [
   'tests/staging-generation-22-recovery-coordinator.test.mjs',
   'tests/staging-generation-22-process-supervisor.test.mjs',
   'tests/staging-generation-22-process-binding.test.mjs',
+  'tests/staging-generation-22-worker-entry.test.mjs',
   'tests/staging-generation-22-retired-query.test.mjs',
   'tests/staging-generation-22-retired-check.test.mjs',
   'tests/staging-generation-22-journal.test.mjs',
