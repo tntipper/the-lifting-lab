@@ -1172,7 +1172,7 @@
       },
       {
         "path": "scripts/staging-generation-23-whole-run.mjs",
-        "sha256": "d646ba8a20720dba00045b0d4bdf1f769d076f420d32c3a5b770a24493cd4ab1"
+        "sha256": "f0b7e1cc7dc3452fa4e154c9cd235900e19d81b9aa53a85e7b12a3a2c8ef7e6a"
       },
       {
         "path": "scripts/staging-generation-22-preflight-assessment.mjs",
@@ -1772,7 +1772,7 @@
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
-        "sha256": "c015cc2e3bcbb6ad358f634470f23a50df3f185a268c2bdc03a059f78eb0536f"
+        "sha256": "5518ff42793262611978eee4a5ded3b2259efa940ce23d70ed472471af42ce19"
       },
       {
         "path": "tests/staging-generation-22-credentials.test.mjs",

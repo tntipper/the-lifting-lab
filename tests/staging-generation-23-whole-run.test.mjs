@@ -60,7 +60,7 @@ test('every wrong receipt halts before the next phase; no phase is retried', asy
 
 test('lost reply from provider, Preview or retirement halts without automatic recovery write', async () => {
   const { rehearseStagingGeneration23WholeRun: run } = await armed()
-  for (const phase of ['providerEnable', 'enabledPreview', 'databaseRetire']) {
+  for (const phase of ['providerEnable', 'surfaceEnable', 'databaseRetire']) {
     const state = fixture({ throwAt: phase })
     const result = await run({ ...state, windowExpiresAt: expires, signal })
     assert.equal(result.status, 'HOLD')
@@ -73,7 +73,7 @@ test('lost reply from provider, Preview or retirement halts without automatic re
 
 test('customer step is withheld when less than 15 minutes remain for shutdown', async () => {
   const { rehearseStagingGeneration23WholeRun: run } = await armed()
-  const state = fixture({ clockStep: 170_000 })
+  const state = fixture({ clockStep: 200_000 })
   const result = await run({ ...state, windowExpiresAt: expires, signal })
   assert.equal(result.failedPhase, 'ownerJourney')
   assert.equal(result.timeline.at(-1).state, 'NOT_DISPATCHED')
