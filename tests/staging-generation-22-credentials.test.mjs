@@ -73,3 +73,20 @@ test('expiry and verifiers fail closed before SQL is returned', async () => {
     verifiers: { ...valid, bridge: "x'; DROP ROLE postgres;--" }, expiresAt, nowMs,
   }), /unavailable/)
 })
+
+test('Gen22 receipt accepts only the exact transaction result in an armed fixture', async () => {
+  const { validateStagingGeneration22CredentialReceipt: validate } = await armedFixture()
+  const receipt = { status: 'PASS', packageId: 'tll-staging-generation-22-credentials/v1',
+    projectRef: 'qdmvngjwkcsilzmqksme', generation: 22,
+    windowId: WINDOW_ID, expiresAt, controlsEnabled: false, runtimeCount: 5 }
+  const rows = [{ tll_generation_22_credential_receipt: receipt }]
+  assert.equal(validate(rows, { expiresAt, nowMs }).status, 'PASS')
+  assert.match(validate(rows, { expiresAt, nowMs }).receiptSha256, /^[a-f0-9]{64}$/)
+  for (const changed of [{ ...receipt, controlsEnabled: true }, { ...receipt, runtimeCount: 4 },
+    { ...receipt, projectRef: 'wrhgscovsgsudtedbljr' }, { ...receipt, extra: true }]) {
+    assert.throws(() => validate([{ tll_generation_22_credential_receipt: changed }], { expiresAt, nowMs }), /unavailable/)
+  }
+  assert.throws(() => validate(rows, { expiresAt: '2026-09-26T10:49:00.000Z', nowMs }), /unavailable/)
+  assert.throws(() => validate([...rows, ...rows], { expiresAt, nowMs }), /unavailable/)
+  assert.throws(() => validate([{ wrong: receipt }], { expiresAt, nowMs }), /unavailable/)
+})

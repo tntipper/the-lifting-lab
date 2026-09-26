@@ -1,4 +1,5 @@
 /** Pure, disconnected SQL package for a future reviewed staging credential window. */
+import { createHash } from 'node:crypto'
 import { GENERATION_21_RETIRED_EXPIRES_AT, PRODUCTION_PROJECT_REF,
   STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_QUERY_ID } from './staging-account-hosted-baseline-database.mjs'
 import { IDENTITIES, WINDOW_ID as GENERATION_21_WINDOW_ID } from './staging-generation-21-credentials.mjs'
@@ -168,4 +169,18 @@ SELECT jsonb_build_object('status','PASS','packageId','${PACKAGE_ID}',
  'expiresAt',${quote(expiresAt)},'controlsEnabled',false,'runtimeCount',5)
  AS tll_generation_22_credential_receipt;
 `
+}
+
+/** Accepts only the exact nonsecret result of the single Gen22 transaction. */
+export function validateStagingGeneration22CredentialReceipt(rows, { expiresAt, nowMs = Date.now() } = {}) {
+  if (!STAGING_GENERATION_22_CREDENTIALS_ENABLED || expiresAt !== ACTIVE_WINDOW_EXPIRES_AT) unavailable()
+  validateExpiry(expiresAt, nowMs)
+  if (!Array.isArray(rows) || rows.length !== 1 || !exact(rows[0], ['tll_generation_22_credential_receipt'])) unavailable()
+  const receipt = rows[0].tll_generation_22_credential_receipt
+  if (!exact(receipt, ['status', 'packageId', 'projectRef', 'generation', 'windowId', 'expiresAt', 'controlsEnabled', 'runtimeCount'])
+    || receipt.status !== 'PASS' || receipt.packageId !== PACKAGE_ID || receipt.projectRef !== PROJECT_REF
+    || receipt.generation !== GENERATION || receipt.windowId !== WINDOW_ID || receipt.expiresAt !== expiresAt
+    || receipt.controlsEnabled !== false || receipt.runtimeCount !== 5) unavailable()
+  return Object.freeze({ status: 'PASS', projectRef: PROJECT_REF, generation: GENERATION,
+    windowId: WINDOW_ID, receiptSha256: createHash('sha256').update(JSON.stringify(receipt)).digest('hex') })
 }
