@@ -1188,7 +1188,15 @@
       },
       {
         "path": "scripts/staging-generation-22-setup-coordinator.mjs",
-        "sha256": "c4ed662c93387e48c3c14fd89f6a5762997d5399bff84ca74e37bf56db4b8d52"
+        "sha256": "d7d64bd5059e3f1b4b13715084a21c3ab7f5aa115ddd6378fcf2beda0beacb36"
+      },
+      {
+        "path": "scripts/staging-generation-22-worker-core.mjs",
+        "sha256": "39566b29b66832d5c8929aa80259f8bcd018968a39c4bdec1c41d7a3e09c2f5e"
+      },
+      {
+        "path": "scripts/staging-generation-22-connection-proof.mjs",
+        "sha256": "03f172e4c6db672e8fbacc5e344c39bd8b30a11d6e7db5f79efd5d40f24d7cd5"
       },
       {
         "path": "app/api/staging/readiness/contract.ts",
@@ -1664,7 +1672,15 @@
       },
       {
         "path": "tests/staging-generation-22-setup-coordinator.test.mjs",
-        "sha256": "f31979b7e36c852336ffd26eb3873419eb28907bd9da0198a54e2644e5d48c0d"
+        "sha256": "fb92131b39512ce4f66d8c3de53df74472af374ca27b383b432e6484f7634e65"
+      },
+      {
+        "path": "tests/staging-generation-22-worker-core.test.mjs",
+        "sha256": "ef76358bb93368ba53ee9d2740865602328eef02e365c313a812664aa777bc91"
+      },
+      {
+        "path": "tests/staging-generation-22-connection-proof.test.mjs",
+        "sha256": "b671277f31dd1372860522c5f4fa44e4d255f5f5b7c3dc106bd6656945c405c3"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",

@@ -56,12 +56,26 @@ async function armed() {
     .replace("from './staging-generation-22-journal.mjs'", `from '${journalUrl}'`)
     .replace("from './staging-generation-22-recovery-journal.mjs'", `from '${recoveryJournalUrl}'`)
     .replaceAll("from './", `from '${scripts.href}`)
+  let recoveryCoordinator = await readFile(new URL('staging-generation-22-recovery-coordinator.mjs', scripts), 'utf8')
+  recoveryCoordinator = recoveryCoordinator
+    .replace('export const STAGING_GENERATION_22_RECOVERY_COORDINATOR_ENABLED = false',
+      'export const STAGING_GENERATION_22_RECOVERY_COORDINATOR_ENABLED = true')
+    .replace("from './staging-generation-22-credentials.mjs'", `from '${credentialsUrl}'`)
+    .replace("from './staging-generation-22-recovery-journal.mjs'", `from '${recoveryJournalUrl}'`)
+    .replaceAll("from './", `from '${scripts.href}`)
+  let workerCore = await readFile(new URL('staging-generation-22-worker-core.mjs', scripts), 'utf8')
+  workerCore = workerCore
+    .replace('export const STAGING_GENERATION_22_WORKER_CORE_ENABLED = false',
+      'export const STAGING_GENERATION_22_WORKER_CORE_ENABLED = true')
+    .replaceAll("from './", `from '${scripts.href}`)
   return { ...await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`),
     journalModule: await import(journalUrl), credentialsModule: await import(credentialsUrl),
-    databaseHostModule: await import(databaseHostUrl), recoveryJournalModule: await import(recoveryJournalUrl) }
+    databaseHostModule: await import(databaseHostUrl), recoveryJournalModule: await import(recoveryJournalUrl),
+    recoveryCoordinatorModule: await import(`data:text/javascript;base64,${Buffer.from(recoveryCoordinator).toString('base64')}`),
+    workerCoreModule: await import(`data:text/javascript;base64,${Buffer.from(workerCore).toString('base64')}`) }
 }
 
-function fixture({ failAt, failReadback = false } = {}) {
+function fixture({ failAt, failReadback = false, failConnections = false } = {}) {
   const calls = []
   const journal = {
     claim() { calls.push('claim'); return { state: 'CLAIMED', nextIndex: 0 } },
@@ -122,7 +136,17 @@ function fixture({ failAt, failReadback = false } = {}) {
       branch: 'codex/tll-integration', vercelSecretCount: 16,
       disabledControlCount: 4, edgePasswordNamePresent: true }
   } }
-  return { journal, recoveryJournal, database, vercel, edge, config, readback, calls }
+  const connections = { async prove({ passwords, expiresAt, signal }) {
+    calls.push('connections')
+    assert.equal(expiresAt, expiry)
+    assert.equal(signal.aborted, false)
+    assert.deepEqual(Object.keys(passwords).sort(), ['bridge', 'broker', 'cart', 'customer', 'provisional'])
+    assert.equal(Object.values(passwords).every(value => /^[A-Za-z0-9_-]{64}$/.test(value)), true)
+    if (failConnections) throw new Error('synthetic connection failure')
+    return { status: 'PASS_DRAINED', projectRef: 'qdmvngjwkcsilzmqksme',
+      purposes: 5, controlsEnabled: false }
+  } }
+  return { journal, recoveryJournal, database, vercel, edge, config, readback, connections, calls }
 }
 
 test('setup coordinator remains disconnected by default', () => {
@@ -155,11 +179,11 @@ test('coordinator stages all 22 writes in journal order, then reads back OFF sta
   const input = fixture()
   const coordinator = create({ ...input, now: () => Date.parse('2026-09-26T10:00:00.000Z') })
   const result = await coordinator.stage({ signal: new AbortController().signal })
-  assert.equal(result.status, 'SETTINGS_STAGED_OFF_VERIFIED', JSON.stringify(input.calls.slice(0, 6)))
+  assert.equal(result.status, 'SETTINGS_AND_CONNECTIONS_VERIFIED', JSON.stringify(input.calls.slice(0, 6)))
   assert.equal(result.operationCount, 22)
   assert.equal(input.calls.filter(value => value.startsWith('dispatch:')).length, 22)
   assert.equal(input.calls.filter(value => value.startsWith('confirm:')).length, 22)
-  assert.equal(input.calls.at(-1), 'readback')
+  assert.deepEqual(input.calls.slice(-2), ['readback', 'connections'])
   await assert.rejects(coordinator.stage({ signal: new AbortController().signal }), /unavailable/)
 })
 
@@ -182,6 +206,18 @@ test('a failed readback reports staged but unverified and cannot replay writes',
   const result = await create({ ...input, now: () => Date.parse('2026-09-26T10:00:00.000Z') })
     .stage({ signal: new AbortController().signal })
   assert.equal(result.status, 'SETTINGS_STAGED_UNVERIFIED')
+  assert.equal(input.calls.filter(value => value.startsWith('confirm:')).length, 22)
+  assert.equal(input.calls.some(value => value.startsWith('hold:')), false)
+  assert.equal(input.calls.includes('connections'), false)
+})
+
+test('five-login proof failure cannot be called a verified setup or replay writes', async () => {
+  const { createStagingGeneration22SetupCoordinator: create } = await armed()
+  const input = fixture({ failConnections: true })
+  const result = await create({ ...input, now: () => Date.parse('2026-09-26T10:00:00.000Z') })
+    .stage({ signal: new AbortController().signal })
+  assert.equal(result.status, 'SETTINGS_STAGED_CONNECTIONS_UNVERIFIED')
+  assert.deepEqual(input.calls.slice(-2), ['readback', 'connections'])
   assert.equal(input.calls.filter(value => value.startsWith('confirm:')).length, 22)
   assert.equal(input.calls.some(value => value.startsWith('hold:')), false)
 })
@@ -222,10 +258,12 @@ test('caller cancellation aborts the first database write and stops the sequence
   assert.equal(input.calls.some(value => value.startsWith('host:secret:')), false)
 })
 
-test('coordinator composes with real journal and database capability once', async () => {
+test('whole generation composes setup, five drained logins and retirement with real one-use journals', async () => {
   const { createStagingGeneration22SetupCoordinator: create, journalModule,
-    credentialsModule, databaseHostModule, recoveryJournalModule } = await armed()
-  const now = () => Date.parse('2026-09-26T10:00:00.000Z')
+    credentialsModule, databaseHostModule, recoveryJournalModule,
+    recoveryCoordinatorModule, workerCoreModule } = await armed()
+  let clock = Date.parse('2026-09-26T10:00:00.000Z')
+  const now = () => clock
   const path = join(mkdtempSync(join(tmpdir(), 'tll-gen22-setup-compose-')), 'private', 'record.json')
   const journal = journalModule.createStagingGeneration22Journal({ path, now })
   const recoveryPath = join(mkdtempSync(join(tmpdir(), 'tll-gen22-recovery-reserve-')), 'private', 'record.json')
@@ -259,12 +297,35 @@ test('coordinator composes with real journal and database capability once', asyn
   const readback = { async prove() { return { status: 'DISABLED_SETTINGS_VERIFIED',
     projectRef: 'qdmvngjwkcsilzmqksme', branch: 'codex/tll-integration',
     vercelSecretCount: 16, disabledControlCount: 4, edgePasswordNamePresent: true } } }
-  const result = await create({ journal, recoveryJournal, database, vercel, edge, config, readback, now })
-    .stage({ signal: new AbortController().signal })
-  assert.equal(result.status, 'SETTINGS_STAGED_OFF_VERIFIED')
+  const connections = { async prove() { return { status: 'PASS_DRAINED',
+    projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5, controlsEnabled: false } } }
+  const setup = create({ journal, recoveryJournal, database, vercel, edge, config,
+    readback, connections, now })
+  const active = { async prove() { assert.equal(journal.read().state, 'FINISHED')
+    return { status: 'PASS_ACTIVE', projectRef: 'qdmvngjwkcsilzmqksme',
+      queryId: 'tll-staging-generation-22-active-check/v1', receiptSha256: 'a'.repeat(64) } } }
+  const recovery = { async retire({ capability }) {
+    recoveryJournalModule.consumeStagingGeneration22RecoveryCapability(capability)
+    return { status: 'PASS_RETIRED', projectRef: 'qdmvngjwkcsilzmqksme', generation: 22,
+      windowId: '9a539def-bf3c-442c-bf06-c4bd1df39543', receiptSha256: 'b'.repeat(64) } } }
+  const retired = { async prove() { assert.equal(recoveryJournal.read().state, 'FINISHED')
+    return { status: 'PASS_RETIRED', projectRef: 'qdmvngjwkcsilzmqksme',
+      queryId: 'tll-staging-generation-22-retired-check/v1', receiptSha256: 'c'.repeat(64) } } }
+  const recoverySequence = recoveryCoordinatorModule.createStagingGeneration22RecoveryCoordinator({
+    journal: recoveryJournal, active, recovery, retired, now })
+  const worker = workerCoreModule.createStagingGeneration22WorkerCore({
+    setup: { async stage({ signal }) {
+      const result = await setup.stage({ signal })
+      clock = Date.parse('2026-09-26T11:00:00.000Z')
+      return result
+    } }, recovery: recoverySequence })
+  const result = await worker.run({ signal: new AbortController().signal })
+  assert.equal(result.status, 'DRAINED')
+  assert.equal(result.setupStatus, 'SETTINGS_AND_CONNECTIONS_VERIFIED')
+  assert.equal(result.recoveryStatus, 'RECOVERY_VERIFIED')
   assert.equal(databaseCalls, 1)
   assert.equal(journal.read().state, 'FINISHED')
-  assert.equal(recoveryJournal.read().state, 'CLAIMED')
+  assert.equal(recoveryJournal.read().state, 'FINISHED')
   assert.equal(journal.read().receiptDigests.length, 22)
   assert.doesNotMatch(readFileSync(path, 'utf8'), /SCRAM-SHA-256|vault|password/i)
 })

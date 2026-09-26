@@ -6,7 +6,7 @@ import { RECOVERY_WINDOW_EXPIRES_AT } from './staging-generation-22-recovery-jou
 import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
 import { DISABLED_VERCEL_CONFIGURATION, GENERATION, MISSING_SUPABASE_SECRET_NAMES,
   MISSING_VERCEL_SECRET_NAMES, PROJECT_REF, generateStagingGeneration22Material,
-  eraseStagingGeneration22Material, projectStagingGeneration22Material,
+  PASSWORD_PURPOSES, eraseStagingGeneration22Material, projectStagingGeneration22Material,
   clearStagingGeneration22Projection, deriveStagingGeneration22Verifiers } from './staging-generation-22-material.mjs'
 
 export const STAGING_GENERATION_22_SETUP_COORDINATOR_ENABLED = false
@@ -26,14 +26,15 @@ function stageReceipt(value, name, classification) {
 }
 
 export function createStagingGeneration22SetupCoordinator({ journal, recoveryJournal, database, vercel, edge, config,
-  readback, now = Date.now, timeoutMs = 600_000 } = {}) {
+  readback, connections, now = Date.now, timeoutMs = 600_000 } = {}) {
   if (!STAGING_GENERATION_22_SETUP_COORDINATOR_ENABLED
     || !journal || ['claim', 'dispatch', 'databaseCapability', 'operationCapability', 'confirm', 'hold']
       .some(method => typeof journal[method] !== 'function')
     || !recoveryJournal || typeof recoveryJournal.claim !== 'function'
     || typeof database?.install !== 'function' || typeof vercel?.stageSecret !== 'function'
     || typeof edge?.stageSecret !== 'function' || typeof config?.stageDisabled !== 'function'
-    || typeof readback?.prove !== 'function' || typeof now !== 'function'
+    || typeof readback?.prove !== 'function' || typeof connections?.prove !== 'function'
+    || typeof now !== 'function'
     || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 600_000
     || OPERATION_IDS.length !== 22 || OPERATION_IDS[0] !== 'DATABASE_CREDENTIALS'
     || OPERATION_IDS[17] !== `SUPABASE_EDGE:${MISSING_SUPABASE_SECRET_NAMES[0]}`
@@ -50,7 +51,7 @@ export function createStagingGeneration22SetupCoordinator({ journal, recoveryJou
       const forwardAbort = () => controller.abort()
       signal.addEventListener('abort', forwardAbort, { once: true })
       const timer = setTimeout(() => controller.abort(), Math.min(timeoutMs, deadline - startedAt))
-      let onAbort, state, material, projection, verifiers
+      let onAbort, state, material, projection, verifiers, passwords
       const aborted = new Promise((_, reject) => {
         onAbort = () => reject(new Error('Generation 22 setup expired'))
         controller.signal.addEventListener('abort', onAbort, { once: true })
@@ -124,10 +125,25 @@ export function createStagingGeneration22SetupCoordinator({ journal, recoveryJou
             || proof.status !== 'DISABLED_SETTINGS_VERIFIED' || proof.projectRef !== PROJECT_REF
             || proof.branch !== HOSTED_BASELINE_VERCEL_TARGET.branch || proof.vercelSecretCount !== 16
             || proof.disabledControlCount !== 4 || proof.edgePasswordNamePresent !== true) unavailable()
-          return Object.freeze({ status: 'SETTINGS_STAGED_OFF_VERIFIED', projectRef: PROJECT_REF,
-            generation: GENERATION, operationCount: OPERATION_IDS.length })
         } catch { return Object.freeze({ status: 'SETTINGS_STAGED_UNVERIFIED', projectRef: PROJECT_REF,
           generation: GENERATION, operationCount: OPERATION_IDS.length }) }
+        // This call must run inside the externally supervised worker. It is
+        // deliberately awaited without a Promise.race: a close that hangs
+        // must keep the child alive until the parent kills its process group.
+        try {
+          if (controller.signal.aborted || now() >= deadline) unavailable()
+          passwords = Object.fromEntries(PASSWORD_PURPOSES.map(purpose =>
+            [purpose, projection.vercel[`TLL_STAGING_${purpose.toUpperCase()}_DATABASE_PASSWORD`]]))
+          const proof = await connections.prove({ passwords, expiresAt: ACTIVE_WINDOW_EXPIRES_AT,
+            signal: controller.signal })
+          if (controller.signal.aborted || now() >= deadline
+            || !exact(proof, ['status', 'projectRef', 'purposes', 'controlsEnabled'])
+            || proof.status !== 'PASS_DRAINED' || proof.projectRef !== PROJECT_REF
+            || proof.purposes !== PASSWORD_PURPOSES.length || proof.controlsEnabled !== false) unavailable()
+          return Object.freeze({ status: 'SETTINGS_AND_CONNECTIONS_VERIFIED', projectRef: PROJECT_REF,
+            generation: GENERATION, operationCount: OPERATION_IDS.length })
+        } catch { return Object.freeze({ status: 'SETTINGS_STAGED_CONNECTIONS_UNVERIFIED',
+          projectRef: PROJECT_REF, generation: GENERATION, operationCount: OPERATION_IDS.length }) }
       } catch {
         let held = false
         if (state && state.state !== 'FINISHED') {
@@ -139,6 +155,7 @@ export function createStagingGeneration22SetupCoordinator({ journal, recoveryJou
         controller.abort(); clearTimeout(timer)
         signal.removeEventListener('abort', forwardAbort)
         controller.signal.removeEventListener('abort', onAbort)
+        if (passwords) for (const purpose of PASSWORD_PURPOSES) passwords[purpose] = undefined
         clearStagingGeneration22Projection(projection)
         eraseStagingGeneration22Material(material)
         if (verifiers) for (const purpose of Object.keys(verifiers)) verifiers[purpose] = undefined
