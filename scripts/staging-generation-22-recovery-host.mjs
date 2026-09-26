@@ -16,14 +16,18 @@ export function createStagingGeneration22RecoveryHost({ post, now = Date.now,
     || requestTimeoutMs < 1 || requestTimeoutMs > 35_000) unavailable()
   let dispatched = false
   return Object.freeze({
-    async retire({ capability, expiresAt } = {}) {
+    async retire({ capability, expiresAt, signal } = {}) {
       const startedAt = now()
       if (dispatched || expiresAt !== ACTIVE_WINDOW_EXPIRES_AT
+        || !signal || signal.aborted || typeof signal.addEventListener !== 'function'
         || !Number.isFinite(startedAt) || startedAt >= Date.parse(RECOVERY_WINDOW_EXPIRES_AT)) unavailable()
       const packet = prepareStagingGeneration22RecoverySql({ expiresAt })
       consumeStagingGeneration22RecoveryCapability(capability)
       dispatched = true
       const controller = new AbortController()
+      const forwardAbort = () => controller.abort()
+      signal.addEventListener('abort', forwardAbort, { once: true })
+      if (signal.aborted) controller.abort()
       const remaining = Date.parse(RECOVERY_WINDOW_EXPIRES_AT) - startedAt
       const timeout = setTimeout(() => controller.abort(),
         Math.min(requestTimeoutMs, Math.max(1, remaining)))
@@ -32,6 +36,7 @@ export function createStagingGeneration22RecoveryHost({ post, now = Date.now,
         onAbort = () => reject(new Error('Generation 22 recovery request expired'))
         controller.signal.addEventListener('abort', onAbort, { once: true })
       })
+      void aborted.catch(() => {})
       try {
         const rows = await Promise.race([Promise.resolve().then(() => {
           const sendAt = now()
@@ -44,7 +49,8 @@ export function createStagingGeneration22RecoveryHost({ post, now = Date.now,
           || completedAt >= Date.parse(RECOVERY_WINDOW_EXPIRES_AT)) unavailable()
         return validateStagingGeneration22RecoveryReceipt(rows, { expiresAt })
       } catch { unavailable() }
-      finally { clearTimeout(timeout); controller.signal.removeEventListener('abort', onAbort) }
+      finally { clearTimeout(timeout); signal.removeEventListener('abort', forwardAbort)
+        controller.signal.removeEventListener('abort', onAbort) }
     },
   })
 }

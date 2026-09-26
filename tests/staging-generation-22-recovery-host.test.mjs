@@ -78,10 +78,10 @@ test('recovery host consumes one journal permission and validates exact retireme
     assert.equal(signal.aborted, false)
     return rows
   } })
-  const result = await host.retire({ capability: journal.capability(pending), expiresAt })
+  const result = await host.retire({ capability: journal.capability(pending), expiresAt, signal: new AbortController().signal })
   assert.equal(result.status, 'PASS_RETIRED')
   assert.equal(journal.confirm(pending, result.receiptSha256).state, 'FINISHED')
-  await assert.rejects(host.retire({ capability: {}, expiresAt }), /unavailable/)
+  await assert.rejects(host.retire({ capability: {}, expiresAt, signal: new AbortController().signal }), /unavailable/)
   assert.equal(calls, 1)
 })
 
@@ -91,9 +91,29 @@ test('failed and stalled retirement cannot retry; journal remains holdable', asy
   const { journal, pending } = makeJournal(module, now)
   let release
   const host = create({ now, requestTimeoutMs: 5, post: () => new Promise(resolve => { release = resolve }) })
-  await assert.rejects(host.retire({ capability: journal.capability(pending), expiresAt }), /unavailable/)
+  await assert.rejects(host.retire({ capability: journal.capability(pending), expiresAt, signal: new AbortController().signal }), /unavailable/)
   release(rows)
-  await assert.rejects(host.retire({ capability: {}, expiresAt }), /unavailable/)
+  await assert.rejects(host.retire({ capability: {}, expiresAt, signal: new AbortController().signal }), /unavailable/)
+  assert.equal(journal.hold(pending).state, 'HOLD')
+})
+
+test('caller cancellation stops a stalled retirement request and cannot retry', async () => {
+  const { create, journal: module } = await fixture()
+  const now = () => Date.parse('2026-09-26T10:00:00.000Z')
+  const { journal, pending } = makeJournal(module, now)
+  const controller = new AbortController()
+  let requestSignal, release
+  const host = create({ now, post: (_packet, { signal }) => {
+    requestSignal = signal
+    return new Promise(resolve => { release = resolve })
+  } })
+  const attempt = host.retire({ capability: journal.capability(pending), expiresAt, signal: controller.signal })
+  await new Promise(resolve => setImmediate(resolve))
+  controller.abort()
+  await assert.rejects(attempt, /unavailable/)
+  assert.equal(requestSignal.aborted, true)
+  release(rows)
+  await assert.rejects(host.retire({ capability: {}, expiresAt, signal: controller.signal }), /unavailable/)
   assert.equal(journal.hold(pending).state, 'HOLD')
 })
 
@@ -104,11 +124,11 @@ test('recovery host rejects expired and wrong receipts without replay', async ()
   const { journal, pending } = makeJournal(module, now)
   const host = create({ now, post: async () => [{ tll_generation_22_recovery_receipt:
     { ...receipt, projectRef: 'wrhgscovsgsudtedbljr' } }] })
-  await assert.rejects(host.retire({ capability: journal.capability(pending), expiresAt }), /unavailable/)
+  await assert.rejects(host.retire({ capability: journal.capability(pending), expiresAt, signal: new AbortController().signal }), /unavailable/)
   assert.equal(journal.hold(pending).state, 'HOLD')
   clock = Date.parse(recoveryDeadline)
   const expired = create({ now, post: async () => rows })
-  await assert.rejects(expired.retire({ capability: {}, expiresAt }), /unavailable/)
+  await assert.rejects(expired.retire({ capability: {}, expiresAt, signal: new AbortController().signal }), /unavailable/)
 })
 
 test('clock turning invalid after capability use cannot start recovery network call', async () => {
@@ -128,7 +148,7 @@ test('clock turning invalid after capability use cannot start recovery network c
   const capability = journal.capability(pending)
   reads = 0; flip = true
   const host = create({ now, post: async () => { posts++; return rows } })
-  await assert.rejects(host.retire({ capability, expiresAt }), /unavailable/)
+  await assert.rejects(host.retire({ capability, expiresAt, signal: new AbortController().signal }), /unavailable/)
   assert.equal(posts, 0)
   clock = Date.parse('2026-09-26T10:00:00.000Z')
   assert.equal(journal.hold(pending).state, 'HOLD')
@@ -159,7 +179,7 @@ test('recovery journal, host and fixed Supabase query compose once', async () =>
   const token = Buffer.from(`sbp_${'a'.repeat(40)}`)
   const host = create({ now, post: (packet, { signal }) =>
     query.postStagingGeneration22RecoverySql(packet, { token, signal, request }) })
-  const result = await host.retire({ capability: journal.capability(pending), expiresAt })
+  const result = await host.retire({ capability: journal.capability(pending), expiresAt, signal: new AbortController().signal })
   assert.equal(result.status, 'PASS_RETIRED')
   assert.equal(journal.confirm(pending, result.receiptSha256).state, 'FINISHED')
   assert.equal(calls.length, 1)
