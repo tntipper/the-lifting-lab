@@ -7,7 +7,9 @@ import { resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 export const STAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED = false
-const sourceRoot = '/Users/tobiastipper/Library/Mobile Documents/com~apple~CloudDocs/Business/The Lifting Lab/TLL and Store/implementation-integration'
+// Both the source checkout and its one-run arming checkout are fixed siblings.
+// Resolve from either script location so a parent-folder rename cannot strand publication.
+const sourceRoot = resolve(import.meta.dirname, '../../implementation-integration')
 const armRoot = resolve(sourceRoot, '../implementation-preview-publish-arm-v1')
 const gitBinary = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'
 const gitBinarySha256 = 'ee73b116cc37f44ecdaa9e3fdfbc25ce827675859f5f966ec671112fd5caf074'
