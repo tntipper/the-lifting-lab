@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "993975e7c8d76c7bb73be7df2be9d41aae7e9795eb97997e67e1ae50df0d6be3"
+        "sha256": "7cd58a2b166c6aee16f638d74b37f5fb290965bf89ae35fe1f3bccece35c4b78"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -1159,6 +1159,14 @@
         "sha256": "0c8f4a9605cb827d4f9f5e7ae3eebdfcf9aa236de3d782ebd07ea1ef3cf13141"
       },
       {
+        "path": "scripts/staging-generation-22-incident-recovery.mjs",
+        "sha256": "9175dfaef02b1316721a185703127735ec8aa20f5b84560adc08a01aef9b3d2b"
+      },
+      {
+        "path": "scripts/staging-generation-22-incident-journal.mjs",
+        "sha256": "578b6f199df4787c18691f44a43def9e4eee9edabe00be1c34099c02c5cbca71"
+      },
+      {
         "path": "scripts/staging-generation-22-process-supervisor.mjs",
         "sha256": "b40beeae1728e78186c6ebc29ad57a3401c628ca713b4eae55d8cc7b1ddd47ea"
       },
@@ -1665,6 +1673,14 @@
       {
         "path": "tests/staging-generation-22-recovery-coordinator.test.mjs",
         "sha256": "a6c952af83f42ce813bd95d9f824ae7f5a747d0b75e384d4b4fb4a3047b9ceb6"
+      },
+      {
+        "path": "tests/staging-generation-22-incident-recovery.test.mjs",
+        "sha256": "2ebddeae285ab7b0335e7bf8bb280640e7606719a149dd28faae54b460913346"
+      },
+      {
+        "path": "tests/staging-generation-22-incident-journal.test.mjs",
+        "sha256": "1b79dc83c4809f1d768becd0180e07180907f33b5ceeb6c231a9920534556b11"
       },
       {
         "path": "tests/staging-generation-22-process-supervisor.test.mjs",

@@ -68,6 +68,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       const expected = [`export const ${gate} = false`]
       if (file === 'staging-generation-22-parent-launcher.mjs') expected.push('export const STAGING_GENERATION_22_PARENT_CLI_ENABLED = false')
       if (file === 'staging-generation-22-worker-entry.mjs') expected.push('export const STAGING_GENERATION_22_WORKER_CLI_ENABLED = false')
+      if (file === 'staging-generation-22-incident-recovery.mjs') expected.push('export const STAGING_GENERATION_22_INCIDENT_RECOVERY_CLI_ENABLED = false')
       const assignments = source.match(/^[ \t]*export const STAGING_GENERATION_22_[A-Z0-9_]*ENABLED[ \t]*=.*$/gm) ?? []
       if (assignments.length !== expected.length || assignments.some((line, index) => line !== expected[index])) {
         violations.push(`enabled-native-gate:${display(path)}`)
