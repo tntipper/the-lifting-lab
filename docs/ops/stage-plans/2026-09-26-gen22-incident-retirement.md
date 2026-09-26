@@ -1,6 +1,6 @@
 # Generation 22 partial-setup retirement gate
 
-This plan is preparation, not authority to read Keychain or contact staging. The setup and original recovery records are consumed. Customer account and cart controls remain OFF; production, deployments, purchases and customer messages are outside scope.
+This plan records a completed, separately approved staging retirement. The setup, original recovery and incident-retirement records are consumed and must not be replayed. Customer account and cart controls remain OFF; production, deployments, purchases and customer messages were outside scope.
 
 ## Observed state and cause
 
@@ -20,3 +20,15 @@ This plan is preparation, not authority to read Keychain or contact staging. The
 ## Proof and stop conditions
 
 Focused tests must cover default disconnection, new record path, credential erasure, host request classification (`read_only:false` with guarded SQL), success order, failure before dispatch, uncertain retirement response and parent timeout. Run activation-manifest and live-boundary checks after disarm. Stop before any hosted call if the independent review, fresh inventory, one-use record absence, exact patch, deadline or owner approval is missing. If retirement's response is uncertain, perform a separately reviewed read-only state check; do not replay SQL under the consumed incident record.
+
+## 19:30 UTC preparation checkpoint
+
+Disabled source is committed at `8ddb8ca4fefa1d9a215f2a3ee6d0cab034ebaff7`; the full suite passed 2,936 with two intentionally skipped and zero failures, plus typecheck, lint, both manifest checks and the normal live-boundary check. A separate read-only Supabase staging SQL Editor query returned `database_name=postgres`, `operator=postgres`, five active logins, five password-present roles, five exact Gen22 active markers, ten membership edges, zero runtime sessions and zero enabled controls. This observation is a fresh baseline, not the later in-run full active-state proof. The canonical record path resolves to `../implementation-state/staging/tll-generation-22-incident-retirement-v1.json`, is absent, and its parent directories are mode 0700. The consumed setup/recovery records remain mode 0600 at `FINISHED` (22 setup receipts) and `HOLD` respectively.
+
+The reviewed arming patch is `/tmp/tll-gen22-incident-arming-20260926.patch`, SHA-256 `8f99eb44761a1977294c6629356d9906aeb9748d273daf21bbea758dcfabf6b8`, based on the exact commit above. Its `git diff --name-only` has **11 source paths plus the activation manifest**; the independent reviewer inspected the patch and returned GO for presenting the one-time decision, conditional on the final current-state, path, time and approval checks. It pins the original expiry to 19:52 UTC and the separate incident deadline to 20:25 UTC. The disposable review worktree is **never** an execution location. At the action point, apply this exact patch to the canonical checkout only if HEAD, hash, records, staging state and remaining time still match; otherwise stop and prepare a newly reviewed patch. No incident credential has been read and no retirement has run as of this checkpoint.
+
+## 19:32–19:33 UTC execution and independent proof
+
+The owner approved this separate one-time staging retirement. Immediately before execution, the canonical checkout still matched `8ddb8ca`, the exact patch hash and `git apply --check` passed, the new record was absent, and the saved Supabase CLI helper was available. A single supervised run in the canonical checkout returned `RECOVERY_VERIFIED` with exit code zero. The temporary arming patch was reversed immediately; both manifests and the ordinary live-boundary check passed with all switches OFF. The new private incident record is mode 0600 and `FINISHED`, with a receipt digest. The old setup record remains `FINISHED` with 22 receipts and the old recovery record remains `HOLD`; neither was replayed or rewritten.
+
+A separate SQL Editor read from the pinned staging project then reported database and execution operator `postgres`, all five exact Generation 22 roles `NOLOGIN` with passwords removed and infinite validity, all five retired markers, five administrative-only membership edges, zero runtime sessions and zero enabled account/cart controls. This independently confirms the database retirement rather than relying only on the program's terminal. The earlier combined setup is still correctly recorded as failed; this later approved incident action repaired its leftover database accounts. Staged Vercel and Edge settings were not removed or changed by this Supabase-only retirement and require their own read before the next build or activation gate. No production deployment, purchase or customer message occurred.
