@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "350454493f923767084841daa9550283d8dbcdf20e50bbf43c3382b6db69d701"
+        "sha256": "5dcf7bdfd6e30aa24f0329dbc5b0b5ce62db4da1a14dd5a90ea20bcfc4964201"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -161,7 +161,7 @@
       },
       {
         "path": "tests/staging-live-boundary.test.mjs",
-        "sha256": "0c8693a45c32c07fc21afd7e22960e53d9732213bc91856e46ba1c6d1fc50e3f"
+        "sha256": "b85d9b251a3870b30a7a85a5eca4b2378ea56032c16ba01dcc6d320ac0f303a2"
       },
       {
         "path": "tests/staging-window-phase-journal.test.mjs",
@@ -1067,6 +1067,26 @@
         "sha256": "fe7d53faf077de5a4aeab63205ae1080adff60d588fe0052a5f6c62b656d7516"
       },
       {
+        "path": "scripts/staging-preview-environment-assessment.mjs",
+        "sha256": "ed5eef4bfab5da77dee488fbc23c2d8366a93483f8cf2c9b419cf09234e55b5e"
+      },
+      {
+        "path": "scripts/staging-preview-environment-journal.mjs",
+        "sha256": "0d3d94e8b0931b5f224472cace024402a9d0f9e8f820f7a8536dd9c2bc23cc0c"
+      },
+      {
+        "path": "scripts/staging-preview-environment-observer.mjs",
+        "sha256": "3bc9ac216bef754cb2439ba18d51cd78f17f0d1bf113918b2da4d50f41a11572"
+      },
+      {
+        "path": "scripts/staging-preview-environment-keychain.py",
+        "sha256": "1ac72bbe86834a5673aa62caa0d8496cbbb85fc999f265dce462a984dbba7bd5"
+      },
+      {
+        "path": "scripts/staging-preview-environment-live-launcher.mjs",
+        "sha256": "43f73cf4818d50451151ae5faf662ac10adce9c456656c186cb3bd64ebc2b62c"
+      },
+      {
         "path": "app/api/staging/readiness/contract.ts",
         "sha256": "4e598ef4dd00e7e0574cfe4f981e735fb0962fa14d9225b64055b76b52d72233"
       },
@@ -1425,6 +1445,22 @@
       {
         "path": "tests/staging-preview-source-observer.test.mjs",
         "sha256": "145e6fbe9480a00305cd384cec6d7cd54e98d79bff58dc90ddf6e850fad2d115"
+      },
+      {
+        "path": "tests/staging-preview-environment-assessment.test.mjs",
+        "sha256": "0cdfc8a086ef9eace4c515bfabf6cfd28a57995fdd35069915d4f278760bdbe5"
+      },
+      {
+        "path": "tests/staging-preview-environment-journal.test.mjs",
+        "sha256": "a884c5a86f5ec07dc9d3612d42bb85521c5a1bd42674d17d61f18cade6e848c1"
+      },
+      {
+        "path": "tests/staging-preview-environment-observer.test.mjs",
+        "sha256": "d748982f7de04a270be86e21b0a8a431834f151f55ac15a9c2421535e2684905"
+      },
+      {
+        "path": "tests/staging-preview-environment-live-launcher.test.mjs",
+        "sha256": "a27b941efcfa03215fef9b938a85e347fde0a8a68fe2821168b66b499512408d"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",

@@ -82,6 +82,25 @@ test('boundary keeps both Preview deployment gates disabled in ordinary work', (
   ])
 })
 
+test('boundary keeps the Preview environment inventory gates disabled and requires its journal', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'scripts/staging-preview-environment-live-launcher.mjs'),
+    'const createStagingPreviewEnvironmentJournal = null\nexport const STAGING_PREVIEW_ENVIRONMENT_LIVE_ENABLED = (true)\n')
+  writeFileSync(join(root, 'scripts/staging-preview-environment-keychain.py'),
+    'APPROVED_PREVIEW_ENVIRONMENT_READ = True\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'enabled-keychain-read:scripts/staging-preview-environment-keychain.py',
+    'enabled-native-gate:scripts/staging-preview-environment-live-launcher.mjs',
+  ])
+  writeFileSync(join(root, 'scripts/staging-preview-environment-live-launcher.mjs'),
+    'export const STAGING_PREVIEW_ENVIRONMENT_LIVE_ENABLED = false\n')
+  writeFileSync(join(root, 'scripts/staging-preview-environment-keychain.py'),
+    'APPROVED_PREVIEW_ENVIRONMENT_READ = False\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'live-launcher-missing-phase-journal:scripts/staging-preview-environment-live-launcher.mjs',
+  ])
+})
+
 test('boundary rejects an armed database rehearsal launcher', () => {
   const root = fixture()
   writeFileSync(join(root, 'scripts/staging-account-hosted-baseline-db-rehearsal-live-launcher.mjs'),

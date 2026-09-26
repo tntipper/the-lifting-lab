@@ -63,7 +63,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       violations.push(`embedded-live-launcher:${display(path)}`)
     }
     if (/-live-launcher\.mjs$/.test(path)
-      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal|createFixtureRecoveryJournal|createFixtureRecoveryV2Journal|createFixtureMetadataJournal|createSearchDomainJournal|createBrokerRecoveryReadJournal|createStagingProviderBrokerRestJournals|createStagingPreviewDeploymentJournal/.test(source)) {
+      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal|createFixtureRecoveryJournal|createFixtureRecoveryV2Journal|createFixtureMetadataJournal|createSearchDomainJournal|createBrokerRecoveryReadJournal|createStagingProviderBrokerRestJournals|createStagingPreviewDeploymentJournal|createStagingPreviewEnvironmentJournal/.test(source)) {
       violations.push(`live-launcher-missing-phase-journal:${display(path)}`)
     }
     if (/\bNATIVE(?:_[A-Z0-9]+)*_(?:TRANSPORT_)?ENABLED\s*=\s*true\b/.test(source)
@@ -89,6 +89,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       || /\bBROKER_ROTATION_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_BROKER_REST_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bSTAGING_PREVIEW_DEPLOYMENT_LIVE_ENABLED\s*=\s*true\b/.test(source)
+      || /\bSTAGING_PREVIEW_ENVIRONMENT_LIVE_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_DATABASE_TRANSPORT_ENABLED\s*=\s*true\b/.test(source)
       || /\bNATIVE_ACCESS_APPROVED\s*=\s*true\b/.test(source)) violations.push(`enabled-native-gate:${display(path)}`)
     if (path.endsWith('/staging-provider-broker-rest-live-launcher.mjs')) {
@@ -103,9 +104,21 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       if ((assignments.length !== 1 || assignments[0] !== 'export const STAGING_PREVIEW_DEPLOYMENT_LIVE_ENABLED = false')
         && !violations.includes(finding)) violations.push(finding)
     }
+    if (path.endsWith('/staging-preview-environment-live-launcher.mjs')) {
+      const assignments = source.match(/^[ \t]*export const STAGING_PREVIEW_ENVIRONMENT_LIVE_ENABLED[ \t]*=.*$/gm) ?? []
+      const finding = `enabled-native-gate:${display(path)}`
+      if ((assignments.length !== 1 || assignments[0] !== 'export const STAGING_PREVIEW_ENVIRONMENT_LIVE_ENABLED = false')
+        && !violations.includes(finding)) violations.push(finding)
+    }
     if (/^APPROVED_BROKER_RECOVERY_READ\s*=\s*True\s*$/m.test(source)
       || /^APPROVED_NATIVE_READ\s*=\s*True\s*$/m.test(source)
       || /^APPROVED_PREVIEW_SOURCE_READ\s*=\s*True\s*$/m.test(source)) violations.push(`enabled-keychain-read:${display(path)}`)
+    if (path.endsWith('/staging-preview-environment-keychain.py')) {
+      const assignments = source.match(/^[ \t]*APPROVED_PREVIEW_ENVIRONMENT_READ[ \t]*=.*$/gm) ?? []
+      if (assignments.length !== 1 || assignments[0] !== 'APPROVED_PREVIEW_ENVIRONMENT_READ = False') {
+        violations.push(`enabled-keychain-read:${display(path)}`)
+      }
+    }
     if (path.endsWith('/staging-provider-broker-rotation-keychain.py')) {
       const assignments = source.match(/^[ \t]*APPROVED_BROKER_ROTATION[ \t]*=.*$/gm) ?? []
       if (assignments.length !== 1 || assignments[0] !== 'APPROVED_BROKER_ROTATION = False') {
