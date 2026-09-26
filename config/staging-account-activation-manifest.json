@@ -1663,6 +1663,18 @@
         "sha256": "24c93621fe22f87c1dd61e27ee0106f94a427d919805f5da50ba81abe1bae70c"
       },
       {
+        "path": "tests/staging-generation-22-default-process.test.mjs",
+        "sha256": "0e569f55e4feb4101cab134682701f76cf070793ac70f3a015bef205941d08f5"
+      },
+      {
+        "path": "tests/fixtures/staging-generation-22-default-success.mjs",
+        "sha256": "953c809007278ff64df56c29dbe7a58c48e7e5f3c52611e470f045af73dfd40d"
+      },
+      {
+        "path": "tests/fixtures/staging-generation-22-network-deny.mjs",
+        "sha256": "2518d9ba346507febbf97a15bee4a8aa60d02e27ed6c06b4c3000d12c802c1d9"
+      },
+      {
         "path": "tests/staging-generation-22-keychain-reader.test.mjs",
         "sha256": "e5fb2e56e47c453106f20c66d64389768f35a49a1e3ec273db74775b7792762b"
       },
