@@ -1171,6 +1171,10 @@
         "sha256": "30f5144d6ef8657cda4bb4d0f2689145165b7e3f4284520224ba1292ba7d78a9"
       },
       {
+        "path": "scripts/staging-generation-23-provider-control.mjs",
+        "sha256": "26e855c78e93bf84da18d9398d26d7f4c60142a1770b6ae8112d0d65260a790f"
+      },
+      {
         "path": "scripts/staging-generation-23-whole-run.mjs",
         "sha256": "f0b7e1cc7dc3452fa4e154c9cd235900e19d81b9aa53a85e7b12a3a2c8ef7e6a"
       },
@@ -1767,12 +1771,16 @@
         "sha256": "de28b876d38dfce749841e0fde6036ed35f41af8e7475997e00e13bb7fc71da5"
       },
       {
+        "path": "tests/staging-generation-23-provider-control.test.mjs",
+        "sha256": "9c0d3c4de224dd992e280e40cd8a4e840d0da4c9073ad1d56066030e1b7df0a5"
+      },
+      {
         "path": "tests/staging-generation-23-database-acceptance.mjs",
-        "sha256": "fd1864c0bc57de95ad700e01be9bbdc7d170d78e1d46acb1e0dcde578226d2cc"
+        "sha256": "71458ab0d4fca55f2e03b814ad3f89da6c58d945260fd755542f3ccec871a73b"
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "f876d84f47d53246a35f4abbe470b4fa64f690b41defdbcd6b0bf3c62ea93d76"
+        "sha256": "404597ce2ec8d7afc693034c1a52a8924af450785a2cd7cda8012efaa8cc72a6"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",

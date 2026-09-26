@@ -146,8 +146,30 @@ export async function createStagingGeneration23LocalDatabaseFixture() {
       state = 'CONNECTIONS_PROVED'
       return { status: 'PASS', runtimeCount: 5 }
     },
-    retire() {
+    enableControls() {
       assert.equal(state, 'CONNECTIONS_PROVED')
+      sql('tll_local_admin', `BEGIN;
+${PASSWORD_PURPOSES.map(purpose => `UPDATE tll_${purpose}_private.control SET enabled=true WHERE singleton;`).join('\n')}
+COMMIT;`)
+      for (const purpose of PASSWORD_PURPOSES) {
+        assert.equal(sql('tll_local_admin', `SELECT enabled FROM tll_${purpose}_private.control WHERE singleton`), 't')
+      }
+      state = 'CONTROLS_ENABLED'
+      return { status: 'PASS_CONTROLS_ENABLED', count: 5 }
+    },
+    disableControls() {
+      assert.equal(state, 'CONTROLS_ENABLED')
+      sql('tll_local_admin', `BEGIN;
+${PASSWORD_PURPOSES.map(purpose => `UPDATE tll_${purpose}_private.control SET enabled=false WHERE singleton;`).join('\n')}
+COMMIT;`)
+      for (const purpose of PASSWORD_PURPOSES) {
+        assert.equal(sql('tll_local_admin', `SELECT enabled FROM tll_${purpose}_private.control WHERE singleton`), 'f')
+      }
+      state = 'CONTROLS_DISABLED'
+      return { status: 'PASS_CONTROLS_DISABLED', count: 5 }
+    },
+    retire() {
+      assert.equal(state, 'CONTROLS_DISABLED')
       state = 'RETIRE_DISPATCHED'
       recoverySql = recovery.buildStagingGeneration23RecoverySql({ expiresAt })
       const rows = [{ tll_generation_23_recovery_receipt: JSON.parse(sql('postgres', recoverySql)) }]
@@ -195,6 +217,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   try {
     fixture.setup()
     fixture.proveRestrictedConnections()
+    fixture.enableControls()
+    fixture.disableControls()
     fixture.retire()
     console.log(JSON.stringify(fixture.proveRetired()))
   } finally { fixture.dispose() }
