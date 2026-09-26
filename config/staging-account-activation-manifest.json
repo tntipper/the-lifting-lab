@@ -1091,6 +1091,14 @@
         "sha256": "d0af68df3cc7fa5c602d3c960c458dd8b69368e61100cf16c5cce616d3f81f58"
       },
       {
+        "path": "scripts/staging-minimum-configuration-journal.mjs",
+        "sha256": "123ea2b94ea4730e23781ff7af4cc6361ac907260e3a1e4328c2e5910e011aff"
+      },
+      {
+        "path": "scripts/staging-minimum-configuration-observer.mjs",
+        "sha256": "a70eefc4a564bfea47c1303f11cc7dc084515ece2dbbac5018f3ebedf306c6f4"
+      },
+      {
         "path": "app/api/staging/readiness/contract.ts",
         "sha256": "4e598ef4dd00e7e0574cfe4f981e735fb0962fa14d9225b64055b76b52d72233"
       },
@@ -1469,6 +1477,10 @@
       {
         "path": "tests/staging-minimum-configuration-assessment.test.mjs",
         "sha256": "78edc5a6a338598755a60926e8c36474e493227e1ac09e377dc5c1a568a1ba65"
+      },
+      {
+        "path": "tests/staging-minimum-configuration-observer.test.mjs",
+        "sha256": "b123911528a24875c73010e4702fa0917e881a0f68055d85141e471dd03ab1a6"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",
