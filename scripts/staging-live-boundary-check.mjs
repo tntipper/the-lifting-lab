@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { basename, dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -58,6 +58,36 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
 
   for (const path of filesBelow(join(projectRoot, 'scripts')).filter(path => /\.(?:mjs|js|ts|py|swift)$/.test(path))) {
     const source = read(path)
+    const file = basename(path)
+    const exactAssignments = (pattern, expected) => {
+      const assignments = source.match(pattern) ?? []
+      return assignments.length === 1 && assignments[0] === expected
+    }
+    if (/^staging-generation-22-.*\.mjs$/.test(file)) {
+      const gate = `STAGING_GENERATION_22_${file.slice('staging-generation-22-'.length, -'.mjs'.length).replaceAll('-', '_').toUpperCase()}_ENABLED`
+      const expected = [`export const ${gate} = false`]
+      if (file === 'staging-generation-22-parent-launcher.mjs') expected.push('export const STAGING_GENERATION_22_PARENT_CLI_ENABLED = false')
+      if (file === 'staging-generation-22-worker-entry.mjs') expected.push('export const STAGING_GENERATION_22_WORKER_CLI_ENABLED = false')
+      const assignments = source.match(/^[ \t]*export const STAGING_GENERATION_22_[A-Z0-9_]*ENABLED[ \t]*=.*$/gm) ?? []
+      if (assignments.length !== expected.length || assignments.some((line, index) => line !== expected[index])) {
+        violations.push(`enabled-native-gate:${display(path)}`)
+      }
+    }
+    if (file === 'staging-generation-22-keychain.py'
+      && !exactAssignments(/^[ \t]*GENERATION_22_KEYCHAIN_ENABLED[ \t]*=.*$/gm,
+        'GENERATION_22_KEYCHAIN_ENABLED = False')) violations.push(`enabled-keychain-read:${display(path)}`)
+    if (file === 'staging-generation-22-credentials.mjs'
+      && !exactAssignments(/^[ \t]*export const ACTIVE_WINDOW_EXPIRES_AT[ \t]*=.*$/gm,
+        "export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'")) violations.push(`armed-expiry:${display(path)}`)
+    if (file === 'staging-generation-22-recovery-journal.mjs'
+      && !exactAssignments(/^[ \t]*export const RECOVERY_WINDOW_EXPIRES_AT[ \t]*=.*$/gm,
+        "export const RECOVERY_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'")) violations.push(`armed-expiry:${display(path)}`)
+    const sharedReaderGate = {
+      'staging-account-hosted-baseline-vercel.mjs': 'HOSTED_BASELINE_VERCEL_BINDING_ENABLED',
+      'staging-account-hosted-baseline-supabase.mjs': 'HOSTED_BASELINE_SUPABASE_BINDING_ENABLED',
+    }[file]
+    if (sharedReaderGate && !exactAssignments(new RegExp(`^[ \\t]*export const ${sharedReaderGate}[ \\t]*=.*$`, 'gm'),
+      `export const ${sharedReaderGate} = false`)) violations.push(`enabled-native-gate:${display(path)}`)
     if (!/-live-launcher\.mjs$/.test(path)
       && /\b(?:export\s+)?async\s+function\s+runNativeGeneration\d+CredentialWindow\s*\(/.test(source)) {
       violations.push(`embedded-live-launcher:${display(path)}`)

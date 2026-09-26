@@ -48,6 +48,50 @@ test('boundary rejects enabled JavaScript and Keychain gates', () => {
   ])
 })
 
+test('boundary keeps Generation 22 process, credential and shared-reader switches off', () => {
+  const root = fixture()
+  const sources = {
+    'staging-generation-22-parent-launcher.mjs': 'export const STAGING_GENERATION_22_PARENT_LAUNCHER_ENABLED = false\nexport const STAGING_GENERATION_22_PARENT_CLI_ENABLED = false\n',
+    'staging-generation-22-worker-entry.mjs': 'export const STAGING_GENERATION_22_WORKER_ENTRY_ENABLED = false\nexport const STAGING_GENERATION_22_WORKER_CLI_ENABLED = false\n',
+    'staging-generation-22-credentials.mjs': "export const STAGING_GENERATION_22_CREDENTIALS_ENABLED = false\nexport const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'\n",
+    'staging-generation-22-recovery-journal.mjs': "export const STAGING_GENERATION_22_RECOVERY_JOURNAL_ENABLED = false\nexport const RECOVERY_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'\n",
+    'staging-generation-22-keychain.py': 'GENERATION_22_KEYCHAIN_ENABLED = False\n',
+    'staging-account-hosted-baseline-vercel.mjs': 'export const HOSTED_BASELINE_VERCEL_BINDING_ENABLED = false\n',
+    'staging-account-hosted-baseline-supabase.mjs': 'export const HOSTED_BASELINE_SUPABASE_BINDING_ENABLED = false\n',
+  }
+  for (const [name, source] of Object.entries(sources)) writeFileSync(join(root, 'scripts', name), source)
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [])
+  const change = (name, from, to) => {
+    const path = join(root, 'scripts', name)
+    writeFileSync(path, readFileSync(path, 'utf8').replace(from, to))
+  }
+  change('staging-generation-22-parent-launcher.mjs', 'PARENT_CLI_ENABLED = false', 'PARENT_CLI_ENABLED = (true)')
+  change('staging-generation-22-worker-entry.mjs', 'WORKER_ENTRY_ENABLED = false', 'WORKER_ENTRY_ENABLED = true')
+  change('staging-generation-22-credentials.mjs', "'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'", "'2026-09-26T12:00:00Z'")
+  change('staging-generation-22-recovery-journal.mjs', "'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'", "'2026-09-26T13:00:00Z'")
+  change('staging-generation-22-keychain.py', 'GENERATION_22_KEYCHAIN_ENABLED = False', 'GENERATION_22_KEYCHAIN_ENABLED = True')
+  change('staging-account-hosted-baseline-vercel.mjs', 'BINDING_ENABLED = false', 'BINDING_ENABLED = true')
+  change('staging-account-hosted-baseline-supabase.mjs', 'BINDING_ENABLED = false', 'BINDING_ENABLED = (true)')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [
+    'armed-expiry:scripts/staging-generation-22-credentials.mjs',
+    'armed-expiry:scripts/staging-generation-22-recovery-journal.mjs',
+    'enabled-keychain-read:scripts/staging-generation-22-keychain.py',
+    'enabled-native-gate:scripts/staging-account-hosted-baseline-supabase.mjs',
+    'enabled-native-gate:scripts/staging-account-hosted-baseline-vercel.mjs',
+    'enabled-native-gate:scripts/staging-generation-22-parent-launcher.mjs',
+    'enabled-native-gate:scripts/staging-generation-22-worker-entry.mjs',
+  ])
+})
+
+test('boundary rejects a missing or duplicated Generation 22 switch', () => {
+  const root = fixture()
+  const path = join(root, 'scripts/staging-generation-22-material.mjs')
+  writeFileSync(path, '')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), ['enabled-native-gate:scripts/staging-generation-22-material.mjs'])
+  writeFileSync(path, 'export const STAGING_GENERATION_22_MATERIAL_ENABLED = false\nexport const STAGING_GENERATION_22_MATERIAL_ENABLED = false\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), ['enabled-native-gate:scripts/staging-generation-22-material.mjs'])
+})
+
 test('boundary rejects rotation credential access if its separate gates are armed', () => {
   const root = fixture({ scriptSource: 'export const BROKER_ROTATION_LIVE_ENABLED = true\n' })
   for (const assignment of ['True', 'True # approved one-run window', '(True)', 'False\nAPPROVED_BROKER_ROTATION = True']) {
