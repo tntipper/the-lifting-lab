@@ -4,8 +4,8 @@ import * as fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 export const STAGING_PREVIEW_ENVIRONMENT_JOURNAL_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-preview-environment-inventory-v1.json')
-const SCHEMA = 'tll-preview-environment-inventory/v1'
+  '../../implementation-state/staging/tll-preview-environment-inventory-v2.json')
+const SCHEMA = 'tll-preview-environment-inventory/v2'
 const PROJECT = 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4'
 const OUTCOMES = new Set(['NAMES_PRESENT', 'HOLD', 'READ_UNAVAILABLE'])
 const unavailable = () => { throw new Error('Staging Preview environment journal unavailable') }

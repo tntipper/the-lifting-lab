@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { HOSTED_BASELINE_VERCEL_TARGET } from '../scripts/staging-account-hosted-baseline-vercel.mjs'
 import { createStagingPreviewEnvironmentJournal } from '../scripts/staging-preview-environment-journal.mjs'
-import { runStagingPreviewEnvironmentObservation, STAGING_PREVIEW_ENVIRONMENT_OBSERVER_ENABLED } from '../scripts/staging-preview-environment-observer.mjs'
+import { runStagingPreviewEnvironmentObservation, STAGING_PREVIEW_ENVIRONMENT_OBSERVER_ENABLED, STAGING_PREVIEW_ENVIRONMENT_DEADLINE_MS } from '../scripts/staging-preview-environment-observer.mjs'
 
 const project = { target: HOSTED_BASELINE_VERCEL_TARGET, repository: { provider: 'github', repoId: 1264363509,
   org: 'tntipper', repo: 'the-lifting-lab', ownerId: 17, productionBranch: 'main', sourceless: false } }
@@ -18,6 +18,7 @@ function journal() {
 
 test('journal claim precedes credential; fixed project is read before inventory; result is name-only and unreplayable', async () => {
   assert.equal(STAGING_PREVIEW_ENVIRONMENT_OBSERVER_ENABLED, false)
+  assert.equal(STAGING_PREVIEW_ENVIRONMENT_DEADLINE_MS, 58_000)
   const events = [], j = journal(), token = Buffer.from('secret-token-for-test')
   const run = () => runStagingPreviewEnvironmentObservation({ journal: j, ...requirements,
     readCredential: async () => { events.push('credential'); assert.equal(j.read().state, 'CLAIMED'); return token },

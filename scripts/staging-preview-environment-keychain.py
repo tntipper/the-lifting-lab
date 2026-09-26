@@ -14,7 +14,7 @@ def main():
     result = subprocess.run(
         ["/usr/bin/security", "find-generic-password", "-w", "-s", SERVICE, "-a", ACCOUNT],
         stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-        env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"}, timeout=10, check=True,
+        env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"}, timeout=30, check=True,
     )
     value = bytearray(result.stdout.rstrip(b"\n"))
     try:

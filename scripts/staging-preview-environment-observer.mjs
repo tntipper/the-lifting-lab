@@ -2,7 +2,7 @@
 import { assessStagingPreviewEnvironment } from './staging-preview-environment-assessment.mjs'
 
 export const STAGING_PREVIEW_ENVIRONMENT_OBSERVER_ENABLED = false
-export const STAGING_PREVIEW_ENVIRONMENT_DEADLINE_MS = 45_000
+export const STAGING_PREVIEW_ENVIRONMENT_DEADLINE_MS = 58_000
 const unavailable = () => { throw new Error('Staging Preview environment observer unavailable') }
 const fixed = status => Object.freeze({ status, projectId: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4' })
 

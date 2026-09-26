@@ -3,7 +3,11 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createStagingPreviewEnvironmentJournal } from '../scripts/staging-preview-environment-journal.mjs'
+import { createStagingPreviewEnvironmentJournal, STAGING_PREVIEW_ENVIRONMENT_JOURNAL_PATH } from '../scripts/staging-preview-environment-journal.mjs'
+
+test('successor journal uses a fresh v2 path while v1 remains terminal', () => {
+  assert.match(STAGING_PREVIEW_ENVIRONMENT_JOURNAL_PATH, /tll-preview-environment-inventory-v2\.json$/)
+})
 
 const now = () => Date.parse('2026-09-26T10:00:00.000Z')
 const journal = () => {

@@ -12,7 +12,7 @@ import { createStagingPreviewEnvironmentJournal } from './staging-preview-enviro
 export const STAGING_PREVIEW_ENVIRONMENT_LIVE_ENABLED = false
 const ROOT = resolve(import.meta.dirname, '..')
 const HELPER = resolve(import.meta.dirname, 'staging-preview-environment-keychain.py')
-const PROOF = 'TLL_STAGING_PREVIEW_ENV_INVENTORY_V1'
+const PROOF = 'TLL_STAGING_PREVIEW_ENV_INVENTORY_V2'
 const unavailable = () => { throw new Error('Staging Preview environment live read unavailable') }
 const disabled = () => Object.freeze({ status: 'STAGING_PREVIEW_ENVIRONMENT_LIVE_DISABLED' })
 const env = Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' })
@@ -34,7 +34,7 @@ function checkArming() {
 function readCredential({ signal }) {
   if (signal.aborted) unavailable()
   const result = spawnSync('/usr/bin/python3', ['-I', '-S', HELPER], {
-    cwd: ROOT, env, stdio: ['ignore', 'pipe', 'ignore'], timeout: 15_000, maxBuffer: 4097,
+    cwd: ROOT, env, stdio: ['ignore', 'pipe', 'ignore'], timeout: 35_000, maxBuffer: 4097,
   })
   const output = Buffer.isBuffer(result.stdout) ? result.stdout : Buffer.alloc(0)
   try {
@@ -63,7 +63,7 @@ async function superviseOnce() {
   checkArming()
   const result = await runBoundedDetachedWorker({ executable: process.execPath,
     args: [fileURLToPath(import.meta.url), '--worker'], cwd: ROOT, env, proof: PROOF,
-    deadlineMs: 60_000, maxOutputBytes: 4096 })
+    deadlineMs: 70_000, maxOutputBytes: 4096 })
   try {
     if (result.status !== 'EXITED' || result.code !== 0 || !result.output) unavailable()
     const value = JSON.parse(result.output.toString('utf8'))
