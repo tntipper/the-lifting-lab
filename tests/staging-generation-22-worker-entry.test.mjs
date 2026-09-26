@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import { runStagingGeneration22Worker } from '../scripts/staging-generation-22-worker-entry.mjs'
 import { WORKER_TERMINAL_SCHEMA } from '../scripts/staging-generation-22-process-supervisor.mjs'
 import { WINDOW_ID } from '../scripts/staging-generation-22-credentials.mjs'
@@ -26,6 +28,15 @@ test('worker lifecycle is disabled before supervisor proof or construction', asy
     readCredentials() { calls++ }, createWorker() { calls++ }, write() { calls++ },
     signal: new AbortController().signal }), /unavailable/)
   assert.equal(calls, 0)
+})
+
+test('fixed CLI exits disabled without output or credential access', () => {
+  const path = fileURLToPath(new URL('../scripts/staging-generation-22-worker-entry.mjs', import.meta.url))
+  const result = spawnSync(process.execPath, [path], { encoding: 'utf8', timeout: 2_000,
+    env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' } })
+  assert.equal(result.status, 1)
+  assert.equal(result.stdout, '')
+  assert.equal(result.stderr, '')
 })
 
 test('worker reads tokens only after proof and erases them before publishing its terminal', async () => {

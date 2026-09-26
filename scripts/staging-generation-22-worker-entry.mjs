@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Fixed Gen22 child entry; hosted worker assembly has not been connected. */
+/** Fixed Gen22 child entry; the completed hosted path remains disabled. */
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { acceptSupervisorPipe } from './staging-provider-broker-recovery-process-control.mjs'
@@ -9,6 +9,7 @@ import { WINDOW_ID } from './staging-generation-22-credentials.mjs'
 import { GENERATION, PROJECT_REF } from './staging-generation-22-material.mjs'
 
 export const STAGING_GENERATION_22_WORKER_ENTRY_ENABLED = false
+export const STAGING_GENERATION_22_WORKER_CLI_ENABLED = false
 const unavailable = () => { throw new Error('Generation 22 worker entry unavailable') }
 
 export function acceptStagingGeneration22Supervisor() {
@@ -69,7 +70,32 @@ export async function runStagingGeneration22Worker({ accept = acceptStagingGener
 
 if (import.meta.url.startsWith('file:') && process.argv[1]
   && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  // No credential reader or host is imported. A separate reviewed change must
-  // connect the worker core and the supervisor-loss pipe before this can run.
-  process.exitCode = 1
+  if (!STAGING_GENERATION_22_WORKER_CLI_ENABLED) process.exitCode = 1
+  else {
+    const controller = new AbortController()
+    const abort = () => controller.abort()
+    process.once('SIGINT', abort)
+    process.once('SIGTERM', abort)
+    try {
+      const [{ readStagingGeneration22Credentials },
+        { createStagingGeneration22WorkerAssembly }] = await Promise.all([
+        import('./staging-generation-22-keychain-reader.mjs'),
+        import('./staging-generation-22-worker-assembly.mjs'),
+      ])
+      const passed = await runStagingGeneration22Worker({
+        signal: controller.signal,
+        readCredentials: ({ signal }) => readStagingGeneration22Credentials({ signal,
+          stopWorkerGroup: () => process.kill(-process.pid, 'SIGKILL') }),
+        createWorker: createStagingGeneration22WorkerAssembly,
+        write: value => new Promise((resolveWrite, rejectWrite) => {
+          process.stdout.write(value, error => error ? rejectWrite(error) : resolveWrite())
+        }),
+      })
+      process.exitCode = passed ? 0 : 1
+    } catch { process.exitCode = 1 }
+    finally {
+      process.removeListener('SIGINT', abort)
+      process.removeListener('SIGTERM', abort)
+    }
+  }
 }
