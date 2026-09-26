@@ -148,3 +148,36 @@ test('a delayed response chunk is wiped when abort wins during body read', async
   assert.deepEqual(delayed, Buffer.alloc(delayed.length))
   host.dispose()
 })
+
+test('abort before queued request sends nothing', async () => {
+  const { host: { createStagingGeneration22VercelHost: create }, journal } = await armedFixture()
+  const { name, capability } = capabilityFor(journal)
+  const upstream = new AbortController()
+  let calls = 0
+  const host = create({ token, now, fetch: async () => { calls++; return null } })
+  const pending = host.stageSecret({ name, value: password, capability, signal: upstream.signal })
+  upstream.abort()
+  await assert.rejects(pending, /unavailable/)
+  assert.equal(calls, 0)
+  host.dispose()
+})
+
+test('a response arriving after abort is cancelled', async () => {
+  const { host: { createStagingGeneration22VercelHost: create }, journal } = await armedFixture()
+  const { name, capability } = capabilityFor(journal)
+  const upstream = new AbortController()
+  let finishFetch, fetchStarted, cancellations = 0
+  const started = new Promise(resolve => { fetchStarted = resolve })
+  const host = create({ token, now, fetch: () => {
+    fetchStarted()
+    return new Promise(resolve => { finishFetch = resolve })
+  } })
+  const pending = host.stageSecret({ name, value: password, capability, signal: upstream.signal })
+  await started
+  upstream.abort()
+  await assert.rejects(pending, /unavailable/)
+  finishFetch({ body: { cancel: () => { cancellations++; return Promise.resolve() } } })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(cancellations, 1)
+  host.dispose()
+})

@@ -1,39 +1,14 @@
-/** Disabled, injected-only Vercel host for the 16 missing staging Preview secrets. */
-import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
+/** Disabled, injected-only host for one staging Edge Function database password. */
 import { ACTIVE_WINDOW_EXPIRES_AT } from './staging-generation-22-credentials.mjs'
 import { consumeStagingGeneration22OperationCapability } from './staging-generation-22-journal.mjs'
-import { MISSING_VERCEL_SECRET_NAMES } from './staging-generation-22-material.mjs'
+import { MISSING_SUPABASE_SECRET_NAMES, PROJECT_REF } from './staging-generation-22-material.mjs'
 
-export const STAGING_GENERATION_22_VERCEL_HOST_ENABLED = false
-const unavailable = () => { throw new Error('Generation 22 Vercel host unavailable') }
-const API_URL = `https://api.vercel.com/v10/projects/${HOSTED_BASELINE_VERCEL_TARGET.projectId}/env?teamId=${HOSTED_BASELINE_VERCEL_TARGET.teamId}`
+export const STAGING_GENERATION_22_EDGE_HOST_ENABLED = false
+const unavailable = () => { throw new Error('Generation 22 Edge host unavailable') }
+const NAME = MISSING_SUPABASE_SECRET_NAMES[0]
+const URL = `https://api.supabase.com/v1/projects/${PROJECT_REF}/secrets`
+const PASSWORD = /^[A-Za-z0-9_-]{64}$/
 const MAX_RESPONSE_BYTES = 65_536
-const ID = /^[A-Za-z0-9_-]{4,128}$/
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-const BASE64URL = /^[A-Za-z0-9_-]{64}$/
-const HEX = /^[a-f0-9]{64}$/i
-
-function validValue(name, value) {
-  if (typeof value !== 'string') return false
-  if (name.endsWith('_DATABASE_PASSWORD')) return BASE64URL.test(value)
-  if (name.endsWith('_KEY_ID')) return UUID.test(value)
-  if (name.endsWith('_KEY_HEX') || name.endsWith('_HMAC_KEY_HEX')) return HEX.test(value)
-  return false
-}
-
-function responseCreated(value, name) {
-  const created = value?.created
-  if (!value || typeof value !== 'object' || Array.isArray(value)
-    || !Array.isArray(value.failed) || value.failed.length !== 0
-    || !created || typeof created !== 'object' || Array.isArray(created)
-    || !ID.test(created.id) || created.key !== name
-    || created.gitBranch !== HOSTED_BASELINE_VERCEL_TARGET.branch
-    || !(created.target === 'preview' || (Array.isArray(created.target)
-      && created.target.length === 1 && created.target[0] === 'preview'))
-    || created.type !== 'sensitive' || created.visibility !== 'secret') unavailable()
-  return Object.freeze({ status: 'STAGED', name, id: created.id, branch: HOSTED_BASELINE_VERCEL_TARGET.branch,
-    target: 'preview', classification: 'sensitive' })
-}
 
 function abortRace(pending, signal) {
   if (signal.aborted) return Promise.reject(new Error('aborted'))
@@ -44,8 +19,9 @@ function abortRace(pending, signal) {
   return Promise.race([pending, aborted]).finally(() => signal.removeEventListener('abort', onAbort))
 }
 
-async function boundedJson(response, signal) {
-  if (!response?.body?.getReader) unavailable()
+async function emptySuccess(response, signal) {
+  if (!response?.body) return
+  if (typeof response.body.getReader !== 'function') unavailable()
   const reader = response.body.getReader(), chunks = []
   let size = 0
   try {
@@ -64,7 +40,9 @@ async function boundedJson(response, signal) {
       item.value.fill(0)
     }
     const bytes = Buffer.concat(chunks, size)
-    try { return JSON.parse(bytes.toString('utf8')) } finally { bytes.fill(0) }
+    try {
+      if (size && (bytes.toString('utf8').trim() !== '{}')) unavailable()
+    } finally { bytes.fill(0) }
   } finally {
     try { Promise.resolve(reader.cancel()).catch(() => {}) } catch {}
     try { reader.releaseLock() } catch {}
@@ -72,24 +50,22 @@ async function boundedJson(response, signal) {
   }
 }
 
-export function createStagingGeneration22VercelHost({ fetch: fetcher, token, now = Date.now,
+export function createStagingGeneration22EdgeHost({ fetch: fetcher, token, now = Date.now,
   requestTimeoutMs = 20_000 } = {}) {
-  if (!STAGING_GENERATION_22_VERCEL_HOST_ENABLED || typeof fetcher !== 'function'
-    || !Buffer.isBuffer(token) || token.length < 8 || token.length > 1024
+  if (!STAGING_GENERATION_22_EDGE_HOST_ENABLED || typeof fetcher !== 'function'
+    || !Buffer.isBuffer(token) || token.length < 8 || token.length > 4096
     || !/^[\x21-\x7e]+$/.test(token.toString('utf8')) || typeof now !== 'function'
     || !Number.isInteger(requestTimeoutMs) || requestTimeoutMs < 1 || requestTimeoutMs > 20_000) unavailable()
-  const ownedToken = Buffer.from(token), dispatched = new Set()
-  let disposed = false
+  const ownedToken = Buffer.from(token)
+  let disposed = false, dispatched = false
   return Object.freeze({
     async stageSecret({ name, value, capability, signal } = {}) {
-      if (disposed || !MISSING_VERCEL_SECRET_NAMES.includes(name) || dispatched.has(name)
-        || !validValue(name, value) || !signal || signal.aborted
-        || typeof signal.addEventListener !== 'function'
+      if (disposed || dispatched || name !== NAME || typeof value !== 'string' || !PASSWORD.test(value)
+        || !signal || signal.aborted || typeof signal.addEventListener !== 'function'
         || now() >= Date.parse(ACTIVE_WINDOW_EXPIRES_AT)) unavailable()
-      const body = JSON.stringify({ key: name, value, type: 'sensitive', visibility: 'secret',
-        target: ['preview'], gitBranch: HOSTED_BASELINE_VERCEL_TARGET.branch })
-      consumeStagingGeneration22OperationCapability(capability, `VERCEL_SECRET:${name}`)
-      dispatched.add(name)
+      const body = JSON.stringify([{ name, value }])
+      consumeStagingGeneration22OperationCapability(capability, `SUPABASE_EDGE:${NAME}`)
+      dispatched = true
       const controller = new AbortController()
       const forwardAbort = () => controller.abort()
       signal.addEventListener('abort', forwardAbort, { once: true })
@@ -97,31 +73,30 @@ export function createStagingGeneration22VercelHost({ fetch: fetcher, token, now
         Math.min(requestTimeoutMs, Math.max(1, Date.parse(ACTIVE_WINDOW_EXPIRES_AT) - now())))
       let onAbort, response
       const aborted = new Promise((_, reject) => {
-        onAbort = () => reject(new Error('Vercel request aborted'))
+        onAbort = () => reject(new Error('Edge request aborted'))
         controller.signal.addEventListener('abort', onAbort, { once: true })
       })
       try {
         if (signal.aborted || now() >= Date.parse(ACTIVE_WINDOW_EXPIRES_AT)) unavailable()
         const pendingFetch = Promise.resolve().then(() => {
           if (controller.signal.aborted) unavailable()
-          return fetcher(API_URL,
-            { method: 'POST', redirect: 'error', headers: { authorization: `Bearer ${ownedToken.toString('utf8')}`,
-              accept: 'application/json', 'content-type': 'application/json', 'accept-encoding': 'identity' },
-              body, signal: controller.signal })
+          return fetcher(URL, { method: 'POST', redirect: 'error',
+            headers: { authorization: `Bearer ${ownedToken.toString('utf8')}`, accept: 'application/json',
+              'content-type': 'application/json', 'accept-encoding': 'identity' }, body, signal: controller.signal })
         })
         void pendingFetch.then(late => {
           if (controller.signal.aborted) { try { Promise.resolve(late?.body?.cancel?.()).catch(() => {}) } catch {} }
         }, () => {})
         response = await Promise.race([pendingFetch, aborted])
         if (controller.signal.aborted || !response || response.status !== 201 || response.redirected === true
-          || (response.url && response.url !== API_URL)) unavailable()
+          || (response.url && response.url !== URL)) unavailable()
         const length = response.headers?.get?.('content-length')
         const encoding = response.headers?.get?.('content-encoding')
         if (length != null && (!/^\d+$/.test(length) || Number(length) > MAX_RESPONSE_BYTES)
           || (encoding != null && encoding !== '' && encoding !== 'identity')) unavailable()
-        const payload = await Promise.race([boundedJson(response, controller.signal), aborted])
+        await Promise.race([emptySuccess(response, controller.signal), aborted])
         if (controller.signal.aborted || now() >= Date.parse(ACTIVE_WINDOW_EXPIRES_AT)) unavailable()
-        return responseCreated(payload, name)
+        return Object.freeze({ status: 'STAGED', name, projectRef: PROJECT_REF })
       } catch { unavailable() }
       finally {
         clearTimeout(timeout)

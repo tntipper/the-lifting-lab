@@ -1136,7 +1136,11 @@
       },
       {
         "path": "scripts/staging-generation-22-vercel-host.mjs",
-        "sha256": "e16ca41582f9c48fce601ad2006bc4aa820275df4cd7bb8546223e643aaf3d69"
+        "sha256": "682bbd2bd0f19a88e97d7a515d77741f04d0e2842a481a10e8aec82f7e9dfaaf"
+      },
+      {
+        "path": "scripts/staging-generation-22-edge-host.mjs",
+        "sha256": "4a727dc9ac06160a91062894f04e00d9e3ac5d28e5355eac4145b424990a2a6f"
       },
       {
         "path": "app/api/staging/readiness/contract.ts",
@@ -1560,7 +1564,11 @@
       },
       {
         "path": "tests/staging-generation-22-vercel-host.test.mjs",
-        "sha256": "06f2fce3e0e5790751dc6c6424efc96564bb0abe7eb9eb6578769afab1f86ae0"
+        "sha256": "b6369f1d757e10a43666e83a26c4c689ae7c7d4d3a8c6998249a8a1b00f42b4e"
+      },
+      {
+        "path": "tests/staging-generation-22-edge-host.test.mjs",
+        "sha256": "10a9fc87d3cce0433b6623661897cf976bd03a409ebe92fa8d6bb81bd1386788"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",
