@@ -21,16 +21,27 @@ const exact = (value, keys) => value && typeof value === 'object' && !Array.isAr
 
 /** Injected-only lifecycle. The fixed CLI remains unavailable until the host assembly is reviewed. */
 export async function runStagingGeneration22Worker({ accept = acceptStagingGeneration22Supervisor,
-  createWorker, write, signal } = {}) {
+  readCredentials, createWorker, write, signal } = {}) {
   if (!STAGING_GENERATION_22_WORKER_ENTRY_ENABLED || typeof accept !== 'function'
-    || typeof createWorker !== 'function' || typeof write !== 'function'
+    || typeof readCredentials !== 'function' || typeof createWorker !== 'function'
+    || typeof write !== 'function'
     || !signal || signal.aborted || typeof signal.addEventListener !== 'function') unavailable()
-  let release, dispose
+  let release, dispose, credentials
+  const eraseCredentials = () => {
+    if (!credentials || typeof credentials !== 'object') return
+    for (const value of Object.values(credentials)) if (Buffer.isBuffer(value)) value.fill(0)
+    credentials = undefined
+  }
   try {
     release = await accept()
     if (typeof release !== 'function' || signal.aborted) unavailable()
+    credentials = await readCredentials({ signal })
+    if (signal.aborted || !exact(credentials, ['managementToken', 'vercelToken'])
+      || !Buffer.isBuffer(credentials.managementToken) || !Buffer.isBuffer(credentials.vercelToken)
+      || credentials.managementToken.length < 8 || credentials.vercelToken.length < 8
+      || credentials.managementToken === credentials.vercelToken) unavailable()
     // Construction is synchronous: all hosted effects belong to core.run().
-    const assembly = createWorker()
+    const assembly = createWorker(credentials)
     if (!exact(assembly, ['core', 'dispose']) || typeof assembly.core?.run !== 'function'
       || typeof assembly.dispose !== 'function') unavailable()
     dispose = assembly.dispose
@@ -38,6 +49,7 @@ export async function runStagingGeneration22Worker({ accept = acceptStagingGener
     const finishDisposal = dispose
     dispose = undefined
     await finishDisposal()
+    eraseCredentials()
     if (signal.aborted || !exact(terminal, ['schema', 'status', 'projectRef', 'generation',
       'windowId', 'setupStatus', 'recoveryStatus'])
       || terminal.schema !== WORKER_TERMINAL_SCHEMA || terminal.status !== 'DRAINED'
@@ -50,6 +62,7 @@ export async function runStagingGeneration22Worker({ accept = acceptStagingGener
   } catch { return false }
   finally {
     if (dispose) { try { await dispose() } catch {} }
+    eraseCredentials()
     if (release) { try { release() } catch {} }
   }
 }

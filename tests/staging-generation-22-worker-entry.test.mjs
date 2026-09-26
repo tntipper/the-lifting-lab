@@ -23,21 +23,33 @@ async function armed() {
 test('worker lifecycle is disabled before supervisor proof or construction', async () => {
   let calls = 0
   await assert.rejects(runStagingGeneration22Worker({ accept() { calls++ },
-    createWorker() { calls++ }, write() { calls++ }, signal: new AbortController().signal }), /unavailable/)
+    readCredentials() { calls++ }, createWorker() { calls++ }, write() { calls++ },
+    signal: new AbortController().signal }), /unavailable/)
   assert.equal(calls, 0)
 })
 
-test('worker publishes its exact terminal only after cleanup and releases supervisor last', async () => {
+test('worker reads tokens only after proof and erases them before publishing its terminal', async () => {
   const run = await armed(), order = [], output = []
+  const managementToken = Buffer.from('synthetic-supabase-token')
+  const vercelToken = Buffer.from('synthetic-vercel-token')
   const result = await run({ signal: new AbortController().signal,
     accept() { order.push('proof'); return () => order.push('release') },
-    createWorker() { order.push('construct'); return { core: { run() {
+    readCredentials() { order.push('credentials'); return { managementToken, vercelToken } },
+    createWorker(credentials) {
+      order.push('construct')
+      assert.equal(credentials.managementToken, managementToken)
+      assert.equal(credentials.vercelToken, vercelToken)
+      return { core: { run() {
       order.push('run'); return terminal
     } }, dispose() { order.push('dispose') } } },
-    write(value) { order.push('write'); output.push(value) },
+    write(value) {
+      assert.equal(managementToken.every(byte => byte === 0), true)
+      assert.equal(vercelToken.every(byte => byte === 0), true)
+      order.push('write'); output.push(value)
+    },
   })
   assert.equal(result, true)
-  assert.deepEqual(order, ['proof', 'construct', 'run', 'dispose', 'write', 'release'])
+  assert.deepEqual(order, ['proof', 'credentials', 'construct', 'run', 'dispose', 'write', 'release'])
   assert.deepEqual(output, [`${JSON.stringify(terminal)}\n`])
 })
 
@@ -45,8 +57,11 @@ test('worker never publishes success after cleanup, result or output failure', a
   const run = await armed()
   for (const failure of ['result', 'dispose', 'write']) {
     const output = [], order = []
+    const managementToken = Buffer.from('synthetic-supabase-token')
+    const vercelToken = Buffer.from('synthetic-vercel-token')
     const result = await run({ signal: new AbortController().signal,
       accept() { return () => order.push('release') },
+      readCredentials() { return { managementToken, vercelToken } },
       createWorker() { return { core: { run() {
         return failure === 'result' ? { ...terminal, status: 'HOLD' } : terminal
       } }, dispose() {
@@ -60,8 +75,57 @@ test('worker never publishes success after cleanup, result or output failure', a
       },
     })
     assert.equal(result, false)
+    assert.equal(managementToken.every(byte => byte === 0), true)
+    assert.equal(vercelToken.every(byte => byte === 0), true)
     assert.deepEqual(output, [])
     assert.deepEqual(order, failure === 'write'
       ? ['dispose', 'write', 'release'] : ['dispose', 'release'])
   }
+})
+
+test('invalid or failed credential read stops before worker construction and erases returned buffers', async () => {
+  const run = await armed()
+  for (const readCredentials of [
+    () => { throw Error('synthetic Keychain failure') },
+    () => ({ managementToken: Buffer.from('synthetic-supabase-token'),
+      vercelToken: Buffer.from('synthetic-vercel-token'), extra: Buffer.from('extra-secret') }),
+  ]) {
+    let constructed = false, written = false, released = false
+    let returned
+    const result = await run({ signal: new AbortController().signal,
+      accept() { return () => { released = true } },
+      readCredentials() { returned = readCredentials(); return returned },
+      createWorker() { constructed = true }, write() { written = true },
+    })
+    assert.equal(result, false)
+    assert.equal(constructed, false)
+    assert.equal(written, false)
+    assert.equal(released, true)
+    if (returned) for (const value of Object.values(returned)) {
+      assert.equal(value.every(byte => byte === 0), true)
+    }
+  }
+})
+
+test('supervisor failure prevents credential access; assembly failure erases both tokens', async () => {
+  const run = await armed()
+  let reads = 0
+  assert.equal(await run({ signal: new AbortController().signal,
+    accept() { throw Error('supervisor lost') },
+    readCredentials() { reads++ }, createWorker() {}, write() {},
+  }), false)
+  assert.equal(reads, 0)
+  const managementToken = Buffer.from('synthetic-supabase-token')
+  const vercelToken = Buffer.from('synthetic-vercel-token')
+  let released = false, written = false
+  assert.equal(await run({ signal: new AbortController().signal,
+    accept() { return () => { released = true } },
+    readCredentials() { return { managementToken, vercelToken } },
+    createWorker() { throw Error('synthetic assembly failure') },
+    write() { written = true },
+  }), false)
+  assert.equal(managementToken.every(byte => byte === 0), true)
+  assert.equal(vercelToken.every(byte => byte === 0), true)
+  assert.equal(released, true)
+  assert.equal(written, false)
 })
