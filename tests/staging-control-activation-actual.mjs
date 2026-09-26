@@ -7,10 +7,13 @@ import { admin, assertFixture } from './account-operations/local-pg.mjs'
 // object added here has a unique prefix and is removed in finally.
 assertFixture()
 const OPERATOR = 'tll_ca_operator'
-const WINDOW = '91b9cc94-7743-4e0a-9d40-6f01fd215189'
+const GENERATION = process.env.TLL_CONTROL_GENERATION === '23' ? 23 : 22
+const WINDOW = GENERATION === 23
+  ? '7d0e8f17-eac4-40e1-a5b5-8a8597d502a9'
+  : '91b9cc94-7743-4e0a-9d40-6f01fd215189'
 const expiry = new Date(Date.now() + 10 * 60 * 1000); expiry.setMilliseconds(0)
 const EXPIRES = expiry.toISOString()
-const context = { generation: 22, windowId: WINDOW, expiresAt: EXPIRES }
+const context = { generation: GENERATION, windowId: WINDOW, expiresAt: EXPIRES }
 const aliases = {
   tll_customer_owner: 'tll_ao1_customer_owner', tll_cart_owner: 'tll_ca_cart_owner',
   tll_broker_owner: 'tll_ao1_broker_owner', tll_provisional_owner: 'tll_ao1_provisional_owner', tll_bridge_owner: 'tll_ao1_bridge_owner',
@@ -80,7 +83,7 @@ try {
     SET SESSION AUTHORIZATION ${OPERATOR};
     ${executors.map((role, index) => `GRANT ${role} TO ${runtimes[index]} WITH ADMIN FALSE,INHERIT TRUE,SET FALSE;`).join('\n')}
     RESET SESSION AUTHORIZATION;
-    ${runtimes.map(role => `COMMENT ON ROLE ${role} IS ${q(`tll-runtime-window/v1 ${JSON.stringify({ expiresAt: EXPIRES, generation: 22, projectRef: 'qdmvngjwkcsilzmqksme', state: 'active', windowId: WINDOW })}`)};`).join('\n')}
+    ${runtimes.map(role => `COMMENT ON ROLE ${role} IS ${q(`tll-runtime-window/v1 ${JSON.stringify({ expiresAt: EXPIRES, generation: GENERATION, projectRef: 'qdmvngjwkcsilzmqksme', state: 'active', windowId: WINDOW })}`)};`).join('\n')}
     UPDATE tll_customer_private.control SET enabled=false,operator_oid='${OPERATOR}'::regrole::oid;
     UPDATE tll_broker_private.control SET enabled=false,operator_oid='${OPERATOR}'::regrole::oid;
     UPDATE tll_provisional_private.control SET enabled=false,operator_oid='${OPERATOR}'::regrole::oid;

@@ -1,7 +1,7 @@
 /** Opt-in, networkless composite rehearsal. Hosted APIs remain injected. */
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -15,7 +15,8 @@ import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scrip
 import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/staging-generation-23-surface-fixture.mjs'
 
 const mode = process.argv.slice(2).join(' ')
-if (!['--run-offline-once', '--fail-first-setting-once'].includes(mode)) {
+if (!['--run-offline-once', '--fail-first-setting-once',
+  '--fail-setup-reply-once', '--fail-retirement-reply-once'].includes(mode)) {
   throw Error('Explicit local test mode required')
 }
 
@@ -26,12 +27,13 @@ const run = (program, args, env = process.env) => execFileSync(program, args, {
 const surface = surfaceFixture()
 const { PHASES, REQUIRED_RESULTS, rehearseStagingGeneration23WholeRun } = await rehearsal()
 const scriptDir = new URL('../scripts/', import.meta.url)
-async function arm(filename, flag) {
+async function arm(filename, flag, replacements = []) {
   let source = await readFile(new URL(filename, scriptDir), 'utf8')
   const declaration = `export const ${flag} = false`
   assert.equal(source.split(declaration).length, 2)
   source = source.replace(declaration, `export const ${flag} = true`)
-    .replaceAll("from './", `from '${scriptDir.href}`)
+  for (const [from, to] of replacements) source = source.replace(from, to)
+  source = source.replaceAll("from './", `from '${scriptDir.href}`)
     .replaceAll('resolve(import.meta.dirname,', `resolve(${JSON.stringify(fileURLToPath(scriptDir))},`)
   return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
 }
@@ -42,7 +44,47 @@ const settingsJournalModule = await arm('staging-generation-23-settings-journal.
 const settingsCoordinatorModule = await arm('staging-generation-23-settings-coordinator.mjs',
   'STAGING_GENERATION_23_SETTINGS_COORDINATOR_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
-const settingsDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-settings-'))
+let existingCartFixtureStarted = false
+let databaseJournalDirectory, settingsDirectory, providerDirectory
+function ensureCartFixture() {
+  if (run('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres']).trim() === 'false') {
+    run('docker', ['start', 'tll-stage0-postgres'])
+    existingCartFixtureStarted = true
+  }
+}
+try {
+const databaseJournalModule = await arm('staging-generation-23-database-journal.mjs',
+  'STAGING_GENERATION_23_DATABASE_JOURNAL_ENABLED')
+const databaseHostModule = await arm('staging-generation-23-database-host.mjs',
+  'STAGING_GENERATION_23_DATABASE_HOST_ENABLED', [
+    ["from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`],
+    ["from './staging-generation-23-recovery.mjs'", `from '${database.recoveryUrl}'`],
+  ])
+databaseJournalDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-database-'))
+const databaseJournal = action => databaseJournalModule.createStagingGeneration23DatabaseJournal({
+  action, path: join(databaseJournalDirectory, `${action.toLowerCase()}.json`), now: Date.now,
+  makeRunId: () => action === 'SETUP' ? '00eec22d-31af-46fd-acf8-af2f15ad54f2'
+    : '7f532f58-e750-42f7-9e83-0a7ec82f3732',
+})
+const setupJournal = databaseJournal('SETUP')
+const retirementJournal = databaseJournal('RETIRE')
+const setupHost = databaseHostModule.createStagingGeneration23DatabaseHost({
+  action: 'SETUP', journal: setupJournal,
+  post: packet => {
+    const rows = database.postSetupPacket(packet)
+    if (mode === '--fail-setup-reply-once') throw Error('injected lost setup reply after commit')
+    return rows
+  },
+})
+const retirementHost = databaseHostModule.createStagingGeneration23DatabaseHost({
+  action: 'RETIRE', journal: retirementJournal,
+  post: packet => {
+    const rows = database.postRetirementPacket(packet)
+    if (mode === '--fail-retirement-reply-once') throw Error('injected lost retirement reply after commit')
+    return rows
+  },
+})
+settingsDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-settings-'))
 const settingsTargets = VERCEL_PASSWORD_NAMES.map((name, index) => ({ name,
   id: `env_gen23_${index}`, branch: 'codex/tll-integration', target: 'preview',
   classification: 'sensitive' }))
@@ -79,7 +121,7 @@ let provider = {
   jwks_uri: STAGING_BROKER_PROVIDER.jwksUrl, discovery_document: null,
   created_at: new Date(START).toISOString(), updated_at: new Date(START).toISOString(),
 }
-const providerDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-provider-'))
+providerDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-provider-'))
 const providerJournal = action => providerControl.createStagingGeneration23ProviderJournal({
   action, path: join(providerDirectory, `${action.toLowerCase()}.json`),
   makeRunId: () => action === 'ENABLE' ? 'e45d1f62-76cf-4b8d-a27e-0c39af85fe7e'
@@ -100,7 +142,6 @@ const providerPort = {
     return { status: 'UPDATED_NEEDS_READBACK', projectRef: STAGING_PROJECT_REF, identifier }
   },
 }
-let existingCartFixtureStarted = false
 const calls = []
 const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
   calls.push(phase)
@@ -125,7 +166,16 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
       assert.equal(edgePassword, installedSettings.get(EDGE_PASSWORD_NAME))
       break
     case 'databaseSetup':
-      assert.equal(database.setup().status, 'PASS')
+      const setupResult = await setupHost.run({ expiresAt: database.expiresAt,
+        deadlineAt: database.expiresAt, verifiers: database.verifiers,
+        signal: new AbortController().signal })
+      if (mode === '--fail-setup-reply-once') {
+        assert.equal(setupResult.status, 'HOLD_RECONCILE')
+        assert.equal(setupJournal.read().state, 'HOLD')
+        return { status: 'HOLD_DATABASE_SETUP' }
+      }
+      assert.equal(setupResult.status, 'SETUP_VERIFIED')
+      assert.equal(setupJournal.read().state, 'FINISHED')
       active = true
       break
     case 'restrictedConnections':
@@ -139,6 +189,10 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
       break
     case 'databaseEnable':
       assert.equal(databaseEnabled, false)
+      ensureCartFixture()
+      run(process.execPath, ['tests/staging-control-activation-actual.mjs'], {
+        ...process.env, TLL_CONTROL_GENERATION: '23',
+      })
       assert.equal(database.enableControls().status, 'PASS_CONTROLS_ENABLED')
       databaseEnabled = true
       break
@@ -154,10 +208,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
       assert.ok(enabledPreview)
       run(process.execPath, ['--test', 'tests/customer-auth-mount.test.mjs',
         'tests/customer-orders.test.mjs', 'tests/customer-account-operations.test.mjs'])
-      if (run('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres']).trim() === 'false') {
-        run('docker', ['start', 'tll-stage0-postgres'])
-        existingCartFixtureStarted = true
-      }
+      ensureCartFixture()
       run(process.execPath, ['--test', 'tests/staging-cart-account/acceptance.test.mjs'])
       run(process.execPath, ['tests/browser/staging-cart.mjs'], {
         ...process.env, TEST_BROWSER_CHANNEL: 'chrome',
@@ -181,7 +232,16 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
       break
     }
     case 'databaseRetire':
-      assert.equal(database.retire().status, 'PASS_RETIRED')
+      const retirementResult = await retirementHost.run({ expiresAt: database.expiresAt,
+        deadlineAt: database.expiresAt,
+        signal: new AbortController().signal })
+      if (mode === '--fail-retirement-reply-once') {
+        assert.equal(retirementResult.status, 'HOLD_RECONCILE')
+        assert.equal(retirementJournal.read().state, 'HOLD')
+        return { status: 'HOLD_DATABASE_RETIRE' }
+      }
+      assert.equal(retirementResult.status, 'RETIREMENT_VERIFIED')
+      assert.equal(retirementJournal.read().state, 'FINISHED')
       active = false
       break
     case 'finalReadback':
@@ -195,7 +255,6 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
   return { status: REQUIRED_RESULTS[phase] }
 }]))
 
-try {
   const result = await rehearseStagingGeneration23WholeRun({ operations, now: Date.now,
     windowExpiresAt: database.expiresAt, signal: new AbortController().signal })
   if (mode === '--fail-first-setting-once') {
@@ -208,6 +267,22 @@ try {
     console.log(JSON.stringify({ status: 'PASS_LOCAL_SETTINGS_LOST_REPLY_STOP',
       phaseCount: calls.length, databaseSetup: 'not_dispatched',
       provider: 'off', surface: 'off', purchase: 'none' }))
+  } else if (mode === '--fail-setup-reply-once') {
+    assert.equal(result.status, 'HOLD')
+    assert.equal(result.failedPhase, 'databaseSetup')
+    assert.deepEqual(calls, ['baseline', 'settings', 'databaseSetup'])
+    assert.equal(provider.enabled, false)
+    assert.equal(surface.events.length, 0)
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_SETUP_LOST_REPLY_STOP',
+      phaseCount: calls.length, provider: 'off', surface: 'off', purchase: 'none' }))
+  } else if (mode === '--fail-retirement-reply-once') {
+    assert.equal(result.status, 'HOLD')
+    assert.equal(result.failedPhase, 'databaseRetire')
+    assert.deepEqual(calls, PHASES.slice(0, PHASES.indexOf('finalReadback')))
+    assert.equal(provider.enabled || databaseEnabled, false)
+    assert.equal(surface.events.length, 8)
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_RETIREMENT_LOST_REPLY_STOP',
+      phaseCount: calls.length, provider: 'off', surface: 'off', purchase: 'none' }))
   } else {
   if (result.status !== 'LOCAL_SEQUENCE_PASS') console.error(JSON.stringify({
     status: result.status, failedPhase: result.failedPhase, nextAction: result.nextAction,
@@ -215,9 +290,9 @@ try {
   assert.equal(result.status, 'LOCAL_SEQUENCE_PASS')
   assert.deepEqual(calls, PHASES)
   console.log(JSON.stringify({ status: 'PASS_PARTIAL_LOCAL_COMPOSITE', phaseCount: PHASES.length,
-    database: 'real_isolated_postgres', surface: 'real_controller_injected_services',
+    database: 'real_sql_lifecycle_injected_guarded_host', surface: 'real_controller_injected_services',
     customer: 'real_local_tests_and_browser', provider: 'real_control_injected_service',
-    backendControls: 'real_local_fixture_only', settings: 'real_coordinator_injected_services',
+    backendControls: 'local_fixture_and_gen23_sql_compatibility', settings: 'real_coordinator_injected_services',
     hostedPreview: 'not_tested', purchase: 'none', elapsedMs: result.elapsedMs }))
   }
 } finally {
@@ -225,4 +300,7 @@ try {
     try { run('docker', ['stop', 'tll-stage0-postgres']) } catch { /* preserve primary failure */ }
   }
   database.dispose()
+  for (const directory of [providerDirectory, settingsDirectory, databaseJournalDirectory]) {
+    if (directory) rmSync(directory, { recursive: true, force: true })
+  }
 }

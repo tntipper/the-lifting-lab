@@ -83,6 +83,21 @@ test('boundary keeps Generation 22 process, credential and shared-reader switche
   ])
 })
 
+test('boundary keeps every Generation 23 source gate and expiry unarmed', () => {
+  const root = fixture()
+  const path = join(root, 'scripts/staging-generation-23-database-host.mjs')
+  writeFileSync(path, 'export const STAGING_GENERATION_23_DATABASE_HOST_ENABLED = true\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }),
+    ['enabled-native-gate:scripts/staging-generation-23-database-host.mjs'])
+  writeFileSync(path, 'export const STAGING_GENERATION_23_DATABASE_HOST_ENABLED = false\n')
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }), [])
+  const credentialPath = join(root, 'scripts/staging-generation-23-credentials.mjs')
+  writeFileSync(credentialPath, 'export const STAGING_GENERATION_23_CREDENTIALS_ENABLED = false\n'
+    + "export const ACTIVE_WINDOW_EXPIRES_AT = '2026-09-26T13:00:00.000Z'\n")
+  assert.deepEqual(inspectStagingLiveBoundary({ projectRoot: root }),
+    ['armed-expiry:scripts/staging-generation-23-credentials.mjs'])
+})
+
 test('boundary rejects a missing or duplicated Generation 22 switch', () => {
   const root = fixture()
   const path = join(root, 'scripts/staging-generation-22-material.mjs')

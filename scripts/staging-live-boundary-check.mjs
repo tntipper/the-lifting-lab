@@ -74,10 +74,19 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
         violations.push(`enabled-native-gate:${display(path)}`)
       }
     }
+    if (/^staging-generation-23-.*\.mjs$/.test(file)) {
+      const assignments = source.match(/^[ \t]*export const STAGING_GENERATION_23_[A-Z0-9_]*ENABLED[ \t]*=.*$/gm) ?? []
+      if (assignments.length !== 1 || !assignments[0].endsWith('= false')) {
+        violations.push(`enabled-native-gate:${display(path)}`)
+      }
+    }
     if (file === 'staging-generation-22-keychain.py'
       && !exactAssignments(/^[ \t]*GENERATION_22_KEYCHAIN_ENABLED[ \t]*=.*$/gm,
         'GENERATION_22_KEYCHAIN_ENABLED = False')) violations.push(`enabled-keychain-read:${display(path)}`)
     if (file === 'staging-generation-22-credentials.mjs'
+      && !exactAssignments(/^[ \t]*export const ACTIVE_WINDOW_EXPIRES_AT[ \t]*=.*$/gm,
+        "export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'")) violations.push(`armed-expiry:${display(path)}`)
+    if (file === 'staging-generation-23-credentials.mjs'
       && !exactAssignments(/^[ \t]*export const ACTIVE_WINDOW_EXPIRES_AT[ \t]*=.*$/gm,
         "export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'")) violations.push(`armed-expiry:${display(path)}`)
     if (file === 'staging-generation-22-recovery-journal.mjs'

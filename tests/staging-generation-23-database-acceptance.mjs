@@ -81,8 +81,9 @@ async function armedModules() {
       'export const STAGING_GENERATION_23_RECOVERY_ENABLED = true')
     .replace("from './staging-generation-23-credentials.mjs'", `from '${credentialUrl}'`)
     .replaceAll("from './", `from '${new URL('../scripts/', import.meta.url).href}`)
-  return { credentials: await import(credentialUrl),
-    recovery: await import(`data:text/javascript;base64,${Buffer.from(recoveryArmed).toString('base64')}`) }
+  const recoveryUrl = `data:text/javascript;base64,${Buffer.from(recoveryArmed).toString('base64')}`
+  return { credentialUrl, recoveryUrl, credentials: await import(credentialUrl),
+    recovery: await import(recoveryUrl) }
 }
 
 /** One disposable, networkless fixture shared by the standalone and joined tests. */
@@ -105,10 +106,27 @@ export async function createStagingGeneration23LocalDatabaseFixture() {
   assert.equal(ready, true, 'isolated database did not become ready')
   assert.match(docker(['inspect', '--format', '{{.Config.Image}} {{.HostConfig.NetworkMode}}', name]), /^postgres:17-alpine none$/)
   sql('tll_local_admin', fixtureSql())
-  const { credentials, recovery } = await armedModules()
+  const { credentials, recovery, credentialUrl, recoveryUrl } = await armedModules()
   let state = 'READY', built, recoverySql, removed = false
+  const executeSetup = input => {
+    assert.equal(state, 'READY')
+    state = 'SETUP_DISPATCHED'
+    const rows = [{ tll_generation_23_credential_receipt: JSON.parse(sql('postgres', input)) }]
+    state = 'ACTIVE'
+    return rows
+  }
+  const executeRetirement = input => {
+    assert.equal(state, 'CONTROLS_DISABLED')
+    state = 'RETIRE_DISPATCHED'
+    const rows = [{ tll_generation_23_recovery_receipt: JSON.parse(sql('postgres', input)) }]
+    state = 'RETIRED'
+    return rows
+  }
   return Object.freeze({
     expiresAt,
+    verifiers,
+    credentialUrl,
+    recoveryUrl,
     passwordProjection() {
       assert.equal(state, 'READY')
       const vercel = Object.fromEntries(PASSWORD_PURPOSES.map(purpose => [
@@ -118,14 +136,15 @@ export async function createStagingGeneration23LocalDatabaseFixture() {
       return { vercel, supabase: { [EDGE_PASSWORD_NAME]: vercel[EDGE_PASSWORD_NAME] } }
     },
     setup() {
-      assert.equal(state, 'READY')
-      state = 'SETUP_DISPATCHED'
       built = credentials.buildStagingGeneration23CredentialSql({ expiresAt, verifiers })
-      const rows = [{ tll_generation_23_credential_receipt: JSON.parse(sql('postgres', built)) }]
+      const rows = executeSetup(built)
       const result = credentials.validateStagingGeneration23CredentialReceipt(rows, { expiresAt })
       assert.equal(result.status, 'PASS')
-      state = 'ACTIVE'
       return result
+    },
+    postSetupPacket(packet) {
+      built = credentials.consumeStagingGeneration23PreparedSql(packet)
+      return executeSetup(built)
     },
     proveRestrictedConnections() {
       assert.equal(state, 'ACTIVE')
@@ -178,14 +197,15 @@ COMMIT;`)
       return { status: 'PASS_CONTROLS_DISABLED', count: 5 }
     },
     retire() {
-      assert.equal(state, 'CONTROLS_DISABLED')
-      state = 'RETIRE_DISPATCHED'
       recoverySql = recovery.buildStagingGeneration23RecoverySql({ expiresAt })
-      const rows = [{ tll_generation_23_recovery_receipt: JSON.parse(sql('postgres', recoverySql)) }]
+      const rows = executeRetirement(recoverySql)
       const result = recovery.validateStagingGeneration23RecoveryReceipt(rows, { expiresAt })
       assert.equal(result.status, 'PASS_RETIRED')
-      state = 'RETIRED'
       return result
+    },
+    postRetirementPacket(packet) {
+      recoverySql = recovery.consumeStagingGeneration23PreparedRecoverySql(packet).sql
+      return executeRetirement(recoverySql)
     },
     proveRetired() {
       assert.equal(state, 'RETIRED')

@@ -82,11 +82,35 @@ test('customer step is withheld when less than 15 minutes remain for shutdown', 
 
 test('activation is withheld before provider access when cleanup reserve is gone', async () => {
   const { rehearseStagingGeneration23WholeRun: run } = await armed()
-  const state = fixture({ clockStep: 390_000 })
+  const state = fixture({ clockStep: 330_000 })
   const result = await run({ ...state, windowExpiresAt: expires, signal })
   assert.equal(result.failedPhase, 'providerEnable')
   assert.equal(result.timeline.at(-1).state, 'NOT_DISPATCHED')
   assert.equal(state.calls.includes('providerEnable'), false)
+})
+
+test('no password setting or database setup starts without the shutdown reserve', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  const shortWindow = fixture({ clockStep: 1000 })
+  const settingsStop = await run({ ...shortWindow,
+    windowExpiresAt: new Date(start + 14 * 60_000).toISOString(), signal })
+  assert.equal(settingsStop.failedPhase, 'settings')
+  assert.deepEqual(shortWindow.calls, ['baseline'])
+
+  const setupWindow = fixture({ clockStep: 550_000 })
+  const setupStop = await run({ ...setupWindow, windowExpiresAt: expires, signal })
+  assert.equal(setupStop.failedPhase, 'databaseSetup')
+  assert.deepEqual(setupWindow.calls, ['baseline', 'settings'])
+  assert.equal(setupStop.timeline.at(-1).state, 'NOT_DISPATCHED')
+})
+
+test('enabled Preview cannot start after earlier steps consume the shutdown reserve', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  const state = fixture({ clockStep: 210_000 })
+  const result = await run({ ...state, windowExpiresAt: expires, signal })
+  assert.equal(result.failedPhase, 'surfaceEnable')
+  assert.deepEqual(state.calls, PHASES.slice(0, PHASES.indexOf('surfaceEnable')))
+  assert.equal(result.timeline.at(-1).state, 'NOT_DISPATCHED')
 })
 
 test('incomplete operation map and expired window stop before any action', async () => {

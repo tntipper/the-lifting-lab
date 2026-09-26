@@ -23,7 +23,7 @@ export const REQUIRED_RESULTS = Object.freeze(Object.fromEntries(
 ))
 
 const CUSTOMER_PHASE = PHASES.indexOf('ownerJourney')
-const ACTIVATION_PHASE = PHASES.indexOf('providerEnable')
+const SETTINGS_PHASE = PHASES.indexOf('settings')
 const FINAL_PHASE = PHASES.indexOf('finalReadback')
 const MAX_WINDOW_MS = 60 * 60 * 1000
 const MIN_SHUTDOWN_RESERVE_MS = 15 * 60 * 1000
@@ -58,7 +58,7 @@ export async function rehearseStagingGeneration23WholeRun({ operations, now = Da
     const phase = PHASES[index]
     const before = now()
     if (!Number.isFinite(before) || before < lastTime || signal.aborted
-      || before >= expires || ([ACTIVATION_PHASE, CUSTOMER_PHASE].includes(index)
+      || before >= expires || (index >= SETTINGS_PHASE && index <= CUSTOMER_PHASE
         && expires - before < MIN_SHUTDOWN_RESERVE_MS)) {
       timeline.push(Object.freeze({ phase, state: 'NOT_DISPATCHED', atMs: before - startedAt }))
       return Object.freeze({ status: 'HOLD', failedPhase: phase,
