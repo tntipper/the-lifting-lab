@@ -117,6 +117,17 @@ test('failed residual-group stop cannot be reported as success', async () => {
   assert.equal((await pending).status, 'CHILD_EXIT_RECONCILIATION_REQUIRED')
 })
 
+test('a failed supervisor pipe cannot be reported as success', async () => {
+  const create = await armed(), worker = child()
+  const supervisor = create({ spawnWorker: () => worker, now, timeoutMs: 100,
+    killGroup() {} })
+  const pending = supervisor.supervise({ signal: new AbortController().signal })
+  worker.stdout.write(Buffer.from(JSON.stringify(terminal) + '\n'))
+  worker.bindingFault = true
+  worker.emit('close', 0, null)
+  assert.equal((await pending).status, 'CHILD_EXIT_RECONCILIATION_REQUIRED')
+})
+
 test('child ignoring TERM is KILLed as a group and parent waits for close', async () => {
   const create = await armed(), worker = child(), signals = []
   const supervisor = create({ spawnWorker: () => worker, now, timeoutMs: 5, termGraceMs: 5,

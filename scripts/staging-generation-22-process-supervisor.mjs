@@ -102,7 +102,8 @@ export function createStagingGeneration22ProcessSupervisor({ spawnWorker,
           let accepted = false
           const bytes = Buffer.concat(output, outputBytes)
           try {
-            if (!terminated && !outputUnsafe && code === 0 && exitSignal == null
+            if (!terminated && !outputUnsafe && child.bindingFault !== true
+              && code === 0 && exitSignal == null
               && withinTime) {
               const raw = bytes.toString('utf8').trim()
               const terminal = JSON.parse(raw)
