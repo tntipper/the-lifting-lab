@@ -1111,6 +1111,10 @@
         "sha256": "f3232acf3e748a893c23672d0b3d643b7c8f8e649097e679b876571ff3bc1931"
       },
       {
+        "path": "scripts/staging-generation-22-credentials.mjs",
+        "sha256": "cf74ac9a71b811c6bc85b0293b3746c271dd269849e286e7037ffe646d641196"
+      },
+      {
         "path": "app/api/staging/readiness/contract.ts",
         "sha256": "4e598ef4dd00e7e0574cfe4f981e735fb0962fa14d9225b64055b76b52d72233"
       },
@@ -1505,6 +1509,10 @@
       {
         "path": "tests/staging-generation-22-material.test.mjs",
         "sha256": "a7bccb7f97b249e3e8e89839efc5fd55be8961f2d62443546bb5f355317b2afe"
+      },
+      {
+        "path": "tests/staging-generation-22-credentials.test.mjs",
+        "sha256": "2e5386880ea7f2adc3c99dab45fe4f9dfabaecc69fcaef67bb6ba0e3a79a3326"
       },
       {
         "path": "tests/staging-readiness-route.test.mjs",
@@ -4203,7 +4211,7 @@
       },
       {
         "path": "scripts/staging-generation-21-retirement-preflight.mjs",
-        "sha256": "2165ce16b7980a81f23c0a8aba1521c0c1d41caccc5e42ec04c26c57f00d1c1b"
+        "sha256": "d269dd73d4415ab10920fb758516d2ded8a5603c98a1bf15fdbc84cc5c26542d"
       },
       {
         "path": "scripts/staging-generation-recovery-pin-contract.mjs",

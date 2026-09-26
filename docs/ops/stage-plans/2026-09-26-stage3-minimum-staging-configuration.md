@@ -1,5 +1,7 @@
 # Stage 3 — minimum configuration after the Preview inventory
 
+**26 September update:** The one-use Supabase baseline passed and is consumed. Generation 22's pure material mapping and disconnected SQL builder are present. An independent review blocked the first SQL draft; the off switch, exact migration hashes and private-permission checks have since been corrected and locally verified. No Generation 22 host write has happened. The remaining blocker is an exact result validator and tested way to retire the five roles after any partial or failed staging setup. Build those before any one-use launcher or request to enable this generation.
+
 ## What changed
 
 The one-use v2 Vercel inventory reached the correct project and found 20 of 37 required effective Preview setting names absent. The exact missing names are in [the observation](../evidence/2026-09-26-stage3-preview-environment-inventory-v2.md). Sixteen are new staging credentials: five restricted database passwords, eight customer vault fields, and three cart vault/HMAC fields. Four are customer/cart switches that must first be installed with **disabled** values. The already present broker client secret and Shopify confidential client secret must be preserved; the historical Generation 6–21 material/one-use windows must not be replayed. The Storefront token name exists but its secret classification is unproven and needs correction before an enabled build.
