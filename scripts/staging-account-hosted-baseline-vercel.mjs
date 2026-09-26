@@ -210,6 +210,18 @@ function environmentReceipt (value) {
   })
 }
 
+function environmentInventoryReceipt (value) {
+  environmentReceipt(value)
+  const seen = new Set()
+  const entries = value.envs.map(item => {
+    if (seen.has(item.key)) unavailable()
+    seen.add(item.key)
+    return Object.freeze({ key: item.key, type: item.type })
+  }).sort((left, right) => left.key.localeCompare(right.key))
+  return Object.freeze({ target: HOSTED_BASELINE_VERCEL_TARGET,
+    environment: 'preview', branch: STAGING_BRANCH, entries: Object.freeze(entries) })
+}
+
 /**
  * Return closed, read-only Vercel baseline operations. Every call accepts the
  * same caller-owned abort signal and can request only one fixed endpoint.
@@ -248,6 +260,7 @@ export function createStagingAccountHostedBaselineVercelBinding ({ fetch: fetche
   return Object.freeze({
     async readProject ({ signal } = {}) { return projectReceipt(await read(PROJECT_URL, signal)) },
     async readPreviewEnvironmentPresence ({ signal } = {}) { return environmentReceipt(await read(ENVIRONMENT_URL, signal)) },
+    async readPreviewEnvironmentInventory ({ signal } = {}) { return environmentInventoryReceipt(await read(ENVIRONMENT_URL, signal)) },
     async readBaseline ({ signal } = {}) {
       const project = projectReceipt(await read(PROJECT_URL, signal))
       const environment = environmentReceipt(await read(ENVIRONMENT_URL, signal))

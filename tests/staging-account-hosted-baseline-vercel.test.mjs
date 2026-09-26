@@ -56,6 +56,22 @@ test('environment evidence is presence-only and never includes provider values',
   assert.equal(absent.brokerSecretPresent, false)
 })
 
+test('complete preview inventory returns names and classifications but never values', async () => {
+  const calls = []
+  const result = await binding({ onFetch: url => calls.push(url) }).readPreviewEnvironmentInventory({ signal: new AbortController().signal })
+  assert.deepEqual(calls, [environmentUrl])
+  assert.deepEqual(result.entries, [
+    { key: BROKER_SECRET_NAME, type: 'encrypted' },
+    { key: 'UNRELATED_SAFE_NAME', type: 'plain' },
+  ].sort((left, right) => left.key.localeCompare(right.key)))
+  assert.doesNotMatch(JSON.stringify(result), /must-not-escape|also-not-returned|private-vercel-read-token/)
+  const duplicate = { envs: [envs().envs[0], envs().envs[0]], pagination: { next: null } }
+  await assert.rejects(binding({ bodyFor: () => duplicate }).readPreviewEnvironmentInventory({ signal: new AbortController().signal }),
+    new RegExp(HOSTED_BASELINE_VERCEL_ERROR))
+  await assert.rejects(binding({ bodyFor: () => ({ envs: [], pagination: { next: 'more' } }) }).readPreviewEnvironmentInventory({ signal: new AbortController().signal }),
+    new RegExp(HOSTED_BASELINE_VERCEL_ERROR))
+})
+
 test('target and repository identity drift fails before a receipt is returned', async () => {
   for (const mutate of [
     value => ({ ...value, id: 'prj_other' }), value => ({ ...value, name: 'other-project' }), value => ({ ...value, accountId: 'team_other' }),
