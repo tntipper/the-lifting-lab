@@ -1,8 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { EventEmitter } from 'node:events'
 import { readFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PassThrough } from 'node:stream'
 import { readStagingGeneration22Credential,
@@ -16,6 +19,21 @@ const scripts = new URL('../scripts/', import.meta.url)
 const root = fileURLToPath(new URL('../', import.meta.url))
 const supabase = `sbp_${'a'.repeat(40)}`
 const vercel = 'fixture-vercel-token'
+async function isolatedPythonHelper(t, securitySource) {
+  const directory = mkdtempSync(join(tmpdir(), 'tll-gen22-keychain-python-'))
+  t.after(() => rmSync(directory, { recursive: true, force: true }))
+  const securityPath = join(directory, 'synthetic-security')
+  const helperPath = join(directory, 'staging-generation-22-keychain.py')
+  writeFileSync(securityPath, securitySource, { mode: 0o700 })
+  chmodSync(securityPath, 0o700)
+  const source = await readFile(GENERATION_22_KEYCHAIN_HELPER, 'utf8')
+  assert.equal(source.includes('GENERATION_22_KEYCHAIN_ENABLED = False'), true)
+  assert.equal(source.includes('"/usr/bin/security"'), true)
+  writeFileSync(helperPath, source
+    .replace('GENERATION_22_KEYCHAIN_ENABLED = False', 'GENERATION_22_KEYCHAIN_ENABLED = True')
+    .replace('"/usr/bin/security"', JSON.stringify(securityPath)), { mode: 0o600 })
+  return helperPath
+}
 async function armed() {
   const source = (await readFile(new URL('staging-generation-22-keychain-reader.mjs', scripts), 'utf8'))
     .replace('export const STAGING_GENERATION_22_KEYCHAIN_READER_ENABLED = false',
@@ -54,6 +72,39 @@ test('both live gates reject before reading Keychain or spawning a helper', asyn
     assert.throws(() => execFileSync(GENERATION_22_PYTHON,
       ['-I', '-S', GENERATION_22_KEYCHAIN_HELPER, selector], { stdio: 'ignore', timeout: 2_000 }))
   }
+})
+
+test('isolated Python helper selects only the two exact Keychain items without opening Keychain', async t => {
+  const helper = await isolatedPythonHelper(t, `#!/bin/sh
+if [ "$1" != find-generic-password ] || [ "$2" != -w ] || [ "$3" != -s ] || [ "$5" != -a ]; then exit 9; fi
+if [ "$4" = 'Supabase CLI' ] && [ "$6" = supabase ]; then printf '%s' '${supabase}'; exit 0; fi
+if [ "$4" = 'TLL Hosted Baseline Vercel API' ] && [ "$6" = prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4 ]; then printf '%s' '${vercel}'; exit 0; fi
+exit 9
+`)
+  for (const [selector, expected] of [['supabase', supabase], ['vercel', vercel]]) {
+    const output = execFileSync(GENERATION_22_PYTHON, ['-I', '-S', helper, selector], {
+      encoding: 'utf8', timeout: 3_000,
+      env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
+    })
+    assert.equal(output, expected)
+  }
+  assert.throws(() => execFileSync(GENERATION_22_PYTHON, ['-I', '-S', helper, 'other'], {
+    stdio: 'pipe', timeout: 3_000,
+    env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
+  }))
+})
+
+test('isolated Python helper never returns malformed or failed command output', async t => {
+  const malformed = await isolatedPythonHelper(t, '#!/bin/sh\nprintf bad\n')
+  assert.throws(() => execFileSync(GENERATION_22_PYTHON, ['-I', '-S', malformed, 'supabase'], {
+    stdio: 'pipe', timeout: 3_000,
+    env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
+  }), error => error.status === 1 && error.stdout.length === 0 && error.stderr.length === 0)
+  const failed = await isolatedPythonHelper(t, '#!/bin/sh\nexit 7\n')
+  assert.throws(() => execFileSync(GENERATION_22_PYTHON, ['-I', '-S', failed, 'vercel'], {
+    stdio: 'pipe', timeout: 3_000,
+    env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
+  }), error => error.status === 1 && error.stdout.length === 0 && error.stderr.length === 0)
 })
 
 test('reader uses two fixed selectors, a minimal environment and returns owned buffers', async () => {

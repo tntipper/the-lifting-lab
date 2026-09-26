@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync,
+import { chmodSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync,
   writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -203,4 +203,75 @@ for (const [mode, expectedStatus, expectedSetup, expectedRecovery] of [
     `${childStderr}\nsetup=${setup.state}/${setup.pending} recovery=${recovery.state}/${recovery.pending}`)
   assert.equal(setup.state, expectedSetup)
   assert.equal(recovery.state, expectedRecovery)
+})
+
+for (const [secondToken, expectedSetup] of [
+  ['bad', null], ['fixture-vercel-token', 'HOLD'],
+]) test(`fixed CLI uses copied Python helper and stops safely with ${secondToken}`, async t => {
+  const fixture = isolatedSources(t)
+  const entryPath = join(fixture.directory, 'scripts', 'staging-generation-22-worker-entry.mjs')
+  const entry = readFileSync(entryPath, 'utf8')
+  assert.ok(entry.includes('export const STAGING_GENERATION_22_WORKER_CLI_ENABLED = false'))
+  writeFileSync(entryPath, entry.replace('export const STAGING_GENERATION_22_WORKER_CLI_ENABLED = false',
+    'export const STAGING_GENERATION_22_WORKER_CLI_ENABLED = true'))
+  const securityPath = join(fixture.directory, 'synthetic-security')
+  const marker = join(fixture.directory, 'synthetic-helper-calls.txt')
+  writeFileSync(securityPath, `#!/bin/sh
+if [ "$1" != find-generic-password ] || [ "$2" != -w ] || [ "$3" != -s ] || [ "$5" != -a ]; then exit 9; fi
+if [ "$4" = 'Supabase CLI' ] && [ "$6" = supabase ]; then
+  printf 'supabase\\n' >> ${JSON.stringify(marker)}
+  printf '%s' 'sbp_${'a'.repeat(40)}'
+  exit 0
+fi
+if [ "$4" = 'TLL Hosted Baseline Vercel API' ] && [ "$6" = prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4 ]; then
+  printf 'vercel\\n' >> ${JSON.stringify(marker)}
+  printf '%s' '${secondToken}'
+  exit 0
+fi
+exit 9
+`, { mode: 0o700 })
+  chmodSync(securityPath, 0o700)
+  const helperPath = join(fixture.directory, 'scripts', 'staging-generation-22-keychain.py')
+  const helper = readFileSync(helperPath, 'utf8')
+  assert.ok(helper.includes('GENERATION_22_KEYCHAIN_ENABLED = False'))
+  assert.ok(helper.includes('"/usr/bin/security"'))
+  writeFileSync(helperPath, helper
+    .replace('GENERATION_22_KEYCHAIN_ENABLED = False', 'GENERATION_22_KEYCHAIN_ENABLED = True')
+    .replace('"/usr/bin/security"', JSON.stringify(securityPath)))
+  const [{ createStagingGeneration22FixedSpawner: createSpawner,
+    GENERATION_22_WORKER_ARGS },
+  { createStagingGeneration22ProcessSupervisor: createSupervisor }] = await Promise.all([
+    import(pathToFileURL(join(fixture.directory, 'scripts',
+      'staging-generation-22-process-binding.mjs')).href),
+    import(pathToFileURL(join(fixture.directory, 'scripts',
+      'staging-generation-22-process-supervisor.mjs')).href),
+  ])
+  let workerPid
+  t.after(() => { if (workerPid) { try { process.kill(-workerPid, 'SIGKILL') } catch {} } })
+  const spawnWorker = createSpawner({ spawnProcess(executable, args, options) {
+    assert.equal(executable, process.execPath)
+    assert.deepEqual(args, GENERATION_22_WORKER_ARGS)
+    assert.equal(options.detached, true)
+    assert.deepEqual(options.env, { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' })
+    const child = spawn(executable,
+      [args[0], '--import', networkDeny, args[1]], options)
+    workerPid = child.pid
+    return child
+  } })
+  const supervisor = createSupervisor({ spawnWorker, timeoutMs: 10_000,
+    termGraceMs: 100 })
+  const result = await supervisor.supervise({ signal: new AbortController().signal })
+  assert.equal(result.status, 'CHILD_EXIT_RECONCILIATION_REQUIRED')
+  assert.equal(readFileSync(marker, 'utf8'), 'supabase\nvercel\n')
+  const setupPath = join(fixture.directory, 'implementation-state', 'staging',
+    'tll-generation-22-dispatch-v1.json')
+  if (expectedSetup === null) assert.equal(existsSync(setupPath), false)
+  else {
+    const setup = JSON.parse(readFileSync(setupPath, 'utf8'))
+    assert.equal(setup.state, expectedSetup)
+    assert.equal(setup.pending, 'DATABASE_CREDENTIALS')
+    const recovery = JSON.parse(readFileSync(join(fixture.directory, 'implementation-state',
+      'staging', 'tll-generation-22-recovery-dispatch-v1.json'), 'utf8'))
+    assert.equal(recovery.state, 'CLAIMED')
+  }
 })
