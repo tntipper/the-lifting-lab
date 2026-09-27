@@ -35,6 +35,7 @@ export async function stagingCartRoute(request: Request): Promise<Response> {
     const storefront = createStagingStorefront({ enabled: true, environment: 'staging', shop: STAGING_CART_SHOP,
       privateToken: process.env.TLL_STAGING_CART_STOREFRONT_TOKEN ?? '', transport: fetch, buyerIp })
     const handler = createCartHandler({ enabled: true, origin, hmacKeyHex,
+      checkoutHandoffEnabled: process.env.TLL_STAGING_CART_CHECKOUT_HANDOFF_ENABLED === 'true',
       service: createCartService({ repository, storefront, vault, context }),
       transition: createCartTransitionService({ repository: createCartTransitionRepository({ enabled: true, pool: database.pool }), vault, context }),
       currentActor: async () => {

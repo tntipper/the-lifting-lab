@@ -1,6 +1,6 @@
 # Staging guest and account cart acceptance slice
 
-This is an explicitly enabled, synthetic-only cart path. It adds opaque guest sessions, deterministic server-derived account sessions, server-side Storefront cart operations, an explicit guest-to-account decision, a responsive cart dialog/page, and gated actions in the header, product offer component and manual stack. It is not checkout, production commerce approval or a delivery quote. No checkout URL, customer token, buyer email, Shopify cart ID/key, database password or Storefront credential is returned to the browser.
+This is an explicitly enabled, synthetic-only cart path. It adds opaque guest sessions, deterministic server-derived account sessions, server-side Storefront cart operations, an explicit guest-to-account decision, a responsive cart dialog/page, and gated actions in the header, product offer component and manual stack. It is not production commerce approval or a delivery quote. Ordinary cart responses never return a checkout URL, customer token, buyer email, Shopify cart ID/key, database password or Storefront credential. A separate `checkout_handoff` action can return only a validated staging Shopify checkout address for a signed-in customer's own ready cart when its additional private switch is explicitly enabled; that switch is OFF by default, no shop button calls the action, and no order or payment submission is implemented.
 
 The one server-owned mapping is app fixture `40000000-0000-4000-8000-000000000001` to Shopify variant `57160491139412` / product `15768467472724`, only at `tll-integration-staging.myshopify.com`. The client supplies the app fixture ID and a desired quantity, never provider identity or price. Both the variant read and mutation response must confirm the exact IDs, availability, positive GBP unit price and consistent line/subtotal; foreign items, discounts, warnings, truncated lines, zero price and malformed results fail closed. This deliberately small test slice allows one line and quantities 0–5.
 
@@ -10,6 +10,7 @@ Ordinary production and synthetic preview behavior is unchanged when the UI flag
 
 - Public flags: `NEXT_PUBLIC_TLL_ENVIRONMENT=staging`, `NEXT_PUBLIC_TLL_STAGING_CART=enabled`.
 - Server flags: `TLL_STAGING_CART_ENABLED=true`, actual Vercel preview (`VERCEL=1`, `VERCEL_ENV=preview`).
+- `TLL_STAGING_CART_CHECKOUT_HANDOFF_ENABLED=true` is an additional, separate server-only switch for the checkout handoff action. Leave it absent/OFF outside a reviewed protected staging exercise.
 - `TLL_STAGING_CART_ORIGIN`: exact approved HTTPS deployment origin, and `TLL_STAGING_CART_SHOP`: the fixed synthetic shop.
 - `TLL_STAGING_SUPABASE_PROJECT_REF` / `NEXT_PUBLIC_SUPABASE_URL`: the explicitly approved staging project; production ref is rejected.
 - Distinct server-injected `TLL_STAGING_CART_VAULT_KEY_HEX` and `TLL_STAGING_CART_HMAC_KEY_HEX`, each a fresh 32-byte key, plus `TLL_STAGING_CART_VAULT_KEY_ID`.

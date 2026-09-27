@@ -172,7 +172,9 @@ function fixture(faults = {}) {
     },
   }
   const transition = transitions.createCartTransitionService({ repository: transitionRepository, vault, context: ['synthetic-project', sf.STAGING_CART_SHOP, ORIGIN] })
-  const handler = http.createCartHandler({ enabled: true, origin: ORIGIN, hmacKeyHex: HMAC, service, transition, currentActor: async () => { authReads++; return actor } })
+  const handler = http.createCartHandler({ enabled: true, origin: ORIGIN, hmacKeyHex: HMAC,
+    checkoutHandoffEnabled: faults.checkoutEnabled === true,
+    service, transition, currentActor: async () => { authReads++; return actor } })
   let cookie = '', view
   async function request(method = 'GET', body, headers = {}, rawCookie = cookie) {
     const response = await handler(new Request(ORIGIN + '/api/cart', { method, headers: { ...(rawCookie ? { cookie: rawCookie } : {}),
@@ -205,6 +207,37 @@ test('service releases only a current ready cart to the server-side staging hand
   await assert.rejects(f.service.checkoutHandoff(record.sessionHash, record.actorHash), svc.CartUnavailable)
   f.rows.get(record.sessionHash).phase = 'held'
   await assert.rejects(f.service.checkoutHandoff(record.sessionHash, record.actorHash), svc.CartUnavailable)
+})
+test('checkout handoff HTTP action requires a signed-in account and same-origin CSRF', async () => {
+  const disabled = fixture({ allowCheckout: true })
+  disabled.setActor(ACTOR); await disabled.open(); await disabled.set(1)
+  assert.equal((await disabled.request('POST', { action: 'checkout_handoff' })).response.status, 400)
+  assert.equal(disabled.calls.filter(call => call.query.includes('TllStagingCheckoutHandoff')).length, 0)
+
+  const guest = fixture({ allowCheckout: true, checkoutEnabled: true })
+  await guest.open(); await guest.set(1)
+  assert.equal((await guest.request('POST', { action: 'checkout_handoff' })).response.status, 400)
+  assert.equal(guest.calls.filter(call => call.query.includes('TllStagingCheckoutHandoff')).length, 0)
+
+  const transitioning = fixture({ allowCheckout: true, checkoutEnabled: true })
+  await transitioning.open(); await transitioning.set(1)
+  transitioning.setActor(ACTOR); await transitioning.request()
+  assert.equal((await transitioning.request('POST', { action: 'checkout_handoff' })).response.status, 400)
+  assert.equal(transitioning.calls.filter(call => call.query.includes('TllStagingCheckoutHandoff')).length, 0)
+
+  const account = fixture({ allowCheckout: true, checkoutEnabled: true })
+  account.setActor(ACTOR)
+  await account.open(); await account.set(1)
+  assert.equal((await account.request('POST', { action: 'checkout_handoff' },
+    { 'X-TLL-Cart-CSRF': 'b'.repeat(64) })).response.status, 403)
+  assert.equal(account.calls.filter(call => call.query.includes('TllStagingCheckoutHandoff')).length, 0)
+  await account.request()
+  const { response, view } = await account.request('POST', { action: 'checkout_handoff' })
+  assert.equal(response.status, 200)
+  assert.equal(view.checkoutUrl, `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123`)
+  assert.match(response.headers.get('cache-control'), /no-store/)
+  assert.equal(response.headers.get('referrer-policy'), 'no-referrer')
+  assert.equal(account.calls.filter(call => call.query.includes('TllStagingCheckoutHandoff')).length, 1)
 })
 
 /** App Router mount harness: same env/origin/project gates as stagingCartRoute, injectable verified account. */

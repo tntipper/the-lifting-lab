@@ -39,6 +39,7 @@ async function body(request: Request): Promise<Record<string, unknown> | null> {
 /** Route dependency injection is test-only code; request data cannot choose configuration or providers. */
 export function createCartHandler(options: {
   enabled: boolean; origin: string; hmacKeyHex: string; service: Service
+  checkoutHandoffEnabled?: boolean
   transition: Transition
   currentActor(request: Request): Promise<string | null>
 }) {
@@ -57,6 +58,7 @@ export function createCartHandler(options: {
         const validPost = input.action === 'open' && keys === 'action'
           || input.action === 'use_account' && keys === 'action'
           || input.action === 'transfer' && keys === 'action,revision' && Number.isSafeInteger(input.revision) && Number(input.revision) >= 0
+          || options.checkoutHandoffEnabled === true && input.action === 'checkout_handoff' && keys === 'action'
         if (!validPost) return respond(unavailable, 400)
       }
       const actor = await options.currentActor(request)
@@ -109,6 +111,14 @@ export function createCartHandler(options: {
         if (request.method === 'POST' && input.action === 'open' && Object.keys(input).length === 1) {
           const view = await options.service.open(accountSession, actorHash)
           return respond({ ...view, csrfToken: csrf(accountSession) }, 200)
+        }
+        if (request.method === 'POST' && input.action === 'checkout_handoff' && Object.keys(input).length === 1) {
+          if (!same(request.headers.get('x-tll-cart-csrf') ?? '', csrf(accountSession))) return respond(unavailable, 403)
+          const checkoutUrl = await options.service.checkoutHandoff(accountSession, actorHash)
+          return Response.json({ checkoutUrl }, { status: 200, headers: {
+            'Cache-Control': 'private, no-store', 'Vary': 'Cookie',
+            'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
+          } })
         }
         // Account carts use their server-derived session even without a browser cookie.
         if (!sessionHash && ['PATCH','DELETE'].includes(request.method)) {
