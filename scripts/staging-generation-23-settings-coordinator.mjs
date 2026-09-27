@@ -4,7 +4,7 @@ import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, READINESS_WINDOW_ID, PR
   clearStagingGeneration23Projection } from './staging-generation-23-password-material.mjs'
 import { OPERATION_IDS } from './staging-generation-23-settings-journal.mjs'
 
-export const STAGING_GENERATION_23_SETTINGS_COORDINATOR_ENABLED = false
+export const STAGING_GENERATION_23_SETTINGS_COORDINATOR_ENABLED = true
 const unavailable = () => { throw new Error('Generation 23 settings coordinator unavailable') }
 const PASSWORD = /^[A-Za-z0-9_-]{64}$/
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

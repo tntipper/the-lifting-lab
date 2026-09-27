@@ -1,7 +1,7 @@
 /** One held Preview built after settings, followed by fixed consumer reads. */
 import { STAGING_BRANCH, STAGING_SURFACE_TARGET } from './staging-surface-activation-transport.mjs'
 
-export const STAGING_GENERATION_23_CONSUMER_PROOF_ENABLED = false
+export const STAGING_GENERATION_23_CONSUMER_PROOF_ENABLED = true
 const unavailable = () => { throw Error('Generation 23 consumer proof unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')

@@ -18,7 +18,7 @@ import {
   STAGING_AUTH_URL,
 } from './staging-provider-broker-native-adapter.mjs'
 
-export const NATIVE_STAGING_PROVIDER_BROKER_BINDING_ENABLED = false
+export const NATIVE_STAGING_PROVIDER_BROKER_BINDING_ENABLED = true
 export const STAGING_PROVIDER_ROOT_URL = `https://${STAGING_PROJECT_REF}.supabase.co`
 
 const unavailable = () => { throw new Error('Staging provider native binding unavailable') }

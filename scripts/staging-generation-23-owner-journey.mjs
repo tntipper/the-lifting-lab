@@ -4,7 +4,7 @@ import { observeStagingCheckout } from './staging-generation-23-checkout-observe
 import { STAGING_ALIAS } from './staging-surface-activation-transport.mjs'
 import { STAGING_PROJECT_REF } from './staging-provider-broker-rotation.mjs'
 
-export const STAGING_GENERATION_23_OWNER_JOURNEY_ENABLED = false
+export const STAGING_GENERATION_23_OWNER_JOURNEY_ENABLED = true
 export const OWNER_EMAIL = 'toby@theliftinglab.co.uk'
 export const PRODUCT_ID = '40000000-0000-4000-8000-000000000001'
 const SHOP = 'tll-integration-staging.myshopify.com'

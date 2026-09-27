@@ -10,7 +10,7 @@ import { JOURNAL_PATH as WHOLE_ROUTE_JOURNAL_PATH } from './staging-generation-2
 import { STAGING_GENERATION_23_PROCESS_BINDING_ENABLED,
   runBoundedStagingGeneration23WholeWorker } from './staging-generation-23-process-binding.mjs'
 
-export const STAGING_GENERATION_23_LIVE_LAUNCHER_ENABLED = false
+export const STAGING_GENERATION_23_LIVE_LAUNCHER_ENABLED = true
 export const GENERATION_23_LAUNCH_BRANCH = 'codex/tll-integration'
 export const GENERATION_23_LAUNCH_MIN_REMAINING_MS = 45 * 60 * 1000
 const ROOT = resolve(import.meta.dirname, '..')

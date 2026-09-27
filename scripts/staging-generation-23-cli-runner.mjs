@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-export const STAGING_GENERATION_23_CLI_RUNNER_ENABLED = false
+export const STAGING_GENERATION_23_CLI_RUNNER_ENABLED = true
 export const STAGING_GENERATION_23_CLI_RUNNER_TIMEOUT_MS = 45_000
 export const STAGING_GENERATION_23_CLI_RUNNER_MAX_OUTPUT_BYTES = 16 * 1024
 

@@ -7,7 +7,7 @@ import { projectOfficialProviderSchema, STAGING_PROVIDER_NAME } from './staging-
 import { BROKER_CLIENT_ID, PROVIDER_IDENTIFIER, STAGING_BROKER_PROVIDER,
   STAGING_PROVIDER_TARGET, STAGING_PROJECT_REF } from './staging-provider-broker-rotation.mjs'
 
-export const STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED = false
+export const STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED = true
 export const PROVIDER_CONTROL_PATHS = Object.freeze({
   ENABLE: resolve(import.meta.dirname, '../../implementation-state/staging/tll-generation-23-provider-enable-v7.json'),
   DISABLE: resolve(import.meta.dirname, '../../implementation-state/staging/tll-generation-23-provider-disable-v7.json'),

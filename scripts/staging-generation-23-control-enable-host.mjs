@@ -2,7 +2,7 @@
 import { ACTIVE_WINDOW_EXPIRES_AT, WINDOW_ID } from './staging-generation-23-credentials.mjs'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_CONTROL_ENABLE_HOST_ENABLED = false
+export const STAGING_GENERATION_23_CONTROL_ENABLE_HOST_ENABLED = true
 const unavailable = () => { throw Error('Generation 23 control enable unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')

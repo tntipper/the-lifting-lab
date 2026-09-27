@@ -2,7 +2,7 @@
 import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from './staging-generation-23-password-material.mjs'
 import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
 
-export const STAGING_GENERATION_23_SETTINGS_READBACK_ENABLED = false
+export const STAGING_GENERATION_23_SETTINGS_READBACK_ENABLED = true
 const unavailable = () => { throw Error('Generation 23 settings readback unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')

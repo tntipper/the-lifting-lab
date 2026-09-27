@@ -2,7 +2,7 @@
 import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
 import { VERCEL_PASSWORD_NAMES } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_VERCEL_TARGETS_ENABLED = false
+export const STAGING_GENERATION_23_VERCEL_TARGETS_ENABLED = true
 const ID = /^[A-Za-z0-9_-]{4,128}$/
 const unavailable = () => { throw new Error('Generation 23 Vercel targets unavailable') }
 const preview = value => value === 'preview'

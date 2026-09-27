@@ -11,7 +11,7 @@ import * as fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { PHASES } from './staging-generation-23-whole-run.mjs'
 
-export const STAGING_GENERATION_23_WHOLE_ROUTE_JOURNAL_ENABLED = false
+export const STAGING_GENERATION_23_WHOLE_ROUTE_JOURNAL_ENABLED = true
 export const WHOLE_ROUTE_STAGING_TARGET = 'tll-stage3-protected-staging'
 export const JOURNAL_PATH = resolve(import.meta.dirname,
   '../../implementation-state/staging/tll-generation-23-whole-route-v7.json')

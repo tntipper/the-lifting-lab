@@ -1,7 +1,7 @@
 /** Disabled, injected-only replacement of the staging broker Edge password. */
 import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, READINESS_WINDOW_ID, PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_EDGE_REPLACER_ENABLED = false
+export const STAGING_GENERATION_23_EDGE_REPLACER_ENABLED = true
 const URL = `https://api.supabase.com/v1/projects/${PROJECT_REF}/secrets`
 const MAX_RESPONSE_BYTES = 65_536
 const unavailable = () => { throw new Error('Generation 23 Edge replacement unavailable') }

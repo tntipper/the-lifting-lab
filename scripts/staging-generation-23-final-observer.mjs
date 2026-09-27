@@ -2,7 +2,7 @@
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 import { QUERY_ID } from './staging-generation-23-final-check.mjs'
 
-export const STAGING_GENERATION_23_FINAL_OBSERVER_ENABLED = false
+export const STAGING_GENERATION_23_FINAL_OBSERVER_ENABLED = true
 const unavailable = () => { throw new Error('Generation 23 final observer unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')

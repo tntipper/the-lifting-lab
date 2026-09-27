@@ -4,7 +4,7 @@ import { buildStagingGeneration23FinalCheckSql,
   validateStagingGeneration23FinalCheck } from './staging-generation-23-final-check.mjs'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_FINAL_QUERY_ENABLED = false
+export const STAGING_GENERATION_23_FINAL_QUERY_ENABLED = true
 export const ENDPOINT = Object.freeze({ hostname: 'api.supabase.com',
   path: `/v1/projects/${PROJECT_REF}/database/query`, method: 'POST' })
 const MAX_RESPONSE_BYTES = 65_536

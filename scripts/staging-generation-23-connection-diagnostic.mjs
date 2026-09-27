@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 import { WINDOW_ID } from './staging-generation-23-credentials.mjs'
 
-export const STAGING_GENERATION_23_CONNECTION_DIAGNOSTIC_ENABLED = false
+export const STAGING_GENERATION_23_CONNECTION_DIAGNOSTIC_ENABLED = true
 export const CONNECTION_DIAGNOSTIC_PATH = resolve(import.meta.dirname,
   '../../implementation-state/staging/tll-generation-23-restricted-connections-v7.json')
 const SCHEMA = 'tll-generation-23-restricted-connection-diagnostic/v1'

@@ -18,7 +18,7 @@ import { validateStagingGeneration23FinalCheck } from './staging-generation-23-f
 import { readPinnedSupabaseCa } from './staging-supabase-ca.mjs'
 import { READINESS_WINDOW_ID } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_FIXED_DATABASE_PROVIDER_COMPONENTS_ENABLED = false
+export const STAGING_GENERATION_23_FIXED_DATABASE_PROVIDER_COMPONENTS_ENABLED = true
 const unavailable = () => { throw Error('Generation 23 fixed database/provider components unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')

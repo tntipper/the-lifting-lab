@@ -8,7 +8,7 @@ import {
   STAGING_SURFACE_TARGET,
 } from './staging-surface-activation-transport.mjs'
 
-export const NATIVE_SURFACE_ACTIVATION_ADAPTER_ENABLED = false
+export const NATIVE_SURFACE_ACTIVATION_ADAPTER_ENABLED = true
 export const VERCEL_PROJECT = 'the-lifting-lab'
 export const VERCEL_SCOPE = 'my-lifting-lab-s-projects'
 export const STAGING_EDGE_FUNCTION = 'customer-subject-broker'

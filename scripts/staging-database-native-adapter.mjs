@@ -7,7 +7,7 @@
 import { buildStagingControlActivationSql, PROJECT_REF, PRODUCTION_PROJECT_REF, validateControlActivationContext, validateStagingControlActivationReceipt } from './staging-control-activation.mjs'
 
 export { PROJECT_REF, PRODUCTION_PROJECT_REF }
-export const NATIVE_STAGING_CONTROL_ADAPTER_ENABLED = false
+export const NATIVE_STAGING_CONTROL_ADAPTER_ENABLED = true
 export const MANAGEMENT_ENDPOINT = Object.freeze({
   hostname: 'api.supabase.com',
   path: `/v1/projects/${PROJECT_REF}/database/query`,

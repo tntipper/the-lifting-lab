@@ -9,7 +9,7 @@ import { createStagingGeneration23ProtectedFetch } from './staging-generation-23
 import { CHECKOUT_SETTING_NAME } from './staging-generation-23-checkout-setting.mjs'
 import { HELD_SURFACE_FLAGS, MAX_FRESH_PREREQUISITE_MS, STAGING_ALIAS, STAGING_BRANCH, STAGING_SURFACE_TARGET } from './staging-surface-activation-transport.mjs'
 
-export const STAGING_GENERATION_23_FIXED_PREFLIGHT_ENABLED = false
+export const STAGING_GENERATION_23_FIXED_PREFLIGHT_ENABLED = true
 
 const unavailable = () => { throw Error('Generation 23 fixed preflight unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

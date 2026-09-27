@@ -20,9 +20,9 @@ import {
   VERCEL_TEAM_ID,
 } from './staging-surface-activation-native-binding.mjs'
 
-export const HOSTED_BASELINE_SURFACE_BINDING_ENABLED = false
+export const HOSTED_BASELINE_SURFACE_BINDING_ENABLED = true
 export const HOSTED_BASELINE_SURFACE_ERROR = 'Staging hosted baseline surface binding unavailable'
-export const PREVIEW_SOURCE_READBACK_ENABLED = false
+export const PREVIEW_SOURCE_READBACK_ENABLED = true
 export const HOSTED_BASELINE_SURFACE_TARGET = Object.freeze({
   projectRef: STAGING_PROJECT_REF,
   productionProjectRef: PRODUCTION_PROJECT_REF,

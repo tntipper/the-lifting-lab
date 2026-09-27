@@ -6,7 +6,7 @@ import { createStagingPreviewDeploymentPost } from './staging-surface-preview-de
 import { createStagingPreviewDeploymentVerifier } from './staging-surface-preview-deployment-verifier.mjs'
 import { createStagingPreviewProtectionProbe } from './staging-surface-preview-protection-probe.mjs'
 
-export const STAGING_PREVIEW_DEPLOYMENT_WORKER_ENABLED = false
+export const STAGING_PREVIEW_DEPLOYMENT_WORKER_ENABLED = true
 const unavailable = () => { throw new Error('Staging Preview deployment worker unavailable') }
 const pendingStop = stopWorkerGroup => { try { stopWorkerGroup() } catch {}; return new Promise(() => {}) }
 const wipe = value => {

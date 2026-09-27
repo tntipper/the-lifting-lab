@@ -17,7 +17,7 @@ import { enableStagingSurfaces, freezeStagingSurfaces, readOnlyHeldStagingSurfac
   STAGING_SURFACE_TARGET } from './staging-surface-activation-transport.mjs'
 import { runStagingGeneration23OwnerJourney } from './staging-generation-23-owner-journey.mjs'
 
-export const STAGING_GENERATION_23_SURFACE_FACTORY_ENABLED = false
+export const STAGING_GENERATION_23_SURFACE_FACTORY_ENABLED = true
 export const STAGING_GENERATION_23_SHOPIFY_VARIANT_ID = 'gid://shopify/ProductVariant/57160491139412'
 const unavailable = () => { throw Error('Generation 23 surface factory unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
