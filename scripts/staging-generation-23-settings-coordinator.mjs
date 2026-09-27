@@ -1,6 +1,6 @@
 /** Disabled composition of five exact-ID replacements and one matching Edge value. */
 import { createHash } from 'node:crypto'
-import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES,
+import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, READINESS_WINDOW_ID, PROJECT_REF, VERCEL_PASSWORD_NAMES,
   clearStagingGeneration23Projection } from './staging-generation-23-password-material.mjs'
 import { OPERATION_IDS } from './staging-generation-23-settings-journal.mjs'
 
@@ -16,10 +16,12 @@ function validInputs(targets, projection) {
     && targets.every((value, index) => value?.name === VERCEL_PASSWORD_NAMES[index])
     && exact(projection, ['vercel', 'supabase'])
     && exact(projection.vercel, VERCEL_PASSWORD_NAMES)
-    && exact(projection.supabase, [EDGE_PASSWORD_NAME])
+    && exact(projection.supabase, [EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME])
     && Object.values(projection.vercel).every(value => typeof value === 'string' && PASSWORD.test(value))
     && new Set(Object.values(projection.vercel)).size === VERCEL_PASSWORD_NAMES.length
     && projection.supabase[EDGE_PASSWORD_NAME] === projection.vercel[EDGE_PASSWORD_NAME]
+    && typeof projection.supabase[EDGE_READINESS_WINDOW_NAME] === 'string'
+    && projection.supabase[EDGE_READINESS_WINDOW_NAME].startsWith(`${READINESS_WINDOW_ID}|`)
 }
 
 /** Takes ownership of projection and erases its values before returning. */
@@ -62,6 +64,13 @@ export function createStagingGeneration23SettingsCoordinator({ journal, makeRepl
         if (!exact(receipt, ['status', 'name', 'projectRef']) || receipt.status !== 'STAGED'
           || receipt.name !== EDGE_PASSWORD_NAME || receipt.projectRef !== PROJECT_REF) unavailable()
         current = journal.confirm(current, digest(receipt))
+        if (signal.aborted || Date.parse(expiresAt) <= now()) unavailable()
+        current = journal.dispatch(current, OPERATION_IDS[6])
+        const gate = await edgeHost.stageSecret({ name: EDGE_READINESS_WINDOW_NAME,
+          value: projection.supabase[EDGE_READINESS_WINDOW_NAME], signal })
+        if (!exact(gate, ['status', 'name', 'projectRef']) || gate.status !== 'STAGED'
+          || gate.name !== EDGE_READINESS_WINDOW_NAME || gate.projectRef !== PROJECT_REF) unavailable()
+        current = journal.confirm(current, digest(gate))
         if (current.state !== 'FINISHED' || current.nextIndex !== OPERATION_IDS.length) unavailable()
         return Object.freeze({ status: 'SETTINGS_REPLACED_UNVERIFIED', operationCount: OPERATION_IDS.length })
       } catch {

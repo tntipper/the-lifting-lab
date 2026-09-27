@@ -19,7 +19,7 @@ const phaseResult = (value, expected) => value && typeof value === 'object' && !
   && value.status === expected
 const required = Object.freeze([
   'readBaseline', 'replaceSettings', 'readSettings', 'setupDatabase',
-  'proveRestrictedConnections', 'enableProvider', 'enableDatabase',
+  'proveRestrictedConnections', 'proveConsumers', 'enableProvider', 'enableDatabase',
   'enableSurface', 'runOwnerJourney', 'disableDatabase', 'disableProvider',
   'freezeSurface', 'retireDatabase', 'readFinal',
 ])
@@ -43,6 +43,7 @@ export function createStagingGeneration23HostedAssembly({ adapters, runWhole,
 
   let used = false
   let enabledSurface
+  let heldConsumerSurface
   const invoke = async (name, input, expected) => {
     if (input.signal.aborted) unavailable()
     const result = await adapters[name](Object.freeze(input))
@@ -70,6 +71,12 @@ export function createStagingGeneration23HostedAssembly({ adapters, runWhole,
       await invoke('proveRestrictedConnections', input, 'PASS_RESTRICTED_CONNECTIONS')
       return Object.freeze({ status: 'PASS_RESTRICTEDCONNECTIONS' })
     },
+    async consumerReadiness(input) {
+      const result = await invoke('proveConsumers', input, 'CONSUMERS_READY_VERIFIED')
+      if (!result.deployment || typeof result.deployment !== 'object') unavailable()
+      heldConsumerSurface = result.deployment
+      return Object.freeze({ status: 'PASS_CONSUMERREADINESS' })
+    },
     async providerEnable(input) {
       await invoke('enableProvider', input, 'PROVIDER_ENABLED_VERIFIED')
       return Object.freeze({ status: 'PASS_PROVIDERENABLE' })
@@ -79,12 +86,15 @@ export function createStagingGeneration23HostedAssembly({ adapters, runWhole,
       return Object.freeze({ status: 'PASS_DATABASEENABLE' })
     },
     async surfaceEnable(input) {
-      const result = await invoke('enableSurface', input, 'SURFACES_ENABLED_VERIFIED')
+      if (!heldConsumerSurface) unavailable()
+      const result = await invoke('enableSurface', Object.freeze({ ...input,
+        heldEvidence: heldConsumerSurface }), 'SURFACES_ENABLED_VERIFIED')
       // Keep the immutable deployment identity only in memory.  It is passed
       // to the browser guard and then to the OFF deployment; no alias may be
       // substituted halfway through a customer test.
       if (!result.deployment || typeof result.deployment !== 'object') unavailable()
       enabledSurface = result.deployment
+      heldConsumerSurface = undefined
       return Object.freeze({ status: 'PASS_SURFACEENABLE' })
     },
     async ownerJourney(input) {
@@ -114,6 +124,7 @@ export function createStagingGeneration23HostedAssembly({ adapters, runWhole,
     async finalReadback(input) {
       await invoke('readFinal', input, 'FINAL_HELD_VERIFIED')
       enabledSurface = undefined
+      heldConsumerSurface = undefined
       return Object.freeze({ status: 'PASS_FINALREADBACK' })
     },
   })
@@ -132,8 +143,9 @@ export function createStagingGeneration23HostedAssembly({ adapters, runWhole,
         // later call could accidentally reuse.  Durable state is in the ports'
         // journals and must be reconciled separately.
         enabledSurface = undefined
+        heldConsumerSurface = undefined
       }
     },
-    dispose() { enabledSurface = undefined },
+    dispose() { enabledSurface = undefined; heldConsumerSurface = undefined },
   })
 }

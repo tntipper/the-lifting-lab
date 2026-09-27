@@ -48,7 +48,7 @@ test('backend receipt accepts a valid session count and rejects drift', async ()
   const api = await armed()
   const expected = { status: 'PASS_BACKEND_OFF', queryId: api.QUERY_ID,
     projectRef: PROJECT_REF, generation: 23,
-    windowId: 'f1688d28-70fa-42d1-bdda-9f1489ee4470', expiresAt,
+    windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe', expiresAt,
     controlsEnabled: false, runtimeSessions: 1 }
   const rows = [{ tll_generation_23_backend_state: expected }]
   const result = api.validateStagingGeneration23BackendState(rows, { expiresAt })

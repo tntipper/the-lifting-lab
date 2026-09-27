@@ -16,6 +16,7 @@ import { createStagingGeneration23FinalJournal } from './staging-generation-23-f
 import { postStagingGeneration23FinalCheck } from './staging-generation-23-final-query.mjs'
 import { validateStagingGeneration23FinalCheck } from './staging-generation-23-final-check.mjs'
 import { readPinnedSupabaseCa } from './staging-supabase-ca.mjs'
+import { READINESS_WINDOW_ID } from './staging-generation-23-password-material.mjs'
 
 export const STAGING_GENERATION_23_FIXED_DATABASE_PROVIDER_COMPONENTS_ENABLED = false
 const unavailable = () => { throw Error('Generation 23 fixed database/provider components unavailable') }
@@ -24,16 +25,28 @@ const exact = (value, keys) => value && typeof value === 'object' && !Array.isAr
 const token = value => Buffer.isBuffer(value) && value.length >= 16 && value.length <= 512
   && /^sbp_(?:oauth_|v0_)?[a-f0-9]{40}$/.test(value.toString('utf8'))
 const signalOk = signal => signal && !signal.aborted && typeof signal.addEventListener === 'function'
+const bounded = (promise, signal) => {
+  if (signal.aborted) return Promise.reject(Error('Broker read timed out'))
+  return new Promise((resolve, reject) => {
+    const abort = () => { signal.removeEventListener('abort', abort); reject(Error('Broker read timed out')) }
+    signal.addEventListener('abort', abort, { once: true })
+    Promise.resolve(promise).then(value => { signal.removeEventListener('abort', abort);
+      if (signal.aborted && Buffer.isBuffer(value)) value.fill(0)
+      resolve(value) },
+      error => { signal.removeEventListener('abort', abort); reject(error) })
+  })
+}
 
 /**
  * All defaults are the fixed, guarded modules. `factories` exists solely for
  * local tests; it cannot supply a different project, endpoint or SQL package.
  */
-export function createStagingGeneration23FixedDatabaseProviderComponents({ credentials, sourceCommit,
+export function createStagingGeneration23FixedDatabaseProviderComponents({ credentials, sourceCommit, expiresAt,
   fetch: fetcher, factories = {}, request = https.request } = {}) {
   if (!STAGING_GENERATION_23_FIXED_DATABASE_PROVIDER_COMPONENTS_ENABLED
     || !exact(credentials, ['managementToken', 'vercelToken', 'previewBypass'])
     || typeof sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(sourceCommit)
+    || typeof expiresAt !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.000Z$/.test(expiresAt)
     || !token(credentials.managementToken) || typeof fetcher !== 'function' || typeof request !== 'function'
     || !factories || typeof factories !== 'object' || Array.isArray(factories)) unavailable()
   const make = (name, fallback) => factories[name] ?? fallback
@@ -83,6 +96,48 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       projectSecret?.fill?.(0); binding?.dispose?.()
     }
   }
+  const readBrokerState = async ({ signal, expected }) => {
+    requireLive(signal)
+    const binding = makeSupabase({ fetch: fetcher, managementToken })
+    let projectSecret
+    const controller = new AbortController()
+    const abort = () => controller.abort()
+    signal.addEventListener('abort', abort, { once: true })
+    const timer = setTimeout(abort, 10_000)
+    try {
+      projectSecret = await bounded(binding.readProjectSecret({ signal: controller.signal }), controller.signal)
+      if (!Buffer.isBuffer(projectSecret) || projectSecret.length < 32 || controller.signal.aborted) unavailable()
+      const url = 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness'
+      const response = await bounded(fetcher(url, Object.freeze({ method: 'GET', redirect: 'error', cache: 'no-store',
+        headers: Object.freeze({ authorization: `Bearer ${projectSecret.toString('utf8')}`,
+          apikey: projectSecret.toString('utf8'), accept: 'application/json', 'accept-encoding': 'identity' }),
+        signal: controller.signal })), controller.signal)
+      if (controller.signal.aborted || response?.status !== (expected === 'PASS' ? 200 : 404) || response.redirected === true
+        || response.url && response.url !== url
+        || !/^application\/json(?:;|$)/i.test(response.headers?.get?.('content-type') ?? '')
+        || response.headers?.get?.('content-encoding') && response.headers.get('content-encoding') !== 'identity'
+        || !response.body || typeof response.body.getReader !== 'function') unavailable()
+      const reader = response.body.getReader()
+      let bytes = Buffer.alloc(0)
+      try {
+        while (true) {
+          const chunk = await bounded(reader.read(), controller.signal)
+          if (controller.signal.aborted || !chunk || typeof chunk.done !== 'boolean') unavailable()
+          if (chunk.done) break
+          if (!(chunk.value instanceof Uint8Array) || bytes.length + chunk.value.length > 256) unavailable()
+          const next = Buffer.concat([bytes, chunk.value]); bytes.fill(0); chunk.value.fill?.(0); bytes = next
+        }
+        const value = JSON.parse(bytes.toString('utf8'))
+        if (expected === 'PASS' ? (!exact(value, ['status', 'windowId', 'expiresAt'])
+          || value.status !== 'PASS' || value.windowId !== READINESS_WINDOW_ID || value.expiresAt !== expiresAt)
+          : (!exact(value, ['status']) || value.status !== 'held')) unavailable()
+        return Object.freeze({ status: expected })
+      } finally { bytes.fill(0); try { void reader.cancel().catch(() => {}) } catch {}; try { reader.releaseLock() } catch {} }
+    } catch { unavailable() } finally {
+      clearTimeout(timer); signal.removeEventListener('abort', abort); controller.abort()
+      projectSecret?.fill?.(0); binding?.dispose?.()
+    }
+  }
   return Object.freeze({
     components: Object.freeze({
       databaseSetup: { run: input => makeDatabaseHost({ action: 'SETUP', journal: makeJournal({ action: 'SETUP' }), post }).run(input) },
@@ -111,6 +166,8 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
         } }).run(input)
       } },
       providerEnable: ({ signal, expiresAt }) => withProvider({ action: 'ENABLE', signal, expiresAt }),
+      readBrokerConsumer: ({ signal }) => readBrokerState({ signal, expected: 'PASS' }),
+      readBrokerHeld: ({ signal }) => readBrokerState({ signal, expected: 'HELD' }),
       providerDisable: ({ signal, expiresAt }) => withProvider({ action: 'DISABLE', signal, expiresAt }),
       readBackendState: ({ signal, expiresAt }) => backendState({ signal, expiresAt }),
       readRetiredState: async ({ signal } = {}) => {

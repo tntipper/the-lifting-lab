@@ -18,6 +18,10 @@ import { createStagingGeneration23CheckoutSettingJournal } from './staging-gener
 import { createStagingPreviewDeploymentJournal } from './staging-surface-preview-deployment-journal.mjs'
 import { createSurfaceActivationJournal } from './staging-surface-activation-transport.mjs'
 import { createStagingGeneration23VariantReadinessReader } from './staging-generation-23-variant-readiness-reader.mjs'
+import { createStagingGeneration23ConsumerProof } from './staging-generation-23-consumer-proof.mjs'
+import { createStagingGeneration23BrokerGateRetire } from './staging-generation-23-broker-gate-retire.mjs'
+import { createStagingGeneration23ProtectedFetch } from './staging-generation-23-protected-fetch.mjs'
+import { createStagingSurfaceNativeBinding } from './staging-surface-activation-native-binding.mjs'
 import { createStagingBoundedExecutor } from './staging-bounded-executor.mjs'
 import { runStagingPreviewDeploymentWorker } from './staging-surface-preview-deployment-worker.mjs'
 import { STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_MAX_MS } from './staging-generation-23-restricted-connections.mjs'
@@ -117,6 +121,10 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
   const makePreviewJournal = make('createPreviewJournal', createStagingPreviewDeploymentJournal)
   const makeSurfaceJournal = make('createSurfaceJournal', createSurfaceActivationJournal)
   const makeVariantReader = make('createVariantReader', createStagingGeneration23VariantReadinessReader)
+  const makeConsumerProof = make('createConsumerProof', createStagingGeneration23ConsumerProof)
+  const makeGateRetire = make('createGateRetire', createStagingGeneration23BrokerGateRetire)
+  const makeProtectedFetch = make('createProtectedFetch', createStagingGeneration23ProtectedFetch)
+  const makeNativeBinding = make('createNativeBinding', createStagingSurfaceNativeBinding)
   const makeExecutor = make('createExecutor', createStagingBoundedExecutor)
   const runWhole = make('runWhole', rehearseStagingGeneration23WholeRun)
   const runPreviewWorker = make('runPreviewWorker', runStagingPreviewDeploymentWorker)
@@ -130,23 +138,24 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
   const journals = Object.freeze({
     whole: requireJournal(makeWholeJournal(), ['claim', 'dispatch', 'verify', 'ownerFailure', 'skipOwner', 'hold', 'holdBeforeDispatch', 'read']),
     settings: requireJournal(makeSettingsJournal(), ['claim', 'dispatch', 'confirm', 'hold', 'read']),
-    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v6.json` }), ['read', 'recordIntent', 'transition']),
-    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v6.json` }), ['read', 'recordIntent', 'transition']),
+    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v7.json` }), ['read', 'recordIntent', 'transition']),
+    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v7.json` }), ['read', 'recordIntent', 'transition']),
+    consumerPreview: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-consumer-v7.json` }), ['read', 'claim']),
     checkoutEnable: requireJournal(makeCheckoutJournal({ action: 'ENABLE' }), ['read', 'recordIntent', 'transition']),
     checkoutFreeze: requireJournal(makeCheckoutJournal({ action: 'FREEZE' }), ['read', 'recordIntent', 'transition']),
-    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v6.json` }), ['read', 'claim']),
-    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v6.json` }), ['read', 'claim']),
+    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v7.json` }), ['read', 'claim']),
+    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v7.json` }), ['read', 'claim']),
   })
   if (journals.previewEnabled === journals.previewHeld || journals.enableSurface === journals.freezeSurface) unavailable()
 
-  let hosted, database, surface, variant, core, disposed = false
+  let hosted, database, surface, variant, gateRetire, core, disposed = false
   const dispose = () => {
     if (disposed) return
     disposed = true
     try { core?.dispose?.() } finally {
       try { surface?.dispose?.() } finally {
         try { variant?.dispose?.() } finally {
-          try { database?.dispose?.() } finally { hosted?.dispose?.() }
+          try { database?.dispose?.() } finally { try { gateRetire?.dispose?.() } finally { hosted?.dispose?.() } }
         }
       }
     }
@@ -155,11 +164,14 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
     const expectedDeployment = Object.freeze({ deploymentId: preflight.heldEvidence.deploymentId,
       immutableUrl: preflight.heldEvidence.immutableUrl, gitSourceCommit: preflight.heldEvidence.sourceCommit })
     hosted = makeHosted({ credentials, fetch: fetcher, expiresAt, expectedDeployment, settingsJournal: journals.settings })
-    database = makeDatabase({ credentials, sourceCommit: preflight.requirements.sourceCommit, fetch: fetcher })
+    database = makeDatabase({ credentials, sourceCommit: preflight.requirements.sourceCommit, expiresAt, fetch: fetcher })
+    gateRetire = makeGateRetire({ token: credentials.managementToken, fetch: fetcher,
+      readNames: input => hosted.ports.readEdgeNamesForRetire(input) })
     variant = makeVariantReader({ fetch: fetcher, bypass: credentials.previewBypass,
       deploymentId: preflight.heldEvidence.deploymentId, immutableUrl: preflight.heldEvidence.immutableUrl })
     const execute = makeExecutor()
-    if (!hosted?.ports || typeof hosted.getDatabaseMaterial !== 'function' || typeof hosted.dispose !== 'function'
+    if (!hosted?.ports || typeof hosted.ports.readEdgeNamesForRetire !== 'function'
+      || typeof hosted.getDatabaseMaterial !== 'function' || typeof hosted.dispose !== 'function'
       || !database?.components || typeof database.dispose !== 'function' || !variant || typeof variant.read !== 'function'
       || typeof variant.dispose !== 'function' || typeof execute !== 'function') unavailable()
     const runPreviewBuild = async ({ input, journal, signal } = {}) => {
@@ -173,6 +185,25 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
       return runPreviewWorker({ input, journal, acquireCredentials, fetch: fetcher,
         runCli, stopWorkerGroup, signal })
     }
+    const readConsumerDeployment = async (target, deploymentId, { signal }) => {
+      const binding = makeNativeBinding({ runCli, fetch: fetcher, vercelToken: credentials.vercelToken })
+      const identity = await binding.readDeployment(target, deploymentId, { signal })
+      return Object.freeze({ target, ...identity })
+    }
+    const readWebsiteConsumer = async (identity, { signal }) => {
+      const reader = makeProtectedFetch({ fetch: fetcher, bypass: credentials.previewBypass,
+        immutableUrl: identity.immutableUrl, maxReads: 1 })
+      try {
+        const response = await reader.fetch(`${identity.immutableUrl}/api/staging/consumer-readiness`, {
+          method: 'GET', redirect: 'error', headers: { 'x-tll-deployment-id': identity.deploymentId }, signal })
+        if (response.status !== 200 || !/^application\/json(?:;|$)/i.test(response.headers.get('content-type') ?? '')) unavailable()
+        return response.json()
+      } finally { reader.dispose() }
+    }
+    const consumerProof = makeConsumerProof({ journal: journals.consumerPreview,
+      runBuild: runPreviewBuild, readDeployment: readConsumerDeployment,
+      readWebsite: readWebsiteConsumer,
+      readEdge: input => database.components.readBrokerConsumer(input) })
     surface = makeSurface({ credentials: Object.freeze({ vercelToken: credentials.vercelToken, previewBypass: credentials.previewBypass }),
       fetch: fetcher, runCli, execute, preflight,
       preview: Object.freeze({ enabledJournal: journals.previewEnabled, heldJournal: journals.previewHeld, runBuild: runPreviewBuild }),
@@ -198,6 +229,8 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
           now() + STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_MAX_MS - 1000)).toISOString()
         return database.components.restrictedConnections.prove({ expiresAt, deadlineAt, passwords: material.passwords, signal })
       },
+      proveConsumers: ({ signal }) => consumerProof.prove({ sourceCommit: preflight.requirements.sourceCommit,
+        manifestSha256: preflight.requirements.manifestSha256, signal }),
       enableProvider: ({ signal }) => database.components.providerEnable({ expiresAt, signal }),
       enableDatabase: ({ signal, phaseDeadlineAt }) => database.components.controlsEnable.run({ expiresAt, deadlineAt: phaseDeadlineAt, signal }),
       enableSurface: input => surface.ports.enableSurface(input),
@@ -213,7 +246,11 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
           signal, deadlineAt: phaseDeadlineAt, now,
         })
         if (!drained) return Object.freeze({ status: 'SESSION_DRAIN_HOLD' })
-        return database.components.databaseRetire.run({ expiresAt, deadlineAt: phaseDeadlineAt, signal })
+        const retired = await database.components.databaseRetire.run({ expiresAt, deadlineAt: phaseDeadlineAt, signal })
+        if (retired?.status !== 'RETIREMENT_VERIFIED') return retired
+        const gate = await gateRetire.retire({ signal })
+        if (gate?.status !== 'BROKER_GATE_RETIRED_VERIFIED') unavailable()
+        return retired
       },
       async readFinal({ signal }) {
         const result = await database.components.readRetiredState({ signal })
@@ -223,12 +260,14 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
         if (result?.status !== 'PASS_FINAL_RETIRED') unavailable()
         const provider = await hosted.ports.readFinalProvider({ signal })
         if (provider?.status !== 'FINAL_PROVIDER_DISABLED_VERIFIED') unavailable()
+        const broker = await database.components.readBrokerHeld({ signal })
+        if (broker?.status !== 'HELD') unavailable()
         const heldSurface = await surface.ports.readFinalSurface({ signal })
         if (heldSurface?.status !== 'FINAL_SURFACES_HELD_VERIFIED') unavailable()
         return Object.freeze({ status: 'FINAL_HELD_VERIFIED' })
       },
     })
-    const needed = ['readBaseline', 'replaceSettings', 'readSettings', 'setupDatabase', 'proveRestrictedConnections',
+    const needed = ['readBaseline', 'replaceSettings', 'readSettings', 'setupDatabase', 'proveRestrictedConnections', 'proveConsumers',
       'enableProvider', 'enableDatabase', 'enableSurface', 'runOwnerJourney', 'disableDatabase', 'disableProvider',
       'freezeSurface', 'retireDatabase', 'readFinal']
     if (needed.some(name => typeof ports[name] !== 'function')) unavailable()

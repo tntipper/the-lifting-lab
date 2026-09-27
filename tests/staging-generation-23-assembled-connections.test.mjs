@@ -87,7 +87,9 @@ function fakeRuntime({ expiresAt, failAt, events }) {
         const attempt = (attempts.get(purpose) ?? 0) + 1
         attempts.set(purpose, attempt)
         events.push(`connect:${purpose}:${attempt}`)
-        if (failAt === `${purpose}:connect_both` || (failAt === `${purpose}:connect_first` && attempt === 1))
+        if (failAt === `${purpose}:connect_both`
+          || (failAt === `${purpose}:connect_first` && attempt === 1)
+          || (failAt === `${purpose}:connect_after_wrong` && attempt >= 2))
           throw Object.assign(Error(`SYNTHETIC_PRIVATE ${password}`), { code: '28P01' })
         return client
       },
@@ -146,7 +148,8 @@ test('actual connection wrapper, verifier and durable journal pass with delayed 
   assert.equal(record.state, 'PASS')
   assert.equal(record.step, 'complete')
   assert.equal(events.filter(value => value.startsWith('wrong:')).length, 5)
-  assert.equal(events.filter(value => value.startsWith('close:')).length, 5)
+  assert.equal(events.filter(value => value.startsWith('close:')).length, 10)
+  assert.equal(events.filter(value => value.startsWith('customer:identity')).length, 2)
 })
 
 test('a network fault cannot count as a permission denial and preserves role/check', async () => {
@@ -176,6 +179,17 @@ test('two authentication rejections cannot become a successful connection proof'
   })
   assert.equal(events.filter(value => value.startsWith('wrong:')).length, 0)
   assert.doesNotMatch(JSON.stringify(record), /SYNTHETIC_PRIVATE|[A-E]{32}/)
+})
+
+test('a pooler rejection after the wrong-password checks holds before activation', async () => {
+  const { record, events } = await exercise('broker:connect_after_wrong')
+  assert.equal(record.state, 'HOLD')
+  assert.equal(record.outcome, 'final_good_failed')
+  assert.equal(record.purpose, 'broker')
+  assert.equal(record.check, 'connect_retry')
+  assert.equal(events.filter(value => value.startsWith('wrong:')).length, 5)
+  assert.equal(record.connectionEvidence?.first?.category, 'authentication')
+  assert.equal(record.connectionEvidence?.second?.category, 'authentication')
 })
 
 test('a diagnostic write failure stops before password and later activation checks', async () => {

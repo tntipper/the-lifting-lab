@@ -108,7 +108,7 @@ test('adapter forwards the exact expiry to the fixed provider controls', async (
   const providerCalls = []
   const receipt = status => ({ status, receiptSha256: 'a'.repeat(64) })
   const fixed = createFixed({
-    sourceCommit: 'a'.repeat(40),
+    sourceCommit: 'a'.repeat(40), expiresAt,
     credentials: { managementToken: Buffer.from(`sbp_${'a'.repeat(40)}`), vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') },
     fetch: async () => { throw Error('not called') },
     factories: {

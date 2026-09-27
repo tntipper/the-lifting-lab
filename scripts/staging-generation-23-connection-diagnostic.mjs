@@ -7,14 +7,14 @@ import { WINDOW_ID } from './staging-generation-23-credentials.mjs'
 
 export const STAGING_GENERATION_23_CONNECTION_DIAGNOSTIC_ENABLED = false
 export const CONNECTION_DIAGNOSTIC_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-generation-23-restricted-connections-v6.json')
+  '../../implementation-state/staging/tll-generation-23-restricted-connections-v7.json')
 const SCHEMA = 'tll-generation-23-restricted-connection-diagnostic/v1'
 const PURPOSES = new Set([null, 'customer', 'cart', 'broker', 'provisional', 'bridge'])
 const PURPOSE_ORDER = ['customer', 'cart', 'broker', 'provisional', 'bridge']
-const STEPS = new Set(['correct_roles', 'wrong_password', 'drain', 'cleanup', 'complete'])
+const STEPS = new Set(['correct_roles', 'wrong_password', 'final_good', 'drain', 'cleanup', 'complete'])
 const CHECKS = new Set([null, 'input', 'factory', 'connect', 'connect_wait', 'factory_retry',
   'connect_retry', 'identity', 'membership', 'matrix', 'own_probe', 'table_denial', 'release', 'close'])
-const OUTCOMES = new Set([null, 'correct_role_failed', 'wrong_password_failed',
+const OUTCOMES = new Set([null, 'correct_role_failed', 'wrong_password_failed', 'final_good_failed',
   'sessions_remain', 'drain_read_failed', 'deadline', 'cancelled', 'cleanup_failed', 'unavailable'])
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 const CONNECTION_FIELDS = ['operation', 'category', 'code', 'elapsed']
@@ -48,7 +48,7 @@ function validate(value) {
     || !CHECKS.has(value.check) || !OUTCOMES.has(value.outcome)
     || (Object.hasOwn(value, 'connectionEvidence') && !connectionEvidence(value.connectionEvidence))
     || (value.connectionEvidence !== undefined && value.connectionEvidence !== null
-      && (value.state !== 'HOLD' || value.outcome !== 'correct_role_failed'))
+      && (value.state !== 'HOLD' || !['correct_role_failed', 'final_good_failed'].includes(value.outcome)))
     || (value.state === 'CLAIMED' && (value.sequence !== 0 || value.step !== 'correct_roles'
       || value.purpose !== null || value.check !== null || value.outcome !== null))
     || (value.state === 'RUNNING' && (value.sequence < 1 || value.outcome !== null))
@@ -129,9 +129,13 @@ export function createStagingGeneration23ConnectionDiagnostic({ path = CONNECTIO
           || (previous.step === 'wrong_password'
             && PURPOSE_ORDER.indexOf(purpose) !== PURPOSE_ORDER.indexOf(previous.purpose) + 1)
           || !['correct_roles', 'wrong_password'].includes(previous.step)) unavailable()
+      } else if (step === 'final_good') {
+        if (!PURPOSE_ORDER.includes(purpose) || previous?.state !== 'RUNNING'
+          || !(previous.step === 'wrong_password' && previous.purpose === 'bridge'
+            || previous.step === 'final_good')) unavailable()
       } else if (step === 'drain') {
         if (purpose !== null || check !== null || previous?.state !== 'RUNNING'
-          || !(previous.step === 'wrong_password' && previous.purpose === 'bridge'
+          || !(previous.step === 'final_good' && previous.purpose === 'bridge'
             || previous.step === 'drain')) unavailable()
       } else if (step === 'cleanup') {
         if (purpose !== null || check !== null || previous?.state !== 'RUNNING'
@@ -146,7 +150,8 @@ export function createStagingGeneration23ConnectionDiagnostic({ path = CONNECTIO
     },
     hold(previous, { outcome, purpose = null, check = null, connectionEvidence: evidence = null }) {
       if (outcome === null || !OUTCOMES.has(outcome) || !PURPOSES.has(purpose) || !CHECKS.has(check)
-        || !connectionEvidence(evidence) || (evidence !== null && outcome !== 'correct_role_failed')) unavailable()
+        || !connectionEvidence(evidence)
+        || (evidence !== null && !['correct_role_failed', 'final_good_failed'].includes(outcome))) unavailable()
       return update(previous, { state: 'HOLD', outcome, purpose, check, connectionEvidence: evidence })
     },
   })

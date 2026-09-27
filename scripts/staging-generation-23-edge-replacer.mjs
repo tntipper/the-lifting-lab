@@ -1,5 +1,5 @@
 /** Disabled, injected-only replacement of the staging broker Edge password. */
-import { EDGE_PASSWORD_NAME, PROJECT_REF } from './staging-generation-23-password-material.mjs'
+import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, READINESS_WINDOW_ID, PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
 export const STAGING_GENERATION_23_EDGE_REPLACER_ENABLED = false
 const URL = `https://api.supabase.com/v1/projects/${PROJECT_REF}/secrets`
@@ -56,13 +56,15 @@ export function createStagingGeneration23EdgeReplacer({ fetch: fetcher, token, e
     || Date.parse(expiresAt) <= now() || Date.parse(expiresAt) - now() > 3_600_000
     || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 20_000) unavailable()
   const ownedToken = Buffer.from(token)
-  let used = false, disposed = false
+  let next = 0, disposed = false
   return Object.freeze({
     async stageSecret({ name, value, signal } = {}) {
-      if (used || disposed || name !== EDGE_PASSWORD_NAME || typeof value !== 'string'
-        || !/^[A-Za-z0-9_-]{64}$/.test(value) || !signal || signal.aborted
+      if (next >= 2 || disposed || name !== [EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME][next]
+        || typeof value !== 'string' || (next === 0 ? !/^[A-Za-z0-9_-]{64}$/.test(value)
+          : value !== `${READINESS_WINDOW_ID}|${new Date(Date.parse(expiresAt) - 3_600_000).toISOString()}|${expiresAt}`)
+        || !signal || signal.aborted
         || typeof signal.addEventListener !== 'function' || now() >= Date.parse(expiresAt)) unavailable()
-      used = true
+      next += 1
       const body = Buffer.from(JSON.stringify([{ name, value }]))
       const controller = new AbortController()
       const abort = () => controller.abort()

@@ -37,9 +37,9 @@ test('settings record is unavailable in ordinary source', () => {
   assert.throws(() => createStagingGeneration23SettingsJournal(), /unavailable/)
 })
 
-test('one claim records five exact Vercel IDs and Edge in order without a password', async () => {
+test('one claim records five exact Vercel IDs and two Edge writes in order without a password', async () => {
   const { journal, path, OPERATION_IDS } = await fixture()
-  assert.equal(OPERATION_IDS.length, 6)
+  assert.equal(OPERATION_IDS.length, 7)
   assert.deepEqual(OPERATION_IDS.slice(0, 5), names.map(name => `VERCEL_PATCH:${name}`))
   let current = journal.claim(targets, expiresAt)
   assert.equal(statSync(path).mode & 0o777, 0o600)
@@ -51,11 +51,11 @@ test('one claim records five exact Vercel IDs and Edge in order without a passwo
     current = journal.confirm(current, digest)
   }
   assert.equal(current.state, 'FINISHED')
-  assert.equal(current.nextIndex, 6)
+  assert.equal(current.nextIndex, 7)
   assert.throws(() => journal.dispatch(current, OPERATION_IDS[0]), /unavailable/)
   const raw = readFileSync(path, 'utf8')
   assert.doesNotMatch(raw, /Bearer|"value"|"secret"|"password"/i)
-  assert.equal(JSON.parse(raw).receiptDigests.length, 6)
+  assert.equal(JSON.parse(raw).receiptDigests.length, 7)
 })
 
 test('a dispatched or failed setting cannot be sent again after interruption', async () => {

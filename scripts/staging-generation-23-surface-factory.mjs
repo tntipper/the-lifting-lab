@@ -201,19 +201,22 @@ export function createStagingGeneration23SurfaceFactory({ credentials, fetch: fe
 
     return Object.freeze({
       ports: Object.freeze({
-        async enableSurface({ signal } = {}) {
+        async enableSurface({ signal, heldEvidence: verifiedHeld } = {}) {
           requireLive(signal)
-          if (enabled || frozen) unavailable()
+          if (enabled || frozen || !heldEvidence(verifiedHeld, preflight.requirements)
+            || verifiedHeld.deploymentId === preflight.heldEvidence.deploymentId
+            || verifiedHeld.immutableUrl === preflight.heldEvidence.immutableUrl
+            || Date.parse(verifiedHeld.createdAt) <= Date.parse(preflight.heldEvidence.createdAt)) unavailable()
           // This exact Shopify read happens before any customer-facing switch.
           // A stale RRP can therefore stop the window before it becomes visible.
           cachedPrice = checkedPrice(await readVariantPrice({ variantId: STAGING_GENERATION_23_SHOPIFY_VARIANT_ID, signal }), now())
           // Settings and restricted-login checks can legitimately take more
           // than five minutes. Refresh the pinned held build before the first
           // checkout or customer-facing setting changes.
-          const currentRequirements = await refreshPinnedRequirements(preflight.heldEvidence, signal)
+          const currentRequirements = await refreshPinnedRequirements(verifiedHeld, signal)
           const checkout = await checkoutChange('ENABLE', journals.checkoutEnable, signal)
           if (checkout?.status !== 'CHECKOUT_SETTING_ENABLED_VERIFIED') return Object.freeze({ status: 'HOLD_RECONCILIATION_REQUIRED' })
-          const result = await enable({ ports, heldEvidence: preflight.heldEvidence,
+          const result = await enable({ ports, heldEvidence: verifiedHeld,
             requirements: currentRequirements, journal: journals.enableSurface, now })
           if (result?.status !== 'SURFACES_ENABLED_VERIFIED' || !deployment(result.deployment)) return result
           await checkoutRuntime(result.deployment, true, signal)

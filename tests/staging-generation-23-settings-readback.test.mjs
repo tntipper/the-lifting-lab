@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
-import { EDGE_PASSWORD_NAME, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
+import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
 
 const source = await readFile(new URL('../scripts/staging-generation-23-settings-readback.mjs', import.meta.url), 'utf8')
 const scripts = new URL('../scripts/', import.meta.url)
@@ -15,10 +15,10 @@ const targets = VERCEL_PASSWORD_NAMES.map((name, index) => ({ name, id: `env_gen
   branch: 'codex/tll-integration', target: 'preview', classification: 'sensitive' }))
 const signal = new AbortController().signal
 
-test('six setting writes require a matching value-free Vercel and Edge readback', async () => {
+test('seven setting writes require a matching value-free Vercel and Edge readback', async () => {
   const proof = createStagingGeneration23SettingsReadback({
     readVercelTargets: async () => targets.map(item => ({ ...item })),
-    readEdgeNames: async () => ['OTHER_STAGING_NAME', EDGE_PASSWORD_NAME],
+    readEdgeNames: async () => ['OTHER_STAGING_NAME', EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME],
   })
   assert.deepEqual(await proof.prove({ expectedTargets: targets, signal }), {
     status: 'SETTINGS_METADATA_VERIFIED', projectRef: 'qdmvngjwkcsilzmqksme',

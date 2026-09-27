@@ -46,7 +46,7 @@ test('final proof validator rejects a predecessor-shaped or changed receipt', as
   const final = await armed()
   const receipt = { status: 'PASS_FINAL_RETIRED', queryId: 'tll-staging-generation-23-final-check/v1',
     projectRef: 'qdmvngjwkcsilzmqksme', generation: 23,
-    windowId: 'f1688d28-70fa-42d1-bdda-9f1489ee4470', expiresAt,
+    windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe', expiresAt,
     controlsEnabled: false, runtimeCount: 5, runtimeSessions: 0 }
   assert.equal(final.validateStagingGeneration23FinalCheck([{ tll_generation_23_final_check: receipt }]).status,
     'PASS_FINAL_RETIRED')

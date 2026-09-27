@@ -15,30 +15,32 @@ export const GENERATION_23_LAUNCH_BRANCH = 'codex/tll-integration'
 export const GENERATION_23_LAUNCH_MIN_REMAINING_MS = 45 * 60 * 1000
 const ROOT = resolve(import.meta.dirname, '..')
 const STATE = resolve(ROOT, '../implementation-state/staging')
-export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v5.json'
-export const GENERATION_23_PRIOR_HOLD_SHA256 = 'b807f755ab1b8e85803a9d72f39f60071016f05ae5a222aaccfd97afdb31c3b6'
-export const GENERATION_23_PRIOR_RETIRE_NAME = 'tll-gen23-v5-incident-retire.json'
-export const GENERATION_23_PRIOR_RETIRE_SHA256 = '9200d98254ec97ef0954394faa9956ab75e9bd0e7e0d48f015389809b0f9e92a'
+export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v6.json'
+export const GENERATION_23_PRIOR_HOLD_SHA256 = 'd646bf50984d4b1671fd6eb6b08401707c63825925106932d09a89831f0f03e9'
+export const GENERATION_23_PRIOR_RETIRE_NAME = 'tll-gen23-v6-incident-retire.json'
+export const GENERATION_23_PRIOR_RETIRE_SHA256 = '26cf8f779bca57656a1b7b344b2b0d958fa4e94a35ce603749096d4aad0191e6'
 // Each of these is a one-use record owned by a fixed Gen23 component. A
 // previous or uncertain attempt closes this entry before any credential read.
 export const GENERATION_23_LAUNCH_RECORD_NAMES = Object.freeze([
-  'tll-generation-23-whole-route-v6.json',
-  'tll-generation-23-predecessor-read-v6.json',
-  'tll-generation-23-database-setup-v6.json',
-  'tll-generation-23-database-activate-v6.json',
-  'tll-generation-23-database-shutdown-v6.json',
-  'tll-generation-23-database-retire-v6.json',
-  'tll-generation-23-provider-enable-v6.json',
-  'tll-generation-23-provider-disable-v6.json',
-  'tll-generation-23-settings-v6.json',
-  'tll-generation-23-surface-enable-v6.json',
-  'tll-generation-23-surface-freeze-v6.json',
-  'tll-generation-23-checkout-enable-v6.json',
-  'tll-generation-23-checkout-freeze-v6.json',
-  'tll-generation-23-preview-enabled-v6.json',
-  'tll-generation-23-preview-held-v6.json',
-  'tll-generation-23-final-read-v6.json',
-  'tll-generation-23-restricted-connections-v6.json',
+  'tll-generation-23-whole-route-v7.json',
+  'tll-generation-23-predecessor-read-v7.json',
+  'tll-generation-23-database-setup-v7.json',
+  'tll-generation-23-database-activate-v7.json',
+  'tll-generation-23-database-shutdown-v7.json',
+  'tll-generation-23-database-retire-v7.json',
+  'tll-generation-23-provider-enable-v7.json',
+  'tll-generation-23-provider-disable-v7.json',
+  'tll-generation-23-settings-v7.json',
+  'tll-generation-23-surface-enable-v7.json',
+  'tll-generation-23-surface-freeze-v7.json',
+  'tll-generation-23-checkout-enable-v7.json',
+  'tll-generation-23-checkout-freeze-v7.json',
+  'tll-generation-23-preview-enabled-v7.json',
+  'tll-generation-23-preview-held-v7.json',
+  'tll-generation-23-preview-consumer-v7.json',
+  'tll-generation-23-broker-gate-retire-v7.json',
+  'tll-generation-23-final-read-v7.json',
+  'tll-generation-23-restricted-connections-v7.json',
 ])
 const result = status => Object.freeze({ status })
 let used = false
@@ -64,7 +66,7 @@ function recordsUnused() {
     } catch { return false }
   }
   for (const name of GENERATION_23_LAUNCH_RECORD_NAMES) {
-    if (!name.endsWith('-v6.json')) return false
+    if (!name.endsWith('-v7.json')) return false
     try { lstatSync(resolve(STATE, name)); return false }
     catch (error) { if (error?.code !== 'ENOENT') return false }
   }

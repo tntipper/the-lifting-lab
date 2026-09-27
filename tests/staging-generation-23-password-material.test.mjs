@@ -3,13 +3,14 @@ import assert from 'node:assert/strict'
 import { deriveScramVerifier } from '../scripts/staging-generation-6-transport.mjs'
 import {
   STAGING_GENERATION_23_PASSWORD_MATERIAL_ENABLED, GENERATION, PROJECT_REF,
-  VERCEL_PASSWORD_NAMES, EDGE_PASSWORD_NAME, generateStagingGeneration23Passwords,
+  VERCEL_PASSWORD_NAMES, EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, generateStagingGeneration23Passwords,
   eraseStagingGeneration23Passwords, projectStagingGeneration23Passwords,
   clearStagingGeneration23Projection, deriveStagingGeneration23Verifiers,
 } from '../scripts/staging-generation-23-password-material.mjs'
 
 const purposes = ['customer', 'cart', 'broker', 'provisional', 'bridge']
 const fixture = () => { let byte = 1; return { randomBytes: size => Buffer.alloc(size, byte++) } }
+const window = { expiresAt: '2026-09-27T22:00:00.000Z', now: () => Date.parse('2026-09-27T21:30:00.000Z') }
 
 test('replacement scope is only five database passwords, with all host access off', () => {
   assert.equal(STAGING_GENERATION_23_PASSWORD_MATERIAL_ENABLED, false)
@@ -22,9 +23,9 @@ test('replacement scope is only five database passwords, with all host access of
 
 test('five distinct values project to Vercel and one equal broker Edge value, then erase', () => {
   const passwords = generateStagingGeneration23Passwords(fixture())
-  const projection = projectStagingGeneration23Passwords(passwords)
+  const projection = projectStagingGeneration23Passwords(passwords, window)
   assert.deepEqual(Object.keys(projection.vercel).sort(), VERCEL_PASSWORD_NAMES)
-  assert.deepEqual(Object.keys(projection.supabase), [EDGE_PASSWORD_NAME])
+  assert.deepEqual(Object.keys(projection.supabase), [EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME])
   assert.equal(projection.supabase[EDGE_PASSWORD_NAME], projection.vercel[EDGE_PASSWORD_NAME])
   assert.equal(new Set(Object.values(projection.vercel)).size, 5)
   clearStagingGeneration23Projection(projection)
@@ -53,7 +54,7 @@ test('partial and duplicate generation fail, wiping all owned buffers', () => {
 
 test('verifiers derive from hosted password text and reject an Edge mismatch', () => {
   const passwords = generateStagingGeneration23Passwords(fixture())
-  const projection = projectStagingGeneration23Passwords(passwords)
+  const projection = projectStagingGeneration23Passwords(passwords, window)
   let saltNo = 1
   const verifiers = deriveStagingGeneration23Verifiers(projection,
     { randomBytes: size => Buffer.alloc(size, saltNo++) })

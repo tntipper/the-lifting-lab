@@ -19,7 +19,7 @@ test('the entire networkless Gen23 route finishes under one parent process limit
       assert.equal(result.code, 0)
       const receipt = JSON.parse(result.output.toString('utf8'))
       assert.equal(receipt.status, 'PASS_PARTIAL_LOCAL_COMPOSITE')
-      assert.equal(receipt.phaseCount, 12)
+      assert.equal(receipt.phaseCount, 13)
       assert.equal(receipt.previewWorker, 'real_worker_local_http_two_one_use_journals')
       assert.equal(receipt.hostedPreview, 'not_tested')
       assert.equal(receipt.purchase, 'none')

@@ -83,18 +83,18 @@ test('five correct roles and five wrong passwords are proved and every runtime c
   assert.deepEqual(await proof.prove({ passwords, expiresAt, deadlineAt, signal: new AbortController().signal }), {
     status: 'PASS_RESTRICTED_CONNECTIONS', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5, controlsEnabled: false,
   })
-  assert.equal(calls.length, 1)
+  assert.equal(calls.length, 2)
   assert.equal(calls[0].requireClassifiedDenials, true)
   assert.equal(calls[0].classifyQueryError, classifyQueryError)
   const created = events.filter(event => event.kind === 'create')
-  assert.equal(created.length, 5)
+  assert.equal(created.length, 10)
   for (const purpose of purposes) {
     const correct = created.find(event => event.purpose === purpose && event.password === passwords[purpose])
     const wrong = wrongPasswordCalls.find(event => event.purpose === purpose)
     assert.ok(correct); assert.ok(wrong); assert.match(wrong.password, /^[A-Za-z0-9_-]{64}$/)
     assert.notEqual(wrong.password, passwords[purpose])
   }
-  assert.equal(events.filter(event => event.kind === 'close').length, 5)
+  assert.equal(events.filter(event => event.kind === 'close').length, 10)
   await assert.rejects(proof.prove({ passwords, expiresAt, deadlineAt, signal: new AbortController().signal }), /unavailable/)
 })
 

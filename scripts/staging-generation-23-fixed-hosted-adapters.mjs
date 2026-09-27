@@ -16,7 +16,7 @@ import { createStagingGeneration23EdgeReplacer } from './staging-generation-23-e
 import { createStagingGeneration23SettingsCoordinator } from './staging-generation-23-settings-coordinator.mjs'
 import { createStagingGeneration23SettingsReadback } from './staging-generation-23-settings-readback.mjs'
 import { generateStagingGeneration23Passwords, projectStagingGeneration23Passwords,
-  deriveStagingGeneration23Verifiers, eraseStagingGeneration23Passwords, EDGE_PASSWORD_NAME } from './staging-generation-23-password-material.mjs'
+  deriveStagingGeneration23Verifiers, eraseStagingGeneration23Passwords, EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME } from './staging-generation-23-password-material.mjs'
 import { postStagingGeneration23PredecessorCheck } from './staging-generation-23-predecessor-query.mjs'
 import { validateStagingGeneration23PredecessorCheck } from './staging-generation-23-predecessor-check.mjs'
 import { projectOfficialStagingProvider } from './staging-provider-broker-native-adapter.mjs'
@@ -137,7 +137,8 @@ export function createStagingGeneration23FixedHostedAdapters({ credentials, fetc
           // retained this Edge setting. Gen23 replaces its value in the
           // supervised window, so its single existing name is the baseline.
           if (!Array.isArray(edgeNames) || edgeNames.filter(name => name === BROKER_SECRET_NAME).length !== 1
-            || edgeNames.filter(name => name === EDGE_PASSWORD_NAME).length !== 1) unavailable()
+            || edgeNames.filter(name => name === EDGE_PASSWORD_NAME).length !== 1
+            || edgeNames.includes(EDGE_READINESS_WINDOW_NAME)) unavailable()
           if (!previewPresence || previewPresence.environment !== 'preview' || previewPresence.branch !== STAGING_BRANCH
             || previewPresence.brokerSecretPresent !== true) unavailable()
           // Vercel can report a Git-linked project as `sourceless: true`.
@@ -163,7 +164,7 @@ export function createStagingGeneration23FixedHostedAdapters({ credentials, fetc
         passwords = generateStagingGeneration23Passwords()
         let projection
         try {
-          projection = projectStagingGeneration23Passwords(passwords)
+          projection = projectStagingGeneration23Passwords(passwords, { expiresAt })
           verifiers = deriveStagingGeneration23Verifiers(projection)
           targets = await withInventory(reader => reader.readTargets({ signal }))
           const edgeHost = makeEdge({ fetch: fetcher, token: credentials.managementToken, expiresAt })
@@ -191,6 +192,10 @@ export function createStagingGeneration23FixedHostedAdapters({ credentials, fetc
         if (!result || result.status !== 'SETTINGS_METADATA_VERIFIED') unavailable()
         return Object.freeze({ status: 'SETTINGS_METADATA_VERIFIED' })
       },
+      async readEdgeNamesForRetire({ signal } = {}) {
+        requireLive(signal)
+        return readEdgeNames(signal)
+      },
       async readFinalProvider({ signal } = {}) {
         requireLive(signal)
         const binding = makeSupabase({ fetch: fetcher, managementToken: credentials.managementToken })
@@ -203,7 +208,8 @@ export function createStagingGeneration23FixedHostedAdapters({ credentials, fetc
           ])
           projectOfficialStagingProvider(provider)
           if (!Array.isArray(names) || names.filter(name => name === BROKER_SECRET_NAME).length !== 1
-            || names.filter(name => name === EDGE_PASSWORD_NAME).length !== 1) unavailable()
+            || names.filter(name => name === EDGE_PASSWORD_NAME).length !== 1
+            || names.includes(EDGE_READINESS_WINDOW_NAME)) unavailable()
           return Object.freeze({ status: 'FINAL_PROVIDER_DISABLED_VERIFIED' })
         } finally { binding.dispose() }
       },

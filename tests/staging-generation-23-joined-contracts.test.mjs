@@ -8,7 +8,7 @@ import { EDGE_PASSWORD_NAME } from '../scripts/staging-generation-23-password-ma
 
 const scripts = new URL('../scripts/', import.meta.url)
 const encode = value => `data:text/javascript;base64,${Buffer.from(value).toString('base64')}`
-const expiresAt = '2099-01-01T00:00:00.000Z'
+const expiresAt = new Date(Math.ceil(Date.now() / 1000) * 1000 + 45 * 60_000).toISOString()
 const signal = new AbortController().signal
 const credentials = () => ({ managementToken: Buffer.from(`sbp_${'a'.repeat(40)}`),
   vercelToken: Buffer.from('vercel-test-token'), previewBypass: Buffer.from('bypass-test-token') })
@@ -91,11 +91,11 @@ test('hosted password projection, database material and restricted login proof u
       },
       verifyDrained: async () => ({ status: 'PASS_DRAINED', projectRef: 'qdmvngjwkcsilzmqksme',
         purposes: 5, controlsEnabled: false, runtimeSessions: 0 }),
-      now: () => Date.parse('2098-12-31T23:57:00.000Z'),
+      now: () => Date.parse(expiresAt) - 3 * 60_000,
     })
     assert.equal((await proof.prove({ passwords: material.passwords, expiresAt,
-      deadlineAt: '2098-12-31T23:59:00.000Z', signal })).status, 'PASS_RESTRICTED_CONNECTIONS')
-    assert.deepEqual(accepted.sort(), [...PASSWORD_PURPOSES].sort())
+      deadlineAt: new Date(Date.parse(expiresAt) - 60_000).toISOString(), signal })).status, 'PASS_RESTRICTED_CONNECTIONS')
+    assert.deepEqual(accepted.sort(), [...PASSWORD_PURPOSES, ...PASSWORD_PURPOSES].sort())
     assert.equal(diagnosticEvents.at(-1), 'PASS')
   } finally { adapter.dispose() }
   assert.throws(() => adapter.getDatabaseMaterial(), /unavailable/)
@@ -117,7 +117,7 @@ test('backend read receipt projects only the fields accepted by the fixed provid
   const backend = await import(backendUrl)
   const receipt = { status: 'PASS_BACKEND_OFF', queryId: backend.QUERY_ID,
     projectRef: 'qdmvngjwkcsilzmqksme', generation: 23,
-    windowId: 'f1688d28-70fa-42d1-bdda-9f1489ee4470', expiresAt,
+    windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe', expiresAt,
     controlsEnabled: false, runtimeSessions: 0 }
   const validated = backend.validateStagingGeneration23BackendState(
     [{ tll_generation_23_backend_state: receipt }], { expiresAt })
@@ -134,7 +134,7 @@ test('backend read receipt projects only the fields accepted by the fixed provid
     source => source.replace(`from '${scripts.href}staging-generation-23-backend-state.mjs'`,
       `from '${backendUrl}'`))
   const bound = fixed.createStagingGeneration23FixedDatabaseProviderComponents({
-    credentials: credentials(), sourceCommit: 'a'.repeat(40),
+    credentials: credentials(), sourceCommit: 'a'.repeat(40), expiresAt,
     fetch: async () => assert.fail('network must not run'),
     factories: {
       createSupabase: () => ({ async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {} }),

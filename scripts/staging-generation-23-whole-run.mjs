@@ -8,6 +8,7 @@ export const PHASES = Object.freeze([
   'settings',
   'databaseSetup',
   'restrictedConnections',
+  'consumerReadiness',
   'providerEnable',
   'databaseEnable',
   'surfaceEnable',
@@ -32,7 +33,7 @@ const unavailable = () => { throw new Error('Generation 23 whole-run rehearsal u
 
 function classifyFailure(index, wasDispatched) {
   if (!wasDispatched && index === 0) return 'CHECK_STARTING_STATE'
-  if (index <= 3) return 'READ_ONLY_RECONCILIATION'
+  if (index <= PHASES.indexOf('consumerReadiness')) return 'READ_ONLY_RECONCILIATION'
   if (index <= CUSTOMER_PHASE) return 'RECONCILE_ENABLED_SURFACES_THEN_SHUT_DOWN'
   return 'RECONCILE_SHUTDOWN_BEFORE_RETRY'
 }

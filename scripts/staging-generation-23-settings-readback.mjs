@@ -1,5 +1,5 @@
 /** Disabled value-free metadata readback after the six Gen23 setting writes. */
-import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from './staging-generation-23-password-material.mjs'
+import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from './staging-generation-23-password-material.mjs'
 import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
 
 export const STAGING_GENERATION_23_SETTINGS_READBACK_ENABLED = false
@@ -30,7 +30,8 @@ export function createStagingGeneration23SettingsReadback({ readVercelTargets, r
       if (signal.aborted || !Array.isArray(edgeNames) || edgeNames.length > 4096
         || edgeNames.some(name => typeof name !== 'string' || !/^[A-Z][A-Z0-9_]{0,255}$/.test(name))
         || new Set(edgeNames).size !== edgeNames.length
-        || edgeNames.filter(name => name === EDGE_PASSWORD_NAME).length !== 1) unavailable()
+        || edgeNames.filter(name => name === EDGE_PASSWORD_NAME).length !== 1
+        || edgeNames.filter(name => name === EDGE_READINESS_WINDOW_NAME).length !== 1) unavailable()
       return Object.freeze({ status: 'SETTINGS_METADATA_VERIFIED', projectRef: PROJECT_REF,
         branch: HOSTED_BASELINE_VERCEL_TARGET.branch, vercelCount: observed.length,
         edgeNamePresent: true, valuesReadable: false })

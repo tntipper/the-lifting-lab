@@ -27,6 +27,9 @@
     "scripts/staging-generation-23-backend-state.mjs": [
       "STAGING_GENERATION_23_BACKEND_STATE_ENABLED"
     ],
+    "scripts/staging-generation-23-broker-gate-retire.mjs": [
+      "STAGING_GENERATION_23_BROKER_GATE_RETIRE_ENABLED"
+    ],
     "scripts/staging-generation-23-checkout-observer.mjs": [
       "STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED"
     ],
@@ -50,6 +53,9 @@
     ],
     "scripts/staging-generation-23-control-shutdown.mjs": [
       "STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED"
+    ],
+    "scripts/staging-generation-23-consumer-proof.mjs": [
+      "STAGING_GENERATION_23_CONSUMER_PROOF_ENABLED"
     ],
     "scripts/staging-generation-23-credential-reader.mjs": [
       "STAGING_GENERATION_23_CREDENTIAL_READER_ENABLED"

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile } from 'node:fs/promises'
-import { EDGE_PASSWORD_NAME } from '../scripts/staging-generation-23-password-material.mjs'
+import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME } from '../scripts/staging-generation-23-password-material.mjs'
 
 const script = new URL('../scripts/staging-generation-23-fixed-hosted-adapters.mjs', import.meta.url)
 const source = await readFile(script, 'utf8')
@@ -16,6 +16,7 @@ const credentials = () => ({ managementToken: Buffer.from(`sbp_${'a'.repeat(40)}
   vercelToken: Buffer.from('vercel-token'), previewBypass: Buffer.from('preview-bypass') })
 const expectedDeployment = { deploymentId: 'dpl_fixed', immutableUrl: 'https://fixed.vercel.app',
   gitSourceCommit: 'a'.repeat(40) }
+const testExpiry = new Date(Math.ceil(Date.now() / 1000) * 1000 + 45 * 60_000).toISOString()
 
 function provider () {
   return {
@@ -31,13 +32,14 @@ function provider () {
 
 function makeFactories (calls, { retainedSecret = true, passwordNames = [EDGE_PASSWORD_NAME], repository = { provider: 'github', repoId: 1264363509,
   repo: 'the-lifting-lab', org: 'tntipper', sourceless: true } } = {}) {
-  const records = { state: null }
+  const records = { state: null, gateInstalled: false }
   const factories = {
     async readPredecessor () { calls.push('gen23Predecessor'); return { status: 'PASS_RETIRED', receiptSha256: 'a'.repeat(64) } },
     createSupabase () { return {
       async readDatabase () { assert.fail('the obsolete Gen21 baseline database query must not run') },
       async readProvider () { calls.push('provider'); return provider() },
-      async readEdgeSecretNames () { calls.push('edgeNames'); return retainedSecret ? [broker.BROKER_SECRET_NAME, ...passwordNames] : [] },
+      async readEdgeSecretNames () { calls.push('edgeNames'); return retainedSecret ? [broker.BROKER_SECRET_NAME, ...passwordNames,
+        ...(records.gateInstalled ? [EDGE_READINESS_WINDOW_NAME] : [])] : [] },
       dispose () { calls.push('disposeSupabase') },
     } },
     createVercel () { return {
@@ -53,11 +55,11 @@ function makeFactories (calls, { retainedSecret = true, passwordNames = [EDGE_PA
     createInventory () { return { async readTargets () { calls.push('inventory'); return [{ name: 'a' }] }, dispose () {} } },
     createEdge () { return { dispose () {} } },
     createReplacer () { return { dispose () {} } },
-    createCoordinator ({ journal: input }) { assert.equal(input, testJournal); return { async run () { calls.push('replace'); records.state = 'FINISHED'; return { status: 'SETTINGS_REPLACED_UNVERIFIED' } } } },
+    createCoordinator ({ journal: input }) { assert.equal(input, testJournal); return { async run () { calls.push('replace'); records.state = 'FINISHED'; records.gateInstalled = true; return { status: 'SETTINGS_REPLACED_UNVERIFIED' } } } },
     createReadback ({ readVercelTargets, readEdgeNames }) { return { async prove ({ expectedTargets, signal }) {
       calls.push('readback'); assert.deepEqual(expectedTargets, [{ name: 'a' }])
       assert.deepEqual(await readVercelTargets({ signal }), [{ name: 'a' }])
-      assert.deepEqual(await readEdgeNames({ signal }), [broker.BROKER_SECRET_NAME, EDGE_PASSWORD_NAME])
+      assert.deepEqual(await readEdgeNames({ signal }), [broker.BROKER_SECRET_NAME, EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME])
       return { status: 'SETTINGS_METADATA_VERIFIED' }
     } } },
   }
@@ -74,7 +76,7 @@ test('uses Generation 23 baseline semantics: retained broker secret is required 
   const calls = [], owned = credentials()
   const { factories, testJournal } = makeFactories(calls)
   const factory = armed.createStagingGeneration23FixedHostedAdapters({ credentials: owned, fetch: async () => assert.fail('network'),
-    expiresAt: '2099-01-01T00:00:00.000Z', expectedDeployment, settingsJournal: testJournal, factories })
+    expiresAt: testExpiry, expectedDeployment, settingsJournal: testJournal, factories })
   const signal = new AbortController().signal
   assert.deepEqual(await factory.ports.readBaseline({ signal }), { status: 'BASELINE_HELD_VERIFIED' })
   assert.deepEqual(await factory.ports.replaceSettings({ signal }), { status: 'SETTINGS_METADATA_VERIFIED' })

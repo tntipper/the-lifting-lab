@@ -61,6 +61,8 @@ test('PASS requires completed cleanup and an existing symbolic link cannot be cl
     for (const purpose of ['customer', 'cart', 'broker', 'provisional', 'bridge']) {
       record = journal.progress(record, { step: 'wrong_password', purpose })
     }
+    record = journal.progress(record, { step: 'final_good', purpose: 'customer', check: 'connect' })
+    record = journal.progress(record, { step: 'final_good', purpose: 'bridge' })
     record = journal.progress(record, { step: 'drain' })
     record = journal.progress(record, { step: 'cleanup' })
     record = journal.pass(record)

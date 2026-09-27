@@ -210,6 +210,27 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
             outcome = 'wrong_password_failed'; unavailable()
           }
         }
+        // Wrong-password probes may trip a shared pooler guard. Prove every
+        // real login still works before any provider or customer switch turns on.
+        try {
+          record = diagnostic.progress(record, { step: 'final_good', purpose: 'customer', check: 'connect' })
+          const final = await verify({ passwords, expiresAt, tlsCa, createRuntime: trackedRuntime,
+            requireClassifiedDenials: true, classifyQueryError, classifyConnectError,
+            signal: controller.signal, onProgress: ({ purpose, check }) => {
+              record = diagnostic.progress(record, { step: 'final_good', purpose, check })
+            } })
+          if (final?.status !== 'PASS' || final.projectRef !== PROJECT_REF
+            || final.purposes !== PASSWORD_PURPOSES.length || final.controlsEnabled !== false) unavailable()
+          record = diagnostic.progress(record, { step: 'final_good', purpose: 'bridge' })
+        } catch (error) {
+          const safe = connectionFailureReport(error)
+          failedPurpose = safe.purpose; failedCheck = safe.check
+          if (safe.firstConnect || safe.secondConnect) failedConnectionEvidence = Object.freeze({
+            first: safe.firstConnect ?? null, second: safe.secondConnect ?? null,
+          })
+          outcome = 'final_good_failed'
+          throw error
+        }
         clearScheduledTimeout(roleTimer); roleTimer = undefined
         record = diagnostic.progress(record, { step: 'drain' })
         failedPurpose = null
@@ -254,7 +275,8 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
         const terminal = cleanupFailed ? 'cleanup_failed' : expired ? 'deadline'
           : cancelled ? 'cancelled' : outcome
         diagnostic.hold(record, { outcome: terminal, purpose: failedPurpose, check: failedCheck,
-          connectionEvidence: terminal === 'correct_role_failed' ? failedConnectionEvidence : null })
+          connectionEvidence: ['correct_role_failed', 'final_good_failed'].includes(terminal)
+            ? failedConnectionEvidence : null })
         unavailable()
       }
       diagnostic.pass(record)

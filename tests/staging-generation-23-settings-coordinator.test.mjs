@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createStagingGeneration23SettingsCoordinator,
   STAGING_GENERATION_23_SETTINGS_COORDINATOR_ENABLED } from '../scripts/staging-generation-23-settings-coordinator.mjs'
-import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
+import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, READINESS_WINDOW_ID, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
 
 const names = VERCEL_PASSWORD_NAMES
 const targets = names.map((name, index) => ({ name, id: `env_gen23_${index}`,
@@ -16,7 +16,8 @@ const start = Date.parse('2026-09-26T12:00:00.000Z')
 const expiresAt = new Date(start + 3_600_000).toISOString()
 const passwords = () => Object.fromEntries(names.map((name, index) => [name, String(index).repeat(64)]))
 const projection = () => { const vercel = passwords(); return {
-  vercel, supabase: { [EDGE_PASSWORD_NAME]: vercel[EDGE_PASSWORD_NAME] },
+  vercel, supabase: { [EDGE_PASSWORD_NAME]: vercel[EDGE_PASSWORD_NAME],
+    [EDGE_READINESS_WINDOW_NAME]: `${READINESS_WINDOW_ID}|${new Date(start).toISOString()}|${expiresAt}` },
 } }
 
 async function fixture({ failAt = -1, badReceipt = false, failEdge = false } = {}) {
@@ -61,14 +62,14 @@ test('six-setting coordinator is disabled by default', () => {
   assert.throws(() => createStagingGeneration23SettingsCoordinator(), /unavailable/)
 })
 
-test('six operations dispatch and confirm in order, then clear in-memory projection', async () => {
+test('seven operations dispatch and confirm in order, then clear in-memory projection', async () => {
   const { coordinator, journal, calls, edgeDisposed } = await fixture()
   const held = projection()
   assert.deepEqual(await coordinator.run({ targets, projection: held, expiresAt,
-    signal: new AbortController().signal }), { status: 'SETTINGS_REPLACED_UNVERIFIED', operationCount: 6 })
+    signal: new AbortController().signal }), { status: 'SETTINGS_REPLACED_UNVERIFIED', operationCount: 7 })
   assert.equal(journal.read().state, 'FINISHED')
-  assert.equal(journal.read().receiptDigests.length, 6)
-  assert.deepEqual(calls.filter(call => call.name).map(call => call.name), [...names, EDGE_PASSWORD_NAME])
+  assert.equal(journal.read().receiptDigests.length, 7)
+  assert.deepEqual(calls.filter(call => call.name).map(call => call.name), [...names, EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME])
   assert.deepEqual(Object.values(held.vercel), Array(5).fill(undefined))
   assert.equal(held.supabase[EDGE_PASSWORD_NAME], undefined)
   assert.equal(edgeDisposed(), true)

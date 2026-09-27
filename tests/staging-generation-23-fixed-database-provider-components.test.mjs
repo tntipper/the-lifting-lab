@@ -6,6 +6,7 @@ import { createStagingGeneration23FixedDatabaseProviderComponents } from '../scr
 const scripts = new URL('../scripts/', import.meta.url)
 const managementToken = Buffer.from(`sbp_${'a'.repeat(40)}`)
 const signal = new AbortController().signal
+const expiresAt = '2026-09-27T22:00:00.000Z'
 async function armed() {
   let source = await readFile(new URL('staging-generation-23-fixed-database-provider-components.mjs', scripts), 'utf8')
   source = source.replace('STAGING_GENERATION_23_FIXED_DATABASE_PROVIDER_COMPONENTS_ENABLED = false',
@@ -23,7 +24,7 @@ test('fixed construction selects distinct database journals and forwards the man
   const create = await armed(), calls = []
   const journal = ({ action }) => ({ action, claim() {}, dispatch() {}, confirm() {}, hold() {}, read() { return null } })
   const component = create({ credentials: { managementToken, vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') },
-    sourceCommit: 'a'.repeat(40),
+    sourceCommit: 'a'.repeat(40), expiresAt,
     fetch: async () => { throw Error('not called') },
     factories: {
       createDatabaseJournal: journal,
@@ -38,7 +39,7 @@ test('fixed construction selects distinct database journals and forwards the man
       createSupabase: () => ({ async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {} }),
       createProviderPort: () => ({ dispose() {} }),
       createActivation: () => ({ async activate() { return { status: 'CONTROLS_ENABLED', target: 'qdmvngjwkcsilzmqksme', generation: 23,
-        windowId: '1e8c4f1d-0dde-4329-a9c6-e17223905a77', receiptHash: 'a'.repeat(64) } } }),
+        windowId: 'f1688d28-70fa-42d1-bdda-9f1489ee4470', receiptHash: 'a'.repeat(64) } } }),
       createFinalJournal: () => ({}),
       createFinal: () => ({ async observe() { return { status: 'PASS_FINAL_RETIRED', projectRef: 'qdmvngjwkcsilzmqksme' } } }),
       postFinal: async () => [], validateFinal() {},
@@ -57,7 +58,7 @@ test('fixed construction selects distinct database journals and forwards the man
 test('construction refuses malformed management credentials before any factory runs', async () => {
   const create = await armed(); let called = false
   assert.throws(() => create({ credentials: { managementToken: Buffer.from('bad'), vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') },
-    sourceCommit: 'a'.repeat(40),
+    sourceCommit: 'a'.repeat(40), expiresAt,
     fetch() { called = true }, factories: {} }), /unavailable/)
   assert.equal(called, false)
 })
@@ -66,7 +67,7 @@ test('final state uses the distinct Gen23 final journal and observer', async () 
   const create = await armed(); const calls = []
   const component = create({
     credentials: { managementToken, vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') },
-    sourceCommit: 'a'.repeat(40),
+    sourceCommit: 'a'.repeat(40), expiresAt,
     fetch: async () => { throw Error('not called') },
     factories: {
       createFinalJournal: () => { calls.push('final-journal'); return { final: true } },
@@ -86,4 +87,34 @@ test('final state uses the distinct Gen23 final journal and observer', async () 
   } finally {
     component.dispose()
   }
+})
+
+test('broker consumer and held reads accept only the exact authenticated staging replies', async () => {
+  const create = await armed()
+  const observed = []
+  const make = response => create({
+    credentials: { managementToken, vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') },
+    sourceCommit: 'a'.repeat(40), expiresAt,
+    fetch: async (url, options) => {
+      observed.push({ url, method: options.method, authorization: options.headers.authorization,
+        apikey: options.headers.apikey })
+      return response
+    },
+    factories: { createSupabase: () => ({
+      async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {},
+    }) },
+  })
+  const pass = make(new Response(JSON.stringify({ status: 'PASS',
+    windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe', expiresAt }),
+  { status: 200, headers: { 'content-type': 'application/json' } }))
+  try { assert.deepEqual(await pass.components.readBrokerConsumer({ signal }), { status: 'PASS' }) }
+  finally { pass.dispose() }
+  const held = make(new Response(JSON.stringify({ status: 'held' }),
+    { status: 404, headers: { 'content-type': 'application/json' } }))
+  try { assert.deepEqual(await held.components.readBrokerHeld({ signal }), { status: 'HELD' }) }
+  finally { held.dispose() }
+  assert.equal(observed.length, 2)
+  assert.ok(observed.every(value => value.url === 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness'
+    && value.method === 'GET' && value.authorization === `Bearer ${'s'.repeat(48)}`
+    && value.apikey === 's'.repeat(48)))
 })

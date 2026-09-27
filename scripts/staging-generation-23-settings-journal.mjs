@@ -2,14 +2,15 @@
 import { randomUUID } from 'node:crypto'
 import * as fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { PROJECT_REF, VERCEL_PASSWORD_NAMES, EDGE_PASSWORD_NAME } from './staging-generation-23-password-material.mjs'
+import { PROJECT_REF, VERCEL_PASSWORD_NAMES, EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME } from './staging-generation-23-password-material.mjs'
 import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
 
 export const STAGING_GENERATION_23_SETTINGS_JOURNAL_ENABLED = false
 export const JOURNAL_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-generation-23-settings-v6.json')
+  '../../implementation-state/staging/tll-generation-23-settings-v7.json')
 export const OPERATION_IDS = Object.freeze([
   ...VERCEL_PASSWORD_NAMES.map(name => `VERCEL_PATCH:${name}`), `SUPABASE_EDGE:${EDGE_PASSWORD_NAME}`,
+  `SUPABASE_EDGE:${EDGE_READINESS_WINDOW_NAME}`,
 ])
 const SCHEMA = 'tll-generation-23-settings/v1'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/

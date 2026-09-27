@@ -19,7 +19,7 @@ const preflight = Object.freeze({ requirements: Object.freeze({ sourceCommit: 'a
     sourceCommit: 'a'.repeat(40), manifestSha256: 'b'.repeat(64), ready: true, createdAt: new Date(now - 1_000).toISOString() }) })
 const checkout = Object.freeze({ name: 'TLL_STAGING_CART_CHECKOUT_HANDOFF_ENABLED', id: 'env_checkout',
   branch: 'codex/tll-integration', environment: 'preview', classification: 'config' })
-const adapters = ['readBaseline', 'replaceSettings', 'readSettings', 'setupDatabase', 'proveRestrictedConnections',
+const adapters = ['readBaseline', 'replaceSettings', 'readSettings', 'setupDatabase', 'proveRestrictedConnections', 'proveConsumers',
   'enableProvider', 'enableDatabase', 'enableSurface', 'runOwnerJourney', 'disableDatabase', 'disableProvider',
   'freezeSurface', 'retireDatabase', 'readFinal']
 
@@ -28,6 +28,7 @@ const journal = () => ({ read: () => null, claim() {}, dispatch() {}, verify() {
 function factories(calls, final = {}) {
   const captured = {}
   const hostedPorts = { readBaseline: async () => ({ status: 'BASELINE_HELD_VERIFIED' }),
+    readEdgeNamesForRetire: async () => [],
     readFinalProvider: async () => ({ status: final.provider ?? 'FINAL_PROVIDER_DISABLED_VERIFIED' }),
     replaceSettings: async () => ({ status: 'SETTINGS_METADATA_VERIFIED' }), readSettings: async () => ({ status: 'SETTINGS_METADATA_VERIFIED' }) }
   const databaseResult = name => async () => ({ status: name })
@@ -42,8 +43,11 @@ function factories(calls, final = {}) {
       controlsDisable: { run: databaseResult('SHUTDOWN_VERIFIED') }, providerDisable: databaseResult('PROVIDER_DISABLED_VERIFIED'),
       readBackendState: async () => ({ projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false, runtimeSessions: 0 }),
       databaseRetire: { run: databaseResult('RETIREMENT_VERIFIED') }, readRetiredState: databaseResult(final.database ?? 'PASS_FINAL_RETIRED'),
+      readBrokerHeld: databaseResult(final.broker ?? 'HELD'),
     }, dispose() { calls.push('dispose:database') } } },
     createVariantReader() { return { read: async () => ({ status: 'SHOPIFY_STAGING_VARIANT_PRICE_VERIFIED' }), dispose() { calls.push('dispose:variant') } } },
+    createConsumerProof() { return { prove: async () => ({ status: 'CONSUMERS_READY_VERIFIED', deployment: { deploymentId: 'dpl_consumer' } }) } },
+    createGateRetire() { return { retire: async () => ({ status: 'BROKER_GATE_RETIRED_VERIFIED' }), dispose() {} } },
     createExecutor() { return async operation => ({ status: 'COMPLETED', value: await operation(signal) }) },
     createSurface(input) { calls.push('surface'); assert.equal(typeof input.preview.runBuild, 'function'); captured.runPreviewBuild = input.preview.runBuild
       return { ports: { enableSurface: async () => ({ status: 'SURFACES_ENABLED_VERIFIED', deployment: { deploymentId: 'dpl_enabled' } }),
@@ -97,7 +101,7 @@ test('refuses a malformed fixed input before any factory can run', () => {
 
 test('final success requires database, provider and held Preview proofs together', async () => {
   for (const failed of [{ database: 'PASS_RETIRED' }, { provider: 'PROVIDER_ENABLED' },
-    { surface: 'ALIAS_DRIFT' }]) {
+    { broker: 'PASS' }, { surface: 'ALIAS_DRIFT' }]) {
     const built = armed.createStagingGeneration23FixedWorkerAssembly({ credentials: { ...credentials },
       fetch: async () => {}, expiresAt: expiry, preflight, checkoutTarget: checkout,
       runCli: async () => ({ status: 'COMPLETED' }), now: () => now,

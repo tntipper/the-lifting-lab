@@ -8,8 +8,8 @@ import {
   validateStagingGeneration23PredecessorCheck,
 } from '../scripts/staging-generation-23-predecessor-check.mjs'
 
-const predecessorExpiry = '2026-09-27T20:48:54.000Z'
-const predecessorWindow = '1e8c4f1d-0dde-4329-a9c6-e17223905a77'
+const predecessorExpiry = '2026-09-27T21:11:37.000Z'
+const predecessorWindow = 'f1688d28-70fa-42d1-bdda-9f1489ee4470'
 
 async function armedFixture() {
   const scripts = new URL('../scripts/', import.meta.url)

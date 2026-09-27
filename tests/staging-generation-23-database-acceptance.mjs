@@ -10,7 +10,7 @@ import { PASSWORD_PURPOSES } from '../scripts/staging-generation-22-material.mjs
 import { PREDECESSOR_WINDOW_ID } from '../scripts/staging-generation-23-predecessor-check.mjs'
 import { PREDECESSOR_EXPIRES_AT } from '../scripts/staging-generation-23-predecessor-check.mjs'
 import { deriveScramVerifier } from '../scripts/staging-generation-6-transport.mjs'
-import { EDGE_PASSWORD_NAME, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
+import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, READINESS_WINDOW_ID, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
 
 const name = `tll-gen23-offline-${randomUUID().slice(0, 8)}`
 const docker = (args, input) => execFileSync('docker', args, { input, encoding: 'utf8',
@@ -133,7 +133,8 @@ export async function createStagingGeneration23LocalDatabaseFixture() {
         `TLL_STAGING_${purpose.toUpperCase()}_DATABASE_PASSWORD`, passwords[purpose],
       ]))
       assert.deepEqual(Object.keys(vercel).sort(), [...VERCEL_PASSWORD_NAMES])
-      return { vercel, supabase: { [EDGE_PASSWORD_NAME]: vercel[EDGE_PASSWORD_NAME] } }
+      return { vercel, supabase: { [EDGE_PASSWORD_NAME]: vercel[EDGE_PASSWORD_NAME],
+        [EDGE_READINESS_WINDOW_NAME]: `${READINESS_WINDOW_ID}|${new Date(Date.parse(expiresAt) - 3_600_000).toISOString()}|${expiresAt}` } }
     },
     setup() {
       built = credentials.buildStagingGeneration23CredentialSql({ expiresAt, verifiers })

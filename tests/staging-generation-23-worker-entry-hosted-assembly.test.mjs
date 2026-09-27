@@ -27,12 +27,12 @@ const { createStagingGeneration23HostedWorkerAssembly } = await import(workerUrl
 const credentials = () => ({ managementToken: Buffer.from(`sbp_${'a'.repeat(40)}`),
   vercelToken: Buffer.from('token-value'), previewBypass: Buffer.from('bypass-value') })
 const names = ['readBaseline', 'replaceSettings', 'readSettings', 'setupDatabase',
-  'proveRestrictedConnections', 'enableProvider', 'enableDatabase', 'enableSurface',
+  'proveRestrictedConnections', 'proveConsumers', 'enableProvider', 'enableDatabase', 'enableSurface',
   'runOwnerJourney', 'disableDatabase', 'disableProvider', 'freezeSurface',
   'retireDatabase', 'readFinal']
 const statuses = Object.freeze({ readBaseline: 'BASELINE_HELD_VERIFIED',
   replaceSettings: 'SETTINGS_METADATA_VERIFIED', readSettings: 'SETTINGS_METADATA_VERIFIED',
-  setupDatabase: 'SETUP_VERIFIED', proveRestrictedConnections: 'PASS_RESTRICTED_CONNECTIONS',
+  setupDatabase: 'SETUP_VERIFIED', proveRestrictedConnections: 'PASS_RESTRICTED_CONNECTIONS', proveConsumers: 'CONSUMERS_READY_VERIFIED',
   enableProvider: 'PROVIDER_ENABLED_VERIFIED', enableDatabase: 'CONTROL_ACTIVATION_VERIFIED',
   enableSurface: 'SURFACES_ENABLED_VERIFIED', runOwnerJourney: 'OWNER_JOURNEY_VERIFIED_NO_PURCHASE',
   disableDatabase: 'SHUTDOWN_VERIFIED', disableProvider: 'PROVIDER_DISABLED_VERIFIED',
@@ -46,14 +46,15 @@ test('hosted worker factory retains credentials in the child and disposes its re
       assert.equal(received.managementToken, owned.managementToken)
       const ports = Object.fromEntries(names.map(name => [name, async () => {
         calls.push(name)
-        return name === 'enableSurface'
+        return name === 'proveConsumers' ? { status: statuses[name], deployment: { deploymentId: 'dpl_consumer' } }
+          : name === 'enableSurface'
           ? { status: statuses[name], deployment: { deploymentId: 'dpl_gen23' } }
           : { status: statuses[name] }
       }]))
       return { ports, async dispose() { disposed = true } }
     },
     async runWhole({ operations, signal, windowExpiresAt }) {
-      for (const phase of ['baseline', 'settings', 'databaseSetup', 'restrictedConnections', 'providerEnable',
+      for (const phase of ['baseline', 'settings', 'databaseSetup', 'restrictedConnections', 'consumerReadiness', 'providerEnable',
         'databaseEnable', 'surfaceEnable', 'ownerJourney', 'backendDisable', 'surfaceFreeze', 'databaseRetire', 'finalReadback']) {
         await operations[phase]({ signal, windowExpiresAt, phaseDeadlineAt: windowExpiresAt })
       }
@@ -73,9 +74,11 @@ test('verified owner failure is never published as a success route', async () =>
   const worker = createStagingGeneration23HostedWorkerAssembly({ credentials: owned,
     createAdapters() { return { ports: Object.fromEntries(names.map(name => [name, async () =>
       name === 'runOwnerJourney' ? { status: 'OWNER_JOURNEY_FAILED_VERIFIED' }
+        : name === 'proveConsumers' ? { status: statuses[name], deployment: { deploymentId: 'dpl_consumer' } }
         : name === 'enableSurface' ? { status: statuses[name], deployment: { deploymentId: 'dpl_gen23' } }
           : { status: statuses[name] }])), async dispose() {} } },
     async runWhole({ operations, signal, windowExpiresAt }) {
+      await operations.consumerReadiness({ signal, windowExpiresAt, phaseDeadlineAt: windowExpiresAt })
       await operations.surfaceEnable({ signal, windowExpiresAt, phaseDeadlineAt: windowExpiresAt })
       assert.equal((await operations.ownerJourney({ signal, windowExpiresAt, phaseDeadlineAt: windowExpiresAt })).status,
         'OWNER_JOURNEY_FAILED_VERIFIED')

@@ -15,10 +15,13 @@ const ordinaryBundle = await build({ entryPoints: [path], bundle: true, platform
   format: 'esm', packages: 'external', write: false, logLevel: 'silent' })
 const ordinary = await import(`data:text/javascript;base64,${Buffer.from(ordinaryBundle.outputFiles[0].text).toString('base64')}`)
 const serviceKey = 'SYNTHETIC_SERVICE_KEY_' + 'x'.repeat(40)
+const startsAt = '2026-09-27T21:00:00.000Z', expiresAt = '2026-09-27T22:00:00.000Z'
+const now = () => Date.parse('2026-09-27T21:30:00.000Z')
 const env = Object.freeze({ SUPABASE_URL: 'https://qdmvngjwkcsilzmqksme.supabase.co',
   SUPABASE_SERVICE_ROLE_KEY: serviceKey, TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'false',
   TLL_STAGING_BROKER_DATABASE_PASSWORD: 'SYNTHETIC_BROKER_PASSWORD_' + 'y'.repeat(40),
-  TLL_STAGING_POSTGRES_CA_PEM: 'public-ca-fixture', TLL_STAGING_POSTGRES_CA_SHA256: 'a'.repeat(64) })
+  TLL_STAGING_POSTGRES_CA_PEM: 'public-ca-fixture', TLL_STAGING_POSTGRES_CA_SHA256: 'a'.repeat(64),
+  TLL_STAGING_BROKER_READINESS_WINDOW: `b7bf72d4-18c1-4b85-8e7c-23a95dd845fe|${startsAt}|${expiresAt}` })
 const request = (authorization = `Bearer ${serviceKey}`, apikey = serviceKey) => new Request(
   'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness', {
     headers: { authorization, apikey },
@@ -26,9 +29,31 @@ const request = (authorization = `Bearer ${serviceKey}`, apikey = serviceKey) =>
 
 test('ordinary deployed source keeps the Edge probe off before credential access', async () => {
   let constructed = false
-  const result = await ordinary.createStagingBrokerReadinessHandler(env, () => { constructed = true })(request())
+  const result = await ordinary.createStagingBrokerReadinessHandler({ ...env,
+    TLL_STAGING_BROKER_READINESS_WINDOW: undefined }, () => { constructed = true }, now)(request())
   assert.equal(result.status, 404)
   assert.equal(constructed, false)
+})
+
+test('ordinary deployed source accepts only the short-lived staging window', async () => {
+  let connected = 0
+  const runtime = () => ({ pool: { async connect() { connected++; return {
+    async query() { return { rows: [{ role: 'tll_broker_runtime' }] } }, release() {},
+  } } }, async close() {} })
+  const live = await ordinary.createStagingBrokerReadinessHandler(env, runtime, now)(request())
+  assert.equal(live.status, 200)
+  assert.equal(connected, 1)
+  for (const setting of [undefined,
+    `wrong-window|${startsAt}|${expiresAt}`,
+    `b7bf72d4-18c1-4b85-8e7c-23a95dd845fe|${startsAt}|2026-09-27T22:00:01.000Z`]) {
+    const held = await ordinary.createStagingBrokerReadinessHandler({ ...env,
+      TLL_STAGING_BROKER_READINESS_WINDOW: setting }, runtime, now)(request())
+    assert.equal(held.status, 404)
+  }
+  const expired = await ordinary.createStagingBrokerReadinessHandler(env, runtime,
+    () => Date.parse(expiresAt))(request())
+  assert.equal(expired.status, 404)
+  assert.equal(connected, 1)
 })
 
 test('wrong authority or active broker never reaches a database runtime', async () => {
@@ -37,7 +62,7 @@ test('wrong authority or active broker never reaches a database runtime', async 
     [{ ...env, TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'true' }, request()],
     [{ ...env, SUPABASE_URL: 'https://other.supabase.co' }, request()]]) {
     let constructed = false
-    const handler = createStagingBrokerReadinessHandler(settings, () => { constructed = true })
+    const handler = createStagingBrokerReadinessHandler(settings, () => { constructed = true }, now)
     const result = await handler(req)
     assert.equal(result.status, 404)
     assert.equal(constructed, false)
@@ -53,17 +78,17 @@ test('the authenticated Edge probe uses its own installed broker password and re
       assert.equal(sql, 'SELECT current_user::text AS role')
       return { rows: [{ role: 'tll_broker_runtime' }] }
     }, release() {} } } }, async close() {} }
-  })
+  }, now)
   const result = await handler(request())
   assert.equal(result.status, 200)
-  assert.deepEqual(await result.json(), { status: 'PASS' })
+  assert.deepEqual(await result.json(), { status: 'PASS', windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe', expiresAt })
   assert.doesNotMatch(JSON.stringify(Object.fromEntries(result.headers)), /SYNTHETIC/)
 })
 
 test('Edge connection errors stay private and give no false pass', async () => {
   const handler = createStagingBrokerReadinessHandler(env, () => ({
     pool: { async connect() { throw Error(`SYNTHETIC_PRIVATE_${serviceKey}`) } }, async close() {},
-  }))
+  }), now)
   const result = await handler(request())
   assert.equal(result.status, 503)
   assert.deepEqual(await result.json(), { status: 'FAIL' })

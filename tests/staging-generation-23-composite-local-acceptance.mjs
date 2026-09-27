@@ -12,7 +12,7 @@ import { enableStagingSurfaces, freezeStagingSurfaces } from '../scripts/staging
 import { PROVIDER_IDENTIFIER, STAGING_BROKER_PROVIDER, STAGING_PROVIDER_TARGET,
   STAGING_PROJECT_REF } from '../scripts/staging-provider-broker-rotation.mjs'
 import { STAGING_PROVIDER_NAME } from '../scripts/staging-provider-broker-native-adapter.mjs'
-import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
+import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
 import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/staging-generation-23-surface-fixture.mjs'
 import { createStagingPreviewDeploymentJournal } from '../scripts/staging-surface-preview-deployment-journal.mjs'
 import { createStagingGeneration23PreviewWorkerFixture } from './helpers/staging-generation-23-preview-worker-fixture.mjs'
@@ -166,7 +166,7 @@ const localRequest = action => (options, callback) => {
           rows = [{ tll_generation_23_backend_state: {
             status: 'PASS_BACKEND_OFF', queryId: backendState.QUERY_ID,
             projectRef: PROJECT_REF, generation: 23,
-            windowId: 'f1688d28-70fa-42d1-bdda-9f1489ee4470',
+            windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe',
             expiresAt: database.expiresAt, controlsEnabled: false,
             runtimeSessions: syntheticSessionCount,
           } }]
@@ -177,7 +177,7 @@ const localRequest = action => (options, callback) => {
           rows = [{ tll_generation_23_control_shutdown: {
             status: 'PASS_CONTROLS_DISABLED', shutdownId: shutdownControl.SHUTDOWN_ID,
             projectRef: PROJECT_REF, generation: 23,
-            windowId: 'f1688d28-70fa-42d1-bdda-9f1489ee4470',
+            windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe',
             expiresAt: database.expiresAt, controlsEnabled: 0,
           } }]
         }
@@ -242,7 +242,7 @@ const settingsJournal = settingsJournalModule.createStagingGeneration23SettingsJ
   makeRunId: () => '224f77e4-c361-46ce-b357-1e0a740a7f77',
 })
 const installedSettings = new Map()
-let edgePassword
+let edgePassword, edgeWindow
 const vercelFetch = async (url, options) => {
   assert.equal(options.method, 'PATCH')
   const target = settingsTargets.find(item => url.includes(`/env/${item.id}?`))
@@ -260,8 +260,9 @@ const edgeFetch = async (url, options) => {
   assert.equal(options.method, 'POST')
   const body = JSON.parse(options.body.toString('utf8'))
   assert.equal(body.length, 1)
-  assert.equal(body[0].name, EDGE_PASSWORD_NAME)
-  edgePassword = body[0].value
+  assert.ok([EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME].includes(body[0].name))
+  if (body[0].name === EDGE_PASSWORD_NAME) edgePassword = body[0].value
+  else edgeWindow = body[0].value
   return new Response('{}', { status: 201, headers: { 'content-type': 'application/json' } })
 }
 const settingsCoordinator = settingsCoordinatorModule.createStagingGeneration23SettingsCoordinator({
@@ -437,15 +438,16 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
         assert.equal(settingsJournal.read().state, 'HOLD')
         return { status: 'HOLD_SETTINGS' }
       }
-      assert.deepEqual(settingResult, { status: 'SETTINGS_REPLACED_UNVERIFIED', operationCount: 6 })
+      assert.deepEqual(settingResult, { status: 'SETTINGS_REPLACED_UNVERIFIED', operationCount: 7 })
       assert.equal(settingsJournal.read().state, 'FINISHED')
       assert.equal(installedSettings.size, 5)
       assert.equal(edgePassword, installedSettings.get(EDGE_PASSWORD_NAME))
+      assert.match(edgeWindow, /^b7bf72d4-18c1-4b85-8e7c-23a95dd845fe\|/)
       const readbackReader = makeInventoryReader()
       try {
         const readback = settingsReadbackModule.createStagingGeneration23SettingsReadback({
           readVercelTargets: input => readbackReader.readTargets(input),
-          readEdgeNames: async () => edgePassword ? [EDGE_PASSWORD_NAME] : [],
+          readEdgeNames: async () => edgePassword && edgeWindow ? [EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME] : [],
         })
         assert.equal((await readback.prove({ expectedTargets: settingsTargets, signal })).status,
           'SETTINGS_METADATA_VERIFIED')
@@ -467,6 +469,13 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     case 'restrictedConnections':
       // The fixture's SCRAM checks use the exact values sent to the injected hosts.
       assert.equal(database.proveRestrictedConnections().runtimeCount, 5)
+      break
+    case 'consumerReadiness':
+      // The dedicated proof module tests the new protected build and both
+      // consumers. This broader lifecycle fixture keeps its network fake.
+      assert.equal(active, true)
+      assert.equal(provider.enabled, false)
+      assert.equal(databaseEnabled, false)
       break
     case 'providerEnable':
       assert.equal((await providerControl.runStagingGeneration23ProviderControl({ action: 'ENABLE',
@@ -738,7 +747,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       phaseCount: calls.length, provider: 'off', surface: 'off', purchase: 'none' }))
   } else {
   if (result.status !== 'LOCAL_SEQUENCE_PASS') console.error(JSON.stringify({
-    status: result.status, failedPhase: result.failedPhase, nextAction: result.nextAction,
+    status: result.status, failedPhase: result.failedPhase, nextAction: result.nextAction, phaseErrors,
   }))
   assert.equal(result.status, 'LOCAL_SEQUENCE_PASS')
   assert.deepEqual(calls, PHASES)
