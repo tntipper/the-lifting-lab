@@ -80,6 +80,8 @@ const checkoutControl = await arm('staging-generation-23-checkout-setting.mjs',
   'STAGING_GENERATION_23_CHECKOUT_SETTING_ENABLED')
 const checkoutJournalModule = await arm('staging-generation-23-checkout-setting-journal.mjs',
   'STAGING_GENERATION_23_CHECKOUT_SETTING_JOURNAL_ENABLED')
+const checkoutPortModule = await arm('staging-generation-23-checkout-setting-port.mjs',
+  'STAGING_GENERATION_23_CHECKOUT_SETTING_PORT_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
 let existingCartFixtureStarted = false
 let databaseJournalDirectory, settingsDirectory, providerDirectory, previewDirectory, checkoutDirectory,
@@ -376,13 +378,21 @@ const checkoutJournal = action => checkoutJournalModule.createStagingGeneration2
 })
 const checkoutEnableJournal = checkoutJournal('ENABLE')
 const checkoutFreezeJournal = checkoutJournal('FREEZE')
-const checkoutRead = async () => ({ ...checkoutTarget, enabled: checkoutSettingValue })
-const checkoutWrite = async (_target, enabled) => {
-  assert.deepEqual(_target, checkoutTarget)
-  checkoutSettingValue = enabled
-  if (enabled && mode === '--fail-checkout-enable-reply-once') throw Error('injected lost checkout-setting reply')
-  return { ...checkoutTarget, enabled }
-}
+const checkoutPort = () => checkoutPortModule.createStagingGeneration23CheckoutSettingPort({
+  token: Buffer.from('local-checkout-port-token'), target: checkoutTarget,
+  fetch: async (_url, options) => {
+    if (options.method === 'PATCH') {
+      checkoutSettingValue = JSON.parse(options.body).value === 'true'
+      if (checkoutSettingValue && mode === '--fail-checkout-enable-reply-once') {
+        throw Error('injected lost checkout-setting reply')
+      }
+    }
+    return new Response(JSON.stringify({ id: checkoutTarget.id, key: checkoutTarget.name,
+      gitBranch: checkoutTarget.branch, target: ['preview'], type: 'encrypted',
+      visibility: 'config', decrypted: true, value: String(checkoutSettingValue) }),
+    { status: 200, headers: { 'content-type': 'application/json' } })
+  },
+})
 const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signal }) => {
   calls.push(phase)
   try {
@@ -456,9 +466,12 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       break
     case 'surfaceEnable': {
       assert.equal(provider.enabled && databaseEnabled, true)
-      const checkoutResult = await checkoutControl.changeStagingCheckoutSetting({
+      const port = checkoutPort()
+      let checkoutResult
+      try { checkoutResult = await checkoutControl.changeStagingCheckoutSetting({
         action: 'ENABLE', target: checkoutTarget, journal: checkoutEnableJournal,
-        read: checkoutRead, write: checkoutWrite, signal })
+        read: port.read, write: port.write, signal }) }
+      finally { port.dispose() }
       if (mode === '--fail-checkout-enable-reply-once') {
         assert.equal(checkoutResult.status, 'HOLD_RECONCILIATION_REQUIRED')
         return { status: 'HOLD_CHECKOUT_SETTING' }
@@ -529,9 +542,13 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       break
     case 'surfaceFreeze': {
       assert.equal(databaseEnabled || provider.enabled, false)
-      assert.equal((await checkoutControl.changeStagingCheckoutSetting({
+      const port = checkoutPort()
+      let checkoutResult
+      try { checkoutResult = await checkoutControl.changeStagingCheckoutSetting({
         action: 'FREEZE', target: checkoutTarget, journal: checkoutFreezeJournal,
-        read: checkoutRead, write: checkoutWrite, signal })).status, 'CHECKOUT_SETTING_HELD_VERIFIED')
+        read: port.read, write: port.write, signal }) }
+      finally { port.dispose() }
+      assert.equal(checkoutResult.status, 'CHECKOUT_SETTING_HELD_VERIFIED')
       const result = await freezeStagingSurfaces({ ports: surfacePorts,
         currentEvidence: enabledPreview, requirements,
         journal: surface.journal('freeze'), now: () => START })
