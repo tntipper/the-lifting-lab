@@ -73,6 +73,8 @@ const settingsReadbackModule = await arm('staging-generation-23-settings-readbac
   'STAGING_GENERATION_23_SETTINGS_READBACK_ENABLED')
 const previewBridge = await arm('staging-generation-23-preview-build-port.mjs',
   'STAGING_GENERATION_23_PREVIEW_BUILD_PORT_ENABLED')
+const checkoutObserver = await arm('staging-generation-23-checkout-observer.mjs',
+  'STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
 let existingCartFixtureStarted = false
 let databaseJournalDirectory, settingsDirectory, providerDirectory, previewDirectory,
@@ -446,6 +448,31 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       run(process.execPath, ['tests/browser/staging-cart.mjs'], {
         ...process.env, TEST_BROWSER_CHANNEL: 'chrome',
       })
+      // The separate Chrome test proves interception in a browser. Here the
+      // same disabled guard is joined to the complete OFF-to-OFF phase order.
+      {
+        const checkoutUrl = 'https://tll-integration-staging.myshopify.com/cart/c/syntheticCheckout123'
+        let guard, blocked = false
+        const checkoutPage = {
+          route: async (_pattern, handler) => { guard = handler },
+          url: () => checkoutUrl,
+          goto: async url => {
+            assert.equal(url, checkoutUrl)
+            await guard({ request: () => ({ url: () => url, method: () => 'GET',
+              isNavigationRequest: () => true, headers: () => ({}) }),
+            fallback: async () => {}, abort: async () => assert.fail('checkout navigation blocked') })
+            return { status: () => 200 }
+          },
+        }
+        assert.equal((await checkoutObserver.observeStagingCheckout({ page: checkoutPage,
+          checkoutUrl, signal, deadlineAt: new Date(Date.now() + 60_000).toISOString() })).status,
+        'STAGING_CHECKOUT_OBSERVED_NO_MUTATION')
+        await guard({ request: () => ({ url: () => checkoutUrl, method: () => 'POST',
+          isNavigationRequest: () => true, headers: () => ({}) }),
+        fallback: async () => assert.fail('purchase request escaped guard'),
+        abort: async () => { blocked = true } })
+        assert.equal(blocked, true)
+      }
       ownerChecks = true
       syntheticSessionCount = 1
       if (mode === '--fail-owner-verified-once') return { status: 'OWNER_JOURNEY_FAILED_VERIFIED' }
@@ -614,7 +641,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
   assert.deepEqual(calls, PHASES)
   console.log(JSON.stringify({ status: 'PASS_PARTIAL_LOCAL_COMPOSITE', phaseCount: PHASES.length,
     database: 'real_sql_lifecycle_injected_guarded_host', surface: 'native_adapter_injected_services',
-    customer: 'real_local_tests_and_browser', provider: 'real_control_official_sdk_local_fetch',
+    customer: 'real_local_tests_browser_and_injected_checkout_guard', provider: 'real_control_official_sdk_local_fetch',
     backendControls: 'local_fixture_and_gen23_sql_compatibility', settings: 'guarded_transports_local_http',
     previewWorker: 'real_worker_local_http_two_one_use_journals', hostedPreview: 'not_tested',
     purchase: 'none', elapsedMs: result.elapsedMs }))
