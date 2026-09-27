@@ -39,7 +39,7 @@ test('fixed construction selects distinct database journals and forwards the man
       createSupabase: () => ({ async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {} }),
       createProviderPort: () => ({ dispose() {} }),
       createActivation: () => ({ async activate() { return { status: 'CONTROLS_ENABLED', target: 'qdmvngjwkcsilzmqksme', generation: 23,
-        windowId: 'f1688d28-70fa-42d1-bdda-9f1489ee4470', receiptHash: 'a'.repeat(64) } } }),
+        windowId: 'f910c5cb-1a94-410a-8e8d-2c9704c1536a', receiptHash: 'a'.repeat(64) } } }),
       createFinalJournal: () => ({}),
       createFinal: () => ({ async observe() { return { status: 'PASS_FINAL_RETIRED', projectRef: 'qdmvngjwkcsilzmqksme' } } }),
       postFinal: async () => [], validateFinal() {},
@@ -105,7 +105,7 @@ test('broker consumer and held reads accept only the exact authenticated staging
     }) },
   })
   const pass = make(new Response(JSON.stringify({ status: 'PASS',
-    windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe', expiresAt }),
+    windowId: 'f910c5cb-1a94-410a-8e8d-2c9704c1536a', expiresAt }),
   { status: 200, headers: { 'content-type': 'application/json' } }))
   try { assert.deepEqual(await pass.components.readBrokerConsumer({ signal }), { status: 'PASS' }) }
   finally { pass.dispose() }
@@ -117,4 +117,31 @@ test('broker consumer and held reads accept only the exact authenticated staging
   assert.ok(observed.every(value => value.url === 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness'
     && value.method === 'GET' && value.authorization === `Bearer ${'s'.repeat(48)}`
     && value.apikey === 's'.repeat(48)))
+})
+
+test('broker diagnostic records the request status before rejecting an active 503', async () => {
+  const create = await armed()
+  const events = []
+  let fetches = 0
+  const diagnostic = {
+    verified: (stage, status) => events.push(['verified', stage, status ?? null]),
+    pending: stage => events.push(['pending', stage]),
+  }
+  const component = create({ credentials: { managementToken,
+    vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') },
+  sourceCommit: 'a'.repeat(40), expiresAt,
+  fetch: async () => { fetches++
+    return new Response(JSON.stringify({ status: 'FAIL' }),
+      { status: 503, headers: { 'content-type': 'application/json' } }) },
+  factories: { createSupabase: () => ({
+    async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {},
+  }) } })
+  try {
+    await assert.rejects(component.components.readBrokerConsumer({ signal, diagnostic }), /unavailable/)
+    assert.equal(fetches, 1)
+    assert.deepEqual(events, [
+      ['verified', 'broker_service_key', null], ['pending', 'broker_request'],
+      ['verified', 'broker_request', 503], ['pending', 'broker_response_validation'],
+    ])
+  } finally { component.dispose() }
 })

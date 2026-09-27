@@ -21,7 +21,7 @@ const env = Object.freeze({ SUPABASE_URL: 'https://qdmvngjwkcsilzmqksme.supabase
   SUPABASE_SERVICE_ROLE_KEY: serviceKey, TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'false',
   TLL_STAGING_BROKER_DATABASE_PASSWORD: 'SYNTHETIC_BROKER_PASSWORD_' + 'y'.repeat(40),
   TLL_STAGING_POSTGRES_CA_PEM: 'public-ca-fixture', TLL_STAGING_POSTGRES_CA_SHA256: 'a'.repeat(64),
-  TLL_STAGING_BROKER_READINESS_WINDOW: `b7bf72d4-18c1-4b85-8e7c-23a95dd845fe|${startsAt}|${expiresAt}` })
+  TLL_STAGING_BROKER_READINESS_WINDOW: `f910c5cb-1a94-410a-8e8d-2c9704c1536a|${startsAt}|${expiresAt}` })
 const request = (authorization = `Bearer ${serviceKey}`, apikey = serviceKey) => new Request(
   'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness', {
     headers: { authorization, apikey },
@@ -45,7 +45,7 @@ test('ordinary deployed source accepts only the short-lived staging window', asy
   assert.equal(connected, 1)
   for (const setting of [undefined,
     `wrong-window|${startsAt}|${expiresAt}`,
-    `b7bf72d4-18c1-4b85-8e7c-23a95dd845fe|${startsAt}|2026-09-27T22:00:01.000Z`]) {
+    `f910c5cb-1a94-410a-8e8d-2c9704c1536a|${startsAt}|2026-09-27T22:00:01.000Z`]) {
     const held = await ordinary.createStagingBrokerReadinessHandler({ ...env,
       TLL_STAGING_BROKER_READINESS_WINDOW: setting }, runtime, now)(request())
     assert.equal(held.status, 404)
@@ -81,7 +81,7 @@ test('the authenticated Edge probe uses its own installed broker password and re
   }, now)
   const result = await handler(request())
   assert.equal(result.status, 200)
-  assert.deepEqual(await result.json(), { status: 'PASS', windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe', expiresAt })
+  assert.deepEqual(await result.json(), { status: 'PASS', windowId: 'f910c5cb-1a94-410a-8e8d-2c9704c1536a', expiresAt })
   assert.doesNotMatch(JSON.stringify(Object.fromEntries(result.headers)), /SYNTHETIC/)
 })
 

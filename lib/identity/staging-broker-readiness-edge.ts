@@ -7,7 +7,7 @@ type Environment = Readonly<Record<string, string | undefined>>
 type RuntimeFactory = typeof createStagingPostgresRuntime
 export const STAGING_BROKER_READINESS_ENABLED = false
 const PROJECT_URL = 'https://qdmvngjwkcsilzmqksme.supabase.co'
-const WINDOW_ID = 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe'
+const WINDOW_ID = 'f910c5cb-1a94-410a-8e8d-2c9704c1536a'
 const WINDOW_NAME = 'TLL_STAGING_BROKER_READINESS_WINDOW'
 function activeWindow(env: Environment, now: number) {
   const parts = env[WINDOW_NAME]?.split('|')

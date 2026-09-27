@@ -19,6 +19,7 @@ import { createStagingPreviewDeploymentJournal } from './staging-surface-preview
 import { createSurfaceActivationJournal } from './staging-surface-activation-transport.mjs'
 import { createStagingGeneration23VariantReadinessReader } from './staging-generation-23-variant-readiness-reader.mjs'
 import { createStagingGeneration23ConsumerProof } from './staging-generation-23-consumer-proof.mjs'
+import { createStagingGeneration23ConsumerDiagnostic } from './staging-generation-23-consumer-diagnostic.mjs'
 import { createStagingGeneration23BrokerGateRetire } from './staging-generation-23-broker-gate-retire.mjs'
 import { createStagingGeneration23ProtectedFetch } from './staging-generation-23-protected-fetch.mjs'
 import { createStagingSurfaceNativeBinding } from './staging-surface-activation-native-binding.mjs'
@@ -122,6 +123,7 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
   const makeSurfaceJournal = make('createSurfaceJournal', createSurfaceActivationJournal)
   const makeVariantReader = make('createVariantReader', createStagingGeneration23VariantReadinessReader)
   const makeConsumerProof = make('createConsumerProof', createStagingGeneration23ConsumerProof)
+  const makeConsumerDiagnostic = make('createConsumerDiagnostic', createStagingGeneration23ConsumerDiagnostic)
   const makeGateRetire = make('createGateRetire', createStagingGeneration23BrokerGateRetire)
   const makeProtectedFetch = make('createProtectedFetch', createStagingGeneration23ProtectedFetch)
   const makeNativeBinding = make('createNativeBinding', createStagingSurfaceNativeBinding)
@@ -129,7 +131,8 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
   const runWhole = make('runWhole', rehearseStagingGeneration23WholeRun)
   const runPreviewWorker = make('runPreviewWorker', runStagingPreviewDeploymentWorker)
   if ([makeHosted, makeDatabase, makeSurface, makeAssembly, makeWholeJournal, makeSettingsJournal,
-    makeCheckoutJournal, makePreviewJournal, makeSurfaceJournal, makeVariantReader, makeExecutor, runWhole]
+    makeCheckoutJournal, makePreviewJournal, makeSurfaceJournal, makeVariantReader,
+    makeConsumerDiagnostic, makeExecutor, runWhole]
     .concat(runPreviewWorker).some(item => typeof item !== 'function')) unavailable()
 
   // These are deliberately separate durable records. The enable and freeze
@@ -138,13 +141,14 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
   const journals = Object.freeze({
     whole: requireJournal(makeWholeJournal(), ['claim', 'dispatch', 'verify', 'ownerFailure', 'skipOwner', 'hold', 'holdBeforeDispatch', 'read']),
     settings: requireJournal(makeSettingsJournal(), ['claim', 'dispatch', 'confirm', 'hold', 'read']),
-    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v7.json` }), ['read', 'recordIntent', 'transition']),
-    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v7.json` }), ['read', 'recordIntent', 'transition']),
-    consumerPreview: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-consumer-v7.json` }), ['read', 'claim']),
+    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v8.json` }), ['read', 'recordIntent', 'transition']),
+    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v8.json` }), ['read', 'recordIntent', 'transition']),
+    consumerPreview: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-consumer-v8.json` }), ['read', 'claim']),
+    consumerDiagnostic: requireJournal(makeConsumerDiagnostic(), ['read', 'claim', 'pending', 'verified', 'finish', 'hold']),
     checkoutEnable: requireJournal(makeCheckoutJournal({ action: 'ENABLE' }), ['read', 'recordIntent', 'transition']),
     checkoutFreeze: requireJournal(makeCheckoutJournal({ action: 'FREEZE' }), ['read', 'recordIntent', 'transition']),
-    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v7.json` }), ['read', 'claim']),
-    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v7.json` }), ['read', 'claim']),
+    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v8.json` }), ['read', 'claim']),
+    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v8.json` }), ['read', 'claim']),
   })
   if (journals.previewEnabled === journals.previewHeld || journals.enableSurface === journals.freezeSurface) unavailable()
 
@@ -190,17 +194,20 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
       const identity = await binding.readDeployment(target, deploymentId, { signal })
       return Object.freeze({ target, ...identity })
     }
-    const readWebsiteConsumer = async (identity, { signal }) => {
+    const readWebsiteConsumer = async (identity, { signal, diagnostic }) => {
       const reader = makeProtectedFetch({ fetch: fetcher, bypass: credentials.previewBypass,
         immutableUrl: identity.immutableUrl, maxReads: 1 })
       try {
         const response = await reader.fetch(`${identity.immutableUrl}/api/staging/consumer-readiness`, {
           method: 'GET', redirect: 'error', headers: { 'x-tll-deployment-id': identity.deploymentId }, signal })
+        diagnostic?.verified('website_request', response.status)
+        diagnostic?.pending('website_response_validation')
         if (response.status !== 200 || !/^application\/json(?:;|$)/i.test(response.headers.get('content-type') ?? '')) unavailable()
         return response.json()
       } finally { reader.dispose() }
     }
     const consumerProof = makeConsumerProof({ journal: journals.consumerPreview,
+      diagnostic: journals.consumerDiagnostic,
       runBuild: runPreviewBuild, readDeployment: readConsumerDeployment,
       readWebsite: readWebsiteConsumer,
       readEdge: input => database.components.readBrokerConsumer(input) })

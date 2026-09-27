@@ -15,32 +15,35 @@ export const GENERATION_23_LAUNCH_BRANCH = 'codex/tll-integration'
 export const GENERATION_23_LAUNCH_MIN_REMAINING_MS = 45 * 60 * 1000
 const ROOT = resolve(import.meta.dirname, '..')
 const STATE = resolve(ROOT, '../implementation-state/staging')
-export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v6.json'
-export const GENERATION_23_PRIOR_HOLD_SHA256 = 'd646bf50984d4b1671fd6eb6b08401707c63825925106932d09a89831f0f03e9'
-export const GENERATION_23_PRIOR_RETIRE_NAME = 'tll-gen23-v6-incident-retire.json'
-export const GENERATION_23_PRIOR_RETIRE_SHA256 = '26cf8f779bca57656a1b7b344b2b0d958fa4e94a35ce603749096d4aad0191e6'
+export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v7.json'
+export const GENERATION_23_PRIOR_HOLD_SHA256 = '2f7a328c610d0fc5e9b84f2ef6dd61003790baf39ca47f8de72889dcc28e7deb'
+export const GENERATION_23_PRIOR_RETIRE_NAME = 'tll-generation-23-database-retire-v7.json'
+export const GENERATION_23_PRIOR_RETIRE_SHA256 = '74b4f19ad2dd4a0fcff49280fe7b4dc5cfe43cacac7cdc4e1db75fe659bac56c'
+export const GENERATION_23_PRIOR_GATE_NAME = 'tll-generation-23-broker-gate-retire-v7.json'
+export const GENERATION_23_PRIOR_GATE_SHA256 = '243c953ea5ff5ad14d3ff31976e1dfb7ff580326c4d7ebf91ab024048182912c'
 // Each of these is a one-use record owned by a fixed Gen23 component. A
 // previous or uncertain attempt closes this entry before any credential read.
 export const GENERATION_23_LAUNCH_RECORD_NAMES = Object.freeze([
-  'tll-generation-23-whole-route-v7.json',
-  'tll-generation-23-predecessor-read-v7.json',
-  'tll-generation-23-database-setup-v7.json',
-  'tll-generation-23-database-activate-v7.json',
-  'tll-generation-23-database-shutdown-v7.json',
-  'tll-generation-23-database-retire-v7.json',
-  'tll-generation-23-provider-enable-v7.json',
-  'tll-generation-23-provider-disable-v7.json',
-  'tll-generation-23-settings-v7.json',
-  'tll-generation-23-surface-enable-v7.json',
-  'tll-generation-23-surface-freeze-v7.json',
-  'tll-generation-23-checkout-enable-v7.json',
-  'tll-generation-23-checkout-freeze-v7.json',
-  'tll-generation-23-preview-enabled-v7.json',
-  'tll-generation-23-preview-held-v7.json',
-  'tll-generation-23-preview-consumer-v7.json',
-  'tll-generation-23-broker-gate-retire-v7.json',
-  'tll-generation-23-final-read-v7.json',
-  'tll-generation-23-restricted-connections-v7.json',
+  'tll-generation-23-whole-route-v8.json',
+  'tll-generation-23-predecessor-read-v8.json',
+  'tll-generation-23-database-setup-v8.json',
+  'tll-generation-23-database-activate-v8.json',
+  'tll-generation-23-database-shutdown-v8.json',
+  'tll-generation-23-database-retire-v8.json',
+  'tll-generation-23-provider-enable-v8.json',
+  'tll-generation-23-provider-disable-v8.json',
+  'tll-generation-23-settings-v8.json',
+  'tll-generation-23-surface-enable-v8.json',
+  'tll-generation-23-surface-freeze-v8.json',
+  'tll-generation-23-checkout-enable-v8.json',
+  'tll-generation-23-checkout-freeze-v8.json',
+  'tll-generation-23-preview-enabled-v8.json',
+  'tll-generation-23-preview-held-v8.json',
+  'tll-generation-23-preview-consumer-v8.json',
+  'tll-generation-23-consumer-diagnostic-v8.json',
+  'tll-generation-23-broker-gate-retire-v8.json',
+  'tll-generation-23-final-read-v8.json',
+  'tll-generation-23-restricted-connections-v8.json',
 ])
 const result = status => Object.freeze({ status })
 let used = false
@@ -59,14 +62,15 @@ function fixedBranch() {
 function recordsUnused() {
   if (resolve(STATE, GENERATION_23_LAUNCH_RECORD_NAMES[0]) !== WHOLE_ROUTE_JOURNAL_PATH) return false
   for (const [name, expectedSha256] of [[GENERATION_23_PRIOR_HOLD_NAME, GENERATION_23_PRIOR_HOLD_SHA256],
-    [GENERATION_23_PRIOR_RETIRE_NAME, GENERATION_23_PRIOR_RETIRE_SHA256]]) {
+    [GENERATION_23_PRIOR_RETIRE_NAME, GENERATION_23_PRIOR_RETIRE_SHA256],
+    [GENERATION_23_PRIOR_GATE_NAME, GENERATION_23_PRIOR_GATE_SHA256]]) {
     try {
       const path = resolve(STATE, name), stat = lstatSync(path)
       if (!priorHoldVerified({ stat, bytes: readFileSync(path), expectedSha256 })) return false
     } catch { return false }
   }
   for (const name of GENERATION_23_LAUNCH_RECORD_NAMES) {
-    if (!name.endsWith('-v7.json')) return false
+    if (!name.endsWith('-v8.json')) return false
     try { lstatSync(resolve(STATE, name)); return false }
     catch (error) { if (error?.code !== 'ENOENT') return false }
   }

@@ -26,6 +26,8 @@ function isolatedCopy() {
   copyFileSync(join(sourceRoot, 'tests/staging-generation-22-preflight-armed-copy.test.mjs'),
     join(root, 'tests/staging-generation-22-preflight-armed-copy.test.mjs'))
   for (const name of ['scripts/staging-generation-23-connection-diagnostic.mjs',
+    'scripts/staging-generation-23-consumer-diagnostic.mjs',
+    'tests/staging-generation-23-consumer-diagnostic.test.mjs',
     'tests/staging-generation-23-connection-diagnostic.test.mjs',
     'tests/staging-generation-23-assembled-connections.test.mjs',
     'app/api/staging/consumer-readiness/route.ts',

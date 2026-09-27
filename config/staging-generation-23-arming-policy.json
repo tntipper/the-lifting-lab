@@ -54,6 +54,9 @@
     "scripts/staging-generation-23-control-shutdown.mjs": [
       "STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED"
     ],
+    "scripts/staging-generation-23-consumer-diagnostic.mjs": [
+      "STAGING_GENERATION_23_CONSUMER_DIAGNOSTIC_ENABLED"
+    ],
     "scripts/staging-generation-23-consumer-proof.mjs": [
       "STAGING_GENERATION_23_CONSUMER_PROOF_ENABLED"
     ],

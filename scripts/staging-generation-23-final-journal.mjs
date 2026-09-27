@@ -6,7 +6,7 @@ import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
 export const STAGING_GENERATION_23_FINAL_JOURNAL_ENABLED = false
 export const JOURNAL_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-generation-23-final-read-v7.json')
+  '../../implementation-state/staging/tll-generation-23-final-read-v8.json')
 const SCHEMA = 'tll-generation-23-final-read/v1'
 const QUERY_ID = 'tll-staging-generation-23-final-check/v1'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/

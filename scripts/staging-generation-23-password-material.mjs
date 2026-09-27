@@ -11,7 +11,7 @@ export const VERCEL_PASSWORD_NAMES = Object.freeze(PASSWORD_PURPOSES.map(
   purpose => `TLL_STAGING_${purpose.toUpperCase()}_DATABASE_PASSWORD`).sort())
 export const EDGE_PASSWORD_NAME = 'TLL_STAGING_BROKER_DATABASE_PASSWORD'
 export const EDGE_READINESS_WINDOW_NAME = 'TLL_STAGING_BROKER_READINESS_WINDOW'
-export const READINESS_WINDOW_ID = 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe'
+export const READINESS_WINDOW_ID = 'f910c5cb-1a94-410a-8e8d-2c9704c1536a'
 const unavailable = () => { throw new Error('Staging generation 23 password material unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')

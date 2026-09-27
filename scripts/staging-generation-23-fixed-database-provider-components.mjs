@@ -96,7 +96,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       projectSecret?.fill?.(0); binding?.dispose?.()
     }
   }
-  const readBrokerState = async ({ signal, expected }) => {
+  const readBrokerState = async ({ signal, expected, diagnostic }) => {
     requireLive(signal)
     const binding = makeSupabase({ fetch: fetcher, managementToken })
     let projectSecret
@@ -107,11 +107,15 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
     try {
       projectSecret = await bounded(binding.readProjectSecret({ signal: controller.signal }), controller.signal)
       if (!Buffer.isBuffer(projectSecret) || projectSecret.length < 32 || controller.signal.aborted) unavailable()
+      diagnostic?.verified('broker_service_key')
+      diagnostic?.pending('broker_request')
       const url = 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness'
       const response = await bounded(fetcher(url, Object.freeze({ method: 'GET', redirect: 'error', cache: 'no-store',
         headers: Object.freeze({ authorization: `Bearer ${projectSecret.toString('utf8')}`,
           apikey: projectSecret.toString('utf8'), accept: 'application/json', 'accept-encoding': 'identity' }),
         signal: controller.signal })), controller.signal)
+      diagnostic?.verified('broker_request', response?.status)
+      diagnostic?.pending('broker_response_validation')
       if (controller.signal.aborted || response?.status !== (expected === 'PASS' ? 200 : 404) || response.redirected === true
         || response.url && response.url !== url
         || !/^application\/json(?:;|$)/i.test(response.headers?.get?.('content-type') ?? '')
@@ -131,6 +135,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
         if (expected === 'PASS' ? (!exact(value, ['status', 'windowId', 'expiresAt'])
           || value.status !== 'PASS' || value.windowId !== READINESS_WINDOW_ID || value.expiresAt !== expiresAt)
           : (!exact(value, ['status']) || value.status !== 'held')) unavailable()
+        diagnostic?.verified('broker_response_validation')
         return Object.freeze({ status: expected })
       } finally { bytes.fill(0); try { void reader.cancel().catch(() => {}) } catch {}; try { reader.releaseLock() } catch {} }
     } catch { unavailable() } finally {
@@ -166,7 +171,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
         } }).run(input)
       } },
       providerEnable: ({ signal, expiresAt }) => withProvider({ action: 'ENABLE', signal, expiresAt }),
-      readBrokerConsumer: ({ signal }) => readBrokerState({ signal, expected: 'PASS' }),
+      readBrokerConsumer: ({ signal, diagnostic }) => readBrokerState({ signal, expected: 'PASS', diagnostic }),
       readBrokerHeld: ({ signal }) => readBrokerState({ signal, expected: 'HELD' }),
       providerDisable: ({ signal, expiresAt }) => withProvider({ action: 'DISABLE', signal, expiresAt }),
       readBackendState: ({ signal, expiresAt }) => backendState({ signal, expiresAt }),

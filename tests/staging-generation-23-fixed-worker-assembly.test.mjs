@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile } from 'node:fs/promises'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const script = new URL('../scripts/staging-generation-23-fixed-worker-assembly.mjs', import.meta.url)
 const source = await readFile(script, 'utf8')
@@ -23,7 +27,7 @@ const adapters = ['readBaseline', 'replaceSettings', 'readSettings', 'setupDatab
   'enableProvider', 'enableDatabase', 'enableSurface', 'runOwnerJourney', 'disableDatabase', 'disableProvider',
   'freezeSurface', 'retireDatabase', 'readFinal']
 
-const journal = () => ({ read: () => null, claim() {}, dispatch() {}, verify() {}, ownerFailure() {}, skipOwner() {}, hold() {}, holdBeforeDispatch() {}, confirm() {}, recordIntent() {}, transition() {} })
+const journal = () => ({ read: () => null, claim() {}, dispatch() {}, verify() {}, ownerFailure() {}, skipOwner() {}, hold() {}, holdBeforeDispatch() {}, confirm() {}, recordIntent() {}, transition() {}, pending() {}, verified() {}, finish() {} })
 
 function factories(calls, final = {}) {
   const captured = {}
@@ -34,7 +38,7 @@ function factories(calls, final = {}) {
   const databaseResult = name => async () => ({ status: name })
   return {
     createWholeJournal: journal, createSettingsJournal: journal, createCheckoutJournal: journal,
-    createPreviewJournal: journal, createSurfaceJournal: journal,
+    createPreviewJournal: journal, createSurfaceJournal: journal, createConsumerDiagnostic: journal,
     createHosted(input) { calls.push('hosted'); assert.equal(input.expectedDeployment.gitSourceCommit, preflight.requirements.sourceCommit)
       return { ports: hostedPorts, getDatabaseMaterial: () => ({ passwords: {}, verifiers: {} }), dispose() { calls.push('dispose:hosted') } } },
     createDatabase() { calls.push('database'); return { components: {
@@ -137,4 +141,123 @@ test('later customer sessions drain before the one-use retirement write is claim
       controlsEnabled: false, runtimeSessions: 0 } }, signal: cancelled.signal,
     deadlineAt: new Date(now + 5 * 60_000).toISOString(), now: () => now,
   }), false)
+})
+
+// Exercise the actual nested website wrapper, protected body copy, broker read,
+// consumer proof and durable diagnostic together. Other whole-route phases
+// remain synthetic; no credential or network boundary is opened by this test.
+async function armReal(name, gate) {
+  const path = new URL(`../scripts/${name}`, import.meta.url)
+  const source = (await readFile(path, 'utf8'))
+    .replace(`export const ${gate} = false`, `export const ${gate} = true`)
+    .replaceAll("from './", `from '${new URL('../scripts/', import.meta.url).href}`)
+    .replace('resolve(import.meta.dirname,',
+      `resolve(${JSON.stringify(fileURLToPath(new URL('../scripts/', import.meta.url)))},`)
+  return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
+}
+
+test('assembled consumers record real website and broker boundaries before activation', async () => {
+  const [proofModule, diagnosticModule, protectedModule, databaseModule] = await Promise.all([
+    armReal('staging-generation-23-consumer-proof.mjs', 'STAGING_GENERATION_23_CONSUMER_PROOF_ENABLED'),
+    armReal('staging-generation-23-consumer-diagnostic.mjs', 'STAGING_GENERATION_23_CONSUMER_DIAGNOSTIC_ENABLED'),
+    armReal('staging-generation-23-protected-fetch.mjs', 'STAGING_GENERATION_23_PROTECTED_FETCH_ENABLED'),
+    armReal('staging-generation-23-fixed-database-provider-components.mjs',
+      'STAGING_GENERATION_23_FIXED_DATABASE_PROVIDER_COMPONENTS_ENABLED'),
+  ])
+  const deploymentId = 'dpl_consumer', immutableUrl = 'https://consumer.vercel.app'
+  const sourceCommit = preflight.requirements.sourceCommit
+  const manifestSha256 = preflight.requirements.manifestSha256
+  const runId = '8a5354d1-e925-4e30-84cf-70802c5d4a34'
+  const validWebsite = { status: 'PASS', deploymentId,
+    checks: { customer: 'PASS', cart: 'PASS', provisional: 'PASS', bridge: 'PASS' } }
+  const scenarios = [
+    { name: 'pass', expected: 'PASS', stage: 'broker_response_validation', website: validWebsite },
+    { name: 'website-invalid-json', expected: 'HOLD', stage: 'website_response_validation', website: '{' },
+    { name: 'website-invalid-contract', expected: 'HOLD', stage: 'website_response_validation',
+      website: { ...validWebsite, checks: { ...validWebsite.checks, bridge: 'FAIL' } } },
+    { name: 'service-key-failure', expected: 'HOLD', stage: 'broker_service_key', website: validWebsite,
+      serviceKeyFails: true },
+    { name: 'broker-network-failure', expected: 'HOLD', stage: 'broker_request', website: validWebsite,
+      brokerThrows: true },
+    { name: 'broker-503', expected: 'HOLD', stage: 'broker_response_validation', website: validWebsite,
+      brokerStatus: 503 },
+    { name: 'journal-write-failure', expected: 'PENDING', stage: 'preview_build', website: validWebsite,
+      blockJournalWrite: true },
+  ]
+  for (const scenario of scenarios) {
+    const dir = mkdtempSync(join(tmpdir(), 'tll-gen23-joined-consumer-'))
+    const path = join(dir, 'consumer.json')
+    const requests = { website: 0, broker: 0 }
+    let consumerPreviewJournal
+    let built
+    try {
+      if (scenario.blockJournalWrite) writeFileSync(`${path}.${runId}.1.tmp`, 'occupied', { flag: 'wx', mode: 0o600 })
+      const f = factories([])
+      f.createConsumerProof = proofModule.createStagingGeneration23ConsumerProof
+      f.createConsumerDiagnostic = () => diagnosticModule.createStagingGeneration23ConsumerDiagnostic({
+        path, makeRunId: () => runId, now: () => now })
+      f.createProtectedFetch = protectedModule.createStagingGeneration23ProtectedFetch
+      f.createPreviewJournal = ({ path: journalPath }) => {
+        const fixture = { value: null, read() { return this.value }, claim() {} }
+        if (journalPath.includes('preview-consumer')) consumerPreviewJournal = fixture
+        return fixture
+      }
+      f.createNativeBinding = () => ({ async readDeployment() { return {
+        deploymentId, immutableUrl, sourceCommit, manifestSha256, ready: true,
+        createdAt: new Date(now).toISOString(),
+      } } })
+      f.createDatabase = input => databaseModule.createStagingGeneration23FixedDatabaseProviderComponents({
+        ...input, factories: { createSupabase: () => ({
+          async readProjectSecret() {
+            if (scenario.serviceKeyFails) throw Error('synthetic service-key failure')
+            return Buffer.from('s'.repeat(48))
+          }, dispose() {},
+        }) },
+      })
+      f.runPreviewWorker = async ({ journal: selected }) => {
+        assert.equal(selected, consumerPreviewJournal)
+        selected.value = { phase: 'VERIFIED', deploymentId, sourceCommit, manifestSha256,
+          publicCustomer: false, publicCart: false }
+        return { status: 'PROTECTED_PREVIEW_VERIFIED', deploymentId, immutableUrl,
+          sourceCommit, manifestSha256, customerEnabled: false, cartEnabled: false }
+      }
+      const fakeFetch = async (url, options) => {
+        if (url === `${immutableUrl}/api/staging/consumer-readiness`) {
+          requests.website++
+          assert.equal(options.method, 'GET')
+          assert.equal(options.headers.get('x-vercel-protection-bypass'), 'preview-token')
+          return new Response(typeof scenario.website === 'string' ? scenario.website
+            : JSON.stringify(scenario.website), { status: 200,
+            headers: { 'content-type': 'application/json' } })
+        }
+        if (url === 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness') {
+          requests.broker++
+          assert.equal(options.headers.authorization, `Bearer ${'s'.repeat(48)}`)
+          if (scenario.brokerThrows) throw Error('synthetic broker network failure')
+          const status = scenario.brokerStatus ?? 200
+          return new Response(JSON.stringify(status === 200
+            ? { status: 'PASS', windowId: 'f910c5cb-1a94-410a-8e8d-2c9704c1536a', expiresAt: expiry }
+            : { status: 'FAIL' }), { status, headers: { 'content-type': 'application/json' } })
+        }
+        throw Error('unexpected synthetic target')
+      }
+      built = armed.createStagingGeneration23FixedWorkerAssembly({ credentials: { ...credentials },
+        fetch: fakeFetch, expiresAt: expiry, preflight, checkoutTarget: checkout,
+        runCli: async () => ({ status: 'COMPLETED' }), now: () => now, factories: f })
+      if (scenario.expected === 'PASS') {
+        const result = await built.ports.proveConsumers({ signal })
+        assert.equal(result.status, 'CONSUMERS_READY_VERIFIED', scenario.name)
+      } else await assert.rejects(built.ports.proveConsumers({ signal }), undefined, scenario.name)
+      const recorded = JSON.parse(readFileSync(path, 'utf8'))
+      assert.equal(recorded.state, scenario.expected, scenario.name)
+      assert.equal(recorded.stage, scenario.stage, scenario.name)
+      assert.equal(requests.website, scenario.blockJournalWrite ? 0 : 1, scenario.name)
+      assert.equal(requests.broker, ['pass', 'broker-network-failure', 'broker-503'].includes(scenario.name) ? 1 : 0,
+        scenario.name)
+      assert.equal(recorded.websiteHttpStatus, scenario.blockJournalWrite ? null : 200, scenario.name)
+      assert.equal(recorded.brokerHttpStatus, scenario.brokerStatus ?? (scenario.expected === 'PASS' ? 200 : null),
+        scenario.name)
+      assert.doesNotMatch(readFileSync(path, 'utf8'), /Bearer|preview-token|synthetic service-key/i)
+    } finally { built?.dispose(); rmSync(dir, { recursive: true, force: true }) }
+  }
 })

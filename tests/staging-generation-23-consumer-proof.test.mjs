@@ -24,12 +24,23 @@ function connected(overrides = {}) {
   const calls = []
   const proof = armed.createStagingGeneration23ConsumerProof({
     journal: { read: () => state },
+    diagnostic: overrides.diagnostic,
     async runBuild({ input }) { calls.push('build'); assert.equal(input.publicCustomer, false)
       state = { phase: 'VERIFIED', deploymentId: built.deploymentId, sourceCommit,
         manifestSha256, publicCustomer: false, publicCart: false }; return overrides.built ?? built },
     async readDeployment() { calls.push('identity'); return overrides.identity ?? identity },
-    async readWebsite() { calls.push('website'); return overrides.website ?? website },
-    async readEdge() { calls.push('edge'); return overrides.edge ?? { status: 'PASS' } },
+    async readWebsite(_identity, { diagnostic }) { calls.push('website')
+      diagnostic?.verified('website_request', 200)
+      diagnostic?.pending('website_response_validation')
+      return overrides.website ?? website },
+    async readEdge({ diagnostic }) { calls.push('edge')
+      if (overrides.edgeError) throw overrides.edgeError
+      diagnostic?.verified('broker_service_key')
+      diagnostic?.pending('broker_request')
+      diagnostic?.verified('broker_request', 200)
+      diagnostic?.pending('broker_response_validation')
+      diagnostic?.verified('broker_response_validation')
+      return overrides.edge ?? { status: 'PASS' } },
   })
   return { proof, calls }
 }
@@ -53,4 +64,21 @@ test('wrong source, website role, or Edge result stops before the next step', as
     await assert.rejects(proof.prove({ sourceCommit, manifestSha256, signal }), /unavailable/)
     assert.equal(calls[0], 'build')
   }
+})
+
+test('consumer diagnostic identifies a service-key failure before broker GET', async () => {
+  const events = []
+  const diagnostic = {
+    claim: () => events.push('claim'),
+    pending: stage => events.push(`pending:${stage}`),
+    verified: stage => events.push(`verified:${stage}`),
+    hold: () => events.push('HOLD'),
+    finish: () => events.push('PASS'),
+  }
+  const { proof, calls } = connected({ diagnostic, edgeError: Error('synthetic credential failure') })
+  await assert.rejects(proof.prove({ sourceCommit, manifestSha256, signal }), /synthetic/)
+  assert.deepEqual(calls, ['build', 'identity', 'website', 'edge'])
+  assert.deepEqual(events.slice(-3), ['verified:website_response_validation',
+    'pending:broker_service_key', 'HOLD'])
+  assert.equal(events.includes('pending:broker_request'), false)
 })

@@ -6,7 +6,7 @@ import { EDGE_READINESS_WINDOW_NAME, PROJECT_REF } from './staging-generation-23
 
 export const STAGING_GENERATION_23_BROKER_GATE_RETIRE_ENABLED = false
 export const JOURNAL_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-generation-23-broker-gate-retire-v7.json')
+  '../../implementation-state/staging/tll-generation-23-broker-gate-retire-v8.json')
 const URL = `https://api.supabase.com/v1/projects/${PROJECT_REF}/secrets`
 const unavailable = () => { throw Error('Generation 23 broker gate retirement unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

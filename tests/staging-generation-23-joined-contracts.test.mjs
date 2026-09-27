@@ -117,7 +117,7 @@ test('backend read receipt projects only the fields accepted by the fixed provid
   const backend = await import(backendUrl)
   const receipt = { status: 'PASS_BACKEND_OFF', queryId: backend.QUERY_ID,
     projectRef: 'qdmvngjwkcsilzmqksme', generation: 23,
-    windowId: 'b7bf72d4-18c1-4b85-8e7c-23a95dd845fe', expiresAt,
+    windowId: 'f910c5cb-1a94-410a-8e8d-2c9704c1536a', expiresAt,
     controlsEnabled: false, runtimeSessions: 0 }
   const validated = backend.validateStagingGeneration23BackendState(
     [{ tll_generation_23_backend_state: receipt }], { expiresAt })
