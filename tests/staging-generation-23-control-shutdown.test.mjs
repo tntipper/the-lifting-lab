@@ -35,6 +35,9 @@ test('shutdown is one pinned transaction using narrow operator controls', async 
   assert.match(sql, /wrhgscovsgsudtedbljr/)
   assert.match(sql, /6f33365f-9b0f-4885-b0be-40669e039f61/)
   assert.match(sql, /operator_set_enabled\(false,'generation_23_shutdown'\)/)
+  assert.match(sql, /rolconnlimit=2/)
+  for (const setting of ['statement_timeout=10s', 'lock_timeout=5s',
+    'idle_in_transaction_session_timeout=15s', 'search_path=pg_catalog']) assert.ok(sql.includes(setting))
   assert.match(sql, /UPDATE tll_cart_private\.control SET enabled=false WHERE singleton/)
   assert.match(sql, /operator_status\(\)->'enabled' IS DISTINCT FROM 'false'::jsonb/)
   assert.doesNotMatch(sql, /CREATE ROLE|ALTER ROLE|PASSWORD|GRANT .* TO .*runtime/)

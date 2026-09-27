@@ -15,6 +15,8 @@ const unavailable = () => { throw Error('Generation 23 control shutdown unavaila
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 const quote = value => `'${value.replaceAll("'", "''")}'`
+const runtimeSettings = "ARRAY['idle_in_transaction_session_timeout=15s','lock_timeout=5s','search_path=pg_catalog','statement_timeout=10s']::text[]"
+const sortedRuntimeSettings = 'ARRAY(SELECT setting FROM unnest(rolconfig) AS setting ORDER BY setting)'
 const operatorSchemas = ['customer', 'broker', 'provisional', 'bridge']
 const roleNames = ['customer', 'cart', 'broker', 'provisional', 'bridge']
   .map(name => `tll_${name}_runtime`)
@@ -68,7 +70,8 @@ BEGIN
    RAISE EXCEPTION 'Gen23 shutdown migration mismatch'; END IF;
  IF (SELECT count(*) FROM pg_roles WHERE rolname IN(${roleList}) AND rolcanlogin
    AND NOT rolsuper AND NOT rolinherit AND NOT rolcreaterole AND NOT rolcreatedb
-   AND NOT rolreplication AND NOT rolbypassrls AND rolconnlimit=-1 AND rolconfig IS NULL
+   AND NOT rolreplication AND NOT rolbypassrls AND rolconnlimit=2
+   AND rolconfig IS NOT NULL AND ${sortedRuntimeSettings} IS NOT DISTINCT FROM ${runtimeSettings}
    AND rolvaliduntil=${quote(expiresAt)}::timestamptz)<>5
    OR (SELECT count(*) FROM pg_authid WHERE rolname IN(${roleList}) AND rolpassword IS NOT NULL)<>5 THEN
    RAISE EXCEPTION 'Gen23 shutdown runtime credential mismatch'; END IF;

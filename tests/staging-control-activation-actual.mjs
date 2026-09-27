@@ -115,7 +115,11 @@ try {
     GRANT USAGE ON SCHEMA tll_cart_private TO ${aliases.tll_cart_owner}; GRANT SELECT,UPDATE(enabled) ON tll_cart_private.control TO ${aliases.tll_cart_owner};
     CREATE POLICY cart_control_owner ON tll_cart_private.control FOR SELECT TO ${aliases.tll_cart_owner} USING(true);
     CREATE POLICY cart_control_lock ON tll_cart_private.control FOR UPDATE TO ${aliases.tll_cart_owner} USING(true) WITH CHECK(false);
-    ${runtimes.map(role => `CREATE ROLE ${role} LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB NOREPLICATION CONNECTION LIMIT -1 PASSWORD 'synthetic-control-only' VALID UNTIL ${q(EXPIRES)};`).join('\n')}
+    ${runtimes.map(role => `CREATE ROLE ${role} LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB NOREPLICATION CONNECTION LIMIT 2 PASSWORD 'synthetic-control-only' VALID UNTIL ${q(EXPIRES)};
+      ALTER ROLE ${role} SET statement_timeout='10s';
+      ALTER ROLE ${role} SET lock_timeout='5s';
+      ALTER ROLE ${role} SET idle_in_transaction_session_timeout='15s';
+      ALTER ROLE ${role} SET search_path=pg_catalog;`).join('\n')}
     GRANT ${[...owners, ...executors, ...runtimes].join(',')} TO ${OPERATOR} WITH ADMIN TRUE,INHERIT FALSE,SET FALSE;
     SET SESSION AUTHORIZATION ${OPERATOR};
     ${executors.map((role, index) => `GRANT ${role} TO ${runtimes[index]} WITH ADMIN FALSE,INHERIT TRUE,SET FALSE;`).join('\n')}
@@ -145,6 +149,19 @@ try {
   }
 
   // A privilege-bearing runtime role is rejected before any control changes.
+  admin(`ALTER ROLE ${runtimes[0]} CONNECTION LIMIT -1`)
+  assert.equal(managed(sql, { allowFailure: true }), null)
+  assert.equal(admin(controls), 'false,false,false,false,false')
+  admin(`ALTER ROLE ${runtimes[0]} CONNECTION LIMIT 2`)
+  admin(`ALTER ROLE ${runtimes[0]} RESET lock_timeout`)
+  assert.equal(managed(sql, { allowFailure: true }), null)
+  assert.equal(admin(controls), 'false,false,false,false,false')
+  // Restoring the setting appends it in a different order; order alone is safe.
+  admin(`ALTER ROLE ${runtimes[0]} SET lock_timeout='5s'`)
+  admin(`ALTER ROLE ${runtimes[0]} SET work_mem='4MB'`)
+  assert.equal(managed(sql, { allowFailure: true }), null)
+  assert.equal(admin(controls), 'false,false,false,false,false')
+  admin(`ALTER ROLE ${runtimes[0]} RESET work_mem`)
   admin(`ALTER ROLE ${runtimes[0]} BYPASSRLS`)
   assert.equal(managed(sql, { allowFailure: true }), null)
   assert.equal(admin(controls), 'false,false,false,false,false')
@@ -176,6 +193,14 @@ try {
     admin(`ALTER ROLE ${runtimes[0]} BYPASSRLS`)
     assert.equal(managed(shutdownSql, { allowFailure: true }), null)
     admin(`ALTER ROLE ${runtimes[0]} NOBYPASSRLS`)
+    admin(`ALTER ROLE ${runtimes[0]} CONNECTION LIMIT -1`)
+    assert.equal(managed(shutdownSql, { allowFailure: true }), null)
+    assert.equal(admin(controls), 'true,true,true,true,true')
+    admin(`ALTER ROLE ${runtimes[0]} CONNECTION LIMIT 2`)
+    admin(`ALTER ROLE ${runtimes[0]} RESET lock_timeout`)
+    assert.equal(managed(shutdownSql, { allowFailure: true }), null)
+    assert.equal(admin(controls), 'true,true,true,true,true')
+    admin(`ALTER ROLE ${runtimes[0]} SET lock_timeout='5s'`)
     admin('ALTER TABLE tll_cart_private.control DISABLE ROW LEVEL SECURITY')
     assert.equal(managed(shutdownSql, { allowFailure: true }), null)
     admin('ALTER TABLE tll_cart_private.control ENABLE ROW LEVEL SECURITY')

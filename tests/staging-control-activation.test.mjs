@@ -47,6 +47,9 @@ test('one fixed transaction validates exact staging/runtime/owner state and enab
   assert.match(sql, /clock_timestamp\(\)>='2026-09-22T15:50:00\.000Z'::timestamptz/)
   assert.match(sql, /pg_stat_clear_snapshot\(\)/)
   for (const attribute of ['rolsuper', 'rolinherit', 'rolcreaterole', 'rolcreatedb', 'rolreplication', 'rolbypassrls', 'rolconnlimit', 'rolconfig']) assert.match(sql, new RegExp(attribute))
+  assert.match(sql, /rolconnlimit<>2/)
+  for (const setting of ['statement_timeout=10s', 'lock_timeout=5s',
+    'idle_in_transaction_session_timeout=15s', 'search_path=pg_catalog']) assert.ok(sql.includes(setting))
   assert.match(sql, /requires exact disabled controls/)
   for (const name of ['customer', 'broker', 'provisional', 'bridge']) assert.match(sql, new RegExp(`tll_${name}_private\\.operator_status`))
   assert.doesNotMatch(sql, /operator_set_enabled/)

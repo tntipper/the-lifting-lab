@@ -24,6 +24,8 @@ const EXECUTION_PAIRS = Object.freeze([
 
 const unavailable = () => { throw new Error('Staging control activation unavailable') }
 const sqlLiteral = value => `'${value.replaceAll("'", "''")}'`
+const runtimeSettings = "ARRAY['idle_in_transaction_session_timeout=15s','lock_timeout=5s','search_path=pg_catalog','statement_timeout=10s']::text[]"
+const sortedRuntimeSettings = 'ARRAY(SELECT setting FROM unnest(rolconfig) AS setting ORDER BY setting)'
 const exactKeys = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 
@@ -94,7 +96,8 @@ BEGIN
     RAISE EXCEPTION 'Control activation staging binding mismatch'; END IF;
   IF (SELECT count(*) FROM pg_roles WHERE rolname IN(${runtimeList}))<>5
     OR EXISTS(SELECT 1 FROM pg_roles WHERE rolname IN(${runtimeList}) AND (NOT rolcanlogin OR rolsuper OR rolinherit OR rolcreaterole
-      OR rolcreatedb OR rolreplication OR rolbypassrls OR rolconnlimit<>-1 OR rolconfig IS NOT NULL
+      OR rolcreatedb OR rolreplication OR rolbypassrls OR rolconnlimit<>2
+      OR rolconfig IS NULL OR ${sortedRuntimeSettings} IS DISTINCT FROM ${runtimeSettings}
       OR rolvaliduntil IS DISTINCT FROM ${sqlLiteral(context.expiresAt)}::timestamptz))
     OR EXISTS(SELECT 1 FROM pg_authid WHERE rolname IN(${runtimeList}) AND rolpassword IS NULL)
     OR clock_timestamp()+interval '2 minutes'>=${sqlLiteral(context.expiresAt)}::timestamptz
