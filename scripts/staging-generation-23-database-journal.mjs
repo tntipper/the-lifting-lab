@@ -1,11 +1,11 @@
-/** Separate, one-use, secret-free dispatch records for Gen23 setup and retirement. */
+/** Separate, one-use, secret-free dispatch records for Gen23 database changes. */
 import { randomUUID } from 'node:crypto'
 import * as fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
 export const STAGING_GENERATION_23_DATABASE_JOURNAL_ENABLED = false
-const ACTIONS = Object.freeze(['SETUP', 'SHUTDOWN', 'RETIRE'])
+const ACTIONS = Object.freeze(['SETUP', 'ACTIVATE', 'SHUTDOWN', 'RETIRE'])
 const SCHEMA = 'tll-generation-23-database-dispatch/v1'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 const HASH = /^[a-f0-9]{64}$/
@@ -26,7 +26,8 @@ function validate(record, action) {
     || Date.parse(record.updatedAt) < Date.parse(record.createdAt)
     || Date.parse(record.deadlineAt) <= Date.parse(record.createdAt)
     || Date.parse(record.deadlineAt) > Date.parse(record.expiresAt) + 3_600_000
-    || (action === 'SETUP' && Date.parse(record.deadlineAt) > Date.parse(record.expiresAt))
+    || (['SETUP', 'ACTIVATE'].includes(action)
+      && Date.parse(record.deadlineAt) > Date.parse(record.expiresAt))
     || !['CLAIMED', 'DISPATCHED', 'HOLD', 'FINISHED'].includes(record.state)
     || (record.state === 'FINISHED' ? !HASH.test(record.receiptDigest) : record.receiptDigest !== null)) unavailable()
   return Object.freeze(record)

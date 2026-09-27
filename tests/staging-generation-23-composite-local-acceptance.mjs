@@ -21,7 +21,7 @@ import { acceptSupervisorPipe } from '../scripts/staging-provider-broker-recover
 const mode = process.argv.slice(2).join(' ')
 if (!['--run-offline-once', '--run-supervised-offline-once', '--fail-first-setting-once',
   '--fail-inventory-branch-once', '--fail-settings-readback-once',
-  '--fail-surface-public-once', '--fail-owner-verified-once',
+  '--fail-activation-reply-once', '--fail-surface-public-once', '--fail-owner-verified-once',
   '--fail-setup-reply-once', '--abort-setup-once', '--fail-shutdown-reply-once',
   '--fail-retirement-reply-once'].includes(mode)) {
   throw Error('Explicit local test mode required')
@@ -85,6 +85,10 @@ function ensureCartFixture() {
 try {
 const databaseJournalModule = await arm('staging-generation-23-database-journal.mjs',
   'STAGING_GENERATION_23_DATABASE_JOURNAL_ENABLED')
+const controlEnableHostModule = await arm('staging-generation-23-control-enable-host.mjs',
+  'STAGING_GENERATION_23_CONTROL_ENABLE_HOST_ENABLED', [[
+    "from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`,
+  ]])
 const shutdownUrl = await armedUrl('staging-generation-23-control-shutdown.mjs',
   'STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED', [[
     "from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`,
@@ -115,6 +119,7 @@ const databaseJournal = action => databaseJournalModule.createStagingGeneration2
     : '7f532f58-e750-42f7-9e83-0a7ec82f3732',
 })
 const setupJournal = databaseJournal('SETUP')
+const activationJournal = databaseJournal('ACTIVATE')
 const shutdownJournal = databaseJournal('SHUTDOWN')
 const retirementJournal = databaseJournal('RETIRE')
 syntheticToken = Buffer.from(`sbp_${'a'.repeat(40)}`)
@@ -255,6 +260,23 @@ const settingsCoordinator = settingsCoordinatorModule.createStagingGeneration23S
   }),
 })
 let active, databaseEnabled = false, enabledPreview, ownerChecks = false, syntheticSessionCount = 0
+const activationHost = controlEnableHostModule.createStagingGeneration23ControlEnableHost({
+  journal: activationJournal,
+  async execute({ context, signal }) {
+    assert.equal(context.generation, 23)
+    assert.equal(context.expiresAt, database.expiresAt)
+    assert.equal(signal.aborted, false)
+    ensureCartFixture()
+    run(process.execPath, ['tests/staging-control-activation-actual.mjs'], {
+      ...process.env, TLL_CONTROL_GENERATION: '23',
+    })
+    assert.equal(database.enableControls().status, 'PASS_CONTROLS_ENABLED')
+    databaseEnabled = true
+    if (mode === '--fail-activation-reply-once') throw Error('injected lost activation reply')
+    return { status: 'CONTROLS_ENABLED', target: PROJECT_REF, generation: 23,
+      windowId: context.windowId, receiptHash: 'c'.repeat(64) }
+  },
+})
 let provider = {
   id: 'synthetic-staging-provider', provider_type: 'oauth2', identifier: PROVIDER_IDENTIFIER,
   name: STAGING_PROVIDER_NAME, client_id: STAGING_BROKER_PROVIDER.clientId,
@@ -357,12 +379,15 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       break
     case 'databaseEnable':
       assert.equal(databaseEnabled, false)
-      ensureCartFixture()
-      run(process.execPath, ['tests/staging-control-activation-actual.mjs'], {
-        ...process.env, TLL_CONTROL_GENERATION: '23',
-      })
-      assert.equal(database.enableControls().status, 'PASS_CONTROLS_ENABLED')
-      databaseEnabled = true
+      const activationResult = await activationHost.run({ expiresAt: database.expiresAt,
+        deadlineAt: database.expiresAt, signal })
+      if (mode === '--fail-activation-reply-once') {
+        assert.equal(activationResult.status, 'HOLD_RECONCILE')
+        assert.equal(activationJournal.read().state, 'HOLD')
+        return { status: 'HOLD_CONTROL_ACTIVATION' }
+      }
+      assert.equal(activationResult.status, 'CONTROL_ACTIVATION_VERIFIED')
+      assert.equal(activationJournal.read().state, 'FINISHED')
       break
     case 'surfaceEnable': {
       assert.equal(provider.enabled && databaseEnabled, true)
@@ -433,6 +458,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.deepEqual(httpRequests, ['SETUP', 'READ_STATE', 'SHUTDOWN', 'READ_STATE', 'RETIRE'])
       assert.equal(enabledPreviewJournal.read().phase, 'VERIFIED')
       assert.equal(heldPreviewJournal.read().phase, 'VERIFIED')
+      assert.equal(activationJournal.read().state, 'FINISHED')
       assert.notEqual(enabledPreviewJournal.read().deploymentId, heldPreviewJournal.read().deploymentId)
       break
     default: throw Error('Unrecognised phase')
@@ -489,6 +515,14 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     assert.equal(surface.events.length, 0)
     console.log(JSON.stringify({ status: 'PASS_LOCAL_SETTINGS_READBACK_DRIFT_STOP',
       phaseCount: calls.length, databaseSetup: 'not_dispatched', purchase: 'none' }))
+  } else if (mode === '--fail-activation-reply-once') {
+    assert.equal(result.status, 'HOLD')
+    assert.equal(result.failedPhase, 'databaseEnable')
+    assert.deepEqual(calls, PHASES.slice(0, PHASES.indexOf('surfaceEnable')))
+    assert.equal(activationJournal.read().state, 'HOLD')
+    assert.equal(surface.events.length, 0)
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_ACTIVATION_LOST_REPLY_STOP',
+      phaseCount: calls.length, customerJourney: 'not_dispatched', purchase: 'none' }))
   } else if (mode === '--fail-surface-public-once') {
     assert.equal(result.status, 'HOLD')
     assert.equal(result.failedPhase, 'surfaceEnable')
