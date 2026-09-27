@@ -106,6 +106,20 @@ try {
       assert.equal(await handoff.getAttribute('href'),'https://tll-integration-staging.myshopify.com/cart/c/syntheticCheckout123')
       assert.match(await handoff.getAttribute('rel'),/noreferrer/)
       assert.equal(await handoff.getAttribute('referrerpolicy'),'no-referrer')
+      const checkoutAttempts=[]
+      let resolveCheckoutAttempt
+      const checkoutAttempt=new Promise(resolve=>{resolveCheckoutAttempt=resolve})
+      await context.route('https://tll-integration-staging.myshopify.com/**',route=>{
+        checkoutAttempts.push({url:route.request().url(),method:route.request().method(),referrer:route.request().headers().referer})
+        resolveCheckoutAttempt()
+        return route.abort()
+      })
+      const popupPromise=page.waitForEvent('popup')
+      await handoff.click()
+      const popup=await popupPromise
+      await Promise.race([checkoutAttempt,new Promise((_,reject)=>setTimeout(()=>reject(Error('Checkout GET was not intercepted')),5000))])
+      assert.deepEqual(checkoutAttempts,[{url:'https://tll-integration-staging.myshopify.com/cart/c/syntheticCheckout123',method:'GET',referrer:undefined}])
+      await popup.close()
       mode='maliciousCheckout';await prepare.click()
       await dialog.getByRole('status').filter({hasText:'could not be confirmed'}).waitFor()
       assert.equal(await handoff.count(),0,'unsafe destination must never remain available')
