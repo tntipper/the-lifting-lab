@@ -72,6 +72,33 @@ test('known owner failure continues through shutdown and never becomes PASS', as
   assert.throws(() => create({ path: location, now }).claim(), /unavailable/)
 })
 
+test('owner may be skipped for budget while shutdown continues', async () => {
+  const { createStagingGeneration23WholeRouteJournal: create } = await armed()
+  const location = path(), journal = create({ path: location, makeRunId: () => runId, now })
+  let record = journal.claim()
+  for (const [index, phase] of PHASES.entries()) {
+    if (phase === 'ownerJourney') record = journal.skipOwner(record)
+    else record = journal.verify(record, phase)
+    if (index + 1 < PHASES.length && PHASES[index + 1] !== 'ownerJourney') {
+      record = journal.dispatch(record, PHASES[index + 1])
+    }
+  }
+  assert.equal(record.state, 'OWNER_FAILURE_SHUTDOWN_VERIFIED')
+  assert.equal(record.phases.find(value => value.phase === 'ownerJourney').state, 'SKIPPED_VERIFIED')
+  assert.equal(create({ path: location, now }).read().state, 'OWNER_FAILURE_SHUTDOWN_VERIFIED')
+})
+
+test('an unstarted later phase records a terminal hold without claiming an effect', async () => {
+  const { createStagingGeneration23WholeRouteJournal: create } = await armed()
+  const location = path(), journal = create({ path: location, makeRunId: () => runId, now })
+  const baseline = journal.verify(journal.claim(), 'baseline')
+  const held = journal.holdBeforeDispatch(baseline, 'settings')
+  assert.equal(held.state, 'HOLD')
+  assert.equal(held.phases.at(-1).state, 'NOT_DISPATCHED_HOLD')
+  assert.equal(create({ path: location, now }).read().state, 'HOLD')
+  assert.throws(() => journal.dispatch(held, 'settings'), /unavailable/)
+})
+
 test('an uncertain dispatched phase becomes a terminal hold and cannot replay', async () => {
   const { createStagingGeneration23WholeRouteJournal: create } = await armed()
   const location = path(), journal = create({ path: location, makeRunId: () => runId, now })

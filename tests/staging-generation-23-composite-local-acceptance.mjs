@@ -84,9 +84,12 @@ const checkoutPortModule = await arm('staging-generation-23-checkout-setting-por
   'STAGING_GENERATION_23_CHECKOUT_SETTING_PORT_ENABLED')
 const checkoutReadinessModule = await arm('staging-generation-23-checkout-readiness-reader.mjs',
   'STAGING_GENERATION_23_CHECKOUT_READINESS_READER_ENABLED')
+const wholeRouteJournalModule = await arm('staging-generation-23-whole-route-journal.mjs',
+  'STAGING_GENERATION_23_WHOLE_ROUTE_JOURNAL_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
 let existingCartFixtureStarted = false
 let databaseJournalDirectory, settingsDirectory, providerDirectory, previewDirectory, checkoutDirectory,
+  wholeRouteDirectory,
   syntheticToken, providerPort
 function ensureCartFixture() {
   if (run('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres']).trim() === 'false') {
@@ -634,8 +637,14 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     readDeployment: (target, id) => surface.ports.readDeployment(target, id),
   })
   surfacePorts = surface.nativePorts(parent.signal, buildPort)
+  wholeRouteDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-whole-route-'))
+  const wholeRouteJournal = wholeRouteJournalModule.createStagingGeneration23WholeRouteJournal({
+    path: join(wholeRouteDirectory, 'route.json'), now: Date.now })
   const result = await rehearseStagingGeneration23WholeRun({ operations, now: Date.now,
-    windowExpiresAt: database.expiresAt, signal: parent.signal })
+    windowExpiresAt: database.expiresAt, signal: parent.signal, journal: wholeRouteJournal })
+  assert.equal(wholeRouteJournal.read().state, result.status === 'LOCAL_SEQUENCE_PASS' ? 'PASS'
+    : result.status === 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED'
+      ? 'OWNER_FAILURE_SHUTDOWN_VERIFIED' : 'HOLD')
   if (mode === '--fail-inventory-branch-once') {
     assert.equal(result.status, 'HOLD')
     assert.equal(result.failedPhase, 'baseline')
@@ -745,7 +754,8 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
   database.dispose()
   providerPort?.dispose()
   syntheticToken?.fill(0)
-  for (const directory of [previewDirectory, providerDirectory, settingsDirectory, databaseJournalDirectory, checkoutDirectory]) {
+  for (const directory of [previewDirectory, providerDirectory, settingsDirectory, databaseJournalDirectory,
+    checkoutDirectory, wholeRouteDirectory]) {
     if (directory) rmSync(directory, { recursive: true, force: true })
   }
   releaseSupervisorPipe?.()

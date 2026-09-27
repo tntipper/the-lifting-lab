@@ -1,6 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { PHASES, REQUIRED_RESULTS,
   rehearseStagingGeneration23WholeRun } from '../scripts/staging-generation-23-whole-run.mjs'
 
@@ -14,6 +18,19 @@ async function armed() {
   return import(`data:text/javascript;base64,${Buffer.from(source.replace(
     'export const STAGING_GENERATION_23_WHOLE_RUN_ENABLED = false',
     'export const STAGING_GENERATION_23_WHOLE_RUN_ENABLED = true')).toString('base64')}`)
+}
+
+async function journal() {
+  const scripts = new URL('../scripts/', import.meta.url)
+  let source = await readFile(new URL('staging-generation-23-whole-route-journal.mjs', scripts), 'utf8')
+  source = source.replace('export const STAGING_GENERATION_23_WHOLE_ROUTE_JOURNAL_ENABLED = false',
+    'export const STAGING_GENERATION_23_WHOLE_ROUTE_JOURNAL_ENABLED = true')
+    .replaceAll("from './", `from '${scripts.href}`)
+    .replace('resolve(import.meta.dirname,', `resolve(${JSON.stringify(fileURLToPath(scripts))},`)
+  const journalSource = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
+  return journalSource.createStagingGeneration23WholeRouteJournal({
+    path: join(mkdtempSync(join(tmpdir(), 'tll-gen23-joined-journal-')), 'route.json'),
+  })
 }
 
 function fixture({ fail, throwAt, clockStep = 1000 } = {}) {
@@ -44,6 +61,63 @@ test('complete local sequence records only nonsecret phase and time metadata', a
   assert.equal(result.timeline.length, PHASES.length * 2)
   assert.deepEqual(Object.keys(result.timeline[0]), ['phase', 'state', 'atMs'])
   assert.equal(JSON.stringify(result).includes('private material'), false)
+})
+
+test('complete controller durably records each phase and its final PASS', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  const record = await journal(), state = fixture()
+  const result = await run({ ...state, journal: record, windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'LOCAL_SEQUENCE_PASS')
+  assert.equal(record.read().state, 'PASS')
+  assert.equal(record.read().phases.length, PHASES.length)
+  assert.throws(() => record.claim(), /unavailable/)
+})
+
+test('known owner failure records separate verified shutdown rather than PASS', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  const record = await journal(), state = fixture()
+  state.operations.ownerJourney = async () => ({ status: 'OWNER_JOURNEY_FAILED_VERIFIED' })
+  const result = await run({ ...state, journal: record, windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED')
+  assert.equal(record.read().state, 'OWNER_FAILURE_SHUTDOWN_VERIFIED')
+  assert.equal(record.read().phases.find(value => value.phase === 'ownerJourney').state,
+    'FAILED_VERIFIED')
+})
+
+test('a failed operation leaves a terminal hold before dependent work', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  const record = await journal(), state = fixture({ fail: 'surfaceEnable' })
+  const result = await run({ ...state, journal: record, windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'HOLD')
+  assert.equal(record.read().state, 'HOLD')
+  assert.equal(record.read().pendingPhase, 'surfaceEnable')
+  assert.equal(state.calls.includes('ownerJourney'), false)
+})
+
+test('journal preserves a budget-skipped customer test while shutdown succeeds', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  const record = await journal()
+  let time = start
+  const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
+    if (phase === 'surfaceEnable') time = start + 47 * 60_000
+    return { status: REQUIRED_RESULTS[phase] }
+  }]))
+  const result = await run({ operations, now: () => time, journal: record,
+    windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED')
+  assert.equal(record.read().state, 'OWNER_FAILURE_SHUTDOWN_VERIFIED')
+  assert.equal(record.read().phases.find(value => value.phase === 'ownerJourney').state,
+    'SKIPPED_VERIFIED')
+})
+
+test('journal records a budget hold before dispatching a later effect', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  const record = await journal(), state = fixture({ clockStep: 330_000 })
+  const result = await run({ ...state, journal: record, windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'HOLD')
+  assert.equal(record.read().state, 'HOLD')
+  assert.equal(record.read().phases.at(-1).state, 'NOT_DISPATCHED_HOLD')
+  assert.equal(state.calls.includes(result.failedPhase), false)
 })
 
 test('every wrong receipt halts before the next phase; no phase is retried', async () => {

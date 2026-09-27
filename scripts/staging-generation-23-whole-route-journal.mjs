@@ -37,13 +37,19 @@ function validPhase(value, index, state) {
     && value.phase === 'ownerJourney' && value.state === state
     && OWNER_FAILURE_REASONS.has(value.reason)
     && value.summary === phaseSummary(value.phase, state)
+  if (state === 'SKIPPED_VERIFIED') return PHASES[index] === 'ownerJourney'
+    && exact(value, ['phase', 'state', 'summary', 'reason'])
+    && value.phase === 'ownerJourney' && value.state === state
+    && value.reason === 'INSUFFICIENT_OWNER_BUDGET'
+    && value.summary === phaseSummary(value.phase, state)
   return exact(value, ['phase', 'state', 'summary']) && value.phase === PHASES[index]
     && value.state === state && value.summary === phaseSummary(value.phase, state)
 }
 
 const validCompleted = (value, index) => validPhase(value, index, 'VERIFIED')
-  || validPhase(value, index, 'FAILED_VERIFIED')
-const ownerFailed = phases => phases.some((value, index) => validPhase(value, index, 'FAILED_VERIFIED'))
+  || validPhase(value, index, 'FAILED_VERIFIED') || validPhase(value, index, 'SKIPPED_VERIFIED')
+const ownerFailed = phases => phases.some((value, index) => validPhase(value, index, 'FAILED_VERIFIED')
+  || validPhase(value, index, 'SKIPPED_VERIFIED'))
 
 function validate(record) {
   if (!exact(record, ['schema', 'target', 'runId', 'createdAt', 'updatedAt', 'state',
@@ -75,7 +81,8 @@ function validate(record) {
     if (!record.pendingPhase || record.pendingPhase !== PHASES[record.nextIndex]
       || record.phases.length !== record.nextIndex + 1
       || !record.phases.slice(0, -1).every(validCompleted)
-      || !validPhase(record.phases.at(-1), record.nextIndex, 'HOLD')) unavailable()
+      || !(validPhase(record.phases.at(-1), record.nextIndex, 'HOLD')
+        || validPhase(record.phases.at(-1), record.nextIndex, 'NOT_DISPATCHED_HOLD'))) unavailable()
   }
   return Object.freeze(record)
 }
@@ -167,6 +174,21 @@ export function createStagingGeneration23WholeRouteJournal({ path = JOURNAL_PATH
       phases[phases.length - 1] = { phase, state: 'FAILED_VERIFIED',
         summary: phaseSummary(phase, 'FAILED_VERIFIED'), reason }
       return update(previous, { nextIndex: previous.nextIndex + 1, pendingPhase: null, phases })
+    },
+    skipOwner(previous) {
+      const phase = 'ownerJourney'
+      if (faulted || previous?.state !== 'ACTIVE' || previous.pendingPhase !== null
+        || previous.nextIndex !== PHASES.indexOf(phase)) unavailable()
+      return update(previous, { nextIndex: previous.nextIndex + 1,
+        phases: [...previous.phases, { phase, state: 'SKIPPED_VERIFIED',
+          summary: phaseSummary(phase, 'SKIPPED_VERIFIED'), reason: 'INSUFFICIENT_OWNER_BUDGET' }] })
+    },
+    holdBeforeDispatch(previous, phase) {
+      if (faulted || previous?.state !== 'ACTIVE' || previous.pendingPhase !== null
+        || phase !== PHASES[previous.nextIndex]) unavailable()
+      return update(previous, { state: 'HOLD', pendingPhase: phase,
+        phases: [...previous.phases, { phase, state: 'NOT_DISPATCHED_HOLD',
+          summary: phaseSummary(phase, 'NOT_DISPATCHED_HOLD') }] })
     },
     hold(previous, phase) {
       if (faulted || previous?.state !== 'ACTIVE' || previous.pendingPhase !== phase

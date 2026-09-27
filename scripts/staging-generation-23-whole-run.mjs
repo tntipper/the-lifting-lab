@@ -44,18 +44,37 @@ function classifyFailure(index, wasDispatched) {
  * cancellation. A separate parent process supervisor must kill a stuck child.
  */
 export async function rehearseStagingGeneration23WholeRun({ operations, now = Date.now,
-  windowExpiresAt, signal } = {}) {
+  windowExpiresAt, signal, journal } = {}) {
   if (!STAGING_GENERATION_23_WHOLE_RUN_ENABLED || !operations || typeof operations !== 'object'
     || Array.isArray(operations) || typeof now !== 'function' || !signal
     || typeof signal.addEventListener !== 'function' || signal.aborted
     || typeof windowExpiresAt !== 'string'
     || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.000Z$/.test(windowExpiresAt)
-    || PHASES.some(phase => typeof operations[phase] !== 'function')) unavailable()
+    || PHASES.some(phase => typeof operations[phase] !== 'function')
+    || (journal && ['claim', 'dispatch', 'verify', 'ownerFailure', 'skipOwner',
+      'hold', 'holdBeforeDispatch'].some(method => typeof journal[method] !== 'function'))) unavailable()
   const startedAt = now(), expires = Date.parse(windowExpiresAt)
   if (!Number.isFinite(startedAt) || !Number.isFinite(expires)
     || expires <= startedAt || expires - startedAt > MAX_WINDOW_MS) unavailable()
 
   const timeline = []
+  let record
+  if (journal) {
+    try { record = journal.claim() } catch {
+      return Object.freeze({ status: 'HOLD', failedPhase: 'baseline',
+        nextAction: 'CHECK_STARTING_STATE', timeline: Object.freeze(timeline) })
+    }
+  }
+  const recordStep = (method, ...args) => {
+    if (!journal) return true
+    try { record = journal[method](record, ...args); return true } catch { return false }
+  }
+  const held = (index, wasDispatched, priorOwnerFailure) => Object.freeze({
+    status: 'HOLD', failedPhase: PHASES[index],
+    nextAction: classifyFailure(index, wasDispatched),
+    ...(priorOwnerFailure ? { priorOwnerFailure } : {}),
+    timeline: Object.freeze(timeline),
+  })
   let lastTime = startedAt, ownerFailure = null
   for (let index = 0; index < PHASES.length; index++) {
     const phase = PHASES[index]
@@ -70,16 +89,17 @@ export async function rehearseStagingGeneration23WholeRun({ operations, now = Da
       // its time budget is a known non-effect, so proceed to the reserved OFF path.
       if (index === CUSTOMER_PHASE && insufficientReserve && Number.isFinite(before)
         && before >= lastTime && before < expires && !signal.aborted) {
+        if (!recordStep('skipOwner')) return held(index, false, ownerFailure)
         ownerFailure = 'INSUFFICIENT_OWNER_BUDGET'
         lastTime = before
         continue
       }
-      return Object.freeze({ status: 'HOLD', failedPhase: phase,
-        nextAction: classifyFailure(index, false),
-        ...(ownerFailure ? { priorOwnerFailure: ownerFailure } : {}),
-        timeline: Object.freeze(timeline) })
+      if (!recordStep(index === 0 ? 'hold' : 'holdBeforeDispatch', phase))
+        return held(index, false, ownerFailure)
+      return held(index, false, ownerFailure)
     }
     lastTime = before
+    if (index > 0 && !recordStep('dispatch', phase)) return held(index, false, ownerFailure)
     // A phase is counted as dispatched before the supplied function runs.
     // An exception or lost reply therefore cannot be mistaken for a no-op.
     timeline.push(Object.freeze({ phase, state: 'DISPATCHED', atMs: before - startedAt }))
@@ -95,6 +115,8 @@ export async function rehearseStagingGeneration23WholeRun({ operations, now = Da
       && result && typeof result === 'object' && !Array.isArray(result)
       && Object.keys(result).length === 1 && result.status === 'OWNER_JOURNEY_FAILED_VERIFIED') {
       timeline.push(Object.freeze({ phase, state: 'FAILED_VERIFIED', atMs: after - startedAt }))
+      if (!recordStep('ownerFailure', 'OWNER_JOURNEY_FAILED_VERIFIED'))
+        return held(index, true, ownerFailure)
       ownerFailure = 'OWNER_JOURNEY_FAILED_VERIFIED'
       lastTime = after
       continue
@@ -104,6 +126,8 @@ export async function rehearseStagingGeneration23WholeRun({ operations, now = Da
       && result && typeof result === 'object' && !Array.isArray(result)
       && Object.keys(result).length === 1 && result.status === REQUIRED_RESULTS[phase]) {
       timeline.push(Object.freeze({ phase, state: 'LATE_VERIFIED', atMs: after - startedAt }))
+      if (!recordStep('ownerFailure', 'OWNER_JOURNEY_OVERRAN_BUDGET'))
+        return held(index, true, ownerFailure)
       ownerFailure = 'OWNER_JOURNEY_OVERRAN_BUDGET'
       lastTime = after
       continue
@@ -113,13 +137,12 @@ export async function rehearseStagingGeneration23WholeRun({ operations, now = Da
       || !result || typeof result !== 'object' || Array.isArray(result)
       || Object.keys(result).length !== 1 || result.status !== REQUIRED_RESULTS[phase]) {
       timeline.push(Object.freeze({ phase, state: 'UNCONFIRMED', atMs: after - startedAt }))
-      return Object.freeze({ status: 'HOLD', failedPhase: phase,
-        nextAction: classifyFailure(index, true),
-        ...(ownerFailure ? { priorOwnerFailure: ownerFailure } : {}),
-        timeline: Object.freeze(timeline) })
+      recordStep('hold', phase)
+      return held(index, true, ownerFailure)
     }
     lastTime = after
     timeline.push(Object.freeze({ phase, state: 'VERIFIED', atMs: after - startedAt }))
+    if (!recordStep('verify', phase)) return held(index, true, ownerFailure)
   }
   if (ownerFailure) return Object.freeze({ status: 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED',
     failedPhase: 'ownerJourney', reason: ownerFailure, completedPhases: FINAL_PHASE,
