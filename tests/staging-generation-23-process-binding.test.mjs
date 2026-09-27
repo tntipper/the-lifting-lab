@@ -12,6 +12,8 @@ import { runStagingGeneration23WholeWorker } from '../scripts/staging-generation
 import { GENERATION_23_ORDERLY_ABORT_MS } from '../scripts/staging-generation-23-worker-entry.mjs'
 
 const proof = 'TLL_STAGING_GENERATION_23_WHOLE_SUPERVISOR_V1'
+const credentials = () => ({ managementToken: Buffer.from(`sbp_${'a'.repeat(40)}`),
+  vercelToken: Buffer.from('local-vercel-token'), previewBypass: Buffer.from('local-preview-bypass') })
 const controlUrl = new URL('../scripts/staging-provider-broker-recovery-process-control.mjs', import.meta.url).href
 const rotationUrl = new URL('../scripts/staging-provider-broker-rotation-process-control.mjs', import.meta.url).href
 const running = pid => {
@@ -44,34 +46,57 @@ test('ordinary Gen23 process source is OFF and starts neither worker nor hosted 
   assert.equal(STAGING_GENERATION_23_PROCESS_BINDING_ENABLED, false)
   await assert.rejects(runBoundedStagingGeneration23WholeWorker(), /unavailable/)
   await assert.rejects(runStagingGeneration23WholeWorker({ signal: new AbortController().signal,
-    accept() { throw Error('must not run') }, runOperations() {}, write() {} }), /unavailable/)
+    accept() { throw Error('must not run') }, readCredentials() {}, createWorker() {}, write() {} }), /unavailable/)
   assert.equal(spawnSync(process.execPath, [new URL('../scripts/staging-generation-23-worker-entry.mjs', import.meta.url).pathname],
     { encoding: 'utf8', timeout: 2_000, env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' } }).status, 1)
 })
 
 test('injected worker needs FD3 proof and emits only the secret-free exact terminal', async () => {
   const run = await armedWorker(), output = []
+  const owned = credentials()
   assert.equal(await run({ signal: new AbortController().signal,
     accept() { return () => output.push('released') },
-    runOperations() { return { status: 'PASS_PARTIAL_LOCAL_COMPOSITE' } },
+    readCredentials() { return owned },
+    createWorker(values) { assert.equal(values, owned); return { core: { run() { return { status: 'PASS_PARTIAL_LOCAL_COMPOSITE' } } },
+      dispose() { output.push('disposed') } } },
     write(value) { output.push(value) },
   }), true)
-  assert.deepEqual(output, ['{"schema":"tll-staging-generation-23-whole-worker-terminal/v1","status":"PASS_PARTIAL_LOCAL_COMPOSITE","generation":23}\n', 'released'])
+  assert.deepEqual(output, ['disposed', '{"schema":"tll-staging-generation-23-whole-worker-terminal/v1","status":"PASS_PARTIAL_LOCAL_COMPOSITE","generation":23}\n', 'released'])
+  assert.equal(Object.values(owned).every(value => value.every(byte => byte === 0)), true)
   assert.equal(await run({ signal: new AbortController().signal, accept() { throw Error('lost parent') },
-    runOperations() { throw Error('must not run') }, write() {} }), false)
+    readCredentials() { throw Error('must not run') }, createWorker() {}, write() {} }), false)
+})
+
+test('invalid credentials and failed disposal cannot publish a success terminal', async () => {
+  const run = await armedWorker()
+  const invalid = credentials(); invalid.previewBypass = Buffer.from('bad value')
+  let constructed = false, wrote = false
+  assert.equal(await run({ signal: new AbortController().signal, accept: () => () => {},
+    readCredentials: () => invalid, createWorker: () => { constructed = true }, write: () => { wrote = true } }), false)
+  assert.equal(constructed, false); assert.equal(wrote, false)
+  assert.equal(Object.values(invalid).every(value => value.every(byte => byte === 0)), true)
+  const valid = credentials()
+  assert.equal(await run({ signal: new AbortController().signal, accept: () => () => {},
+    readCredentials: () => valid, createWorker: () => ({ core: { run: () => ({ status: 'PASS_PARTIAL_LOCAL_COMPOSITE' }) },
+      dispose: () => { throw Error('not erased') } }), write: () => { wrote = true } }), false)
+  assert.equal(wrote, false)
+  assert.equal(Object.values(valid).every(value => value.every(byte => byte === 0)), true)
 })
 
 test('worker requests orderly cancellation before the parent hard stop', async () => {
   assert.equal(GENERATION_23_ORDERLY_ABORT_MS, 3_480_000)
   const run = await armedWorker()
   let aborted = false, wrote = false
+  const owned = credentials()
   assert.equal(await run({ deadlineMs: 20, signal: new AbortController().signal,
     accept() { return () => {} },
-    runOperations({ signal }) { return new Promise(resolve => {
+    readCredentials: () => owned,
+    createWorker: () => ({ core: { run({ signal }) { return new Promise(resolve => {
       signal.addEventListener('abort', () => { aborted = true; resolve({ status: 'PASS_PARTIAL_LOCAL_COMPOSITE' }) }, { once: true })
-    }) }, write() { wrote = true } }), false)
+    }) } }, dispose() {} }), write() { wrote = true } }), false)
   assert.equal(aborted, true)
   assert.equal(wrote, false)
+  assert.equal(Object.values(owned).every(value => value.every(byte => byte === 0)), true)
 })
 
 test('parent accepts one clean exact terminal and never replays the fixed child', async () => {

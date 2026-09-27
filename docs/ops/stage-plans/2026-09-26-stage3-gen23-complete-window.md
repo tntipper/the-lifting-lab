@@ -1,5 +1,9 @@
 # Stage 3 Generation 23: complete held-test window
 
+## 27 September credential lifecycle joined to the disabled supervised child
+
+The Gen23 child now requires an exact three-buffer input (staging Supabase Management token, Vercel token, protected Preview bypass) after accepting its parent-process proof. It constructs one worker synchronously, runs it under the existing deadline, disposes it, erases the input buffers, and only then emits the existing **local-only** terminal. Missing/aliased/malformed credentials, failed disposal and cancellation cannot produce a success terminal. The seven focused process tests and 3,092 active project tests pass. The ordinary CLI and all hosted module switches remain OFF; no Keychain reader or fixed hosted operations assembly is connected, and the only accepted terminal still says `PASS_PARTIAL_LOCAL_COMPOSITE`. This is an internal lifecycle proof, not a hosted-ready runner. Next connect fixed, bounded credential reading and all twelve exact hosted operations inside this child, then repeat the complete local failure/timing rehearsal and whole-package review.
+
 ## 27 September checkout guard across the whole browser context
 
 Review of the disabled no-purchase browser guard found that a page-level interceptor would not cover a new tab opened from checkout. The observer now installs its fixed-shop, GET/HEAD-only interceptor on the entire browser context before navigation and keeps it there until that context closes. The eventual owner worker must create a fresh context with service workers blocked. A real local Chrome test proves that both an on-page synthetic order POST and an automatic POST from a new checkout tab are stopped before the fake server sees them. The focused observer tests, live-boundary check, lint and parent-supervised 12-phase local rehearsal passed. This strengthens the offline no-purchase boundary but does not prove the real Shopify checkout or authorise a hosted window.
