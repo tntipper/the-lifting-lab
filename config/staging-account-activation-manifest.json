@@ -1175,6 +1175,10 @@
         "sha256": "f1323aa0ea55d248a2cde89f60d8ce471ec76f8788491e960650f7d26ba553ce"
       },
       {
+        "path": "scripts/staging-generation-23-backend-state.mjs",
+        "sha256": "e80697ccc2d7cef3ff106a889264a9954e24433078c25715eb393d7c3f04bc2e"
+      },
+      {
         "path": "scripts/staging-generation-23-database-journal.mjs",
         "sha256": "935565f40a4320b29acb6667eb2bceb379fa4a7f7e9558aaf56ead1c1364cd8a"
       },
@@ -1184,7 +1188,7 @@
       },
       {
         "path": "scripts/staging-generation-23-supabase-query.mjs",
-        "sha256": "299c268a4e0506fe5866236097361394c0b5f059e3e52ef2fe4cc537038cf25b"
+        "sha256": "056789236cbadc99c30a798f83ca340bc2648babfcabf7ae85771d86259357bd"
       },
       {
         "path": "scripts/staging-generation-23-provider-control.mjs",
@@ -1584,7 +1588,7 @@
       },
       {
         "path": "tests/staging-control-activation-actual.mjs",
-        "sha256": "08ea61d14dcdf8cd9436abf2b351964acb0db2030213cdd1354d6e0332c38616"
+        "sha256": "0fb42d26169bbf6578833795f9ca4d1ba2f644037cc30ae264c59f4144e78867"
       },
       {
         "path": "tests/staging-database-native-adapter.test.mjs",
@@ -1795,12 +1799,16 @@
         "sha256": "3cfbe80f4e8049fe0e97b261a209210e7ce0df658bcb919e6bde38e331aa6a60"
       },
       {
+        "path": "tests/staging-generation-23-backend-state.test.mjs",
+        "sha256": "e6b9fd6a7a7556cff4a42271576a7d62ecdd17916f75437fcb65a7035b6d704e"
+      },
+      {
         "path": "tests/staging-generation-23-database-host.test.mjs",
         "sha256": "7b575220caaee6e95e6d95bb9ed296e9ee652eeb9637807bc1ecbfec99b41a29"
       },
       {
         "path": "tests/staging-generation-23-supabase-query.test.mjs",
-        "sha256": "1684f108c7f5d459503e3e0fe52c00d25712dd58bf0e26f51feb7e4bb2a446e5"
+        "sha256": "cabc904d429100535c56da67cad75f67b258f5f54d235b0b85a7f624a53a93ec"
       },
       {
         "path": "tests/staging-generation-23-provider-control.test.mjs",
@@ -1816,7 +1824,7 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "cc660b81257e814bcf35fa1a6e382547f37e4b8405437bb175cbb1975c699cc3"
+        "sha256": "ca18fcf37a713f81842faf85e5f0ec5fc1912e8013f6fa2a3fdba4b610dca595"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",

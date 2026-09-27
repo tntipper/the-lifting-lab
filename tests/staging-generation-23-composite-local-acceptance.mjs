@@ -66,11 +66,17 @@ const shutdownUrl = await armedUrl('staging-generation-23-control-shutdown.mjs',
     "from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`,
   ]])
 const shutdownControl = await import(shutdownUrl)
+const backendStateUrl = await armedUrl('staging-generation-23-backend-state.mjs',
+  'STAGING_GENERATION_23_BACKEND_STATE_ENABLED', [[
+    "from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`,
+  ]])
+const backendState = await import(backendStateUrl)
 const databaseQuery = await arm('staging-generation-23-supabase-query.mjs',
   'STAGING_GENERATION_23_SUPABASE_QUERY_ENABLED', [
     ["from './staging-generation-23-credentials.mjs'", `from '${database.credentialUrl}'`],
     ["from './staging-generation-23-recovery.mjs'", `from '${database.recoveryUrl}'`],
     ["from './staging-generation-23-control-shutdown.mjs'", `from '${shutdownUrl}'`],
+    ["from './staging-generation-23-backend-state.mjs'", `from '${backendStateUrl}'`],
   ])
 const databaseHostModule = await arm('staging-generation-23-database-host.mjs',
   'STAGING_GENERATION_23_DATABASE_HOST_ENABLED', [
@@ -106,10 +112,21 @@ const localRequest = action => (options, callback) => {
       try {
         const parsed = JSON.parse(body.toString('utf8'))
         assert.equal(parsed.read_only, false)
-        assert.match(parsed.query, /^BEGIN;/)
+        assert.match(parsed.query, action === 'READ_STATE' ? /^BEGIN READ ONLY;/ : /^BEGIN;/)
         let rows
         if (action === 'SETUP') rows = database.executeSetupSql(parsed.query)
         else if (action === 'RETIRE') rows = database.executeRetirementSql(parsed.query)
+        else if (action === 'READ_STATE') {
+          assert.match(parsed.query, /Gen23 backend controls not OFF/)
+          assert.equal(databaseEnabled, false)
+          rows = [{ tll_generation_23_backend_state: {
+            status: 'PASS_BACKEND_OFF', queryId: backendState.QUERY_ID,
+            projectRef: PROJECT_REF, generation: 23,
+            windowId: '7d0e8f17-eac4-40e1-a5b5-8a8597d502a9',
+            expiresAt: database.expiresAt, controlsEnabled: false,
+            runtimeSessions: syntheticSessionCount,
+          } }]
+        }
         else {
           assert.match(parsed.query, /operator_set_enabled\(false/)
           assert.equal(database.disableControls().status, 'PASS_CONTROLS_DISABLED')
@@ -200,10 +217,14 @@ const providerJournal = action => providerControl.createStagingGeneration23Provi
 })
 providerPort = providerPortModule.createStagingGeneration23ProviderPort({
   projectSecret: Buffer.from('p'.repeat(48)),
-  async readBackendState(target) {
+  async readBackendState(target, { signal }) {
     assert.deepEqual(target, STAGING_PROVIDER_TARGET)
-    return { projectRef: STAGING_PROJECT_REF, controlsEnabled: databaseEnabled,
-      runtimeSessions: syntheticSessionCount }
+    const rows = await postDatabase('READ_STATE')(
+      backendState.prepareStagingGeneration23BackendStateSql({ expiresAt: database.expiresAt }),
+      { signal })
+    const { projectRef, controlsEnabled, runtimeSessions } =
+      backendState.validateStagingGeneration23BackendState(rows, { expiresAt: database.expiresAt })
+    return { projectRef, controlsEnabled, runtimeSessions }
   },
   async fetcher(url, init) {
     assert.equal(url, `https://${STAGING_PROJECT_REF}.supabase.co/auth/v1/admin/custom-providers/${PROVIDER_IDENTIFIER}`)
@@ -339,7 +360,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.equal(syntheticSessionCount, 0)
       assert.deepEqual(surface.events, ['edge:true', 'private:true', 'public:true', 'create',
         'edge:false', 'private:false', 'public:false', 'create'])
-      assert.deepEqual(httpRequests, ['SETUP', 'SHUTDOWN', 'RETIRE'])
+      assert.deepEqual(httpRequests, ['SETUP', 'READ_STATE', 'SHUTDOWN', 'READ_STATE', 'RETIRE'])
       break
     default: throw Error('Unrecognised phase')
   }

@@ -34,19 +34,23 @@ async function fixture() {
     'STAGING_GENERATION_23_RECOVERY_ENABLED')
   const shutdown = await arm('staging-generation-23-control-shutdown.mjs',
     'STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED')
+  const backend = await arm('staging-generation-23-backend-state.mjs',
+    'STAGING_GENERATION_23_BACKEND_STATE_ENABLED')
   const querySource = (await readFile(new URL('staging-generation-23-supabase-query.mjs', scripts), 'utf8'))
     .replace('export const STAGING_GENERATION_23_SUPABASE_QUERY_ENABLED = false',
       'export const STAGING_GENERATION_23_SUPABASE_QUERY_ENABLED = true')
     .replace("from './staging-generation-23-credentials.mjs'", `from '${credentialUrl}'`)
     .replace("from './staging-generation-23-recovery.mjs'", `from '${recovery.url}'`)
     .replace("from './staging-generation-23-control-shutdown.mjs'", `from '${shutdown.url}'`)
+    .replace("from './staging-generation-23-backend-state.mjs'", `from '${backend.url}'`)
     .replaceAll("from './", `from '${scripts.href}`)
   const query = await import(encode(querySource))
   const prepare = action => action === 'SETUP'
     ? credentials.prepareStagingGeneration23CredentialSql({ expiresAt, verifiers, nowMs: start })
     : action === 'SHUTDOWN'
       ? shutdown.module.prepareStagingGeneration23ControlShutdownSql({ expiresAt })
-      : recovery.module.prepareStagingGeneration23RecoverySql({ expiresAt })
+      : action === 'RETIRE' ? recovery.module.prepareStagingGeneration23RecoverySql({ expiresAt })
+        : backend.module.prepareStagingGeneration23BackendStateSql({ expiresAt })
   return { query, prepare }
 }
 
@@ -83,9 +87,9 @@ test('ordinary Gen23 query cannot contact the hosted API', async () => {
   }), /unavailable/)
 })
 
-test('all three packets reach only the fixed staging HTTP endpoint and return one JSON row', async () => {
+test('all four packets reach only the fixed staging HTTP endpoint and return one JSON row', async () => {
   const { query: { postStagingGeneration23DatabaseSql: post }, prepare } = await fixture()
-  for (const action of ['SETUP', 'SHUTDOWN', 'RETIRE']) {
+  for (const action of ['SETUP', 'SHUTDOWN', 'RETIRE', 'READ_STATE']) {
     const packet = prepare(action)
     const fake = fakeRequest()
     assert.deepEqual(await post(packet, { action, token,
@@ -98,10 +102,11 @@ test('all three packets reach only the fixed staging HTTP endpoint and return on
     assert.equal(options.rejectUnauthorized, true)
     assert.equal(JSON.parse(body.toString('utf8')).read_only, false)
     const sql = JSON.parse(body.toString('utf8')).query
-    assert.match(sql, /^BEGIN;/)
+    assert.match(sql, action === 'READ_STATE' ? /^BEGIN READ ONLY;/ : /^BEGIN;/)
     if (action === 'SETUP') assert.match(sql, /Generation 23 role state mismatch/)
     if (action === 'SHUTDOWN') assert.match(sql, /operator_set_enabled\(false/)
     if (action === 'RETIRE') assert.match(sql, /Generation 23 recovery retired marker mismatch/)
+    if (action === 'READ_STATE') assert.match(sql, /Gen23 backend controls not OFF/)
     await assert.rejects(post(packet, { action, token,
       signal: new AbortController().signal, request: fake.request }), /unavailable/)
     assert.equal(fake.calls.length, 1)

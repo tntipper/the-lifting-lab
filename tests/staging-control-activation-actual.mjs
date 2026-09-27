@@ -16,7 +16,7 @@ const WINDOW = GENERATION === 23
 const expiry = new Date(Date.now() + 10 * 60 * 1000); expiry.setMilliseconds(0)
 const EXPIRES = expiry.toISOString()
 const context = { generation: GENERATION, windowId: WINDOW, expiresAt: EXPIRES }
-async function armedShutdown() {
+async function armedGeneration23Checks() {
   const scripts = new URL('../scripts/', import.meta.url)
   const credentialSource = readFileSync(new URL('staging-generation-23-credentials.mjs', scripts), 'utf8')
     .replace("export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'",
@@ -28,7 +28,15 @@ async function armedShutdown() {
       'export const STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED = true')
     .replace("from './staging-generation-23-credentials.mjs'", `from '${credentialUrl}'`)
     .replaceAll("from './", `from '${scripts.href}`)
-  return import(`data:text/javascript;base64,${Buffer.from(shutdownSource).toString('base64')}`)
+  const backendSource = readFileSync(new URL('staging-generation-23-backend-state.mjs', scripts), 'utf8')
+    .replace('export const STAGING_GENERATION_23_BACKEND_STATE_ENABLED = false',
+      'export const STAGING_GENERATION_23_BACKEND_STATE_ENABLED = true')
+    .replace("from './staging-generation-23-credentials.mjs'", `from '${credentialUrl}'`)
+    .replaceAll("from './", `from '${scripts.href}`)
+  return {
+    shutdown: await import(`data:text/javascript;base64,${Buffer.from(shutdownSource).toString('base64')}`),
+    backend: await import(`data:text/javascript;base64,${Buffer.from(backendSource).toString('base64')}`),
+  }
 }
 const aliases = {
   tll_customer_owner: 'tll_ao1_customer_owner', tll_cart_owner: 'tll_ca_cart_owner',
@@ -124,6 +132,16 @@ try {
   // staging operator is expected to perform.
   rejectedAs(aliases.tll_cart_owner, 'UPDATE tll_cart_private.control SET enabled=true WHERE singleton;')
   assert.equal(admin(controls), 'false,false,false,false,false')
+  let backend, backendSql, shutdown
+  if (GENERATION === 23) {
+    const checks = await armedGeneration23Checks()
+    backend = checks.backend
+    shutdown = checks.shutdown
+    backendSql = adapt(backend.buildStagingGeneration23BackendStateSql({ expiresAt: EXPIRES }))
+    const off = [{ tll_generation_23_backend_state: JSON.parse(managed(backendSql)) }]
+    assert.equal(backend.validateStagingGeneration23BackendState(off,
+      { expiresAt: EXPIRES }).runtimeSessions, 0)
+  }
 
   // A privilege-bearing runtime role is rejected before any control changes.
   admin(`ALTER ROLE ${runtimes[0]} BYPASSRLS`)
@@ -139,12 +157,12 @@ try {
   const output = managed(sql)
   assert.match(output, /"status": "PASS_CONTROLS_ENABLED"/)
   assert.equal(admin(controls), 'true,true,true,true,true')
+  if (GENERATION === 23) assert.equal(managed(backendSql, { allowFailure: true }), null)
   assert.equal(admin(`SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid
     WHERE g.rolname IN (${owners.map(q).join(',')}) AND e.member='${OPERATOR}'::regrole AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option`), '5')
   assert.equal(admin(`SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid
     WHERE g.rolname IN (${owners.map(q).join(',')}) AND e.member='${OPERATOR}'::regrole AND (e.inherit_option OR e.set_option OR NOT e.admin_option)`), '0')
   if (GENERATION === 23) {
-    const shutdown = await armedShutdown()
     const shutdownSql = adapt(shutdown.buildStagingGeneration23ControlShutdownSql({ expiresAt: EXPIRES }))
     admin("UPDATE tll_ca_staging_private.environment SET operator_project_ref='wrong-project'")
     assert.equal(managed(shutdownSql, { allowFailure: true }), null)
@@ -171,6 +189,9 @@ try {
     assert.equal(shutdown.validateStagingGeneration23ControlShutdownReceipt(shutdownRows,
       { expiresAt: EXPIRES }).status, 'CONTROLS_DISABLED')
     assert.equal(admin(controls), 'false,false,false,false,false')
+    const off = [{ tll_generation_23_backend_state: JSON.parse(managed(backendSql)) }]
+    assert.equal(backend.validateStagingGeneration23BackendState(off,
+      { expiresAt: EXPIRES }).runtimeSessions, 0)
   }
   console.log(`PASS: PostgreSQL 17 generation ${GENERATION} rejected privilege drift, rolled back a partial failure, enabled five controls atomically${GENERATION === 23 ? ', then disabled them through the operator controls' : ''}`)
 } finally {

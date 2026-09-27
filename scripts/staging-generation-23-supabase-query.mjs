@@ -3,6 +3,7 @@ import https from 'node:https'
 import { consumeStagingGeneration23PreparedSql } from './staging-generation-23-credentials.mjs'
 import { consumeStagingGeneration23PreparedRecoverySql } from './staging-generation-23-recovery.mjs'
 import { consumeStagingGeneration23PreparedShutdownSql } from './staging-generation-23-control-shutdown.mjs'
+import { consumeStagingGeneration23BackendStateSql } from './staging-generation-23-backend-state.mjs'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
 export const STAGING_GENERATION_23_SUPABASE_QUERY_ENABLED = false
@@ -15,14 +16,16 @@ const unavailable = () => { throw new Error('Generation 23 Supabase query unavai
 export async function postStagingGeneration23DatabaseSql(packet, { action, token,
   signal, request = https.request } = {}) {
   if (!STAGING_GENERATION_23_SUPABASE_QUERY_ENABLED
-    || !['SETUP', 'SHUTDOWN', 'RETIRE'].includes(action) || typeof request !== 'function'
+    || !['SETUP', 'SHUTDOWN', 'RETIRE', 'READ_STATE'].includes(action) || typeof request !== 'function'
     || !Buffer.isBuffer(token) || token.length < 16 || token.length > 512
     || !/^sbp_(?:oauth_|v0_)?[a-f0-9]{40}$/.test(token.toString('utf8'))
     || !signal || signal.aborted || typeof signal.addEventListener !== 'function') unavailable()
   const sql = action === 'SETUP' ? consumeStagingGeneration23PreparedSql(packet)
     : action === 'SHUTDOWN' ? consumeStagingGeneration23PreparedShutdownSql(packet)
-      : consumeStagingGeneration23PreparedRecoverySql(packet).sql
+      : action === 'RETIRE' ? consumeStagingGeneration23PreparedRecoverySql(packet).sql
+        : consumeStagingGeneration23BackendStateSql(packet)
   if (sql.length > 100_000) unavailable()
+  // Supabase read_only mode changes execution identity; READ_STATE is constrained by BEGIN READ ONLY.
   const body = Buffer.from(JSON.stringify({ query: sql, read_only: false }))
   const chunks = []
   let req, response, timer, settled = false, size = 0
