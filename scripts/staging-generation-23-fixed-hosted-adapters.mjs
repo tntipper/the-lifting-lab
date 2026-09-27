@@ -121,10 +121,14 @@ export function createStagingGeneration23FixedHostedAdapters({ credentials, fetc
           || ['readProject', 'readPreviewEnvironmentPresence', 'dispose'].some(name => typeof vercel[name] !== 'function')
           || typeof surface.readBaseline !== 'function' || typeof surface.dispose !== 'function') unavailable()
         try {
-          const [rawProvider, edgeNames, project, previewPresence, observedSurface] = await Promise.all([
-            supabase.readProvider({ signal }), supabase.readEdgeSecretNames({ signal }), vercel.readProject({ signal }),
-            vercel.readPreviewEnvironmentPresence({ signal }), surface.readBaseline({ signal }),
-          ])
+          // Await each independent read before starting the next. A rejected
+          // Promise.all previously left sibling requests running while the
+          // one-use baseline was already being reported as unavailable.
+          const edgeNames = await supabase.readEdgeSecretNames({ signal })
+          const rawProvider = await supabase.readProvider({ signal })
+          const project = await vercel.readProject({ signal })
+          const previewPresence = await vercel.readPreviewEnvironmentPresence({ signal })
+          const observedSurface = await surface.readBaseline({ signal })
           // This exact projector validates the disabled provider's identifier,
           // endpoints, PKCE, scopes and retained JWKS address. It is a real
           // read of Supabase's official provider response, never a guessed copy.

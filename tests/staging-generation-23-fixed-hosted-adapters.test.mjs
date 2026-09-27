@@ -78,7 +78,7 @@ test('uses Generation 23 baseline semantics: retained broker secret is required 
   assert.deepEqual(await factory.ports.readBaseline({ signal }), { status: 'BASELINE_HELD_VERIFIED' })
   assert.deepEqual(await factory.ports.replaceSettings({ signal }), { status: 'SETTINGS_METADATA_VERIFIED' })
   assert.deepEqual(await factory.ports.readSettings({ signal }), { status: 'SETTINGS_METADATA_VERIFIED' })
-  assert.deepEqual(calls, ['gen23Predecessor', 'provider', 'edgeNames', 'project', 'previewPresence', 'surface',
+  assert.deepEqual(calls, ['gen23Predecessor', 'edgeNames', 'provider', 'project', 'previewPresence', 'surface',
     'disposeSupabase', 'disposeVercel', 'disposeSurface', 'inventory', 'replace', 'readback', 'inventory', 'edgeNames', 'disposeSupabase'])
   const material = factory.getDatabaseMaterial()
   assert.equal(Object.keys(material.passwords).length, 5)

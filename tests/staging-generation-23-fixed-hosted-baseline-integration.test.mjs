@@ -44,17 +44,39 @@ const fakeFetch=async(input)=>{
  return new Response(JSON.stringify(body),{status:u.pathname==='/functions/v1/tll-broker-token'?503:200,headers:{'content-type':'application/json'}})
 }
 const journal={read(){return null},claim(){throw Error('WRITE_BLOCKED')},dispatch(){throw Error('WRITE_BLOCKED')},confirm(){throw Error('WRITE_BLOCKED')},hold(){throw Error('WRITE_BLOCKED')}}
-test('Generation 23 joins actual held surface binding shape across all fixed readers',async()=>{
-const adapter=createStagingGeneration23FixedHostedAdapters({
+const makeAdapter=fetch=>createStagingGeneration23FixedHostedAdapters({
  credentials:{managementToken:Buffer.from('fake-management-token'),vercelToken:Buffer.from('fake-vercel-token'),previewBypass:Buffer.from('fake-preview-bypass')},
- fetch:fakeFetch,expiresAt:'2099-01-01T00:00:00.000Z',expectedDeployment:{deploymentId,immutableUrl,gitSourceCommit},settingsJournal:journal,
+ fetch,expiresAt:'2099-01-01T00:00:00.000Z',expectedDeployment:{deploymentId,immutableUrl,gitSourceCommit},settingsJournal:journal,
  factories:{readPredecessor:async()=>({status:'PASS_RETIRED',receiptSha256:'a'.repeat(64)})},
 })
+test('Generation 23 joins actual held surface binding shape across all fixed readers',async()=>{
+const adapter=makeAdapter(fakeFetch)
 try{
  const result=await adapter.ports.readBaseline({signal:new AbortController().signal})
  assert.equal(result.status,'BASELINE_HELD_VERIFIED')
- assert.equal(calls.length,10)
- assert.equal(calls.filter(path=>path.startsWith('/v4/aliases/')).length,2)
- assert.ok(calls.includes('/v1/projects/qdmvngjwkcsilzmqksme/api-keys?reveal=true'))
+ assert.deepEqual(calls,[
+  '/v1/projects/qdmvngjwkcsilzmqksme/secrets',
+  '/v1/projects/qdmvngjwkcsilzmqksme/api-keys?reveal=true',
+  '/auth/v1/admin/custom-providers/custom:tll-staging-subject-broker-v1',
+  '/v9/projects/prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4?teamId=team_gf7cgIkkoeMLtODFDDT5MrW4',
+  '/v10/projects/prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4/env?target=preview&gitBranch=codex%2Ftll-integration&limit=100&teamId=team_gf7cgIkkoeMLtODFDDT5MrW4',
+  `/v4/aliases/${aliasHost}?projectId=prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4&teamId=team_gf7cgIkkoeMLtODFDDT5MrW4`,
+  `/v13/deployments/${deploymentId}?withGitRepoInfo=true&teamId=team_gf7cgIkkoeMLtODFDDT5MrW4`,
+  '/api/staging/readiness',
+  '/functions/v1/tll-broker-token',
+  `/v4/aliases/${aliasHost}?projectId=prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4&teamId=team_gf7cgIkkoeMLtODFDDT5MrW4`,
+ ])
 }finally{adapter.dispose()}
+})
+
+test('a failed secret-name request stops before any later service read',async()=>{
+ const observed=[]
+ const adapter=makeAdapter(async input=>{
+   observed.push(new URL(input).pathname)
+   throw Error('synthetic secret transport failure')
+ })
+ try{
+  await assert.rejects(adapter.ports.readBaseline({signal:new AbortController().signal}),/unavailable/)
+  assert.deepEqual(observed,['/v1/projects/qdmvngjwkcsilzmqksme/secrets'])
+ }finally{adapter.dispose()}
 })
