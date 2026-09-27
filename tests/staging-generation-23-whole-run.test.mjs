@@ -71,13 +71,114 @@ test('lost reply from provider, Preview or retirement halts without automatic re
   }
 })
 
-test('customer step is withheld when less than 15 minutes remain for shutdown', async () => {
+test('customer step is withheld and verified shutdown still runs when under 15 minutes remain', async () => {
   const { rehearseStagingGeneration23WholeRun: run } = await armed()
-  const state = fixture({ clockStep: 200_000 })
-  const result = await run({ ...state, windowExpiresAt: expires, signal })
+  let time = start
+  const calls = []
+  const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
+    calls.push(phase)
+    if (phase === 'surfaceEnable') time = start + 47 * 60_000
+    return { status: REQUIRED_RESULTS[phase] }
+  }]))
+  const result = await run({ operations, now: () => time,
+    windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED')
   assert.equal(result.failedPhase, 'ownerJourney')
-  assert.equal(result.timeline.at(-1).state, 'NOT_DISPATCHED')
-  assert.equal(state.calls.includes('ownerJourney'), false)
+  assert.equal(result.timeline.find(item => item.phase === 'ownerJourney').state, 'NOT_DISPATCHED')
+  assert.equal(calls.includes('ownerJourney'), false)
+  assert.deepEqual(calls.slice(-4), PHASES.slice(-4))
+})
+
+test('customer step needs its own ten-minute budget in addition to shutdown reserve', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  let time = start
+  const calls = []
+  const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
+    calls.push(phase)
+    if (phase === 'surfaceEnable') time = start + 36 * 60_000
+    return { status: REQUIRED_RESULTS[phase] }
+  }]))
+  const result = await run({ operations, now: () => time,
+    windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED')
+  assert.equal(result.failedPhase, 'ownerJourney')
+  assert.equal(result.reason, 'INSUFFICIENT_OWNER_BUDGET')
+  assert.equal(result.timeline.find(item => item.phase === 'ownerJourney').state, 'NOT_DISPATCHED')
+  assert.equal(calls.includes('ownerJourney'), false)
+  assert.deepEqual(calls.slice(-4), PHASES.slice(-4))
+})
+
+test('a verified customer failure closes backend and Preview before retirement', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  const state = fixture()
+  state.operations.ownerJourney = async () => {
+    state.calls.push('ownerJourney')
+    return { status: 'OWNER_JOURNEY_FAILED_VERIFIED' }
+  }
+  const result = await run({ ...state, windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED')
+  assert.equal(result.reason, 'OWNER_JOURNEY_FAILED_VERIFIED')
+  assert.deepEqual(state.calls, PHASES)
+  assert.equal(result.timeline.find(item => item.phase === 'ownerJourney' && item.state === 'FAILED_VERIFIED')?.state,
+    'FAILED_VERIFIED')
+  assert.equal(result.timeline.at(-1).state, 'VERIFIED')
+})
+
+test('shutdown failure after a known customer failure is still a HOLD', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  const state = fixture({ fail: 'backendDisable' })
+  state.operations.ownerJourney = async () => {
+    state.calls.push('ownerJourney')
+    return { status: 'OWNER_JOURNEY_FAILED_VERIFIED' }
+  }
+  const result = await run({ ...state, windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'HOLD')
+  assert.equal(result.failedPhase, 'backendDisable')
+  assert.equal(result.priorOwnerFailure, 'OWNER_JOURNEY_FAILED_VERIFIED')
+  assert.equal(state.calls.includes('surfaceFreeze'), false)
+})
+
+test('customer step receives a deadline and a late result cannot count as a pass', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  let time = start, ownerDeadline
+  const calls = []
+  const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ phaseDeadlineAt }) => {
+    calls.push(phase)
+    if (phase === 'ownerJourney') {
+      ownerDeadline = phaseDeadlineAt
+      time = start + 11 * 60_000
+    }
+    return { status: REQUIRED_RESULTS[phase] }
+  }]))
+  const result = await run({ operations, now: () => time,
+    windowExpiresAt: expires, signal })
+  assert.equal(ownerDeadline, new Date(start + 10 * 60_000).toISOString())
+  assert.equal(result.status, 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED')
+  assert.equal(result.failedPhase, 'ownerJourney')
+  assert.equal(result.reason, 'OWNER_JOURNEY_OVERRAN_BUDGET')
+  assert.equal(result.timeline.find(item => item.phase === 'ownerJourney'
+    && item.state === 'LATE_VERIFIED')?.state, 'LATE_VERIFIED')
+  assert.deepEqual(calls.slice(-4), PHASES.slice(-4))
+})
+
+test('an uncertain late customer result still holds for reconciliation', async () => {
+  const { rehearseStagingGeneration23WholeRun: run } = await armed()
+  let time = start
+  const calls = []
+  const operations = Object.fromEntries(PHASES.map(phase => [phase, async () => {
+    calls.push(phase)
+    if (phase === 'ownerJourney') {
+      time = start + 11 * 60_000
+      return { status: 'UNKNOWN' }
+    }
+    return { status: REQUIRED_RESULTS[phase] }
+  }]))
+  const result = await run({ operations, now: () => time,
+    windowExpiresAt: expires, signal })
+  assert.equal(result.status, 'HOLD')
+  assert.equal(result.failedPhase, 'ownerJourney')
+  assert.equal(result.timeline.at(-1).state, 'UNCONFIRMED')
+  assert.equal(calls.includes('backendDisable'), false)
 })
 
 test('activation is withheld before provider access when cleanup reserve is gone', async () => {

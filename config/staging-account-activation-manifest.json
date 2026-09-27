@@ -1192,7 +1192,7 @@
       },
       {
         "path": "scripts/staging-generation-23-whole-run.mjs",
-        "sha256": "c5f7d4522cec55f3476bbd34b347ca473008f0a2af7c11fdcb464eab763bc9c4"
+        "sha256": "458d83ebbdbccd3b2cfe8ebb7025bab583ff1d66a4f09417c7ee5116bec11666"
       },
       {
         "path": "scripts/staging-generation-22-preflight-assessment.mjs",
@@ -1808,11 +1808,11 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "227e98109ef1e0b2dc0122470e243c1ffe5d19a7b56102167c2677355e4c02f2"
+        "sha256": "9cb488dfb0872bf4eccc8de29764d648b3295b3c38cd6f7c1a0e580c20d3f84b"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
-        "sha256": "0514b90abb42b32d9d9062d49582ee928e18500cadf11931a367fc962dc34bff"
+        "sha256": "b536d2c49233e529fd91d109f0c0572989124c1fa267ba3dc48c8876bc5de133"
       },
       {
         "path": "tests/staging-generation-23-surface-whole-run.test.mjs",

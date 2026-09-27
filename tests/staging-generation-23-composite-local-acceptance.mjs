@@ -16,7 +16,7 @@ import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scrip
 import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/staging-generation-23-surface-fixture.mjs'
 
 const mode = process.argv.slice(2).join(' ')
-if (!['--run-offline-once', '--fail-first-setting-once',
+if (!['--run-offline-once', '--fail-first-setting-once', '--fail-owner-verified-once',
   '--fail-setup-reply-once', '--abort-setup-once', '--fail-shutdown-reply-once',
   '--fail-retirement-reply-once'].includes(mode)) {
   throw Error('Explicit local test mode required')
@@ -285,6 +285,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
         ...process.env, TEST_BROWSER_CHANNEL: 'chrome',
       })
       ownerChecks = true
+      if (mode === '--fail-owner-verified-once') return { status: 'OWNER_JOURNEY_FAILED_VERIFIED' }
       break
     case 'backendDisable':
       assert.equal(ownerChecks, true)
@@ -379,6 +380,14 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     assert.equal(surface.events.length, 4)
     console.log(JSON.stringify({ status: 'PASS_LOCAL_SHUTDOWN_LOST_REPLY_STOP',
       phaseCount: calls.length, nextAction: result.nextAction, purchase: 'none' }))
+  } else if (mode === '--fail-owner-verified-once') {
+    assert.equal(result.status, 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED')
+    assert.equal(result.reason, 'OWNER_JOURNEY_FAILED_VERIFIED')
+    assert.deepEqual(calls, PHASES)
+    assert.equal(provider.enabled || databaseEnabled, false)
+    assert.equal(surface.events.length, 8)
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_OWNER_FAILURE_VERIFIED_SHUTDOWN',
+      phaseCount: calls.length, provider: 'off', surface: 'off', purchase: 'none' }))
   } else {
   if (result.status !== 'LOCAL_SEQUENCE_PASS') console.error(JSON.stringify({
     status: result.status, failedPhase: result.failedPhase, nextAction: result.nextAction,
