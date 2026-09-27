@@ -11,12 +11,21 @@ export const ENTRYPOINTS=Object.freeze({
 const purposes=Object.keys(IDENTITIES),failureChecks=new Set(['input','factory','connect','connect_wait','factory_retry','connect_retry','identity','membership','matrix','own_probe','table_denial','release','close'])
 const failures=new WeakMap()
 const sqlstateOf=error=>typeof error?.code==='string'&&/^[0-9A-Z]{5}$/.test(error.code)?error.code:null
+const safeConnect=value=>value&&typeof value==='object'
+  && ['driver','acquire','state','closed'].includes(value.operation)
+  && ['authentication','capacity','network','timeout','other'].includes(value.category)
+  && ['under_1s','1_to_4s','over_4s'].includes(value.elapsed)
+  && (value.code===null||['28P01','28000','53300','57P03','08001','08004','08006',
+    'ECONNREFUSED','ECONNRESET','ENETUNREACH','EHOSTUNREACH','ETIMEDOUT','EAI_AGAIN'].includes(value.code))
+  ? Object.freeze({operation:value.operation,category:value.category,code:value.code,elapsed:value.elapsed}):null
 const unavailable=(purpose=null,check='input',extras={})=>{
   const error=new Error('Generation-6 connection verification unavailable')
   const meta={purpose:purposes.includes(purpose)?purpose:null,check:failureChecks.has(check)?check:'input'}
   if(extras.expectedMode==='rejected'||extras.expectedMode==='error')meta.expectedMode=extras.expectedMode
   if(typeof extras.sqlstate==='string'&&/^[0-9A-Z]{5}$/.test(extras.sqlstate))meta.sqlstate=extras.sqlstate
   if(Number.isInteger(extras.purposesPassed)&&extras.purposesPassed>=0&&extras.purposesPassed<=purposes.length)meta.purposesPassed=extras.purposesPassed
+  if(safeConnect(extras.firstConnect))meta.firstConnect=safeConnect(extras.firstConnect)
+  if(safeConnect(extras.secondConnect))meta.secondConnect=safeConnect(extras.secondConnect)
   failures.set(error,meta);return error
 }
 export const POOLER_CONVERGENCE_MS=16_000
@@ -26,13 +35,15 @@ export function connectionFailureReport(error){
   if(value?.expectedMode==='rejected'||value?.expectedMode==='error')report.expectedMode=value.expectedMode
   if(typeof value?.sqlstate==='string')report.sqlstate=value.sqlstate
   if(Number.isInteger(value?.purposesPassed))report.purposesPassed=value.purposesPassed
+  if(value?.firstConnect)report.firstConnect=value.firstConnect
+  if(value?.secondConnect)report.secondConnect=value.secondConnect
   return Object.freeze(report)
 }
 const values=purposes.flatMap(purpose=>ENTRYPOINTS[purpose].map(signature=>`('${purpose}','${signature}')`)).join(',')
 const waitForPooler=(ms,signal)=>new Promise((resolve,reject)=>{
   if(signal?.aborted){reject(unavailable(null,'connect_wait'));return}
   let timer
-  const done=error=>{clearTimeout(timer);signal?.removeEventListener('abort',onAbort);error?reject(error):resolve()}
+  const done=error=>{clearTimeout(timer);signal?.removeEventListener('abort',onAbort);if(error)reject(error);else resolve()}
   const onAbort=()=>done(unavailable(null,'connect_wait'))
   timer=setTimeout(()=>done(),ms)
   signal?.addEventListener('abort',onAbort,{once:true})
@@ -65,24 +76,25 @@ function exactMatrix(rows,purpose){if(!Array.isArray(rows)||rows.length!==Object
   for(const row of rows)if(!row.present||row.allowed!==(row.purpose===purpose)||!ENTRYPOINTS[row.purpose]?.includes(row.signature))throw unavailable(purpose,'matrix')}
 
 export async function verifyGeneration6Connections({passwords,expiresAt,tlsCa,createRuntime,pause=waitForPooler,
-  requireClassifiedDenials=false,classifyQueryError,signal,onProgress}={}){
+  requireClassifiedDenials=false,classifyQueryError,classifyConnectError,signal,onProgress}={}){
   if(!passwords||Object.keys(passwords).sort().join('|')!==[...purposes].sort().join('|')||!tlsCa||Object.keys(tlsCa).sort().join('|')!=='pem|sha256'
     ||typeof tlsCa.pem!=='string'||!tlsCa.pem||!/^[a-f0-9]{64}$/.test(tlsCa.sha256)||typeof createRuntime!=='function'||typeof pause!=='function'
     ||typeof requireClassifiedDenials!=='boolean'||(requireClassifiedDenials&&typeof classifyQueryError!=='function')
     ||(signal!==undefined&&(typeof signal.addEventListener!=='function'||typeof signal.aborted!=='boolean'))
-    ||(onProgress!==undefined&&typeof onProgress!=='function'))throw unavailable()
+    ||(onProgress!==undefined&&typeof onProgress!=='function')
+    ||(classifyConnectError!==undefined&&typeof classifyConnectError!=='function'))throw unavailable()
   let purposesPassed=0
   const live=(purpose,check)=>{
     if(signal?.aborted)throw unavailable(purpose,check,{purposesPassed})
     onProgress?.({purpose,check})
   }
-  for(const purpose of purposes){let runtime,client,primary,check='factory'
+  for(const purpose of purposes){let runtime,client,primary,check='factory',firstConnect,secondConnect
     try{
       live(purpose,check)
       const create=()=>createRuntime({purpose,enabled:true,password:passwords[purpose],tlsCa})
       runtime=create();check='connect';live(purpose,check)
       try{client=await runtime.pool.connect()}
-      catch{live(purpose,check);check='connect_wait';await runtime.close();runtime=undefined;await pause(POOLER_CONVERGENCE_MS,signal);live(purpose,check);check='factory_retry';runtime=create();check='connect_retry';client=await runtime.pool.connect()}
+      catch(error){firstConnect=safeConnect(classifyConnectError?.(error));live(purpose,check);check='connect_wait';await runtime.close();runtime=undefined;await pause(POOLER_CONVERGENCE_MS,signal);live(purpose,check);check='factory_retry';runtime=create();check='connect_retry';try{client=await runtime.pool.connect()}catch(retryError){secondConnect=safeConnect(classifyConnectError?.(retryError));throw retryError}}
       check='identity'
       live(purpose,check)
       exactIdentity((await client.query(IDENTITY_QUERY)).rows[0],purpose,expiresAt)
@@ -119,7 +131,11 @@ export async function verifyGeneration6Connections({passwords,expiresAt,tlsCa,cr
         const prior=failures.get(error)
         if(!Number.isInteger(prior.purposesPassed))failures.set(error,{...prior,purposesPassed})
         primary=error
-      }else primary=unavailable(purpose,check,{purposesPassed})
+      }else primary=unavailable(purpose,check,{purposesPassed,firstConnect,secondConnect})
+      if(primary&&failures.has(primary)){
+        const detail=failures.get(primary)
+        failures.set(primary,{...detail,...(firstConnect?{firstConnect}:{}),...(secondConnect?{secondConnect}:{})})
+      }
     }
     finally{try{client?.release(true)}catch{if(!primary)primary=unavailable(purpose,'release',{purposesPassed})}try{await runtime?.close()}catch{if(!primary)primary=unavailable(purpose,'close',{purposesPassed})}}
     if(primary)throw primary

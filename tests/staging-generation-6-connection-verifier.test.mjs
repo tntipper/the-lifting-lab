@@ -57,6 +57,29 @@ test('second connection failure reports only fixed purpose and check',async()=>{
   assert.deepEqual(waits,[POOLER_CONVERGENCE_MS])
 })
 
+test('first and second connection causes survive as allow-listed private evidence',async()=>{
+  const f=fixture()
+  const createRuntime=input=>{const runtime=f.createRuntime(input)
+    if(input.purpose==='customer') {
+      runtime.pool.connect=async()=>{throw Object.assign(Error('SYNTHETIC_PASSWORD private detail'),{code:'28P01'})}
+      runtime.close=async()=>{}
+    }
+    return runtime
+  }
+  try{
+    await verifyGeneration6Connections({passwords,expiresAt,tlsCa,createRuntime,pause:async()=>{},
+      classifyConnectError:error=>({operation:'driver',category:'authentication',code:error.code,elapsed:'under_1s'})})
+    assert.fail('must reject')
+  }catch(error){
+    const report=connectionFailureReport(error)
+    assert.equal(report.check,'connect_retry')
+    assert.equal(report.purposesPassed,0)
+    assert.deepEqual(report.firstConnect,report.secondConnect)
+    assert.deepEqual(report.firstConnect,{operation:'driver',category:'authentication',code:'28P01',elapsed:'under_1s'})
+    assert.doesNotMatch(JSON.stringify(report),/SYNTHETIC|PASSWORD|private detail/)
+  }
+})
+
 test('identity drift reports fixed diagnostic and accepts Supavisor backend identity',async()=>{
   const f=fixture({identity:{application_name:'PRIVATE_CLIENT_VALUE'}})
   try{await verifyGeneration6Connections({passwords,expiresAt,tlsCa,createRuntime:f.createRuntime});assert.fail('must reject')}

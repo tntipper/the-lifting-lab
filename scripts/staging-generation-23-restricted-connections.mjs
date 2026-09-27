@@ -116,12 +116,12 @@ export function createStagingGeneration23WrongPasswordProbe({ Client,
  */
 export function createStagingGeneration23RestrictedConnections({ createRuntime,
   verify = verifyGeneration6Connections, readCa = readPinnedSupabaseCa,
-  verifyDrained, verifyWrongPassword, classifyQueryError, diagnostic, pause = waitForDrain,
+  verifyDrained, verifyWrongPassword, classifyQueryError, classifyConnectError, diagnostic, pause = waitForDrain,
   now = Date.now, scheduleTimeout = setTimeout, clearScheduledTimeout = clearTimeout,
 } = {}) {
   if (!STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_ENABLED || typeof createRuntime !== 'function'
     || typeof verify !== 'function' || typeof readCa !== 'function' || typeof now !== 'function'
-    || typeof classifyQueryError !== 'function'
+    || typeof classifyQueryError !== 'function' || (classifyConnectError !== undefined && typeof classifyConnectError !== 'function')
     || !diagnostic || ['claim', 'progress', 'hold', 'pass'].some(method => typeof diagnostic[method] !== 'function')
     || typeof verifyDrained !== 'function' || (verifyWrongPassword !== undefined && typeof verifyWrongPassword !== 'function')
     || typeof pause !== 'function' || typeof scheduleTimeout !== 'function'
@@ -163,7 +163,7 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
         return runtime
       }
       let result, failed = false, cleanupFailed = false, outcome = 'unavailable'
-      let failedPurpose = null, failedCheck = null
+      let failedPurpose = null, failedCheck = null, failedConnectionEvidence = null
       try {
         record = diagnostic.progress(record, { step: 'correct_roles' })
         const roleDeadline = Math.min(deadlineMs - STAGING_GENERATION_23_CLEANUP_RESERVE_MS,
@@ -173,13 +173,16 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
         let verified
         try {
           verified = await verify({ passwords, expiresAt, tlsCa, createRuntime: trackedRuntime,
-            requireClassifiedDenials: true, classifyQueryError, signal: controller.signal,
+            requireClassifiedDenials: true, classifyQueryError, classifyConnectError, signal: controller.signal,
             onProgress: ({ purpose, check }) => {
               record = diagnostic.progress(record, { step: 'correct_roles', purpose, check })
             } })
         } catch (error) {
           const safe = connectionFailureReport(error)
           failedPurpose = safe.purpose; failedCheck = safe.check
+          if (safe.firstConnect || safe.secondConnect) failedConnectionEvidence = Object.freeze({
+            first: safe.firstConnect ?? null, second: safe.secondConnect ?? null,
+          })
           outcome = 'correct_role_failed'
           throw error
         }
@@ -250,7 +253,8 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
       if (failed || cleanupFailed || expired || cancelled || controller.signal.aborted) {
         const terminal = cleanupFailed ? 'cleanup_failed' : expired ? 'deadline'
           : cancelled ? 'cancelled' : outcome
-        diagnostic.hold(record, { outcome: terminal, purpose: failedPurpose, check: failedCheck })
+        diagnostic.hold(record, { outcome: terminal, purpose: failedPurpose, check: failedCheck,
+          connectionEvidence: terminal === 'correct_role_failed' ? failedConnectionEvidence : null })
         unavailable()
       }
       diagnostic.pass(record)

@@ -41,7 +41,9 @@ test('the private one-use record retains only fixed connection failure categorie
     assert.equal(journal.read().purpose, 'cart')
     assert.deepEqual(Object.keys(JSON.parse(readFileSync(path, 'utf8'))).sort(),
       ['schema', 'projectRef', 'windowId', 'sourceCommit', 'runId', 'expiresAt', 'deadlineAt', 'createdAt',
-        'updatedAt', 'state', 'sequence', 'step', 'purpose', 'check', 'outcome'].sort())
+        'updatedAt', 'state', 'sequence', 'step', 'purpose', 'check', 'outcome', 'connectionEvidence'].sort())
+    assert.throws(() => journal.hold(record, { outcome: 'correct_role_failed', purpose: 'cart',
+      check: 'connect_retry', connectionEvidence: { first: { message: 'SYNTHETIC_PASSWORD' }, second: null } }), /unavailable/)
     assert.throws(() => journal.claim(window()), /unavailable/)
     assert.throws(() => journal.progress(record, { step: 'drain' }), /unavailable/)
   } finally { rmSync(directory, { recursive: true, force: true }) }

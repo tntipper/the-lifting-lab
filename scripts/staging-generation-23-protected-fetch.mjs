@@ -14,6 +14,7 @@ export const STAGING_GENERATION_23_PROTECTED_READINESS_PATHS = Object.freeze([
   '/api/staging/readiness',
   '/api/staging/checkout-readiness',
   '/api/staging/variant-readiness',
+  '/api/staging/consumer-readiness',
 ])
 
 const unavailable = () => { throw Error('Generation 23 protected Preview fetch unavailable') }

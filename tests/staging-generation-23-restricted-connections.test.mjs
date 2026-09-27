@@ -173,7 +173,7 @@ test('a changed-password transport failure leaves its purpose in the safe HOLD r
   await assert.rejects(proof.prove({ passwords, expiresAt, deadlineAt,
     signal: new AbortController().signal }), /unavailable/)
   assert.deepEqual(diagnostic.events.at(-1), { state: 'HOLD', outcome: 'wrong_password_failed',
-    purpose: 'customer', check: null })
+    purpose: 'customer', check: null, connectionEvidence: null })
   assert.doesNotMatch(JSON.stringify(diagnostic.events), /private transport detail/)
 })
 

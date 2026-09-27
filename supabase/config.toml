@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.tll-broker-userinfo]
 verify_jwt = false
+
+[functions.tll-broker-readiness]
+verify_jwt = false

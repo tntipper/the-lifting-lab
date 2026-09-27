@@ -17,7 +17,7 @@ const scripts = new URL('../scripts/', import.meta.url)
 const data = source => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`
 const bundled = await build({ entryPoints: ['lib/server/staging-postgres.ts'], bundle: true,
   platform: 'node', format: 'esm', packages: 'external', write: false, logLevel: 'silent' })
-const { createStagingPostgresRuntime, stagingPostgresSqlstate } = await import(data(bundled.outputFiles[0].text))
+const { createStagingPostgresRuntime, stagingPostgresSqlstate, stagingPostgresConnectionDiagnostic } = await import(data(bundled.outputFiles[0].text))
 const pem = rootCertificates.find(value => {
   const certificate = new X509Certificate(value)
   return certificate.ca && Date.parse(certificate.validFrom) < Date.now()
@@ -51,7 +51,11 @@ async function armedModules(expiresAt) {
 }
 
 function fakeRuntime({ expiresAt, failAt, events }) {
-  return ({ purpose }) => {
+  const attempts = new Map()
+  return ({ purpose, enabled, password, tlsCa: suppliedCa }) => {
+    assert.equal(enabled, true)
+    assert.equal(password, passwords[purpose], 'the verifier must forward the current purpose password')
+    assert.deepEqual(suppliedCa, tlsCa, 'the verifier must forward the pinned CA')
     events.push(`create:${purpose}`)
     const login = IDENTITIES[purpose].login
     const client = Object.assign(new EventEmitter(), {
@@ -79,11 +83,23 @@ function fakeRuntime({ expiresAt, failAt, events }) {
       release() { events.push(`release:${purpose}`) },
     })
     const driver = Object.assign(new EventEmitter(), {
-      async connect() { events.push(`connect:${purpose}`); return client },
+      async connect() {
+        const attempt = (attempts.get(purpose) ?? 0) + 1
+        attempts.set(purpose, attempt)
+        events.push(`connect:${purpose}:${attempt}`)
+        if (failAt === `${purpose}:connect_both` || (failAt === `${purpose}:connect_first` && attempt === 1))
+          throw Object.assign(Error(`SYNTHETIC_PRIVATE ${password}`), { code: '28P01' })
+        return client
+      },
       async end() { events.push(`close:${purpose}`) },
     })
-    return createStagingPostgresRuntime({ purpose, enabled: true, password: passwords[purpose], tlsCa },
-      { createPool: () => driver })
+    return createStagingPostgresRuntime({ purpose, enabled, password, tlsCa: suppliedCa },
+      { createPool: config => {
+        assert.equal(config.password, password)
+        assert.equal(config.ssl.ca, suppliedCa.pem)
+        assert.equal(config.ssl.rejectUnauthorized, true)
+        return driver
+      } })
   }
 }
 
@@ -108,6 +124,7 @@ async function exercise(failAt) {
     const proof = wrapper.createStagingGeneration23RestrictedConnections({
       createRuntime: fakeRuntime({ expiresAt, failAt, events }), diagnostic,
       classifyQueryError: stagingPostgresSqlstate,
+      classifyConnectError: stagingPostgresConnectionDiagnostic,
       readCa: () => tlsCa,
       verifyWrongPassword: async ({ purpose }) => {
         events.push(`wrong:${purpose}`); return { code: '28P01' }
@@ -116,7 +133,7 @@ async function exercise(failAt) {
         purposes: 5, controlsEnabled: false, runtimeSessions: sessions.shift() }),
       pause: async () => {},
     })
-    if (failAt) await assert.rejects(proof.prove({ passwords, expiresAt, deadlineAt,
+    if (failAt && !failAt.endsWith(':connect_first')) await assert.rejects(proof.prove({ passwords, expiresAt, deadlineAt,
       signal: new AbortController().signal }), /unavailable/)
     else assert.equal((await proof.prove({ passwords, expiresAt, deadlineAt,
       signal: new AbortController().signal })).status, 'PASS_RESTRICTED_CONNECTIONS')
@@ -140,6 +157,25 @@ test('a network fault cannot count as a permission denial and preserves role/che
   assert.equal(record.check, 'own_probe')
   assert.equal(events.filter(value => value.startsWith('wrong:')).length, 0)
   assert.equal(events.filter(value => value.startsWith('close:')).length, 2)
+})
+
+test('the real wrapper retries a transient authentication rejection with the same supplied password', async () => {
+  const { record, events } = await exercise('broker:connect_first')
+  assert.equal(record.state, 'PASS')
+  assert.ok(events.includes('connect:broker:2'))
+  assert.doesNotMatch(JSON.stringify(record), /SYNTHETIC_PRIVATE|[A-E]{32}/)
+})
+
+test('two authentication rejections cannot become a successful connection proof', async () => {
+  const { record, events } = await exercise('broker:connect_both')
+  assert.equal(record.state, 'HOLD')
+  assert.equal(record.check, 'connect_retry')
+  assert.deepEqual(record.connectionEvidence, {
+    first: { operation: 'driver', category: 'authentication', code: '28P01', elapsed: 'under_1s' },
+    second: { operation: 'driver', category: 'authentication', code: '28P01', elapsed: 'under_1s' },
+  })
+  assert.equal(events.filter(value => value.startsWith('wrong:')).length, 0)
+  assert.doesNotMatch(JSON.stringify(record), /SYNTHETIC_PRIVATE|[A-E]{32}/)
 })
 
 test('a diagnostic write failure stops before password and later activation checks', async () => {

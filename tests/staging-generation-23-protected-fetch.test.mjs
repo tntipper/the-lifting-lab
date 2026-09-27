@@ -44,6 +44,19 @@ test('only the exact immutable Preview and fixed branch alias receive the bypass
   guarded.dispose()
 })
 
+test('the consumer check is allowed only on the fixed protected Preview path', async () => {
+  const { createStagingGeneration23ProtectedFetch: create } = await armed()
+  const calls = []
+  const guarded = create({ bypass, immutableUrl, fetch: async (url) => {
+    calls.push(url); return ok()
+  } })
+  await guarded.fetch(`${immutableUrl}/api/staging/consumer-readiness`, { method: 'GET', signal })
+  assert.deepEqual(calls, [`${immutableUrl}/api/staging/consumer-readiness`])
+  await assert.rejects(() => guarded.fetch(`${immutableUrl}/api/staging/consumer-readiness?sql=SELECT`,
+    { method: 'GET', signal }), /unavailable/)
+  guarded.dispose()
+})
+
 test('a streaming response remains readable after the protected request has been closed', async () => {
   const { createStagingGeneration23ProtectedFetch: create } = await armed()
   const bytes = new TextEncoder().encode('{"ready":true}')

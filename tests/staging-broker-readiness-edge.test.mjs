@@ -1,0 +1,70 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { build } from 'esbuild'
+import { readFileSync } from 'node:fs'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const path = fileURLToPath(new URL('../lib/identity/staging-broker-readiness-edge.ts', import.meta.url))
+const source = readFileSync(path, 'utf8')
+const bundle = await build({ stdin: { contents: source.replace('STAGING_BROKER_READINESS_ENABLED = false',
+  'STAGING_BROKER_READINESS_ENABLED = true'), resolveDir: dirname(path), sourcefile: path, loader: 'ts' }, bundle: true,
+  platform: 'node', format: 'esm', packages: 'external', write: false, logLevel: 'silent' })
+const { createStagingBrokerReadinessHandler } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`)
+const ordinaryBundle = await build({ entryPoints: [path], bundle: true, platform: 'node',
+  format: 'esm', packages: 'external', write: false, logLevel: 'silent' })
+const ordinary = await import(`data:text/javascript;base64,${Buffer.from(ordinaryBundle.outputFiles[0].text).toString('base64')}`)
+const serviceKey = 'SYNTHETIC_SERVICE_KEY_' + 'x'.repeat(40)
+const env = Object.freeze({ SUPABASE_URL: 'https://qdmvngjwkcsilzmqksme.supabase.co',
+  SUPABASE_SERVICE_ROLE_KEY: serviceKey, TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'false',
+  TLL_STAGING_BROKER_DATABASE_PASSWORD: 'SYNTHETIC_BROKER_PASSWORD_' + 'y'.repeat(40),
+  TLL_STAGING_POSTGRES_CA_PEM: 'public-ca-fixture', TLL_STAGING_POSTGRES_CA_SHA256: 'a'.repeat(64) })
+const request = (authorization = `Bearer ${serviceKey}`, apikey = serviceKey) => new Request(
+  'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness', {
+    headers: { authorization, apikey },
+  })
+
+test('ordinary deployed source keeps the Edge probe off before credential access', async () => {
+  let constructed = false
+  const result = await ordinary.createStagingBrokerReadinessHandler(env, () => { constructed = true })(request())
+  assert.equal(result.status, 404)
+  assert.equal(constructed, false)
+})
+
+test('wrong authority or active broker never reaches a database runtime', async () => {
+  for (const [settings, req] of [[env, request('Bearer wrong', serviceKey)],
+    [env, request(`Bearer ${'é'.repeat(serviceKey.length)}`, serviceKey)],
+    [{ ...env, TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'true' }, request()],
+    [{ ...env, SUPABASE_URL: 'https://other.supabase.co' }, request()]]) {
+    let constructed = false
+    const handler = createStagingBrokerReadinessHandler(settings, () => { constructed = true })
+    const result = await handler(req)
+    assert.equal(result.status, 404)
+    assert.equal(constructed, false)
+  }
+})
+
+test('the authenticated Edge probe uses its own installed broker password and returns only PASS', async () => {
+  const handler = createStagingBrokerReadinessHandler(env, input => {
+    assert.equal(input.purpose, 'broker')
+    assert.equal(input.password, env.TLL_STAGING_BROKER_DATABASE_PASSWORD)
+    assert.equal(input.tlsCa.pem, env.TLL_STAGING_POSTGRES_CA_PEM)
+    return { pool: { async connect() { return { async query(sql) {
+      assert.equal(sql, 'SELECT current_user::text AS role')
+      return { rows: [{ role: 'tll_broker_runtime' }] }
+    }, release() {} } } }, async close() {} }
+  })
+  const result = await handler(request())
+  assert.equal(result.status, 200)
+  assert.deepEqual(await result.json(), { status: 'PASS' })
+  assert.doesNotMatch(JSON.stringify(Object.fromEntries(result.headers)), /SYNTHETIC/)
+})
+
+test('Edge connection errors stay private and give no false pass', async () => {
+  const handler = createStagingBrokerReadinessHandler(env, () => ({
+    pool: { async connect() { throw Error(`SYNTHETIC_PRIVATE_${serviceKey}`) } }, async close() {},
+  }))
+  const result = await handler(request())
+  assert.equal(result.status, 503)
+  assert.deepEqual(await result.json(), { status: 'FAIL' })
+})

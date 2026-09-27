@@ -50,8 +50,8 @@
       "app/api/account",
       "supabase/functions"
     ],
-    "fileCount": 73,
-    "sha256": "4febabaa40bd69be49580e2a8575f179407d6a00ded7892d908efac82a8efd11"
+    "fileCount": 80,
+    "sha256": "f414c8d23fd2a560425833e9180da2d99f151b56e091b395a622931e4baae8ea"
   },
   "stageSafety": {
     "sources": [
@@ -449,6 +449,18 @@
         "sha256": "c0a2ec7dc07ce15c7da34ae53320ed65328e6d878b74a690e1cd631a761e355f"
       },
       {
+        "path": "supabase/functions/tll-broker-readiness/index.ts",
+        "sha256": "6bed2693744e97087f679565526f3215e56342b9caa055b4b72f602d47230a81"
+      },
+      {
+        "path": "supabase/functions/tll-broker-readiness/deno.json",
+        "sha256": "c0a2ec7dc07ce15c7da34ae53320ed65328e6d878b74a690e1cd631a761e355f"
+      },
+      {
+        "path": "lib/identity/staging-broker-readiness-edge.ts",
+        "sha256": "4c768b57865007b61993e510127b0906d1dd7c47780734249bae2a6935e26351"
+      },
+      {
         "path": "lib/identity/customer-subject-broker-edge.ts",
         "sha256": "a3b40795795b064d33769cc939402780f4409d73b538acd244468e68b22de708"
       },
@@ -462,7 +474,7 @@
       },
       {
         "path": "lib/server/staging-postgres.ts",
-        "sha256": "6a450c1f0ad1031948724db9d5c5ebb1a0e121911806e32ab4422f5a408db5ec"
+        "sha256": "f7a10582c673777d6f88a6a8ad218a4ab39c891834aeedb1bdf467388851312d"
       }
     ],
     "requiredSecrets": [
@@ -522,6 +534,14 @@
       {
         "path": "app/api/staging/variant-readiness/route.ts",
         "sha256": "a8d5b549f9b244a23f4d3971fab7df484ffe413ebc7747be14f12855343b8570"
+      },
+      {
+        "path": "app/api/staging/consumer-readiness/route.ts",
+        "sha256": "b6f917fe1d82aa0e9c9107f64de585db181b15e59e8242ad5d65638471d39f3c"
+      },
+      {
+        "path": "lib/server/staging-consumer-readiness.ts",
+        "sha256": "db2207bb3a0e79ba9dfea434d4ada81fa6e9d0f8e4862477b058e9e73b4d724b"
       }
     ],
     "reviewedPreview": {
@@ -1205,11 +1225,11 @@
       },
       {
         "path": "scripts/staging-generation-23-connection-diagnostic.mjs",
-        "sha256": "8ed6b3e86f99bcd38bbacdf00ecfa870683d3524d1f381eaa208afbdbb7899ae"
+        "sha256": "9087edab4606f1ad748238847b62187683078c74ec7a94a9edd61cff8220548b"
       },
       {
         "path": "scripts/staging-generation-23-restricted-connections.mjs",
-        "sha256": "8e4888ad805c8dffeb870654b1501b8bf396617032353120e3d4d4c861f504a7"
+        "sha256": "4c1a95f76feb36ffd2b43fe199221a4832b3544e5d72a538e68f714875b0abc4"
       },
       {
         "path": "scripts/staging-generation-23-supabase-query.mjs",
@@ -1313,7 +1333,7 @@
       },
       {
         "path": "scripts/staging-generation-23-fixed-database-provider-components.mjs",
-        "sha256": "c3859194e6a0d014d04393ce431b2a44187ce6ada892b7133764429d5d48894e"
+        "sha256": "99ecf498cc50c95eba49be0985396df45daac5ee5ba8d76cb5d8fd356241ac80"
       },
       {
         "path": "scripts/staging-generation-23-fixed-hosted-adapters.mjs",
@@ -1333,7 +1353,7 @@
       },
       {
         "path": "scripts/staging-generation-23-protected-fetch.mjs",
-        "sha256": "da73b2d270895bbd42829d85074e049c4a434bfd15b6fdc77a8f84a8b3d0048d"
+        "sha256": "f4f70e95b1cc10cde04831336a65c562370efc8ccc4ca9c8878c8f4f75ee3775"
       },
       {
         "path": "scripts/staging-generation-23-surface-factory.mjs",
@@ -1949,15 +1969,15 @@
       },
       {
         "path": "tests/staging-generation-23-restricted-connections.test.mjs",
-        "sha256": "aaafa02017fcd2be2056be53a5807b757f63aaf9a4c4fc476049dda47138352b"
+        "sha256": "c327d53357d81cea0d929549839ab60882f5913305f7cbad81cff4ccc4684ebd"
       },
       {
         "path": "tests/staging-generation-23-connection-diagnostic.test.mjs",
-        "sha256": "cf417157df832f542bd804230a7f73f7da304096de9e46784ffc8c72cb4c4e76"
+        "sha256": "b7d89238111affb9ede96bcbf99737e8cdd5016ec8e5559902702596366424c7"
       },
       {
         "path": "tests/staging-generation-23-assembled-connections.test.mjs",
-        "sha256": "101fb460bd9966ba402c72937ad7e52b278834291bf2b8f86e052798e9343507"
+        "sha256": "94e0e2e364d86a09c34c9f9cb3b8f54d1cfcea72c12093e7fe877214387b8e72"
       },
       {
         "path": "tests/staging-generation-23-control-enable-host.test.mjs",
@@ -2077,7 +2097,7 @@
       },
       {
         "path": "tests/staging-generation-23-protected-fetch.test.mjs",
-        "sha256": "89367adfc6ccc26f046e358684008f2dfed50e420ce3b7b0645c3dd7791533d2"
+        "sha256": "bab9a8e55ac670881cdf5b57b01fb830aa9c0d15c1775ffbe71ab9170904fb7e"
       },
       {
         "path": "tests/staging-generation-23-surface-factory.test.mjs",
@@ -2197,7 +2217,7 @@
       },
       {
         "path": "tests/staging-generation-22-preflight-armed-copy.test.mjs",
-        "sha256": "e8c3660a9e511182da258098f1ca58a40bd7b556542439ce14a55d8534a08182"
+        "sha256": "920896d2ebbbcb8b0b088fb29ab8161eb7695044dafd4b3b819f254b2dfbb7e6"
       },
       {
         "path": "tests/staging-generation-22-retired-query.test.mjs",
@@ -2520,7 +2540,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "tests/staging-generation-6-credentials.test.mjs",
@@ -2544,7 +2564,7 @@
       },
       {
         "path": "tests/staging-generation-6-connection-verifier.test.mjs",
-        "sha256": "8395cea98e6cadee9c2a13d8ad1adcd8575e04b267087b44f61541ae19ad019e"
+        "sha256": "37148c73f32d95286bbcab280127019fba1258d7034afb40ae6a66483114307e"
       },
       {
         "path": "tests/staging-supabase-ca.test.mjs",
@@ -2826,7 +2846,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-10-credentials.mjs",
@@ -2941,7 +2961,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-11-credentials.mjs",
@@ -3074,7 +3094,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-12-credentials.mjs",
@@ -3231,7 +3251,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-13-credentials.mjs",
@@ -3401,7 +3421,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-14-credentials.mjs",
@@ -3578,7 +3598,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-15-credentials.mjs",
@@ -3767,7 +3787,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-16-credentials.mjs",
@@ -3987,7 +4007,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-17-credentials.mjs",
@@ -4216,7 +4236,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-18-credentials.mjs",
@@ -4452,7 +4472,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-19-credentials.mjs",
@@ -4717,7 +4737,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-20-credentials.mjs",
@@ -4900,7 +4920,7 @@
       },
       {
         "path": "scripts/staging-generation-6-connection-verifier.mjs",
-        "sha256": "56f1b731f07c45c296af0ae842366458c6f73685dd09f27ea46a305d55d3bbaf"
+        "sha256": "d927beab75b177a9f0de9dd1333b1faee8bdfe595043eadacc1beff5f05f7b5e"
       },
       {
         "path": "scripts/staging-generation-21-credentials.mjs",

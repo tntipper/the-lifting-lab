@@ -27,7 +27,12 @@ function isolatedCopy() {
     join(root, 'tests/staging-generation-22-preflight-armed-copy.test.mjs'))
   for (const name of ['scripts/staging-generation-23-connection-diagnostic.mjs',
     'tests/staging-generation-23-connection-diagnostic.test.mjs',
-    'tests/staging-generation-23-assembled-connections.test.mjs']) {
+    'tests/staging-generation-23-assembled-connections.test.mjs',
+    'app/api/staging/consumer-readiness/route.ts',
+    'lib/server/staging-consumer-readiness.ts',
+    'supabase/functions/tll-broker-readiness/index.ts',
+    'supabase/functions/tll-broker-readiness/deno.json',
+    'lib/identity/staging-broker-readiness-edge.ts']) {
     const destination = join(root, name)
     mkdirSync(dirname(destination), { recursive: true })
     copyFileSync(join(sourceRoot, name), destination)

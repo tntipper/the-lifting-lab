@@ -53,6 +53,29 @@ const unavailable = () => new Error('Staging database unavailable')
 // A trusted staging verifier can distinguish an actual PostgreSQL denial from
 // a timeout without exposing driver errors to application callers or logs.
 const querySqlstates = new WeakMap<Error, string>()
+type ConnectionDiagnostic = Readonly<{ operation: 'driver' | 'acquire' | 'state' | 'closed'
+  category: 'authentication' | 'capacity' | 'network' | 'timeout' | 'other'
+  code: string | null; elapsed: 'under_1s' | '1_to_4s' | 'over_4s' }>
+const connectionDiagnostics = new WeakMap<Error, ConnectionDiagnostic>()
+const safeConnectionCodes = new Set(['28P01', '28000', '53300', '57P03', '08001', '08004', '08006',
+  'ECONNREFUSED', 'ECONNRESET', 'ENETUNREACH', 'EHOSTUNREACH', 'ETIMEDOUT', 'EAI_AGAIN'])
+const connectionError = (operation: ConnectionDiagnostic['operation'], raw: unknown, started: number): Error => {
+  const error = unavailable()
+  const candidate = raw && typeof raw === 'object' ? (raw as { code?: unknown }).code : null
+  const code = typeof candidate === 'string' && safeConnectionCodes.has(candidate) ? candidate : null
+  const category = code === '28P01' || code === '28000' ? 'authentication'
+    : code === '53300' || code === '57P03' ? 'capacity'
+      : operation === 'acquire' || code === 'ETIMEDOUT' ? 'timeout'
+        : code === '08001' || code === '08004' || code === '08006' || code?.startsWith('E') ? 'network' : 'other'
+  const duration = Date.now() - started
+  connectionDiagnostics.set(error, Object.freeze({ operation, category, code,
+    elapsed: duration < 1000 ? 'under_1s' : duration < 4000 ? '1_to_4s' : 'over_4s' }))
+  return error
+}
+/** Private, allow-listed connection evidence; raw driver errors never escape. */
+export function stagingPostgresConnectionDiagnostic(error: unknown): ConnectionDiagnostic | null {
+  return error instanceof Error ? connectionDiagnostics.get(error) ?? null : null
+}
 const expectedDenialSqlstates = new Set(['22023', '42501', '55000'])
 export function stagingPostgresSqlstate(error: unknown): string | null {
   return error instanceof Error ? querySqlstates.get(error) ?? null : null
@@ -207,26 +230,29 @@ export function createStagingPostgresRuntime(input: StagingPostgresOptions, fixt
   }
   const pool: StagingPostgresPool = Object.freeze({
     async connect() {
-      if (closed || !serverEnvironmentSafe() || acquiring.size >= STAGING_POSTGRES_LIMITS.maxPending) throw unavailable()
+      const started = Date.now()
+      if (closed || !serverEnvironmentSafe() || acquiring.size >= STAGING_POSTGRES_LIMITS.maxPending)
+        throw connectionError('closed', null, started)
       return new Promise<StagingPostgresClient>((resolve, reject) => {
         let pending = true
-        const fail = () => {
+        const fail = (operation: ConnectionDiagnostic['operation'] = 'acquire', raw?: unknown) => {
           if (!pending) return
-          pending = false; clearTimeout(timer); acquiring.delete(fail); reject(unavailable())
+          pending = false; clearTimeout(timer); acquiring.delete(cancel); reject(connectionError(operation, raw, started))
         }
-        const timer = setTimeout(fail, STAGING_POSTGRES_LIMITS.acquireMs)
-        acquiring.add(fail)
+        const cancel = () => fail('closed')
+        const timer = setTimeout(() => fail('acquire'), STAGING_POSTGRES_LIMITS.acquireMs)
+        acquiring.add(cancel)
         getDriver().then(async pg => {
           if (!pending || closed) return
           let raw: DriverClient
-          try { raw = await pg.connect() } catch { fail(); return }
+          try { raw = await pg.connect() } catch (error) { fail('driver', error); return }
           if (!pending || closed) { try { raw.release(true) } catch {} return }
           try {
-            if (raw.getTransactionStatus() !== 'I') { raw.release(true); fail(); return }
+            if (raw.getTransactionStatus() !== 'I') { raw.release(true); fail('state'); return }
             const client = lease(raw)
-            pending = false; clearTimeout(timer); acquiring.delete(fail); resolve(client)
-          } catch { try { raw.release(true) } catch {} fail() }
-        }, fail)
+            pending = false; clearTimeout(timer); acquiring.delete(cancel); resolve(client)
+          } catch { try { raw.release(true) } catch {} fail('state') }
+        }, error => fail('driver', error))
       })
     },
   })

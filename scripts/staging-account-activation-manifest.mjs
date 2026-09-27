@@ -30,6 +30,8 @@ const migrations = [
 const edgeSources = [
   'supabase/functions/tll-broker-token/index.ts', 'supabase/functions/tll-broker-token/deno.json',
   'supabase/functions/tll-broker-userinfo/index.ts', 'supabase/functions/tll-broker-userinfo/deno.json',
+  'supabase/functions/tll-broker-readiness/index.ts', 'supabase/functions/tll-broker-readiness/deno.json',
+  'lib/identity/staging-broker-readiness-edge.ts',
   'lib/identity/customer-subject-broker-edge.ts', 'lib/identity/customer-subject-broker.ts',
   'lib/identity/customer-subject-broker-repository.ts', 'lib/server/staging-postgres.ts',
 ]
@@ -40,6 +42,8 @@ const runtimeSources = [
   'lib/identity/customer-orders.ts', 'app/api/account/orders/route.ts', 'app/auth/customer/logout/route.ts',
   'app/api/staging/checkout-readiness/contract.ts', 'app/api/staging/checkout-readiness/route.ts',
   'app/api/staging/variant-readiness/route.ts',
+  'app/api/staging/consumer-readiness/route.ts',
+  'lib/server/staging-consumer-readiness.ts',
 ]
 const recoverySources = [
   'scripts/staging-account-activation-recovery.mjs',
@@ -968,6 +972,7 @@ const disabledActivationToolingSources = [
 const sourceTreePaths = [...new Set([...migrations, ...edgeSources, ...runtimeSources,
   ...await walk('lib/identity'), ...await walk('lib/server'), ...await walk('lib/commerce'),
   ...await walk('app/auth/customer'), ...await walk('app/account/orders'), ...await walk('app/api/account'),
+  ...await walk('app/api/staging'),
   ...await walk('supabase/functions')])].sort()
 const sourceTreePins = await Promise.all(sourceTreePaths.map(pin))
 const sourceTreeSha256 = createHash('sha256').update(sourceTreePins.map(item => `${item.path}\0${item.sha256}\n`).join('')).digest('hex')

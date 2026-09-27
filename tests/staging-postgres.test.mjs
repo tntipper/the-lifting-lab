@@ -5,7 +5,7 @@ import {rootCertificates} from 'node:tls'
 import {X509Certificate,createHash} from 'node:crypto'
 import {build} from 'esbuild'
 const bundled=await build({entryPoints:['lib/server/staging-postgres.ts'],bundle:true,platform:'node',format:'esm',packages:'external',write:false,logLevel:'silent'})
-const {createStagingPostgresRuntime,stagingPostgresSqlstate,STAGING_POSTGRES_PROJECT_REF,STAGING_POSTGRES_HOST,STAGING_POSTGRES_LIMITS:L}=await import('data:text/javascript;base64,'+Buffer.from(bundled.outputFiles[0].text).toString('base64'))
+const {createStagingPostgresRuntime,stagingPostgresSqlstate,stagingPostgresConnectionDiagnostic,STAGING_POSTGRES_PROJECT_REF,STAGING_POSTGRES_HOST,STAGING_POSTGRES_LIMITS:L}=await import('data:text/javascript;base64,'+Buffer.from(bundled.outputFiles[0].text).toString('base64'))
 const tick=()=>new Promise(resolve=>setImmediate(resolve))
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return{promise,resolve,reject}}
 const privateError=()=>Object.assign(new Error('SYNTHETIC_PASSWORD SELECT secret FROM private'),{detail:'SYNTHETIC_PRIVATE',cause:new Error('SYNTHETIC_CAUSE')})
@@ -108,6 +108,16 @@ test('raw constructor, connection, query and pool-close errors never expose secr
  await assert.rejects(()=>fail.pool.connect(),unavailable);await fail.close()
  const {runtime,driver}=setup();driver.connectImpl=async()=>{throw privateError()};await assert.rejects(()=>runtime.pool.connect(),unavailable);assert.equal(driver.connects,1);await runtime.close()
  const next=setup();const c=await next.runtime.pool.connect();next.driver.client.queryImpl=async()=>{throw privateError()};await assert.rejects(()=>c.query('SELECT SYNTHETIC_PRIVATE'),unavailable);assert.deepEqual(next.driver.client.released,[true]);next.driver.endImpl=async()=>{throw privateError()};await assert.rejects(()=>next.runtime.close(),unavailable)
+})
+test('private connection diagnosis preserves only a fixed category and never the driver message',async()=>{
+ const {runtime,driver}=setup()
+ driver.connectImpl=async()=>{throw Object.assign(privateError(),{code:'28P01'})}
+ let result
+ try{await runtime.pool.connect()}catch(error){unavailable(error);result=stagingPostgresConnectionDiagnostic(error)}
+ assert.deepEqual(result,{operation:'driver',category:'authentication',code:'28P01',elapsed:'under_1s'})
+ assert.doesNotMatch(JSON.stringify(result),/SYNTHETIC|PASSWORD|private/)
+ assert.equal(stagingPostgresConnectionDiagnostic(privateError()),null)
+ await runtime.close()
 })
 test('only a driver query rejection carries a private SQLSTATE classification',async()=>{
  const expected=setup(),client=await expected.runtime.pool.connect()

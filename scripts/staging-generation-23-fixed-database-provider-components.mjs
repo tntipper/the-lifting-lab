@@ -93,6 +93,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
         const runtimeModule = await import('../lib/server/staging-postgres.ts')
         const proof = makeRestricted({ createRuntime: runtimeModule.createStagingPostgresRuntime,
           classifyQueryError: runtimeModule.stagingPostgresSqlstate,
+          classifyConnectError: runtimeModule.stagingPostgresConnectionDiagnostic,
           diagnostic: createStagingGeneration23ConnectionDiagnostic({ sourceCommit }), readCa,
           verifyDrained: async ({ expiresAt, signal }) => {
             const state = await backendState({ expiresAt, signal })

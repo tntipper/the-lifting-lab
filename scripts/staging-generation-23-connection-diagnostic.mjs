@@ -17,6 +17,15 @@ const CHECKS = new Set([null, 'input', 'factory', 'connect', 'connect_wait', 'fa
 const OUTCOMES = new Set([null, 'correct_role_failed', 'wrong_password_failed',
   'sessions_remain', 'drain_read_failed', 'deadline', 'cancelled', 'cleanup_failed', 'unavailable'])
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+const CONNECTION_FIELDS = ['operation', 'category', 'code', 'elapsed']
+const connection = value => value === null || (exact(value, CONNECTION_FIELDS)
+  && ['driver', 'acquire', 'state', 'closed'].includes(value.operation)
+  && ['authentication', 'capacity', 'network', 'timeout', 'other'].includes(value.category)
+  && ['under_1s', '1_to_4s', 'over_4s'].includes(value.elapsed)
+  && (value.code === null || ['28P01', '28000', '53300', '57P03', '08001', '08004', '08006',
+    'ECONNREFUSED', 'ECONNRESET', 'ENETUNREACH', 'EHOSTUNREACH', 'ETIMEDOUT', 'EAI_AGAIN'].includes(value.code)))
+const connectionEvidence = value => value === null || (exact(value, ['first', 'second'])
+  && connection(value.first) && connection(value.second))
 const unavailable = () => { throw Error('Generation 23 connection diagnostic unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
@@ -24,8 +33,9 @@ const iso = value => typeof value === 'string' && Number.isFinite(Date.parse(val
   && new Date(Date.parse(value)).toISOString() === value
 
 function validate(value) {
-  if (!exact(value, ['schema', 'projectRef', 'windowId', 'sourceCommit', 'runId', 'expiresAt', 'deadlineAt', 'createdAt',
-    'updatedAt', 'state', 'sequence', 'step', 'purpose', 'check', 'outcome'])
+  const fields = ['schema', 'projectRef', 'windowId', 'sourceCommit', 'runId', 'expiresAt', 'deadlineAt', 'createdAt',
+    'updatedAt', 'state', 'sequence', 'step', 'purpose', 'check', 'outcome']
+  if ((!exact(value, fields) && !exact(value, [...fields, 'connectionEvidence']))
     || value.schema !== SCHEMA || value.projectRef !== PROJECT_REF || value.windowId !== WINDOW_ID
     || !/^[a-f0-9]{40}$/.test(value.sourceCommit) || !UUID.test(value.runId)
     || ![value.expiresAt, value.deadlineAt, value.createdAt, value.updatedAt].every(iso)
@@ -36,6 +46,9 @@ function validate(value) {
     || !Number.isSafeInteger(value.sequence) || value.sequence < 0 || value.sequence > 128
     || !STEPS.has(value.step) || !PURPOSES.has(value.purpose)
     || !CHECKS.has(value.check) || !OUTCOMES.has(value.outcome)
+    || (Object.hasOwn(value, 'connectionEvidence') && !connectionEvidence(value.connectionEvidence))
+    || (value.connectionEvidence !== undefined && value.connectionEvidence !== null
+      && (value.state !== 'HOLD' || value.outcome !== 'correct_role_failed'))
     || (value.state === 'CLAIMED' && (value.sequence !== 0 || value.step !== 'correct_roles'
       || value.purpose !== null || value.check !== null || value.outcome !== null))
     || (value.state === 'RUNNING' && (value.sequence < 1 || value.outcome !== null))
@@ -102,7 +115,7 @@ export function createStagingGeneration23ConnectionDiagnostic({ path = CONNECTIO
       const record = validate({ schema: SCHEMA, projectRef: PROJECT_REF, windowId: WINDOW_ID,
         sourceCommit, runId: makeRunId(),
         expiresAt, deadlineAt, createdAt, updatedAt: createdAt, state: 'CLAIMED', sequence: 0,
-        step: 'correct_roles', purpose: null, check: null, outcome: null })
+        step: 'correct_roles', purpose: null, check: null, outcome: null, connectionEvidence: null })
       persist(path, record, fileSystem, true); owned = record.runId; return record
     },
     progress(previous, { step, purpose = null, check = null }) {
@@ -131,9 +144,10 @@ export function createStagingGeneration23ConnectionDiagnostic({ path = CONNECTIO
         || now() >= Date.parse(previous.deadlineAt)) unavailable()
       return update(previous, { state: 'PASS', step: 'complete', purpose: null, check: null, outcome: null })
     },
-    hold(previous, { outcome, purpose = null, check = null }) {
-      if (outcome === null || !OUTCOMES.has(outcome) || !PURPOSES.has(purpose) || !CHECKS.has(check)) unavailable()
-      return update(previous, { state: 'HOLD', outcome, purpose, check })
+    hold(previous, { outcome, purpose = null, check = null, connectionEvidence: evidence = null }) {
+      if (outcome === null || !OUTCOMES.has(outcome) || !PURPOSES.has(purpose) || !CHECKS.has(check)
+        || !connectionEvidence(evidence) || (evidence !== null && outcome !== 'correct_role_failed')) unavailable()
+      return update(previous, { state: 'HOLD', outcome, purpose, check, connectionEvidence: evidence })
     },
   })
 }
