@@ -13,7 +13,7 @@ This card describes **one** protected staging attempt, not production activation
 
 The guarded child takes one-use records in this order: baseline; five Vercel passwords plus broker Edge password and the expiring broker-window setting; value-free setting readback; five temporary database logins; classified role connections, deliberate wrong-password checks and final correct-role checks; **new held protected Preview**; four website consumer reads and authenticated broker Edge read; provider and database controls; enabled site/checkout; owner Shopify sign-in, identity/orders, guest-cart transfer, exact variant/price, checkout-page GET and POST logout; database then provider OFF; held site/checkout; passwordless role retirement and zero sessions; exact broker-window deletion and secret-name absence; final authenticated broker `404 held`, provider OFF and website OFF observations. A checkout GET is permitted; submitting an order or payment is not.
 
-The service-role key is used only by the staging broker checker. The website consumer result must come from the newly built Preview, and activation must use that same held deployment identity rather than the older preflight build. Timeouts and uncertain writes are recorded as findings/HOLD, never silently retried.
+The staging broker checker uses a service-role key for its authenticated read; the fixed provider-control path also uses that key for its staging Auth Admin operation. The website consumer result must come from the newly built Preview, and activation must use that same held deployment identity rather than the older preflight build. Timeouts and uncertain writes are recorded as findings/HOLD, never silently retried.
 
 ## Early HOLD or uncertain reply
 
