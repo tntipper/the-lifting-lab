@@ -7,7 +7,7 @@ import { WINDOW_ID } from './staging-generation-23-credentials.mjs'
 
 export const STAGING_GENERATION_23_CONNECTION_DIAGNOSTIC_ENABLED = false
 export const CONNECTION_DIAGNOSTIC_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-generation-23-restricted-connections-v3.json')
+  '../../implementation-state/staging/tll-generation-23-restricted-connections-v4.json')
 const SCHEMA = 'tll-generation-23-restricted-connection-diagnostic/v1'
 const PURPOSES = new Set([null, 'customer', 'cart', 'broker', 'provisional', 'bridge'])
 const PURPOSE_ORDER = ['customer', 'cart', 'broker', 'provisional', 'bridge']

@@ -38,7 +38,7 @@ test('fixed construction selects distinct database journals and forwards the man
       createSupabase: () => ({ async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {} }),
       createProviderPort: () => ({ dispose() {} }),
       createActivation: () => ({ async activate() { return { status: 'CONTROLS_ENABLED', target: 'qdmvngjwkcsilzmqksme', generation: 23,
-        windowId: '97fa9556-5c70-4e23-bfda-6efdf6265c24', receiptHash: 'a'.repeat(64) } } }),
+        windowId: '6f33365f-9b0f-4885-b0be-40669e039f61', receiptHash: 'a'.repeat(64) } } }),
       createFinalJournal: () => ({}),
       createFinal: () => ({ async observe() { return { status: 'PASS_FINAL_RETIRED', projectRef: 'qdmvngjwkcsilzmqksme' } } }),
       postFinal: async () => [], validateFinal() {},

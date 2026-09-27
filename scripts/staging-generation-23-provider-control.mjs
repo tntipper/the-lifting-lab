@@ -9,8 +9,8 @@ import { BROKER_CLIENT_ID, PROVIDER_IDENTIFIER, STAGING_BROKER_PROVIDER,
 
 export const STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED = false
 export const PROVIDER_CONTROL_PATHS = Object.freeze({
-  ENABLE: resolve(import.meta.dirname, '../../implementation-state/staging/tll-generation-23-provider-enable-v3.json'),
-  DISABLE: resolve(import.meta.dirname, '../../implementation-state/staging/tll-generation-23-provider-disable-v3.json'),
+  ENABLE: resolve(import.meta.dirname, '../../implementation-state/staging/tll-generation-23-provider-enable-v4.json'),
+  DISABLE: resolve(import.meta.dirname, '../../implementation-state/staging/tll-generation-23-provider-disable-v4.json'),
 })
 const SCHEMA = 'tll-generation-23-provider-control/v1'
 const HASH = /^[a-f0-9]{64}$/
