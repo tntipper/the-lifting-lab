@@ -1313,7 +1313,7 @@
       },
       {
         "path": "scripts/staging-generation-23-fixed-hosted-adapters.mjs",
-        "sha256": "10ab2cd5f2fe07c6bf72af1aab62a91b3b21032c2e7c554216f35e61e8914b1f"
+        "sha256": "3dbdcf308e2d71b8193880956a26419beddd1cbdac821fc75344ab388331daed"
       },
       {
         "path": "scripts/staging-generation-23-fixed-preflight.mjs",
@@ -2045,7 +2045,7 @@
       },
       {
         "path": "tests/staging-generation-23-fixed-hosted-adapters.test.mjs",
-        "sha256": "081e6fcd30f71e982d81ac95f9a7f6f96de05356ee7ab485060b23a1bff61b0a"
+        "sha256": "a929d81851c2b14dd38730373267f27637d5c58bad56aa9f29c4648f3f5c7322"
       },
       {
         "path": "tests/staging-generation-23-fixed-preflight.test.mjs",

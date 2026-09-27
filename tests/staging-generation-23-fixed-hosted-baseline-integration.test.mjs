@@ -16,7 +16,7 @@ const aliasHost='the-lifting-lab-git-codex-tll-4adea2-my-lifting-lab-s-projects.
 const alias=()=>({alias:aliasHost,projectId:'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4',deploymentId,deployment:{id:deploymentId,url:new URL(immutableUrl).hostname}})
 const fixtures=new Map([
  ['/v1/projects/qdmvngjwkcsilzmqksme/api-keys?reveal=true',[{name:'service_role',type:'legacy',api_key:'s'.repeat(64)}]],
- ['/v1/projects/qdmvngjwkcsilzmqksme/secrets',[{name:broker.BROKER_SECRET_NAME}]],
+ ['/v1/projects/qdmvngjwkcsilzmqksme/secrets',[{name:broker.BROKER_SECRET_NAME},{name:'TLL_STAGING_BROKER_DATABASE_PASSWORD'}]],
  ['/auth/v1/admin/custom-providers/custom:tll-staging-subject-broker-v1',{
   id:'custom-provider-id',provider_type:'oauth2',identifier:broker.PROVIDER_IDENTIFIER,name:providerAdapter.STAGING_PROVIDER_NAME,
   client_id:broker.STAGING_BROKER_PROVIDER.clientId,acceptable_client_ids:[],scopes:['subject'],pkce_enabled:true,

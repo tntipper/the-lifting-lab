@@ -133,8 +133,11 @@ export function createStagingGeneration23FixedHostedAdapters({ credentials, fetc
           // endpoints, PKCE, scopes and retained JWKS address. It is a real
           // read of Supabase's official provider response, never a guessed copy.
           projectOfficialStagingProvider(rawProvider)
+          // Gen22 retirement disabled the database login but deliberately
+          // retained this Edge setting. Gen23 replaces its value in the
+          // supervised window, so its single existing name is the baseline.
           if (!Array.isArray(edgeNames) || edgeNames.filter(name => name === BROKER_SECRET_NAME).length !== 1
-            || edgeNames.includes(EDGE_PASSWORD_NAME)) unavailable()
+            || edgeNames.filter(name => name === EDGE_PASSWORD_NAME).length !== 1) unavailable()
           if (!previewPresence || previewPresence.environment !== 'preview' || previewPresence.branch !== STAGING_BRANCH
             || previewPresence.brokerSecretPresent !== true) unavailable()
           // Vercel can report a Git-linked project as `sourceless: true`.

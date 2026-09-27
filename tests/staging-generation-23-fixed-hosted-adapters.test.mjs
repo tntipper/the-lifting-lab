@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFile } from 'node:fs/promises'
+import { EDGE_PASSWORD_NAME } from '../scripts/staging-generation-23-password-material.mjs'
 
 const script = new URL('../scripts/staging-generation-23-fixed-hosted-adapters.mjs', import.meta.url)
 const source = await readFile(script, 'utf8')
@@ -28,7 +29,7 @@ function provider () {
   }
 }
 
-function makeFactories (calls, { retainedSecret = true, repository = { provider: 'github', repoId: 1264363509,
+function makeFactories (calls, { retainedSecret = true, passwordNames = [EDGE_PASSWORD_NAME], repository = { provider: 'github', repoId: 1264363509,
   repo: 'the-lifting-lab', org: 'tntipper', sourceless: true } } = {}) {
   const records = { state: null }
   const factories = {
@@ -36,7 +37,7 @@ function makeFactories (calls, { retainedSecret = true, repository = { provider:
     createSupabase () { return {
       async readDatabase () { assert.fail('the obsolete Gen21 baseline database query must not run') },
       async readProvider () { calls.push('provider'); return provider() },
-      async readEdgeSecretNames () { calls.push('edgeNames'); return retainedSecret ? [broker.BROKER_SECRET_NAME] : [] },
+      async readEdgeSecretNames () { calls.push('edgeNames'); return retainedSecret ? [broker.BROKER_SECRET_NAME, ...passwordNames] : [] },
       dispose () { calls.push('disposeSupabase') },
     } },
     createVercel () { return {
@@ -56,7 +57,7 @@ function makeFactories (calls, { retainedSecret = true, repository = { provider:
     createReadback ({ readVercelTargets, readEdgeNames }) { return { async prove ({ expectedTargets, signal }) {
       calls.push('readback'); assert.deepEqual(expectedTargets, [{ name: 'a' }])
       assert.deepEqual(await readVercelTargets({ signal }), [{ name: 'a' }])
-      assert.deepEqual(await readEdgeNames({ signal }), [broker.BROKER_SECRET_NAME])
+      assert.deepEqual(await readEdgeNames({ signal }), [broker.BROKER_SECRET_NAME, EDGE_PASSWORD_NAME])
       return { status: 'SETTINGS_METADATA_VERIFIED' }
     } } },
   }
@@ -95,6 +96,17 @@ test('fails closed if the deliberately retained broker secret is missing from ei
   assert.ok(calls.includes('provider'))
   assert.ok(calls.includes('disposeSupabase'))
   factory.dispose()
+})
+
+test('baseline requires exactly one retained Edge database-password name', async () => {
+  for (const passwordNames of [[], [EDGE_PASSWORD_NAME, EDGE_PASSWORD_NAME]]) {
+    const { factories, testJournal } = makeFactories([], { passwordNames })
+    const factory = armed.createStagingGeneration23FixedHostedAdapters({ credentials: credentials(),
+      fetch: async () => assert.fail('network'), expiresAt: '2099-01-01T00:00:00.000Z',
+      expectedDeployment, settingsJournal: testJournal, factories })
+    await assert.rejects(factory.ports.readBaseline({ signal: new AbortController().signal }), /unavailable/)
+    factory.dispose()
+  }
 })
 
 test('the live Git-linked sourceless flag cannot replace the pinned repository identity', async () => {
