@@ -166,7 +166,7 @@ const localRequest = action => (options, callback) => {
           rows = [{ tll_generation_23_backend_state: {
             status: 'PASS_BACKEND_OFF', queryId: backendState.QUERY_ID,
             projectRef: PROJECT_REF, generation: 23,
-            windowId: '7d0e8f17-eac4-40e1-a5b5-8a8597d502a9',
+            windowId: '97fa9556-5c70-4e23-bfda-6efdf6265c24',
             expiresAt: database.expiresAt, controlsEnabled: false,
             runtimeSessions: syntheticSessionCount,
           } }]
@@ -177,7 +177,7 @@ const localRequest = action => (options, callback) => {
           rows = [{ tll_generation_23_control_shutdown: {
             status: 'PASS_CONTROLS_DISABLED', shutdownId: shutdownControl.SHUTDOWN_ID,
             projectRef: PROJECT_REF, generation: 23,
-            windowId: '7d0e8f17-eac4-40e1-a5b5-8a8597d502a9',
+            windowId: '97fa9556-5c70-4e23-bfda-6efdf6265c24',
             expiresAt: database.expiresAt, controlsEnabled: 0,
           } }]
         }

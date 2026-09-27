@@ -1141,7 +1141,7 @@
       },
       {
         "path": "scripts/staging-generation-23-predecessor-journal.mjs",
-        "sha256": "f9464c9b6a884b64df7b83e913608f67ca00f3ca10331a9df0832e9930446f28"
+        "sha256": "c0977ea72e58fdd8c4380ab18cf9b46370cdf996849a3044f8c24f3f3bec82f5"
       },
       {
         "path": "scripts/staging-generation-23-predecessor-observer.mjs",
@@ -1165,7 +1165,7 @@
       },
       {
         "path": "scripts/staging-generation-23-settings-journal.mjs",
-        "sha256": "6ce8c8f9476dda146029f3d93dc2091311d7d27f4542a785f874f6e6b9754b3a"
+        "sha256": "2cc878cd2d2c16361db4a1344e6a232037f2416d7f7c15e353b193f21be4c62d"
       },
       {
         "path": "scripts/staging-generation-23-settings-coordinator.mjs",
@@ -1177,7 +1177,7 @@
       },
       {
         "path": "scripts/staging-generation-23-credentials.mjs",
-        "sha256": "69e66d2e898ff4cd3b84fdeb7bd7e26136027bb8a9164d80db403cf95169ca81"
+        "sha256": "9d9e355a70a66ab5f627bd317c549aab25eda85d0184e50b738effbc9c52be55"
       },
       {
         "path": "scripts/staging-generation-23-recovery.mjs",
@@ -1193,7 +1193,7 @@
       },
       {
         "path": "scripts/staging-generation-23-database-journal.mjs",
-        "sha256": "6dd2d806ae18f4a9b4a4bdb0ffaeaebebde6b7446d3b7337747ed475f6735168"
+        "sha256": "b3a77dbcb805aaa3a2f7658169fe90048589188f4dd349b6b08c5a2cf55255d1"
       },
       {
         "path": "scripts/staging-generation-23-control-enable-host.mjs",
@@ -1213,7 +1213,7 @@
       },
       {
         "path": "scripts/staging-generation-23-provider-control.mjs",
-        "sha256": "2366f750fab35ec51759da8d35099e8ff8e51693e582e74ad3fb72f94017d623"
+        "sha256": "0963ce6554ecb8e8913aaa47841ce83dd31f12b2a5f2e067b2331481d83651ed"
       },
       {
         "path": "scripts/staging-generation-23-provider-port.mjs",
@@ -1233,7 +1233,7 @@
       },
       {
         "path": "scripts/staging-generation-23-checkout-setting-journal.mjs",
-        "sha256": "6e8862cb94a0265924d4b6e0a393919d844e4a151f2fb548eed172bae7f7929d"
+        "sha256": "55e8091c7f8ac20128379c8f8ca0c195a4659762a6823d5285f23b11530127c9"
       },
       {
         "path": "scripts/staging-generation-23-checkout-setting-port.mjs",
@@ -1265,7 +1265,7 @@
       },
       {
         "path": "scripts/staging-generation-23-live-launcher.mjs",
-        "sha256": "8491258dd81d4ca1288be1a5c99e2da6557d95f386ad22a39fc64dcba92d1b0f"
+        "sha256": "d9d02c2e2059ea65580054c2a37b67cd3d5a3cdda3b517f14464e1f9291ee53d"
       },
       {
         "path": "config/staging-generation-23-arming-policy.json",
@@ -1273,7 +1273,7 @@
       },
       {
         "path": "scripts/staging-generation-23-whole-route-journal.mjs",
-        "sha256": "11d1f0f15a99bb2432435c7527021a950d90e0e19a56ef6b9bb88021b825870a"
+        "sha256": "75dd8d593620b8589e61980c0afb6dd8d015815d9e905edde591dd7daa7d5c3e"
       },
       {
         "path": "scripts/staging-generation-23-settings-readback.mjs",
@@ -1301,7 +1301,7 @@
       },
       {
         "path": "scripts/staging-generation-23-final-journal.mjs",
-        "sha256": "10b6bbd9135a8846705ff8177077b81615892f5af87105f5f093fbdbf23686ef"
+        "sha256": "2643eb8965e07f8d46f999db542baaf41482b3a16039e60995cd455f4c591cdd"
       },
       {
         "path": "scripts/staging-generation-23-final-observer.mjs",
@@ -1321,7 +1321,7 @@
       },
       {
         "path": "scripts/staging-generation-23-fixed-worker-assembly.mjs",
-        "sha256": "5d03893c67e140c466dcc14c8071279c4f98de948e3849a7c5c2dfeb0149d7a5"
+        "sha256": "5ef61ee831b7500b2d8a3e58a8ff576d3b2b68d0832ed53ade642711b16a7195"
       },
       {
         "path": "scripts/staging-generation-23-hosted-assembly.mjs",
@@ -1725,7 +1725,7 @@
       },
       {
         "path": "tests/staging-control-activation-actual.mjs",
-        "sha256": "0fb42d26169bbf6578833795f9ca4d1ba2f644037cc30ae264c59f4144e78867"
+        "sha256": "98fd367b991737a5e858133724263b9a865c41439760bbcd088c542fbd0da7b1"
       },
       {
         "path": "tests/staging-database-native-adapter.test.mjs",
@@ -1925,23 +1925,23 @@
       },
       {
         "path": "tests/staging-generation-23-credentials.test.mjs",
-        "sha256": "855e1081c6dd02f5dc46d722f96e4d5d2380f7235d5047053d426e55b5d13651"
+        "sha256": "bece8910ea2e09a71542a01188feb6ddd31eec8a80f75698cd56c8f867bf713b"
       },
       {
         "path": "tests/staging-generation-23-recovery.test.mjs",
-        "sha256": "3c2f4edbfaa765bceca8eed7b1cb879504aef98c91b7bb3e27c3ad6b82724b40"
+        "sha256": "ec95583912b75e936f1649b0a78e97e1eba9b555bb6d92f1ba4a958ee44bda62"
       },
       {
         "path": "tests/staging-generation-23-control-shutdown.test.mjs",
-        "sha256": "3cfbe80f4e8049fe0e97b261a209210e7ce0df658bcb919e6bde38e331aa6a60"
+        "sha256": "0957532ae6b0e87e5931d74259e725cddd7dab0c944c4897266e62424c2f555c"
       },
       {
         "path": "tests/staging-generation-23-backend-state.test.mjs",
-        "sha256": "e6b9fd6a7a7556cff4a42271576a7d62ecdd17916f75437fcb65a7035b6d704e"
+        "sha256": "2f7383d5eb7458a288ddab73416d98a1a6b0f515791a86d4d8cd80d9cbe04f06"
       },
       {
         "path": "tests/staging-generation-23-database-host.test.mjs",
-        "sha256": "7b575220caaee6e95e6d95bb9ed296e9ee652eeb9637807bc1ecbfec99b41a29"
+        "sha256": "f1536ae6a855a8d6b4c4a382bd35fd0f7a29e20a50a9e2370f093652ac4358da"
       },
       {
         "path": "tests/staging-generation-23-restricted-connections.test.mjs",
@@ -1949,7 +1949,7 @@
       },
       {
         "path": "tests/staging-generation-23-control-enable-host.test.mjs",
-        "sha256": "cd0d9330907f36a9143e1432ad3f1c908f587305e14906e629330da6a9beee48"
+        "sha256": "1d261f21830b5028ec7d409e4a9415fceef73d110760c9611f90ed2035de0128"
       },
       {
         "path": "tests/staging-generation-23-supabase-query.test.mjs",
@@ -2001,7 +2001,7 @@
       },
       {
         "path": "tests/staging-generation-23-live-launcher.test.mjs",
-        "sha256": "67b4244f2f4b2f52a8ce65c37dc9a2ea21f062ab0ed40b4bd484eda77f242dae"
+        "sha256": "ab6d5ca341f76f751556b2ff9a324f442cb2e9f0a18fdfea344dcfc6a2faa8b1"
       },
       {
         "path": "tests/staging-generation-23-whole-route-journal.test.mjs",
@@ -2017,7 +2017,7 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "40016d4eb6812a94462a6f5b31ecece601e4b284b0dc5c0ebecff35af2bfa89a"
+        "sha256": "4da7e5007a78d948784d18f034e40817a6424b2b5febe3c96c52bbdaa11cfb6f"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
@@ -2033,15 +2033,15 @@
       },
       {
         "path": "tests/staging-generation-23-final-check.test.mjs",
-        "sha256": "5fffdba8f938f3fe464b77e5594a1417f23e5a999e2459695e6fdcfe188fdc4b"
+        "sha256": "2acce9141ea0368f1061a2c38ea11c091834556fd90b5e68a6b05673f1687c34"
       },
       {
         "path": "tests/staging-generation-23-final-postgres.test.mjs",
-        "sha256": "ecd2b84f2705ff959db7502314232f90e19e8b3ac738be2c295d606bcf813496"
+        "sha256": "27f7a1668c7beb9b132dbe158f020bf67da4c459f848a39d4a7b3390ac8196dc"
       },
       {
         "path": "tests/staging-generation-23-fixed-database-provider-components.test.mjs",
-        "sha256": "aa50254411f236aabe17df67fe11b95b4ab6e14834b2d9b136a9e3fd58555e88"
+        "sha256": "2e76dd3f97a8dfca19cb96609743c00cd6500a4cb7c852f6278e05c12f78f7ed"
       },
       {
         "path": "tests/staging-generation-23-fixed-hosted-adapters.test.mjs",
@@ -2061,7 +2061,7 @@
       },
       {
         "path": "tests/staging-generation-23-joined-contracts.test.mjs",
-        "sha256": "21c52ffbbfb6a8682abcf2dc87ce92631f3abdc1ee2da10f570ca2441b52b375"
+        "sha256": "3e1a6058f4acd5f81e3ef3d616ff1aa455bd9b79a3392f1cccd5214730bb305c"
       },
       {
         "path": "tests/staging-generation-23-protected-fetch.test.mjs",

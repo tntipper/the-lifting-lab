@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 const path = new URL('../scripts/staging-generation-23-live-launcher.mjs', import.meta.url)
 const launcherSource = await readFile(path, 'utf8')
@@ -9,14 +10,14 @@ const loadDisabled = () => import(`data:text/javascript;base64,${Buffer.from(lau
   .replace("import { execFileSync } from 'node:child_process'", "const execFileSync = () => { throw Error('unexpected git') }")
   .replace("import { lstatSync } from 'node:fs'", "const lstatSync = () => { throw Error('unexpected file read') }")
   .replace("import { ACTIVE_WINDOW_EXPIRES_AT } from './staging-generation-23-credentials.mjs'", "const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'")
-  .replace("import { JOURNAL_PATH as WHOLE_ROUTE_JOURNAL_PATH } from './staging-generation-23-whole-route-journal.mjs'", "const WHOLE_ROUTE_JOURNAL_PATH = '/fixed/test/implementation-state/staging/tll-generation-23-whole-route-v1.json'")
+  .replace("import { JOURNAL_PATH as WHOLE_ROUTE_JOURNAL_PATH } from './staging-generation-23-whole-route-journal.mjs'", "const WHOLE_ROUTE_JOURNAL_PATH = '/fixed/test/implementation-state/staging/tll-generation-23-whole-route-v2.json'")
   .replace(/import \{ STAGING_GENERATION_23_PROCESS_BINDING_ENABLED,\s+runBoundedStagingGeneration23WholeWorker \} from '\.\/staging-generation-23-process-binding\.mjs'/,
     "const STAGING_GENERATION_23_PROCESS_BINDING_ENABLED = false; const runBoundedStagingGeneration23WholeWorker = () => { throw Error('unexpected worker') }")
   .replace("const ROOT = resolve(import.meta.dirname, '..')", "const ROOT = '/fixed/test/root'")
   .replace('if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {', 'if (false) {')).toString('base64')}#${Math.random()}`)
 const { assessStagingGeneration23LaunchGate, GENERATION_23_LAUNCH_RECORD_NAMES,
   GENERATION_23_LAUNCH_MIN_REMAINING_MS, STAGING_GENERATION_23_LIVE_LAUNCHER_ENABLED,
-  runStagingGeneration23LiveOnce } = await loadDisabled()
+  priorHoldVerified, runStagingGeneration23LiveOnce } = await loadDisabled()
 const now = Date.now()
 const expiry = new Date(now + 50 * 60 * 1000).toISOString()
 const gate = overrides => assessStagingGeneration23LaunchGate({ branchOk: true,
@@ -44,9 +45,20 @@ test('one-run gate needs the exact branch, unused records and a live one-hour ex
   assert.equal(gate({ expiresAt: '2026-09-27T25:00:00.000Z' }), false)
   assert.equal(gate({ nowMs: NaN }), false)
   assert.equal(new Set(GENERATION_23_LAUNCH_RECORD_NAMES).size, GENERATION_23_LAUNCH_RECORD_NAMES.length)
-  assert.ok(GENERATION_23_LAUNCH_RECORD_NAMES.includes('tll-generation-23-whole-route-v1.json'))
-  assert.ok(GENERATION_23_LAUNCH_RECORD_NAMES.includes('tll-generation-23-database-retire-v1.json'))
-  assert.ok(GENERATION_23_LAUNCH_RECORD_NAMES.includes('tll-generation-23-final-read-v1.json'))
+  assert.ok(GENERATION_23_LAUNCH_RECORD_NAMES.includes('tll-generation-23-whole-route-v2.json'))
+  assert.ok(GENERATION_23_LAUNCH_RECORD_NAMES.includes('tll-generation-23-database-retire-v2.json'))
+  assert.ok(GENERATION_23_LAUNCH_RECORD_NAMES.includes('tll-generation-23-final-read-v2.json'))
+})
+
+test('successor requires an exact preserved prior HOLD file, not a cleared or edited record', () => {
+  const bytes = Buffer.from('prior baseline HOLD fixture\n')
+  const stat = { isFile: () => true, isSymbolicLink: () => false, nlink: 1, mode: 0o100600, size: bytes.length }
+  const expectedSha256 = createHash('sha256').update(bytes).digest('hex')
+  assert.equal(priorHoldVerified({ stat, bytes, expectedSha256 }), true)
+  assert.equal(priorHoldVerified({ stat, bytes: Buffer.from('altered'), expectedSha256 }), false)
+  assert.equal(priorHoldVerified({ stat: { ...stat, mode: 0o100644 }, bytes, expectedSha256 }), false)
+  assert.equal(priorHoldVerified({ stat: { ...stat, isSymbolicLink: () => true }, bytes, expectedSha256 }), false)
+  assert.equal(priorHoldVerified({ stat, bytes }), false)
 })
 
 async function isolatedLauncher(terminal) {
@@ -58,7 +70,7 @@ async function isolatedLauncher(terminal) {
     .replace("import { ACTIVE_WINDOW_EXPIRES_AT } from './staging-generation-23-credentials.mjs'",
       `const ACTIVE_WINDOW_EXPIRES_AT = ${JSON.stringify(expiry)}`)
     .replace("import { JOURNAL_PATH as WHOLE_ROUTE_JOURNAL_PATH } from './staging-generation-23-whole-route-journal.mjs'",
-      "const WHOLE_ROUTE_JOURNAL_PATH = '/fixed/test/implementation-state/staging/tll-generation-23-whole-route-v1.json'")
+      "const WHOLE_ROUTE_JOURNAL_PATH = '/fixed/test/implementation-state/staging/tll-generation-23-whole-route-v2.json'")
     .replace(/import \{ STAGING_GENERATION_23_PROCESS_BINDING_ENABLED,\s+runBoundedStagingGeneration23WholeWorker \} from '\.\/staging-generation-23-process-binding\.mjs'/,
       `const STAGING_GENERATION_23_PROCESS_BINDING_ENABLED = true;
        const runBoundedStagingGeneration23WholeWorker = async ({ spawnProcess }) => {
@@ -67,6 +79,7 @@ async function isolatedLauncher(terminal) {
        }`)
     .replace('export const STAGING_GENERATION_23_LIVE_LAUNCHER_ENABLED = false',
       'export const STAGING_GENERATION_23_LIVE_LAUNCHER_ENABLED = true')
+    .replace('recordsUnused: recordsUnused()', 'recordsUnused: true')
     .replace("const ROOT = resolve(import.meta.dirname, '..')", "const ROOT = '/fixed/test/root'")
     .replace('if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {', 'if (false) {')
   return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}#${Math.random()}`)

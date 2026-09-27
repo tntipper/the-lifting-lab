@@ -11,7 +11,7 @@ assertFixture()
 const OPERATOR = 'tll_ca_operator'
 const GENERATION = process.env.TLL_CONTROL_GENERATION === '23' ? 23 : 22
 const WINDOW = GENERATION === 23
-  ? '7d0e8f17-eac4-40e1-a5b5-8a8597d502a9'
+  ? '97fa9556-5c70-4e23-bfda-6efdf6265c24'
   : '91b9cc94-7743-4e0a-9d40-6f01fd215189'
 const expiry = new Date(Date.now() + 10 * 60 * 1000); expiry.setMilliseconds(0)
 const EXPIRES = expiry.toISOString()
