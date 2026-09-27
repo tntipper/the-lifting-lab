@@ -133,8 +133,12 @@ export function createStagingGeneration23FixedHostedAdapters({ credentials, fetc
             || edgeNames.includes(EDGE_PASSWORD_NAME)) unavailable()
           if (!previewPresence || previewPresence.environment !== 'preview' || previewPresence.branch !== STAGING_BRANCH
             || previewPresence.brokerSecretPresent !== true) unavailable()
+          // Vercel can report a Git-linked project as `sourceless: true`.
+          // The Git repository ID and the deployment/source proof, not this
+          // project flag, establish which code the protected Preview runs.
           if (!project?.repository || project.repository.provider !== 'github' || project.repository.repo !== 'the-lifting-lab'
-            || project.repository.org !== 'tntipper' || project.repository.sourceless !== false) unavailable()
+            || project.repository.org !== 'tntipper' || project.repository.repoId !== 1264363509
+            || typeof project.repository.sourceless !== 'boolean') unavailable()
           const flags = observedSurface?.surface?.flags, edge = observedSurface?.surface?.edge, identity = observedSurface?.deployment
           if (!flags || !edge || edge.enabled !== false
             || Object.keys(HELD_SURFACE_FLAGS).some(key => flags[key] !== HELD_SURFACE_FLAGS[key])

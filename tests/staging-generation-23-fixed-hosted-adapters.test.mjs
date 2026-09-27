@@ -28,7 +28,8 @@ function provider () {
   }
 }
 
-function makeFactories (calls, { retainedSecret = true } = {}) {
+function makeFactories (calls, { retainedSecret = true, repository = { provider: 'github', repoId: 1264363509,
+  repo: 'the-lifting-lab', org: 'tntipper', sourceless: true } } = {}) {
   const records = { state: null }
   const factories = {
     async readPredecessor () { calls.push('gen23Predecessor'); return { status: 'PASS_RETIRED', receiptSha256: 'a'.repeat(64) } },
@@ -39,7 +40,7 @@ function makeFactories (calls, { retainedSecret = true } = {}) {
       dispose () { calls.push('disposeSupabase') },
     } },
     createVercel () { return {
-      async readProject () { calls.push('project'); return { repository: { provider: 'github', repo: 'the-lifting-lab', org: 'tntipper', sourceless: false } } },
+      async readProject () { calls.push('project'); return { repository } },
       async readPreviewEnvironmentPresence () { calls.push('previewPresence'); return { environment: 'preview', branch: 'codex/tll-integration', brokerSecretPresent: retainedSecret } },
       dispose () { calls.push('disposeVercel') },
     } },
@@ -94,4 +95,18 @@ test('fails closed if the deliberately retained broker secret is missing from ei
   assert.ok(calls.includes('provider'))
   assert.ok(calls.includes('disposeSupabase'))
   factory.dispose()
+})
+
+test('the live Git-linked sourceless flag cannot replace the pinned repository identity', async () => {
+  for (const repository of [
+    { provider: 'github', repoId: 123, repo: 'the-lifting-lab', org: 'tntipper', sourceless: true },
+    { provider: 'github', repoId: 1264363509, repo: 'the-lifting-lab', org: 'tntipper', sourceless: 'true' },
+  ]) {
+    const { factories, testJournal } = makeFactories([], { repository })
+    const factory = armed.createStagingGeneration23FixedHostedAdapters({ credentials: credentials(),
+      fetch: async () => assert.fail('network'), expiresAt: '2099-01-01T00:00:00.000Z',
+      expectedDeployment, settingsJournal: testJournal, factories })
+    await assert.rejects(factory.ports.readBaseline({ signal: new AbortController().signal }), /unavailable/)
+    factory.dispose()
+  }
 })
