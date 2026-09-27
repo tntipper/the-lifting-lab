@@ -1,13 +1,14 @@
-/** Read-only proof that Gen22 is still fully retired before Gen23 may start. */
+/** Read-only proof that the previous Gen23 window is fully retired. */
 import { createHash } from 'node:crypto'
 import { IDENTITIES } from './staging-generation-21-credentials.mjs'
 import { PRODUCTION_PROJECT_REF } from './staging-account-hosted-baseline-database.mjs'
 import { EXACT_MIGRATIONS } from './staging-generation-21-retirement-preflight.mjs'
-import { GENERATION, PROJECT_REF, PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
-import { WINDOW_ID } from './staging-generation-22-credentials.mjs'
+import { PROJECT_REF, PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
+import { GENERATION } from './staging-generation-23-password-material.mjs'
 
-/** Fixed from the consumed Gen22 setup journal; never re-arm its old window. */
-export const PREDECESSOR_EXPIRES_AT = '2026-09-26T19:52:00.000Z'
+/** Fixed from the consumed Gen23 v2 retirement; never re-arm its old window. */
+export const PREDECESSOR_EXPIRES_AT = '2026-09-27T18:51:00.000Z'
+export const PREDECESSOR_WINDOW_ID = '97fa9556-5c70-4e23-bfda-6efdf6265c24'
 
 export const STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED = false
 export const QUERY_ID = 'tll-staging-generation-23-predecessor-check/v1'
@@ -21,7 +22,7 @@ export function buildStagingGeneration23PredecessorCheckSql() {
   const expiresAt = PREDECESSOR_EXPIRES_AT
   if (!STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED) unavailable()
   const marker = `tll-runtime-window/v1 ${JSON.stringify({ expiresAt, generation: GENERATION,
-    projectRef: PROJECT_REF, state: 'retired', windowId: WINDOW_ID })}`
+    projectRef: PROJECT_REF, state: 'retired', windowId: PREDECESSOR_WINDOW_ID })}`
   const controls = PASSWORD_PURPOSES.map(purpose => `(SELECT count(*) FROM tll_${purpose}_private.control)<>1
     OR EXISTS(SELECT 1 FROM tll_${purpose}_private.control WHERE NOT singleton OR enabled)`).join('\n    OR ')
   return `BEGIN READ ONLY;
@@ -88,7 +89,7 @@ BEGIN
  IF ${controls} THEN RAISE EXCEPTION 'Generation 23 predecessor check controls changed'; END IF;
 END $check$;
 SELECT jsonb_build_object('status','PASS_RETIRED','queryId','${QUERY_ID}',
- 'projectRef','${PROJECT_REF}','generation',${GENERATION},'windowId','${WINDOW_ID}',
+ 'projectRef','${PROJECT_REF}','generation',${GENERATION},'windowId','${PREDECESSOR_WINDOW_ID}',
  'expiresAt',${quote(expiresAt)},'controlsEnabled',false,'runtimeCount',5,'runtimeSessions',0)
  AS tll_generation_23_predecessor_check;
 COMMIT;
@@ -104,7 +105,7 @@ export function validateStagingGeneration23PredecessorCheck(rows) {
   const keys = ['status','queryId','projectRef','generation','windowId','expiresAt','controlsEnabled','runtimeCount','runtimeSessions']
   if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).sort().join('|') !== keys.sort().join('|')
     || value.status !== 'PASS_RETIRED' || value.queryId !== QUERY_ID || value.projectRef !== PROJECT_REF
-    || value.generation !== GENERATION || value.windowId !== WINDOW_ID || value.expiresAt !== expiresAt
+    || value.generation !== GENERATION || value.windowId !== PREDECESSOR_WINDOW_ID || value.expiresAt !== expiresAt
     || value.controlsEnabled !== false || value.runtimeCount !== 5 || value.runtimeSessions !== 0) unavailable()
   return Object.freeze({ status: 'PASS_RETIRED', projectRef: PROJECT_REF, queryId: QUERY_ID,
     receiptSha256: createHash('sha256').update(JSON.stringify(value)).digest('hex') })

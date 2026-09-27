@@ -29,6 +29,14 @@ export function connectionFailureReport(error){
   return Object.freeze(report)
 }
 const values=purposes.flatMap(purpose=>ENTRYPOINTS[purpose].map(signature=>`('${purpose}','${signature}')`)).join(',')
+const waitForPooler=(ms,signal)=>new Promise((resolve,reject)=>{
+  if(signal?.aborted){reject(unavailable(null,'connect_wait'));return}
+  let timer
+  const done=error=>{clearTimeout(timer);signal?.removeEventListener('abort',onAbort);error?reject(error):resolve()}
+  const onAbort=()=>done(unavailable(null,'connect_wait'))
+  timer=setTimeout(()=>done(),ms)
+  signal?.addEventListener('abort',onAbort,{once:true})
+})
 export const IDENTITY_QUERY=`SELECT current_database() AS database,current_user::text AS current_role,session_user::text AS session_role,current_setting('application_name') AS application_name,
  r.rolcanlogin AS can_login,r.rolinherit AS inherits,r.rolsuper AS superuser,r.rolbypassrls AS bypass_rls,r.rolcreaterole AS create_role,r.rolcreatedb AS create_database,
  r.rolreplication AS replication,r.rolvaliduntil::text AS valid_until FROM pg_catalog.pg_roles r WHERE r.rolname=current_user`
@@ -56,28 +64,44 @@ function exactMembership(rows,purpose){const expected=IDENTITIES[purpose]
 function exactMatrix(rows,purpose){if(!Array.isArray(rows)||rows.length!==Object.values(ENTRYPOINTS).reduce((n,list)=>n+list.length,0))throw unavailable(purpose,'matrix')
   for(const row of rows)if(!row.present||row.allowed!==(row.purpose===purpose)||!ENTRYPOINTS[row.purpose]?.includes(row.signature))throw unavailable(purpose,'matrix')}
 
-export async function verifyGeneration6Connections({passwords,expiresAt,tlsCa,createRuntime,pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))}){
+export async function verifyGeneration6Connections({passwords,expiresAt,tlsCa,createRuntime,pause=waitForPooler,
+  requireClassifiedDenials=false,classifyQueryError,signal,onProgress}={}){
   if(!passwords||Object.keys(passwords).sort().join('|')!==[...purposes].sort().join('|')||!tlsCa||Object.keys(tlsCa).sort().join('|')!=='pem|sha256'
-    ||typeof tlsCa.pem!=='string'||!tlsCa.pem||!/^[a-f0-9]{64}$/.test(tlsCa.sha256)||typeof createRuntime!=='function'||typeof pause!=='function')throw unavailable()
+    ||typeof tlsCa.pem!=='string'||!tlsCa.pem||!/^[a-f0-9]{64}$/.test(tlsCa.sha256)||typeof createRuntime!=='function'||typeof pause!=='function'
+    ||typeof requireClassifiedDenials!=='boolean'||(requireClassifiedDenials&&typeof classifyQueryError!=='function')
+    ||(signal!==undefined&&(typeof signal.addEventListener!=='function'||typeof signal.aborted!=='boolean'))
+    ||(onProgress!==undefined&&typeof onProgress!=='function'))throw unavailable()
   let purposesPassed=0
+  const live=(purpose,check)=>{
+    if(signal?.aborted)throw unavailable(purpose,check,{purposesPassed})
+    onProgress?.({purpose,check})
+  }
   for(const purpose of purposes){let runtime,client,primary,check='factory'
     try{
+      live(purpose,check)
       const create=()=>createRuntime({purpose,enabled:true,password:passwords[purpose],tlsCa})
-      runtime=create();check='connect'
+      runtime=create();check='connect';live(purpose,check)
       try{client=await runtime.pool.connect()}
-      catch{check='connect_wait';await runtime.close();runtime=undefined;await pause(POOLER_CONVERGENCE_MS);check='factory_retry';runtime=create();check='connect_retry';client=await runtime.pool.connect()}
+      catch{live(purpose,check);check='connect_wait';await runtime.close();runtime=undefined;await pause(POOLER_CONVERGENCE_MS,signal);live(purpose,check);check='factory_retry';runtime=create();check='connect_retry';client=await runtime.pool.connect()}
       check='identity'
+      live(purpose,check)
       exactIdentity((await client.query(IDENTITY_QUERY)).rows[0],purpose,expiresAt)
-      check='membership';exactMembership((await client.query(MEMBERSHIP_QUERY)).rows,purpose)
-      check='matrix';exactMatrix((await client.query(FUNCTION_MATRIX_QUERY)).rows,purpose)
+      check='membership';live(purpose,check);exactMembership((await client.query(MEMBERSHIP_QUERY)).rows,purpose)
+      check='matrix';live(purpose,check);exactMatrix((await client.query(FUNCTION_MATRIX_QUERY)).rows,purpose)
       const [query,payload,expected]=ownProbe[purpose]
-      check='own_probe'
+      check='own_probe';live(purpose,check)
       if(expected==='error'){
-        let rejected=false,sqlstate=null
+        let rejected=false
         try{if(payload==null)await client.query(query);else await client.query(query,[payload])}
-        catch(probeError){rejected=true;sqlstate=sqlstateOf(probeError)}
+        catch(probeError){rejected=requireClassifiedDenials
+          ? classifyQueryError(probeError)===(purpose==='cart'?'55000':'22023') : true}
         if(!rejected)throw unavailable(purpose,check,{expectedMode:'error',purposesPassed})
-        client=undefined
+        if(requireClassifiedDenials){
+          // A failed query destroys this runtime's lease. Reconnect before the
+          // independent private-table denial check for cart and bridge.
+          client.release(true)
+          live(purpose,check);client=await runtime.pool.connect()
+        }else client=undefined
       }else{
         try{
           const rows=(await client.query(query,[payload])).rows
@@ -87,7 +111,9 @@ export async function verifyGeneration6Connections({passwords,expiresAt,tlsCa,cr
           throw unavailable(purpose,check,{expectedMode:expected,purposesPassed,...(sqlstateOf(probeError)?{sqlstate:sqlstateOf(probeError)}:{})})
         }
       }
-      if(client){check='table_denial';let denied=false;try{await client.query(PRIVATE_TABLE_DENIAL_QUERY)}catch{denied=true}if(!denied)throw unavailable(purpose,check,{purposesPassed});client=undefined}
+      if(client){check='table_denial';live(purpose,check);let denied=false;try{await client.query(PRIVATE_TABLE_DENIAL_QUERY)}
+        catch(probeError){denied=requireClassifiedDenials?classifyQueryError(probeError)==='42501':true}
+        if(!denied)throw unavailable(purpose,check,{purposesPassed});client=undefined}
     }catch(error){
       if(failures.has(error)){
         const prior=failures.get(error)

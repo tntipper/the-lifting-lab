@@ -15,27 +15,30 @@ export const GENERATION_23_LAUNCH_BRANCH = 'codex/tll-integration'
 export const GENERATION_23_LAUNCH_MIN_REMAINING_MS = 45 * 60 * 1000
 const ROOT = resolve(import.meta.dirname, '..')
 const STATE = resolve(ROOT, '../implementation-state/staging')
-export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v1.json'
-export const GENERATION_23_PRIOR_HOLD_SHA256 = 'b996d3f1dc74d6c48e9b10eada64e7ec057cee8c0425b87f5693e870a32b0be3'
+export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v2.json'
+export const GENERATION_23_PRIOR_HOLD_SHA256 = '686b08ce3e4902abd3c9d023d39b6df4aa4668104c079b760dd598296852e544'
+export const GENERATION_23_PRIOR_RETIRE_NAME = 'tll-generation-23-database-retire-v2.json'
+export const GENERATION_23_PRIOR_RETIRE_SHA256 = 'e64e7bf78b01190dc1500b26a0083c7c1ef29fa161bd4d6441d7f5ff70926880'
 // Each of these is a one-use record owned by a fixed Gen23 component. A
 // previous or uncertain attempt closes this entry before any credential read.
 export const GENERATION_23_LAUNCH_RECORD_NAMES = Object.freeze([
-  'tll-generation-23-whole-route-v2.json',
-  'tll-generation-23-predecessor-read-v2.json',
-  'tll-generation-23-database-setup-v2.json',
-  'tll-generation-23-database-activate-v2.json',
-  'tll-generation-23-database-shutdown-v2.json',
-  'tll-generation-23-database-retire-v2.json',
-  'tll-generation-23-provider-enable-v2.json',
-  'tll-generation-23-provider-disable-v2.json',
-  'tll-generation-23-settings-v2.json',
-  'tll-generation-23-surface-enable-v2.json',
-  'tll-generation-23-surface-freeze-v2.json',
-  'tll-generation-23-checkout-enable-v2.json',
-  'tll-generation-23-checkout-freeze-v2.json',
-  'tll-generation-23-preview-enabled-v2.json',
-  'tll-generation-23-preview-held-v2.json',
-  'tll-generation-23-final-read-v2.json',
+  'tll-generation-23-whole-route-v3.json',
+  'tll-generation-23-predecessor-read-v3.json',
+  'tll-generation-23-database-setup-v3.json',
+  'tll-generation-23-database-activate-v3.json',
+  'tll-generation-23-database-shutdown-v3.json',
+  'tll-generation-23-database-retire-v3.json',
+  'tll-generation-23-provider-enable-v3.json',
+  'tll-generation-23-provider-disable-v3.json',
+  'tll-generation-23-settings-v3.json',
+  'tll-generation-23-surface-enable-v3.json',
+  'tll-generation-23-surface-freeze-v3.json',
+  'tll-generation-23-checkout-enable-v3.json',
+  'tll-generation-23-checkout-freeze-v3.json',
+  'tll-generation-23-preview-enabled-v3.json',
+  'tll-generation-23-preview-held-v3.json',
+  'tll-generation-23-final-read-v3.json',
+  'tll-generation-23-restricted-connections-v3.json',
 ])
 const result = status => Object.freeze({ status })
 let used = false
@@ -53,19 +56,15 @@ function fixedBranch() {
 
 function recordsUnused() {
   if (resolve(STATE, GENERATION_23_LAUNCH_RECORD_NAMES[0]) !== WHOLE_ROUTE_JOURNAL_PATH) return false
-  try {
-    const path = resolve(STATE, GENERATION_23_PRIOR_HOLD_NAME)
-    const stat = lstatSync(path)
-    if (!stat.isFile() || stat.isSymbolicLink() || stat.size < 1 || stat.size > 8192) return false
-    if (!priorHoldVerified({ stat, bytes: readFileSync(path) })) return false
-  } catch { return false }
+  for (const [name, expectedSha256] of [[GENERATION_23_PRIOR_HOLD_NAME, GENERATION_23_PRIOR_HOLD_SHA256],
+    [GENERATION_23_PRIOR_RETIRE_NAME, GENERATION_23_PRIOR_RETIRE_SHA256]]) {
+    try {
+      const path = resolve(STATE, name), stat = lstatSync(path)
+      if (!priorHoldVerified({ stat, bytes: readFileSync(path), expectedSha256 })) return false
+    } catch { return false }
+  }
   for (const name of GENERATION_23_LAUNCH_RECORD_NAMES) {
-    if (!name.endsWith('-v2.json')) return false
-    const oldName = name.replace(/-v2\.json$/, '-v1.json')
-    if (oldName !== GENERATION_23_PRIOR_HOLD_NAME) {
-      try { lstatSync(resolve(STATE, oldName)); return false }
-      catch (error) { if (error?.code !== 'ENOENT') return false }
-    }
+    if (!name.endsWith('-v3.json')) return false
     try { lstatSync(resolve(STATE, name)); return false }
     catch (error) { if (error?.code !== 'ENOENT') return false }
   }

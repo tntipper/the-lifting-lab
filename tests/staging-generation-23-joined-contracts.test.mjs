@@ -67,11 +67,20 @@ test('hosted password projection, database material and restricted login proof u
       'STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_ENABLED = true',
       source => source.replace(`from '${scripts.href}staging-generation-23-credentials.mjs'`,
         `from '${credentialsUrl}'`))
-    const accepted = []
+    const accepted = [], diagnosticEvents = []
     const proof = restricted.createStagingGeneration23RestrictedConnections({
       createRuntime: input => ({ pool: { connect() {} }, async close() { accepted.push(input.purpose) } }),
+      classifyQueryError: error => error?.code ?? null,
+      diagnostic: {
+        claim: () => { diagnosticEvents.push('CLAIMED'); return {} },
+        progress: (_record, step) => { diagnosticEvents.push(step.step); return {} },
+        hold: () => { diagnosticEvents.push('HOLD'); return {} },
+        pass: () => { diagnosticEvents.push('PASS'); return {} },
+      },
       readCa: () => ({ pem: 'synthetic', sha256: 'a'.repeat(64) }),
       verify: async input => {
+        assert.equal(input.requireClassifiedDenials, true)
+        assert.equal(typeof input.classifyQueryError, 'function')
         assert.deepEqual(input.passwords, material.passwords)
         for (const purpose of PASSWORD_PURPOSES) input.createRuntime({ purpose, password: input.passwords[purpose] })
         return { status: 'PASS', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5, controlsEnabled: false }
@@ -87,6 +96,7 @@ test('hosted password projection, database material and restricted login proof u
     assert.equal((await proof.prove({ passwords: material.passwords, expiresAt,
       deadlineAt: '2098-12-31T23:59:00.000Z', signal })).status, 'PASS_RESTRICTED_CONNECTIONS')
     assert.deepEqual(accepted.sort(), [...PASSWORD_PURPOSES].sort())
+    assert.equal(diagnosticEvents.at(-1), 'PASS')
   } finally { adapter.dispose() }
   assert.throws(() => adapter.getDatabaseMaterial(), /unavailable/)
 })
@@ -107,7 +117,7 @@ test('backend read receipt projects only the fields accepted by the fixed provid
   const backend = await import(backendUrl)
   const receipt = { status: 'PASS_BACKEND_OFF', queryId: backend.QUERY_ID,
     projectRef: 'qdmvngjwkcsilzmqksme', generation: 23,
-    windowId: '97fa9556-5c70-4e23-bfda-6efdf6265c24', expiresAt,
+    windowId: '6f33365f-9b0f-4885-b0be-40669e039f61', expiresAt,
     controlsEnabled: false, runtimeSessions: 0 }
   const validated = backend.validateStagingGeneration23BackendState(
     [{ tll_generation_23_backend_state: receipt }], { expiresAt })
@@ -124,7 +134,8 @@ test('backend read receipt projects only the fields accepted by the fixed provid
     source => source.replace(`from '${scripts.href}staging-generation-23-backend-state.mjs'`,
       `from '${backendUrl}'`))
   const bound = fixed.createStagingGeneration23FixedDatabaseProviderComponents({
-    credentials: credentials(), fetch: async () => assert.fail('network must not run'),
+    credentials: credentials(), sourceCommit: 'a'.repeat(40),
+    fetch: async () => assert.fail('network must not run'),
     factories: {
       createSupabase: () => ({ async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {} }),
       createProviderJournal: () => ({}),

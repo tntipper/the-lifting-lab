@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { buildStagingControlActivationSql } from '../scripts/staging-control-activation.mjs'
 import { EXACT_MIGRATIONS } from '../scripts/staging-generation-21-retirement-preflight.mjs'
+import { WINDOW_ID as GENERATION_23_WINDOW_ID } from '../scripts/staging-generation-23-credentials.mjs'
 import { admin, assertFixture } from './account-operations/local-pg.mjs'
 
 // Actual PostgreSQL 17 proof in the existing isolated local fixture. Every
@@ -11,7 +12,7 @@ assertFixture()
 const OPERATOR = 'tll_ca_operator'
 const GENERATION = process.env.TLL_CONTROL_GENERATION === '23' ? 23 : 22
 const WINDOW = GENERATION === 23
-  ? '97fa9556-5c70-4e23-bfda-6efdf6265c24'
+  ? GENERATION_23_WINDOW_ID
   : '91b9cc94-7743-4e0a-9d40-6f01fd215189'
 const expiry = new Date(Date.now() + 10 * 60 * 1000); expiry.setMilliseconds(0)
 const EXPIRES = expiry.toISOString()

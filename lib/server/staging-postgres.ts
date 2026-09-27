@@ -50,6 +50,13 @@ type DriverPool = {
   on(event: 'error', listener: () => void): unknown
 }
 const unavailable = () => new Error('Staging database unavailable')
+// A trusted staging verifier can distinguish an actual PostgreSQL denial from
+// a timeout without exposing driver errors to application callers or logs.
+const querySqlstates = new WeakMap<Error, string>()
+const expectedDenialSqlstates = new Set(['22023', '42501', '55000'])
+export function stagingPostgresSqlstate(error: unknown): string | null {
+  return error instanceof Error ? querySqlstates.get(error) ?? null : null
+}
 /** Public CA DER bytes from a single PEM certificate (no private material). */
 function derBytesFromPem(pem: string): Buffer {
   const body = pem.replace(/^-----BEGIN CERTIFICATE-----/, '')
@@ -169,10 +176,17 @@ export function createStagingPostgresRuntime(input: StagingPostgresOptions, fixt
         busy = true
         return new Promise<{ rows: Record<string, unknown>[] }>((resolve, reject) => {
           let settled = false
-          const fail = () => {
+          const fail = (driverError?: unknown) => {
             if (settled) return
             settled = true; clearTimeout(timer); cancelQuery = undefined
-            release(true); reject(unavailable())
+            const safeError = unavailable()
+            if (driverError && typeof driverError === 'object') {
+              const code = (driverError as { code?: unknown }).code
+              if (typeof code === 'string' && expectedDenialSqlstates.has(code)) {
+                querySqlstates.set(safeError, code)
+              }
+            }
+            release(true); reject(safeError)
           }
           const timer = setTimeout(fail, STAGING_POSTGRES_LIMITS.queryMs)
           cancelQuery = fail

@@ -4,6 +4,7 @@ import { createStagingGeneration23DatabaseJournal } from './staging-generation-2
 import { createStagingGeneration23DatabaseHost } from './staging-generation-23-database-host.mjs'
 import { createStagingGeneration23ControlEnableHost } from './staging-generation-23-control-enable-host.mjs'
 import { createStagingGeneration23RestrictedConnections } from './staging-generation-23-restricted-connections.mjs'
+import { createStagingGeneration23ConnectionDiagnostic } from './staging-generation-23-connection-diagnostic.mjs'
 import { createStagingGeneration23ProviderJournal, runStagingGeneration23ProviderControl } from './staging-generation-23-provider-control.mjs'
 import { createStagingGeneration23ProviderPort } from './staging-generation-23-provider-port.mjs'
 import { createStagingAccountHostedBaselineSupabaseBinding } from './staging-account-hosted-baseline-supabase.mjs'
@@ -28,10 +29,11 @@ const signalOk = signal => signal && !signal.aborted && typeof signal.addEventLi
  * All defaults are the fixed, guarded modules. `factories` exists solely for
  * local tests; it cannot supply a different project, endpoint or SQL package.
  */
-export function createStagingGeneration23FixedDatabaseProviderComponents({ credentials,
+export function createStagingGeneration23FixedDatabaseProviderComponents({ credentials, sourceCommit,
   fetch: fetcher, factories = {}, request = https.request } = {}) {
   if (!STAGING_GENERATION_23_FIXED_DATABASE_PROVIDER_COMPONENTS_ENABLED
     || !exact(credentials, ['managementToken', 'vercelToken', 'previewBypass'])
+    || typeof sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(sourceCommit)
     || !token(credentials.managementToken) || typeof fetcher !== 'function' || typeof request !== 'function'
     || !factories || typeof factories !== 'object' || Array.isArray(factories)) unavailable()
   const make = (name, fallback) => factories[name] ?? fallback
@@ -89,7 +91,9 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       restrictedConnections: { async prove(input) {
         requireLive(input?.signal)
         const runtimeModule = await import('../lib/server/staging-postgres.ts')
-        const proof = makeRestricted({ createRuntime: runtimeModule.createStagingPostgresRuntime, readCa,
+        const proof = makeRestricted({ createRuntime: runtimeModule.createStagingPostgresRuntime,
+          classifyQueryError: runtimeModule.stagingPostgresSqlstate,
+          diagnostic: createStagingGeneration23ConnectionDiagnostic({ sourceCommit }), readCa,
           verifyDrained: async ({ expiresAt, signal }) => {
             const state = await backendState({ expiresAt, signal })
             return { status: 'PASS_DRAINED', purposes: 5, projectRef: state.projectRef,

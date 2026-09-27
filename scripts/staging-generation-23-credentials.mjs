@@ -1,21 +1,20 @@
 /** Pure, disconnected SQL package for a future reviewed staging credential window. */
 import { createHash } from 'node:crypto'
 import { PRODUCTION_PROJECT_REF } from './staging-account-hosted-baseline-database.mjs'
-import { PREDECESSOR_EXPIRES_AT, QUERY_ID as PREDECESSOR_QUERY_ID } from './staging-generation-23-predecessor-check.mjs'
+import { PREDECESSOR_EXPIRES_AT, PREDECESSOR_WINDOW_ID, QUERY_ID as PREDECESSOR_QUERY_ID } from './staging-generation-23-predecessor-check.mjs'
 import { IDENTITIES } from './staging-generation-21-credentials.mjs'
-import { WINDOW_ID as GENERATION_22_WINDOW_ID } from './staging-generation-22-credentials.mjs'
 import { GENERATION, PROJECT_REF } from './staging-generation-23-password-material.mjs'
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
 import { EXACT_MIGRATIONS } from './staging-generation-21-retirement-preflight.mjs'
 
 export const STAGING_GENERATION_23_CREDENTIALS_ENABLED = false
 export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'
-export const WINDOW_ID = '97fa9556-5c70-4e23-bfda-6efdf6265c24'
+export const WINDOW_ID = '6f33365f-9b0f-4885-b0be-40669e039f61'
 export const PACKAGE_ID = 'tll-staging-generation-23-credentials/v1'
 export const MAX_WINDOW_MS = 60 * 60 * 1000
 export const PREDECESSOR = Object.freeze({
-  generation: 22,
-  windowId: GENERATION_22_WINDOW_ID,
+  generation: 23,
+  windowId: PREDECESSOR_WINDOW_ID,
   expiresAt: PREDECESSOR_EXPIRES_AT,
   queryId: PREDECESSOR_QUERY_ID,
 })

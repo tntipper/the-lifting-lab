@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { EXACT_MIGRATIONS } from '../scripts/staging-generation-21-retirement-preflight.mjs'
 import { IDENTITIES } from '../scripts/staging-generation-21-credentials.mjs'
 import { PASSWORD_PURPOSES } from '../scripts/staging-generation-22-material.mjs'
-import { WINDOW_ID as PREDECESSOR_WINDOW_ID } from '../scripts/staging-generation-22-credentials.mjs'
+import { PREDECESSOR_WINDOW_ID } from '../scripts/staging-generation-23-predecessor-check.mjs'
 import { PREDECESSOR_EXPIRES_AT } from '../scripts/staging-generation-23-predecessor-check.mjs'
 import { deriveScramVerifier } from '../scripts/staging-generation-6-transport.mjs'
 import { EDGE_PASSWORD_NAME, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
@@ -20,7 +20,7 @@ const sql = (user, input) => docker(['exec', '-i', name, 'psql', '-XqAt', '-U', 
 const quote = value => `'${String(value).replaceAll("'", "''")}'`
 const projectRef = 'qdmvngjwkcsilzmqksme'
 const retiredMarker = `tll-runtime-window/v1 ${JSON.stringify({
-  expiresAt: PREDECESSOR_EXPIRES_AT, generation: 22, projectRef,
+  expiresAt: PREDECESSOR_EXPIRES_AT, generation: 23, projectRef,
   state: 'retired', windowId: PREDECESSOR_WINDOW_ID,
 })}`
 const expiresAt = new Date(Math.floor((Date.now() + 40 * 60_000) / 1000) * 1000).toISOString()

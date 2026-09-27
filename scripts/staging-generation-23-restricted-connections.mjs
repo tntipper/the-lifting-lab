@@ -3,7 +3,7 @@
  * their assigned roles. The worker owns the projected passwords in memory;
  * this module never reads, writes, or reports them.
  */
-import { verifyGeneration6Connections } from './staging-generation-6-connection-verifier.mjs'
+import { verifyGeneration6Connections, connectionFailureReport } from './staging-generation-6-connection-verifier.mjs'
 import { readPinnedSupabaseCa } from './staging-supabase-ca.mjs'
 import { ACTIVE_WINDOW_EXPIRES_AT } from './staging-generation-23-credentials.mjs'
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
@@ -12,8 +12,14 @@ import { IDENTITIES } from './staging-generation-6-credentials.mjs'
 import { checkServerIdentity } from 'node:tls'
 
 export const STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_ENABLED = false
-export const STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_MAX_MS = 140_000
+export const STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_MAX_MS = 360_000
+export const STAGING_GENERATION_23_CORRECT_ROLES_MAX_MS = 180_000
+export const STAGING_GENERATION_23_DRAIN_MAX_MS = 150_000
+export const STAGING_GENERATION_23_CLEANUP_RESERVE_MS = 30_000
+export const STAGING_GENERATION_23_DRAIN_POLL_MS = 20_000
+export const STAGING_GENERATION_23_DRAIN_MAX_READS = 8
 export const STAGING_GENERATION_23_WRONG_PASSWORD_CONNECT_MS = 3_000
+export const STAGING_GENERATION_23_WRONG_PASSWORD_CLOSE_MS = 2_000
 const STAGING_POOLER_HOST = 'aws-0-eu-west-2.pooler.supabase.com'
 const STAGING_POOLER_PORT = 6543
 const unavailable = () => { throw Error('Generation 23 restricted connection proof unavailable') }
@@ -26,6 +32,12 @@ const validPasswords = passwords => exact(passwords, PASSWORD_PURPOSES)
     && /^[A-Za-z0-9_-]{64}$/.test(value))
   && new Set(Object.values(passwords)).size === PASSWORD_PURPOSES.length
 const changedPassword = password => `${password.slice(0, -1)}${password.at(-1) === 'A' ? 'B' : 'A'}`
+const waitForDrain = (ms, signal) => new Promise((resolve, reject) => {
+  if (signal.aborted) { reject(Error('Generation 23 drain cancelled')); return }
+  const onAbort = () => { clearTimeout(timer); reject(Error('Generation 23 drain cancelled')) }
+  const timer = setTimeout(() => { signal.removeEventListener('abort', onAbort); resolve() }, ms)
+  signal.addEventListener('abort', onAbort, { once: true })
+})
 
 /**
  * A narrow raw-client probe is required because the application runtime
@@ -45,8 +57,16 @@ export function createStagingGeneration23WrongPasswordProbe({ Client,
       || !tlsCa.pem || !/^[a-f0-9]{64}$/.test(tlsCa.sha256) || !validSignal(signal) || signal.aborted) unavailable()
     let client, timer, closePromise, resolveOutcome
     const close = () => closePromise ??= Promise.resolve().then(async () => {
-      if (client && typeof client.end === 'function') await client.end()
-    }).catch(() => undefined)
+      if (!client || typeof client.end !== 'function') return true
+      let closeTimer
+      try {
+        return await Promise.race([
+          Promise.resolve().then(() => client.end()).then(() => true, () => false),
+          new Promise(resolve => { closeTimer = scheduleTimeout(() => resolve(false),
+            STAGING_GENERATION_23_WRONG_PASSWORD_CLOSE_MS) }),
+        ])
+      } finally { if (closeTimer) clearScheduledTimeout(closeTimer) }
+    }).catch(() => false)
     const onAbort = () => {
       void close()
       resolveOutcome?.(Object.freeze({ aborted: true }))
@@ -84,7 +104,7 @@ export function createStagingGeneration23WrongPasswordProbe({ Client,
     finally {
       if (timer) clearScheduledTimeout(timer)
       signal.removeEventListener('abort', onAbort)
-      await close()
+      if (await close() !== true) unavailable()
     }
   }
 }
@@ -96,13 +116,16 @@ export function createStagingGeneration23WrongPasswordProbe({ Client,
  */
 export function createStagingGeneration23RestrictedConnections({ createRuntime,
   verify = verifyGeneration6Connections, readCa = readPinnedSupabaseCa,
-  verifyDrained, verifyWrongPassword,
+  verifyDrained, verifyWrongPassword, classifyQueryError, diagnostic, pause = waitForDrain,
   now = Date.now, scheduleTimeout = setTimeout, clearScheduledTimeout = clearTimeout,
 } = {}) {
   if (!STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_ENABLED || typeof createRuntime !== 'function'
     || typeof verify !== 'function' || typeof readCa !== 'function' || typeof now !== 'function'
+    || typeof classifyQueryError !== 'function'
+    || !diagnostic || ['claim', 'progress', 'hold', 'pass'].some(method => typeof diagnostic[method] !== 'function')
     || typeof verifyDrained !== 'function' || (verifyWrongPassword !== undefined && typeof verifyWrongPassword !== 'function')
-    || typeof scheduleTimeout !== 'function' || typeof clearScheduledTimeout !== 'function') unavailable()
+    || typeof pause !== 'function' || typeof scheduleTimeout !== 'function'
+    || typeof clearScheduledTimeout !== 'function') unavailable()
   const wrongPasswordProbe = verifyWrongPassword ?? createStagingGeneration23WrongPasswordProbe()
   let used = false
   return Object.freeze({
@@ -112,17 +135,24 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
         || expiresAt !== ACTIVE_WINDOW_EXPIRES_AT || !Number.isFinite(startedAt)
         || !Number.isFinite(expiresMs) || !Number.isFinite(deadlineMs)
         || startedAt >= deadlineMs || deadlineMs > expiresMs
-        || deadlineMs - startedAt > STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_MAX_MS) unavailable()
+        || deadlineMs - startedAt > STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_MAX_MS
+        || deadlineMs - startedAt <= STAGING_GENERATION_23_CLEANUP_RESERVE_MS) unavailable()
       used = true
+      // Claim before any certificate read or connection attempt. A killed child
+      // leaves an exclusive, private last-dispatched record for reconciliation.
+      let record = diagnostic.claim({ expiresAt, deadlineAt })
       const controller = new AbortController(), runtimes = new Set()
-      const closeAll = async () => {
+      let closing, expired = false, cancelled = false, roleTimer, drainTimer
+      const closeAll = () => closing ??= (async () => {
         const values = [...runtimes]
         runtimes.clear()
         const results = await Promise.allSettled(values.map(runtime => runtime.close()))
         if (results.some(result => result.status !== 'fulfilled')) unavailable()
-      }
-      const onAbort = () => controller.abort()
-      const timeout = scheduleTimeout(onAbort, Math.max(1, deadlineMs - now()))
+      })()
+      const abort = () => { controller.abort(); void closeAll().catch(() => undefined) }
+      const onAbort = () => { cancelled = true; abort() }
+      const onDeadline = () => { expired = true; abort() }
+      const timeout = scheduleTimeout(onDeadline, Math.max(1, deadlineMs - now()))
       signal.addEventListener('abort', onAbort, { once: true })
       const trackedRuntime = input => {
         if (controller.signal.aborted) unavailable()
@@ -132,15 +162,37 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
         runtimes.add(runtime)
         return runtime
       }
+      let result, failed = false, cleanupFailed = false, outcome = 'unavailable'
+      let failedPurpose = null, failedCheck = null
       try {
+        record = diagnostic.progress(record, { step: 'correct_roles' })
+        const roleDeadline = Math.min(deadlineMs - STAGING_GENERATION_23_CLEANUP_RESERVE_MS,
+          startedAt + STAGING_GENERATION_23_CORRECT_ROLES_MAX_MS)
+        roleTimer = scheduleTimeout(onDeadline, Math.max(1, roleDeadline - now()))
         const tlsCa = readCa()
-        const verified = await verify({ passwords, expiresAt, tlsCa, createRuntime: trackedRuntime })
+        let verified
+        try {
+          verified = await verify({ passwords, expiresAt, tlsCa, createRuntime: trackedRuntime,
+            requireClassifiedDenials: true, classifyQueryError, signal: controller.signal,
+            onProgress: ({ purpose, check }) => {
+              record = diagnostic.progress(record, { step: 'correct_roles', purpose, check })
+            } })
+        } catch (error) {
+          const safe = connectionFailureReport(error)
+          failedPurpose = safe.purpose; failedCheck = safe.check
+          outcome = 'correct_role_failed'
+          throw error
+        }
         if (controller.signal.aborted || now() >= deadlineMs
           || !exact(verified, ['status', 'projectRef', 'purposes', 'controlsEnabled'])
           || verified.status !== 'PASS' || verified.projectRef !== PROJECT_REF
-          || verified.purposes !== PASSWORD_PURPOSES.length || verified.controlsEnabled !== false) unavailable()
+          || verified.purposes !== PASSWORD_PURPOSES.length || verified.controlsEnabled !== false) {
+          outcome = 'correct_role_failed'; unavailable()
+        }
         for (const purpose of PASSWORD_PURPOSES) {
           if (controller.signal.aborted || now() >= deadlineMs) unavailable()
+          record = diagnostic.progress(record, { step: 'wrong_password', purpose })
+          failedPurpose = purpose; failedCheck = null
           let denied = false
           try {
             const result = await wrongPasswordProbe({ purpose, password: changedPassword(passwords[purpose]), tlsCa,
@@ -151,22 +203,58 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
           // Its `connect()` cannot distinguish authentication rejection from a
           // transport outage, so the supervised assembly must inject the
           // pinned raw probe which closes its own pool and retains only code.
-          if (!denied || controller.signal.aborted || now() >= deadlineMs) unavailable()
+          if (!denied || controller.signal.aborted || now() >= deadlineMs) {
+            outcome = 'wrong_password_failed'; unavailable()
+          }
         }
+        clearScheduledTimeout(roleTimer); roleTimer = undefined
+        record = diagnostic.progress(record, { step: 'drain' })
+        failedPurpose = null
         await closeAll()
-        const drained = await verifyDrained({ expiresAt, signal: controller.signal })
-        if (controller.signal.aborted || now() >= deadlineMs
-          || !exact(drained, ['status', 'projectRef', 'purposes', 'controlsEnabled', 'runtimeSessions'])
-          || drained.status !== 'PASS_DRAINED' || drained.projectRef !== PROJECT_REF
-          || drained.purposes !== PASSWORD_PURPOSES.length || drained.controlsEnabled !== false
-          || drained.runtimeSessions !== 0) unavailable()
-        return Object.freeze({ status: 'PASS_RESTRICTED_CONNECTIONS', projectRef: PROJECT_REF,
+        const drainDeadline = Math.min(deadlineMs - STAGING_GENERATION_23_CLEANUP_RESERVE_MS,
+          now() + STAGING_GENERATION_23_DRAIN_MAX_MS)
+        drainTimer = scheduleTimeout(onDeadline, Math.max(1, drainDeadline - now()))
+        let drained = false
+        for (let attempt = 0; attempt < STAGING_GENERATION_23_DRAIN_MAX_READS; attempt++) {
+          if (controller.signal.aborted || now() >= drainDeadline) { outcome = 'deadline'; unavailable() }
+          if (attempt > 0) record = diagnostic.progress(record, { step: 'drain' })
+          let observation
+          try { observation = await verifyDrained({ expiresAt, signal: controller.signal }) }
+          catch { outcome = 'drain_read_failed'; unavailable() }
+          if (!exact(observation, ['status', 'projectRef', 'purposes', 'controlsEnabled', 'runtimeSessions'])
+            || observation.status !== 'PASS_DRAINED' || observation.projectRef !== PROJECT_REF
+            || observation.purposes !== PASSWORD_PURPOSES.length || observation.controlsEnabled !== false
+            || !Number.isSafeInteger(observation.runtimeSessions) || observation.runtimeSessions < 0) {
+            outcome = 'drain_read_failed'; unavailable()
+          }
+          if (observation.runtimeSessions === 0) { drained = true; break }
+          outcome = 'sessions_remain'
+          if (attempt + 1 === STAGING_GENERATION_23_DRAIN_MAX_READS) break
+          const remaining = drainDeadline - now()
+          if (remaining <= 0) break
+          await pause(Math.min(STAGING_GENERATION_23_DRAIN_POLL_MS, remaining), controller.signal)
+        }
+        if (!drained) unavailable()
+        clearScheduledTimeout(drainTimer); drainTimer = undefined
+        record = diagnostic.progress(record, { step: 'cleanup' })
+        result = Object.freeze({ status: 'PASS_RESTRICTED_CONNECTIONS', projectRef: PROJECT_REF,
           purposes: PASSWORD_PURPOSES.length, controlsEnabled: false })
-      } finally {
+      } catch { failed = true }
+      finally {
+        if (roleTimer) clearScheduledTimeout(roleTimer)
+        if (drainTimer) clearScheduledTimeout(drainTimer)
         clearScheduledTimeout(timeout)
         signal.removeEventListener('abort', onAbort)
-        try { await closeAll() } catch { /* caller receives the original failed proof */ }
+        try { await closeAll() } catch { cleanupFailed = true }
       }
+      if (failed || cleanupFailed || expired || cancelled || controller.signal.aborted) {
+        const terminal = cleanupFailed ? 'cleanup_failed' : expired ? 'deadline'
+          : cancelled ? 'cancelled' : outcome
+        diagnostic.hold(record, { outcome: terminal, purpose: failedPurpose, check: failedCheck })
+        unavailable()
+      }
+      diagnostic.pass(record)
+      return result
     },
   })
 }

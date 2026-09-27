@@ -100,12 +100,12 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
   const journals = Object.freeze({
     whole: requireJournal(makeWholeJournal(), ['claim', 'dispatch', 'verify', 'ownerFailure', 'skipOwner', 'hold', 'holdBeforeDispatch', 'read']),
     settings: requireJournal(makeSettingsJournal(), ['claim', 'dispatch', 'confirm', 'hold', 'read']),
-    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v2.json` }), ['read', 'recordIntent', 'transition']),
-    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v2.json` }), ['read', 'recordIntent', 'transition']),
+    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v3.json` }), ['read', 'recordIntent', 'transition']),
+    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v3.json` }), ['read', 'recordIntent', 'transition']),
     checkoutEnable: requireJournal(makeCheckoutJournal({ action: 'ENABLE' }), ['read', 'recordIntent', 'transition']),
     checkoutFreeze: requireJournal(makeCheckoutJournal({ action: 'FREEZE' }), ['read', 'recordIntent', 'transition']),
-    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v2.json` }), ['read', 'claim']),
-    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v2.json` }), ['read', 'claim']),
+    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v3.json` }), ['read', 'claim']),
+    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v3.json` }), ['read', 'claim']),
   })
   if (journals.previewEnabled === journals.previewHeld || journals.enableSurface === journals.freezeSurface) unavailable()
 
@@ -125,7 +125,7 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
     const expectedDeployment = Object.freeze({ deploymentId: preflight.heldEvidence.deploymentId,
       immutableUrl: preflight.heldEvidence.immutableUrl, gitSourceCommit: preflight.heldEvidence.sourceCommit })
     hosted = makeHosted({ credentials, fetch: fetcher, expiresAt, expectedDeployment, settingsJournal: journals.settings })
-    database = makeDatabase({ credentials, fetch: fetcher })
+    database = makeDatabase({ credentials, sourceCommit: preflight.requirements.sourceCommit, fetch: fetcher })
     variant = makeVariantReader({ fetch: fetcher, bypass: credentials.previewBypass,
       deploymentId: preflight.heldEvidence.deploymentId, immutableUrl: preflight.heldEvidence.immutableUrl })
     const execute = makeExecutor()

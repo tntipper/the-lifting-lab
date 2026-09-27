@@ -15,7 +15,7 @@ const scripts = new URL('../scripts/', import.meta.url)
 const start = Date.parse('2026-09-26T12:00:00.000Z')
 const expiresAt = new Date(start + 40 * 60_000).toISOString()
 const deadlineAt = new Date(start + 35 * 60_000).toISOString()
-const windowId = '97fa9556-5c70-4e23-bfda-6efdf6265c24'
+const windowId = '6f33365f-9b0f-4885-b0be-40669e039f61'
 const verifiers = Object.fromEntries(PASSWORD_PURPOSES.map((purpose, index) => [purpose,
   deriveScramVerifier(String(index + 1).repeat(64), Buffer.alloc(18, index + 1))]))
 const data = source => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`

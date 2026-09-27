@@ -5,7 +5,7 @@ import { buildStagingGeneration23CredentialSql, PREDECESSOR, WINDOW_ID,
   STAGING_GENERATION_23_CREDENTIALS_ENABLED } from '../scripts/staging-generation-23-credentials.mjs'
 import { PASSWORD_PURPOSES } from '../scripts/staging-generation-22-material.mjs'
 import { IDENTITIES } from '../scripts/staging-generation-21-credentials.mjs'
-import { WINDOW_ID as GENERATION_22_WINDOW_ID } from '../scripts/staging-generation-22-credentials.mjs'
+import { PREDECESSOR_WINDOW_ID } from '../scripts/staging-generation-23-predecessor-check.mjs'
 import { PREDECESSOR_EXPIRES_AT } from '../scripts/staging-generation-23-predecessor-check.mjs'
 import { EXACT_MIGRATIONS } from '../scripts/staging-generation-21-retirement-preflight.mjs'
 
@@ -28,20 +28,20 @@ async function armedFixture() {
   return import(`data:text/javascript;base64,${Buffer.from(armed).toString('base64')}`)
 }
 
-test('Gen23 SQL is disconnected and pins the retired Gen22 predecessor', async () => {
+test('Gen23 SQL is disconnected and pins the retired Gen23 v2 predecessor', async () => {
   assert.equal(STAGING_GENERATION_23_CREDENTIALS_ENABLED, false)
   assert.throws(() => buildStagingGeneration23CredentialSql({ verifiers: verifiers(), expiresAt, nowMs }), /unavailable/)
-  assert.equal(PREDECESSOR.generation, 22)
-  assert.equal(PREDECESSOR.windowId, GENERATION_22_WINDOW_ID)
+  assert.equal(PREDECESSOR.generation, 23)
+  assert.equal(PREDECESSOR.windowId, PREDECESSOR_WINDOW_ID)
   assert.equal(PREDECESSOR.expiresAt, PREDECESSOR_EXPIRES_AT)
-  assert.notEqual(WINDOW_ID, GENERATION_22_WINDOW_ID)
+  assert.notEqual(WINDOW_ID, PREDECESSOR_WINDOW_ID)
   const { buildStagingGeneration23CredentialSql: buildArmed } = await armedFixture()
   const sql = buildArmed({ verifiers: verifiers(), expiresAt, nowMs })
   assert.match(sql, /^BEGIN;\nSET LOCAL lock_timeout='5s';\nSET LOCAL statement_timeout='30s';/)
   assert.match(sql, /operator_project_ref='qdmvngjwkcsilzmqksme'/)
   assert.match(sql, /operator_project_ref='wrhgscovsgsudtedbljr'/)
-  assert.match(sql, /'generation',23,'windowId','97fa9556-5c70-4e23-bfda-6efdf6265c24'/)
-  assert.match(sql, /generation":22.*state":"retired"/)
+  assert.match(sql, /'generation',23,'windowId','6f33365f-9b0f-4885-b0be-40669e039f61'/)
+  assert.match(sql, /generation":23.*state":"retired"/)
   assert.match(sql, /rolvaliduntil='infinity'::timestamptz/)
   assert.match(sql, /NOT rolbypassrls/)
   assert.match(sql, /pg_shdepend/)

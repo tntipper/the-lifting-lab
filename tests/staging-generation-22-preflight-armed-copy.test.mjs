@@ -25,6 +25,13 @@ function isolatedCopy() {
   // This new test may be run before its first commit; the manifest still pins it.
   copyFileSync(join(sourceRoot, 'tests/staging-generation-22-preflight-armed-copy.test.mjs'),
     join(root, 'tests/staging-generation-22-preflight-armed-copy.test.mjs'))
+  for (const name of ['scripts/staging-generation-23-connection-diagnostic.mjs',
+    'tests/staging-generation-23-connection-diagnostic.test.mjs',
+    'tests/staging-generation-23-assembled-connections.test.mjs']) {
+    const destination = join(root, name)
+    mkdirSync(dirname(destination), { recursive: true })
+    copyFileSync(join(sourceRoot, name), destination)
+  }
   symlinkSync(join(sourceRoot, 'node_modules'), join(root, 'node_modules'), 'dir')
   return { parent, root }
 }

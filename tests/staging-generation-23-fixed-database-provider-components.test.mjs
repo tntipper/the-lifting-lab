@@ -23,6 +23,7 @@ test('fixed construction selects distinct database journals and forwards the man
   const create = await armed(), calls = []
   const journal = ({ action }) => ({ action, claim() {}, dispatch() {}, confirm() {}, hold() {}, read() { return null } })
   const component = create({ credentials: { managementToken, vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') },
+    sourceCommit: 'a'.repeat(40),
     fetch: async () => { throw Error('not called') },
     factories: {
       createDatabaseJournal: journal,
@@ -56,6 +57,7 @@ test('fixed construction selects distinct database journals and forwards the man
 test('construction refuses malformed management credentials before any factory runs', async () => {
   const create = await armed(); let called = false
   assert.throws(() => create({ credentials: { managementToken: Buffer.from('bad'), vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') },
+    sourceCommit: 'a'.repeat(40),
     fetch() { called = true }, factories: {} }), /unavailable/)
   assert.equal(called, false)
 })
@@ -64,6 +66,7 @@ test('final state uses the distinct Gen23 final journal and observer', async () 
   const create = await armed(); const calls = []
   const component = create({
     credentials: { managementToken, vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') },
+    sourceCommit: 'a'.repeat(40),
     fetch: async () => { throw Error('not called') },
     factories: {
       createFinalJournal: () => { calls.push('final-journal'); return { final: true } },

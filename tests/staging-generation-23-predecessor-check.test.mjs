@@ -8,8 +8,8 @@ import {
   validateStagingGeneration23PredecessorCheck,
 } from '../scripts/staging-generation-23-predecessor-check.mjs'
 
-const predecessorExpiry = '2026-09-26T19:52:00.000Z'
-const predecessorWindow = '9a539def-bf3c-442c-bf06-c4bd1df39543'
+const predecessorExpiry = '2026-09-27T18:51:00.000Z'
+const predecessorWindow = '97fa9556-5c70-4e23-bfda-6efdf6265c24'
 
 async function armedFixture() {
   const scripts = new URL('../scripts/', import.meta.url)
@@ -26,7 +26,7 @@ test('the Gen23 predecessor check is disconnected by default', () => {
   assert.throws(() => validateStagingGeneration23PredecessorCheck([]), /unavailable/)
 })
 
-test('the fixed read-only transaction requires the exact retired Gen22 state', async () => {
+test('the fixed read-only transaction requires the exact retired Gen23 v2 state', async () => {
   const { buildStagingGeneration23PredecessorCheckSql: build } = await armedFixture()
   const sql = build()
   assert.match(sql, /^BEGIN READ ONLY;\nSET LOCAL lock_timeout='5s';/)
@@ -36,7 +36,7 @@ test('the fixed read-only transaction requires the exact retired Gen22 state', a
   for (const [version, hash] of EXACT_MIGRATIONS) assert.ok(sql.includes(`('${version}','${hash}')`))
   assert.ok(sql.includes(predecessorExpiry))
   assert.ok(sql.includes(predecessorWindow))
-  assert.match(sql, /"generation":22/)
+  assert.match(sql, /"generation":23/)
   assert.match(sql, /"state":"retired"/)
   assert.match(sql, /rolpassword IS NOT NULL/)
   assert.match(sql, /rolvaliduntil='infinity'::timestamptz/)
@@ -51,14 +51,14 @@ test('the fixed read-only transaction requires the exact retired Gen22 state', a
   assert.doesNotMatch(sql, /REVOKE |ALTER ROLE|UPDATE tll_|DELETE FROM/)
 })
 
-test('only the exact retired Gen22 receipt is accepted', async () => {
+test('only the exact retired Gen23 v2 receipt is accepted', async () => {
   const { validateStagingGeneration23PredecessorCheck: validate } = await armedFixture()
   const value = { status: 'PASS_RETIRED', queryId: 'tll-staging-generation-23-predecessor-check/v1',
-    projectRef: 'qdmvngjwkcsilzmqksme', generation: 22, windowId: predecessorWindow,
+    projectRef: 'qdmvngjwkcsilzmqksme', generation: 23, windowId: predecessorWindow,
     expiresAt: predecessorExpiry, controlsEnabled: false, runtimeCount: 5, runtimeSessions: 0 }
   const rows = [{ tll_generation_23_predecessor_check: value }]
   assert.equal(validate(rows).status, 'PASS_RETIRED')
-  for (const changed of [{ ...value, runtimeSessions: 1 }, { ...value, generation: 23 },
+  for (const changed of [{ ...value, runtimeSessions: 1 }, { ...value, generation: 22 },
     { ...value, projectRef: 'wrhgscovsgsudtedbljr' }, { ...value, extra: true }]) {
     assert.throws(() => validate([{ tll_generation_23_predecessor_check: changed }]), /unavailable/)
   }

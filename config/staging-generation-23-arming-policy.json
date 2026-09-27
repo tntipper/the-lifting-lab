@@ -120,6 +120,9 @@
     "scripts/staging-generation-23-recovery.mjs": [
       "STAGING_GENERATION_23_RECOVERY_ENABLED"
     ],
+    "scripts/staging-generation-23-connection-diagnostic.mjs": [
+      "STAGING_GENERATION_23_CONNECTION_DIAGNOSTIC_ENABLED"
+    ],
     "scripts/staging-generation-23-restricted-connections.mjs": [
       "STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_ENABLED"
     ],
