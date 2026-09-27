@@ -1,5 +1,11 @@
 # Stage 3 Generation 23: complete held-test window
 
+## 27 September checkout-switch integration, local proof only
+
+The fifth private Preview control now has a disabled, exact-ID ON/OFF controller and two separate durable one-use records. It requires an existing `codex/tll-integration` Preview Config setting and verifies its opposite starting state and final value. A lost write reply records `RECONCILIATION_REQUIRED` and stops the route without retry. The 12-phase local rehearsal now turns the fifth setting ON before the enabled Preview build and OFF before the held build, records each build's observed setting value, and proves final OFF. The full local route, its parent-supervised test, the owner-failure shutdown case, six focused controller tests and a lost-checkout-reply stop all pass. These tests use injected Vercel responses and do not establish a hosted setting or customer checkout amount.
+
+A signed-in, read-only Vercel settings search on 27 September found **no** `TLL_STAGING_CART_CHECKOUT_HANDOFF_ENABLED` row. Before any protected Gen23 window, create it as branch-only Preview Config `false` through a separately reviewed and approved setting change, then re-read its exact ID, branch, type and OFF value. Bind the disabled controller to the fixed Vercel API transport and the `/api/staging/checkout-readiness` readback on both pinned builds. The credential-owning whole worker and protected real owner journey are still missing; the hosted gate remains closed. If ON is uncertain, stop for read-only reconciliation and containment; the local HOLD result is not proof that hosted access is OFF.
+
 ## 27 September whole-route review: hosted gate remains closed
 
 An independent read-only review of source commit `ab66e86c976e20f3004c4dd465af261e796edec3` found no high-severity mistake in the successful order of the twelve local steps. It approved **disabled assembly only**, not an armed or hosted run. The local route uses fake hosted replies and disposable records; the following connections are still required as one reviewed package:

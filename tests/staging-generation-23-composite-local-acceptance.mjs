@@ -23,6 +23,7 @@ const mode = process.argv.slice(2).join(' ')
 if (!['--run-offline-once', '--run-supervised-offline-once', '--fail-first-setting-once',
   '--fail-inventory-branch-once', '--fail-settings-readback-once',
   '--fail-activation-reply-once', '--fail-surface-public-once', '--fail-owner-verified-once',
+  '--fail-checkout-enable-reply-once',
   '--fail-setup-reply-once', '--abort-setup-once', '--fail-shutdown-reply-once',
   '--fail-retirement-reply-once'].includes(mode)) {
   throw Error('Explicit local test mode required')
@@ -75,9 +76,13 @@ const previewBridge = await arm('staging-generation-23-preview-build-port.mjs',
   'STAGING_GENERATION_23_PREVIEW_BUILD_PORT_ENABLED')
 const checkoutObserver = await arm('staging-generation-23-checkout-observer.mjs',
   'STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED')
+const checkoutControl = await arm('staging-generation-23-checkout-setting.mjs',
+  'STAGING_GENERATION_23_CHECKOUT_SETTING_ENABLED')
+const checkoutJournalModule = await arm('staging-generation-23-checkout-setting-journal.mjs',
+  'STAGING_GENERATION_23_CHECKOUT_SETTING_JOURNAL_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
 let existingCartFixtureStarted = false
-let databaseJournalDirectory, settingsDirectory, providerDirectory, previewDirectory,
+let databaseJournalDirectory, settingsDirectory, providerDirectory, previewDirectory, checkoutDirectory,
   syntheticToken, providerPort
 function ensureCartFixture() {
   if (run('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres']).trim() === 'false') {
@@ -361,6 +366,23 @@ providerPort = providerPortModule.createStagingGeneration23ProviderPort({
 const calls = []
 const phaseErrors = []
 let enabledPreviewJournal, heldPreviewJournal
+checkoutDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-checkout-'))
+const checkoutTarget = Object.freeze({ name: checkoutControl.CHECKOUT_SETTING_NAME,
+  id: 'env_checkout123', branch: 'codex/tll-integration', environment: 'preview', classification: 'config' })
+let checkoutSettingValue = false
+const checkoutRuntime = new Map()
+const checkoutJournal = action => checkoutJournalModule.createStagingGeneration23CheckoutSettingJournal({
+  action, path: join(checkoutDirectory, `${action.toLowerCase()}.json`), now: Date.now,
+})
+const checkoutEnableJournal = checkoutJournal('ENABLE')
+const checkoutFreezeJournal = checkoutJournal('FREEZE')
+const checkoutRead = async () => ({ ...checkoutTarget, enabled: checkoutSettingValue })
+const checkoutWrite = async (_target, enabled) => {
+  assert.deepEqual(_target, checkoutTarget)
+  checkoutSettingValue = enabled
+  if (enabled && mode === '--fail-checkout-enable-reply-once') throw Error('injected lost checkout-setting reply')
+  return { ...checkoutTarget, enabled }
+}
 const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signal }) => {
   calls.push(phase)
   try {
@@ -369,6 +391,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.equal(active, undefined)
       assert.equal(databaseEnabled, false)
       assert.equal(provider.enabled, false)
+      assert.equal(checkoutSettingValue, false)
       const inventoryReader = makeInventoryReader()
       try { settingsTargets = await inventoryReader.readTargets({ signal }) }
       finally { inventoryReader.dispose() }
@@ -433,14 +456,24 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       break
     case 'surfaceEnable': {
       assert.equal(provider.enabled && databaseEnabled, true)
+      const checkoutResult = await checkoutControl.changeStagingCheckoutSetting({
+        action: 'ENABLE', target: checkoutTarget, journal: checkoutEnableJournal,
+        read: checkoutRead, write: checkoutWrite, signal })
+      if (mode === '--fail-checkout-enable-reply-once') {
+        assert.equal(checkoutResult.status, 'HOLD_RECONCILIATION_REQUIRED')
+        return { status: 'HOLD_CHECKOUT_SETTING' }
+      }
+      assert.equal(checkoutResult.status, 'CHECKOUT_SETTING_ENABLED_VERIFIED')
       const result = await enableStagingSurfaces({ ports: surfacePorts, heldEvidence: held,
         requirements, journal: surface.journal('enable'), now: () => START })
       assert.equal(result.status, 'SURFACES_ENABLED_VERIFIED')
       enabledPreview = result.deployment
+      assert.equal(checkoutRuntime.get(enabledPreview.deploymentId), true)
       break
     }
     case 'ownerJourney':
       assert.ok(enabledPreview)
+      assert.equal(checkoutRuntime.get(enabledPreview.deploymentId), true)
       run(process.execPath, ['--test', 'tests/customer-auth-mount.test.mjs',
         'tests/customer-orders.test.mjs', 'tests/customer-account-operations.test.mjs'])
       ensureCartFixture()
@@ -496,10 +529,14 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       break
     case 'surfaceFreeze': {
       assert.equal(databaseEnabled || provider.enabled, false)
+      assert.equal((await checkoutControl.changeStagingCheckoutSetting({
+        action: 'FREEZE', target: checkoutTarget, journal: checkoutFreezeJournal,
+        read: checkoutRead, write: checkoutWrite, signal })).status, 'CHECKOUT_SETTING_HELD_VERIFIED')
       const result = await freezeStagingSurfaces({ ports: surfacePorts,
         currentEvidence: enabledPreview, requirements,
         journal: surface.journal('freeze'), now: () => START })
       assert.equal(result.status, 'SURFACES_HELD_VERIFIED')
+      assert.equal(checkoutRuntime.get(result.deployment.deploymentId), false)
       break
     }
     case 'databaseRetire':
@@ -520,6 +557,9 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.equal(database.proveRetired().status, 'PASS_LOCAL_GEN23_DATABASE_LIFECYCLE')
       assert.equal(active || databaseEnabled || provider.enabled, false)
       assert.equal(syntheticSessionCount, 0)
+      assert.equal(checkoutSettingValue, false)
+      assert.equal(checkoutEnableJournal.read().state, 'ENABLE_VERIFIED')
+      assert.equal(checkoutFreezeJournal.read().state, 'FREEZE_VERIFIED')
       assert.deepEqual(surface.events, ['edge:true', 'private:true', 'public:true', 'create',
         'edge:false', 'private:false', 'public:false', 'create'])
       assert.deepEqual(httpRequests, ['SETUP', 'READ_STATE', 'SHUTDOWN', 'READ_STATE', 'RETIRE'])
@@ -548,7 +588,11 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
   const previewWorker = createStagingGeneration23PreviewWorkerFixture({ surface, now: START })
   const buildPort = previewBridge.createStagingGeneration23PreviewBuildPort({
     enabledJournal, heldJournal,
-    runBuild: previewWorker.runBuild,
+    runBuild: async input => {
+      const built = await previewWorker.runBuild(input)
+      checkoutRuntime.set(built.deploymentId, checkoutSettingValue)
+      return built
+    },
     readDeployment: (target, id) => surface.ports.readDeployment(target, id),
   })
   surfacePorts = surface.nativePorts(parent.signal, buildPort)
@@ -590,6 +634,16 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     assert.equal(surface.events.length, 0)
     console.log(JSON.stringify({ status: 'PASS_LOCAL_ACTIVATION_LOST_REPLY_STOP',
       phaseCount: calls.length, customerJourney: 'not_dispatched', purchase: 'none' }))
+  } else if (mode === '--fail-checkout-enable-reply-once') {
+    assert.equal(result.status, 'HOLD')
+    assert.equal(result.failedPhase, 'surfaceEnable')
+    assert.equal(checkoutEnableJournal.read().state, 'RECONCILIATION_REQUIRED')
+    assert.equal(checkoutSettingValue, true)
+    assert.equal(surface.events.length, 0)
+    assert.equal(calls.includes('ownerJourney'), false)
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_CHECKOUT_SETTING_LOST_REPLY_STOP',
+      phaseCount: calls.length, customerJourney: 'not_dispatched', nextAction: result.nextAction,
+      purchase: 'none' }))
   } else if (mode === '--fail-surface-public-once') {
     assert.equal(result.status, 'HOLD')
     assert.equal(result.failedPhase, 'surfaceEnable')
@@ -653,7 +707,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
   database.dispose()
   providerPort?.dispose()
   syntheticToken?.fill(0)
-  for (const directory of [previewDirectory, providerDirectory, settingsDirectory, databaseJournalDirectory]) {
+  for (const directory of [previewDirectory, providerDirectory, settingsDirectory, databaseJournalDirectory, checkoutDirectory]) {
     if (directory) rmSync(directory, { recursive: true, force: true })
   }
   releaseSupervisorPipe?.()
