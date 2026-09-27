@@ -38,6 +38,7 @@ const runtimeSources = [
   'lib/identity/customer-account-operations.ts', 'lib/identity/customer-account-operations-repository.ts',
   'lib/identity/customer-account-logout.ts', 'lib/identity/customer-account-logout-repository.ts',
   'lib/identity/customer-orders.ts', 'app/api/account/orders/route.ts', 'app/auth/customer/logout/route.ts',
+  'app/api/staging/checkout-readiness/contract.ts', 'app/api/staging/checkout-readiness/route.ts',
 ]
 const recoverySources = [
   'scripts/staging-account-activation-recovery.mjs',

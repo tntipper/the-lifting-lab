@@ -50,8 +50,8 @@
       "app/api/account",
       "supabase/functions"
     ],
-    "fileCount": 70,
-    "sha256": "33876710b61bf7edd6e86ca68f2b104be25671d3b9569dd5a914eaa7cccf68b8"
+    "fileCount": 72,
+    "sha256": "5360c4fdec3d55f056ea8bfd0ffad0b99c2f588503cab657a12a8dc93a19e846"
   },
   "stageSafety": {
     "sources": [
@@ -510,6 +510,14 @@
       {
         "path": "app/auth/customer/logout/route.ts",
         "sha256": "63c91e80663b757292252e83f4b9e3d864eb14d4e5d791b12c29e6f7d632f705"
+      },
+      {
+        "path": "app/api/staging/checkout-readiness/contract.ts",
+        "sha256": "83cfc602c242c72dc1e93a98025a68c143bfb8a5dd0090f2b52666a6f95ebd14"
+      },
+      {
+        "path": "app/api/staging/checkout-readiness/route.ts",
+        "sha256": "dbdc1d01031af236bbdffdf9120fa24b709fcbcbe8a644bf50d8996e31016656"
       }
     ],
     "reviewedPreview": {
