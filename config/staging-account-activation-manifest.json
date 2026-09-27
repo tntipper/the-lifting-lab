@@ -51,7 +51,7 @@
       "supabase/functions"
     ],
     "fileCount": 72,
-    "sha256": "5360c4fdec3d55f056ea8bfd0ffad0b99c2f588503cab657a12a8dc93a19e846"
+    "sha256": "103e7f3c11d66a5b8f0cb61a4fd06f5b6b4026809ec564149b5517a1457cea3a"
   },
   "stageSafety": {
     "sources": [
@@ -595,6 +595,7 @@
       "NEXT_PUBLIC_TLL_ENVIRONMENT",
       "NEXT_PUBLIC_TLL_STAGING_CART",
       "NEXT_PUBLIC_TLL_STAGING_CUSTOMER",
+      "TLL_STAGING_CART_CHECKOUT_HANDOFF_ENABLED",
       "TLL_STAGING_CART_ENABLED",
       "TLL_STAGING_CART_ORIGIN",
       "TLL_STAGING_CART_SHOP",

@@ -48,7 +48,7 @@
     },
     {
       "path": "scripts/staging-surface-activation-transport.mjs",
-      "sha256": "b044ea4c48f040877cf0c33246d107f90d7d1d9a61d020e6da39ba49d2e90db7"
+      "sha256": "d8faf46f545657a900b9f9d37f6f4e6b7aa75ee34e7665cbb3d166b136446b80"
     },
     {
       "path": "scripts/staging-surface-activation-native-binding.mjs",
