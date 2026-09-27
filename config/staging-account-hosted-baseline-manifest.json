@@ -56,7 +56,7 @@
     },
     {
       "path": "scripts/staging-surface-activation-native-adapter.mjs",
-      "sha256": "60215dfc92263668d970291bff3b8b3fb5dd2d87d138f452923f6b9c37932761"
+      "sha256": "f78925fd61e31e66e9cc69c8fc43fdc86fc451412dc1b8e676006a62dbb90543"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-session.mjs",

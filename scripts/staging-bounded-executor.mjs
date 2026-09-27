@@ -8,6 +8,9 @@
  * allowing a compensating mutation to race an unknown in-flight mutation.
  */
 export const STAGING_BOUND_EXECUTOR_DEADLINE_MS = 30_000
+// The Preview worker has its own 180-second deadline and may legitimately
+// finish after the ordinary 30-second read/write limit.
+export const STAGING_PREVIEW_BUILD_EXECUTOR_DEADLINE_MS = 185_000
 export const STAGING_BOUNDED_EXECUTOR_ERROR = 'Staging bounded executor unavailable'
 
 const unavailable = () => new Error(STAGING_BOUNDED_EXECUTOR_ERROR)
@@ -37,8 +40,12 @@ export function createStagingBoundedExecutor (options = {}) {
   const now = options.now ?? defaultMonotonicNow
   if (typeof scheduleTimeout !== 'function' || typeof clearScheduledTimeout !== 'function' || typeof now !== 'function') throw unavailable()
 
-  return Object.freeze(async function execute (operation) {
+  return Object.freeze(async function execute (operation, options = {}) {
     if (typeof operation !== 'function') throw unavailable()
+    if (!exactKeys(options, []) && (!exactKeys(options, ['profile'])
+      || options.profile !== 'preview-build')) throw unavailable()
+    const deadlineMs = options.profile === 'preview-build'
+      ? STAGING_PREVIEW_BUILD_EXECUTOR_DEADLINE_MS : STAGING_BOUND_EXECUTOR_DEADLINE_MS
     let startedAt
     try { startedAt = now() } catch { throw unavailable() }
     if (!Number.isFinite(startedAt)) throw unavailable()
@@ -58,12 +65,12 @@ export function createStagingBoundedExecutor (options = {}) {
       try { observedAt = now() } catch { return true }
       if (!Number.isFinite(observedAt) || observedAt < lastObservedAt) return true
       lastObservedAt = observedAt
-      return observedAt - startedAt >= STAGING_BOUND_EXECUTOR_DEADLINE_MS
+      return observedAt - startedAt >= deadlineMs
     }
     try {
       timer = scheduleTimeout(() => {
         abortOnce()
-      }, STAGING_BOUND_EXECUTOR_DEADLINE_MS)
+      }, deadlineMs)
     } catch {
       throw unavailable()
     }

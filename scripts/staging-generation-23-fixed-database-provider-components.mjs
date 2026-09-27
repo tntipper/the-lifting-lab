@@ -111,6 +111,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       } },
       providerEnable: ({ signal, expiresAt }) => withProvider({ action: 'ENABLE', signal, expiresAt }),
       providerDisable: ({ signal, expiresAt }) => withProvider({ action: 'DISABLE', signal, expiresAt }),
+      readBackendState: ({ signal, expiresAt }) => backendState({ signal, expiresAt }),
       readRetiredState: async ({ signal } = {}) => {
         requireLive(signal)
         const journal = makeFinalJournal()

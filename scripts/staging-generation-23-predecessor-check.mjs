@@ -7,8 +7,8 @@ import { PROJECT_REF, PASSWORD_PURPOSES } from './staging-generation-22-material
 import { GENERATION } from './staging-generation-23-password-material.mjs'
 
 /** Fixed from the consumed Gen23 v3 retirement; never re-arm its old window. */
-export const PREDECESSOR_EXPIRES_AT = '2026-09-27T19:50:00.000Z'
-export const PREDECESSOR_WINDOW_ID = '6f33365f-9b0f-4885-b0be-40669e039f61'
+export const PREDECESSOR_EXPIRES_AT = '2026-09-27T20:19:04.000Z'
+export const PREDECESSOR_WINDOW_ID = '383f48dd-cf0b-49b9-9345-634028b9f71b'
 
 export const STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED = false
 export const QUERY_ID = 'tll-staging-generation-23-predecessor-check/v1'

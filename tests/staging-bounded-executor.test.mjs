@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import {
   createStagingBoundedExecutor,
   STAGING_BOUND_EXECUTOR_DEADLINE_MS,
+  STAGING_PREVIEW_BUILD_EXECUTOR_DEADLINE_MS,
   STAGING_BOUNDED_EXECUTOR_ERROR,
 } from '../scripts/staging-bounded-executor.mjs'
 
@@ -42,6 +43,22 @@ test('returns the exact completed receipt when the operation settles before the 
   assert.equal(Object.isFrozen(result), true)
   assert.equal(clock.entries[0].milliseconds, STAGING_BOUND_EXECUTOR_DEADLINE_MS)
   assert.deepEqual(clock.cleared, [clock.entries[0]])
+})
+
+test('only the Preview build may use its longer bounded operation window', async () => {
+  const clock = timers()
+  let time = 0
+  const execute = createStagingBoundedExecutor({ scheduleTimeout: clock.scheduleTimeout,
+    clearScheduledTimeout: clock.clearScheduledTimeout, now: () => time })
+  const result = await execute(async () => { time = 31_000; return 'ready' }, { profile: 'preview-build' })
+  assert.deepEqual(result, { status: 'COMPLETED', value: 'ready' })
+  assert.equal(clock.entries[0].milliseconds, STAGING_PREVIEW_BUILD_EXECUTOR_DEADLINE_MS)
+  await assert.rejects(() => execute(async () => 'unreachable', { profile: 'other' }),
+    new RegExp(STAGING_BOUNDED_EXECUTOR_ERROR))
+  const late = createStagingBoundedExecutor({ scheduleTimeout: () => 1,
+    clearScheduledTimeout: () => {}, now: () => time })
+  await assert.rejects(() => late(async () => { time += STAGING_PREVIEW_BUILD_EXECUTOR_DEADLINE_MS + 1 },
+    { profile: 'preview-build' }), new RegExp(STAGING_BOUNDED_EXECUTOR_ERROR))
 })
 
 test('rejects invalid operations and timer or clock options before a host operation can start', async () => {

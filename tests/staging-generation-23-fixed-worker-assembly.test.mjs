@@ -40,6 +40,7 @@ function factories(calls, final = {}) {
       databaseSetup: { run: databaseResult('SETUP_VERIFIED') }, restrictedConnections: { prove: databaseResult('PASS_RESTRICTED_CONNECTIONS') },
       providerEnable: databaseResult('PROVIDER_ENABLED_VERIFIED'), controlsEnable: { run: databaseResult('CONTROL_ACTIVATION_VERIFIED') },
       controlsDisable: { run: databaseResult('SHUTDOWN_VERIFIED') }, providerDisable: databaseResult('PROVIDER_DISABLED_VERIFIED'),
+      readBackendState: async () => ({ projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false, runtimeSessions: 0 }),
       databaseRetire: { run: databaseResult('RETIREMENT_VERIFIED') }, readRetiredState: databaseResult(final.database ?? 'PASS_FINAL_RETIRED'),
     }, dispose() { calls.push('dispose:database') } } },
     createVariantReader() { return { read: async () => ({ status: 'SHOPIFY_STAGING_VARIANT_PRICE_VERIFIED' }), dispose() { calls.push('dispose:variant') } } },
@@ -104,4 +105,32 @@ test('final success requires database, provider and held Preview proofs together
     await assert.rejects(built.ports.readFinal({ signal }), /unavailable/)
     built.dispose()
   }
+})
+
+test('later customer sessions drain before the one-use retirement write is claimed', async () => {
+  let clock = now, reads = 0
+  const passed = await armed.waitForRetirementDrain({
+    readState: async () => ({ projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false,
+      runtimeSessions: reads++ < 2 ? 1 : 0 }), signal,
+    deadlineAt: new Date(now + 5 * 60_000).toISOString(), now: () => clock,
+    pause: async milliseconds => { clock += milliseconds },
+  })
+  assert.equal(passed, true)
+  assert.equal(reads, 3)
+  assert.equal(await armed.waitForRetirementDrain({
+    readState: async () => ({ projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false, runtimeSessions: 1 }),
+    signal, deadlineAt: new Date(now + 20_000).toISOString(), now: () => now,
+  }), false)
+  let delayed = now
+  assert.equal(await armed.waitForRetirementDrain({
+    readState: async () => { delayed += 120_000; return { projectRef: 'qdmvngjwkcsilzmqksme',
+      controlsEnabled: false, runtimeSessions: 0 } }, signal,
+    deadlineAt: new Date(now + 5 * 60_000).toISOString(), now: () => delayed,
+  }), false)
+  const cancelled = new AbortController()
+  assert.equal(await armed.waitForRetirementDrain({
+    readState: async () => { cancelled.abort(); return { projectRef: 'qdmvngjwkcsilzmqksme',
+      controlsEnabled: false, runtimeSessions: 0 } }, signal: cancelled.signal,
+    deadlineAt: new Date(now + 5 * 60_000).toISOString(), now: () => now,
+  }), false)
 })

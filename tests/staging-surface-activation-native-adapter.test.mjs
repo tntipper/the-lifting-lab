@@ -92,6 +92,21 @@ test('target, branch, invalid runtime ID and alias drift fail before dependencie
   assert.equal(fixture.state.calls.length, before)
 })
 
+test('only a full Preview build receives the longer executor profile', async () => {
+  const profiles = [], fixture = hostedFixture()
+  const execute = async (operation, options) => {
+    profiles.push(options?.profile ?? 'ordinary')
+    return { status: 'COMPLETED', value: await operation(new AbortController().signal) }
+  }
+  const ports = fixture.makePorts({ execute })
+  await ports.readSurfaceFlags(STAGING_SURFACE_TARGET)
+  await ports.createPreviewDeployment(STAGING_SURFACE_TARGET, {
+    branch: 'codex/tll-integration', sourceCommit, manifestSha256,
+    publicCustomer: false, publicCart: false,
+  })
+  assert.deepEqual(profiles, ['ordinary', 'ordinary', 'preview-build'])
+})
+
 test('opposite Edge acknowledgement and malformed TLS response fail closed', async () => {
   const fixture = hostedFixture()
   await assert.rejects(fixture.makePorts({ edgeAck: false }).setEdgeEnabled(STAGING_SURFACE_TARGET, true), /unavailable/)
@@ -101,15 +116,22 @@ test('opposite Edge acknowledgement and malformed TLS response fail closed', asy
   await assert.rejects(malformed.probeTls(STAGING_SURFACE_TARGET, oldDeployment.immutableUrl), /unavailable/)
 })
 
-test('a protected Preview 401 proves endpoint reachability, but redirects and wrong URLs do not', async () => {
+test('only the exact Vercel SSO challenge or a 401 proves protected endpoint reachability', async () => {
   const noop = async () => ({})
   const portsFor = fetch => createStagingSurfaceNativePorts({ execute: completedExecutor,
     runVercel: noop, setEdgeFlag: noop, readEdgeFlag: noop, readVercelFlags: noop,
     createDeployment: noop, readDeployment: noop, resolveAlias: noop, fetch })
   const target = oldDeployment.immutableUrl
-  assert.deepEqual(await portsFor(async () => ({ status: 401, url: target, redirected: false }))
+  assert.deepEqual(await portsFor(async () => ({ status: 401, url: new URL(target).href, redirected: false }))
     .probeTls(STAGING_SURFACE_TARGET, target), { target: STAGING_SURFACE_TARGET, url: target, tls: true })
+  const sso = url => `https://vercel.com/sso-api?url=${encodeURIComponent(`${url}/`)}&nonce=${'a'.repeat(64)}`
+  assert.deepEqual(await portsFor(async () => ({ status: 302, url: new URL(target).href, redirected: false,
+    headers: new Headers({ location: sso(target) }) })).probeTls(STAGING_SURFACE_TARGET, target),
+  { target: STAGING_SURFACE_TARGET, url: target, tls: true })
   await assert.rejects(portsFor(async () => ({ status: 302, url: target, redirected: false }))
+    .probeTls(STAGING_SURFACE_TARGET, target), /unavailable/)
+  await assert.rejects(portsFor(async () => ({ status: 302, url: target, redirected: false,
+    headers: new Headers({ location: sso('https://another.vercel.app') }) }))
     .probeTls(STAGING_SURFACE_TARGET, target), /unavailable/)
   await assert.rejects(portsFor(async () => ({ status: 401, url: 'https://wrong.vercel.app', redirected: false }))
     .probeTls(STAGING_SURFACE_TARGET, target), /unavailable/)

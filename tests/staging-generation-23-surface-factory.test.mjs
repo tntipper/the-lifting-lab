@@ -62,9 +62,16 @@ function fixture({ price = 1999, finalCheckoutOn = false, finalSurfaceStatus = '
   const factories = {
     createProtectedFetch: ({ immutableUrl }) => ({ fetch: async () => { throw Error(`unexpected protected read ${immutableUrl}`) }, dispose() { calls.push(`dispose:${immutableUrl}`) } }),
     createBinding: () => ({ readDeployment: async (_target, id) => {
+      if (id === 'dpl_heldA') throw Error('Git build has no custom manifest metadata')
       const receipt = { ...(id === 'dpl_heldA' ? held : identity(id !== 'dpl_frozenA')) }
       delete receipt.target; delete receipt.observedAt
       if (driftHeld && id === 'dpl_heldA') receipt.sourceCommit = 'c'.repeat(40)
+      return receipt
+    }, readPublishedGitDeployment: async (_target, id) => {
+      if (id !== 'dpl_heldA') throw Error('Only initial Git build is allowed')
+      const receipt = { ...held }
+      delete receipt.target; delete receipt.observedAt; delete receipt.manifestSha256
+      if (driftHeld) receipt.sourceCommit = 'c'.repeat(40)
       return receipt
     }, resolveAlias: async () => ({ deploymentId: 'dpl_heldA', immutableUrl: held.immutableUrl }) }),
     createPreviewPort: () => ({ createDeployment: async () => identity(true) }),

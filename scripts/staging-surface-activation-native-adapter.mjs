@@ -17,6 +17,17 @@ const unavailable = () => { throw new Error('Staging surface native adapter unav
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right)
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
+const protectedRedirect = (response, url) => {
+  if (response.status !== 302 || typeof response.headers?.get !== 'function') return false
+  try {
+    const destination = new URL(response.headers.get('location'))
+    return destination.protocol === 'https:' && destination.host === 'vercel.com'
+      && destination.pathname === '/sso-api' && destination.hash === ''
+      && [...destination.searchParams.keys()].sort().join('|') === 'nonce|url'
+      && destination.searchParams.get('url') === `${url}/`
+      && /^[A-Za-z0-9_-]{32,128}$/.test(destination.searchParams.get('nonce') ?? '')
+  } catch { return false }
+}
 
 function validateTarget(value) {
   if (!same(value, STAGING_SURFACE_TARGET) || value.projectRef === PRODUCTION_PROJECT_REF) unavailable()
@@ -57,13 +68,13 @@ function validateWebProof(value) {
   return value
 }
 
-async function invokeBounded(execute, operation) {
+async function invokeBounded(execute, operation, options) {
   let result
   try {
     result = await execute(async signal => {
       if (!signal || typeof signal.aborted !== 'boolean' || typeof signal.addEventListener !== 'function' || signal.aborted) unavailable()
       return operation(signal)
-    })
+    }, options)
   } catch { unavailable() }
   if (!exact(result, ['status', 'value']) || result.status !== 'COMPLETED') unavailable()
   return result.value
@@ -122,7 +133,9 @@ export function createStagingSurfaceNativePorts({
         || !/^[a-f0-9]{64}$/.test(input.manifestSha256)
         || typeof input.publicCustomer !== 'boolean' || typeof input.publicCart !== 'boolean') unavailable()
       const request = Object.freeze({ ...input, project: VERCEL_PROJECT, scope: VERCEL_SCOPE })
-      const result = validateIdentity(await call(createDeployment, STAGING_SURFACE_TARGET, request), input)
+      const result = validateIdentity(await invokeBounded(execute,
+        signal => createDeployment(STAGING_SURFACE_TARGET, request, { signal }),
+        { profile: 'preview-build' }), input)
       deployments.set(result.deploymentId, result.immutableUrl); return result
     },
     async readDeployment(value, deploymentId) {
@@ -144,13 +157,13 @@ export function createStagingSurfaceNativePorts({
       validateTarget(value)
       if (url !== STAGING_ALIAS && !/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(url ?? '')) unavailable()
       const response = await invokeBounded(execute, signal => fetcher(url, { method: 'HEAD', redirect: 'manual', signal }))
-      // A login-protected Preview may answer HEAD with 401. That still proves
-      // the pinned HTTPS endpoint was reached; the separate protected
-      // readiness read proves the actual runtime state.
+      // Vercel's exact SSO challenge, like a 401, proves only that the pinned
+      // HTTPS endpoint answered. Protected readiness proves runtime state.
       if (!response || response.redirected === true
-        || response.url && response.url !== url
+        || response.url && response.url !== new URL(url).href
         || !Number.isInteger(response.status)
-        || response.status !== 401 && (response.status < 200 || response.status > 299)) unavailable()
+        || response.status !== 401 && !protectedRedirect(response, url)
+          && (response.status < 200 || response.status > 299)) unavailable()
       return Object.freeze({ target: STAGING_SURFACE_TARGET, url, tls: true })
     },
     async readRuntimeReadiness(value, deploymentId) {

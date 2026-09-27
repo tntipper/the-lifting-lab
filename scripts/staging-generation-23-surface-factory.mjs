@@ -128,13 +128,29 @@ export function createStagingGeneration23SurfaceFactory({ credentials, fetch: fe
   try {
     binding = makeBinding({ runCli, fetch: fetcher, protectedFetch: router.fetch,
       vercelToken: credentials.vercelToken })
-    if (!binding || typeof binding.readDeployment !== 'function' || typeof binding.resolveAlias !== 'function') unavailable()
+    if (!binding || typeof binding.readDeployment !== 'function'
+      || typeof binding.readPublishedGitDeployment !== 'function'
+      || typeof binding.resolveAlias !== 'function') unavailable()
     // The native surface adapter deliberately uses a compact six-field Vercel
     // receipt, while the Preview bridge deliberately requires the staging
     // target as a seventh field. Keep the conversion at this boundary rather
     // than weakening either existing receipt contract.
     const nativeReadDeployment = async (...args) => {
-      const identity = await binding.readDeployment(...args)
+      const initial = args[1] === preflight.heldEvidence.deploymentId
+      const observed = initial
+        ? await binding.readPublishedGitDeployment(...args)
+        : await binding.readDeployment(...args)
+      // The first held build was made by Git and has no custom manifest field.
+      // Only its exact preflight identity may inherit the independently proved
+      // manifest. Builds created by this run must carry their own metadata.
+      if (initial && (observed.deploymentId !== preflight.heldEvidence.deploymentId
+        || observed.immutableUrl !== preflight.heldEvidence.immutableUrl
+        || observed.sourceCommit !== preflight.requirements.sourceCommit
+        || observed.ready !== true
+        || observed.createdAt !== preflight.heldEvidence.createdAt)) unavailable()
+      const identity = initial
+        ? Object.freeze({ ...observed, manifestSha256: preflight.requirements.manifestSha256 })
+        : observed
       router.authorise(identity)
       return identity
     }

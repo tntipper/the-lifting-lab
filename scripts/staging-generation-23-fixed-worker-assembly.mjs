@@ -21,6 +21,7 @@ import { createStagingGeneration23VariantReadinessReader } from './staging-gener
 import { createStagingBoundedExecutor } from './staging-bounded-executor.mjs'
 import { runStagingPreviewDeploymentWorker } from './staging-surface-preview-deployment-worker.mjs'
 import { STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_MAX_MS } from './staging-generation-23-restricted-connections.mjs'
+import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
 export const STAGING_GENERATION_23_FIXED_WORKER_ASSEMBLY_ENABLED = false
 
@@ -28,6 +29,35 @@ const unavailable = () => { throw Error('Generation 23 fixed worker assembly una
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 const signalOk = signal => signal && !signal.aborted && typeof signal.addEventListener === 'function'
+const wait = (milliseconds, signal) => new Promise((resolve, reject) => {
+  if (!signalOk(signal)) return reject(Error('Session drain unavailable'))
+  const timer = setTimeout(() => { signal.removeEventListener('abort', abort); resolve() }, milliseconds)
+  const abort = () => { clearTimeout(timer); reject(Error('Session drain stopped')) }
+  signal.addEventListener('abort', abort, { once: true })
+})
+
+/** Read only: leave the one-use retirement record untouched until sessions drain. */
+export async function waitForRetirementDrain({ readState, signal, deadlineAt,
+  now = Date.now, pause = wait } = {}) {
+  if (typeof readState !== 'function' || !signalOk(signal) || typeof now !== 'function'
+    || typeof pause !== 'function' || !Number.isFinite(Date.parse(deadlineAt))) return false
+  const start = now(), stop = Math.min(start + 120_000, Date.parse(deadlineAt) - 30_000)
+  if (!Number.isFinite(start) || stop <= start) return false
+  while (signalOk(signal) && now() < stop) {
+    let state
+    try { state = await readState() } catch { return false }
+    const observedAt = now()
+    if (!signalOk(signal) || !Number.isFinite(observedAt)
+      || observedAt < start || observedAt >= stop) return false
+    if (!exact(state, ['projectRef', 'controlsEnabled', 'runtimeSessions'])
+      || state.projectRef !== PROJECT_REF || state.controlsEnabled !== false
+      || !Number.isSafeInteger(state.runtimeSessions) || state.runtimeSessions < 0) return false
+    if (state.runtimeSessions === 0) return true
+    if (now() + 10_000 >= stop) return false
+    try { await pause(10_000, signal) } catch { return false }
+  }
+  return false
+}
 const token = value => Buffer.isBuffer(value) && value.length >= 8 && value.length <= 4096
   && !value.includes(0) && /^[\x21-\x7e]+$/.test(value.toString('utf8'))
 const iso = value => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.000Z$/.test(value)
@@ -100,12 +130,12 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
   const journals = Object.freeze({
     whole: requireJournal(makeWholeJournal(), ['claim', 'dispatch', 'verify', 'ownerFailure', 'skipOwner', 'hold', 'holdBeforeDispatch', 'read']),
     settings: requireJournal(makeSettingsJournal(), ['claim', 'dispatch', 'confirm', 'hold', 'read']),
-    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v4.json` }), ['read', 'recordIntent', 'transition']),
-    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v4.json` }), ['read', 'recordIntent', 'transition']),
+    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v5.json` }), ['read', 'recordIntent', 'transition']),
+    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v5.json` }), ['read', 'recordIntent', 'transition']),
     checkoutEnable: requireJournal(makeCheckoutJournal({ action: 'ENABLE' }), ['read', 'recordIntent', 'transition']),
     checkoutFreeze: requireJournal(makeCheckoutJournal({ action: 'FREEZE' }), ['read', 'recordIntent', 'transition']),
-    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v4.json` }), ['read', 'claim']),
-    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v4.json` }), ['read', 'claim']),
+    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v5.json` }), ['read', 'claim']),
+    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v5.json` }), ['read', 'claim']),
   })
   if (journals.previewEnabled === journals.previewHeld || journals.enableSurface === journals.freezeSurface) unavailable()
 
@@ -175,7 +205,16 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
       disableDatabase: ({ signal, phaseDeadlineAt }) => database.components.controlsDisable.run({ expiresAt, deadlineAt: phaseDeadlineAt, signal }),
       disableProvider: ({ signal }) => database.components.providerDisable({ expiresAt, signal }),
       freezeSurface: input => surface.ports.freezeSurface(input),
-      retireDatabase: ({ signal, phaseDeadlineAt }) => database.components.databaseRetire.run({ expiresAt, deadlineAt: phaseDeadlineAt, signal }),
+      retireDatabase: async ({ signal, phaseDeadlineAt }) => {
+        // A completed browser journey can leave a pooled database session for
+        // a short time. Prove zero sessions before claiming the one-use write.
+        const drained = await waitForRetirementDrain({
+          readState: () => database.components.readBackendState({ expiresAt, signal }),
+          signal, deadlineAt: phaseDeadlineAt, now,
+        })
+        if (!drained) return Object.freeze({ status: 'SESSION_DRAIN_HOLD' })
+        return database.components.databaseRetire.run({ expiresAt, deadlineAt: phaseDeadlineAt, signal })
+      },
       async readFinal({ signal }) {
         const result = await database.components.readRetiredState({ signal })
         // This is a distinct Gen23 post-retirement query. It checks the
