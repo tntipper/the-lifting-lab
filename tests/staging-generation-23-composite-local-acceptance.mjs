@@ -523,7 +523,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
         const checkoutUrl = 'https://tll-integration-staging.myshopify.com/cart/c/syntheticCheckout123'
         let guard, blocked = false
         const checkoutPage = {
-          route: async (_pattern, handler) => { guard = handler },
+          context: () => ({ route: async (_pattern, handler) => { guard = handler } }),
           url: () => checkoutUrl,
           goto: async url => {
             assert.equal(url, checkoutUrl)

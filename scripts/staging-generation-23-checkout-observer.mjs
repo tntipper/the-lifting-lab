@@ -21,7 +21,8 @@ function pinnedCheckoutUrl(value) {
  */
 export async function observeStagingCheckout({ page, checkoutUrl, signal, deadlineAt } = {}) {
   if (!STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED || !page
-    || typeof page.route !== 'function' || typeof page.goto !== 'function'
+    || typeof page.context !== 'function' || typeof page.context()?.route !== 'function'
+    || typeof page.goto !== 'function'
     || typeof page.url !== 'function' || !signal
     || typeof signal.addEventListener !== 'function' || signal.aborted
     || typeof deadlineAt !== 'string') unavailable()
@@ -50,9 +51,10 @@ export async function observeStagingCheckout({ page, checkoutUrl, signal, deadli
       try { await route.abort('blockedbyclient') } catch { /* browser may already have closed */ }
     }
   }
-  // The guard is deliberately not removed after page load. The owner must not
-  // submit an order; even an accidental click cannot issue POST/PATCH/DELETE.
-  await page.route('**/*', block)
+  // A context-level route also guards popups and new tabs from checkout. The
+  // caller must create a fresh context with service workers blocked and close
+  // that whole context after the observation; no page in it may submit payment.
+  await page.context().route('**/*', block)
   if (signal.aborted || Date.now() >= Date.parse(deadlineAt)) unavailable()
   const response = await page.goto(destination, { waitUntil: 'domcontentloaded', timeout: Math.min(remaining, 30_000), referer: '' })
   const final = new URL(page.url())

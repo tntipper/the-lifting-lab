@@ -1217,7 +1217,7 @@
       },
       {
         "path": "scripts/staging-generation-23-checkout-observer.mjs",
-        "sha256": "5cbc205e588739a53173b5158660e44234213243ba44786f993dd0a57ba84813"
+        "sha256": "e607790bf185442889b10eb79fdb0c9ee304a954d7a4d3d0861de4dfdc3cb4bd"
       },
       {
         "path": "scripts/staging-generation-23-checkout-setting.mjs",
@@ -1913,7 +1913,7 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "92a610df312abed40b3aaed16d70d0d20812e7ee3e7ebca4f6f2fc51b52b162d"
+        "sha256": "40016d4eb6812a94462a6f5b31ecece601e4b284b0dc5c0ebecff35af2bfa89a"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",

@@ -20,6 +20,7 @@ async function armed() {
 function page() {
   let handler, current = CHECKOUT
   const events = []
+  const context = { route: async (_pattern, callback) => { handler = callback } }
   const request = async (url, method = 'GET', navigation = false) => {
     const route = {
       request: () => ({ url: () => url, method: () => method, isNavigationRequest: () => navigation,
@@ -34,7 +35,7 @@ function page() {
     await handler(route)
   }
   return { events, request,
-    route: async (_pattern, callback) => { handler = callback },
+    context: () => context,
     goto: async url => { await request(url, 'GET', true); current = url; return { status: () => 200 } },
     url: () => current }
 }
@@ -101,7 +102,7 @@ test('real browser intercepts a synthetic checkout submit before any network req
         if (route.request().method() !== 'GET' || route.request().url() !== CHECKOUT)
           throw Error('Unsafe request reached the local fixture')
         await route.fulfill({ status: 200, contentType: 'text/html', body:
-          '<!doctype html><html><body><button id="submit">Place order</button><script>document.getElementById("submit").onclick=()=>fetch(location.href,{method:"POST"}).catch(()=>{});</script></body></html>' })
+          '<!doctype html><html><body><button id="submit">Place order</button><button id="popup">New tab</button><script>document.getElementById("submit").onclick=()=>fetch(location.href,{method:"POST"}).catch(()=>{});document.getElementById("popup").onclick=()=>window.open(location.href);if(window.opener)fetch(location.href,{method:"POST"}).catch(()=>{});</script></body></html>' })
       })
       const page = await context.newPage()
       assert.deepEqual(await observe({ page, checkoutUrl: CHECKOUT, signal, deadlineAt: deadlineAt() }),
@@ -109,6 +110,13 @@ test('real browser intercepts a synthetic checkout submit before any network req
       await page.locator('#submit').click()
       await page.waitForTimeout(100)
       assert.deepEqual(seen, [`GET ${CHECKOUT}`])
+      const popupPromise=context.waitForEvent('page')
+      await page.locator('#popup').click()
+      const popup=await popupPromise
+      await popup.locator('#submit').waitFor()
+      await page.waitForTimeout(100)
+      assert.deepEqual(seen, [`GET ${CHECKOUT}`,`GET ${CHECKOUT}`], 'new-tab POST must be blocked before reaching fixture')
+      await popup.close()
       await context.close()
     } finally { await browser.close() }
   })
