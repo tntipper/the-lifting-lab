@@ -1240,6 +1240,10 @@
         "sha256": "9183e16e1f2b32961f68ab5df71b6308094a02a5d6dd34a7264cc704885c66d8"
       },
       {
+        "path": "scripts/staging-generation-23-owner-journey.mjs",
+        "sha256": "6c113231a7fd0cfe3c0bfdfe96349c0c21d685f0f1ca4a76769f54acb2de8c07"
+      },
+      {
         "path": "scripts/staging-generation-23-process-binding.mjs",
         "sha256": "c6135cecac3f6287e35237ea58e9b9f380dc728f704e87f9a1c73f248f401d91"
       },
@@ -1902,6 +1906,10 @@
       {
         "path": "tests/staging-generation-23-credential-reader.test.mjs",
         "sha256": "37a87e6af4d02254a31a8782dadf4bd31c2e0ea915aad1a30322aab9b206909a"
+      },
+      {
+        "path": "tests/staging-generation-23-owner-journey.test.mjs",
+        "sha256": "64b99caacf9d11adbc5e6c0c75cf02be3eb4dbc42d5a9ba2514324f58f41bcd5"
       },
       {
         "path": "tests/staging-generation-23-process-binding.test.mjs",
