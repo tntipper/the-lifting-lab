@@ -211,11 +211,13 @@ test('service releases only a current ready cart to the server-side staging hand
 test('checkout handoff HTTP action requires a signed-in account and same-origin CSRF', async () => {
   const disabled = fixture({ allowCheckout: true })
   disabled.setActor(ACTOR); await disabled.open(); await disabled.set(1)
+  assert.equal((await disabled.request()).view.checkoutAvailable, false)
   assert.equal((await disabled.request('POST', { action: 'checkout_handoff' })).response.status, 400)
   assert.equal(disabled.calls.filter(call => call.query.includes('TllStagingCheckoutHandoff')).length, 0)
 
   const guest = fixture({ allowCheckout: true, checkoutEnabled: true })
   await guest.open(); await guest.set(1)
+  assert.notEqual((await guest.request()).view.checkoutAvailable, true)
   assert.equal((await guest.request('POST', { action: 'checkout_handoff' })).response.status, 400)
   assert.equal(guest.calls.filter(call => call.query.includes('TllStagingCheckoutHandoff')).length, 0)
 
@@ -228,6 +230,7 @@ test('checkout handoff HTTP action requires a signed-in account and same-origin 
   const account = fixture({ allowCheckout: true, checkoutEnabled: true })
   account.setActor(ACTOR)
   await account.open(); await account.set(1)
+  assert.equal((await account.request()).view.checkoutAvailable, true)
   assert.equal((await account.request('POST', { action: 'checkout_handoff' },
     { 'X-TLL-Cart-CSRF': 'b'.repeat(64) })).response.status, 403)
   assert.equal(account.calls.filter(call => call.query.includes('TllStagingCheckoutHandoff')).length, 0)

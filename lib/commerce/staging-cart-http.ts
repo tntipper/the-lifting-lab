@@ -45,6 +45,10 @@ export function createCartHandler(options: {
 }) {
   return async (request: Request): Promise<Response> => {
     const unavailable: StagingCartView = { ...emptyCart(), productId: null, subtotalPence: null, state: 'unavailable', message: 'Test cart unavailable.' }
+    const accountView = (view: StagingCartView): StagingCartView => ({ ...view,
+      checkoutAvailable: options.checkoutHandoffEnabled === true && view.state === 'ready' && view.quantity > 0
+        && view.unitPricePence !== null && view.unitPricePence > 0
+        && view.subtotalPence === view.quantity * view.unitPricePence })
     if (!options.enabled || !KEY.test(options.hmacKeyHex)) return respond(unavailable, 404)
     if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method)) return respond(unavailable, 405)
     const url = new URL(request.url), origin = request.headers.get('origin'), site = request.headers.get('sec-fetch-site')
@@ -72,13 +76,13 @@ export function createCartHandler(options: {
         if (sessionHash) {
           const binding = { sourceSession: sessionHash, sourceActor: guestActorHash, targetSession: accountSession, targetActor: actorHash }
           const transition = await options.transition.inspect(binding)
-          if (transition.status === 'reconciled' && transition.target) return respond({ ...cartRecordView(transition.target), csrfToken: csrf(accountSession),
-            message: 'Your guest cart is now connected to this account.' }, 200, null)
+          if (transition.status === 'reconciled' && transition.target) return respond(accountView({ ...cartRecordView(transition.target), csrfToken: csrf(accountSession),
+            message: 'Your guest cart is now connected to this account.' }), 200, null)
           if (request.method === 'POST' && input.action === 'use_account' && Object.keys(input).length === 1) {
             if (!same(request.headers.get('x-tll-cart-csrf') ?? '', csrf(sessionHash))) return respond(unavailable, 403)
             try {
               const account = await options.service.read(accountSession, actorHash)
-              return respond({ ...account, csrfToken: csrf(accountSession), message: 'Using the cart already saved to this account.' }, 200, null)
+              return respond(accountView({ ...account, csrfToken: csrf(accountSession), message: 'Using the cart already saved to this account.' }), 200, null)
             } catch (error) {
               if (error instanceof CartSessionChanged) return respond({ ...emptyCart(), message: 'Started with an empty account cart. The guest cart was not merged.' }, 200, null)
               throw error
@@ -88,8 +92,8 @@ export function createCartHandler(options: {
             if (!same(request.headers.get('x-tll-cart-csrf') ?? '', csrf(sessionHash))) return respond(unavailable, 403)
             if (!UUID.test(request.headers.get('idempotency-key') ?? '')) return respond(unavailable, 400)
             const moved = await options.transition.transfer(binding, request.headers.get('idempotency-key')!, Number(input.revision))
-            if (moved.status === 'reconciled' && moved.target) return respond({ ...cartRecordView(moved.target), csrfToken: csrf(accountSession),
-              message: 'Your guest cart is now connected to this account.' }, 200, null)
+            if (moved.status === 'reconciled' && moved.target) return respond(accountView({ ...cartRecordView(moved.target), csrfToken: csrf(accountSession),
+              message: 'Your guest cart is now connected to this account.' }), 200, null)
             const current = moved.source ? cartRecordView(moved.source) : emptyCart()
             return respond({ ...current, state: moved.status === 'held' ? 'held' : 'transition_required', csrfToken: csrf(sessionHash),
               message: moved.status === 'held' ? 'The cart transfer could not be confirmed. It will not be retried automatically.' : 'This guest cart could not replace the account cart.' }, 409)
@@ -105,12 +109,12 @@ export function createCartHandler(options: {
               : 'Choose whether to connect this guest cart to your signed-in account.' }, transition.status === 'held' ? 409 : 200)
         }
         if (request.method === 'GET') {
-          try { return respond({ ...await options.service.read(accountSession, actorHash), csrfToken: csrf(accountSession) }, 200) }
+          try { return respond(accountView({ ...await options.service.read(accountSession, actorHash), csrfToken: csrf(accountSession) }), 200) }
           catch (error) { if (error instanceof CartSessionChanged) return respond(emptyCart(), 200); throw error }
         }
         if (request.method === 'POST' && input.action === 'open' && Object.keys(input).length === 1) {
           const view = await options.service.open(accountSession, actorHash)
-          return respond({ ...view, csrfToken: csrf(accountSession) }, 200)
+          return respond(accountView({ ...view, csrfToken: csrf(accountSession) }), 200)
         }
         if (request.method === 'POST' && input.action === 'checkout_handoff' && Object.keys(input).length === 1) {
           if (!same(request.headers.get('x-tll-cart-csrf') ?? '', csrf(accountSession))) return respond(unavailable, 403)
@@ -130,7 +134,7 @@ export function createCartHandler(options: {
           if(!Number.isSafeInteger(quantity)||Number(quantity)<0||Number(quantity)>MAX_CART_QUANTITY||!UUID.test(requestId))return respond(unavailable,400)
           const requestHash=sha(JSON.stringify({productId:STAGING_CART_PRODUCT,quantity,revision:input.revision}))
           const result=await options.service.set(accountSession,actorHash,requestId,requestHash,Number(input.revision),Number(quantity))
-          return respond({...result.view,csrfToken:csrf(accountSession)},result.status)
+          return respond(accountView({...result.view,csrfToken:csrf(accountSession)}),result.status)
         }
       }
       if (request.method === 'GET') {

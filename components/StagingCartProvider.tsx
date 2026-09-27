@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase'
-import { stagingCartUiEnabled, type StagingCartView } from '@/lib/commerce/staging-cart-types'
+import { stagingCartUiEnabled, stagingCheckoutHref, type StagingCartView } from '@/lib/commerce/staging-cart-types'
 import StagingCartPanel from './StagingCartPanel'
 import { StagingCartContext, type CartContext } from './StagingCartContext'
 
@@ -15,13 +15,15 @@ function parse(value: unknown): StagingCartView {
     || view.subtotalPence !== null && (!Number.isSafeInteger(view.subtotalPence) || view.subtotalPence < 0)
     || view.unitPricePence !== null && (!Number.isSafeInteger(view.unitPricePence) || view.unitPricePence <= 0)
     || view.productId !== null && typeof view.productId !== 'string'
-    || view.csrfToken !== null && !/^[a-f0-9]{64}$/.test(view.csrfToken)) throw new Error('Cart response unavailable')
+    || view.csrfToken !== null && !/^[a-f0-9]{64}$/.test(view.csrfToken)
+    || view.checkoutAvailable !== undefined && typeof view.checkoutAvailable !== 'boolean') throw new Error('Cart response unavailable')
   return view
 }
 
 export default function StagingCartProvider({ children }: { children: ReactNode }) {
   const enabled = stagingCartUiEnabled(), [view, setView] = useState<StagingCartView | null>(null)
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState(''), [opened, setOpened] = useState(false)
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null)
   const current = useRef<StagingCartView | null>(null), generation = useRef(0), mutation = useRef(false), mounted = useRef(false), readSequence = useRef(0)
   const returnFocus = useRef<HTMLElement | null>(null), panelOpen = useRef(false)
   const open = useCallback(() => {
@@ -31,12 +33,13 @@ export default function StagingCartProvider({ children }: { children: ReactNode 
     }
     setOpened(true)
   }, [])
-  const close = useCallback(() => { panelOpen.current = false; setOpened(false) }, [])
-  const invalidate = useCallback(() => { generation.current++; readSequence.current++ }, [])
-  const commit = useCallback((next: StagingCartView) => { current.current = next; setView(next) }, [])
+  const invalidate = useCallback(() => { generation.current++; readSequence.current++; setCheckoutUrl(null) }, [])
+  const close = useCallback(() => { panelOpen.current = false; setOpened(false); invalidate() }, [invalidate])
+  const commit = useCallback((next: StagingCartView) => { current.current = next; setView(next); setCheckoutUrl(null) }, [])
   const refresh = useCallback(async () => {
     if (!enabled || !mounted.current || mutation.current) return
     const ownerGeneration = generation.current, sequence = ++readSequence.current
+    setCheckoutUrl(null)
     setBusy(true)
     try {
       const result = await fetch('/api/cart', { credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(12000) })
@@ -128,6 +131,33 @@ export default function StagingCartProvider({ children }: { children: ReactNode 
     }
   }, [commit, enabled, refresh])
 
-  const value: CartContext = { enabled, view, busy, notice, open, close, refresh, setQuantity, resolveTransition }
+  const requestCheckoutHandoff = useCallback(async () => {
+    const before = current.current
+    if (!enabled || !mounted.current || mutation.current || before?.state !== 'ready' || before.quantity < 1
+      || before.checkoutAvailable !== true || !before.csrfToken) return
+    mutation.current = true; readSequence.current++; setBusy(true); setCheckoutUrl(null)
+    setNotice('Checking the staging checkout destination…')
+    const ownerGeneration = generation.current
+    try {
+      const response = await fetch('/api/cart', { method: 'POST', credentials: 'same-origin', cache: 'no-store',
+        signal: AbortSignal.timeout(12000), headers: { 'Content-Type': 'application/json', 'X-TLL-Cart-Intent': 'staging-cart',
+          'X-TLL-Cart-CSRF': before.csrfToken }, body: JSON.stringify({ action: 'checkout_handoff' }) })
+      if (!response.ok) throw new Error('Checkout handoff unavailable')
+      const body: unknown = await response.json()
+      if (!body || typeof body !== 'object' || Object.keys(body).join(',') !== 'checkoutUrl') throw new Error('Checkout handoff unavailable')
+      const url = stagingCheckoutHref((body as { checkoutUrl: unknown }).checkoutUrl)
+      if (ownerGeneration !== generation.current || !mounted.current) return
+      setCheckoutUrl(url); setNotice('Staging checkout is ready. No order has been placed.')
+    } catch {
+      if (ownerGeneration === generation.current && mounted.current) {
+        setCheckoutUrl(null); setNotice('The staging checkout could not be confirmed. Refresh the cart before trying again.')
+      }
+    } finally {
+      mutation.current = false
+      if (mounted.current) { setBusy(false); if (ownerGeneration !== generation.current) void refresh() }
+    }
+  }, [enabled, refresh])
+
+  const value: CartContext = { enabled, view, busy, notice, checkoutUrl, requestCheckoutHandoff, open, close, refresh, setQuantity, resolveTransition }
   return <StagingCartContext.Provider value={value}>{children}{enabled && <StagingCartPanel open={opened} onClose={close} returnFocusRef={returnFocus} />}</StagingCartContext.Provider>
 }

@@ -63,6 +63,13 @@ try {
         assert.equal(request.headers()['idempotency-key'],undefined)
         view={...view,state:view.quantity?'ready':'empty',message:'Using the cart already saved to this account.'};return reply(route)
       }
+      if(body.action==='checkout_handoff'){
+        assert.equal(request.method(),'POST')
+        assert.equal(request.headers()['idempotency-key'],undefined)
+        return reply(route,200,{checkoutUrl:mode==='maliciousCheckout'
+          ? 'https://evil.example/cart/c/syntheticCheckout123'
+          : 'https://tll-integration-staging.myshopify.com/cart/c/syntheticCheckout123'})
+      }
       assert.match(request.headers()['idempotency-key'],/^[a-f0-9-]{36}$/)
       if(mode==='delayed'||mode==='switch'){pending=true;resolvePending?.();resolvePending=undefined;await new Promise(resolvePromise=>{release=resolvePromise})}
       const quantity=request.method()==='DELETE'?0:body.quantity
@@ -91,6 +98,21 @@ try {
     await dialog.getByRole('button',{name:'Increase test product quantity'}).click()
     await dialog.getByText('Quantity: 2',{exact:true}).waitFor();await dialog.getByText('£24.00',{exact:true}).waitFor()
     assert.equal(await dialog.getByRole('link',{name:/checkout/i}).count(),0)
+    if(width===390){
+      view={...view,checkoutAvailable:true};await dialog.getByRole('button',{name:'Refresh cart'}).click()
+      const prepare=dialog.getByRole('button',{name:'Prepare staging checkout'});await prepare.waitFor()
+      await prepare.click()
+      const handoff=dialog.getByRole('link',{name:'Open staging checkout in a new tab'});await handoff.waitFor()
+      assert.equal(await handoff.getAttribute('href'),'https://tll-integration-staging.myshopify.com/cart/c/syntheticCheckout123')
+      assert.match(await handoff.getAttribute('rel'),/noreferrer/)
+      assert.equal(await handoff.getAttribute('referrerpolicy'),'no-referrer')
+      mode='maliciousCheckout';await prepare.click()
+      await dialog.getByRole('status').filter({hasText:'could not be confirmed'}).waitFor()
+      assert.equal(await handoff.count(),0,'unsafe destination must never remain available')
+      mode='normal';view={...view,checkoutAvailable:false};await dialog.getByRole('button',{name:'Refresh cart'}).click()
+      await prepare.waitFor({state:'detached'})
+      assert.equal(await prepare.count(),0,'server OFF state hides the handoff')
+    }
     for(const button of await dialog.getByRole('button').all()){const box=await button.boundingBox();assert.ok(box&&box.height>=44,`small action ${width}`)}
     await page.screenshot({path:resolve(dir,`${width}-cart.png`)})
     await dialog.getByRole('button',{name:'Remove item'}).click();await dialog.getByText('No items in this test cart.').waitFor()

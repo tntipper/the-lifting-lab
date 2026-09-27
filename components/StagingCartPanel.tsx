@@ -15,7 +15,7 @@ export function StagingCartContents() {
   if (!cart?.enabled) return <p>Test cart unavailable.</p>
   const view = cart.view, editable = !!view && ['ready', 'empty'].includes(view.state) && !cart.busy
   return <div className="space-y-5">
-    <p className="text-sm text-lab-muted">Staging cart with synthetic items only; checkout is disabled. Signed-in customers can explicitly connect a guest cart to their account.</p>
+    <p className="text-sm text-lab-muted">Staging cart with synthetic items only. Checkout is available only for a signed-in test account during an approved staging test. Signed-in customers can explicitly connect a guest cart to their account.</p>
     <p ref={status} role="status" aria-live="polite" aria-atomic="true" tabIndex={-1} className="break-words rounded-lg border border-lab-border p-3 text-sm focus:outline-2 focus:outline-lab-lime">{cart.notice || (cart.busy ? 'Loading test cart…' : 'Your test cart is empty.')}</p>
     {view && view.quantity > 0 && <section aria-label="Test cart item" className="rounded-xl border border-lab-border p-4 space-y-3">
       <h3 className="break-words text-base font-bold">Synthetic staging test product — not for sale</h3>
@@ -38,6 +38,12 @@ export function StagingCartContents() {
     </section>}
     <p className="flex flex-wrap justify-between gap-2 font-bold"><span>{view && ['held', 'pending', 'unavailable'].includes(view.state) ? 'Observed subtotal · change unresolved' : 'Item subtotal'}</span><span>{money(view?.subtotalPence)}</span></p>
     <p className="text-xs text-lab-muted">Item subtotal only. Delivery and final taxes have not been calculated. No payment or order will be created here.</p>
+    {view?.checkoutAvailable === true && view.state === 'ready' && view.quantity > 0 && <section aria-label="Staging checkout handoff" className="space-y-2">
+      <button type="button" disabled={cart.busy} onClick={() => cart.requestCheckoutHandoff()} className="min-h-11 rounded-lg bg-lab-lime px-3 text-sm font-bold text-lab-ink disabled:opacity-50">Prepare staging checkout</button>
+      {cart.checkoutUrl && <p className="text-sm">The next page is the separate staging Shopify checkout. For this supervised test, do not submit payment or place an order.{' '}
+        <a href={cart.checkoutUrl} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer" className="text-lab-lime underline">Open staging checkout in a new tab</a>
+      </p>}
+    </section>}
     <div className="flex flex-wrap gap-3">
       <button type="button" disabled={cart.busy} onClick={() => cart.refresh()} className="min-h-11 rounded-lg border border-lab-border px-3 text-sm disabled:opacity-50">Refresh cart</button>
       <Link href="/products" onClick={cart.close} className="min-h-11 inline-flex items-center rounded-lg border border-lab-border px-3 text-sm">Browse research records</Link>
