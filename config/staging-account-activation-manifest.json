@@ -1824,7 +1824,7 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "ca18fcf37a713f81842faf85e5f0ec5fc1912e8013f6fa2a3fdba4b610dca595"
+        "sha256": "6713ff8ed7422f8ab675c950eb102981f970dcc94a2f38e680e41eadde205e91"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
@@ -1836,7 +1836,7 @@
       },
       {
         "path": "tests/helpers/staging-generation-23-surface-fixture.mjs",
-        "sha256": "f6cdb07d7a5859dc11d8f423e346f05645308a63944ecb70ba3ce38a587f596b"
+        "sha256": "35707581270285cf8af79625d89456f890a06e6b4a2a408fee4877e13393af7b"
       },
       {
         "path": "tests/staging-generation-22-credentials.test.mjs",

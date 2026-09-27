@@ -16,7 +16,8 @@ import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scrip
 import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/staging-generation-23-surface-fixture.mjs'
 
 const mode = process.argv.slice(2).join(' ')
-if (!['--run-offline-once', '--fail-first-setting-once', '--fail-owner-verified-once',
+if (!['--run-offline-once', '--fail-first-setting-once', '--fail-inventory-branch-once',
+  '--fail-surface-public-once', '--fail-owner-verified-once',
   '--fail-setup-reply-once', '--abort-setup-once', '--fail-shutdown-reply-once',
   '--fail-retirement-reply-once'].includes(mode)) {
   throw Error('Explicit local test mode required')
@@ -26,7 +27,7 @@ const run = (program, args, env = process.env) => execFileSync(program, args, {
   cwd: new URL('../', import.meta.url), encoding: 'utf8', timeout: 120_000,
   stdio: ['ignore', 'pipe', 'pipe'], env,
 })
-const surface = surfaceFixture()
+const surface = surfaceFixture({ losePublicReply: mode === '--fail-surface-public-once' })
 const { PHASES, REQUIRED_RESULTS, rehearseStagingGeneration23WholeRun } = await rehearsal()
 const scriptDir = new URL('../scripts/', import.meta.url)
 async function armedUrl(filename, flag, replacements = []) {
@@ -49,6 +50,18 @@ const settingsJournalModule = await arm('staging-generation-23-settings-journal.
   'STAGING_GENERATION_23_SETTINGS_JOURNAL_ENABLED')
 const settingsCoordinatorModule = await arm('staging-generation-23-settings-coordinator.mjs',
   'STAGING_GENERATION_23_SETTINGS_COORDINATOR_ENABLED')
+const vercelTargetsUrl = await armedUrl('staging-generation-23-vercel-targets.mjs',
+  'STAGING_GENERATION_23_VERCEL_TARGETS_ENABLED')
+const vercelInventory = await arm('staging-generation-23-vercel-inventory-reader.mjs',
+  'STAGING_GENERATION_23_VERCEL_INVENTORY_READER_ENABLED', [[
+    "from './staging-generation-23-vercel-targets.mjs'", `from '${vercelTargetsUrl}'`,
+  ]])
+const vercelReplacer = await arm('staging-generation-23-vercel-replacer.mjs',
+  'STAGING_GENERATION_23_VERCEL_REPLACER_ENABLED', [[
+    "from './staging-generation-23-vercel-targets.mjs'", `from '${vercelTargetsUrl}'`,
+  ]])
+const edgeReplacer = await arm('staging-generation-23-edge-replacer.mjs',
+  'STAGING_GENERATION_23_EDGE_REPLACER_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
 let existingCartFixtureStarted = false
 let databaseJournalDirectory, settingsDirectory, providerDirectory, syntheticToken, providerPort
@@ -95,7 +108,7 @@ const shutdownJournal = databaseJournal('SHUTDOWN')
 const retirementJournal = databaseJournal('RETIRE')
 syntheticToken = Buffer.from(`sbp_${'a'.repeat(40)}`)
 const httpRequests = []
-let parent
+let parent, surfacePorts
 const localRequest = action => (options, callback) => {
   assert.equal(options.hostname, 'api.supabase.com')
   assert.equal(options.path, `/v1/projects/${PROJECT_REF}/database/query`)
@@ -173,29 +186,59 @@ const shutdownHost = databaseHostModule.createStagingGeneration23DatabaseHost({
   post: postDatabase('SHUTDOWN'),
 })
 settingsDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-settings-'))
-const settingsTargets = VERCEL_PASSWORD_NAMES.map((name, index) => ({ name,
+const inventoryTargets = VERCEL_PASSWORD_NAMES.map((name, index) => ({ name,
   id: `env_gen23_${index}`, branch: 'codex/tll-integration', target: 'preview',
   classification: 'sensitive' }))
+let settingsTargets
+const inventoryReader = vercelInventory.createStagingGeneration23VercelInventoryReader({
+  token: Buffer.from('offline-vercel-token'),
+  fetch: async (url, options) => {
+    assert.match(url, /^https:\/\/api\.vercel\.com\/v10\/projects\//)
+    assert.equal(options.method, 'GET')
+    return new Response(JSON.stringify({ envs: inventoryTargets.map((target, index) => ({
+      id: target.id, key: target.name, target: ['preview'], type: 'sensitive',
+      visibility: 'secret', gitBranch: mode === '--fail-inventory-branch-once' && index === 0
+        ? 'main' : target.branch,
+    })), pagination: { next: null } }), { status: 200,
+      headers: { 'content-type': 'application/json' } })
+  },
+})
 const settingsJournal = settingsJournalModule.createStagingGeneration23SettingsJournal({
   path: join(settingsDirectory, 'settings.json'), now: Date.now,
   makeRunId: () => '224f77e4-c361-46ce-b357-1e0a740a7f77',
 })
 const installedSettings = new Map()
 let edgePassword
+const vercelFetch = async (url, options) => {
+  assert.equal(options.method, 'PATCH')
+  const target = settingsTargets.find(item => url.includes(`/env/${item.id}?`))
+  assert.ok(target)
+  const body = JSON.parse(options.body.toString('utf8'))
+  assert.deepEqual(Object.keys(body), ['value'])
+  installedSettings.set(target.name, body.value)
+  if (mode === '--fail-first-setting-once') throw Error('injected lost setting reply')
+  return new Response(JSON.stringify({ id: target.id, key: target.name,
+    gitBranch: target.branch, target: ['preview'], type: 'sensitive', visibility: 'secret' }),
+  { status: 200, headers: { 'content-type': 'application/json' } })
+}
+const edgeFetch = async (url, options) => {
+  assert.equal(url, `https://api.supabase.com/v1/projects/${PROJECT_REF}/secrets`)
+  assert.equal(options.method, 'POST')
+  const body = JSON.parse(options.body.toString('utf8'))
+  assert.equal(body.length, 1)
+  assert.equal(body[0].name, EDGE_PASSWORD_NAME)
+  edgePassword = body[0].value
+  return new Response('{}', { status: 201, headers: { 'content-type': 'application/json' } })
+}
 const settingsCoordinator = settingsCoordinatorModule.createStagingGeneration23SettingsCoordinator({
   journal: settingsJournal, now: Date.now,
-  makeReplacer: () => ({
-    async replace(target, value) {
-      installedSettings.set(target.name, value)
-      if (mode === '--fail-first-setting-once') throw Error('injected lost setting reply')
-      return { status: 'REPLACED', ...target }
-    }, dispose() {},
+  makeReplacer: () => vercelReplacer.createStagingGeneration23VercelReplacer({
+    token: Buffer.from('offline-vercel-token'), fetch: vercelFetch,
   }),
-  edgeHost: { async stageSecret({ name, value }) {
-    assert.equal(name, EDGE_PASSWORD_NAME)
-    edgePassword = value
-    return { status: 'STAGED', name, projectRef: PROJECT_REF }
-  }, dispose() {} },
+  edgeHost: edgeReplacer.createStagingGeneration23EdgeReplacer({
+    token: Buffer.from('offline-supabase-token'), fetch: edgeFetch,
+    expiresAt: database.expiresAt,
+  }),
 })
 let active, databaseEnabled = false, enabledPreview, ownerChecks = false, syntheticSessionCount = 0
 let provider = {
@@ -248,6 +291,8 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.equal(active, undefined)
       assert.equal(databaseEnabled, false)
       assert.equal(provider.enabled, false)
+      try { settingsTargets = await inventoryReader.readTargets({ signal }) }
+      finally { inventoryReader.dispose() }
       break
     case 'settings':
       const settingResult = await settingsCoordinator.run({ targets: settingsTargets,
@@ -296,7 +341,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       break
     case 'surfaceEnable': {
       assert.equal(provider.enabled && databaseEnabled, true)
-      const result = await enableStagingSurfaces({ ports: surface.ports, heldEvidence: held,
+      const result = await enableStagingSurfaces({ ports: surfacePorts, heldEvidence: held,
         requirements, journal: surface.journal('enable'), now: () => START })
       assert.equal(result.status, 'SURFACES_ENABLED_VERIFIED')
       enabledPreview = result.deployment
@@ -334,7 +379,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       break
     case 'surfaceFreeze': {
       assert.equal(databaseEnabled || provider.enabled, false)
-      const result = await freezeStagingSurfaces({ ports: surface.ports,
+      const result = await freezeStagingSurfaces({ ports: surfacePorts,
         currentEvidence: enabledPreview, requirements,
         journal: surface.journal('freeze'), now: () => START })
       assert.equal(result.status, 'SURFACES_HELD_VERIFIED')
@@ -372,9 +417,19 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
 }]))
 
   parent = new AbortController()
+  surfacePorts = surface.nativePorts(parent.signal)
   const result = await rehearseStagingGeneration23WholeRun({ operations, now: Date.now,
     windowExpiresAt: database.expiresAt, signal: parent.signal })
-  if (mode === '--fail-first-setting-once') {
+  if (mode === '--fail-inventory-branch-once') {
+    assert.equal(result.status, 'HOLD')
+    assert.equal(result.failedPhase, 'baseline')
+    assert.deepEqual(calls, ['baseline'])
+    assert.equal(settingsJournal.read(), null)
+    assert.equal(httpRequests.length, 0)
+    assert.equal(surface.events.length, 0)
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_WRONG_BRANCH_STOPS_BEFORE_SETTINGS',
+      phaseCount: calls.length, databaseSetup: 'not_dispatched', purchase: 'none' }))
+  } else if (mode === '--fail-first-setting-once') {
     assert.equal(result.status, 'HOLD')
     assert.equal(result.failedPhase, 'settings')
     assert.deepEqual(calls, ['baseline', 'settings'])
@@ -384,6 +439,15 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     console.log(JSON.stringify({ status: 'PASS_LOCAL_SETTINGS_LOST_REPLY_STOP',
       phaseCount: calls.length, databaseSetup: 'not_dispatched',
       provider: 'off', surface: 'off', purchase: 'none' }))
+  } else if (mode === '--fail-surface-public-once') {
+    assert.equal(result.status, 'HOLD')
+    assert.equal(result.failedPhase, 'surfaceEnable')
+    assert.deepEqual(calls, PHASES.slice(0, PHASES.indexOf('ownerJourney')))
+    assert.equal(provider.enabled && databaseEnabled, true)
+    assert.deepEqual(surface.events, ['edge:true', 'private:true', 'public:true'])
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_SURFACE_LOST_REPLY_STOP',
+      phaseCount: calls.length, customerJourney: 'not_dispatched',
+      nextAction: result.nextAction, purchase: 'none' }))
   } else if (mode === '--fail-setup-reply-once' || mode === '--abort-setup-once') {
     assert.equal(result.status, 'HOLD')
     assert.equal(result.failedPhase, 'databaseSetup')
@@ -425,9 +489,9 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
   assert.equal(result.status, 'LOCAL_SEQUENCE_PASS')
   assert.deepEqual(calls, PHASES)
   console.log(JSON.stringify({ status: 'PASS_PARTIAL_LOCAL_COMPOSITE', phaseCount: PHASES.length,
-    database: 'real_sql_lifecycle_injected_guarded_host', surface: 'real_controller_injected_services',
+    database: 'real_sql_lifecycle_injected_guarded_host', surface: 'native_adapter_injected_services',
     customer: 'real_local_tests_and_browser', provider: 'real_control_official_sdk_local_fetch',
-    backendControls: 'local_fixture_and_gen23_sql_compatibility', settings: 'real_coordinator_injected_services',
+    backendControls: 'local_fixture_and_gen23_sql_compatibility', settings: 'guarded_transports_local_http',
     hostedPreview: 'not_tested', purchase: 'none', elapsedMs: result.elapsedMs }))
   }
 } finally {

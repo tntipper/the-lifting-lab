@@ -4,6 +4,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createSurfaceActivationJournal, HELD_SURFACE_FLAGS, STAGING_BRANCH, STAGING_SURFACE_TARGET } from '../../scripts/staging-surface-activation-transport.mjs'
+import { createStagingSurfaceNativePorts } from '../../scripts/staging-surface-activation-native-adapter.mjs'
 
 export const START = Date.parse('2026-09-26T12:00:00.000Z')
 export const requirements = { sourceCommit: 'a'.repeat(40), manifestSha256: 'b'.repeat(64),
@@ -71,5 +72,66 @@ export function surfaceFixture({ losePublicReply = false } = {}) {
   const journal = action => createSurfaceActivationJournal({ path: join(mkdtempSync(
     join(tmpdir(), 'tll-gen23-surface-rehearsal-')), `${action}.json`),
   makeRunId: () => `reviewed-${action}-run` })
-  return { ports, events, journal }
+  const nativePorts = signal => {
+    const pending = new Map()
+    const write = async (args, bytes) => {
+      assert.ok(args.includes('--project') && args.includes('the-lifting-lab'))
+      assert.ok(args.includes('--scope') && args.includes('my-lifting-lab-s-projects'))
+      assert.ok(args.includes('--git-branch') && args.includes(STAGING_BRANCH))
+      const name = args[args.indexOf('add') + 1], value = bytes.toString()
+      const group = name.startsWith('NEXT_PUBLIC_') ? 'public' : 'private'
+      pending.set(name, value)
+      const names = group === 'public'
+        ? ['NEXT_PUBLIC_TLL_STAGING_CUSTOMER', 'NEXT_PUBLIC_TLL_STAGING_CART']
+        : ['TLL_STAGING_CUSTOMER_ENABLED', 'TLL_STAGING_CART_ENABLED']
+      if (names.every(item => pending.has(item))) {
+        const expected = group === 'public' ? 'enabled' : 'true'
+        assert.equal(pending.get(names[0]), pending.get(names[1]))
+        await (group === 'public' ? ports.setVercelPublicEnabled : ports.setVercelPrivateEnabled)(
+          STAGING_SURFACE_TARGET, { customer: value === expected, cart: value === expected })
+        names.forEach(item => pending.delete(item))
+      }
+    }
+    return createStagingSurfaceNativePorts({
+      execute: async operation => ({ status: 'COMPLETED', value: await operation(signal) }),
+      runVercel: write,
+      setEdgeFlag: async (target, functionName, enabled) => {
+        assert.equal(functionName, 'customer-subject-broker')
+        await ports.setEdgeEnabled(target, enabled)
+        return { target, functionName, enabled }
+      },
+      readEdgeFlag: async target => ({ target, functionName: 'customer-subject-broker',
+        enabled: (await ports.readSurfaceFlags(target)).edge }),
+      readVercelFlags: async target => {
+        const flags = await ports.readSurfaceFlags(target)
+        return { target, privateCustomer: flags.privateCustomer, privateCart: flags.privateCart,
+          publicCustomer: flags.publicCustomer, publicCart: flags.publicCart }
+      },
+      createDeployment: async (target, input) => {
+        const { project, scope, ...deploymentInput } = input
+        assert.equal(project, 'the-lifting-lab')
+        assert.equal(scope, 'my-lifting-lab-s-projects')
+        const identity = { ...await ports.createPreviewDeployment(target, deploymentInput) }
+        delete identity.target
+        return identity
+      },
+      readDeployment: async (target, id) => {
+        const identity = { ...await ports.readDeployment(target, id) }
+        delete identity.target
+        return identity
+      },
+      resolveAlias: async (target, input) => ports.resolveAlias(target, input.alias),
+      fetch: async (url, options) => {
+        if (options.method === 'HEAD') return { status: (await ports.probeTls(STAGING_SURFACE_TARGET, url)).tls ? 200 : 500 }
+        const id = options.headers['x-tll-deployment-id']
+        const ready = await ports.readRuntimeReadiness(STAGING_SURFACE_TARGET, id)
+        assert.equal(url, `${ready.immutableUrl}/api/staging/readiness`)
+        return { status: 200, json: async () => ({ deploymentId: id, immutableUrl: ready.immutableUrl,
+          projectRef: STAGING_SURFACE_TARGET.projectRef, branch: STAGING_BRANCH,
+          privateCustomer: ready.customerEnabled, privateCart: ready.cartEnabled,
+          publicCustomer: ready.publicCustomerEnabled, publicCart: ready.publicCartEnabled }) }
+      },
+    })
+  }
+  return { ports, nativePorts, events, journal }
 }
