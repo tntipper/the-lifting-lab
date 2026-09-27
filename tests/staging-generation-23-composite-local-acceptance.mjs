@@ -82,6 +82,8 @@ const checkoutJournalModule = await arm('staging-generation-23-checkout-setting-
   'STAGING_GENERATION_23_CHECKOUT_SETTING_JOURNAL_ENABLED')
 const checkoutPortModule = await arm('staging-generation-23-checkout-setting-port.mjs',
   'STAGING_GENERATION_23_CHECKOUT_SETTING_PORT_ENABLED')
+const checkoutReadinessModule = await arm('staging-generation-23-checkout-readiness-reader.mjs',
+  'STAGING_GENERATION_23_CHECKOUT_READINESS_READER_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
 let existingCartFixtureStarted = false
 let databaseJournalDirectory, settingsDirectory, providerDirectory, previewDirectory, checkoutDirectory,
@@ -393,6 +395,23 @@ const checkoutPort = () => checkoutPortModule.createStagingGeneration23CheckoutS
     { status: 200, headers: { 'content-type': 'application/json' } })
   },
 })
+async function proveCheckoutRuntime(deployment, expected, signal) {
+  const reader = checkoutReadinessModule.createStagingGeneration23CheckoutReadinessReader({
+    bypass: Buffer.from('offline-bypass-token'), deploymentId: deployment.deploymentId,
+    immutableUrl: deployment.immutableUrl,
+    fetch: async (url, options) => {
+      assert.equal(url, `${deployment.immutableUrl}/api/staging/checkout-readiness`)
+      assert.equal(options.method, 'GET')
+      return new Response(JSON.stringify({ deploymentId: deployment.deploymentId,
+        immutableUrl: deployment.immutableUrl, projectRef: 'qdmvngjwkcsilzmqksme',
+        branch: 'codex/tll-integration',
+        checkoutHandoffEnabled: checkoutRuntime.get(deployment.deploymentId) }),
+      { status: 200, headers: { 'content-type': 'application/json' } })
+    },
+  })
+  try { assert.equal((await reader.read({ expected, signal })).status, 'CHECKOUT_RUNTIME_VERIFIED') }
+  finally { reader.dispose() }
+}
 const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signal }) => {
   calls.push(phase)
   try {
@@ -482,6 +501,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.equal(result.status, 'SURFACES_ENABLED_VERIFIED')
       enabledPreview = result.deployment
       assert.equal(checkoutRuntime.get(enabledPreview.deploymentId), true)
+      await proveCheckoutRuntime(enabledPreview, true, signal)
       break
     }
     case 'ownerJourney':
@@ -554,6 +574,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
         journal: surface.journal('freeze'), now: () => START })
       assert.equal(result.status, 'SURFACES_HELD_VERIFIED')
       assert.equal(checkoutRuntime.get(result.deployment.deploymentId), false)
+      await proveCheckoutRuntime(result.deployment, false, signal)
       break
     }
     case 'databaseRetire':
