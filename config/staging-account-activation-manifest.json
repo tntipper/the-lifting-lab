@@ -1313,7 +1313,7 @@
       },
       {
         "path": "scripts/staging-generation-23-fixed-hosted-adapters.mjs",
-        "sha256": "2b5822b2afe17edfec4adb7dca01e271516420b2907d9fab5ece77a17fb0fef3"
+        "sha256": "fa08fbf0e431dd75294c3fe2f2f6bdedc7b00500707252e3b60c5121211fde52"
       },
       {
         "path": "scripts/staging-generation-23-fixed-preflight.mjs",

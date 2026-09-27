@@ -141,7 +141,8 @@ export function createStagingGeneration23FixedHostedAdapters({ credentials, fetc
             || typeof project.repository.sourceless !== 'boolean') unavailable()
           const flags = observedSurface?.surface?.flags, edge = observedSurface?.surface?.edge, identity = observedSurface?.deployment
           if (!flags || !edge || edge.enabled !== false
-            || Object.keys(HELD_SURFACE_FLAGS).some(key => flags[key] !== HELD_SURFACE_FLAGS[key])
+            || Object.keys(HELD_SURFACE_FLAGS).filter(key => key !== 'edge')
+              .some(key => flags[key] !== HELD_SURFACE_FLAGS[key])
             || !identity || identity.branch !== STAGING_BRANCH || identity.alias !== STAGING_ALIAS
             || ['deploymentId', 'immutableUrl', 'gitSourceCommit'].some(key => identity[key] !== expectedDeployment[key])) unavailable()
           return Object.freeze({ status: 'BASELINE_HELD_VERIFIED' })
