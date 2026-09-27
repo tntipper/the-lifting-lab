@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn, spawnSync, execFileSync } from 'node:child_process'
+import { EventEmitter } from 'node:events'
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -30,6 +31,13 @@ async function armedWorker() {
     'export const STAGING_GENERATION_23_WORKER_ENTRY_ENABLED = true')
     .replaceAll("from './", `from '${new URL('../scripts/', import.meta.url).href}`)
   return (await import(`data:text/javascript;base64,${Buffer.from(armed).toString('base64')}`)).runStagingGeneration23WholeWorker
+}
+async function armedReader() {
+  const source = await readFile(new URL('../scripts/staging-generation-23-credential-reader.mjs', import.meta.url), 'utf8')
+  assert.match(source, /STAGING_GENERATION_23_CREDENTIAL_READER_ENABLED = false/)
+  return import(`data:text/javascript;base64,${Buffer.from(source.replace(
+    'STAGING_GENERATION_23_CREDENTIAL_READER_ENABLED = false',
+    'STAGING_GENERATION_23_CREDENTIAL_READER_ENABLED = true')).toString('base64')}`)
 }
 async function armedBinding() {
   const source = await readFile(new URL('../scripts/staging-generation-23-process-binding.mjs', import.meta.url), 'utf8')
@@ -65,6 +73,43 @@ test('injected worker needs FD3 proof and emits only the secret-free exact termi
   assert.equal(Object.values(owned).every(value => value.every(byte => byte === 0)), true)
   assert.equal(await run({ signal: new AbortController().signal, accept() { throw Error('lost parent') },
     readCredentials() { throw Error('must not run') }, createWorker() {}, write() {} }), false)
+})
+
+test('offline three-selector reader feeds only the proved worker and credentials are erased', async () => {
+  const run = await armedWorker()
+  const { readStagingGeneration23Credentials } = await armedReader()
+  const byService = new Map([
+    ['Supabase CLI', `sbp_${'a'.repeat(40)}`],
+    ['TLL Hosted Baseline Vercel API', 'local-vercel-token'],
+    ['TLL Hosted Baseline Preview Bypass', 'local-preview-bypass'],
+  ])
+  const selectors = [], owned = [], output = []
+  const spawnProcess = (_program, args) => {
+    selectors.push(args[3])
+    const child = new EventEmitter(), stdout = new EventEmitter()
+    stdout.destroy = () => {}
+    child.stdout = stdout
+    child.kill = () => {}
+    queueMicrotask(() => {
+      stdout.emit('data', Buffer.from(`${byService.get(args[3])}\n`))
+      child.emit('close', 0)
+    })
+    return child
+  }
+  assert.equal(await run({ signal: new AbortController().signal,
+    accept: () => () => {},
+    readCredentials: ({ signal }) => readStagingGeneration23Credentials({ signal,
+      stopWorkerGroup() { throw Error('unexpected stop') }, spawnProcess }),
+    createWorker(values) {
+      owned.push(...Object.values(values))
+      return { core: { run: () => ({ status: 'PASS_PARTIAL_LOCAL_COMPOSITE' }) }, dispose() {} }
+    },
+    write: value => output.push(value),
+  }), true)
+  assert.deepEqual(selectors, [...byService.keys()])
+  assert.equal(owned.length, 3)
+  assert.equal(owned.every(value => value.every(byte => byte === 0)), true)
+  assert.deepEqual(output, ['{"schema":"tll-staging-generation-23-whole-worker-terminal/v1","status":"PASS_PARTIAL_LOCAL_COMPOSITE","generation":23}\n'])
 })
 
 test('invalid credentials and failed disposal cannot publish a success terminal', async () => {

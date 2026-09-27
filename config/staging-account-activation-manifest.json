@@ -1236,6 +1236,10 @@
         "sha256": "abe0be4753ff8f35cdef1d4fcf2365c7129efed29ffa5ff8d5516d1154678123"
       },
       {
+        "path": "scripts/staging-generation-23-credential-reader.mjs",
+        "sha256": "9183e16e1f2b32961f68ab5df71b6308094a02a5d6dd34a7264cc704885c66d8"
+      },
+      {
         "path": "scripts/staging-generation-23-process-binding.mjs",
         "sha256": "c6135cecac3f6287e35237ea58e9b9f380dc728f704e87f9a1c73f248f401d91"
       },
@@ -1896,8 +1900,12 @@
         "sha256": "52f790415c7ece7d519272d6e9ac791a2ab5a4b3177e7c1e7a4793a8e62b6ce7"
       },
       {
+        "path": "tests/staging-generation-23-credential-reader.test.mjs",
+        "sha256": "37a87e6af4d02254a31a8782dadf4bd31c2e0ea915aad1a30322aab9b206909a"
+      },
+      {
         "path": "tests/staging-generation-23-process-binding.test.mjs",
-        "sha256": "f9c254619109b42c6ae9827171b98b70f8fe01b2d561c094210d499dadcb8a88"
+        "sha256": "46cd6b6b207509b768b49c25e5e0a480db094f01217bbfb3acd65a3e05193c8a"
       },
       {
         "path": "tests/staging-generation-23-whole-route-journal.test.mjs",
