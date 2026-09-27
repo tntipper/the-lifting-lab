@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { CHECKOUT_SETTING_NAME } from './staging-generation-23-checkout-setting.mjs'
 import { STAGING_BRANCH } from './staging-surface-activation-transport.mjs'
 
-export const STAGING_GENERATION_23_CHECKOUT_SETTING_JOURNAL_ENABLED = true
+export const STAGING_GENERATION_23_CHECKOUT_SETTING_JOURNAL_ENABLED = false
 const SCHEMA = 'tll-generation-23-checkout-setting/v1'
 const STATES = new Set(['INTENT_RECORDED', 'ENABLE_VERIFIED', 'FREEZE_VERIFIED', 'RECONCILIATION_REQUIRED'])
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/

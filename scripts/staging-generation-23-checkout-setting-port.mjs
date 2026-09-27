@@ -2,7 +2,7 @@
 import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
 import { CHECKOUT_SETTING_NAME } from './staging-generation-23-checkout-setting.mjs'
 
-export const STAGING_GENERATION_23_CHECKOUT_SETTING_PORT_ENABLED = true
+export const STAGING_GENERATION_23_CHECKOUT_SETTING_PORT_ENABLED = false
 const unavailable = () => { throw Error('Generation 23 checkout setting port unavailable') }
 const ID = /^[A-Za-z0-9_-]{4,128}$/
 const MAX_RESPONSE_BYTES = 16_384

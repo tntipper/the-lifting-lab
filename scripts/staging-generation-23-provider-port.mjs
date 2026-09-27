@@ -3,7 +3,7 @@ import { createOfficialStagingProviderClient } from './staging-provider-broker-n
 import { projectOfficialProviderSchema, STAGING_AUTH_URL } from './staging-provider-broker-native-adapter.mjs'
 import { PROVIDER_IDENTIFIER, STAGING_PROJECT_REF, STAGING_PROVIDER_TARGET } from './staging-provider-broker-rotation.mjs'
 
-export const STAGING_GENERATION_23_PROVIDER_PORT_ENABLED = true
+export const STAGING_GENERATION_23_PROVIDER_PORT_ENABLED = false
 const unavailable = () => { throw Error('Generation 23 provider port unavailable') }
 const sameTarget = target => target && typeof target === 'object' && !Array.isArray(target)
   && Object.keys(target).sort().join('|') === Object.keys(STAGING_PROVIDER_TARGET).sort().join('|')

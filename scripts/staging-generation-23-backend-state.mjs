@@ -7,7 +7,7 @@ import { EXACT_MIGRATIONS } from './staging-generation-21-retirement-preflight.m
 import { IDENTITIES } from './staging-generation-21-credentials.mjs'
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
 
-export const STAGING_GENERATION_23_BACKEND_STATE_ENABLED = true
+export const STAGING_GENERATION_23_BACKEND_STATE_ENABLED = false
 export const QUERY_ID = 'tll-staging-generation-23-backend-off-state/v1'
 const unavailable = () => { throw Error('Generation 23 backend state unavailable') }
 const quote = value => `'${value.replaceAll("'", "''")}'`

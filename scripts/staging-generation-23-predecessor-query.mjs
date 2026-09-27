@@ -4,7 +4,7 @@ import { buildStagingGeneration23PredecessorCheckSql,
   validateStagingGeneration23PredecessorCheck } from './staging-generation-23-predecessor-check.mjs'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_PREDECESSOR_QUERY_ENABLED = true
+export const STAGING_GENERATION_23_PREDECESSOR_QUERY_ENABLED = false
 export const ENDPOINT = Object.freeze({ hostname: 'api.supabase.com',
   path: `/v1/projects/${PROJECT_REF}/database/query`, method: 'POST' })
 const MAX_RESPONSE_BYTES = 65_536

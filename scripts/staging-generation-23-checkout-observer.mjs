@@ -1,5 +1,5 @@
 /** Disabled final browser step: observe staging checkout without any mutating request. */
-export const STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED = true
+export const STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED = false
 
 const SHOP = 'tll-integration-staging.myshopify.com'
 const ASSET_HOSTS = new Set(['cdn.shopify.com'])

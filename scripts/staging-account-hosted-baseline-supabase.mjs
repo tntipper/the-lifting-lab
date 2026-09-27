@@ -20,7 +20,7 @@ import {
 } from './staging-provider-broker-native-adapter.mjs'
 import { PROVIDER_IDENTIFIER, STAGING_PROVIDER_TARGET } from './staging-provider-broker-rotation.mjs'
 
-export const HOSTED_BASELINE_SUPABASE_BINDING_ENABLED = true
+export const HOSTED_BASELINE_SUPABASE_BINDING_ENABLED = false
 export const HOSTED_BASELINE_SUPABASE_ERROR = 'Staging hosted baseline Supabase binding unavailable'
 export const HOSTED_BASELINE_SUPABASE_TARGET = PROJECT_REF
 export const HOSTED_BASELINE_SUPABASE_ENDPOINTS = Object.freeze({

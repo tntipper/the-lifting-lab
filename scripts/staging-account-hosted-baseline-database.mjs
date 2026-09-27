@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto'
 import { PROJECT_REF, PRODUCTION_PROJECT_REF, GENERATION, WINDOW_ID } from './staging-generation-21-credentials.mjs'
 
 export { PROJECT_REF, PRODUCTION_PROJECT_REF }
-export const STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_ENABLED = true
+export const STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_ENABLED = false
 export const STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_QUERY_ID = 'tll-staging-hosted-baseline-database/v2'
 // Exact historical Gen21 expiry from the reviewed one-window arming diff:
 // docs/ops/stage-plans/2026-09-22-generation-21-arming-diff.md. The normal

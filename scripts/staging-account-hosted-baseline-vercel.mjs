@@ -14,7 +14,7 @@ import {
   VERCEL_TEAM_ID,
 } from './staging-surface-activation-native-binding.mjs'
 
-export const HOSTED_BASELINE_VERCEL_BINDING_ENABLED = true
+export const HOSTED_BASELINE_VERCEL_BINDING_ENABLED = false
 export const HOSTED_BASELINE_VERCEL_ERROR = 'Staging hosted baseline Vercel binding unavailable'
 export const HOSTED_BASELINE_VERCEL_TARGET = Object.freeze({
   projectId: VERCEL_PROJECT_ID,

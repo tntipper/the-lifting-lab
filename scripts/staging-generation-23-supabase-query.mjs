@@ -6,7 +6,7 @@ import { consumeStagingGeneration23PreparedShutdownSql } from './staging-generat
 import { consumeStagingGeneration23BackendStateSql } from './staging-generation-23-backend-state.mjs'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_SUPABASE_QUERY_ENABLED = true
+export const STAGING_GENERATION_23_SUPABASE_QUERY_ENABLED = false
 export const ENDPOINT = Object.freeze({ hostname: 'api.supabase.com',
   path: `/v1/projects/${PROJECT_REF}/database/query`, method: 'POST' })
 const MAX_RESPONSE_BYTES = 65_536

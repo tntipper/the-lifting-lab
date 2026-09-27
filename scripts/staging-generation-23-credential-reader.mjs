@@ -1,7 +1,7 @@
 /** Disabled, exact three-selector Keychain reader for the supervised Gen23 child. */
 import { spawn } from 'node:child_process'
 
-export const STAGING_GENERATION_23_CREDENTIAL_READER_ENABLED = true
+export const STAGING_GENERATION_23_CREDENTIAL_READER_ENABLED = false
 export const GENERATION_23_SECURITY = '/usr/bin/security'
 const SELECTORS = Object.freeze({
   supabase: Object.freeze(['Supabase CLI', 'supabase']),

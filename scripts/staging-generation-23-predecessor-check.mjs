@@ -10,7 +10,7 @@ import { GENERATION } from './staging-generation-23-password-material.mjs'
 export const PREDECESSOR_EXPIRES_AT = '2026-09-27T21:11:37.000Z'
 export const PREDECESSOR_WINDOW_ID = 'f1688d28-70fa-42d1-bdda-9f1489ee4470'
 
-export const STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED = true
+export const STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED = false
 export const QUERY_ID = 'tll-staging-generation-23-predecessor-check/v1'
 const unavailable = () => { throw new Error('Generation 23 predecessor check unavailable') }
 const quote = value => `'${value.replaceAll("'", "''")}'`
