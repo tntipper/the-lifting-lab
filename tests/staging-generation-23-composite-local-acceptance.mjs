@@ -14,6 +14,8 @@ import { PROVIDER_IDENTIFIER, STAGING_BROKER_PROVIDER, STAGING_PROVIDER_TARGET,
 import { STAGING_PROVIDER_NAME } from '../scripts/staging-provider-broker-native-adapter.mjs'
 import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
 import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/staging-generation-23-surface-fixture.mjs'
+import { createStagingPreviewDeploymentJournal } from '../scripts/staging-surface-preview-deployment-journal.mjs'
+import { STAGING_SURFACE_TARGET } from '../scripts/staging-surface-activation-transport.mjs'
 
 const mode = process.argv.slice(2).join(' ')
 if (!['--run-offline-once', '--fail-first-setting-once', '--fail-inventory-branch-once',
@@ -62,9 +64,12 @@ const vercelReplacer = await arm('staging-generation-23-vercel-replacer.mjs',
   ]])
 const edgeReplacer = await arm('staging-generation-23-edge-replacer.mjs',
   'STAGING_GENERATION_23_EDGE_REPLACER_ENABLED')
+const previewBridge = await arm('staging-generation-23-preview-build-port.mjs',
+  'STAGING_GENERATION_23_PREVIEW_BUILD_PORT_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
 let existingCartFixtureStarted = false
-let databaseJournalDirectory, settingsDirectory, providerDirectory, syntheticToken, providerPort
+let databaseJournalDirectory, settingsDirectory, providerDirectory, previewDirectory,
+  syntheticToken, providerPort
 function ensureCartFixture() {
   if (run('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres']).trim() === 'false') {
     run('docker', ['start', 'tll-stage0-postgres'])
@@ -283,6 +288,7 @@ providerPort = providerPortModule.createStagingGeneration23ProviderPort({
 })
 const calls = []
 const phaseErrors = []
+let enabledPreviewJournal, heldPreviewJournal
 const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signal }) => {
   calls.push(phase)
   try {
@@ -406,6 +412,9 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.deepEqual(surface.events, ['edge:true', 'private:true', 'public:true', 'create',
         'edge:false', 'private:false', 'public:false', 'create'])
       assert.deepEqual(httpRequests, ['SETUP', 'READ_STATE', 'SHUTDOWN', 'READ_STATE', 'RETIRE'])
+      assert.equal(enabledPreviewJournal.read().phase, 'VERIFIED')
+      assert.equal(heldPreviewJournal.read().phase, 'VERIFIED')
+      assert.notEqual(enabledPreviewJournal.read().deploymentId, heldPreviewJournal.read().deploymentId)
       break
     default: throw Error('Unrecognised phase')
   }
@@ -417,7 +426,30 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
 }]))
 
   parent = new AbortController()
-  surfacePorts = surface.nativePorts(parent.signal)
+  previewDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-previews-'))
+  const enabledJournal = createStagingPreviewDeploymentJournal({
+    path: join(previewDirectory, 'enabled.json'), now: () => START })
+  const heldJournal = createStagingPreviewDeploymentJournal({
+    path: join(previewDirectory, 'held.json'), now: () => START })
+  enabledPreviewJournal = enabledJournal
+  heldPreviewJournal = heldJournal
+  const buildPort = previewBridge.createStagingGeneration23PreviewBuildPort({
+    enabledJournal, heldJournal,
+    async runBuild({ input, journal, signal }) {
+      assert.equal(signal, parent.signal)
+      const claim = journal.claim(input)
+      const dispatch = journal.dispatch(claim)
+      const identity = await surface.ports.createPreviewDeployment(STAGING_SURFACE_TARGET, input)
+      const accepted = journal.accepted(dispatch, identity.deploymentId)
+      journal.verified(accepted)
+      return { status: 'PROTECTED_PREVIEW_VERIFIED', deploymentId: identity.deploymentId,
+        immutableUrl: identity.immutableUrl, sourceCommit: identity.sourceCommit,
+        manifestSha256: identity.manifestSha256, customerEnabled: input.publicCustomer,
+        cartEnabled: input.publicCart }
+    },
+    readDeployment: (target, id) => surface.ports.readDeployment(target, id),
+  })
+  surfacePorts = surface.nativePorts(parent.signal, buildPort)
   const result = await rehearseStagingGeneration23WholeRun({ operations, now: Date.now,
     windowExpiresAt: database.expiresAt, signal: parent.signal })
   if (mode === '--fail-inventory-branch-once') {
@@ -492,7 +524,8 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     database: 'real_sql_lifecycle_injected_guarded_host', surface: 'native_adapter_injected_services',
     customer: 'real_local_tests_and_browser', provider: 'real_control_official_sdk_local_fetch',
     backendControls: 'local_fixture_and_gen23_sql_compatibility', settings: 'guarded_transports_local_http',
-    hostedPreview: 'not_tested', purchase: 'none', elapsedMs: result.elapsedMs }))
+    previewWorker: 'two_one_use_journals_simulated_worker', hostedPreview: 'not_tested',
+    purchase: 'none', elapsedMs: result.elapsedMs }))
   }
 } finally {
   if (existingCartFixtureStarted) {
@@ -501,7 +534,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
   database.dispose()
   providerPort?.dispose()
   syntheticToken?.fill(0)
-  for (const directory of [providerDirectory, settingsDirectory, databaseJournalDirectory]) {
+  for (const directory of [previewDirectory, providerDirectory, settingsDirectory, databaseJournalDirectory]) {
     if (directory) rmSync(directory, { recursive: true, force: true })
   }
 }

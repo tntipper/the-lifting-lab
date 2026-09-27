@@ -72,7 +72,7 @@ export function surfaceFixture({ losePublicReply = false } = {}) {
   const journal = action => createSurfaceActivationJournal({ path: join(mkdtempSync(
     join(tmpdir(), 'tll-gen23-surface-rehearsal-')), `${action}.json`),
   makeRunId: () => `reviewed-${action}-run` })
-  const nativePorts = signal => {
+  const nativePorts = (signal, { createDeployment } = {}) => {
     const pending = new Map()
     const write = async (args, bytes) => {
       assert.ok(args.includes('--project') && args.includes('the-lifting-lab'))
@@ -111,7 +111,9 @@ export function surfaceFixture({ losePublicReply = false } = {}) {
         const { project, scope, ...deploymentInput } = input
         assert.equal(project, 'the-lifting-lab')
         assert.equal(scope, 'my-lifting-lab-s-projects')
-        const identity = { ...await ports.createPreviewDeployment(target, deploymentInput) }
+        const identity = { ...await (createDeployment
+          ? createDeployment(target, input, { signal })
+          : ports.createPreviewDeployment(target, deploymentInput)) }
         delete identity.target
         return identity
       },
