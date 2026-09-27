@@ -10,6 +10,8 @@ const bypass = Buffer.from('preview-bypass-test-token')
 const deployment = Object.freeze({ deploymentId: 'dpl_held', immutableUrl: 'https://held-preview.vercel.app',
   sourceCommit: 'a'.repeat(40), manifestSha256: 'b'.repeat(64), ready: true,
   createdAt: new Date(nowMs - 1_000).toISOString() })
+const publishedDeployment = Object.freeze({ deploymentId: deployment.deploymentId, immutableUrl: deployment.immutableUrl,
+  sourceCommit: deployment.sourceCommit, ready: true, createdAt: deployment.createdAt })
 const alias = Object.freeze({ target: STAGING_SURFACE_TARGET, alias: STAGING_ALIAS,
   deploymentId: deployment.deploymentId, immutableUrl: deployment.immutableUrl })
 const source = Object.freeze({ status: 'SOURCE_PROOF_VERIFIED', sourceCommit: deployment.sourceCommit,
@@ -32,7 +34,7 @@ function fixture ({ mutate = value => value, response = inventory() } = {}) {
   const makeNative = ({ protectedFetch }) => ({
     async readPinnedRepository () { return mutate({ repoId: 1264363509, org: 'tntipper', repo: 'the-lifting-lab' }) },
     async resolveAlias (_target, request) { assert.deepEqual(request, { project: 'the-lifting-lab', scope: 'my-lifting-lab-s-projects', alias: STAGING_ALIAS, branch: 'codex/tll-integration' }); return mutate(alias) },
-    async readDeployment (_target, id) { assert.equal(id, deployment.deploymentId); return mutate(deployment) },
+    async readPublishedGitDeployment (_target, id) { assert.equal(id, deployment.deploymentId); return mutate(publishedDeployment) },
     async readVercelFlags () { assert.ok(protectedFetch); return mutate({ target: STAGING_SURFACE_TARGET, privateCustomer: false, privateCart: false, publicCustomer: false, publicCart: false }) },
     async readEdgeFlag () { return mutate({ target: STAGING_SURFACE_TARGET, functionName: 'customer-subject-broker', enabled: false }) },
     dispose () {},
@@ -67,11 +69,11 @@ test('fresh producer returns only the fixed held facts and exact checkout settin
 test('the default fixed Vercel binding accepts only the pinned repository, alias, deployment and held readiness replies', async () => {
   const preflightModule = await armed(), calls = []
   const project = { id: 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4', name: 'the-lifting-lab', accountId: 'team_gf7cgIkkoeMLtODFDDT5MrW4',
-    link: { type: 'github', repoId: 1264363509, repoOwnerId: 123, org: 'tntipper', repo: 'the-lifting-lab', productionBranch: 'main', sourceless: false } }
+    link: { type: 'github', repoId: 1264363509, repoOwnerId: 123, org: 'tntipper', repo: 'the-lifting-lab', productionBranch: 'main', sourceless: true } }
   const rawDeployment = { id: deployment.deploymentId, url: 'held-preview.vercel.app', projectId: project.id, ownerId: project.accountId,
     readyState: 'READY', target: null, createdAt: nowMs - 1_000,
     gitSource: { type: 'github', repoId: 1264363509, ref: 'codex/tll-integration', sha: deployment.sourceCommit },
-    meta: { githubCommitRef: 'codex/tll-integration', githubCommitSha: deployment.sourceCommit, tllManifestSha256: deployment.manifestSha256 } }
+    meta: { githubCommitRef: 'codex/tll-integration', githubCommitSha: deployment.sourceCommit } }
   const fetch = async (url, options) => {
     calls.push({ url, options })
     if (url.includes('/v9/projects/')) return new Response(JSON.stringify(project), { status: 200 })

@@ -41,7 +41,7 @@ test('read-only deployment preflight checks the fixed connected GitHub repositor
   const calls = []
   const project = { id: VERCEL_PROJECT_ID, name: 'the-lifting-lab', accountId: VERCEL_TEAM_ID,
     link: { type: 'github', repoId: 1264363509, repoOwnerId: 12345, org: 'tntipper',
-      repo: 'the-lifting-lab', productionBranch: 'main', sourceless: false } }
+      repo: 'the-lifting-lab', productionBranch: 'main', sourceless: true } }
   const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
     fetch: async (url, options) => { calls.push({ url, options }); return jsonResponse(200, project, url) } })
   const expected = { repoId: 1264363509, org: 'tntipper', repo: 'the-lifting-lab' }
@@ -63,11 +63,11 @@ test('deployment preflight rejects a changed repository, project, or aborted sig
       repo: 'the-lifting-lab', productionBranch: 'main', sourceless: false } }
   for (const changed of [
     { ...base, link: { ...base.link, repoId: 999 } },
-    { ...base, link: { ...base.link, sourceless: true } },
+    { ...base, link: { ...base.link, repo: 'other-repository' } },
     { ...base, accountId: 'team_other' },
   ]) {
     const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
-      fetch: async (url) => jsonResponse(200, changed, url) })
+      fetch: async url => jsonResponse(200, changed, url) })
     await assert.rejects(host.readPinnedRepository(signal), /unavailable/)
   }
   const aborted = new AbortController(); aborted.abort()
@@ -101,7 +101,7 @@ test('Edge read permits only the two secret-free runtime protocol proofs', async
   const wrongStatus = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }), fetch: async (url) => jsonResponse(200, { error: 'invalid_client' }, url) })
   await assert.rejects(wrongStatus.readEdgeFlag(STAGING_SURFACE_TARGET, 'customer-subject-broker', { signal }), /unavailable/)
   const configurationFault = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
-    fetch: async url => new Response(JSON.stringify({ error: 'temporarily_unavailable' }), { status: 503, headers: { 'content-type': 'application/json' } }) })
+    fetch: async () => new Response(JSON.stringify({ error: 'temporarily_unavailable' }), { status: 503, headers: { 'content-type': 'application/json' } }) })
   await assert.rejects(configurationFault.readEdgeFlag(STAGING_SURFACE_TARGET, 'customer-subject-broker', { signal }), /unavailable/)
 })
 
@@ -120,6 +120,28 @@ test('alias, readiness and deployment calls use fixed URLs, headers, and reject 
   assert.equal(deploymentCall.url, `https://api.vercel.com/v13/deployments/${deploymentId}?withGitRepoInfo=true&teamId=${VERCEL_TEAM_ID}`)
   await assert.rejects(ports.readDeployment({ ...STAGING_SURFACE_TARGET, projectRef: 'wrhgscovsgsudtedbljr' }, deploymentId, { signal }), /unavailable/)
   await assert.rejects(ports.createDeployment(), /unavailable/)
+})
+
+test('published Git Preview accepts Vercel metadata without a custom manifest but still pins its Git source', async () => {
+  const published = { ...deployment, meta: { githubCommitRef: 'codex/tll-integration', githubCommitSha: 'a'.repeat(40) } }
+  const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async url => jsonResponse(200, published, url) })
+  assert.deepEqual(await host.readPublishedGitDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal }), {
+    deploymentId, immutableUrl: `https://${deployment.url}`, sourceCommit: 'a'.repeat(40), ready: true,
+    createdAt: new Date(deployment.createdAt).toISOString(),
+  })
+  await assert.rejects(host.readDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal }), /unavailable/)
+  const wrongGit = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async url => jsonResponse(200, { ...published, gitSource: { ...published.gitSource, repoId: 999 } }, url) })
+  await assert.rejects(wrongGit.readPublishedGitDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal }), /unavailable/)
+  for (const meta of [
+    { githubCommitSha: 'a'.repeat(40) },
+    { githubCommitRef: 'main', githubCommitSha: 'a'.repeat(40) },
+  ]) {
+    const wrongRef = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+      fetch: async url => jsonResponse(200, { ...published, meta }, url) })
+    await assert.rejects(wrongRef.readPublishedGitDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal }), /unavailable/)
+  }
 })
 
 test('protected readiness transport is isolated from Vercel management requests', async () => {

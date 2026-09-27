@@ -98,12 +98,13 @@ function edgeCommand(enabled) {
     input: Buffer.from(`${EDGE_FLAG_NAME}=${enabled ? 'true' : 'false'}\n`),
   })
 }
-function sourceMetadata(value) {
+function sourceMetadata(value, requireManifest = true) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || value.githubCommitRef !== STAGING_BRANCH
-    || !/^[a-f0-9]{40}$/.test(value.githubCommitSha ?? '') || !/^[a-f0-9]{64}$/.test(value.tllManifestSha256 ?? '')) unavailable()
+    || !/^[a-f0-9]{40}$/.test(value.githubCommitSha ?? '')
+    || (requireManifest && !/^[a-f0-9]{64}$/.test(value.tllManifestSha256 ?? ''))) unavailable()
   return value
 }
-function deploymentReceipt(value, deploymentId) {
+function deploymentReceipt(value, deploymentId, requireManifest = true) {
   if (!value || typeof value !== 'object' || Array.isArray(value)
     || value.id !== deploymentId || !validUrl(`https://${value.url ?? ''}`) || value.projectId !== VERCEL_PROJECT_ID
     || value.ownerId !== VERCEL_TEAM_ID || value.readyState !== 'READY' || value.target !== null
@@ -111,10 +112,11 @@ function deploymentReceipt(value, deploymentId) {
     || Array.isArray(value.gitSource) || value.gitSource.type !== 'github'
     || !pinnedRepositoryId(value.gitSource.repoId) || value.gitSource.ref !== STAGING_BRANCH
     || !/^[a-f0-9]{40}$/.test(value.gitSource.sha ?? '')) unavailable()
-  const meta = sourceMetadata(value.meta)
+  const meta = sourceMetadata(value.meta, requireManifest)
   if (meta.githubCommitSha !== value.gitSource.sha) unavailable()
   return Object.freeze({ deploymentId, immutableUrl: `https://${value.url}`,
-    sourceCommit: meta.githubCommitSha, manifestSha256: meta.tllManifestSha256, ready: true,
+    sourceCommit: meta.githubCommitSha,
+    ...(requireManifest ? { manifestSha256: meta.tllManifestSha256 } : {}), ready: true,
     createdAt: new Date(value.createdAt).toISOString() })
 }
 function aliasReceipt(value) {
@@ -151,8 +153,11 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher,
       reader = createStagingAccountHostedBaselineVercelBinding({ fetch: fetcher, vercelToken: token })
       const project = await reader.readProject({ signal })
       const repository = project.repository
+      // `sourceless` is a Vercel project flag, not proof that this Git link is
+      // disconnected. The pinned repository identity and deployment Git SHA
+      // are checked independently below.
       if (repository.repoId !== 1264363509 || repository.org !== 'tntipper'
-        || repository.repo !== 'the-lifting-lab' || repository.sourceless !== false) unavailable()
+        || repository.repo !== 'the-lifting-lab') unavailable()
       return Object.freeze({ repoId: repository.repoId, org: repository.org, repo: repository.repo })
     } catch { unavailable() } finally { reader?.dispose() }
   }
@@ -252,6 +257,17 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher,
       const url = `${VERCEL_API}/v13/deployments/${deploymentId}?withGitRepoInfo=true&teamId=${VERCEL_TEAM_ID}`
       const value = await fetchJson(url, Object.freeze({ method: 'GET', redirect: 'error', headers: headersForVercel(token), signal }))
       const receipt = deploymentReceipt(value, deploymentId); deployments.set(deploymentId, receipt.immutableUrl)
+      return receipt
+    },
+    // Git-triggered Preview builds do not carry our custom manifest metadata.
+    // This read verifies their project, repository, branch and commit; the
+    // caller must bind that commit to a local manifest source proof.
+    async readPublishedGitDeployment(target, deploymentId, { signal } = {}) {
+      validateTarget(target); validateSignal(signal); if (!validDeploymentId(deploymentId)) unavailable()
+      const url = `${VERCEL_API}/v13/deployments/${deploymentId}?withGitRepoInfo=true&teamId=${VERCEL_TEAM_ID}`
+      const value = await fetchJson(url, Object.freeze({ method: 'GET', redirect: 'error', headers: headersForVercel(token), signal }))
+      const receipt = deploymentReceipt(value, deploymentId, false)
+      deployments.set(deploymentId, receipt.immutableUrl)
       return receipt
     },
     resolveAlias,

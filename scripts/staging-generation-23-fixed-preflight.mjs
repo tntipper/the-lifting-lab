@@ -81,14 +81,14 @@ function heldDeployment (alias, deployment, sourceProof, now) {
   if (!exact(alias, ['target', 'alias', 'deploymentId', 'immutableUrl'])
     || alias.target !== STAGING_SURFACE_TARGET || alias.alias !== STAGING_ALIAS || !deploymentId(alias.deploymentId)
     || !immutable(alias.immutableUrl)
-    || !exact(deployment, ['deploymentId', 'immutableUrl', 'sourceCommit', 'manifestSha256', 'ready', 'createdAt'])
+    || !exact(deployment, ['deploymentId', 'immutableUrl', 'sourceCommit', 'ready', 'createdAt'])
     || deployment.deploymentId !== alias.deploymentId || deployment.immutableUrl !== alias.immutableUrl
-    || !sha(deployment.sourceCommit) || !digest(deployment.manifestSha256) || deployment.ready !== true || !iso(deployment.createdAt)
+    || !sha(deployment.sourceCommit) || deployment.ready !== true || !iso(deployment.createdAt)
     || !validSourceProof(sourceProof) || sourceProof.sourceCommit !== deployment.sourceCommit
-    || sourceProof.manifestSha256 !== deployment.manifestSha256 || Date.parse(deployment.createdAt) > now) unavailable()
+    || Date.parse(deployment.createdAt) > now) unavailable()
   return Object.freeze({ target: STAGING_SURFACE_TARGET, deploymentId: deployment.deploymentId,
     immutableUrl: deployment.immutableUrl, sourceCommit: deployment.sourceCommit,
-    manifestSha256: deployment.manifestSha256, ready: true, createdAt: deployment.createdAt })
+    manifestSha256: sourceProof.manifestSha256, ready: true, createdAt: deployment.createdAt })
 }
 
 function heldRuntime (web, edge) {
@@ -127,7 +127,7 @@ export function createStagingGeneration23FixedPreflight ({ fetch: fetcher, verce
       try {
         initial = makeNative({ vercelToken: Buffer.from(ownedVercel), fetch: fetcher,
           runCli: async () => { unavailable() } })
-        if (!initial || ['readPinnedRepository', 'resolveAlias', 'readDeployment'].some(name => typeof initial[name] !== 'function')) unavailable()
+        if (!initial || ['readPinnedRepository', 'resolveAlias', 'readPublishedGitDeployment'].some(name => typeof initial[name] !== 'function')) unavailable()
         const [repository, sourceProof] = await Promise.all([
           initial.readPinnedRepository(signal), readSourceProof({ signal }),
         ])
@@ -135,7 +135,7 @@ export function createStagingGeneration23FixedPreflight ({ fetch: fetcher, verce
           || repository.org !== 'tntipper' || repository.repo !== 'the-lifting-lab' || !validSourceProof(sourceProof)) unavailable()
         const alias = await initial.resolveAlias(STAGING_SURFACE_TARGET,
           Object.freeze({ project: 'the-lifting-lab', scope: 'my-lifting-lab-s-projects', alias: STAGING_ALIAS, branch: STAGING_BRANCH }), { signal })
-        const deployment = await initial.readDeployment(STAGING_SURFACE_TARGET, alias.deploymentId, { signal })
+        const deployment = await initial.readPublishedGitDeployment(STAGING_SURFACE_TARGET, alias.deploymentId, { signal })
         const heldEvidence = heldDeployment(alias, deployment, sourceProof, now())
         protectedReader = makeProtected({ fetch: fetcher, bypass: Buffer.from(ownedBypass),
           immutableUrl: heldEvidence.immutableUrl, maxReads: 1 })

@@ -977,7 +977,7 @@
       },
       {
         "path": "scripts/staging-surface-activation-native-binding.mjs",
-        "sha256": "3e092a947aaeb9d0c007bbb511e39b34a01d386e228e02834807c3ad8223c9e0"
+        "sha256": "888e7a7d4366978b27ef9316888727d2bc0ac800504b554e75e0fb9c9f395c0d"
       },
       {
         "path": "scripts/staging-surface-preview-deployment-request.mjs",
@@ -1317,7 +1317,7 @@
       },
       {
         "path": "scripts/staging-generation-23-fixed-preflight.mjs",
-        "sha256": "e46d585cec16e66e8036929c9bf49659a8a328b612cd2d366dbbcb874d5abb09"
+        "sha256": "2df5414d6e366d79e7fd786f4644b5c6c2360c228018e1fdb68c5dc9a1ec3576"
       },
       {
         "path": "scripts/staging-generation-23-fixed-worker-assembly.mjs",
@@ -1741,7 +1741,7 @@
       },
       {
         "path": "tests/staging-surface-activation-native-binding.test.mjs",
-        "sha256": "8c919f889dc4d41bbc92eccbd95a4258c9a826b578cde386d7df0f5e1246a5c9"
+        "sha256": "38470a9b7bb21427c17deb1de448ec055fa55d587f9cb3d27b14d676b41c2d15"
       },
       {
         "path": "tests/staging-surface-preview-deployment-request.test.mjs",
@@ -2049,7 +2049,7 @@
       },
       {
         "path": "tests/staging-generation-23-fixed-preflight.test.mjs",
-        "sha256": "e881020f43aa57a13ce6758a55e73d7524b97d3a296fa9581867c2f76e3c0b0f"
+        "sha256": "c2382fa984f2228b606bd399253dfcc9c900690fa2b3535ef7ae6b17e793bf29"
       },
       {
         "path": "tests/staging-generation-23-fixed-worker-assembly.test.mjs",
