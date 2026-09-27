@@ -1,6 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { createServer } from 'node:http'
+import { once } from 'node:events'
 import { chromium } from 'playwright'
 import { observeStagingCheckout } from '../scripts/staging-generation-23-checkout-observer.mjs'
 
@@ -17,20 +19,40 @@ async function armed() {
     'STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED = true')).toString('base64')}`)
 }
 
+// The networked browser fixture uses only a loopback server. The transformed
+// scheme/port are test-only; the production URL checks are exercised above.
+async function armedLoopback() {
+  const source = await readFile(new URL('../scripts/staging-generation-23-checkout-observer.mjs', import.meta.url), 'utf8')
+  const local = source.replace('STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED = false',
+    'STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED = true')
+    .replace(`const SHOP = '${SHOP}'`, "const SHOP = '127.0.0.1'")
+    .replaceAll("'https:'", "'http:'")
+    .replaceAll('|| url.port', '|| false')
+    .replaceAll('&& !url.port', '&& true')
+    .replaceAll('|| final.port', '|| false')
+  return import(`data:text/javascript;base64,${Buffer.from(local).toString('base64')}`)
+}
+
+async function loopback(handler) {
+  const server = createServer(handler)
+  server.listen(0, '127.0.0.1')
+  await once(server, 'listening')
+  return { url: `http://127.0.0.1:${server.address().port}`,
+    close: () => new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve())) }
+}
+
 function page() {
   let handler, current = CHECKOUT
   const events = []
-  const context = { route: async (_pattern, callback) => { handler = callback } }
+  const context = { route: async (_pattern, callback) => { handler = callback },
+    request: { get: async () => ({ status: () => 200, dispose: async () => {} }) } }
   const request = async (url, method = 'GET', navigation = false) => {
     const route = {
       request: () => ({ url: () => url, method: () => method, isNavigationRequest: () => navigation,
         headers: () => ({ referer: CHECKOUT, accept: 'text/html' }) }),
       abort: async () => { events.push(`blocked:${method}:${url}`) },
-      fallback: async options => {
-        assert.equal(options.headers.referer, undefined)
-        assert.equal(options.headers.accept, 'text/html')
-        events.push(`allowed:${method}:${url}`)
-      },
+      fetch: async options => { assert.equal(options.maxRedirects, 0); return { status: () => 200 } },
+      fulfill: async () => { events.push(`allowed:${method}:${url}`) },
     }
     await handler(route)
   }
@@ -69,6 +91,7 @@ test('wrong shop, checkout syntax, URL extras and expired deadline stop before b
     `http://${SHOP}/cart/c/syntheticCheckout123`,
     `https://${SHOP}/checkout`,
     `${CHECKOUT}?token=secret`,
+    `${CHECKOUT}?key=one&key=two`,
     `${CHECKOUT}#submit`,
     `https://user:pass@${SHOP}/cart/c/syntheticCheckout123`,
   ]) {
@@ -82,6 +105,56 @@ test('wrong shop, checkout syntax, URL extras and expired deadline stop before b
   assert.deepEqual(browser.events, [])
 })
 
+test('real browser observes a loopback checkout redirect at its final address without sending a POST',
+  { timeout: 30_000 }, async () => {
+    const { observeStagingCheckout: observe } = await armedLoopback()
+    const seen = []
+    const fixture = await loopback((request, response) => {
+      seen.push(`${request.method} ${request.url}`)
+      if (request.url.startsWith('/cart/c/')) {
+        response.writeHead(302, { location: '/checkouts/cn/syntheticCheckout123' }); response.end(); return
+      }
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+      response.end('<!doctype html><body>£12.00<button id="submit">Place order</button><button id="popup">New tab</button><script>document.getElementById("submit").onclick=()=>fetch(location.href,{method:"POST"}).catch(()=>{});document.getElementById("popup").onclick=()=>window.open(location.href)</script></body>')
+    })
+    const browser = await chromium.launch({ headless: true, channel: 'chrome' })
+    try {
+      const context = await browser.newContext({ serviceWorkers: 'block' }), page = await context.newPage()
+      const initial = `${fixture.url}/cart/c/syntheticCheckout123?key=syntheticSecret123`
+      const final = `${fixture.url}/checkouts/cn/syntheticCheckout123`
+      assert.deepEqual(await observe({ page, checkoutUrl: initial, signal, deadlineAt: deadlineAt() }),
+        { status: 'STAGING_CHECKOUT_OBSERVED_NO_MUTATION', shop: '127.0.0.1' })
+      assert.equal(page.url(), final)
+      assert.match(await page.locator('body').textContent(), /£12\.00/)
+      await page.locator('#submit').click()
+      await page.waitForTimeout(100)
+      const popupPromise = context.waitForEvent('page')
+      await page.locator('#popup').click()
+      const popup = await popupPromise
+      await popup.locator('#submit').waitFor()
+      assert.equal(seen.filter(item => item.startsWith('POST')).length, 0)
+      await context.close()
+    } finally { await browser.close(); await fixture.close() }
+  })
+
+test('a forbidden checkout redirect is rejected before its destination receives any request', async () => {
+  const { observeStagingCheckout: observe } = await armedLoopback()
+  let reached = 0
+  const forbidden = await loopback((_request, response) => { reached++; response.end('forbidden') })
+  const source = await loopback((_request, response) => {
+    response.writeHead(302, { location: `http://localhost:${new URL(forbidden.url).port}/checkouts/cn/other` })
+    response.end()
+  })
+  const browser = await chromium.launch({ headless: true, channel: 'chrome' })
+  try {
+    const context = await browser.newContext({ serviceWorkers: 'block' }), page = await context.newPage()
+    await assert.rejects(observe({ page, checkoutUrl: `${source.url}/cart/c/syntheticCheckout123`,
+      signal, deadlineAt: deadlineAt() }), /unavailable/)
+    assert.equal(reached, 0)
+    await context.close()
+  } finally { await browser.close(); await source.close(); await forbidden.close() }
+})
+
 test('an HTTP error at the pinned checkout cannot count as an observed handoff', async () => {
   const { observeStagingCheckout: observe } = await armed()
   const browser = page()
@@ -89,34 +162,3 @@ test('an HTTP error at the pinned checkout cannot count as an observed handoff',
   await assert.rejects(observe({ page: browser, checkoutUrl: CHECKOUT,
     signal, deadlineAt: deadlineAt() }), /unavailable/)
 })
-
-test('real browser intercepts a synthetic checkout submit before any network request',
-  { timeout: 30_000 }, async () => {
-    const { observeStagingCheckout: observe } = await armed()
-    const browser = await chromium.launch({ headless: true, channel: 'chrome' })
-    try {
-      const context = await browser.newContext({ serviceWorkers: 'block' })
-      const seen = []
-      await context.route('**/*', async route => {
-        seen.push(`${route.request().method()} ${route.request().url()}`)
-        if (route.request().method() !== 'GET' || route.request().url() !== CHECKOUT)
-          throw Error('Unsafe request reached the local fixture')
-        await route.fulfill({ status: 200, contentType: 'text/html', body:
-          '<!doctype html><html><body><button id="submit">Place order</button><button id="popup">New tab</button><script>document.getElementById("submit").onclick=()=>fetch(location.href,{method:"POST"}).catch(()=>{});document.getElementById("popup").onclick=()=>window.open(location.href);if(window.opener)fetch(location.href,{method:"POST"}).catch(()=>{});</script></body></html>' })
-      })
-      const page = await context.newPage()
-      assert.deepEqual(await observe({ page, checkoutUrl: CHECKOUT, signal, deadlineAt: deadlineAt() }),
-        { status: 'STAGING_CHECKOUT_OBSERVED_NO_MUTATION', shop: SHOP })
-      await page.locator('#submit').click()
-      await page.waitForTimeout(100)
-      assert.deepEqual(seen, [`GET ${CHECKOUT}`])
-      const popupPromise=context.waitForEvent('page')
-      await page.locator('#popup').click()
-      const popup=await popupPromise
-      await popup.locator('#submit').waitFor()
-      await page.waitForTimeout(100)
-      assert.deepEqual(seen, [`GET ${CHECKOUT}`,`GET ${CHECKOUT}`], 'new-tab POST must be blocked before reaching fixture')
-      await popup.close()
-      await context.close()
-    } finally { await browser.close() }
-  })

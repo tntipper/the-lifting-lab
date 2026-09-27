@@ -55,8 +55,9 @@ test('held Preview has a fresh three-read allowance for the final independent ch
 })
 
 function fixture({ price = 1999, finalCheckoutOn = false, finalSurfaceStatus = 'FINAL_SURFACES_HELD_VERIFIED',
-  clock = { value: nowMs }, driftHeld = false } = {}) {
+  clock = { value: nowMs }, driftHeld = false, driftOwnerAlias = false } = {}) {
   const calls = [], journals = { enableSurface: {}, freezeSurface: {}, checkoutEnable: {}, checkoutFreeze: {} }
+  let aliasDeploymentId = 'dpl_heldA'
   const identity = enabled => ({ deploymentId: enabled ? 'dpl_enabledA' : 'dpl_frozenA', immutableUrl: enabled ? 'https://enabled-a.vercel.app' : 'https://frozen-a.vercel.app', ...requirements, ready: true, createdAt: new Date(nowMs).toISOString() })
   const factories = {
     createProtectedFetch: ({ immutableUrl }) => ({ fetch: async () => { throw Error(`unexpected protected read ${immutableUrl}`) }, dispose() { calls.push(`dispose:${immutableUrl}`) } }),
@@ -67,14 +68,23 @@ function fixture({ price = 1999, finalCheckoutOn = false, finalSurfaceStatus = '
       return receipt
     }, resolveAlias: async () => ({ deploymentId: 'dpl_heldA', immutableUrl: held.immutableUrl }) }),
     createPreviewPort: () => ({ createDeployment: async () => identity(true) }),
-    createPorts: () => ({ readSurfaceFlags: async () => ({}) }),
+    createPorts: () => ({ readSurfaceFlags: async () => ({}),
+      resolveAlias: async () => {
+        calls.push('alias:read')
+        const id = driftOwnerAlias ? 'dpl_drifted' : aliasDeploymentId
+        return { alias: STAGING_ALIAS, deploymentId: id,
+          immutableUrl: id === 'dpl_enabledA' ? identity(true).immutableUrl : held.immutableUrl }
+      } }),
     createCheckoutPort: () => ({ read: async () => ({ ...target, enabled: finalCheckoutOn }), write: async () => ({ ...target, enabled: true }), dispose() { calls.push('checkout-dispose') } }),
     changeCheckoutSetting: async ({ action }) => { calls.push(`checkout:${action}`); return { status: action === 'ENABLE' ? 'CHECKOUT_SETTING_ENABLED_VERIFIED' : 'CHECKOUT_SETTING_HELD_VERIFIED' } },
-    enableSurfaces: async () => { calls.push('surface:enable'); return { status: 'SURFACES_ENABLED_VERIFIED', deployment: identity(true) } },
+    enableSurfaces: async () => { calls.push('surface:enable'); aliasDeploymentId = 'dpl_enabledA';
+      return { status: 'SURFACES_ENABLED_VERIFIED', deployment: identity(true) } },
     freezeSurfaces: async () => { calls.push('surface:freeze'); return { status: 'SURFACES_HELD_VERIFIED', deployment: identity(false) } },
     readFinalHeld: async () => { calls.push('surface:final-read'); return { status: finalSurfaceStatus, deployment: identity(false) } },
     createCheckoutReadinessReader: ({ deploymentId }) => ({ read: async ({ expected }) => { calls.push(`runtime:${deploymentId}:${expected}`); return { status: 'CHECKOUT_RUNTIME_VERIFIED', checkoutHandoffEnabled: expected } }, dispose() { calls.push(`runtime-dispose:${deploymentId}`) } }),
-    runOwnerJourney: async input => { calls.push(`owner:${input.expectedUnitPricePence}`); return { status: 'OWNER_JOURNEY_VERIFIED_NO_PURCHASE' } },
+    runOwnerJourney: async input => { assert.equal(input.applicationOrigin, STAGING_ALIAS)
+      await input.verifyAlias({ signal: input.signal })
+      calls.push(`owner:${input.expectedUnitPricePence}`); return { status: 'OWNER_JOURNEY_VERIFIED_NO_PURCHASE' } },
   }
   const build = armed.createStagingGeneration23SurfaceFactory({ credentials, fetch: async () => {}, runCli: async () => {}, execute: async () => {},
     preflight: { heldEvidence: held, requirements }, preview: { enabledJournal: {}, heldJournal: {}, runBuild: async () => {} }, journals,
@@ -115,8 +125,17 @@ test('connects fresh Shopify price, checkout setting, enabled Preview, owner che
   assert.equal((await f.ports.freezeSurface({ signal, deployment: on.deployment })).status, 'SURFACES_HELD_VERIFIED')
   assert.deepEqual(f.calls.filter(item => !item.startsWith('dispose:')), [
     'checkout:ENABLE', 'checkout-dispose', 'surface:enable', 'runtime:dpl_enabledA:true', 'runtime-dispose:dpl_enabledA',
-    'owner:1999', 'checkout:FREEZE', 'checkout-dispose', 'surface:freeze', 'runtime:dpl_frozenA:false', 'runtime-dispose:dpl_frozenA',
+    'alias:read', 'owner:1999', 'checkout:FREEZE', 'checkout-dispose', 'surface:freeze', 'runtime:dpl_frozenA:false', 'runtime-dispose:dpl_frozenA',
   ])
+})
+
+test('owner browser cannot start if the registered alias points to another deployment', async () => {
+  const f = fixture({ driftOwnerAlias: true })
+  const on = await f.ports.enableSurface({ signal })
+  await assert.rejects(f.ports.runOwnerJourney({ signal,
+    phaseDeadlineAt: new Date(nowMs + 60_000).toISOString(), deployment: on.deployment }), /unavailable/)
+  assert.equal(f.calls.includes('owner:1999'), false)
+  f.dispose()
 })
 
 test('final surface read detects held alias drift and a checkout switch left on', async () => {

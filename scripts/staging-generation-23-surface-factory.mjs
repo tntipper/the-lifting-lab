@@ -210,8 +210,17 @@ export function createStagingGeneration23SurfaceFactory({ credentials, fetch: fe
             || !Number.isSafeInteger(cachedPrice)) unavailable()
           // Do not use a hard-coded product price. The price was read from the
           // named staging Shopify variant immediately before surface activation.
-          return ownerJourney({ immutableUrl: activeDeployment.immutableUrl, bypass: credentials.previewBypass,
-            expectedUnitPricePence: cachedPrice, signal, deadlineAt: phaseDeadlineAt })
+          const verifyAlias = async ({ signal: checkSignal } = {}) => {
+            requireLive(checkSignal)
+            const current = await ports.resolveAlias(STAGING_SURFACE_TARGET, STAGING_SURFACE_TARGET.alias)
+            if (current?.alias !== STAGING_SURFACE_TARGET.alias
+              || current?.deploymentId !== activeDeployment.deploymentId
+              || current?.immutableUrl !== activeDeployment.immutableUrl) unavailable()
+          }
+          return ownerJourney({ immutableUrl: activeDeployment.immutableUrl,
+            applicationOrigin: STAGING_SURFACE_TARGET.alias, verifyAlias,
+            bypass: credentials.previewBypass, expectedUnitPricePence: cachedPrice,
+            signal, deadlineAt: phaseDeadlineAt })
         },
         async freezeSurface({ signal, deployment: requested } = {}) {
           requireLive(signal)

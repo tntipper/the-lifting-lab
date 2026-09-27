@@ -76,7 +76,9 @@ test('checkout handoff reads only the pinned staging cart and rejects unsafe des
     },
   })
   assert.equal((await storefront.readCheckoutHandoff(RAW_CART)).url, checkout)
-  assert.equal(calls.length, 1)
+  target = `${checkout}?key=syntheticSecret123`
+  assert.equal((await storefront.readCheckoutHandoff(RAW_CART)).url, target)
+  assert.equal(calls.length, 2)
   assert.equal(calls[0].input.method, 'POST')
   for (const unsafe of [
     'https://evil.example/cart/c/syntheticCheckout123',
@@ -85,11 +87,12 @@ test('checkout handoff reads only the pinned staging cart and rejects unsafe des
     `https://${sf.STAGING_CART_SHOP}/account/login`,
     `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123#payment`,
     `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123?return_to=https://evil.example`,
+    `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123?key=one&key=two`,
   ]) {
     target = unsafe
     await assert.rejects(storefront.readCheckoutHandoff(RAW_CART), sf.CartProviderFailure)
   }
-  assert.equal(calls.length, 7)
+  assert.equal(calls.length, 9)
 })
 
 function fixture(faults = {}) {

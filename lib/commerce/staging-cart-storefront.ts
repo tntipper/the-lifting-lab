@@ -53,8 +53,10 @@ function stagingCheckoutUrl(value: unknown): string {
   const raw = string(value, 4096)
   let url: URL
   try { url = new URL(raw) } catch { throw new CartProviderFailure() }
+  const key = url.searchParams.get('key')
   requireValue(url.protocol === 'https:' && url.hostname === STAGING_CART_SHOP
-    && !url.username && !url.password && !url.port && !url.hash && !url.search
+    && !url.username && !url.password && !url.port && !url.hash
+    && (!url.search || url.searchParams.size === 1 && key !== null && /^[A-Za-z0-9_-]{1,128}$/.test(key))
     && /^\/cart\/c\/[A-Za-z0-9_-]+\/?$/.test(url.pathname))
   return raw
 }
