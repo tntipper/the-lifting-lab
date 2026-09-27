@@ -34,6 +34,45 @@ const HMAC = 'a'.repeat(64), ACTOR = '70000000-0000-4000-8000-000000000001'
 const jsonResponse = value => new Response(JSON.stringify(value), { status: 200, headers: { 'content-type': 'application/json', 'x-shopify-api-version': sf.STOREFRONT_VERSION } })
 const hash = value => createHash('sha256').update(value).digest('hex')
 
+test('checkout handoff reads only the pinned staging cart and rejects unsafe destinations', async () => {
+  const checkout = `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123`
+  const makeCart = url => ({ id: RAW_CART, checkoutUrl: url, totalQuantity: 1,
+    cost: { subtotalAmount: { amount: '12.00', currencyCode: 'GBP' } },
+    lines: { pageInfo: { hasNextPage: false }, nodes: [{ id: LINE, quantity: 1,
+      cost: { totalAmount: { amount: '12.00', currencyCode: 'GBP' } },
+      merchandise: { id: sf.STAGING_SHOPIFY_VARIANT, availableForSale: true,
+        price: { amount: '12.00', currencyCode: 'GBP' }, product: { id: sf.STAGING_SHOPIFY_PRODUCT } },
+    }] },
+  })
+  const calls = []
+  let target = checkout
+  const storefront = sf.createStagingStorefront({ enabled: true, environment: 'staging',
+    shop: sf.STAGING_CART_SHOP, privateToken: 'synthetic-private-token',
+    transport: async (endpoint, input) => {
+      calls.push({ endpoint, input })
+      const body = JSON.parse(input.body)
+      assert.match(body.query, /^query TllStagingCheckoutHandoff/)
+      assert.equal(body.variables.id, RAW_CART)
+      return jsonResponse({ data: { cart: makeCart(target) } })
+    },
+  })
+  assert.equal(await storefront.readCheckoutUrl(RAW_CART), checkout)
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].input.method, 'POST')
+  for (const unsafe of [
+    'https://evil.example/cart/c/syntheticCheckout123',
+    `http://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123`,
+    `https://${sf.STAGING_CART_SHOP}.evil.example/cart/c/syntheticCheckout123`,
+    `https://${sf.STAGING_CART_SHOP}/account/login`,
+    `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123#payment`,
+    `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123?return_to=https://evil.example`,
+  ]) {
+    target = unsafe
+    await assert.rejects(storefront.readCheckoutUrl(RAW_CART), sf.CartProviderFailure)
+  }
+  assert.equal(calls.length, 7)
+})
+
 function fixture(faults = {}) {
   const rows = new Map(), ops = new Map(), transitionRows = new Map(), calls = []
   let count = 0, actor = null, authReads = 0

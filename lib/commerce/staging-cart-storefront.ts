@@ -1,7 +1,7 @@
 import { isIP } from 'node:net'
 import { cartJson } from './staging-cart-json'
 
-/** Fixed synthetic Storefront operations. No checkout URL, buyer identity or credentials in projections. */
+/** Fixed synthetic Storefront operations. Checkout URLs remain server-only. */
 export const STAGING_CART_SHOP = 'tll-integration-staging.myshopify.com'
 export const STAGING_CART_PRODUCT = '40000000-0000-4000-8000-000000000001'
 export const STAGING_SHOPIFY_PRODUCT = 'gid://shopify/Product/15768467472724'
@@ -15,6 +15,7 @@ export type StorefrontCart = {
   read(id: string): Promise<CartObservation>
   create(quantity: number): Promise<CartObservation>
   set(previous: CartObservation, quantity: number): Promise<CartObservation>
+  readCheckoutUrl(id: string): Promise<string>
 }
 export class CartProviderFailure extends Error {
   constructor() { super('Staging cart provider result unavailable or uncertain') }
@@ -40,11 +41,21 @@ const FIELDS = `id totalQuantity cost { subtotalAmount { amount currencyCode } }
   } pageInfo { hasNextPage } }`
 const QUERIES = {
   read: `query TllStagingCart($id: ID!) { cart(id: $id) { ${FIELDS} } }`,
+  checkout: `query TllStagingCheckoutHandoff($id: ID!) { cart(id: $id) { ${FIELDS} checkoutUrl } }`,
   variant: `query TllStagingVariant { productVariant: node(id: "${STAGING_SHOPIFY_VARIANT}") { ... on ProductVariant { id availableForSale price { amount currencyCode } product { id } } } }`,
   create: `mutation TllStagingCartCreate($input: CartInput!) { cartCreate(input: $input) { cart { ${FIELDS} } userErrors { code } warnings { code } } }`,
   add: `mutation TllStagingCartAdd($cartId: ID!, $lines: [CartLineInput!]!) { cartLinesAdd(cartId: $cartId, lines: $lines) { cart { ${FIELDS} } userErrors { code } warnings { code } } }`,
   update: `mutation TllStagingCartUpdate($cartId: ID!, $lines: [CartLineUpdateInput!]!) { cartLinesUpdate(cartId: $cartId, lines: $lines) { cart { ${FIELDS} } userErrors { code } warnings { code } } }`,
   remove: `mutation TllStagingCartRemove($cartId: ID!, $lineIds: [ID!]!) { cartLinesRemove(cartId: $cartId, lineIds: $lineIds) { cart { ${FIELDS} } userErrors { code } warnings { code } } }`,
+}
+function stagingCheckoutUrl(value: unknown): string {
+  const raw = string(value, 4096)
+  let url: URL
+  try { url = new URL(raw) } catch { throw new CartProviderFailure() }
+  requireValue(url.protocol === 'https:' && url.hostname === STAGING_CART_SHOP
+    && !url.username && !url.password && !url.port && !url.hash && !url.search
+    && /^\/cart\/c\/[A-Za-z0-9_-]+\/?$/.test(url.pathname))
+  return raw
 }
 function variant(value: unknown): number {
   const row = object(value)
@@ -92,6 +103,13 @@ export function createStagingStorefront(options: {
   }
   return {
     async read(id) { const cart = observation((await send('read', { id: privateCartId(id) })).cart); requireValue(cart.id === id); return cart },
+    async readCheckoutUrl(id) {
+      privateCartId(id)
+      const cart = object((await send('checkout', { id })).cart)
+      const checked = observation(cart)
+      requireValue(checked.id === id && checked.quantity > 0 && checked.subtotalPence > 0)
+      return stagingCheckoutUrl(cart.checkoutUrl)
+    },
     async create(count) {
       quantity(count, 1); variant((await send('variant')).productVariant)
       return changed('create', { input: { lines: [{ merchandiseId: STAGING_SHOPIFY_VARIANT, quantity: count }], buyerIdentity: { countryCode: 'GB' } } }, count)
