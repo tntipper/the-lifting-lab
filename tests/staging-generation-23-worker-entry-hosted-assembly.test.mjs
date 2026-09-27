@@ -99,7 +99,7 @@ async function fixedEntryFixture() {
   const fakeReader = dataModule("export let reads=0; export const readStagingGeneration23Credentials=async()=>{reads++;throw Error('unused')}")
   const fakeCli = dataModule("export const createStagingGeneration23CliRunner=()=>async()=>({status:'COMPLETED'})")
   const fakePreflight = dataModule("export const createStagingGeneration23FixedPreflight=()=>{throw Error('unused')}")
-  const fakeSource = dataModule("export const readStagingPreviewGitSourceProofFixed=async()=>{throw Error('unused')}")
+  const fakeSource = dataModule("export const readStagingGeneration23ArmingSourceFixed=async()=>{throw Error('unused')}")
   const fakeFixed = dataModule("export let inputs; export const createStagingGeneration23FixedWorkerAssembly=input=>{inputs=input;let disposed=false;return {core:{async run(){return {status:'LOCAL_SEQUENCE_PASS'}}},dispose(){disposed=true},get disposed(){return disposed}}}")
   const armed = workerSource
     .replace('export const STAGING_GENERATION_23_WORKER_ENTRY_ENABLED = false',
@@ -116,7 +116,7 @@ async function fixedEntryFixture() {
     .replace("from './staging-generation-23-cli-runner.mjs'", `from '${fakeCli}'`)
     .replace("from './staging-generation-23-fixed-worker-assembly.mjs'", `from '${fakeFixed}'`)
     .replace("from './staging-generation-23-fixed-preflight.mjs'", `from '${fakePreflight}'`)
-    .replace("from './staging-preview-git-source-preflight.mjs'", `from '${fakeSource}'`)
+    .replace("from './staging-generation-23-arming-source-proof.mjs'", `from '${fakeSource}'`)
   return import(`${dataModule(armed)}#${Math.random()}`)
 }
 

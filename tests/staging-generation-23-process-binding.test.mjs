@@ -75,6 +75,19 @@ test('injected worker needs FD3 proof and emits only the secret-free exact termi
     readCredentials() { throw Error('must not run') }, createWorker() {}, write() {} }), false)
 })
 
+test('child may report verified owner failure only after its worker has disposed', async () => {
+  const run = await armedWorker(), output = []
+  assert.equal(await run({ signal: new AbortController().signal, accept: () => () => {},
+    readCredentials: credentials,
+    createWorker: () => ({ core: { run: () => ({ status: 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED' }) },
+      dispose: () => { output.push('disposed') } }),
+    write: value => output.push(value),
+  }), true)
+  assert.equal(output[0], 'disposed')
+  assert.deepEqual(JSON.parse(output[1]), { schema: 'tll-staging-generation-23-whole-worker-terminal/v1',
+    status: 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED', generation: 23 })
+})
+
 test('offline three-selector reader feeds only the proved worker and credentials are erased', async () => {
   const run = await armedWorker()
   const { readStagingGeneration23Credentials } = await armedReader()
@@ -162,6 +175,15 @@ test('parent distinguishes a verified hosted route from local rehearsal', async 
     return spawn(executable, ['-e', program], options)
   } })
   assert.deepEqual(result, { status: 'VERIFIED_STAGING_WHOLE_PROCESS' })
+})
+
+test('parent reports a verified owner failure with completed shutdown as a failure', async () => {
+  const run = await armedBinding()
+  const program = `import(${JSON.stringify(controlUrl)}).then(async m=>{const release=await m.acceptSupervisorPipe({proof:${JSON.stringify(proof)}});release();process.stdout.write('{"schema":"tll-staging-generation-23-whole-worker-terminal/v1","status":"OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED","generation":23}')})`
+  const result = await run({ deadlineMs: 1_000, spawnProcess(executable, _args, options) {
+    return spawn(executable, ['-e', program], options)
+  } })
+  assert.deepEqual(result, { status: 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED' })
 })
 
 test('Gen23 hard parent kill occurs before one hour and kills a stuck child group', async () => {

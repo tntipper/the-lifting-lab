@@ -10,7 +10,7 @@ import { readStagingGeneration23Credentials } from './staging-generation-23-cred
 import { createStagingGeneration23CliRunner } from './staging-generation-23-cli-runner.mjs'
 import { createStagingGeneration23FixedWorkerAssembly } from './staging-generation-23-fixed-worker-assembly.mjs'
 import { createStagingGeneration23FixedPreflight } from './staging-generation-23-fixed-preflight.mjs'
-import { readStagingPreviewGitSourceProofFixed } from './staging-preview-git-source-preflight.mjs'
+import { readStagingGeneration23ArmingSourceFixed } from './staging-generation-23-arming-source-proof.mjs'
 
 export const STAGING_GENERATION_23_WORKER_ENTRY_ENABLED = false
 // This independent switch makes the worker factory unavailable until a single
@@ -46,6 +46,17 @@ const validCheckoutTarget = value => exact(value, ['name', 'id', 'branch', 'envi
 const erase = credentials => {
   if (!credentials || typeof credentials !== 'object') return
   for (const value of Object.values(credentials)) if (Buffer.isBuffer(value)) value.fill(0)
+}
+const readGeneration23SourceProof = async () => {
+  const result = await readStagingGeneration23ArmingSourceFixed()
+  if (!exact(result, ['status', 'sourceCommit', 'executionCommit', 'manifestSha256', 'expiresAt'])
+    || result.status !== 'GEN23_ARMING_SOURCE_VERIFIED'
+    || result.executionCommit === result.sourceCommit
+    || result.expiresAt !== ACTIVE_WINDOW_EXPIRES_AT
+    || !sha(result.sourceCommit) || !sha(result.executionCommit)
+    || !digest(result.manifestSha256)) unavailable()
+  return Object.freeze({ status: 'SOURCE_PROOF_VERIFIED', sourceCommit: result.sourceCommit,
+    manifestSha256: result.manifestSha256 })
 }
 
 function stopOwnProcessGroup() {
@@ -127,7 +138,7 @@ export async function runStagingGeneration23FixedWholeWorker({ accept,
       if (!current) {
         const reader = createStagingGeneration23FixedPreflight({ fetch: fetcher,
           vercelToken: credentials.vercelToken, previewBypass: credentials.previewBypass,
-          readSourceProof: readStagingPreviewGitSourceProofFixed, now })
+          readSourceProof: readGeneration23SourceProof, now })
         try { current = await reader.read({ signal: childSignal }) }
         finally { reader.dispose() }
       }
@@ -248,7 +259,8 @@ export async function runStagingGeneration23WholeWorker({
     credentials = undefined
     if (controller.signal.aborted || !result || typeof result !== 'object' || Array.isArray(result)
       || Object.keys(result).sort().join('|') !== 'status'
-      || !['PASS_PARTIAL_LOCAL_COMPOSITE', 'STAGING_SEQUENCE_PASS'].includes(result.status)) unavailable()
+      || !['PASS_PARTIAL_LOCAL_COMPOSITE', 'STAGING_SEQUENCE_PASS',
+        'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED'].includes(result.status)) unavailable()
     await write(`${JSON.stringify({ schema: GENERATION_23_WHOLE_WORKER_TERMINAL_SCHEMA,
       status: result.status, generation: 23 })}\n`)
     return true

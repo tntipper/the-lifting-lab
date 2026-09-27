@@ -104,7 +104,7 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
       violations.push(`embedded-live-launcher:${display(path)}`)
     }
     if (/-live-launcher\.mjs$/.test(path)
-      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal|createFixtureRecoveryJournal|createFixtureRecoveryV2Journal|createFixtureMetadataJournal|createSearchDomainJournal|createBrokerRecoveryReadJournal|createStagingProviderBrokerRestJournals|createStagingPreviewDeploymentJournal|createStagingPreviewEnvironmentJournal|createStagingMinimumConfigurationJournal|createStagingGeneration22PreflightJournal|createStagingGeneration23PredecessorJournal/.test(source)) {
+      && !/createStagingWindowPhaseJournal|createProviderNormalizationPhaseJournal|createCredentialReadinessPhaseJournal|createPreviewSourceReadJournal|createPreviewGitPublishJournal|createFixturePhaseJournal|createFixtureRecoveryJournal|createFixtureRecoveryV2Journal|createFixtureMetadataJournal|createSearchDomainJournal|createBrokerRecoveryReadJournal|createStagingProviderBrokerRestJournals|createStagingPreviewDeploymentJournal|createStagingPreviewEnvironmentJournal|createStagingMinimumConfigurationJournal|createStagingGeneration22PreflightJournal|createStagingGeneration23PredecessorJournal|JOURNAL_PATH as WHOLE_ROUTE_JOURNAL_PATH/.test(source)) {
       violations.push(`live-launcher-missing-phase-journal:${display(path)}`)
     }
     if (/\bNATIVE(?:_[A-Z0-9]+)*_(?:TRANSPORT_)?ENABLED\s*=\s*true\b/.test(source)

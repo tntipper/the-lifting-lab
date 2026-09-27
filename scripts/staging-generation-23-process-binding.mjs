@@ -42,10 +42,13 @@ export async function runBoundedStagingGeneration23WholeWorker({
     if (raw !== JSON.stringify(terminal) || !terminal || typeof terminal !== 'object'
       || Array.isArray(terminal) || Object.keys(terminal).sort().join('|') !== 'generation|schema|status'
       || terminal.schema !== 'tll-staging-generation-23-whole-worker-terminal/v1'
-      || !['PASS_PARTIAL_LOCAL_COMPOSITE', 'STAGING_SEQUENCE_PASS'].includes(terminal.status)
+      || !['PASS_PARTIAL_LOCAL_COMPOSITE', 'STAGING_SEQUENCE_PASS',
+        'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED'].includes(terminal.status)
       || terminal.generation !== 23) unavailable()
     return Object.freeze({ status: terminal.status === 'STAGING_SEQUENCE_PASS'
-      ? 'VERIFIED_STAGING_WHOLE_PROCESS' : 'VERIFIED_LOCAL_WHOLE_PROCESS' })
+      ? 'VERIFIED_STAGING_WHOLE_PROCESS'
+      : terminal.status === 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED'
+        ? 'OWNER_JOURNEY_FAILED_SHUTDOWN_VERIFIED' : 'VERIFIED_LOCAL_WHOLE_PROCESS' })
   } catch { return Object.freeze({ status: 'RECONCILIATION_REQUIRED' }) }
   finally { bytes.fill(0) }
 }
