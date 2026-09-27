@@ -15,7 +15,7 @@ export type StorefrontCart = {
   read(id: string): Promise<CartObservation>
   create(quantity: number): Promise<CartObservation>
   set(previous: CartObservation, quantity: number): Promise<CartObservation>
-  readCheckoutUrl(id: string): Promise<string>
+  readCheckoutHandoff(id: string): Promise<{ url: string; observation: CartObservation }>
 }
 export class CartProviderFailure extends Error {
   constructor() { super('Staging cart provider result unavailable or uncertain') }
@@ -103,12 +103,12 @@ export function createStagingStorefront(options: {
   }
   return {
     async read(id) { const cart = observation((await send('read', { id: privateCartId(id) })).cart); requireValue(cart.id === id); return cart },
-    async readCheckoutUrl(id) {
+    async readCheckoutHandoff(id) {
       privateCartId(id)
       const cart = object((await send('checkout', { id })).cart)
       const checked = observation(cart)
       requireValue(checked.id === id && checked.quantity > 0 && checked.subtotalPence > 0)
-      return stagingCheckoutUrl(cart.checkoutUrl)
+      return { url: stagingCheckoutUrl(cart.checkoutUrl), observation: checked }
     },
     async create(count) {
       quantity(count, 1); variant((await send('variant')).productVariant)

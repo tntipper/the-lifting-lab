@@ -57,6 +57,21 @@ export function createCartService(options: { repository: CartRepository; storefr
       }
       return cartRecordView(record)
     },
+    async checkoutHandoff(sessionHash: string, actorHash: string): Promise<string> {
+      const record = await owned(sessionHash, actorHash)
+      const price = record.unitPricePence
+      if (record.phase !== 'ready' || !record.envelope || record.quantity < 1
+        || typeof price !== 'number' || !Number.isSafeInteger(price) || price < 1
+        || record.subtotalPence !== record.quantity * price) throw new CartUnavailable()
+      try {
+        const saved = vault.open<{ id: string }>(record.envelope, aad(sessionHash, actorHash))
+        const handoff = await storefront.readCheckoutHandoff(saved.id)
+        if (handoff.observation.quantity !== record.quantity
+          || handoff.observation.unitPricePence !== record.unitPricePence
+          || handoff.observation.subtotalPence !== record.subtotalPence) throw new CartUnavailable()
+        return handoff.url
+      } catch { throw new CartUnavailable() }
+    },
     async set(sessionHash: string, actorHash: string, requestId: string, requestHash: string, revision: number, target: number): Promise<{ status: number; view: StagingCartView }> {
       if (!Number.isSafeInteger(target) || target < 0 || target > MAX_CART_QUANTITY) throw new CartUnavailable()
       await owned(sessionHash, actorHash)

@@ -56,7 +56,7 @@ test('checkout handoff reads only the pinned staging cart and rejects unsafe des
       return jsonResponse({ data: { cart: makeCart(target) } })
     },
   })
-  assert.equal(await storefront.readCheckoutUrl(RAW_CART), checkout)
+  assert.equal((await storefront.readCheckoutHandoff(RAW_CART)).url, checkout)
   assert.equal(calls.length, 1)
   assert.equal(calls[0].input.method, 'POST')
   for (const unsafe of [
@@ -68,7 +68,7 @@ test('checkout handoff reads only the pinned staging cart and rejects unsafe des
     `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123?return_to=https://evil.example`,
   ]) {
     target = unsafe
-    await assert.rejects(storefront.readCheckoutUrl(RAW_CART), sf.CartProviderFailure)
+    await assert.rejects(storefront.readCheckoutHandoff(RAW_CART), sf.CartProviderFailure)
   }
   assert.equal(calls.length, 7)
 })
@@ -86,6 +86,12 @@ function fixture(faults = {}) {
     assert.equal(init.headers['Shopify-Storefront-Private-Token'], 'synthetic-private-token')
     assert.ok(init.signal instanceof AbortSignal)
     const body = JSON.parse(init.body); calls.push(body)
+    if (body.query.startsWith('query TllStagingCheckoutHandoff')) {
+      assert.equal(faults.allowCheckout, true)
+      assert.equal(body.variables.id, RAW_CART)
+      return jsonResponse({ data: { cart: { ...cart(), checkoutUrl: faults.checkoutUrl
+        ?? `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123` } } })
+    }
     assert.equal(body.query.includes('checkoutUrl'), false)
     if (faults.redirect) return new Response(null, { status: 302, headers: { location: 'https://example.invalid' } })
     if (body.query.startsWith('query TllStagingVariant')) return jsonResponse({ data: { productVariant: variant() } })
@@ -182,6 +188,24 @@ function fixture(faults = {}) {
     setActor: value => { actor = value }, setProviderQuantity: value => { count = value },
     get cookie() { return cookie }, get view() { return view }, get authReads() { return authReads } }
 }
+test('service releases only a current ready cart to the server-side staging handoff', async () => {
+  const f = fixture({ allowCheckout: true })
+  await f.open()
+  const record = [...f.rows.values()][0]
+  await assert.rejects(f.service.checkoutHandoff(record.sessionHash, record.actorHash), svc.CartUnavailable)
+  await f.set(1)
+  assert.equal(await f.service.checkoutHandoff(record.sessionHash, record.actorHash),
+    `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123`)
+  assert.equal(f.calls.filter(call => call.query.includes('TllStagingCheckoutHandoff')).length, 1)
+  f.faults.checkoutUrl = 'https://evil.example/cart/c/syntheticCheckout123'
+  await assert.rejects(f.service.checkoutHandoff(record.sessionHash, record.actorHash), svc.CartUnavailable)
+  f.faults.checkoutUrl = undefined
+  f.rows.get(record.sessionHash).quantity = 2
+  f.rows.get(record.sessionHash).subtotalPence = 2400
+  await assert.rejects(f.service.checkoutHandoff(record.sessionHash, record.actorHash), svc.CartUnavailable)
+  f.rows.get(record.sessionHash).phase = 'held'
+  await assert.rejects(f.service.checkoutHandoff(record.sessionHash, record.actorHash), svc.CartUnavailable)
+})
 
 /** App Router mount harness: same env/origin/project gates as stagingCartRoute, injectable verified account. */
 function mountedCart(f, { actorId = null } = {}) {
