@@ -19,7 +19,8 @@ import { createStagingGeneration23PreviewWorkerFixture } from './helpers/staging
 import { acceptSupervisorPipe } from '../scripts/staging-provider-broker-recovery-process-control.mjs'
 
 const mode = process.argv.slice(2).join(' ')
-if (!['--run-offline-once', '--run-supervised-offline-once', '--fail-first-setting-once', '--fail-inventory-branch-once',
+if (!['--run-offline-once', '--run-supervised-offline-once', '--fail-first-setting-once',
+  '--fail-inventory-branch-once', '--fail-settings-readback-once',
   '--fail-surface-public-once', '--fail-owner-verified-once',
   '--fail-setup-reply-once', '--abort-setup-once', '--fail-shutdown-reply-once',
   '--fail-retirement-reply-once'].includes(mode)) {
@@ -67,6 +68,8 @@ const vercelReplacer = await arm('staging-generation-23-vercel-replacer.mjs',
   ]])
 const edgeReplacer = await arm('staging-generation-23-edge-replacer.mjs',
   'STAGING_GENERATION_23_EDGE_REPLACER_ENABLED')
+const settingsReadbackModule = await arm('staging-generation-23-settings-readback.mjs',
+  'STAGING_GENERATION_23_SETTINGS_READBACK_ENABLED')
 const previewBridge = await arm('staging-generation-23-preview-build-port.mjs',
   'STAGING_GENERATION_23_PREVIEW_BUILD_PORT_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
@@ -197,14 +200,17 @@ settingsDirectory = mkdtempSync(join(tmpdir(), 'tll-gen23-composite-settings-'))
 const inventoryTargets = VERCEL_PASSWORD_NAMES.map((name, index) => ({ name,
   id: `env_gen23_${index}`, branch: 'codex/tll-integration', target: 'preview',
   classification: 'sensitive' }))
-let settingsTargets
-const inventoryReader = vercelInventory.createStagingGeneration23VercelInventoryReader({
+let settingsTargets, inventoryReads = 0
+const makeInventoryReader = () => vercelInventory.createStagingGeneration23VercelInventoryReader({
   token: Buffer.from('offline-vercel-token'),
   fetch: async (url, options) => {
     assert.match(url, /^https:\/\/api\.vercel\.com\/v10\/projects\//)
     assert.equal(options.method, 'GET')
+    inventoryReads++
     return new Response(JSON.stringify({ envs: inventoryTargets.map((target, index) => ({
-      id: target.id, key: target.name, target: ['preview'], type: 'sensitive',
+      id: mode === '--fail-settings-readback-once' && inventoryReads === 2 && index === 0
+        ? 'env_wrong_readback' : target.id,
+      key: target.name, target: ['preview'], type: 'sensitive',
       visibility: 'secret', gitBranch: mode === '--fail-inventory-branch-once' && index === 0
         ? 'main' : target.branch,
     })), pagination: { next: null } }), { status: 200,
@@ -300,6 +306,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.equal(active, undefined)
       assert.equal(databaseEnabled, false)
       assert.equal(provider.enabled, false)
+      const inventoryReader = makeInventoryReader()
       try { settingsTargets = await inventoryReader.readTargets({ signal }) }
       finally { inventoryReader.dispose() }
       break
@@ -316,6 +323,15 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.equal(settingsJournal.read().state, 'FINISHED')
       assert.equal(installedSettings.size, 5)
       assert.equal(edgePassword, installedSettings.get(EDGE_PASSWORD_NAME))
+      const readbackReader = makeInventoryReader()
+      try {
+        const readback = settingsReadbackModule.createStagingGeneration23SettingsReadback({
+          readVercelTargets: input => readbackReader.readTargets(input),
+          readEdgeNames: async () => edgePassword ? [EDGE_PASSWORD_NAME] : [],
+        })
+        assert.equal((await readback.prove({ expectedTargets: settingsTargets, signal })).status,
+          'SETTINGS_METADATA_VERIFIED')
+      } finally { readbackReader.dispose() }
       break
     case 'databaseSetup':
       const setupResult = await setupHost.run({ expiresAt: database.expiresAt,
@@ -464,6 +480,15 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     console.log(JSON.stringify({ status: 'PASS_LOCAL_SETTINGS_LOST_REPLY_STOP',
       phaseCount: calls.length, databaseSetup: 'not_dispatched',
       provider: 'off', surface: 'off', purchase: 'none' }))
+  } else if (mode === '--fail-settings-readback-once') {
+    assert.equal(result.status, 'HOLD')
+    assert.equal(result.failedPhase, 'settings')
+    assert.deepEqual(calls, ['baseline', 'settings'])
+    assert.equal(settingsJournal.read().state, 'FINISHED')
+    assert.equal(httpRequests.length, 0)
+    assert.equal(surface.events.length, 0)
+    console.log(JSON.stringify({ status: 'PASS_LOCAL_SETTINGS_READBACK_DRIFT_STOP',
+      phaseCount: calls.length, databaseSetup: 'not_dispatched', purchase: 'none' }))
   } else if (mode === '--fail-surface-public-once') {
     assert.equal(result.status, 'HOLD')
     assert.equal(result.failedPhase, 'surfaceEnable')
