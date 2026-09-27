@@ -43,13 +43,15 @@ const arm = async (filename, flag, replacements = []) =>
   import(await armedUrl(filename, flag, replacements))
 const providerControl = await arm('staging-generation-23-provider-control.mjs',
   'STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED')
+const providerPortModule = await arm('staging-generation-23-provider-port.mjs',
+  'STAGING_GENERATION_23_PROVIDER_PORT_ENABLED')
 const settingsJournalModule = await arm('staging-generation-23-settings-journal.mjs',
   'STAGING_GENERATION_23_SETTINGS_JOURNAL_ENABLED')
 const settingsCoordinatorModule = await arm('staging-generation-23-settings-coordinator.mjs',
   'STAGING_GENERATION_23_SETTINGS_COORDINATOR_ENABLED')
 const database = await createStagingGeneration23LocalDatabaseFixture()
 let existingCartFixtureStarted = false
-let databaseJournalDirectory, settingsDirectory, providerDirectory, syntheticToken
+let databaseJournalDirectory, settingsDirectory, providerDirectory, syntheticToken, providerPort
 function ensureCartFixture() {
   if (run('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres']).trim() === 'false') {
     run('docker', ['start', 'tll-stage0-postgres'])
@@ -196,21 +198,24 @@ const providerJournal = action => providerControl.createStagingGeneration23Provi
   makeRunId: () => action === 'ENABLE' ? 'e45d1f62-76cf-4b8d-a27e-0c39af85fe7e'
     : '39e55b60-4858-4b2e-a861-c978d8fe07af', now: () => START,
 })
-const providerPort = {
+providerPort = providerPortModule.createStagingGeneration23ProviderPort({
+  projectSecret: Buffer.from('p'.repeat(48)),
   async readBackendState(target) {
     assert.deepEqual(target, STAGING_PROVIDER_TARGET)
     return { projectRef: STAGING_PROJECT_REF, controlsEnabled: databaseEnabled, runtimeSessions: 0 }
   },
-  async readProvider(target) { assert.deepEqual(target, STAGING_PROVIDER_TARGET); return { ...provider } },
-  async updateProvider(target, identifier, patch) {
-    assert.deepEqual(target, STAGING_PROVIDER_TARGET)
-    assert.equal(identifier, PROVIDER_IDENTIFIER)
-    assert.deepEqual(Object.keys(patch), ['enabled'])
-    provider = { ...provider, enabled: patch.enabled,
-      updated_at: new Date(START + 1000).toISOString() }
-    return { status: 'UPDATED_NEEDS_READBACK', projectRef: STAGING_PROJECT_REF, identifier }
+  async fetcher(url, init) {
+    assert.equal(url, `https://${STAGING_PROJECT_REF}.supabase.co/auth/v1/admin/custom-providers/${PROVIDER_IDENTIFIER}`)
+    if (init.method === 'PUT') {
+      const patch = JSON.parse(init.body)
+      assert.deepEqual(Object.keys(patch), ['enabled'])
+      provider = { ...provider, enabled: patch.enabled,
+        updated_at: new Date(START + 1000).toISOString() }
+    } else assert.equal(init.method, 'GET')
+    return new Response(JSON.stringify(provider), { status: 200,
+      headers: { 'content-type': 'application/json' } })
   },
-}
+})
 const calls = []
 const phaseErrors = []
 const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signal }) => {
@@ -396,7 +401,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
   assert.deepEqual(calls, PHASES)
   console.log(JSON.stringify({ status: 'PASS_PARTIAL_LOCAL_COMPOSITE', phaseCount: PHASES.length,
     database: 'real_sql_lifecycle_injected_guarded_host', surface: 'real_controller_injected_services',
-    customer: 'real_local_tests_and_browser', provider: 'real_control_injected_service',
+    customer: 'real_local_tests_and_browser', provider: 'real_control_official_sdk_local_fetch',
     backendControls: 'local_fixture_and_gen23_sql_compatibility', settings: 'real_coordinator_injected_services',
     hostedPreview: 'not_tested', purchase: 'none', elapsedMs: result.elapsedMs }))
   }
@@ -405,6 +410,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     try { run('docker', ['stop', 'tll-stage0-postgres']) } catch { /* preserve primary failure */ }
   }
   database.dispose()
+  providerPort?.dispose()
   syntheticToken?.fill(0)
   for (const directory of [providerDirectory, settingsDirectory, databaseJournalDirectory]) {
     if (directory) rmSync(directory, { recursive: true, force: true })
