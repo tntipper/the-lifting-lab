@@ -14,12 +14,13 @@ export const STAGING_GENERATION_23_CLI_RUNNER_TIMEOUT_MS = 45_000
 export const STAGING_GENERATION_23_CLI_RUNNER_MAX_OUTPUT_BYTES = 16 * 1024
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)))
-// The two repo-local CLI entrypoints use `#!/usr/bin/env node`. The supervised
-// environment intentionally excludes /usr/local/bin, so execute this known
-// Node binary directly instead of relying on the wrapper's PATH lookup.
+// Vercel's repo-local entrypoint uses `#!/usr/bin/env node`. The supervised
+// environment intentionally excludes /usr/local/bin, so execute known Node.
 export const STAGING_GENERATION_23_NODE = '/usr/local/bin/node'
 const VERCEL = resolve(ROOT, 'node_modules/.bin/vercel')
-const SUPABASE = resolve(ROOT, 'node_modules/.bin/supabase')
+// The Supabase JavaScript wrapper forwards only fd 0-2 to its native child.
+// Use the version-pinned native binary directly so /dev/fd/3 reaches it.
+const SUPABASE = resolve(ROOT, 'node_modules/@supabase/cli-darwin-arm64/bin/supabase')
 const BRANCH = 'codex/tll-integration'
 const PROJECT = 'the-lifting-lab'
 const SCOPE = 'my-lifting-lab-s-projects'
@@ -50,7 +51,7 @@ function classify(args, input, inputFd) {
   const expectedSupabase = ['supabase', 'secrets', 'set', '--env-file', '/dev/fd/3', '--project-ref', PROJECT_REF, '--output', 'json']
   if (inputFd === 3 && same(args, expectedSupabase)
     && (input.equals(Buffer.from(`${EDGE_FLAG}=true\n`)) || input.equals(Buffer.from(`${EDGE_FLAG}=false\n`)))) {
-    return Object.freeze({ binary: STAGING_GENERATION_23_NODE, args: Object.freeze([SUPABASE, ...args.slice(1)]), envName: 'SUPABASE_ACCESS_TOKEN', inputFd: 3 })
+    return Object.freeze({ binary: SUPABASE, args: Object.freeze(args.slice(1)), envName: 'SUPABASE_ACCESS_TOKEN', inputFd: 3 })
   }
   unavailable()
 }
@@ -83,7 +84,8 @@ function runLocalVersion({ script, spawnProcess = spawn, timeoutMs = 10_000,
     }
     const stop = () => { killGroup(child); finish(false) }
     try {
-      child = spawnProcess(STAGING_GENERATION_23_NODE, [script, '--version'], { cwd: ROOT,
+      child = spawnProcess(script === VERCEL ? STAGING_GENERATION_23_NODE : SUPABASE,
+        script === VERCEL ? [script, '--version'] : ['--version'], { cwd: ROOT,
         env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C.UTF-8', NO_UPDATE_NOTIFIER: '1' }),
         stdio: ['ignore', 'pipe', 'pipe'] })
       if (!child?.stdout || !child?.stderr || typeof child.once !== 'function') unavailable()

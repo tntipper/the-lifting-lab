@@ -22,6 +22,60 @@ async function armed() {
   return import(`data:text/javascript;base64,${Buffer.from(enabled).toString('base64')}`)
 }
 
+async function armedControl() {
+  const source = await readFile(new URL('../scripts/staging-generation-23-checkout-setting.mjs', import.meta.url), 'utf8')
+  const scripts = new URL('../scripts/', import.meta.url)
+  const enabled = source.replace('STAGING_GENERATION_23_CHECKOUT_SETTING_ENABLED = false',
+    'STAGING_GENERATION_23_CHECKOUT_SETTING_ENABLED = true').replaceAll("from './", `from '${scripts.href}`)
+  assert.notEqual(enabled, source)
+  return import(`data:text/javascript;base64,${Buffer.from(enabled).toString('base64')}`)
+}
+
+test('real checkout controller verifies encrypted acknowledgement through a separate GET', async () => {
+  const [{ createStagingGeneration23CheckoutSettingPort: create },
+    { changeStagingCheckoutSetting }] = await Promise.all([armed(), armedControl()])
+  let calls = 0, finalState
+  const journal = {
+    read: () => null,
+    recordIntent: (action, selected) => ({ action, settingId: selected.id, state: 'INTENT_RECORDED' }),
+    transition: (_intent, state) => { finalState = state },
+  }
+  const port = create({ token, target, fetch: async (_url, options) => {
+    calls++
+    return response(options.method === 'PATCH' ? payload('ciphertext-not-plaintext')
+      : payload(calls === 1 ? 'false' : 'true'))
+  } })
+  try {
+    const result = await changeStagingCheckoutSetting({ action: 'ENABLE', target, journal,
+      read: port.read, write: port.write, signal })
+    assert.equal(result.status, 'CHECKOUT_SETTING_ENABLED_VERIFIED')
+    assert.equal(finalState, 'ENABLE_VERIFIED')
+    assert.equal(calls, 3)
+  } finally { port.dispose() }
+})
+
+test('real checkout controller holds when encrypted acknowledgement is followed by the old value', async () => {
+  const [{ createStagingGeneration23CheckoutSettingPort: create },
+    { changeStagingCheckoutSetting }] = await Promise.all([armed(), armedControl()])
+  let calls = 0, finalState
+  const journal = {
+    read: () => null,
+    recordIntent: (action, selected) => ({ action, settingId: selected.id, state: 'INTENT_RECORDED' }),
+    transition: (_intent, state) => { finalState = state },
+  }
+  const port = create({ token, target, fetch: async (_url, options) => {
+    calls++
+    return response(options.method === 'PATCH' ? payload('ciphertext-not-plaintext') : payload('false'))
+  } })
+  try {
+    const result = await changeStagingCheckoutSetting({ action: 'ENABLE', target, journal,
+      read: port.read, write: port.write, signal })
+    assert.equal(result.status, 'HOLD_RECONCILIATION_REQUIRED')
+    assert.equal(finalState, 'RECONCILIATION_REQUIRED')
+    assert.equal(calls, 3)
+  } finally { port.dispose() }
+})
+
 test('ordinary source cannot read or write', () => {
   assert.throws(() => createStagingGeneration23CheckoutSettingPort({ token, target,
     fetch: async () => response(payload('false')) }), /unavailable/)
@@ -33,7 +87,7 @@ test('fixed GET, one PATCH and GET prove ON while preserving Preview branch', as
   const port = create({ token, target, fetch: async (url, options) => {
     calls.push({ url, options })
     return response(options.method === 'GET' ? payload(calls.length === 1 ? 'false' : 'true')
-      : payload(undefined))
+      : payload('encrypted-value-not-plaintext'))
   } })
   assert.deepEqual(await port.read(target, { signal }), { ...target, enabled: false })
   assert.deepEqual(await port.write(target, true, { signal }), { ...target, enabled: true })
@@ -53,7 +107,7 @@ test('the same fixed port can perform the separate OFF transition', async () => 
   const port = create({ token, target, fetch: async (_url, options) => {
     count++
     return response(options.method === 'GET' ? payload(count === 1 ? 'true' : 'false')
-      : payload(undefined))
+      : payload('********'))
   } })
   assert.equal((await port.read(target, { signal })).enabled, true)
   assert.equal((await port.write(target, false, { signal })).enabled, false)
@@ -91,5 +145,22 @@ test('a lost PATCH reply cannot be retried or mistaken for a verified state', as
   await assert.rejects(port.write(target, true, { signal }), /reply lost/)
   await assert.rejects(port.write(target, true, { signal }), /unavailable/)
   assert.equal(writes, 1)
+  port.dispose()
+})
+
+test('a masked PATCH acknowledgement cannot substitute for decrypted GET verification', async () => {
+  const { createStagingGeneration23CheckoutSettingPort: create } = await armed()
+  let reads = 0, writes = 0
+  const port = create({ token, target, fetch: async (_url, options) => {
+    if (options.method === 'PATCH') { writes++; return response(payload('********')) }
+    reads++
+    return response(payload('false'))
+  } })
+  assert.equal((await port.read(target, { signal })).enabled, false)
+  assert.equal((await port.write(target, true, { signal })).enabled, true)
+  assert.equal((await port.read(target, { signal })).enabled, false)
+  assert.equal(reads, 2)
+  assert.equal(writes, 1)
+  await assert.rejects(port.write(target, true, { signal }), /unavailable/)
   port.dispose()
 })

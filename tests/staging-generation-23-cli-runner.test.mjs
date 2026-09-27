@@ -55,9 +55,8 @@ test('accepts only the exact Supabase Edge flag write and passes input on fd 3',
   const value = await armedRunner(), signal = new AbortController().signal
   assert.deepEqual(await value.run(supabaseArgs, Buffer.from('TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED=true\n'), 3, { signal }), { status: 'COMPLETED' })
   assert.equal(value.calls.length, 1)
-  assert.equal(value.calls[0].binary, '/usr/local/bin/node')
-  assert.match(value.calls[0].args[0], /node_modules\/\.bin\/supabase$/)
-  assert.deepEqual(value.calls[0].args.slice(1), ['secrets', 'set', '--env-file', '/dev/fd/3', '--project-ref', 'qdmvngjwkcsilzmqksme', '--output', 'json'])
+  assert.match(value.calls[0].binary, /node_modules\/@supabase\/cli-darwin-arm64\/bin\/supabase$/)
+  assert.deepEqual(value.calls[0].args, ['secrets', 'set', '--env-file', '/dev/fd/3', '--project-ref', 'qdmvngjwkcsilzmqksme', '--output', 'json'])
   assert.equal(value.calls[0].options.env.SUPABASE_ACCESS_TOKEN, 'supabase-tokenxx')
   assert.equal(value.calls[0].options.env.VERCEL_TOKEN, undefined)
   assert.equal(value.children[0].stdio[3].read()?.toString(), 'TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED=true\n')
@@ -88,7 +87,7 @@ test('kills the detached group when the caller aborts or output exceeds its cap'
   await assert.rejects(oversized.run(vercelArgs('TLL_STAGING_CART_ENABLED'), Buffer.from('false'), 0, { signal: new AbortController().signal }), /unavailable/)
 })
 
-test('local installation proof launches both repo CLIs through pinned Node without credentials', async () => {
+test('local installation proof launches pinned Vercel and native Supabase without credentials', async () => {
   const calls = []
   const result = await verifyStagingGeneration23CliInstallation({
     spawnProcess(binary, args, options) {
@@ -99,9 +98,13 @@ test('local installation proof launches both repo CLIs through pinned Node witho
   assert.deepEqual(result, { status: 'LOCAL_CLI_INSTALLATION_VERIFIED' })
   assert.equal(calls.length, 2)
   for (const call of calls) {
-    assert.equal(call.binary, '/usr/local/bin/node')
-    assert.match(call.args[0], /node_modules\/\.bin\/(vercel|supabase)$/)
-    assert.deepEqual(call.args.slice(1), ['--version'])
+    if (call.binary === '/usr/local/bin/node') {
+      assert.match(call.args[0], /node_modules\/\.bin\/vercel$/)
+      assert.deepEqual(call.args.slice(1), ['--version'])
+    } else {
+      assert.match(call.binary, /node_modules\/@supabase\/cli-darwin-arm64\/bin\/supabase$/)
+      assert.deepEqual(call.args, ['--version'])
+    }
     assert.deepEqual(Object.keys(call.options.env).sort(), ['LANG', 'NO_UPDATE_NOTIFIER', 'PATH'])
     assert.equal(call.options.env.VERCEL_TOKEN, undefined)
     assert.equal(call.options.env.SUPABASE_ACCESS_TOKEN, undefined)

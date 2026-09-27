@@ -21,8 +21,10 @@ function observation(payload, target, expected, decryptedRead) {
     || payload.id !== target.id || payload.key !== target.name
     || payload.gitBranch !== target.branch || !preview(payload.target)
     || payload.type !== 'encrypted' || payload.visibility !== 'config'
-    || (decryptedRead && (payload.decrypted !== true || !['true', 'false'].includes(payload.value)))
-    || (!decryptedRead && Object.hasOwn(payload, 'value') && payload.value !== String(expected))) unavailable()
+    || (decryptedRead && (payload.decrypted !== true || !['true', 'false'].includes(payload.value)))) unavailable()
+  // Vercel may return ciphertext or a masked value from PATCH for an encrypted
+  // setting. This is only an acknowledgement; the following decrypted GET
+  // proves the actual boolean value before the transition is marked verified.
   return Object.freeze({ ...target, enabled: decryptedRead ? payload.value === 'true' : expected })
 }
 
