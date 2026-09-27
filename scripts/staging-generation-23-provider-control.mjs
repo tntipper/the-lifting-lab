@@ -128,7 +128,10 @@ export async function runStagingGeneration23ProviderControl({ action, port, jour
     const backend = await port.readBackendState(STAGING_PROVIDER_TARGET, { signal })
     if (!exact(backend, ['projectRef', 'controlsEnabled', 'runtimeSessions'])
       || backend.projectRef !== STAGING_PROJECT_REF || backend.controlsEnabled !== false
-      || backend.runtimeSessions !== 0) unavailable()
+      || !Number.isSafeInteger(backend.runtimeSessions) || backend.runtimeSessions < 0
+      || (enabled && backend.runtimeSessions !== 0)) unavailable()
+    // During shutdown, close provider access after the backend is OFF even if
+    // customer sessions remain. Session drain is required before role retirement.
     before = structuredClone(await port.readProvider(STAGING_PROVIDER_TARGET, { signal }))
     strictProvider(before, !enabled)
     if (signal.aborted) unavailable()

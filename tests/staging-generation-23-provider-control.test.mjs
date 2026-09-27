@@ -34,13 +34,15 @@ async function armed() {
   return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
 }
 
-function fixture(api, { loseReply = false, drift = false, backendEnabled = false } = {}) {
+function fixture(api, { loseReply = false, drift = false, backendEnabled = false,
+  runtimeSessions = 0 } = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'tll-gen23-provider-'))
-  let current = before(), writes = 0
+  let current = before(), writes = 0, sessions = runtimeSessions
   const port = {
     async readBackendState(target) {
       assert.deepEqual(target, STAGING_PROVIDER_TARGET)
-      return { projectRef: STAGING_PROJECT_REF, controlsEnabled: backendEnabled, runtimeSessions: 0 }
+      return { projectRef: STAGING_PROJECT_REF, controlsEnabled: backendEnabled,
+        runtimeSessions: sessions }
     },
     async readProvider(target) { assert.deepEqual(target, STAGING_PROVIDER_TARGET); return { ...current } },
     async updateProvider(target, identifier, patch) {
@@ -58,7 +60,8 @@ function fixture(api, { loseReply = false, drift = false, backendEnabled = false
     path: join(directory, `${action.toLowerCase()}.json`),
     makeRunId: () => action === 'ENABLE' ? 'e45d1f62-76cf-4b8d-a27e-0c39af85fe7e'
       : '39e55b60-4858-4b2e-a861-c978d8fe07af', now: () => Date.parse(start) })
-  return { port, journal, get writes() { return writes }, directory }
+  return { port, journal, get writes() { return writes },
+    setRuntimeSessions(value) { sessions = value }, directory }
 }
 
 test('ordinary source has no provider update authority', async () => {
@@ -105,4 +108,22 @@ test('wrong target state stops before record or update', async () => {
   assert.equal(result.status, 'STOPPED_BEFORE_DISPATCH')
   assert.equal(journal.read(), null)
   assert.equal(f.writes, 0)
+})
+
+test('enable requires drained sessions but disable proceeds after backend OFF with a session still open', async () => {
+  const api = await armed(), signal = new AbortController().signal
+  const blocked = fixture(api, { runtimeSessions: 1 }), blockedJournal = blocked.journal('ENABLE')
+  assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
+    port: blocked.port, journal: blockedJournal, signal })).status, 'STOPPED_BEFORE_DISPATCH')
+  assert.equal(blockedJournal.read(), null)
+
+  const f = fixture(api), enabled = f.journal('ENABLE')
+  assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
+    port: f.port, journal: enabled, signal })).status, 'PROVIDER_ENABLED_VERIFIED')
+  f.setRuntimeSessions(1)
+  const disabled = f.journal('DISABLE')
+  assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'DISABLE',
+    port: f.port, journal: disabled, signal })).status, 'PROVIDER_DISABLED_VERIFIED')
+  assert.equal(disabled.read().state, 'VERIFIED')
+  assert.equal(f.writes, 2)
 })

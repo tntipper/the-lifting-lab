@@ -180,7 +180,7 @@ const settingsCoordinator = settingsCoordinatorModule.createStagingGeneration23S
     return { status: 'STAGED', name, projectRef: PROJECT_REF }
   }, dispose() {} },
 })
-let active, databaseEnabled = false, enabledPreview, ownerChecks = false
+let active, databaseEnabled = false, enabledPreview, ownerChecks = false, syntheticSessionCount = 0
 let provider = {
   id: 'synthetic-staging-provider', provider_type: 'oauth2', identifier: PROVIDER_IDENTIFIER,
   name: STAGING_PROVIDER_NAME, client_id: STAGING_BROKER_PROVIDER.clientId,
@@ -202,7 +202,8 @@ providerPort = providerPortModule.createStagingGeneration23ProviderPort({
   projectSecret: Buffer.from('p'.repeat(48)),
   async readBackendState(target) {
     assert.deepEqual(target, STAGING_PROVIDER_TARGET)
-    return { projectRef: STAGING_PROJECT_REF, controlsEnabled: databaseEnabled, runtimeSessions: 0 }
+    return { projectRef: STAGING_PROJECT_REF, controlsEnabled: databaseEnabled,
+      runtimeSessions: syntheticSessionCount }
   },
   async fetcher(url, init) {
     assert.equal(url, `https://${STAGING_PROJECT_REF}.supabase.co/auth/v1/admin/custom-providers/${PROVIDER_IDENTIFIER}`)
@@ -290,6 +291,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
         ...process.env, TEST_BROWSER_CHANNEL: 'chrome',
       })
       ownerChecks = true
+      syntheticSessionCount = 1
       if (mode === '--fail-owner-verified-once') return { status: 'OWNER_JOURNEY_FAILED_VERIFIED' }
       break
     case 'backendDisable':
@@ -318,6 +320,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       break
     }
     case 'databaseRetire':
+      syntheticSessionCount = 0 // The local browser fixture has now closed its synthetic customer session.
       const retirementResult = await retirementHost.run({ expiresAt: database.expiresAt,
         deadlineAt: database.expiresAt,
         signal })
@@ -333,6 +336,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     case 'finalReadback':
       assert.equal(database.proveRetired().status, 'PASS_LOCAL_GEN23_DATABASE_LIFECYCLE')
       assert.equal(active || databaseEnabled || provider.enabled, false)
+      assert.equal(syntheticSessionCount, 0)
       assert.deepEqual(surface.events, ['edge:true', 'private:true', 'public:true', 'create',
         'edge:false', 'private:false', 'public:false', 'create'])
       assert.deepEqual(httpRequests, ['SETUP', 'SHUTDOWN', 'RETIRE'])
