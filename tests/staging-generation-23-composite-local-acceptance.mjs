@@ -17,6 +17,7 @@ import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/
 import { createStagingPreviewDeploymentJournal } from '../scripts/staging-surface-preview-deployment-journal.mjs'
 import { createStagingGeneration23PreviewWorkerFixture } from './helpers/staging-generation-23-preview-worker-fixture.mjs'
 import { acceptSupervisorPipe } from '../scripts/staging-provider-broker-recovery-process-control.mjs'
+import { executeExactControlActivation, MANAGEMENT_ENDPOINT } from '../scripts/staging-database-native-adapter.mjs'
 
 const mode = process.argv.slice(2).join(' ')
 if (!['--run-offline-once', '--run-supervised-offline-once', '--fail-first-setting-once',
@@ -260,6 +261,7 @@ const settingsCoordinator = settingsCoordinatorModule.createStagingGeneration23S
   }),
 })
 let active, databaseEnabled = false, enabledPreview, ownerChecks = false, syntheticSessionCount = 0
+let activationHttpRequests = 0
 const activationHost = controlEnableHostModule.createStagingGeneration23ControlEnableHost({
   journal: activationJournal,
   async execute({ context, signal }) {
@@ -272,9 +274,46 @@ const activationHost = controlEnableHostModule.createStagingGeneration23ControlE
     })
     assert.equal(database.enableControls().status, 'PASS_CONTROLS_ENABLED')
     databaseEnabled = true
-    if (mode === '--fail-activation-reply-once') throw Error('injected lost activation reply')
-    return { status: 'CONTROLS_ENABLED', target: PROJECT_REF, generation: 23,
-      windowId: context.windowId, receiptHash: 'c'.repeat(64) }
+    const activationReceipt = { queryId: 'tll-staging-control-activation/v1',
+      packageId: 'tll-staging-generation-23-control-activation/v1',
+      projectRef: PROJECT_REF, generation: 23, windowId: context.windowId,
+      expiresAt: context.expiresAt, status: 'PASS_CONTROLS_ENABLED',
+      controlsEnabled: 5, runtimeSessions: 0, ownerEdgesVerified: 5,
+      temporaryOwnerEdgesRestored: 4 }
+    const token = Buffer.from(`sbp_${'a'.repeat(40)}`)
+    try {
+      return await executeExactControlActivation({ context, token, nowMs: Date.now(),
+        request(options, callback) {
+          assert.equal(options.hostname, MANAGEMENT_ENDPOINT.hostname)
+          assert.equal(options.path, MANAGEMENT_ENDPOINT.path)
+          assert.equal(options.method, 'POST')
+          const request = new EventEmitter()
+          request.destroy = () => {}
+          request.end = body => {
+            activationHttpRequests++
+            const packet = JSON.parse(body.toString('utf8'))
+            assert.equal(packet.read_only, false)
+            assert.match(packet.query, /UPDATE tll_cart_private\.control SET enabled=true/)
+            queueMicrotask(() => {
+              if (mode === '--fail-activation-reply-once') {
+                request.emit('error', Error('injected lost activation reply'))
+                return
+              }
+              const response = new EventEmitter()
+              response.statusCode = 201
+              response.headers = { 'content-type': 'application/json' }
+              response.destroy = () => {}
+              callback(response)
+              response.emit('data', Buffer.from(JSON.stringify([
+                { tll_staging_control_activation: activationReceipt },
+              ])))
+              response.emit('end')
+            })
+          }
+          return request
+        },
+      })
+    } finally { token.fill(0) }
   },
 })
 let provider = {
@@ -384,6 +423,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       if (mode === '--fail-activation-reply-once') {
         assert.equal(activationResult.status, 'HOLD_RECONCILE')
         assert.equal(activationJournal.read().state, 'HOLD')
+        assert.equal(activationHttpRequests, 1)
         return { status: 'HOLD_CONTROL_ACTIVATION' }
       }
       assert.equal(activationResult.status, 'CONTROL_ACTIVATION_VERIFIED')

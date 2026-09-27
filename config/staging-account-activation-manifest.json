@@ -1852,7 +1852,7 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "d28aebe8a20ec38236f75b2c8ade5c35bdc8b1ac733acb21fa6371c085b29aee"
+        "sha256": "8b0e0acc592f77f3f7280aed2c3668ff7188b80865ae43a1af1e1ef5367c917c"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
