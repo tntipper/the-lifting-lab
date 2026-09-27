@@ -4,7 +4,9 @@ import { execFileSync, spawn } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { BROKER_ROTATION_MAX_WORKER_MS, BROKER_ROTATION_PROCESS_CONTROL_ENABLED,
+import { fileURLToPath } from 'node:url'
+import { BROKER_ROTATION_MAX_WORKER_MS, MAX_REVIEWED_EXTENDED_WORKER_MS,
+  BROKER_ROTATION_PROCESS_CONTROL_ENABLED,
   runBoundedBrokerRotationWorker } from '../scripts/staging-provider-broker-rotation-process-control.mjs'
 import { acceptSupervisorPipe } from '../scripts/staging-provider-broker-recovery-process-control.mjs'
 
@@ -24,6 +26,27 @@ test('rotation supervisor remains offline and rejects unbounded deadlines', () =
   assert.equal(BROKER_ROTATION_PROCESS_CONTROL_ENABLED, false)
   assert.equal(BROKER_ROTATION_MAX_WORKER_MS, 1_800_000)
   assert.throws(() => runBoundedBrokerRotationWorker({ ...options([]), deadlineMs: BROKER_ROTATION_MAX_WORKER_MS + 1 }), /unavailable/)
+  assert.equal(MAX_REVIEWED_EXTENDED_WORKER_MS, 3_598_000)
+  assert.throws(() => runBoundedBrokerRotationWorker({ ...options([]),
+    deadlineCeilingMs: MAX_REVIEWED_EXTENDED_WORKER_MS + 1 }), /unavailable/)
+  assert.throws(() => runBoundedBrokerRotationWorker({ ...options([]),
+    deadlineMs: MAX_REVIEWED_EXTENDED_WORKER_MS, deadlineCeilingMs: MAX_REVIEWED_EXTENDED_WORKER_MS }), /unavailable/)
+})
+test('only the exact Gen23 worker proof can use the longer ceiling', async () => {
+  const worker = fileURLToPath(new URL('../scripts/staging-generation-23-worker-entry.mjs', import.meta.url))
+  assert.throws(() => runBoundedBrokerRotationWorker({ ...options([worker]),
+    deadlineMs: MAX_REVIEWED_EXTENDED_WORKER_MS,
+    deadlineCeilingMs: MAX_REVIEWED_EXTENDED_WORKER_MS }), /unavailable/)
+  const result = await runBoundedBrokerRotationWorker({ ...options([worker]),
+    proof: 'TLL_STAGING_GENERATION_23_WHOLE_SUPERVISOR_V1', strictGroupCleanup: true,
+    deadlineMs: BROKER_ROTATION_MAX_WORKER_MS + 1,
+    deadlineCeilingMs: MAX_REVIEWED_EXTENDED_WORKER_MS,
+    spawnProcess(executable, _args, options) {
+      return spawn(executable, ['-e', 'process.stdout.write("OK")'], options)
+    } })
+  assert.equal(result.status, 'EXITED')
+  assert.equal(result.output.toString('utf8'), 'OK')
+  result.output.fill(0)
 })
 test('a stalled worker and its descendant are killed at the whole-process deadline', async () => {
   const file = join(mkdtempSync(join(tmpdir(), 'tll-rotation-process-')), 'child.pid')

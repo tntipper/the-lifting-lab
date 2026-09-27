@@ -8,29 +8,40 @@ import { GENERATION_23_WHOLE_WORKER_PROOF } from './staging-generation-23-proces
 export const STAGING_GENERATION_23_WORKER_ENTRY_ENABLED = false
 export const STAGING_GENERATION_23_WORKER_CLI_ARMED = false
 export const GENERATION_23_WHOLE_WORKER_TERMINAL_SCHEMA = 'tll-staging-generation-23-whole-worker-terminal/v1'
+export const GENERATION_23_ORDERLY_ABORT_MS = 58 * 60 * 1000
 const unavailable = () => { throw Error('Generation 23 whole worker unavailable') }
 
 /** Injected-only seam for local process tests; no credential or hosted adapter is imported. */
 export async function runStagingGeneration23WholeWorker({
   accept = () => acceptSupervisorPipe({ proof: GENERATION_23_WHOLE_WORKER_PROOF }),
-  runOperations, write, signal,
+  runOperations, write, signal, deadlineMs = GENERATION_23_ORDERLY_ABORT_MS,
 } = {}) {
   if (!STAGING_GENERATION_23_WORKER_ENTRY_ENABLED || typeof accept !== 'function'
     || typeof runOperations !== 'function' || typeof write !== 'function' || !signal
-    || signal.aborted || typeof signal.addEventListener !== 'function') unavailable()
-  let release
+    || signal.aborted || typeof signal.addEventListener !== 'function'
+    || !Number.isSafeInteger(deadlineMs) || deadlineMs < 1
+    || deadlineMs > GENERATION_23_ORDERLY_ABORT_MS) unavailable()
+  let release, deadlineTimer
+  const controller = new AbortController()
+  const onExternalAbort = () => controller.abort()
+  signal.addEventListener('abort', onExternalAbort, { once: true })
+  deadlineTimer = setTimeout(() => controller.abort(), deadlineMs)
   try {
     release = await accept()
-    if (typeof release !== 'function' || signal.aborted) unavailable()
-    const result = await runOperations({ signal })
-    if (signal.aborted || !result || typeof result !== 'object' || Array.isArray(result)
+    if (typeof release !== 'function' || controller.signal.aborted) unavailable()
+    const result = await runOperations({ signal: controller.signal })
+    if (controller.signal.aborted || !result || typeof result !== 'object' || Array.isArray(result)
       || Object.keys(result).sort().join('|') !== 'status'
       || result.status !== 'PASS_PARTIAL_LOCAL_COMPOSITE') unavailable()
     await write(`${JSON.stringify({ schema: GENERATION_23_WHOLE_WORKER_TERMINAL_SCHEMA,
       status: result.status, generation: 23 })}\n`)
     return true
   } catch { return false }
-  finally { if (release) { try { release() } catch {} } }
+  finally {
+    clearTimeout(deadlineTimer)
+    signal.removeEventListener('abort', onExternalAbort)
+    if (release) { try { release() } catch {} }
+  }
 }
 
 if (import.meta.url.startsWith('file:') && process.argv[1]

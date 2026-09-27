@@ -1,10 +1,14 @@
 /** Credential-free, disabled process supervisor for a future one-use staging rotation. */
 import { spawn } from 'node:child_process'
 import { isAbsolute } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { terminateProcessGroup } from './staging-provider-broker-recovery-process-control.mjs'
 
 export const BROKER_ROTATION_PROCESS_CONTROL_ENABLED = false
 export const BROKER_ROTATION_MAX_WORKER_MS = 1_800_000
+export const MAX_REVIEWED_EXTENDED_WORKER_MS = 3_598_000
+const GENERATION_23_PROOF = 'TLL_STAGING_GENERATION_23_WHOLE_SUPERVISOR_V1'
+const GENERATION_23_WORKER = fileURLToPath(new URL('./staging-generation-23-worker-entry.mjs', import.meta.url))
 const unavailable = () => { throw Error('Staging broker rotation process control unavailable') }
 
 /**
@@ -14,11 +18,16 @@ const unavailable = () => { throw Error('Staging broker rotation process control
  */
 export function runBoundedBrokerRotationWorker({ executable, args, cwd, env, proof,
   deadlineMs, maxOutputBytes = 1024, stopGraceMs = 2_000, spawnProcess = spawn,
-  strictGroupCleanup = false, killGroup = terminateProcessGroup } = {}) {
+  strictGroupCleanup = false, killGroup = terminateProcessGroup,
+  deadlineCeilingMs = BROKER_ROTATION_MAX_WORKER_MS } = {}) {
   if (!isAbsolute(executable) || !Array.isArray(args) || args.some(value => typeof value !== 'string')
     || !isAbsolute(cwd) || !env || typeof env !== 'object' || typeof proof !== 'string'
     || proof.length < 8 || proof.length > 128 || !Number.isSafeInteger(deadlineMs)
-    || deadlineMs < 1 || deadlineMs > BROKER_ROTATION_MAX_WORKER_MS
+    || ![BROKER_ROTATION_MAX_WORKER_MS, MAX_REVIEWED_EXTENDED_WORKER_MS].includes(deadlineCeilingMs)
+    || (deadlineCeilingMs === MAX_REVIEWED_EXTENDED_WORKER_MS
+      && (proof !== GENERATION_23_PROOF || args.length !== 1
+        || args[0] !== GENERATION_23_WORKER || !strictGroupCleanup))
+    || deadlineMs < 1 || deadlineMs > deadlineCeilingMs
     || !Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1 || maxOutputBytes > 4096
     || !Number.isSafeInteger(stopGraceMs) || stopGraceMs < 1 || stopGraceMs > 5_000
     || typeof spawnProcess !== 'function' || typeof strictGroupCleanup !== 'boolean'

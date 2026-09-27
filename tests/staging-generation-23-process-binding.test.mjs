@@ -9,6 +9,7 @@ import { STAGING_GENERATION_23_PROCESS_BINDING_ENABLED,
   runBoundedStagingGeneration23WholeWorker, GENERATION_23_WHOLE_WORKER_DEADLINE_MS,
 } from '../scripts/staging-generation-23-process-binding.mjs'
 import { runStagingGeneration23WholeWorker } from '../scripts/staging-generation-23-worker-entry.mjs'
+import { GENERATION_23_ORDERLY_ABORT_MS } from '../scripts/staging-generation-23-worker-entry.mjs'
 
 const proof = 'TLL_STAGING_GENERATION_23_WHOLE_SUPERVISOR_V1'
 const controlUrl = new URL('../scripts/staging-provider-broker-recovery-process-control.mjs', import.meta.url).href
@@ -60,6 +61,19 @@ test('injected worker needs FD3 proof and emits only the secret-free exact termi
     runOperations() { throw Error('must not run') }, write() {} }), false)
 })
 
+test('worker requests orderly cancellation before the parent hard stop', async () => {
+  assert.equal(GENERATION_23_ORDERLY_ABORT_MS, 3_480_000)
+  const run = await armedWorker()
+  let aborted = false, wrote = false
+  assert.equal(await run({ deadlineMs: 20, signal: new AbortController().signal,
+    accept() { return () => {} },
+    runOperations({ signal }) { return new Promise(resolve => {
+      signal.addEventListener('abort', () => { aborted = true; resolve({ status: 'PASS_PARTIAL_LOCAL_COMPOSITE' }) }, { once: true })
+    }) }, write() { wrote = true } }), false)
+  assert.equal(aborted, true)
+  assert.equal(wrote, false)
+})
+
 test('parent accepts one clean exact terminal and never replays the fixed child', async () => {
   const run = await armedBinding()
   await assert.rejects(run({ deadlineMs: 1_000 }), /unavailable/)
@@ -71,8 +85,8 @@ test('parent accepts one clean exact terminal and never replays the fixed child'
   await assert.rejects(run({ deadlineMs: 1_000 }), /unavailable/)
 })
 
-test('generic parent cap is 30 minutes and its deadline kills a stuck child group', async () => {
-  assert.equal(GENERATION_23_WHOLE_WORKER_DEADLINE_MS, 1_800_000)
+test('Gen23 hard parent kill occurs before one hour and kills a stuck child group', async () => {
+  assert.equal(GENERATION_23_WHOLE_WORKER_DEADLINE_MS, 3_598_000)
   const file = join(mkdtempSync(join(tmpdir(), 'tll-gen23-stuck-')), 'child.pid')
   const worker = `import(${JSON.stringify(controlUrl)}).then(async m=>{await m.acceptSupervisorPipe({proof:${JSON.stringify(proof)}});const {spawn}=await import('node:child_process');const fs=await import('node:fs');const c=spawn('/bin/sleep',['30'],{stdio:'ignore'});fs.writeFileSync(process.argv[1],String(c.pid));setInterval(()=>{},1000)})`
   const result = await (await import(rotationUrl)).runBoundedBrokerRotationWorker({

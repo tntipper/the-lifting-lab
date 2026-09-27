@@ -636,7 +636,7 @@
       },
       {
         "path": "scripts/staging-provider-broker-rotation-process-control.mjs",
-        "sha256": "6dd43678245e2b00329d8178f21feea20ee91fdc10403fdf81bc2b1f68d66d78"
+        "sha256": "2400c3dd7100726ac7196a377a6a798a36d0cf1ef01004b2366bae0a29e42731"
       },
       {
         "path": "scripts/staging-provider-broker-rotation-keychain.py",
@@ -1236,11 +1236,15 @@
       },
       {
         "path": "scripts/staging-generation-23-process-binding.mjs",
-        "sha256": "ac4990972a5cf8090f9b9ddb39aaf2360b285a53ce2665da25fd0300549e9d19"
+        "sha256": "c6135cecac3f6287e35237ea58e9b9f380dc728f704e87f9a1c73f248f401d91"
       },
       {
         "path": "scripts/staging-generation-23-worker-entry.mjs",
-        "sha256": "60bbe1612d00436ac50cc90752af7e8c125f614f0a7c19a8993b5a406dd0a4cd"
+        "sha256": "516a0e021671f7ad2572a79750e9a2f00e6c42c5eae04e9f3627b17a63fb1fc2"
+      },
+      {
+        "path": "scripts/staging-generation-23-whole-route-journal.mjs",
+        "sha256": "dbc2fbb4062ed4d733b875da2fe120e51a53530d43f5d63d21f3aa33c367bbfc"
       },
       {
         "path": "scripts/staging-generation-23-settings-readback.mjs",
@@ -1412,7 +1416,7 @@
       },
       {
         "path": "tests/staging-provider-broker-rotation-process-control.test.mjs",
-        "sha256": "1384d4366416d4f60dd8aec4cbe5f8e370378549969167c0e1450972ad140a64"
+        "sha256": "4db390d0a09cd369fa11f2cb90523b94d667ad915b3139b801f0524007e57c8c"
       },
       {
         "path": "tests/staging-provider-broker-rotation-keychain.test.mjs",
@@ -1892,7 +1896,11 @@
       },
       {
         "path": "tests/staging-generation-23-process-binding.test.mjs",
-        "sha256": "1464259624c77b690f888a724af2a65394fbfcf398edc2e5da1922aa0d0c2092"
+        "sha256": "c2e2d9550d55b54dea475d0f9852023f149ff9e3838acdfae4784908720fa57b"
+      },
+      {
+        "path": "tests/staging-generation-23-whole-route-journal.test.mjs",
+        "sha256": "6723ef5dd48ac40135a08adf25528a50276ce32cf6341ef86d82112eeff3ebc1"
       },
       {
         "path": "tests/staging-generation-23-whole-process-offline.test.mjs",
