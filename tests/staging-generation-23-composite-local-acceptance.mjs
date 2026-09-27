@@ -15,15 +15,18 @@ import { STAGING_PROVIDER_NAME } from '../scripts/staging-provider-broker-native
 import { EDGE_PASSWORD_NAME, PROJECT_REF, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
 import { START, requirements, held, rehearsal, surfaceFixture } from './helpers/staging-generation-23-surface-fixture.mjs'
 import { createStagingPreviewDeploymentJournal } from '../scripts/staging-surface-preview-deployment-journal.mjs'
-import { STAGING_SURFACE_TARGET } from '../scripts/staging-surface-activation-transport.mjs'
+import { createStagingGeneration23PreviewWorkerFixture } from './helpers/staging-generation-23-preview-worker-fixture.mjs'
+import { acceptSupervisorPipe } from '../scripts/staging-provider-broker-recovery-process-control.mjs'
 
 const mode = process.argv.slice(2).join(' ')
-if (!['--run-offline-once', '--fail-first-setting-once', '--fail-inventory-branch-once',
+if (!['--run-offline-once', '--run-supervised-offline-once', '--fail-first-setting-once', '--fail-inventory-branch-once',
   '--fail-surface-public-once', '--fail-owner-verified-once',
   '--fail-setup-reply-once', '--abort-setup-once', '--fail-shutdown-reply-once',
   '--fail-retirement-reply-once'].includes(mode)) {
   throw Error('Explicit local test mode required')
 }
+const releaseSupervisorPipe = mode === '--run-supervised-offline-once'
+  ? await acceptSupervisorPipe({ proof: 'TLL_GEN23_WHOLE_OFFLINE_V1' }) : null
 
 const run = (program, args, env = process.env) => execFileSync(program, args, {
   cwd: new URL('../', import.meta.url), encoding: 'utf8', timeout: 120_000,
@@ -433,20 +436,10 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     path: join(previewDirectory, 'held.json'), now: () => START })
   enabledPreviewJournal = enabledJournal
   heldPreviewJournal = heldJournal
+  const previewWorker = createStagingGeneration23PreviewWorkerFixture({ surface, now: START })
   const buildPort = previewBridge.createStagingGeneration23PreviewBuildPort({
     enabledJournal, heldJournal,
-    async runBuild({ input, journal, signal }) {
-      assert.equal(signal, parent.signal)
-      const claim = journal.claim(input)
-      const dispatch = journal.dispatch(claim)
-      const identity = await surface.ports.createPreviewDeployment(STAGING_SURFACE_TARGET, input)
-      const accepted = journal.accepted(dispatch, identity.deploymentId)
-      journal.verified(accepted)
-      return { status: 'PROTECTED_PREVIEW_VERIFIED', deploymentId: identity.deploymentId,
-        immutableUrl: identity.immutableUrl, sourceCommit: identity.sourceCommit,
-        manifestSha256: identity.manifestSha256, customerEnabled: input.publicCustomer,
-        cartEnabled: input.publicCart }
-    },
+    runBuild: previewWorker.runBuild,
     readDeployment: (target, id) => surface.ports.readDeployment(target, id),
   })
   surfacePorts = surface.nativePorts(parent.signal, buildPort)
@@ -524,7 +517,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     database: 'real_sql_lifecycle_injected_guarded_host', surface: 'native_adapter_injected_services',
     customer: 'real_local_tests_and_browser', provider: 'real_control_official_sdk_local_fetch',
     backendControls: 'local_fixture_and_gen23_sql_compatibility', settings: 'guarded_transports_local_http',
-    previewWorker: 'two_one_use_journals_simulated_worker', hostedPreview: 'not_tested',
+    previewWorker: 'real_worker_local_http_two_one_use_journals', hostedPreview: 'not_tested',
     purchase: 'none', elapsedMs: result.elapsedMs }))
   }
 } finally {
@@ -537,4 +530,5 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
   for (const directory of [previewDirectory, providerDirectory, settingsDirectory, databaseJournalDirectory]) {
     if (directory) rmSync(directory, { recursive: true, force: true })
   }
+  releaseSupervisorPipe?.()
 }
