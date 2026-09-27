@@ -14,6 +14,7 @@ const preparedSql = new WeakMap()
 const quote = value => `'${value.replaceAll("'", "''")}'`
 const roles = PASSWORD_PURPOSES.map(purpose => IDENTITIES[purpose].login)
 const roleList = roles.map(quote).join(',')
+const membershipList = PASSWORD_PURPOSES.map(purpose => quote(IDENTITIES[purpose].membership)).join(',')
 const pairs = PASSWORD_PURPOSES.map(purpose => `(${quote(IDENTITIES[purpose].membership)},${quote(IDENTITIES[purpose].login)})`).join(',')
 const migrations = EXACT_MIGRATIONS.map(([version, hash]) => `(${quote(version)},${quote(hash)})`).join(',')
 
@@ -100,14 +101,18 @@ BEGIN
   SELECT shobj_description(oid,'pg_authid') INTO marker FROM pg_roles WHERE rolname=r;
   IF marker IS DISTINCT FROM ${quote(retired)} THEN RAISE EXCEPTION 'Generation 23 recovery retired marker mismatch'; END IF;
  END LOOP;
-  IF (SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
+ IF EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles m ON m.oid=e.member
+    WHERE m.rolname IN(${roleList}))
+  OR (SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
+    WHERE g.rolname IN(${roleList}) OR m.rolname IN(${roleList}))<>5
+  OR (SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
     WHERE g.rolname IN(${roleList}) AND m.rolname=session_user
-    AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)<>5
-  OR EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
-    WHERE (g.rolname IN(${roleList}) OR m.rolname IN(${roleList}))
-    AND NOT (g.rolname IN(${roleList}) AND m.rolname=session_user
-      AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)) THEN
-  RAISE EXCEPTION 'Generation 23 recovery execution edge remains'; END IF;
+    AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)<>5 THEN
+  RAISE EXCEPTION 'Generation 23 recovery runtime grants drift'; END IF;
+ IF (SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
+    WHERE g.rolname IN(${membershipList}) AND m.rolname=session_user
+    AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)<>5 THEN
+  RAISE EXCEPTION 'Generation 23 recovery inert operator links changed'; END IF;
  IF EXISTS(${aclDrift}) THEN RAISE EXCEPTION 'Generation 23 recovery private authority changed'; END IF;
  IF ${controls} THEN RAISE EXCEPTION 'Generation 23 recovery controls changed'; END IF;
 END $postflight$;

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createSurfaceActivationJournal, enableStagingSurfaces, freezeStagingSurfaces, HELD_SURFACE_FLAGS,
+import { createSurfaceActivationJournal, enableStagingSurfaces, freezeStagingSurfaces, readOnlyHeldStagingSurfaces, HELD_SURFACE_FLAGS,
   NATIVE_SURFACE_ACTIVATION_TRANSPORT_ENABLED, STAGING_BRANCH, STAGING_SURFACE_TARGET } from '../scripts/staging-surface-activation-transport.mjs'
 
 const NOW = 1_789_000_000_000
@@ -43,6 +43,21 @@ test('freeze builds and proves a distinct immutable held Preview after ordered w
   assert.equal(result.status, 'SURFACES_HELD_VERIFIED'); assert.notEqual(result.deployment.deploymentId, oldDeployment.deploymentId)
   assert.deepEqual(f.events.slice(0, 4), ['edge:false', 'private:false', 'public:false', 'create'])
   assert.equal(result.runtime.publicCustomerEnabled, false); assert.equal(j.read().state, 'FREEZE_VERIFIED')
+})
+
+test('separate final read proves the same held build and detects alias or runtime drift', async () => {
+  const f = fixture(), result = await readOnlyHeldStagingSurfaces({ ports: f.ports,
+    heldEvidence: oldDeployment, requirements, now: f.now })
+  assert.equal(result.status, 'FINAL_SURFACES_HELD_VERIFIED')
+  assert.deepEqual(f.events, ['readDeployment', 'alias', 'tls', 'tls', 'flags', 'runtime'])
+  const drifted = fixture({ runtimeDrift: true })
+  await assert.rejects(readOnlyHeldStagingSurfaces({ ports: drifted.ports,
+    heldEvidence: oldDeployment, requirements, now: drifted.now }), /unavailable/)
+  const alias = fixture()
+  alias.ports.resolveAlias = async () => ({ target: STAGING_SURFACE_TARGET,
+    alias: STAGING_SURFACE_TARGET.alias, deploymentId: 'dpl_other', immutableUrl: oldDeployment.immutableUrl })
+  await assert.rejects(readOnlyHeldStagingSurfaces({ ports: alias.ports,
+    heldEvidence: oldDeployment, requirements, now: alias.now }), /unavailable/)
 })
 
 test('journal is exclusive mode 0600 and contains no deployment or secret material', () => {

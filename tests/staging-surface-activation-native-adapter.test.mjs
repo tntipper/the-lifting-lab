@@ -101,6 +101,22 @@ test('opposite Edge acknowledgement and malformed TLS response fail closed', asy
   await assert.rejects(malformed.probeTls(STAGING_SURFACE_TARGET, oldDeployment.immutableUrl), /unavailable/)
 })
 
+test('a protected Preview 401 proves endpoint reachability, but redirects and wrong URLs do not', async () => {
+  const noop = async () => ({})
+  const portsFor = fetch => createStagingSurfaceNativePorts({ execute: completedExecutor,
+    runVercel: noop, setEdgeFlag: noop, readEdgeFlag: noop, readVercelFlags: noop,
+    createDeployment: noop, readDeployment: noop, resolveAlias: noop, fetch })
+  const target = oldDeployment.immutableUrl
+  assert.deepEqual(await portsFor(async () => ({ status: 401, url: target, redirected: false }))
+    .probeTls(STAGING_SURFACE_TARGET, target), { target: STAGING_SURFACE_TARGET, url: target, tls: true })
+  await assert.rejects(portsFor(async () => ({ status: 302, url: target, redirected: false }))
+    .probeTls(STAGING_SURFACE_TARGET, target), /unavailable/)
+  await assert.rejects(portsFor(async () => ({ status: 401, url: 'https://wrong.vercel.app', redirected: false }))
+    .probeTls(STAGING_SURFACE_TARGET, target), /unavailable/)
+  await assert.rejects(portsFor(async () => ({ status: 401, url: target, redirected: true }))
+    .probeTls(STAGING_SURFACE_TARGET, target), /unavailable/)
+})
+
 test('cancelled mutation settles before rejection and a cancelled read never becomes evidence', async () => {
   let mutationSettled = false
   const execute = async operation => {

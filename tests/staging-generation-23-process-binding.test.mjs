@@ -47,7 +47,7 @@ async function armedBinding() {
       `new URL(${JSON.stringify(new URL('../scripts/staging-generation-23-worker-entry.mjs', import.meta.url).href)})`)
     .replace("const ROOT = resolve(import.meta.dirname, '..')", `const ROOT = ${JSON.stringify(process.cwd())}`)
     .replaceAll("from './", `from '${new URL('../scripts/', import.meta.url).href}`)
-  return (await import(`data:text/javascript;base64,${Buffer.from(armed).toString('base64')}`)).runBoundedStagingGeneration23WholeWorker
+  return (await import(`data:text/javascript;base64,${Buffer.from(armed).toString('base64')}#${Math.random()}`)).runBoundedStagingGeneration23WholeWorker
 }
 
 test('ordinary Gen23 process source is OFF and starts neither worker nor hosted operation', async () => {
@@ -153,6 +153,15 @@ test('parent accepts one clean exact terminal and never replays the fixed child'
   } })
   assert.deepEqual(result, { status: 'VERIFIED_LOCAL_WHOLE_PROCESS' })
   await assert.rejects(run({ deadlineMs: 1_000 }), /unavailable/)
+})
+
+test('parent distinguishes a verified hosted route from local rehearsal', async () => {
+  const run = await armedBinding()
+  const program = `import(${JSON.stringify(controlUrl)}).then(async m=>{const release=await m.acceptSupervisorPipe({proof:${JSON.stringify(proof)}});release();process.stdout.write('{"schema":"tll-staging-generation-23-whole-worker-terminal/v1","status":"STAGING_SEQUENCE_PASS","generation":23}')})`
+  const result = await run({ deadlineMs: 1_000, spawnProcess(executable, _args, options) {
+    return spawn(executable, ['-e', program], options)
+  } })
+  assert.deepEqual(result, { status: 'VERIFIED_STAGING_WHOLE_PROCESS' })
 })
 
 test('Gen23 hard parent kill occurs before one hour and kills a stuck child group', async () => {

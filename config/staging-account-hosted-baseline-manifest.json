@@ -48,15 +48,15 @@
     },
     {
       "path": "scripts/staging-surface-activation-transport.mjs",
-      "sha256": "d8faf46f545657a900b9f9d37f6f4e6b7aa75ee34e7665cbb3d166b136446b80"
+      "sha256": "d4f63749c82e0c144ba83bfc1de88901cc305f07087d193a8626ae2e9bc8f7f5"
     },
     {
       "path": "scripts/staging-surface-activation-native-binding.mjs",
-      "sha256": "dfd1bfc0eec97ce98b9b96a240716796127d1a27c4c339ecc475bd4abd867e03"
+      "sha256": "3e092a947aaeb9d0c007bbb511e39b34a01d386e228e02834807c3ad8223c9e0"
     },
     {
       "path": "scripts/staging-surface-activation-native-adapter.mjs",
-      "sha256": "954a871b0da053418608676a6c421c55d6b8bae4255452e8684987f1f62f13f6"
+      "sha256": "60215dfc92263668d970291bff3b8b3fb5dd2d87d138f452923f6b9c37932761"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-session.mjs",
@@ -88,11 +88,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "78492573b23e2cf4cbc7ce790b9395c38463e2183e3e1e77e374bf99f78d5ecd"
+      "sha256": "278bb8fa521464b35367809de4ac2c3e6ed68262dcfd4a6e26a67e1eca41c5fc"
     },
     {
       "path": "package-lock.json",
-      "sha256": "2063a3da32ae5154ecabc9693d272d088315a6f89ddfe17be9606b2299c0971f"
+      "sha256": "007d5ca416d24c2dcd9d33285d2e047bcff822ec055d8bd67f68182b0df931d4"
     },
     {
       "path": "docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md",

@@ -56,6 +56,7 @@ test('edge entrypoints read secrets per request and wrong Basic auth is invalid_
   values.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED = 'false'
   const blocked = await token.default.fetch(tokenRequest())
   assert.equal(blocked.status, 503)
+  assert.equal(blocked.headers.get('x-tll-staging-edge-control'), 'disabled')
   assert.deepEqual(await blocked.json(), { error: 'temporarily_unavailable' })
   assert.equal(reads, before + 18)
   values.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED = 'true'

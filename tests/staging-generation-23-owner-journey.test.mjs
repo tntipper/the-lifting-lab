@@ -123,12 +123,27 @@ test('a failed owner sign-in closes the browser and never opens checkout', async
         waitForURL: async () => { throw Error('owner did not finish sign-in') } }) }),
     close: async () => { closes++ },
   }
-  await assert.rejects(run({ immutableUrl, bypass, expectedUnitPricePence: 1200,
+  const result = await run({ immutableUrl, bypass, expectedUnitPricePence: 1200,
     signal: new AbortController().signal,
     deadlineAt: new Date(Date.now() + 60_000).toISOString(),
     launch: async () => browser,
     checkoutObserver: async () => { checkout = true },
-  }), /unavailable at owner_sign_in/)
+  })
+  assert.equal(result.status, 'OWNER_JOURNEY_FAILED_VERIFIED')
   assert.equal(checkout, false)
   assert.equal(closes, 2)
+})
+
+test('uncertain browser closure does not claim a verified owner failure', async () => {
+  const { runStagingGeneration23OwnerJourney: run } = await armed()
+  const browser = { newContext: async () => ({ route: async () => {},
+    close: async () => { throw Error('context close failed') },
+    newPage: async () => ({ goto: async () => ({}),
+      getByRole: () => ({ click: async () => { throw Error('sign-in failed') } }) }) }),
+    close: async () => {} }
+  await assert.rejects(run({ immutableUrl, bypass, expectedUnitPricePence: 1200,
+    signal: new AbortController().signal,
+    deadlineAt: new Date(Date.now() + 60_000).toISOString(), launch: async () => browser,
+    checkoutObserver: async () => { throw Error('should not reach checkout') },
+  }), /unavailable/)
 })

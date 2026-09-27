@@ -215,6 +215,11 @@ COMMIT;`)
       recoverySql = input
       return executeRetirement(input)
     },
+    executePostflightReadOnlySql(input) {
+      assert.equal(state, 'RETIRED')
+      assert.match(input, /^BEGIN READ ONLY;/)
+      return sql('postgres', input)
+    },
     proveRetired() {
       assert.equal(state, 'RETIRED')
       assert.equal(sql('postgres', `SELECT count(*) FROM pg_roles WHERE rolname IN

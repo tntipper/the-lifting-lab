@@ -42,15 +42,14 @@ test('armed synthetic recovery is exact, finite, role-only, and checks retired s
   for (const purpose of PASSWORD_PURPOSES) {
     const { login, membership } = IDENTITIES[purpose]
     assert.equal(sql.split(`REVOKE ${membership} FROM ${login};`).length, 2)
+    assert.equal(sql.split(`REVOKE ${login} FROM CURRENT_USER;`).length, 1)
     assert.equal(sql.split(`ALTER ROLE ${login} NOLOGIN PASSWORD NULL VALID UNTIL 'infinity';`).length, 2)
     assert.equal(sql.split(`COMMENT ON ROLE ${login} IS `).length, 2)
   }
   assert.match(sql, /runtime sessions remain/)
   assert.match(sql, /private authority drift/)
   assert.match(sql, /private authority changed/)
-  assert.match(sql, /execution edge remains/)
-  assert.equal(sql.split('e.grantor=operator_name::regrole').length, 2)
-  assert.doesNotMatch(sql, /e\.grantor=session_user::regrole/)
+  assert.match(sql, /runtime grants drift/)
   assert.match(sql, /controls not disabled/)
   assert.match(sql, /controls changed/)
   assert.match(sql, /COMMIT;\nSELECT jsonb_build_object/)

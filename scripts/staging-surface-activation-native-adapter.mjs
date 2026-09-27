@@ -144,7 +144,13 @@ export function createStagingSurfaceNativePorts({
       validateTarget(value)
       if (url !== STAGING_ALIAS && !/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(url ?? '')) unavailable()
       const response = await invokeBounded(execute, signal => fetcher(url, { method: 'HEAD', redirect: 'manual', signal }))
-      if (!response || !Number.isInteger(response.status) || response.status < 200 || response.status > 299) unavailable()
+      // A login-protected Preview may answer HEAD with 401. That still proves
+      // the pinned HTTPS endpoint was reached; the separate protected
+      // readiness read proves the actual runtime state.
+      if (!response || response.redirected === true
+        || response.url && response.url !== url
+        || !Number.isInteger(response.status)
+        || response.status !== 401 && (response.status < 200 || response.status > 299)) unavailable()
       return Object.freeze({ target: STAGING_SURFACE_TARGET, url, tls: true })
     },
     async readRuntimeReadiness(value, deploymentId) {

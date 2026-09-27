@@ -12,6 +12,7 @@ export const MAX_CART_QUANTITY = 5
 type Json = Record<string, unknown>
 export type CartObservation = { id: string; lineId: string | null; quantity: number; unitPricePence: number | null; subtotalPence: number }
 export type StorefrontCart = {
+  readVariantPrice(): Promise<number>
   read(id: string): Promise<CartObservation>
   create(quantity: number): Promise<CartObservation>
   set(previous: CartObservation, quantity: number): Promise<CartObservation>
@@ -102,6 +103,7 @@ export function createStagingStorefront(options: {
     const cart = observation(result.cart); requireValue(cart.quantity === target); return cart
   }
   return {
+    async readVariantPrice() { return variant((await send('variant')).productVariant) },
     async read(id) { const cart = observation((await send('read', { id: privateCartId(id) })).cart); requireValue(cart.id === id); return cart },
     async readCheckoutHandoff(id) {
       privateCartId(id)

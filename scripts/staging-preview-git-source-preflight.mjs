@@ -129,6 +129,11 @@ function fixedGit(args, maxBuffer) {
   return result.stdout
 }
 
+/** Fixed, read-only source proof for a supervised staging child. */
+export function readStagingPreviewGitSourceProofFixed() {
+  return readStagingPreviewGitSourceProof({ runGit: fixedGit })
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   process.stdout.write(`${JSON.stringify(await readStagingPreviewGitSourceProof({ runGit: fixedGit }))}\n`)
 }

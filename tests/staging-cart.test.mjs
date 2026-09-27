@@ -34,6 +34,25 @@ const HMAC = 'a'.repeat(64), ACTOR = '70000000-0000-4000-8000-000000000001'
 const jsonResponse = value => new Response(JSON.stringify(value), { status: 200, headers: { 'content-type': 'application/json', 'x-shopify-api-version': sf.STOREFRONT_VERSION } })
 const hash = value => createHash('sha256').update(value).digest('hex')
 
+test('staging variant price can be checked without creating a cart', async () => {
+  let calls = 0, amount = '12.00'
+  const storefront = sf.createStagingStorefront({ enabled: true, environment: 'staging',
+    shop: sf.STAGING_CART_SHOP, privateToken: 'synthetic-private-token',
+    transport: async (_endpoint, input) => {
+      calls++
+      assert.equal(input.method, 'POST')
+      assert.match(JSON.parse(input.body).query, /^query TllStagingVariant/)
+      return jsonResponse({ data: { productVariant: { id: sf.STAGING_SHOPIFY_VARIANT,
+        availableForSale: true, product: { id: sf.STAGING_SHOPIFY_PRODUCT },
+        price: { amount, currencyCode: 'GBP' } } } })
+    },
+  })
+  assert.equal(await storefront.readVariantPrice(), 1200)
+  amount = '0.00'
+  await assert.rejects(storefront.readVariantPrice(), sf.CartProviderFailure)
+  assert.equal(calls, 2)
+})
+
 test('checkout handoff reads only the pinned staging cart and rejects unsafe destinations', async () => {
   const checkout = `https://${sf.STAGING_CART_SHOP}/cart/c/syntheticCheckout123`
   const makeCart = url => ({ id: RAW_CART, checkoutUrl: url, totalQuantity: 1,

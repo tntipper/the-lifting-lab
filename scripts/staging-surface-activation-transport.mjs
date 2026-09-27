@@ -160,6 +160,23 @@ async function recoverHeld(ports, requirements, priorIdentity, startedAt, now) {
   return deployAndProve(ports, requirements, HELD_SURFACE_FLAGS, priorIdentity, heldBuildBoundary, now)
 }
 
+/** A separate observation after retirement; this makes no surface change. */
+export async function readOnlyHeldStagingSurfaces({ ports, heldEvidence, requirements,
+  now = Date.now } = {}) {
+  requirePorts(ports)
+  const observedAt = now()
+  validateRequirements(requirements, observedAt)
+  const expected = validateIdentity(heldEvidence, requirements, { nowMs: observedAt })
+  const observed = validateIdentity(await ports.readDeployment(STAGING_SURFACE_TARGET,
+    expected.deploymentId), requirements, { nowMs: now() })
+  if (observed.deploymentId !== expected.deploymentId
+    || observed.immutableUrl !== expected.immutableUrl
+    || observed.createdAt !== expected.createdAt) unavailable()
+  await readDeploymentProof(ports, observed, HELD_SURFACE_FLAGS)
+  validateRequirements(requirements, now())
+  return stableResult('FINAL_SURFACES_HELD_VERIFIED', { deployment: observed })
+}
+
 export async function freezeStagingSurfaces({ ports, currentEvidence, requirements, journal = createSurfaceActivationJournal(), now = Date.now } = {}) {
   requirePorts(ports); validateJournal(journal); if (typeof now !== 'function') unavailable()
   const replay = existingStatus(journal); if (replay) return stableResult(replay)

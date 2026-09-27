@@ -52,6 +52,7 @@ export async function runStagingGeneration23OwnerJourney({ immutableUrl, bypass,
     || !Number.isFinite(remaining) || remaining < 1 || remaining > 10 * 60_000
     || typeof launch !== 'function' || typeof checkoutObserver !== 'function') unavailable()
   let browser, accountContext, signedOutContext, checkoutContext, step = 'launch'
+  let outcome, failed = false, closeFailed = false
   const timeout = Math.min(remaining, 9 * 60_000)
   const closed = () => { try { void Promise.resolve(browser?.close()).catch(() => {}) } catch {} }
   signal.addEventListener('abort', closed, { once: true })
@@ -117,16 +118,19 @@ export async function runStagingGeneration23OwnerJourney({ immutableUrl, bypass,
     await checkoutPage.getByText(money(expectedUnitPricePence), { exact: true })
       .first().waitFor({ timeout: 15_000 })
     if (signal.aborted || Date.now() >= Date.parse(deadlineAt)) unavailable()
-    return Object.freeze({ status: 'OWNER_JOURNEY_VERIFIED_NO_PURCHASE',
+    outcome = Object.freeze({ status: 'OWNER_JOURNEY_VERIFIED_NO_PURCHASE',
       account: 'owner_identity_and_orders', cart: 'explicit_guest_transfer_mapped_product_and_price',
       checkout: 'staging_get_only' })
-  } catch { throw Error(`Generation 23 owner journey unavailable at ${step}`) }
+  } catch { failed = true }
   finally {
     clearTimeout(deadlineTimer)
     signal.removeEventListener('abort', closed)
     for (const context of [checkoutContext, signedOutContext, accountContext]) {
-      try { await context?.close() } catch {}
+      try { await context?.close() } catch { closeFailed = true }
     }
-    try { await browser?.close() } catch {}
+    try { await browser?.close() } catch { closeFailed = true }
   }
+  if (closeFailed || signal.aborted) throw Error(`Generation 23 owner journey unavailable at ${step}`)
+  if (failed) return Object.freeze({ status: 'OWNER_JOURNEY_FAILED_VERIFIED' })
+  return outcome
 }

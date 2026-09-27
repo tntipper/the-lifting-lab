@@ -14,7 +14,8 @@ const deployment = Object.freeze({ id: deploymentId, url: 'tll-abc.vercel.app', 
   gitSource: { type: 'github', repoId: 1264363509, ref: 'codex/tll-integration', sha: 'a'.repeat(40) },
   meta: { githubCommitRef: 'codex/tll-integration', githubCommitSha: 'a'.repeat(40), tllManifestSha256: 'b'.repeat(64) } })
 const jsonResponse = (status, body, _url, length = null) => new Response(JSON.stringify(body), { status,
-  headers: length === null ? undefined : { 'content-length': length } })
+  headers: { ...(length === null ? {} : { 'content-length': length }),
+    ...(status === 503 && body?.error === 'temporarily_unavailable' ? { 'x-tll-staging-edge-control': 'disabled' } : {}) } })
 
 function binding({ onFetch = () => {}, onCli = () => ({ status: 'COMPLETED' }) } = {}) {
   return createStagingSurfaceNativeBinding({ vercelToken: token(),
@@ -94,11 +95,14 @@ test('Edge read permits only the two secret-free runtime protocol proofs', async
   const calls = []
   const held = binding({ onFetch: (url, options) => calls.push({ url, options }) })
   assert.deepEqual(await held.readEdgeFlag(STAGING_SURFACE_TARGET, 'customer-subject-broker', { signal }), { target: STAGING_SURFACE_TARGET, functionName: 'customer-subject-broker', enabled: false })
-  assert.deepEqual(calls[0], { url: 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-token', options: { method: 'POST', redirect: 'error', headers: { accept: 'application/json' }, signal } })
+  assert.deepEqual(calls[0], { url: 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-token', options: { method: 'POST', redirect: 'error', headers: { accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' }, body: '', signal } })
   const unexpected = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }), fetch: async (url) => jsonResponse(400, { error: 'bad_request' }, url) })
   await assert.rejects(unexpected.readEdgeFlag(STAGING_SURFACE_TARGET, 'customer-subject-broker', { signal }), /unavailable/)
   const wrongStatus = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }), fetch: async (url) => jsonResponse(200, { error: 'invalid_client' }, url) })
   await assert.rejects(wrongStatus.readEdgeFlag(STAGING_SURFACE_TARGET, 'customer-subject-broker', { signal }), /unavailable/)
+  const configurationFault = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async url => new Response(JSON.stringify({ error: 'temporarily_unavailable' }), { status: 503, headers: { 'content-type': 'application/json' } }) })
+  await assert.rejects(configurationFault.readEdgeFlag(STAGING_SURFACE_TARGET, 'customer-subject-broker', { signal }), /unavailable/)
 })
 
 test('alias, readiness and deployment calls use fixed URLs, headers, and reject drift', async () => {
@@ -116,6 +120,36 @@ test('alias, readiness and deployment calls use fixed URLs, headers, and reject 
   assert.equal(deploymentCall.url, `https://api.vercel.com/v13/deployments/${deploymentId}?withGitRepoInfo=true&teamId=${VERCEL_TEAM_ID}`)
   await assert.rejects(ports.readDeployment({ ...STAGING_SURFACE_TARGET, projectRef: 'wrhgscovsgsudtedbljr' }, deploymentId, { signal }), /unavailable/)
   await assert.rejects(ports.createDeployment(), /unavailable/)
+})
+
+test('protected readiness transport is isolated from Vercel management requests', async () => {
+  const ordinary = [], protectedCalls = []
+  const host = createStagingSurfaceNativeBinding({ vercelToken: token(),
+    runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async url => {
+      ordinary.push(url)
+      if (url.includes('/v4/aliases/')) return jsonResponse(200, {
+        alias: new URL(STAGING_ALIAS).hostname, projectId: VERCEL_PROJECT_ID, deploymentId,
+        deployment: { id: deploymentId, url: deployment.url },
+      }, url)
+      return jsonResponse(200, deployment, url)
+    },
+    protectedFetch: async (url, options) => {
+      protectedCalls.push({ url, options })
+      return jsonResponse(200, { deploymentId, immutableUrl: `https://${deployment.url}`,
+        projectRef: 'qdmvngjwkcsilzmqksme', branch: 'codex/tll-integration',
+        privateCustomer: false, privateCart: false,
+        publicCustomer: false, publicCart: false }, url)
+    },
+  })
+  await host.readVercelFlags(STAGING_SURFACE_TARGET, { privateCustomer: 'TLL_STAGING_CUSTOMER_ENABLED',
+    privateCart: 'TLL_STAGING_CART_ENABLED', publicCustomer: 'NEXT_PUBLIC_TLL_STAGING_CUSTOMER',
+    publicCart: 'NEXT_PUBLIC_TLL_STAGING_CART' }, { signal })
+  await host.readDeployment(STAGING_SURFACE_TARGET, deploymentId, { signal })
+  assert.equal(protectedCalls.length, 1)
+  assert.equal(protectedCalls[0].url, `https://${deployment.url}/api/staging/readiness`)
+  assert.ok(ordinary.every(url => url.startsWith('https://api.vercel.com/')))
+  assert.equal(ordinary.length, 2)
 })
 
 test('deployment state read distinguishes pending, ready and failed builds without claiming source proof', async () => {

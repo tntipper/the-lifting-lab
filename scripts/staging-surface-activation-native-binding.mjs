@@ -135,8 +135,10 @@ function aliasReceipt(value) {
  * runCli and fetch are mandatory injected, abort-aware functions. No operation has a
  * default implementation, so importing this module cannot contact either provider.
  */
-export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher, vercelToken } = {}) {
-  if (typeof runCli !== 'function' || typeof fetcher !== 'function') unavailable()
+export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher,
+  protectedFetch, vercelToken } = {}) {
+  if (typeof runCli !== 'function' || typeof fetcher !== 'function'
+    || protectedFetch !== undefined && typeof protectedFetch !== 'function') unavailable()
   const token = validateVercelToken(vercelToken)
   const deployments = new Map()
   const readPinnedRepository = async signal => {
@@ -158,8 +160,8 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher, verc
     validateSignal(signal)
     return operation()
   }
-  const fetchJson = async (url, options) => {
-    const response = await settled(() => fetcher(url, options))
+  const fetchJson = async (url, options, transport = fetcher) => {
+    const response = await settled(() => transport(url, options))
     return json(response, url, 200)
   }
   const boundFetch = async (url, options) => {
@@ -172,7 +174,8 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher, verc
       && options.method === 'GET' && options.redirect === 'error' && exact(options.headers, ['x-tll-deployment-id'])
       && options.headers['x-tll-deployment-id'] === readiness[0]
     if (!headAllowed && !readinessAllowed) unavailable()
-    const response = await settled(() => fetcher(url, options))
+    const response = await settled(() => readinessAllowed && protectedFetch
+      ? protectedFetch(url, options) : fetcher(url, options))
     if (!response || typeof response !== 'object') unavailable()
     // The adapter's readiness parser receives the same bounded body parser.
     return Object.freeze({ status: response.status, url: response.url, redirected: response.redirected, headers: response.headers,
@@ -205,10 +208,13 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher, verc
     },
     async readEdgeFlag(target, functionName, { signal } = {}) {
       validateTarget(target); validateSignal(signal); if (functionName !== STAGING_EDGE_FUNCTION) unavailable()
-      const response = await settled(() => fetcher(EDGE_TOKEN_URL, Object.freeze({ method: 'POST', redirect: 'error', headers: Object.freeze({ accept: 'application/json' }), signal })))
+      const response = await settled(() => fetcher(EDGE_TOKEN_URL, Object.freeze({ method: 'POST', redirect: 'error', headers: Object.freeze({
+        accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded',
+      }), body: '', signal })))
       const expectedStatus = response?.status === 503 ? 503 : response?.status === 401 ? 401 : -1
       const value = await json(response, EDGE_TOKEN_URL, expectedStatus)
-      if (response.status === 503 && exact(value, ['error']) && value.error === 'temporarily_unavailable') return Object.freeze({ target: STAGING_SURFACE_TARGET, functionName, enabled: false })
+      if (response.status === 503 && exact(value, ['error']) && value.error === 'temporarily_unavailable'
+        && response.headers?.get?.('x-tll-staging-edge-control') === 'disabled') return Object.freeze({ target: STAGING_SURFACE_TARGET, functionName, enabled: false })
       if (response.status === 401 && exact(value, ['error']) && value.error === 'invalid_client') return Object.freeze({ target: STAGING_SURFACE_TARGET, functionName, enabled: true })
       unavailable()
     },
@@ -219,7 +225,7 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher, verc
         || names.publicCustomer !== 'NEXT_PUBLIC_TLL_STAGING_CUSTOMER' || names.publicCart !== 'NEXT_PUBLIC_TLL_STAGING_CART') unavailable()
       const alias = await resolveAlias(target, Object.freeze({ project: VERCEL_PROJECT, scope: VERCEL_SCOPE, alias: STAGING_ALIAS, branch: STAGING_BRANCH }), { signal })
       const url = `${alias.immutableUrl}/api/staging/readiness`
-      const value = await fetchJson(url, Object.freeze({ method: 'GET', redirect: 'error', headers: Object.freeze({ 'x-tll-deployment-id': alias.deploymentId }), signal }))
+      const value = await fetchJson(url, Object.freeze({ method: 'GET', redirect: 'error', headers: Object.freeze({ 'x-tll-deployment-id': alias.deploymentId }), signal }), protectedFetch ?? fetcher)
       if (!exact(value, ['deploymentId', 'immutableUrl', 'projectRef', 'branch', 'privateCustomer', 'privateCart', 'publicCustomer', 'publicCart'])
         || value.deploymentId !== alias.deploymentId || value.immutableUrl !== alias.immutableUrl || value.projectRef !== STAGING_PROJECT_REF || value.branch !== STAGING_BRANCH
         || [value.privateCustomer, value.privateCart, value.publicCustomer, value.publicCart].some(item => typeof item !== 'boolean')) unavailable()

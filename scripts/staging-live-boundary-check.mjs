@@ -76,7 +76,8 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
     }
     if (/^staging-generation-23-.*\.mjs$/.test(file)) {
       const assignments = source.match(/^[ \t]*export const STAGING_GENERATION_23_[A-Z0-9_]*ENABLED[ \t]*=.*$/gm) ?? []
-      if (assignments.length !== 1 || !assignments[0].endsWith('= false')) {
+      const expectedCount = file === 'staging-generation-23-worker-entry.mjs' ? 2 : 1
+      if (assignments.length !== expectedCount || assignments.some(line => !line.endsWith('= false'))) {
         violations.push(`enabled-native-gate:${display(path)}`)
       }
     }

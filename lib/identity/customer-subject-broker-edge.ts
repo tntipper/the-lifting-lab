@@ -20,9 +20,10 @@ type Dependencies = Readonly<{ runtimeFactory?: RuntimeFactory; coreFactory?: Co
 
 const secret = (value: unknown): value is string => typeof value === 'string' && Buffer.byteLength(value) >= 32
   && Buffer.byteLength(value) <= 512 && !/[\x00-\x1f\x7f]/.test(value)
-const fixed = () => new Response(JSON.stringify({ error: 'temporarily_unavailable' }), { status: 503, headers: {
+const fixed = (flagDisabled = false) => new Response(JSON.stringify({ error: 'temporarily_unavailable' }), { status: 503, headers: {
   'content-type': 'application/json', 'cache-control': 'no-store', pragma: 'no-cache',
   'referrer-policy': 'no-referrer', 'x-content-type-options': 'nosniff',
+  ...(flagDisabled ? { 'x-tll-staging-edge-control': 'disabled' } : {}),
 } })
 
 async function boundedBody(request: Request): Promise<string> {
@@ -71,7 +72,8 @@ export function createCustomerSubjectBrokerEdgeHandler(surface: Surface, env: En
       const password = env.TLL_STAGING_BROKER_DATABASE_PASSWORD
       const clientSecret = env.TLL_STAGING_SUBJECT_BROKER_CLIENT_SECRET
       const caPem = env.TLL_STAGING_POSTGRES_CA_PEM, caSha = env.TLL_STAGING_POSTGRES_CA_SHA256
-      if (env.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED !== 'true' || env.SUPABASE_URL !== PROJECT_URL
+      if (env.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED !== 'true') return fixed(true)
+      if (env.SUPABASE_URL !== PROJECT_URL
         || !secret(password) || !secret(clientSecret) || password === clientSecret
         || !caPem || !caSha || !/^[a-f0-9]{64}$/.test(caSha)) return fixed()
       runtime = runtimeFactory({ purpose: 'broker', enabled: true, password,

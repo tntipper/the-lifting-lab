@@ -27,6 +27,7 @@ test('disabled, foreign-project and malformed secrets fail before runtime constr
   {TLL_STAGING_POSTGRES_CA_PEM:undefined},{TLL_STAGING_POSTGRES_CA_SHA256:undefined},
   {TLL_STAGING_POSTGRES_CA_SHA256:'bad'}]){
   const f=fixture(),response=await f.make('token',{...env,...change})(tokenRequest());assert.equal(response.status,503);assert.equal(f.calls.length,0)
+  assert.equal(response.headers.get('x-tll-staging-edge-control'),change.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED==='false'?'disabled':null)
   assert.deepEqual(await response.json(),{error:'temporarily_unavailable'})
  }
 })
