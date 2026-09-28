@@ -316,7 +316,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <dd className="m-0 text-right font-mono text-white">{product.servings_per_container ?? 'Not listed'}</dd>
                 <dt className="text-lab-muted">Serving size</dt>
                 <dd className="m-0 text-right font-mono text-white">
-                  {product.serving_size != null ? `${product.serving_size}${product.serving_unit ?? ''}` : 'Not listed'}
+                  {product.serving_size != null ? `${product.serving_size}${product.serving_unit ? ` ${product.serving_unit}` : ''}` : 'Not listed'}
                 </dd>
                 <dt className="text-lab-muted">Assessment</dt>
                 <dd className="m-0 text-right font-medium text-white">{assessment.label}</dd>
