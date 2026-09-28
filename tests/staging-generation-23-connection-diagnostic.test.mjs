@@ -58,11 +58,8 @@ test('PASS requires completed cleanup and an existing symbolic link cannot be cl
     assert.throws(() => journal.pass(record), /unavailable/)
     record = journal.progress(record, { step: 'correct_roles' })
     assert.throws(() => journal.progress(record, { step: 'cleanup' }), /unavailable/)
-    for (const purpose of ['customer', 'cart', 'broker', 'provisional', 'bridge']) {
-      record = journal.progress(record, { step: 'wrong_password', purpose })
-    }
-    record = journal.progress(record, { step: 'final_good', purpose: 'customer', check: 'connect' })
-    record = journal.progress(record, { step: 'final_good', purpose: 'bridge' })
+    assert.throws(() => journal.progress(record, { step: 'drain' }), /unavailable/)
+    record = journal.progress(record, { step: 'correct_roles', purpose: 'bridge', check: 'table_denial' })
     record = journal.progress(record, { step: 'drain' })
     record = journal.progress(record, { step: 'cleanup' })
     record = journal.pass(record)

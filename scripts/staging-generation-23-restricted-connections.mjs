@@ -31,7 +31,6 @@ const validPasswords = passwords => exact(passwords, PASSWORD_PURPOSES)
   && Object.values(passwords).every(value => typeof value === 'string'
     && /^[A-Za-z0-9_-]{64}$/.test(value))
   && new Set(Object.values(passwords)).size === PASSWORD_PURPOSES.length
-const changedPassword = password => `${password.slice(0, -1)}${password.at(-1) === 'A' ? 'B' : 'A'}`
 const waitForDrain = (ms, signal) => new Promise((resolve, reject) => {
   if (signal.aborted) { reject(Error('Generation 23 drain cancelled')); return }
   const onAbort = () => { clearTimeout(timer); reject(Error('Generation 23 drain cancelled')) }
@@ -111,22 +110,28 @@ export function createStagingGeneration23WrongPasswordProbe({ Client,
 
 /**
  * Runs inside the credential-owning child. `verify` proves each real login's
- * role and private-table denial; this wrapper separately proves that all five
- * modified passwords cannot connect, then closes every created runtime.
+ * identity, assigned role and private-table denial. The wrapper then closes
+ * every runtime and waits for the shared pooler sessions to drain before any
+ * provider or customer-facing switch can turn on.
+ *
+ * Earlier attempts deliberately submitted five wrong passwords and immediately
+ * repeated the complete correct-login sweep. That duplicate proof could trip
+ * the shared pooler's authentication cache/circuit breaker after the first
+ * correct-role proof had already passed. It added no new application-permission
+ * evidence, so the live successor omits it.
  */
 export function createStagingGeneration23RestrictedConnections({ createRuntime,
   verify = verifyGeneration6Connections, readCa = readPinnedSupabaseCa,
-  verifyDrained, verifyWrongPassword, classifyQueryError, classifyConnectError, diagnostic, pause = waitForDrain,
+  verifyDrained, classifyQueryError, classifyConnectError, diagnostic, pause = waitForDrain,
   now = Date.now, scheduleTimeout = setTimeout, clearScheduledTimeout = clearTimeout,
 } = {}) {
   if (!STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_ENABLED || typeof createRuntime !== 'function'
     || typeof verify !== 'function' || typeof readCa !== 'function' || typeof now !== 'function'
     || typeof classifyQueryError !== 'function' || (classifyConnectError !== undefined && typeof classifyConnectError !== 'function')
     || !diagnostic || ['claim', 'progress', 'hold', 'pass'].some(method => typeof diagnostic[method] !== 'function')
-    || typeof verifyDrained !== 'function' || (verifyWrongPassword !== undefined && typeof verifyWrongPassword !== 'function')
+    || typeof verifyDrained !== 'function'
     || typeof pause !== 'function' || typeof scheduleTimeout !== 'function'
     || typeof clearScheduledTimeout !== 'function') unavailable()
-  const wrongPasswordProbe = verifyWrongPassword ?? createStagingGeneration23WrongPasswordProbe()
   let used = false
   return Object.freeze({
     async prove({ passwords, expiresAt, deadlineAt, signal } = {}) {
@@ -192,45 +197,6 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
           || verified.purposes !== PASSWORD_PURPOSES.length || verified.controlsEnabled !== false) {
           outcome = 'correct_role_failed'; unavailable()
         }
-        for (const purpose of PASSWORD_PURPOSES) {
-          if (controller.signal.aborted || now() >= deadlineMs) unavailable()
-          record = diagnostic.progress(record, { step: 'wrong_password', purpose })
-          failedPurpose = purpose; failedCheck = null
-          let denied = false
-          try {
-            const result = await wrongPasswordProbe({ purpose, password: changedPassword(passwords[purpose]), tlsCa,
-              signal: controller.signal })
-            denied = exact(result, ['code']) && result.code === '28P01'
-          } catch { denied = false }
-          // The regular staging runtime intentionally sanitises raw pg errors.
-          // Its `connect()` cannot distinguish authentication rejection from a
-          // transport outage, so the supervised assembly must inject the
-          // pinned raw probe which closes its own pool and retains only code.
-          if (!denied || controller.signal.aborted || now() >= deadlineMs) {
-            outcome = 'wrong_password_failed'; unavailable()
-          }
-        }
-        // Wrong-password probes may trip a shared pooler guard. Prove every
-        // real login still works before any provider or customer switch turns on.
-        try {
-          record = diagnostic.progress(record, { step: 'final_good', purpose: 'customer', check: 'connect' })
-          const final = await verify({ passwords, expiresAt, tlsCa, createRuntime: trackedRuntime,
-            requireClassifiedDenials: true, classifyQueryError, classifyConnectError,
-            signal: controller.signal, onProgress: ({ purpose, check }) => {
-              record = diagnostic.progress(record, { step: 'final_good', purpose, check })
-            } })
-          if (final?.status !== 'PASS' || final.projectRef !== PROJECT_REF
-            || final.purposes !== PASSWORD_PURPOSES.length || final.controlsEnabled !== false) unavailable()
-          record = diagnostic.progress(record, { step: 'final_good', purpose: 'bridge' })
-        } catch (error) {
-          const safe = connectionFailureReport(error)
-          failedPurpose = safe.purpose; failedCheck = safe.check
-          if (safe.firstConnect || safe.secondConnect) failedConnectionEvidence = Object.freeze({
-            first: safe.firstConnect ?? null, second: safe.secondConnect ?? null,
-          })
-          outcome = 'final_good_failed'
-          throw error
-        }
         clearScheduledTimeout(roleTimer); roleTimer = undefined
         record = diagnostic.progress(record, { step: 'drain' })
         failedPurpose = null
@@ -275,7 +241,7 @@ export function createStagingGeneration23RestrictedConnections({ createRuntime,
         const terminal = cleanupFailed ? 'cleanup_failed' : expired ? 'deadline'
           : cancelled ? 'cancelled' : outcome
         diagnostic.hold(record, { outcome: terminal, purpose: failedPurpose, check: failedCheck,
-          connectionEvidence: ['correct_role_failed', 'final_good_failed'].includes(terminal)
+          connectionEvidence: terminal === 'correct_role_failed'
             ? failedConnectionEvidence : null })
         unavailable()
       }

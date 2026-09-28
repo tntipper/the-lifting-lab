@@ -85,17 +85,13 @@ test('hosted password projection, database material and restricted login proof u
         for (const purpose of PASSWORD_PURPOSES) input.createRuntime({ purpose, password: input.passwords[purpose] })
         return { status: 'PASS', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5, controlsEnabled: false }
       },
-      verifyWrongPassword: async input => {
-        assert.notEqual(input.password, material.passwords[input.purpose])
-        return { code: '28P01' }
-      },
       verifyDrained: async () => ({ status: 'PASS_DRAINED', projectRef: 'qdmvngjwkcsilzmqksme',
         purposes: 5, controlsEnabled: false, runtimeSessions: 0 }),
       now: () => Date.parse(expiresAt) - 3 * 60_000,
     })
     assert.equal((await proof.prove({ passwords: material.passwords, expiresAt,
       deadlineAt: new Date(Date.parse(expiresAt) - 60_000).toISOString(), signal })).status, 'PASS_RESTRICTED_CONNECTIONS')
-    assert.deepEqual(accepted.sort(), [...PASSWORD_PURPOSES, ...PASSWORD_PURPOSES].sort())
+    assert.deepEqual(accepted.sort(), [...PASSWORD_PURPOSES].sort())
     assert.equal(diagnosticEvents.at(-1), 'PASS')
   } finally { adapter.dispose() }
   assert.throws(() => adapter.getDatabaseMaterial(), /unavailable/)
@@ -117,7 +113,7 @@ test('backend read receipt projects only the fields accepted by the fixed provid
   const backend = await import(backendUrl)
   const receipt = { status: 'PASS_BACKEND_OFF', queryId: backend.QUERY_ID,
     projectRef: 'qdmvngjwkcsilzmqksme', generation: 23,
-    windowId: '02f36f3c-8927-43cc-96a0-067bfa45a973', expiresAt,
+    windowId: 'b04834a8-89a7-4f3f-b941-623c925786d5', expiresAt,
     controlsEnabled: false, runtimeSessions: 0 }
   const validated = backend.validateStagingGeneration23BackendState(
     [{ tll_generation_23_backend_state: receipt }], { expiresAt })

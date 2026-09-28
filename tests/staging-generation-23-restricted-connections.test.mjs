@@ -55,25 +55,20 @@ test('ordinary source is OFF before it can create a database runtime', () => {
   assert.equal(called, false)
 })
 
-test('armed proof accepts the built-in fixed wrong-password probe when no override is supplied', async () => {
+test('armed proof accepts the fixed correct-role and drained-session dependencies', async () => {
   const { createStagingGeneration23RestrictedConnections: create } = await armed()
   assert.doesNotThrow(() => create({ createRuntime: runtimeFixture(), classifyQueryError, diagnostic: diagnosticFixture(), readCa: () => ({ pem: 'fixture', sha256: 'a'.repeat(64) }),
     verifyDrained: async () => ({ status: 'PASS_DRAINED', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5,
       controlsEnabled: false, runtimeSessions: 0 }), now: () => start }))
 })
 
-test('five correct roles and five wrong passwords are proved and every runtime closes', async () => {
+test('five correct roles are proved once and every runtime closes before drain proof', async () => {
   const { createStagingGeneration23RestrictedConnections: create } = await armed(), events = [], calls = []
-  const wrongPasswordCalls = []
   const proof = create({ createRuntime: runtimeFixture({ events }), classifyQueryError, diagnostic: diagnosticFixture(), readCa: () => ({ pem: 'fixture', sha256: 'a'.repeat(64) }),
     verifyDrained: async ({ expiresAt: received, signal }) => {
       assert.equal(received, expiresAt); assert.equal(signal.aborted, false)
       return { status: 'PASS_DRAINED', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5,
         controlsEnabled: false, runtimeSessions: 0 }
-    },
-    async verifyWrongPassword(input) {
-      wrongPasswordCalls.push(input)
-      return { code: '28P01' }
     },
     async verify(input) {
       calls.push(input)
@@ -83,38 +78,25 @@ test('five correct roles and five wrong passwords are proved and every runtime c
   assert.deepEqual(await proof.prove({ passwords, expiresAt, deadlineAt, signal: new AbortController().signal }), {
     status: 'PASS_RESTRICTED_CONNECTIONS', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5, controlsEnabled: false,
   })
-  assert.equal(calls.length, 2)
+  assert.equal(calls.length, 1)
   assert.equal(calls[0].requireClassifiedDenials, true)
   assert.equal(calls[0].classifyQueryError, classifyQueryError)
   const created = events.filter(event => event.kind === 'create')
-  assert.equal(created.length, 10)
+  assert.equal(created.length, 5)
   for (const purpose of purposes) {
     const correct = created.find(event => event.purpose === purpose && event.password === passwords[purpose])
-    const wrong = wrongPasswordCalls.find(event => event.purpose === purpose)
-    assert.ok(correct); assert.ok(wrong); assert.match(wrong.password, /^[A-Za-z0-9_-]{64}$/)
-    assert.notEqual(wrong.password, passwords[purpose])
+    assert.ok(correct)
   }
-  assert.equal(events.filter(event => event.kind === 'close').length, 10)
+  assert.equal(events.filter(event => event.kind === 'close').length, 5)
   await assert.rejects(proof.prove({ passwords, expiresAt, deadlineAt, signal: new AbortController().signal }), /unavailable/)
 })
 
-test('a network-like wrong-password failure or incomplete correct-role proof fails closed and closes runtimes', async () => {
-  const { createStagingGeneration23RestrictedConnections: create } = await armed(), events = []
-  const proof = create({ createRuntime: runtimeFixture({ events }), classifyQueryError, diagnostic: diagnosticFixture(),
-    readCa: () => ({ pem: 'fixture', sha256: 'a'.repeat(64) }),
-    verifyDrained: async () => ({ status: 'PASS_DRAINED', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5,
-      controlsEnabled: false, runtimeSessions: 0 }),
-    async verifyWrongPassword() { throw Object.assign(Error('network'), { code: 'ECONNREFUSED' }) },
-    verify: async () => ({ status: 'PASS', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5, controlsEnabled: false }),
-    now: () => start })
-  await assert.rejects(proof.prove({ passwords, expiresAt, deadlineAt, signal: new AbortController().signal }), /unavailable/)
-  assert.equal(events.filter(event => event.kind === 'close').length, 0)
-
+test('an incomplete correct-role proof fails closed before the drain read', async () => {
+  const { createStagingGeneration23RestrictedConnections: create } = await armed()
   let incompleteVerifyCalls = 0
   const incomplete = create({ createRuntime: runtimeFixture(), classifyQueryError, diagnostic: diagnosticFixture(),
     readCa: () => ({ pem: 'fixture', sha256: 'a'.repeat(64) }),
     verifyDrained: async () => { throw Error('must not drain') },
-    async verifyWrongPassword() { throw Error('must not probe') },
     verify: async () => { incompleteVerifyCalls++; return { status: 'PASS', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 4, controlsEnabled: false } }, now: () => start })
   await assert.rejects(incomplete.prove({ passwords, expiresAt, deadlineAt, signal: new AbortController().signal }), /unavailable/)
   assert.equal(incompleteVerifyCalls, 1)
@@ -162,18 +144,19 @@ test('closed pooler sessions are reread within the bounded drain budget', async 
   assert.equal(diagnostic.events.filter(event => event.step === 'drain').length, 3)
 })
 
-test('a changed-password transport failure leaves its purpose in the safe HOLD record', async () => {
+test('a correct-role transport failure leaves its purpose in the safe HOLD record', async () => {
   const { createStagingGeneration23RestrictedConnections: create } = await armed()
   const diagnostic = diagnosticFixture()
   const proof = create({ createRuntime: runtimeFixture(), classifyQueryError, diagnostic,
     readCa: () => ({ pem: 'fixture', sha256: 'a'.repeat(64) }),
-    verify: async () => ({ status: 'PASS', projectRef: 'qdmvngjwkcsilzmqksme', purposes: 5, controlsEnabled: false }),
-    verifyWrongPassword: async () => { throw Error('private transport detail') },
+    verify: async () => { throw Object.assign(Error('private transport detail'), {
+      safeConnectionFailure: { purpose: 'customer', check: 'connect', firstConnect: null, secondConnect: null },
+    }) },
     verifyDrained: async () => { throw Error('must not read') }, now: () => start })
   await assert.rejects(proof.prove({ passwords, expiresAt, deadlineAt,
     signal: new AbortController().signal }), /unavailable/)
-  assert.deepEqual(diagnostic.events.at(-1), { state: 'HOLD', outcome: 'wrong_password_failed',
-    purpose: 'customer', check: null, connectionEvidence: null })
+  assert.equal(diagnostic.events.at(-1).state, 'HOLD')
+  assert.equal(diagnostic.events.at(-1).outcome, 'correct_role_failed')
   assert.doesNotMatch(JSON.stringify(diagnostic.events), /private transport detail/)
 })
 

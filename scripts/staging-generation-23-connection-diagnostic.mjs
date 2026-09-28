@@ -7,7 +7,7 @@ import { WINDOW_ID } from './staging-generation-23-credentials.mjs'
 
 export const STAGING_GENERATION_23_CONNECTION_DIAGNOSTIC_ENABLED = false
 export const CONNECTION_DIAGNOSTIC_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-generation-23-restricted-connections-v11.json')
+  '../../implementation-state/staging/tll-generation-23-restricted-connections-v12.json')
 const SCHEMA = 'tll-generation-23-restricted-connection-diagnostic/v1'
 const PURPOSES = new Set([null, 'customer', 'cart', 'broker', 'provisional', 'bridge'])
 const PURPOSE_ORDER = ['customer', 'cart', 'broker', 'provisional', 'bridge']
@@ -135,7 +135,9 @@ export function createStagingGeneration23ConnectionDiagnostic({ path = CONNECTIO
             || previous.step === 'final_good')) unavailable()
       } else if (step === 'drain') {
         if (purpose !== null || check !== null || previous?.state !== 'RUNNING'
-          || !(previous.step === 'final_good' && previous.purpose === 'bridge'
+          || !(previous.step === 'correct_roles' && previous.purpose === 'bridge'
+            && previous.check === 'table_denial'
+            || previous.step === 'final_good' && previous.purpose === 'bridge'
             || previous.step === 'drain')) unavailable()
       } else if (step === 'cleanup') {
         if (purpose !== null || check !== null || previous?.state !== 'RUNNING'

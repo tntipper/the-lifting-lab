@@ -128,14 +128,12 @@ async function exercise(failAt) {
       classifyQueryError: stagingPostgresSqlstate,
       classifyConnectError: stagingPostgresConnectionDiagnostic,
       readCa: () => tlsCa,
-      verifyWrongPassword: async ({ purpose }) => {
-        events.push(`wrong:${purpose}`); return { code: '28P01' }
-      },
       verifyDrained: async () => ({ status: 'PASS_DRAINED', projectRef: 'qdmvngjwkcsilzmqksme',
         purposes: 5, controlsEnabled: false, runtimeSessions: sessions.shift() }),
       pause: async () => {},
     })
-    if (failAt && !failAt.endsWith(':connect_first')) await assert.rejects(proof.prove({ passwords, expiresAt, deadlineAt,
+    const shouldPass = !failAt || failAt.endsWith(':connect_first') || failAt.endsWith(':connect_after_wrong')
+    if (!shouldPass) await assert.rejects(proof.prove({ passwords, expiresAt, deadlineAt,
       signal: new AbortController().signal }), /unavailable/)
     else assert.equal((await proof.prove({ passwords, expiresAt, deadlineAt,
       signal: new AbortController().signal })).status, 'PASS_RESTRICTED_CONNECTIONS')
@@ -147,9 +145,9 @@ test('actual connection wrapper, verifier and durable journal pass with delayed 
   const { record, events } = await exercise(null)
   assert.equal(record.state, 'PASS')
   assert.equal(record.step, 'complete')
-  assert.equal(events.filter(value => value.startsWith('wrong:')).length, 5)
-  assert.equal(events.filter(value => value.startsWith('close:')).length, 10)
-  assert.equal(events.filter(value => value.startsWith('customer:identity')).length, 2)
+  assert.equal(events.filter(value => value.startsWith('wrong:')).length, 0)
+  assert.equal(events.filter(value => value.startsWith('close:')).length, 5)
+  assert.equal(events.filter(value => value.startsWith('customer:identity')).length, 1)
 })
 
 test('a network fault cannot count as a permission denial and preserves role/check', async () => {
@@ -181,15 +179,12 @@ test('two authentication rejections cannot become a successful connection proof'
   assert.doesNotMatch(JSON.stringify(record), /SYNTHETIC_PRIVATE|[A-E]{32}/)
 })
 
-test('a pooler rejection after the wrong-password checks holds before activation', async () => {
+test('the live proof does not perform a wrong-password barrage or duplicate role sweep', async () => {
   const { record, events } = await exercise('broker:connect_after_wrong')
-  assert.equal(record.state, 'HOLD')
-  assert.equal(record.outcome, 'final_good_failed')
-  assert.equal(record.purpose, 'broker')
-  assert.equal(record.check, 'connect_retry')
-  assert.equal(events.filter(value => value.startsWith('wrong:')).length, 5)
-  assert.equal(record.connectionEvidence?.first?.category, 'authentication')
-  assert.equal(record.connectionEvidence?.second?.category, 'authentication')
+  assert.equal(record.state, 'PASS')
+  assert.equal(events.filter(value => value.startsWith('wrong:')).length, 0)
+  assert.equal(events.filter(value => value.startsWith('broker:identity')).length, 1)
+  assert.equal(events.filter(value => value.startsWith('connect:broker:')).length, 1)
 })
 
 test('a diagnostic write failure stops before password and later activation checks', async () => {
