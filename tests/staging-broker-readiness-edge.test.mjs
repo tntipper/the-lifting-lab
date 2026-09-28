@@ -32,7 +32,7 @@ test('ordinary deployed source keeps the Edge probe off before credential access
   const result = await ordinary.createStagingBrokerReadinessHandler({ ...env,
     TLL_STAGING_BROKER_READINESS_WINDOW: undefined }, () => { constructed = true }, now)(request())
   assert.equal(result.status, 404)
-  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
   assert.equal(constructed, false)
 })
 
@@ -43,7 +43,7 @@ test('ordinary deployed source accepts only the short-lived staging window', asy
   } } }, async close() {} })
   const live = await ordinary.createStagingBrokerReadinessHandler(env, runtime, now)(request())
   assert.equal(live.status, 200)
-  assert.equal(live.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
+  assert.equal(live.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
   assert.equal(connected, 1)
   for (const setting of [undefined,
     `wrong-window|${startsAt}|${expiresAt}`,
@@ -51,7 +51,7 @@ test('ordinary deployed source accepts only the short-lived staging window', asy
     const held = await ordinary.createStagingBrokerReadinessHandler({ ...env,
       TLL_STAGING_BROKER_READINESS_WINDOW: setting }, runtime, now)(request())
     assert.equal(held.status, 404)
-    assert.equal(held.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
+    assert.equal(held.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
   }
   const expired = await ordinary.createStagingBrokerReadinessHandler(env, runtime,
     () => Date.parse(expiresAt))(request())
@@ -84,7 +84,7 @@ test('the authenticated Edge probe uses its own installed broker password and re
   }, now)
   const result = await handler(request())
   assert.equal(result.status, 200)
-  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
   assert.deepEqual(await result.json(), { status: 'PASS', windowId: 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef', expiresAt })
   assert.doesNotMatch(JSON.stringify(Object.fromEntries(result.headers)), /SYNTHETIC/)
 })
@@ -95,6 +95,33 @@ test('Edge connection errors stay private and give no false pass', async () => {
   }), now)
   const result = await handler(request())
   assert.equal(result.status, 503)
-  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
   assert.deepEqual(await result.json(), { status: 'FAIL' })
+})
+
+test('guard audit reports only safe conditions and never opens a database connection', async () => {
+  let connected = false
+  const noConnection = () => { connected = true; throw Error('must not connect') }
+  const diagnostic = headers => new Request(
+    'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9', {
+      headers: { ...headers, 'x-tll-broker-guard-audit': 'tll-gen23-guard-audit/v1' },
+    })
+  const allowed = await ordinary.createStagingBrokerReadinessHandler({ ...env,
+    TLL_STAGING_BROKER_READINESS_WINDOW: undefined }, noConnection, now)(diagnostic({
+      authorization: `Bearer ${serviceKey}`, apikey: serviceKey,
+    }))
+  assert.equal(allowed.status, 200)
+  assert.deepEqual(await allowed.json(), { status: 'GUARDS', projectUrlMatches: true,
+    brokerFlagOff: true, window: 'absent' })
+  const wrongKey = await ordinary.createStagingBrokerReadinessHandler(env, noConnection, now)(
+    diagnostic({ authorization: 'Bearer wrong', apikey: 'wrong' }))
+  assert.equal(wrongKey.status, 404)
+  const wrongSettings = await ordinary.createStagingBrokerReadinessHandler({ ...env,
+    SUPABASE_URL: 'https://other.supabase.co', TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'true',
+    TLL_STAGING_BROKER_READINESS_WINDOW: 'invalid' }, noConnection, now)(diagnostic({
+      authorization: `Bearer ${serviceKey}`, apikey: serviceKey,
+    }))
+  assert.deepEqual(await wrongSettings.json(), { status: 'GUARDS', projectUrlMatches: false,
+    brokerFlagOff: false, window: 'invalid' })
+  assert.equal(connected, false)
 })

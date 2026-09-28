@@ -8,8 +8,9 @@ type RuntimeFactory = typeof createStagingPostgresRuntime
 export const STAGING_BROKER_READINESS_ENABLED = false
 const PROJECT_URL = 'https://qdmvngjwkcsilzmqksme.supabase.co'
 const WINDOW_ID = 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef'
-export const STAGING_BROKER_READINESS_REVISION = 'tll-gen23-v9-da4a6ec0'
+export const STAGING_BROKER_READINESS_REVISION = 'tll-gen23-v9-guard-audit-1'
 const WINDOW_NAME = 'TLL_STAGING_BROKER_READINESS_WINDOW'
+const GUARD_AUDIT_HEADER = 'tll-gen23-guard-audit/v1'
 function activeWindow(env: Environment, now: number) {
   const parts = env[WINDOW_NAME]?.split('|')
   if (!parts || parts.length !== 3 || parts[0] !== WINDOW_ID
@@ -35,12 +36,26 @@ export function createStagingBrokerReadinessHandler(env: Environment,
   runtimeFactory: RuntimeFactory = createStagingPostgresRuntime, now = Date.now) {
   return async (request: Request): Promise<Response> => {
     const window = activeWindow(env, now())
+    const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY
+    const authenticated = !!serviceKey && serviceKey.length >= 32
+      && equal(request.headers.get('authorization'), `Bearer ${serviceKey}`)
+      && equal(request.headers.get('apikey'), serviceKey)
+    // An authenticated, staging-only probe proves the guards before temporary
+    // database logins are created. It never opens a connection or reveals values.
+    if (request.headers.get('x-tll-broker-guard-audit') === GUARD_AUDIT_HEADER) {
+      if (!authenticated || request.method !== 'GET') return response(404, 'held')
+      return new Response(JSON.stringify({ status: 'GUARDS',
+        projectUrlMatches: env.SUPABASE_URL === PROJECT_URL,
+        brokerFlagOff: env.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED === 'false',
+        window: window ? 'active' : env[WINDOW_NAME] ? 'invalid' : 'absent' }), {
+        status: 200, headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store',
+          'x-robots-tag': 'noindex, nofollow', 'referrer-policy': 'no-referrer',
+          'x-tll-broker-revision': STAGING_BROKER_READINESS_REVISION },
+      })
+    }
     if ((!STAGING_BROKER_READINESS_ENABLED && !window) || request.method !== 'GET' || env.SUPABASE_URL !== PROJECT_URL
       || env.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED !== 'false') return response(404, 'held')
-    const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY
-    if (!serviceKey || serviceKey.length < 32
-      || !equal(request.headers.get('authorization'), `Bearer ${serviceKey}`)
-      || !equal(request.headers.get('apikey'), serviceKey)) return response(404, 'held')
+    if (!authenticated) return response(404, 'held')
     const password = env.TLL_STAGING_BROKER_DATABASE_PASSWORD
     const pem = env.TLL_STAGING_POSTGRES_CA_PEM, sha256 = env.TLL_STAGING_POSTGRES_CA_SHA256
     if (!password || password.length < 32 || !pem || !sha256 || !/^[a-f0-9]{64}$/.test(sha256))
