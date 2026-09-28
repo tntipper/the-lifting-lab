@@ -83,7 +83,7 @@ try {
     await add.waitFor();assert.equal(await page.getByRole('region',{name:'Unmapped product'}).getByRole('button').count(),0)
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`header overflow ${width}`)
     if(width<1280){await page.locator('header button[aria-controls]').click()}
-    const navCart=page.getByRole('button',{name:'Test cart, 0 items'});await navCart.click()
+    const navCart=page.getByRole('button',{name:'Basket, 0 items'});await navCart.click()
     const dialog=page.getByRole('dialog',{name:'Test cart',exact:true});await dialog.waitFor()
     await page.keyboard.press('Escape');assert.equal(await navCart.evaluate(el=>el===document.activeElement),true)
     if(width<1280)await page.locator('header button[aria-controls]').click()

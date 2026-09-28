@@ -15,7 +15,7 @@ const exact = (value, keys) => value && typeof value === 'object' && !Array.isAr
 const iso = value => typeof value === 'string' && Number.isFinite(Date.parse(value))
   && new Date(Date.parse(value)).toISOString() === value
 const defaultPath = action => resolve(import.meta.dirname,
-  `../../implementation-state/staging/tll-generation-23-database-${action.toLowerCase()}-v15.json`)
+  `../../implementation-state/staging/tll-generation-23-database-${action.toLowerCase()}-v16.json`)
 
 function validate(record, action) {
   if (!exact(record, ['schema', 'projectRef', 'action', 'runId', 'expiresAt',

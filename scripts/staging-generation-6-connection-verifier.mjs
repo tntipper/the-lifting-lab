@@ -29,6 +29,7 @@ const unavailable=(purpose=null,check='input',extras={})=>{
   failures.set(error,meta);return error
 }
 export const POOLER_CONVERGENCE_MS=16_000
+export const POOLER_CONNECT_MAX_ATTEMPTS=3
 export function connectionFailureReport(error){
   const value=failures.get(error)
   const report={status:'FAIL',reason:'connection_verification_failed',purpose:value?.purpose??null,check:value?.check??'input'}
@@ -92,9 +93,19 @@ export async function verifyGeneration6Connections({passwords,expiresAt,tlsCa,cr
     try{
       live(purpose,check)
       const create=()=>createRuntime({purpose,enabled:true,password:passwords[purpose],tlsCa})
-      runtime=create();check='connect';live(purpose,check)
-      try{client=await runtime.pool.connect()}
-      catch(error){firstConnect=safeConnect(classifyConnectError?.(error));live(purpose,check);check='connect_wait';await runtime.close();runtime=undefined;await pause(POOLER_CONVERGENCE_MS,signal);live(purpose,check);check='factory_retry';runtime=create();check='connect_retry';try{client=await runtime.pool.connect()}catch(retryError){secondConnect=safeConnect(classifyConnectError?.(retryError));throw retryError}}
+      for(let attempt=0;attempt<POOLER_CONNECT_MAX_ATTEMPTS;attempt++){
+        check=attempt===0?'factory':'factory_retry';live(purpose,check);runtime=create()
+        check=attempt===0?'connect':'connect_retry';live(purpose,check)
+        try{client=await runtime.pool.connect();break}
+        catch(error){
+          const safe=safeConnect(classifyConnectError?.(error))
+          if(attempt===0)firstConnect=safe
+          else secondConnect=safe
+          if(attempt+1===POOLER_CONNECT_MAX_ATTEMPTS)throw error
+          check='connect_wait';live(purpose,check);await runtime.close();runtime=undefined
+          await pause(POOLER_CONVERGENCE_MS,signal)
+        }
+      }
       check='identity'
       live(purpose,check)
       exactIdentity((await client.query(IDENTITY_QUERY)).rows[0],purpose,expiresAt)

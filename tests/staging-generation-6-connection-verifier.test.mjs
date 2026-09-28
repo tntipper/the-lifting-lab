@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { connectionFailureReport, ENTRYPOINTS, FUNCTION_MATRIX_QUERY, IDENTITY_QUERY, MEMBERSHIP_QUERY, OWN_PROBE, POOLER_CONVERGENCE_MS, PRIVATE_TABLE_DENIAL_QUERY, verifyGeneration6Connections } from '../scripts/staging-generation-6-connection-verifier.mjs'
+import { connectionFailureReport, ENTRYPOINTS, FUNCTION_MATRIX_QUERY, IDENTITY_QUERY, MEMBERSHIP_QUERY, OWN_PROBE, POOLER_CONNECT_MAX_ATTEMPTS, POOLER_CONVERGENCE_MS, PRIVATE_TABLE_DENIAL_QUERY, verifyGeneration6Connections } from '../scripts/staging-generation-6-connection-verifier.mjs'
 import { IDENTITIES } from '../scripts/staging-generation-6-credentials.mjs'
 
 const purposes=Object.keys(IDENTITIES),expiresAt='2026-09-20T18:55:00.000Z',passwords=Object.fromEntries(purposes.map(p=>[p,`synthetic-${p}`]))
@@ -49,12 +49,21 @@ test('one failed connection waits once and uses one fresh runtime',async()=>{
   assert.equal(result.status,'PASS');assert.deepEqual(waits,[POOLER_CONVERGENCE_MS]);assert.deepEqual(f.events.slice(0,3),['customer:close','customer:connect','customer:close'])
 })
 
-test('second connection failure reports only fixed purpose and check',async()=>{
+test('two temporary connection failures wait twice and use a third fresh runtime',async()=>{
+  const f=fixture(),waits=[];let attempts=0
+  const createRuntime=input=>{const runtime=f.createRuntime(input);if(input.purpose==='customer'&&attempts++<2){runtime.pool.connect=async()=>{throw Error('private stale credential')};runtime.close=async()=>f.events.push('customer:close')}return runtime}
+  const result=await verifyGeneration6Connections({passwords,expiresAt,tlsCa,createRuntime,pause:async ms=>waits.push(ms)})
+  assert.equal(result.status,'PASS');assert.equal(POOLER_CONNECT_MAX_ATTEMPTS,3)
+  assert.deepEqual(waits,[POOLER_CONVERGENCE_MS,POOLER_CONVERGENCE_MS])
+  assert.deepEqual(f.events.slice(0,4),['customer:close','customer:close','customer:connect','customer:close'])
+})
+
+test('third connection failure reports only fixed purpose and check',async()=>{
   const f=fixture(),waits=[]
   const createRuntime=input=>{const runtime=f.createRuntime(input);if(input.purpose==='customer'){runtime.pool.connect=async()=>{throw Error('PRIVATE_PASSWORD')};runtime.close=async()=>f.events.push('customer:close')}return runtime}
   try{await verifyGeneration6Connections({passwords,expiresAt,tlsCa,createRuntime,pause:async ms=>waits.push(ms)});assert.fail('must reject')}
   catch(error){assert.deepEqual(connectionFailureReport(error),{status:'FAIL',reason:'connection_verification_failed',purpose:'customer',check:'connect_retry',purposesPassed:0});assert.doesNotMatch(JSON.stringify(connectionFailureReport(error)),/PRIVATE|PASSWORD/)}
-  assert.deepEqual(waits,[POOLER_CONVERGENCE_MS])
+  assert.deepEqual(waits,[POOLER_CONVERGENCE_MS,POOLER_CONVERGENCE_MS])
 })
 
 test('first and second connection causes survive as allow-listed private evidence',async()=>{

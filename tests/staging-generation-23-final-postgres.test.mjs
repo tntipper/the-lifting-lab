@@ -12,7 +12,7 @@ test('Generation 23 final read proves real PostgreSQL retirement with inert oper
         .replace('export const STAGING_GENERATION_23_FINAL_CHECK_ENABLED = false',
           'export const STAGING_GENERATION_23_FINAL_CHECK_ENABLED = true')
         .replace("from './staging-generation-23-credentials.mjs'",
-          `from 'data:text/javascript,export const ACTIVE_WINDOW_EXPIRES_AT=${JSON.stringify(database.expiresAt)};export const WINDOW_ID=%2235b6910a-3a5c-4721-9452-f5074829f91c%22'`)
+          `from 'data:text/javascript,export const ACTIVE_WINDOW_EXPIRES_AT=${JSON.stringify(database.expiresAt)};export const WINDOW_ID=%225a1502a5-0ddd-4da3-a375-d9b34aba6ed9%22'`)
         .replaceAll("from './", `from '${new URL('../scripts/', import.meta.url).href}`)
       const final = await import(`data:text/javascript;base64,${Buffer.from(armed).toString('base64')}`)
       database.setup()
