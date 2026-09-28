@@ -220,9 +220,9 @@ test('assembled consumers record real website and broker boundaries before activ
       } } })
       f.createDatabase = input => databaseModule.createStagingGeneration23FixedDatabaseProviderComponents({
         ...input, factories: { createSupabase: () => ({
-          async readProjectSecret() {
+          async readNamedSecretKey() {
             if (scenario.serviceKeyFails) throw Error('synthetic service-key failure')
-            return Buffer.from('s'.repeat(48))
+            return Buffer.from(`sb_secret_${'d'.repeat(32)}`)
           }, dispose() {},
         }) },
       })
@@ -244,13 +244,14 @@ test('assembled consumers record real website and broker boundaries before activ
         }
         if (url === 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9') {
           requests.broker++
-          assert.equal(options.headers.authorization, `Bearer ${'s'.repeat(48)}`)
+          assert.equal(options.headers.authorization, undefined)
+          assert.equal(options.headers.apikey, `sb_secret_${'d'.repeat(32)}`)
           if (scenario.brokerThrows) throw Error('synthetic broker network failure')
           const status = scenario.brokerStatus ?? 200
           return new Response(JSON.stringify(status === 200
-            ? { status: 'PASS', windowId: 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef', expiresAt: expiry }
+            ? { status: 'PASS', windowId: 'f1706e78-0b93-4cd5-8336-32e89b4291ad', expiresAt: expiry }
             : { status: 'FAIL' }), { status, headers: { 'content-type': 'application/json',
-              'x-tll-broker-revision': 'tll-gen23-v9-da4a6ec0' } })
+              'x-tll-broker-revision': 'tll-gen23-v10-secret-key-1' } })
         }
         throw Error('unexpected synthetic target')
       }

@@ -39,7 +39,7 @@ test('fixed construction selects distinct database journals and forwards the man
       createSupabase: () => ({ async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {} }),
       createProviderPort: () => ({ dispose() {} }),
       createActivation: () => ({ async activate() { return { status: 'CONTROLS_ENABLED', target: 'qdmvngjwkcsilzmqksme', generation: 23,
-        windowId: 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef', receiptHash: 'a'.repeat(64) } } }),
+        windowId: 'f1706e78-0b93-4cd5-8336-32e89b4291ad', receiptHash: 'a'.repeat(64) } } }),
       createFinalJournal: () => ({}),
       createFinal: () => ({ async observe() { return { status: 'PASS_FINAL_RETIRED', projectRef: 'qdmvngjwkcsilzmqksme' } } }),
       postFinal: async () => [], validateFinal() {},
@@ -101,24 +101,24 @@ test('broker consumer and held reads accept only the exact authenticated staging
       return response
     },
     factories: { createSupabase: () => ({
-      async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {},
+      async readNamedSecretKey() { return Buffer.from(`sb_secret_${'d'.repeat(32)}`) }, dispose() {},
     }) },
   })
   const pass = make(new Response(JSON.stringify({ status: 'PASS',
-    windowId: 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef', expiresAt }),
+    windowId: 'f1706e78-0b93-4cd5-8336-32e89b4291ad', expiresAt }),
   { status: 200, headers: { 'content-type': 'application/json',
-    'x-tll-broker-revision': 'tll-gen23-v9-da4a6ec0' } }))
+    'x-tll-broker-revision': 'tll-gen23-v10-secret-key-1' } }))
   try { assert.deepEqual(await pass.components.readBrokerConsumer({ signal }), { status: 'PASS' }) }
   finally { pass.dispose() }
   const held = make(new Response(JSON.stringify({ status: 'held' }),
     { status: 404, headers: { 'content-type': 'application/json',
-      'x-tll-broker-revision': 'tll-gen23-v9-da4a6ec0' } }))
+      'x-tll-broker-revision': 'tll-gen23-v10-secret-key-1' } }))
   try { assert.deepEqual(await held.components.readBrokerHeld({ signal }), { status: 'HELD' }) }
   finally { held.dispose() }
   assert.equal(observed.length, 2)
   assert.ok(observed.every(value => value.url === 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9'
-    && value.method === 'GET' && value.authorization === `Bearer ${'s'.repeat(48)}`
-    && value.apikey === 's'.repeat(48)))
+    && value.method === 'GET' && value.authorization === undefined
+    && value.apikey === `sb_secret_${'d'.repeat(32)}`))
 })
 
 test('broker diagnostic records the request status before rejecting an active 503', async () => {
@@ -136,7 +136,7 @@ test('broker diagnostic records the request status before rejecting an active 50
     return new Response(JSON.stringify({ status: 'FAIL' }),
       { status: 503, headers: { 'content-type': 'application/json' } }) },
   factories: { createSupabase: () => ({
-    async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {},
+    async readNamedSecretKey() { return Buffer.from(`sb_secret_${'d'.repeat(32)}`) }, dispose() {},
   }) } })
   try {
     await assert.rejects(component.components.readBrokerConsumer({ signal, diagnostic }), /unavailable/)
@@ -160,7 +160,7 @@ test('broker held read rejects a gateway or stale source before setup', async ()
       sourceCommit: 'a'.repeat(40), expiresAt,
       fetch: async () => response,
       factories: { createSupabase: () => ({
-        async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {},
+        async readNamedSecretKey() { return Buffer.from(`sb_secret_${'d'.repeat(32)}`) }, dispose() {},
       }) },
     })
     try { await assert.rejects(component.components.readBrokerHeld({ signal }), /unavailable/) }

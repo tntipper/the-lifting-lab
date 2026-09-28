@@ -99,26 +99,28 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
   const readBrokerState = async ({ signal, expected, diagnostic }) => {
     requireLive(signal)
     const binding = makeSupabase({ fetch: fetcher, managementToken })
-    let projectSecret
+    let brokerKey
     const controller = new AbortController()
     const abort = () => controller.abort()
     signal.addEventListener('abort', abort, { once: true })
     const timer = setTimeout(abort, 10_000)
     try {
-      projectSecret = await bounded(binding.readProjectSecret({ signal: controller.signal }), controller.signal)
-      if (!Buffer.isBuffer(projectSecret) || projectSecret.length < 32 || controller.signal.aborted) unavailable()
+      if (!binding || typeof binding.readNamedSecretKey !== 'function' || typeof binding.dispose !== 'function') unavailable()
+      brokerKey = await bounded(binding.readNamedSecretKey({ signal: controller.signal }), controller.signal)
+      if (!Buffer.isBuffer(brokerKey) || !/^sb_secret_[A-Za-z0-9_-]{24,256}$/.test(brokerKey.toString('utf8'))
+        || controller.signal.aborted) unavailable()
       diagnostic?.verified('broker_service_key')
       diagnostic?.pending('broker_request')
       const url = 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9'
       const response = await bounded(fetcher(url, Object.freeze({ method: 'GET', redirect: 'error', cache: 'no-store',
-        headers: Object.freeze({ authorization: `Bearer ${projectSecret.toString('utf8')}`,
-          apikey: projectSecret.toString('utf8'), accept: 'application/json', 'accept-encoding': 'identity' }),
+        headers: Object.freeze({ apikey: brokerKey.toString('utf8'),
+          accept: 'application/json', 'accept-encoding': 'identity' }),
         signal: controller.signal })), controller.signal)
       diagnostic?.verified('broker_request', response?.status)
       diagnostic?.pending('broker_response_validation')
       if (controller.signal.aborted || response?.status !== (expected === 'PASS' ? 200 : 404) || response.redirected === true
         || response.url && response.url !== url
-        || response.headers?.get?.('x-tll-broker-revision') !== 'tll-gen23-v9-da4a6ec0'
+        || response.headers?.get?.('x-tll-broker-revision') !== 'tll-gen23-v10-secret-key-1'
         || !/^application\/json(?:;|$)/i.test(response.headers?.get?.('content-type') ?? '')
         || response.headers?.get?.('content-encoding') && response.headers.get('content-encoding') !== 'identity'
         || !response.body || typeof response.body.getReader !== 'function') unavailable()
@@ -141,7 +143,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       } finally { bytes.fill(0); try { void reader.cancel().catch(() => {}) } catch {}; try { reader.releaseLock() } catch {} }
     } catch { unavailable() } finally {
       clearTimeout(timer); signal.removeEventListener('abort', abort); controller.abort()
-      projectSecret?.fill?.(0); binding?.dispose?.()
+      brokerKey?.fill?.(0); binding?.dispose?.()
     }
   }
   return Object.freeze({

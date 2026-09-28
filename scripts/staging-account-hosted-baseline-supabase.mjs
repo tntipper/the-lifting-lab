@@ -171,6 +171,26 @@ function takeLegacyServiceRole (value) {
   }
 }
 
+function takeNamedSecretKey (value) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_API_KEYS) unavailable()
+  try {
+    const matches = []
+    for (const item of value) {
+      if (!item || typeof item !== 'object' || Array.isArray(item) || typeof item.name !== 'string') unavailable()
+      if (item.type !== undefined && item.type !== null && typeof item.type !== 'string') unavailable()
+      if (item.api_key !== undefined && item.api_key !== null && typeof item.api_key !== 'string') unavailable()
+      if (item.name === 'default' && item.type === 'secret') matches.push(item)
+    }
+    if (matches.length !== 1 || typeof matches[0].api_key !== 'string'
+      || !/^sb_secret_[A-Za-z0-9_-]{24,256}$/.test(matches[0].api_key)) unavailable()
+    return Buffer.from(matches[0].api_key, 'utf8')
+  } finally {
+    for (const item of value) if (item && typeof item === 'object' && Object.hasOwn(item, 'api_key')) {
+      try { item.api_key = '' } catch {}
+    }
+  }
+}
+
 function providerData (result) {
   if (!result || typeof result !== 'object' || Object.keys(result).sort().join('|') !== 'data|error' || result.error !== null
     || !result.data || typeof result.data !== 'object' || Array.isArray(result.data)) unavailable()
@@ -216,6 +236,11 @@ export function createStagingAccountHostedBaselineSupabaseBinding ({ fetch: fetc
     if (disposed || signal.aborted) { selected.fill(0); unavailable() }
     return selected
   }
+  const readNamedSecretKey = async ({ signal } = {}) => {
+    const selected = takeNamedSecretKey(await request(HOSTED_BASELINE_SUPABASE_ENDPOINTS.apiKeys, { signal }))
+    if (disposed || signal.aborted) { selected.fill(0); unavailable() }
+    return selected
+  }
   const readProvider = async ({ signal } = {}) => {
     const projectSecret = await readProjectSecret({ signal })
     let client
@@ -243,6 +268,7 @@ export function createStagingAccountHostedBaselineSupabaseBinding ({ fetch: fetc
     readDatabase,
     readEdgeSecretNames,
     readProjectSecret,
+    readNamedSecretKey,
     readProvider,
     dispose () { disposed = true; token.fill(0) },
   })

@@ -22,6 +22,7 @@ const database = () => [{ tll_staging_hosted_baseline_database: receipt }]
 const keys = () => [
   { name: 'anon', type: 'legacy', api_key: 'a'.repeat(64), arbitraryAdditiveField: true },
   { name: 'service_role', type: 'legacy', api_key: 's'.repeat(64), arbitraryAdditiveField: true },
+  { name: 'default', type: 'secret', api_key: `sb_secret_${'d'.repeat(32)}`, arbitraryAdditiveField: true },
 ]
 const provider = () => ({
   id: 'custom-provider-id', provider_type: 'oauth2', identifier: PROVIDER_IDENTIFIER, name: STAGING_PROVIDER_NAME,
@@ -126,6 +127,26 @@ test('one fixed Management API key read returns only the selected private Buffer
     { name: 'service_role', type: 'legacy', api_key: 'q'.repeat(64) }], [{ name: 'service_role', type: 'new', api_key: 's'.repeat(64) }]]) {
     const bad = binding({ fetch: async () => jsonResponse(invalid) })
     await assert.rejects(bad.readProjectSecret({ signal }), error => error.message === HOSTED_BASELINE_SUPABASE_ERROR)
+    bad.dispose()
+  }
+})
+
+test('broker key read selects only the unique named secret and never substitutes the legacy provider key', async () => {
+  const signal = new AbortController().signal
+  const ports = binding()
+  const selected = await ports.readNamedSecretKey({ signal })
+  assert.equal(selected.toString('utf8'), `sb_secret_${'d'.repeat(32)}`)
+  selected.fill(0)
+  ports.dispose()
+  await assert.rejects(ports.readNamedSecretKey({ signal }), new RegExp(HOSTED_BASELINE_SUPABASE_ERROR))
+  for (const invalid of [
+    [{ name: 'service_role', type: 'legacy', api_key: 's'.repeat(64) }],
+    [{ name: 'default', type: 'secret', api_key: `sb_secret_${'d'.repeat(32)}` },
+      { name: 'default', type: 'secret', api_key: `sb_secret_${'e'.repeat(32)}` }],
+    [{ name: 'default', type: 'secret', api_key: 'bad' }],
+  ]) {
+    const bad = binding({ fetch: async () => jsonResponse(invalid) })
+    await assert.rejects(bad.readNamedSecretKey({ signal }), new RegExp(HOSTED_BASELINE_SUPABASE_ERROR))
     bad.dispose()
   }
 })

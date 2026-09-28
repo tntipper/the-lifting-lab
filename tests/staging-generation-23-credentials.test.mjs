@@ -40,7 +40,7 @@ test('Gen23 SQL is disconnected and pins the retired Gen23 v8 predecessor', asyn
   assert.match(sql, /^BEGIN;\nSET LOCAL lock_timeout='5s';\nSET LOCAL statement_timeout='30s';/)
   assert.match(sql, /operator_project_ref='qdmvngjwkcsilzmqksme'/)
   assert.match(sql, /operator_project_ref='wrhgscovsgsudtedbljr'/)
-  assert.match(sql, /'generation',23,'windowId','da4a6ec0-ff46-4db0-ba9d-db24eccbdaef'/)
+  assert.match(sql, /'generation',23,'windowId','f1706e78-0b93-4cd5-8336-32e89b4291ad'/)
   assert.match(sql, /generation":23.*state":"retired"/)
   assert.match(sql, /rolvaliduntil='infinity'::timestamptz/)
   assert.match(sql, /NOT rolbypassrls/)
