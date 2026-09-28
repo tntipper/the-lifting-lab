@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url'
 import { createStagingGeneration23CliRunner, verifyStagingGeneration23CliInstallation } from '../scripts/staging-generation-23-cli-runner.mjs'
 
 const token = value => Buffer.from(value.padEnd(16, 'x'))
-const vercelArgs = name => ['--yes', 'vercel', 'env', 'add', name, 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color']
+const vercelArgs = name => ['vercel', 'env', 'add', name, 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--yes', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color']
 const supabaseArgs = ['supabase', 'secrets', 'set', '--env-file', '/dev/fd/3', '--project-ref', 'qdmvngjwkcsilzmqksme', '--output', 'json']
 
 function child({ closeCode = 0, output = Buffer.alloc(0), delay = 0 } = {}) {
@@ -44,7 +44,7 @@ test('accepts only the exact Vercel Preview flag write and passes input on stdin
   assert.equal(value.calls.length, 1)
   assert.equal(value.calls[0].binary, '/usr/local/bin/node')
   assert.match(value.calls[0].args[0], /node_modules\/\.bin\/vercel$/)
-  assert.deepEqual(value.calls[0].args.slice(1), ['--yes', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'])
+  assert.deepEqual(value.calls[0].args.slice(1), ['env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--yes', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'])
   assert.equal(value.calls[0].options.env.VERCEL_TOKEN, 'vercel-tokenxxxx')
   assert.equal(value.calls[0].options.env.SUPABASE_ACCESS_TOKEN, undefined)
   assert.equal(value.calls[0].options.detached, true)
@@ -64,7 +64,7 @@ test('accepts only the exact Supabase Edge flag write and passes input on fd 3',
 
 test('rejects arbitrary commands before spawning', async () => {
   const value = await armedRunner(), signal = new AbortController().signal
-  await assert.rejects(value.run(['--yes', 'vercel', 'rm'], Buffer.alloc(0), 0, { signal }), /unavailable/)
+  await assert.rejects(value.run(['vercel', 'rm'], Buffer.alloc(0), 0, { signal }), /unavailable/)
   assert.equal(value.calls.length, 0)
 })
 

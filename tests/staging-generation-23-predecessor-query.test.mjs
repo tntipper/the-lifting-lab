@@ -7,8 +7,8 @@ import { postStagingGeneration23PredecessorCheck } from '../scripts/staging-gene
 const token = Buffer.from(`sbp_${'a'.repeat(40)}`)
 const receipt = { status: 'PASS_RETIRED', queryId: 'tll-staging-generation-23-predecessor-check/v1',
   projectRef: 'qdmvngjwkcsilzmqksme', generation: 23,
-  windowId: 'b04834a8-89a7-4f3f-b941-623c925786d5',
-  expiresAt: '2026-09-28T13:00:00.000Z', controlsEnabled: false, runtimeCount: 5, runtimeSessions: 0 }
+  windowId: 'c216a47f-5445-4076-860c-451aa8d2931e',
+  expiresAt: '2026-09-28T13:44:00.000Z', controlsEnabled: false, runtimeCount: 5, runtimeSessions: 0 }
 const rows = [{ tll_generation_23_predecessor_check: receipt }]
 async function armedFixture() {
   const scripts = new URL('../scripts/', import.meta.url)

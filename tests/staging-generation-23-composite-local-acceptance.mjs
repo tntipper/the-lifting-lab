@@ -166,7 +166,7 @@ const localRequest = action => (options, callback) => {
           rows = [{ tll_generation_23_backend_state: {
             status: 'PASS_BACKEND_OFF', queryId: backendState.QUERY_ID,
             projectRef: PROJECT_REF, generation: 23,
-            windowId: 'c216a47f-5445-4076-860c-451aa8d2931e',
+            windowId: 'e2cb29d6-3900-44d4-813b-dad37292d412',
             expiresAt: database.expiresAt, controlsEnabled: false,
             runtimeSessions: syntheticSessionCount,
           } }]
@@ -177,7 +177,7 @@ const localRequest = action => (options, callback) => {
           rows = [{ tll_generation_23_control_shutdown: {
             status: 'PASS_CONTROLS_DISABLED', shutdownId: shutdownControl.SHUTDOWN_ID,
             projectRef: PROJECT_REF, generation: 23,
-            windowId: 'c216a47f-5445-4076-860c-451aa8d2931e',
+            windowId: 'e2cb29d6-3900-44d4-813b-dad37292d412',
             expiresAt: database.expiresAt, controlsEnabled: 0,
           } }]
         }
@@ -442,7 +442,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       assert.equal(settingsJournal.read().state, 'FINISHED')
       assert.equal(installedSettings.size, 5)
       assert.equal(edgePassword, installedSettings.get(EDGE_PASSWORD_NAME))
-      assert.match(edgeWindow, /^c216a47f-5445-4076-860c-451aa8d2931e\|/)
+      assert.match(edgeWindow, /^e2cb29d6-3900-44d4-813b-dad37292d412\|/)
       const readbackReader = makeInventoryReader()
       try {
         const readback = settingsReadbackModule.createStagingGeneration23SettingsReadback({

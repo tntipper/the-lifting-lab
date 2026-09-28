@@ -87,8 +87,8 @@ function cliCommandForVercel(args, bytes) {
     NEXT_PUBLIC_TLL_STAGING_CART: ['enabled', 'disabled'],
   })
   if (!Array.isArray(args) || args.some(item => typeof item !== 'string') || !Buffer.isBuffer(bytes)) unavailable()
-  const name = args[4]
-  const expected = ['--yes', 'vercel', 'env', 'add', name, 'preview', '--git-branch', STAGING_BRANCH, '--no-sensitive', '--force',
+  const name = args[3]
+  const expected = ['vercel', 'env', 'add', name, 'preview', '--git-branch', STAGING_BRANCH, '--no-sensitive', '--force', '--yes',
     '--project', VERCEL_PROJECT, '--scope', VERCEL_SCOPE, '--non-interactive', '--no-color']
   if (!Object.hasOwn(names, name) || !same(args, expected) || !names[name].includes(bytes.toString('utf8'))) unavailable()
 }

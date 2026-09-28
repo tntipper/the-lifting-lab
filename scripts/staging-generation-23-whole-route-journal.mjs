@@ -14,7 +14,7 @@ import { PHASES } from './staging-generation-23-whole-run.mjs'
 export const STAGING_GENERATION_23_WHOLE_ROUTE_JOURNAL_ENABLED = false
 export const WHOLE_ROUTE_STAGING_TARGET = 'tll-stage3-protected-staging'
 export const JOURNAL_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-generation-23-whole-route-v13.json')
+  '../../implementation-state/staging/tll-generation-23-whole-route-v14.json')
 
 const SCHEMA = 'tll-generation-23-whole-route/v1'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/

@@ -9,7 +9,7 @@ import { EXACT_MIGRATIONS } from './staging-generation-21-retirement-preflight.m
 
 export const STAGING_GENERATION_23_CREDENTIALS_ENABLED = false
 export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'
-export const WINDOW_ID = 'c216a47f-5445-4076-860c-451aa8d2931e'
+export const WINDOW_ID = 'e2cb29d6-3900-44d4-813b-dad37292d412'
 export const PACKAGE_ID = 'tll-staging-generation-23-credentials/v1'
 export const MAX_WINDOW_MS = 60 * 60 * 1000
 export const PREDECESSOR = Object.freeze({

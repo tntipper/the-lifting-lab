@@ -52,11 +52,11 @@
     },
     {
       "path": "scripts/staging-surface-activation-native-binding.mjs",
-      "sha256": "888e7a7d4366978b27ef9316888727d2bc0ac800504b554e75e0fb9c9f395c0d"
+      "sha256": "fd6565ec5e8c976844f3fab7917319d6b365a6e9b059552f01030400793039d5"
     },
     {
       "path": "scripts/staging-surface-activation-native-adapter.mjs",
-      "sha256": "f78925fd61e31e66e9cc69c8fc43fdc86fc451412dc1b8e676006a62dbb90543"
+      "sha256": "7b4fcfcbc018a5270a18862921ec6ceffec746d047bb6692d0bdeca4b1e6798b"
     },
     {
       "path": "scripts/staging-account-hosted-baseline-session.mjs",

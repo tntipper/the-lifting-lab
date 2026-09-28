@@ -52,6 +52,8 @@ The existing one-use shutdown controls first returned:
 
 The original Vercel command path was unavailable during recovery, so the four exact, already-inventoried Preview setting IDs were set off through Vercel's fixed project API and each was read back in decrypted form without printing its value or credential. The separate checkout setting used its unused one-use freeze record and reached `FREEZE_VERIFIED`. The staging-only Edge flag was set off with the pinned Supabase command and its public token endpoint returned HTTP 503 with the expected disabled-control header.
 
+The later held-state diagnosis reproduced the command failure exactly. The guarded command placed global `--yes` before the `env add` subcommand. Vercel CLI 60.1.3 consequently parsed the request as its default deployment command and rejected the otherwise valid `--git-branch` option before contacting Vercel. Moving `--yes` after `env add` made the exact command parse correctly. The corrected diagnostic unexpectedly reused Vercel's saved local login despite an intentionally empty environment, so it performed one same-value overwrite of `TLL_STAGING_CUSTOMER_ENABLED=false`. A fixed-ID decrypted API read immediately reconfirmed that exact setting remained `false`, and Edge remained held at HTTP 503. No setting was enabled.
+
 After zero sessions were proved, the one-use database retirement returned `RETIREMENT_VERIFIED` and the broker-window removal returned `BROKER_GATE_RETIRED_VERIFIED`.
 
 A final independent read-only audit returned `FINAL_HELD_VERIFIED` and proved:
@@ -89,4 +91,4 @@ Two read-only swarm observers independently saw the held Edge response and the t
 
 The completion register remains at **1 of 8** required customer-journey checks. V13 proved more of the activation and shutdown machinery, but it did not prove the product/cart, owner sign-in, order isolation, guest-cart linking, guarded Shopify checkout page, or logout journeys.
 
-Do not replay v13. Its one-use records are consumed. Before another attempt, diagnose why the fixed Vercel surface command was unavailable while the same four fixed-ID API transitions worked, then prepare a disabled successor with fresh identities and records. No production change or purchase is needed to investigate that fault.
+Do not replay v13. Its one-use records are consumed. The successor must preserve the corrected Vercel argument order and use fresh identities and records. No production change or purchase is needed.

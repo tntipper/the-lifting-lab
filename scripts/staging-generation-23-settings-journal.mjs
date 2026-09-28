@@ -7,7 +7,7 @@ import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline
 
 export const STAGING_GENERATION_23_SETTINGS_JOURNAL_ENABLED = false
 export const JOURNAL_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-generation-23-settings-v13.json')
+  '../../implementation-state/staging/tll-generation-23-settings-v14.json')
 export const OPERATION_IDS = Object.freeze([
   ...VERCEL_PASSWORD_NAMES.map(name => `VERCEL_PATCH:${name}`), `SUPABASE_EDGE:${EDGE_PASSWORD_NAME}`,
   `SUPABASE_EDGE:${EDGE_READINESS_WINDOW_NAME}`,

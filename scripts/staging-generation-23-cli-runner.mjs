@@ -41,12 +41,12 @@ function classify(args, input, inputFd) {
     NEXT_PUBLIC_TLL_STAGING_CUSTOMER: ['enabled', 'disabled'],
     NEXT_PUBLIC_TLL_STAGING_CART: ['enabled', 'disabled'],
   })
-  const name = args[4]
-  const expectedVercel = ['--yes', 'vercel', 'env', 'add', name, 'preview', '--git-branch', BRANCH,
-    '--no-sensitive', '--force', '--project', PROJECT, '--scope', SCOPE, '--non-interactive', '--no-color']
+  const name = args[3]
+  const expectedVercel = ['vercel', 'env', 'add', name, 'preview', '--git-branch', BRANCH,
+    '--no-sensitive', '--force', '--yes', '--project', PROJECT, '--scope', SCOPE, '--non-interactive', '--no-color']
   if (Object.hasOwn(names, name) && inputFd === 0 && same(args, expectedVercel)
     && names[name].includes(input.toString('utf8'))) {
-    return Object.freeze({ binary: STAGING_GENERATION_23_NODE, args: Object.freeze([VERCEL, args[0], ...args.slice(2)]), envName: 'VERCEL_TOKEN', inputFd: 0 })
+    return Object.freeze({ binary: STAGING_GENERATION_23_NODE, args: Object.freeze([VERCEL, ...args.slice(1)]), envName: 'VERCEL_TOKEN', inputFd: 0 })
   }
   const expectedSupabase = ['supabase', 'secrets', 'set', '--env-file', '/dev/fd/3', '--project-ref', PROJECT_REF, '--output', 'json']
   if (inputFd === 3 && same(args, expectedSupabase)

@@ -76,10 +76,10 @@ test('deployment preflight rejects a changed repository, project, or aborted sig
 
 test('Vercel mutations accept only the four fixed commands and forward the abort signal', async () => {
   const calls = [], ports = binding({ onCli: (args, input, fd, options) => { calls.push({ args, input: input.toString(), fd, options }); return { status: 'COMPLETED' } } })
-  await ports.runVercel(['--yes', 'vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('true'), 0, { signal })
+  await ports.runVercel(['vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--yes', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('true'), 0, { signal })
   assert.equal(calls.length, 1); assert.equal(calls[0].options.signal, signal)
   await assert.rejects(ports.runVercel(['vercel', 'env'], Buffer.from('true'), 0, { signal }), /unavailable/)
-  await assert.rejects(ports.runVercel(['--yes', 'vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('enabled'), 0, { signal }), /unavailable/)
+  await assert.rejects(ports.runVercel(['vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--yes', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('enabled'), 0, { signal }), /unavailable/)
 })
 
 test('edge write uses an exact private-fd command and runner acknowledgement', async () => {
@@ -275,5 +275,5 @@ test('adapter fetch boundary rejects unrelated URLs and methods before dispatch'
 
 test('injected secret diagnostics are replaced by the fixed binding error', async () => {
   const ports = binding({ onCli: () => { throw new Error('private-vercel-token must never be reported') } })
-  await assert.rejects(ports.runVercel(['--yes', 'vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('true'), 0, { signal }), error => error.message === 'Staging surface native binding unavailable' && !error.message.includes('private'))
+  await assert.rejects(ports.runVercel(['vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--yes', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('true'), 0, { signal }), error => error.message === 'Staging surface native binding unavailable' && !error.message.includes('private'))
 })

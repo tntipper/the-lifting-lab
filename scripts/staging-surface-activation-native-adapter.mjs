@@ -43,7 +43,10 @@ const flagNames = Object.freeze({
   privateCustomer: 'TLL_STAGING_CUSTOMER_ENABLED', privateCart: 'TLL_STAGING_CART_ENABLED',
   publicCustomer: 'NEXT_PUBLIC_TLL_STAGING_CUSTOMER', publicCart: 'NEXT_PUBLIC_TLL_STAGING_CART',
 })
-const vercelCommand = args => ['--yes', 'vercel', ...args, '--project', VERCEL_PROJECT, '--scope', VERCEL_SCOPE, '--non-interactive', '--no-color']
+// Vercel CLI 60 treats options before the subcommand as deployment-command
+// options. Keep `--yes` after `env add` so its branch-only flag is parsed by
+// the environment command rather than rejected by the deployment command.
+const vercelCommand = args => ['vercel', ...args, '--yes', '--project', VERCEL_PROJECT, '--scope', VERCEL_SCOPE, '--non-interactive', '--no-color']
 const writeCommand = name => vercelCommand(['env', 'add', name, 'preview', '--git-branch', STAGING_BRANCH, '--no-sensitive', '--force'])
 
 function validateIdentity(value, requirements) {

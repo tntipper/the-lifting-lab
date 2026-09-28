@@ -8,8 +8,8 @@ import {
   validateStagingGeneration23PredecessorCheck,
 } from '../scripts/staging-generation-23-predecessor-check.mjs'
 
-const predecessorExpiry = '2026-09-28T13:00:00.000Z'
-const predecessorWindow = 'b04834a8-89a7-4f3f-b941-623c925786d5'
+const predecessorExpiry = '2026-09-28T13:44:00.000Z'
+const predecessorWindow = 'c216a47f-5445-4076-860c-451aa8d2931e'
 
 async function armedFixture() {
   const scripts = new URL('../scripts/', import.meta.url)
@@ -26,7 +26,7 @@ test('the Gen23 predecessor check is disconnected by default', () => {
   assert.throws(() => validateStagingGeneration23PredecessorCheck([]), /unavailable/)
 })
 
-test('the fixed read-only transaction requires the exact retired Gen23 v12 state', async () => {
+test('the fixed read-only transaction requires the exact retired Gen23 v13 state', async () => {
   const { buildStagingGeneration23PredecessorCheckSql: build } = await armedFixture()
   const sql = build()
   assert.match(sql, /^BEGIN READ ONLY;\nSET LOCAL lock_timeout='5s';/)
@@ -51,7 +51,7 @@ test('the fixed read-only transaction requires the exact retired Gen23 v12 state
   assert.doesNotMatch(sql, /REVOKE |ALTER ROLE|UPDATE tll_|DELETE FROM/)
 })
 
-test('only the exact retired Gen23 v12 receipt is accepted', async () => {
+test('only the exact retired Gen23 v13 receipt is accepted', async () => {
   const { validateStagingGeneration23PredecessorCheck: validate } = await armedFixture()
   const value = { status: 'PASS_RETIRED', queryId: 'tll-staging-generation-23-predecessor-check/v1',
     projectRef: 'qdmvngjwkcsilzmqksme', generation: 23, windowId: predecessorWindow,

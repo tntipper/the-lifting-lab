@@ -15,35 +15,35 @@ export const GENERATION_23_LAUNCH_BRANCH = 'codex/tll-integration'
 export const GENERATION_23_LAUNCH_MIN_REMAINING_MS = 45 * 60 * 1000
 const ROOT = resolve(import.meta.dirname, '..')
 const STATE = resolve(ROOT, '../implementation-state/staging')
-export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v12.json'
-export const GENERATION_23_PRIOR_HOLD_SHA256 = 'ac752c713ae96fb912dd5886e7092a0bd219b4bc1d7ee39037048b67ef756b45'
-export const GENERATION_23_PRIOR_RETIRE_NAME = 'tll-generation-23-database-retire-v12.json'
-export const GENERATION_23_PRIOR_RETIRE_SHA256 = 'f4324da2b567885736d7ac1f05f58098ad5fcebca37f0883d88a16b05f9eba39'
-export const GENERATION_23_PRIOR_GATE_NAME = 'tll-generation-23-broker-gate-retire-v12.json'
-export const GENERATION_23_PRIOR_GATE_SHA256 = '0aada09d97092dc1cf4059cc4b15c2f9da141959995cd6cc2865a5f5d22c9842'
+export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v13.json'
+export const GENERATION_23_PRIOR_HOLD_SHA256 = '3d8924e62840ae8357f11fe880eed197a659f8ffdc7cd8d837da0da7fd4045b7'
+export const GENERATION_23_PRIOR_RETIRE_NAME = 'tll-generation-23-database-retire-v13.json'
+export const GENERATION_23_PRIOR_RETIRE_SHA256 = '12eebfbd5bba0b1a136a81e0499a054dd7e8a0b2703826f0c6059ca1688a38f1'
+export const GENERATION_23_PRIOR_GATE_NAME = 'tll-generation-23-broker-gate-retire-v13.json'
+export const GENERATION_23_PRIOR_GATE_SHA256 = '6361ced7f027670e0d2a60103f98ac19519c1b208c9d5bb6feb0d32469dab746'
 // Each of these is a one-use record owned by a fixed Gen23 component. A
 // previous or uncertain attempt closes this entry before any credential read.
 export const GENERATION_23_LAUNCH_RECORD_NAMES = Object.freeze([
-  'tll-generation-23-whole-route-v13.json',
-  'tll-generation-23-predecessor-read-v13.json',
-  'tll-generation-23-database-setup-v13.json',
-  'tll-generation-23-database-activate-v13.json',
-  'tll-generation-23-database-shutdown-v13.json',
-  'tll-generation-23-database-retire-v13.json',
-  'tll-generation-23-provider-enable-v13.json',
-  'tll-generation-23-provider-disable-v13.json',
-  'tll-generation-23-settings-v13.json',
-  'tll-generation-23-surface-enable-v13.json',
-  'tll-generation-23-surface-freeze-v13.json',
-  'tll-generation-23-checkout-enable-v13.json',
-  'tll-generation-23-checkout-freeze-v13.json',
-  'tll-generation-23-preview-enabled-v13.json',
-  'tll-generation-23-preview-held-v13.json',
-  'tll-generation-23-preview-consumer-v13.json',
-  'tll-generation-23-consumer-diagnostic-v13.json',
-  'tll-generation-23-broker-gate-retire-v13.json',
-  'tll-generation-23-final-read-v13.json',
-  'tll-generation-23-restricted-connections-v13.json',
+  'tll-generation-23-whole-route-v14.json',
+  'tll-generation-23-predecessor-read-v14.json',
+  'tll-generation-23-database-setup-v14.json',
+  'tll-generation-23-database-activate-v14.json',
+  'tll-generation-23-database-shutdown-v14.json',
+  'tll-generation-23-database-retire-v14.json',
+  'tll-generation-23-provider-enable-v14.json',
+  'tll-generation-23-provider-disable-v14.json',
+  'tll-generation-23-settings-v14.json',
+  'tll-generation-23-surface-enable-v14.json',
+  'tll-generation-23-surface-freeze-v14.json',
+  'tll-generation-23-checkout-enable-v14.json',
+  'tll-generation-23-checkout-freeze-v14.json',
+  'tll-generation-23-preview-enabled-v14.json',
+  'tll-generation-23-preview-held-v14.json',
+  'tll-generation-23-preview-consumer-v14.json',
+  'tll-generation-23-consumer-diagnostic-v14.json',
+  'tll-generation-23-broker-gate-retire-v14.json',
+  'tll-generation-23-final-read-v14.json',
+  'tll-generation-23-restricted-connections-v14.json',
 ])
 const result = status => Object.freeze({ status })
 let used = false
@@ -70,7 +70,7 @@ function recordsUnused() {
     } catch { return false }
   }
   for (const name of GENERATION_23_LAUNCH_RECORD_NAMES) {
-    if (!name.endsWith('-v13.json')) return false
+    if (!name.endsWith('-v14.json')) return false
     try { lstatSync(resolve(STATE, name)); return false }
     catch (error) { if (error?.code !== 'ENOENT') return false }
   }
