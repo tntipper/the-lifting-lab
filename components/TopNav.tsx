@@ -32,7 +32,7 @@ const MORE_LINKS = [
 function BasketControl() {
   const cart = useStagingCart()
   const quantity = cart?.view && ['empty', 'ready', 'held', 'pending'].includes(cart.view.state) ? cart.view.quantity : 0
-  const classes = 'inline-flex min-h-11 items-center gap-2 rounded-lg bg-lab-lime px-3 text-xs font-black text-black transition-transform hover:-translate-y-px sm:min-h-14 sm:gap-3 sm:px-6 sm:text-base'
+  const classes = 'inline-flex min-h-11 items-center gap-2 rounded-lg bg-lab-lime px-3 text-sm font-semibold text-black'
   if (cart?.enabled) {
     return <button type="button" onClick={cart.open} className={classes} aria-label={`Basket, ${quantity} items`}>
       <span className="max-[480px]:hidden">Basket</span><span className="font-mono">{quantity}</span>
@@ -58,18 +58,23 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
 
   const accountHref = isSyntheticPreview() ? '/preview' : signedIn === false ? accountSignInHref() : '/account'
   const accountLabel = isSyntheticPreview() ? 'Preview information' : signedIn === false ? 'Sign In' : 'My Account'
+  const compactResearchHeader = pathname === '/stack' || pathname === '/sources'
 
   return <header onKeyDown={(event) => {
     if (event.key === 'Escape' && menuOpen) { setMenuOpen(false); menuButton.current?.focus() }
   }} className="tll-on-dark sticky top-0 z-40 border-b border-[#2a2c26] bg-[#0d0d0d] text-white">
-    <div className="mx-auto max-w-[1920px] px-3 sm:px-7">
-      <div className="flex min-h-[84px] items-center justify-between gap-3 border-b border-[#2a2c26] sm:min-h-[116px]">
-        <Link href="/" className="grid shrink-0 select-none text-white" aria-label="THE LIFTINGLAB">
-          <span className="ml-[42%] text-[9px] font-black uppercase leading-none tracking-[.08em] sm:text-[11px]">The</span>
-          <span className="tll-display mt-0.5 text-[23px] uppercase leading-[.78] tracking-[.035em] sm:text-[38px]">Lifting <span className="text-lab-lime">Lab</span></span>
+    <div className="mx-auto max-w-[1200px] px-4">
+      <div className="flex min-h-[60px] items-center justify-between gap-3">
+        <Link href="/" className="flex min-h-11 shrink-0 items-center" aria-label="THE LIFTINGLAB">
+          <img src="/brand/tll-wordmark.png" alt="The Lifting Lab" className="block h-auto w-[100px] sm:h-[26px] sm:w-auto" />
         </Link>
 
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        {compactResearchHeader ? <nav aria-label="Main" className="hide-scroll flex min-w-0 items-center gap-1 overflow-x-auto">
+          <Link href="/stack" aria-current={pathname === '/stack' ? 'page' : undefined} className={`flex min-h-11 shrink-0 items-center border-b-2 px-2.5 text-sm font-medium text-white ${pathname === '/stack' ? 'border-lab-lime' : 'border-transparent'}`}>Stack builder</Link>
+          <Link href="/sources" aria-current={pathname === '/sources' ? 'page' : undefined} className={`flex min-h-11 shrink-0 items-center border-b-2 px-2.5 text-sm font-medium text-white ${pathname === '/sources' ? 'border-lab-lime' : 'border-transparent'}`}>Research sources</Link>
+          <Link href="/products" className="flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-2.5 text-sm font-medium text-white">Shop</Link>
+          <a href="https://www.trylift.app" target="_blank" rel="noopener" className="flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-2.5 text-sm font-semibold text-lab-lime">LIFT App ↗</a>
+        </nav> : <div className="flex items-center gap-2">
           <Link href="/stack" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#6c6f63] px-2.5 text-xs font-black text-white sm:min-h-14 sm:gap-3 sm:px-6 sm:text-base">
             <span className="hidden sm:inline">My </span><span className="max-[480px]:hidden">stack</span><span className="font-mono text-lab-lime">{stack.length}</span>
           </Link>
@@ -79,26 +84,26 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
             <span aria-hidden="true">●</span>
           </Link>
           <button ref={menuButton} type="button" aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-controls={menuId} aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-lg border border-[#6c6f63] sm:h-12 sm:w-12 xl:hidden">
+            onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-lg border border-[#6c6f63] xl:hidden">
             <span aria-hidden="true" className="text-xl">{menuOpen ? '×' : '≡'}</span>
           </button>
-        </div>
+        </div>}
       </div>
 
-      <div className="hidden min-h-[70px] items-center justify-between gap-8 xl:flex">
-        <nav aria-label="Shop categories" className="flex items-center gap-8 xl:gap-10">
+      {!compactResearchHeader && <div className="flex min-h-11 items-center justify-between gap-3 border-t border-[#2a2c26]">
+        <nav aria-label="Shop categories" className="hide-scroll flex min-w-0 items-center gap-1 overflow-x-auto">
           {SHOP_LINKS.map(({ href, label }, index) => <Link key={href} href={href} aria-label={index === 0 ? 'Browse' : undefined}
-            className="inline-flex min-h-11 items-center whitespace-nowrap text-[15px] font-bold text-white transition-colors hover:text-lab-lime xl:text-[17px]">{label}</Link>)}
-          <a href="https://theliftinglab.app" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center whitespace-nowrap text-[15px] font-bold text-lab-lime xl:text-[17px]">LIFT App ↗</a>
+            className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-2.5 text-sm font-medium text-white ${pathname === '/products' && index === 0 ? 'border-lab-lime' : 'border-transparent'}`}>{label}</Link>)}
+          <a href="https://www.trylift.app" target="_blank" rel="noopener" className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 border-transparent px-2.5 text-sm font-semibold text-lab-lime">LIFT App ↗</a>
         </nav>
-        <Link href={accountHref} className="text-sm font-bold text-[#a9ac9f] hover:text-white">{accountLabel}</Link>
-      </div>
+        <Link href={accountHref} className="hidden shrink-0 text-sm font-medium text-[#a9ac9f] hover:text-white xl:block">{accountLabel}</Link>
+      </div>}
 
-      {menuOpen && <div id={menuId} className="border-t border-[#2a2c26] py-4 xl:hidden">
+      {!compactResearchHeader && menuOpen && <div id={menuId} className="border-t border-[#2a2c26] py-4 xl:hidden">
         <nav aria-label="Mobile navigation" className="grid gap-1 sm:grid-cols-2">
-          {[...SHOP_LINKS, ...MORE_LINKS].map(({ href, label }, index) => <Link key={`${href}-${label}`} href={href} aria-label={index === 0 ? 'Browse' : undefined}
+          {MORE_LINKS.map(({ href, label }) => <Link key={`${href}-${label}`} href={href}
             className="flex min-h-11 items-center rounded-md px-3 text-sm font-bold text-white hover:bg-[#151613] hover:text-lab-lime">{label}</Link>)}
-          <a href="https://theliftinglab.app" target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center rounded-md px-3 text-sm font-bold text-lab-lime">LIFT App ↗</a>
+          <a href="https://www.trylift.app" target="_blank" rel="noopener" className="flex min-h-11 items-center rounded-md px-3 text-sm font-bold text-lab-lime">LIFT App ↗</a>
           <Link href={accountHref} className="flex min-h-11 items-center rounded-md px-3 text-sm font-bold text-white">{accountLabel}</Link>
         </nav>
       </div>}

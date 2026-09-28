@@ -16,7 +16,8 @@
   --font-display: var(--font-anton), Impact, 'Arial Narrow Bold', sans-serif;
 }
 
-:root {
+:root,
+[data-theme="lab"] {
   --background: #f4f4ef;
   --foreground: #14140f;
 
@@ -30,14 +31,64 @@
   --lab-black: #0d0d0d;
   --on-lab-black: #f2f2ee;
   --lime: #a6e22e;
+  --lime-tint: #c8e86a;
+  --on-lime: #14140f;
   --lime-ink: #4a6e0b;
   --lime-wash: #eef5dc;
+  --action: #14140f;
+  --on-action: #a6e22e;
+  --score-high: #1f4f8a;
+  --score-high-bg: #e6eef8;
+  --score-mid: #8a5a00;
+  --score-mid-bg: #fbf0d9;
+  --score-low: #b3261e;
+  --score-low-bg: #fbe7e5;
   --focus: #2458c6;
+  --focus-on-dark: #8cc4ff;
+  --shadow-raise: 0 8px 24px rgba(20,20,15,.12);
+  --font-display: var(--font-anton), Impact, "Arial Narrow Bold", sans-serif;
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, Menlo, Consolas, monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+  --tap-min: 44px;
 
   /* accent rgb triplet for glow/translucent fills */
   --ar: 166, 226, 46;
   /* Kept as a variable because existing cards already use it. */
   --card-grad: #ffffff;
+}
+
+[data-theme="dark"] {
+  --paper: #0b0c0a;
+  --surface: #151613;
+  --surface-sunk: #1b1d18;
+  --line: #2a2c26;
+  --line-strong: #6c6f63;
+  --ink: #f2f2ee;
+  --ink-muted: #a9ac9f;
+  --lime-ink: #a6e22e;
+  --lime-wash: #1e2614;
+  --action: #a6e22e;
+  --on-action: #14140f;
+  --score-high: #8cc4ff;
+  --score-high-bg: #1a2a3b;
+  --score-mid: #f2c35b;
+  --score-mid-bg: #2b2412;
+  --score-low: #ff8a80;
+  --score-low-bg: #2e1a18;
+  --focus: #8cc4ff;
+  --shadow-raise: 0 8px 24px rgba(0,0,0,.5);
 }
 
 html, body {
@@ -46,9 +97,12 @@ html, body {
 }
 
 body {
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
 }
+
+p { text-wrap: pretty; }
+h1, h2, h3 { text-wrap: balance; }
+code, pre, .font-mono { font-variant-numeric: tabular-nums; }
 
 /*
  * Paper theme adapted from the supplied TLL design reference.
@@ -213,8 +267,14 @@ input, select, textarea { color: var(--ink); }
 
 /* Native dialogs remain display:none until showModal() opens them. */
 .tll-dialog { color: #fff; }
-.tll-dialog::backdrop { background: rgb(0 0 0 / 75%); backdrop-filter: blur(4px); }
+.tll-dialog::backdrop { background: rgb(0 0 0 / 70%); }
 .tll-centered-dialog { width: calc(100% - 24px); max-width: 28rem; max-height: 90dvh; margin: auto; overflow-y: auto; }
 .tll-stack-dialog { position: fixed; inset: auto 0 0; width: 100%; max-width: none; max-height: 90dvh; margin: 0; padding: 0; border: 0; background: transparent; overflow-y: auto; }
-:where(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+:where(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .tll-on-dark :where(a, button, input, select, textarea):focus-visible { outline-color: #8cc4ff; }
+
+@media print {
+  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  :where(header, [class*="sticky"], [class*="fixed"]) { position: static !important; }
+  .lab-card, article, section { break-inside: avoid; }
+}
