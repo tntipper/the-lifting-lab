@@ -61,14 +61,21 @@ test('middleware rejects preview APIs and every unsafe method before handlers', 
     }
   }
   assert.equal(middleware({ url: 'https://preview.invalid/api/products', nextUrl: new URL('https://preview.invalid/api/products'), method: 'GET' }).status, 503)
+  for (const path of ['/api/products/batch', '/api/products/search', '/api/stack/assessments']) {
+    const response = middleware({ url: `https://preview.invalid${path}`, nextUrl: new URL(`https://preview.invalid${path}`), method: 'GET' })
+    assert.equal(response.headers.get('x-middleware-next'), '1')
+    assert.equal(middleware({ url: `https://preview.invalid${path}`, nextUrl: new URL(`https://preview.invalid${path}`), method: 'POST' }).status, 503)
+  }
 }))
 
 test('preview account/form routes rewrite to an explicit inert page and browsing remains available', () => withMode('synthetic-preview', async () => {
   const { middleware } = loadSource('../middleware.ts', resolve)
-  for (const path of ['/auth', '/auth/callback', '/account/settings', '/dashboard', '/favourites', '/stack', '/rewards', '/contact', '/submit']) {
+  for (const path of ['/auth', '/auth/callback', '/account/settings', '/dashboard', '/favourites', '/rewards', '/contact', '/submit']) {
     const response = middleware({ url: `https://preview.invalid${path}`, nextUrl: new URL(`https://preview.invalid${path}`), method: 'GET' })
     assert.equal(response.headers.get('x-middleware-rewrite'), 'https://preview.invalid/preview')
   }
+  const stack = middleware({ url: 'https://preview.invalid/stack', nextUrl: new URL('https://preview.invalid/stack'), method: 'GET' })
+  assert.equal(stack.headers.get('x-middleware-next'), '1')
   const response = middleware({ url: 'https://preview.invalid/guide/protein', nextUrl: new URL('https://preview.invalid/guide/protein'), method: 'GET' })
   assert.equal(response.headers.get('x-middleware-next'), '1')
   assert.equal(response.headers.get('x-robots-tag'), 'noindex, nofollow')

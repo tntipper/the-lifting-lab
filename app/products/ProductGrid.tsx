@@ -14,6 +14,7 @@ import { assessmentDisplayFor } from '@/lib/assessment-display'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { createClient } from '@/lib/supabase'
+import { isSyntheticPreview } from '@/lib/preview-mode'
 import { track } from '@/lib/gtag'
 import { formatListedServingPrice, sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
 import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
@@ -89,6 +90,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
+    if (isSyntheticPreview()) { setSignedIn(false); return }
     let cancelled = false
     createClient().auth.getUser()
       .then(({ data }) => { if (!cancelled) setSignedIn(Boolean(data.user)) })
@@ -97,6 +99,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
   }, [])
 
   useEffect(() => {
+    if (isSyntheticPreview()) return
     let cancelled = false
     fetch('/api/favourites')
       .then((response) => response.ok ? response.json() : null)
@@ -124,6 +127,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
   }, [initialProducts.length])
 
   useEffect(() => {
+    if (isSyntheticPreview()) return
     let cancelled = false
     fetch('/api/products/reviews-summary')
       .then((response) => response.ok ? response.json() : null)
@@ -275,8 +279,8 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           const reviews = reviewSummary[product.id]
           return (
             <article key={product.id} data-product-id={product.id} className={`lab-card grid gap-3 p-4 sm:p-5 ${isSelected ? 'border-[#7c7e72]' : ''}`}>
-              <Link href={`/products/${product.id}`} className="grid aspect-[4/3] place-items-center rounded-lg bg-lab-panel-2 p-4">
-                <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={180} className="max-h-full max-w-full" />
+              <Link href={`/products/${product.id}`} className="grid aspect-square place-items-center overflow-hidden rounded-lg bg-lab-panel-2">
+                <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} fill className="max-h-full max-w-full" />
               </Link>
 
               <div className="flex items-start justify-between gap-3">

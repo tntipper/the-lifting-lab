@@ -1,5 +1,7 @@
 import { parseShareProductIds } from '@/lib/share-products'
 import { getShareProducts } from '@/lib/share-products-server'
+import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
+import { isSyntheticPreview } from '@/lib/preview-mode'
 
 // Read-only public catalogue projection. Like the image route, accepts only
 // bounded IDs and resolves active identity on the server. Frozen scores are withheld.
@@ -7,6 +9,13 @@ export async function GET(request: Request) {
   const ids = parseShareProductIds(new URL(request.url).searchParams)
   const headers = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' }
   if (ids === null) return Response.json({ error: 'Invalid product IDs' }, { status: 400, headers })
+  if (isSyntheticPreview()) {
+    const products = ids.map(id => PREVIEW_PRODUCTS.find(product => product.id === id))
+    if (products.some(product => !product)) return Response.json({ error: 'One or more products are unavailable' }, { status: 404, headers })
+    return Response.json({
+      products: products.map(product => ({ id: product!.id, brand: product!.brand, name: product!.name, category: product!.category, score: null })),
+    }, { headers: { ...headers, 'X-TLL-Preview': 'synthetic' } })
+  }
   const result = await getShareProducts(ids)
   return result.ok
     ? Response.json({ products: result.products.map(product => ({ ...product, score: null })) }, { headers })

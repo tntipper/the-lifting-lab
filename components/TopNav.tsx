@@ -35,10 +35,10 @@ function BasketControl() {
   const classes = 'inline-flex min-h-11 items-center gap-2 rounded-lg bg-lab-lime px-3 text-sm font-semibold text-black'
   if (cart?.enabled) {
     return <button type="button" onClick={cart.open} className={classes} aria-label={`Basket, ${quantity} items`}>
-      <span className="max-[480px]:hidden">Basket</span><span className="font-mono">{quantity}</span>
+      <span className="max-[359px]:hidden">Basket</span><span className="font-mono">{quantity}</span>
     </button>
   }
-  return <Link href="/cart" className={classes} aria-label="Basket, 0 items"><span className="max-[480px]:hidden">Basket</span><span className="font-mono">0</span></Link>
+  return <Link href="/cart" className={classes} aria-label="Basket, 0 items"><span className="max-[359px]:hidden">Basket</span><span className="font-mono">0</span></Link>
 }
 
 export default function TopNav({ signedInInitial }: { signedInInitial?: boolean } = {}) {
@@ -64,19 +64,19 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
     if (event.key === 'Escape' && menuOpen) { setMenuOpen(false); menuButton.current?.focus() }
   }} className="tll-on-dark sticky top-0 z-40 border-b border-[#2a2c26] bg-[#0d0d0d] text-white">
     <div className="mx-auto max-w-[1200px] px-4">
-      <div className="flex min-h-[60px] items-center justify-between gap-3">
+      <div className="flex min-h-[60px] items-center justify-between gap-3 max-[480px]:flex-wrap max-[480px]:py-2">
         <Link href="/" className="flex min-h-11 shrink-0 items-center" aria-label="THE LIFTINGLAB">
           <img src="/brand/tll-wordmark.png" alt="The Lifting Lab" className="block h-auto w-[100px] sm:h-[26px] sm:w-auto" />
         </Link>
 
-        {compactResearchHeader ? <nav aria-label="Main" className="hide-scroll flex min-w-0 items-center gap-1 overflow-x-auto">
+        {compactResearchHeader ? <nav aria-label="Main" className="hide-scroll flex min-w-0 items-center gap-1 overflow-x-auto max-[480px]:w-full">
           <Link href="/stack" aria-current={pathname === '/stack' ? 'page' : undefined} className={`flex min-h-11 shrink-0 items-center border-b-2 px-2.5 text-sm font-medium text-white ${pathname === '/stack' ? 'border-lab-lime' : 'border-transparent'}`}>Stack builder</Link>
           <Link href="/sources" aria-current={pathname === '/sources' ? 'page' : undefined} className={`flex min-h-11 shrink-0 items-center border-b-2 px-2.5 text-sm font-medium text-white ${pathname === '/sources' ? 'border-lab-lime' : 'border-transparent'}`}>Research sources</Link>
           <Link href="/products" className="flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-2.5 text-sm font-medium text-white">Shop</Link>
           <a href="https://www.trylift.app" target="_blank" rel="noopener" className="flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-2.5 text-sm font-semibold text-lab-lime">LIFT App ↗</a>
-        </nav> : <div className="flex items-center gap-2">
+        </nav> : <div className="ml-auto flex items-center gap-2">
           <Link href="/stack" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#6c6f63] px-2.5 text-xs font-black text-white sm:min-h-14 sm:gap-3 sm:px-6 sm:text-base">
-            <span className="hidden sm:inline">My </span><span className="max-[480px]:hidden">stack</span><span className="font-mono text-lab-lime">{stack.length}</span>
+            <span className="max-[359px]:hidden">My stack</span><span className="font-mono text-lab-lime">{stack.length}</span>
           </Link>
           <BasketControl />
           <Link href={accountHref} aria-label={accountLabel} title={accountLabel}

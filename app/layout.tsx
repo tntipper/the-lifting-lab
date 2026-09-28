@@ -66,7 +66,7 @@ export default function RootLayout({
       <body data-theme="lab" className="min-h-full flex flex-col">
         {isSyntheticPreview() && (
           <aside role="status" data-testid="synthetic-preview-notice" className="border-b border-lab-lime bg-lab-lime px-4 py-3 text-center text-sm font-semibold text-black">
-            {PREVIEW_UNAVAILABLE_MESSAGE} Product cards use a read-only catalogue snapshot.
+            {PREVIEW_UNAVAILABLE_MESSAGE} Product cards use a read-only catalogue snapshot; My Stack is saved only in this browser.
           </aside>
         )}
         {isHostedStaging() && (

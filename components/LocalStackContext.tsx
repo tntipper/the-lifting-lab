@@ -6,6 +6,7 @@ import { createStackSync, type StackSyncState } from '@/lib/stack-sync'
 import { createAdditionOutbox } from '@/lib/stack-addition-outbox'
 import { createClient } from '@/lib/supabase'
 import { scoreFor } from '@/lib/scores'
+import { isSyntheticPreview } from '@/lib/preview-mode'
 
 type LocalStackCtx = {
   stack: LocalStackProduct[]
@@ -33,18 +34,26 @@ export function LocalStackProvider({ children }: { children: ReactNode }) {
     }
     const service = createStackSync({ guest: createGuestStore(storage, () => crypto.randomUUID()), additions: createAdditionOutbox(storage), request: (...args) => fetch(...args), nonce: () => crypto.randomUUID(), changed: setState })
     sync.current = service
-    const client = createClient()
     let cancelled = false, authEvent = 0
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      authEvent++
-      void service.setIdentity(session?.user.id ?? null)
-    })
-    const observedEvent = authEvent
-    void client.auth.getUser().then(({ data, error }) => {
-      if (cancelled || authEvent !== observedEvent) return
-      if (error && error.name !== 'AuthSessionMissingError') service.authFailed()
-      else void service.setIdentity(data.user?.id ?? null)
-    }).catch(() => { if (!cancelled) service.authFailed() })
+    let unsubscribe = () => {}
+    if (isSyntheticPreview()) {
+      // The preview has no account transport. Start immediately as a local,
+      // browser-only stack instead of waiting for a deliberately blocked auth call.
+      void service.setIdentity(null)
+    } else {
+      const client = createClient()
+      const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+        authEvent++
+        void service.setIdentity(session?.user.id ?? null)
+      })
+      unsubscribe = () => subscription.unsubscribe()
+      const observedEvent = authEvent
+      void client.auth.getUser().then(({ data, error }) => {
+        if (cancelled || authEvent !== observedEvent) return
+        if (error && error.name !== 'AuthSessionMissingError') service.authFailed()
+        else void service.setIdentity(data.user?.id ?? null)
+      }).catch(() => { if (!cancelled) service.authFailed() })
+    }
     const refresh = () => { void service.refresh() }
     let storageRefresh: ReturnType<typeof setTimeout> | undefined
     const onStorage = (event: StorageEvent) => {
@@ -57,7 +66,7 @@ export function LocalStackProvider({ children }: { children: ReactNode }) {
     window.addEventListener('online', refresh)
     window.addEventListener('storage', onStorage)
     return () => {
-      cancelled = true; clearTimeout(storageRefresh); service.dispose(); subscription.unsubscribe(); sync.current = null
+      cancelled = true; clearTimeout(storageRefresh); service.dispose(); unsubscribe(); sync.current = null
       window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); window.removeEventListener('storage', onStorage)
     }
   }, [])

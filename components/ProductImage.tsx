@@ -10,11 +10,13 @@ export default function ProductImage({
   src,
   alt,
   size = 96,
+  fill = false,
   className = '',
 }: {
   src: string | null | undefined
   alt: string
   size?: number
+  fill?: boolean
   className?: string
 }) {
   const [failed, setFailed] = useState(false)
@@ -33,7 +35,7 @@ export default function ProductImage({
         referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
         className={`rounded-lg object-contain shrink-0 ${className}`}
-        style={{ width: size, height: size, background: '#ecece4' }}
+        style={{ width: fill ? '100%' : size, height: fill ? '100%' : size, background: '#ecece4' }}
       />
     )
   }
@@ -43,7 +45,7 @@ export default function ProductImage({
       aria-label={`${alt} — no product image available`}
       title="No product image available"
       className={`rounded-lg border border-lab-border flex items-center justify-center shrink-0 ${className}`}
-      style={{ width: size, height: size, fontSize: Math.max(12, Math.round(size * 0.38)), background: '#ecece4' }}
+      style={{ width: fill ? '100%' : size, height: fill ? '100%' : size, fontSize: Math.max(12, Math.round(size * 0.38)), background: '#ecece4' }}
     >
       <span aria-hidden="true">🧪</span>
     </div>
