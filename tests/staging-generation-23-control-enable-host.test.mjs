@@ -12,7 +12,7 @@ const scripts = new URL('../scripts/', import.meta.url)
 const start = Date.parse('2026-09-26T12:00:00.000Z')
 const expiresAt = new Date(start + 40 * 60_000).toISOString()
 const deadlineAt = new Date(start + 35 * 60_000).toISOString()
-const windowId = 'f1706e78-0b93-4cd5-8336-32e89b4291ad'
+const windowId = '02f36f3c-8927-43cc-96a0-067bfa45a973'
 const signal = new AbortController().signal
 const data = source => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`
 

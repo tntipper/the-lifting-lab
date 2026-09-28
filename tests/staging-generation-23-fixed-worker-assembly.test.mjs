@@ -348,9 +348,9 @@ test('assembled consumers record real website and broker boundaries before activ
           if (scenario.brokerThrows) throw Error('synthetic broker network failure')
           const status = scenario.brokerStatus ?? 200
           return new Response(JSON.stringify(status === 200
-            ? { status: 'PASS', windowId: 'f1706e78-0b93-4cd5-8336-32e89b4291ad', expiresAt: expiry }
+            ? { status: 'PASS', windowId: '02f36f3c-8927-43cc-96a0-067bfa45a973', expiresAt: expiry }
             : { status: 'FAIL' }), { status, headers: { 'content-type': 'application/json',
-              'x-tll-broker-revision': 'tll-gen23-v10-secret-key-1' } })
+              'x-tll-broker-revision': 'tll-gen23-v11-secret-key-1' } })
         }
         throw Error('unexpected synthetic target')
       }
