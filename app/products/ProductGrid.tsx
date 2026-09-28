@@ -1,116 +1,68 @@
 'use client'
-import { formatListedServingPrice } from '@/lib/products'
 
-import { Suspense, useState, useEffect, useMemo, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import ProductAssessment from '@/components/ProductAssessment'
-import { assessmentDisplayFor, hasApprovedAssessment, isRankingCandidate } from '@/lib/assessment-display'
-import FavouriteButton from '@/components/FavouriteButton'
-import ProductImage from '@/components/ProductImage'
-import { createClient } from '@/lib/supabase'
-import MethodologyModal from '@/components/MethodologyModal'
+import { useSearchParams } from 'next/navigation'
 import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
-import { claimsReviewFor } from '@/lib/claims-review'
-import { useLocalStack } from '@/components/LocalStackContext'
-import { CATEGORIES, categoryLabel } from '@/lib/categories'
-import { sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
-import { cardHighlights } from '@/lib/card-highlights'
+import FavouriteButton from '@/components/FavouriteButton'
+import MethodologyModal from '@/components/MethodologyModal'
+import ProductAssessment from '@/components/ProductAssessment'
+import ProductImage from '@/components/ProductImage'
 import ProductOfferLink from '@/components/ProductOfferLink'
-import { GUIDE_SLUGS } from '@/lib/guides'
-import { track } from '@/lib/gtag'
+import { useLocalStack } from '@/components/LocalStackContext'
+import { assessmentDisplayFor } from '@/lib/assessment-display'
+import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
+import { createClient } from '@/lib/supabase'
+import { track } from '@/lib/gtag'
+import { formatListedServingPrice, sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
 import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'score', label: 'Assessment unavailable (A–Z)' },
   { key: 'value', label: 'Effectiveness value unavailable (A–Z)' },
-  { key: 'budget', label: 'Listed £/serving (low–high)' },
-  { key: 'name', label: 'Name (A–Z)' },
+  { key: 'budget', label: 'Lowest listed price per serving' },
+  { key: 'price', label: 'Lowest pack price' },
+  { key: 'name', label: 'Product name (A–Z)' },
   { key: 'brand', label: 'Brand (A–Z)' },
 ]
 
-const MEDALS = ['🥇', '🥈', '🥉']
+const SORT_KEYS: SortKey[] = ['score', 'name', 'brand', 'value', 'budget', 'price']
+type UrlParams = { category: string; sort: SortKey; q: string; group: string | null }
 
-const CATEGORY_BENEFITS: Record<string, string> = {
-  'whey':             'Fast-absorbing protein · Muscle protein synthesis · Post-workout recovery',
-  'whey-isolate':     'High-purity protein · Low lactose · Lean muscle support',
-  'casein':           'Slow-release protein · Overnight muscle repair · Anti-catabolic',
-  'creatine':         'Strength & power output · ATP resynthesis · Muscle volumisation',
-  'pre-workout':      'Training energy & focus · Blood flow & endurance · Delayed fatigue',
-  'eaas':             'Full essential amino acid profile · Muscle repair · Intra-workout fuel',
-  'intra-workout':    'Hydration & endurance · Amino acid delivery · Electrolyte replenishment',
-  'post-workout':     'Recovery acceleration · Glycogen replenishment · Reduced DOMS',
-  'hydration':        'Electrolyte balance · Performance hydration · Cramp prevention',
-  'protein-bar':      'On-the-go protein · Controlled macros · Convenient muscle support',
-  'meal-replacement': 'Balanced macro profile · Calorie management · Convenient nutrition',
-  'cycle-support':    'Cycle-support formulas · Organ-protection claims under review',
-  'hormone-support':  'Hormone-support formulas · Claims under review',
-  'vitamin':          'Micronutrient support · Immune function · Overall health foundation',
-  'multivitamin':     'Full micronutrient spectrum · Immune & metabolic support · Daily baseline',
-  'vitamin-d':        'Vitamin D products · Compare forms and label amounts',
-  'vitamin-c':        'Immune defence · Collagen synthesis · Antioxidant protection',
-  'gut-digestion':    'Digestive enzyme support · Gut microbiome · Nutrient absorption',
-  'heart-health':     'Cardiovascular support · Cholesterol balance · Blood pressure',
-  'liver-health':     'Liver-health formulas · Organ-protection claims under review',
-  'omega-3':          'Inflammation reduction · Heart & brain health · Joint lubrication',
-  'joint-health':     'Cartilage support · Joint lubrication · Anti-inflammatory',
-  'magnesium':        'Sleep quality · Muscle relaxation · Hormonal & nerve function',
-  'sleep-recovery':   'Sleep onset · Deep sleep quality · Recovery & cortisol regulation',
-  'zma':              'Zinc, magnesium and B6 · Hormone claims under review',
+function UrlParamSync({ onParams }: { onParams: (params: UrlParams) => void }) {
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const category = searchParams.get('category')
+    const sort = searchParams.get('sort')
+    onParams({
+      category: category && CATEGORIES.some((item) => item.slug === category) ? category : 'all',
+      sort: sort && SORT_KEYS.includes(sort as SortKey) ? sort as SortKey : 'score',
+      q: searchParams.get('q') ?? '',
+      group: searchParams.get('group'),
+    })
+    // The callback is intentionally applied only when the URL changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+  return null
 }
 
-function PointerCard({
-  children,
-  className,
-  style,
-  productId,
-}: {
-  children: React.ReactNode
-  className?: string
-  style?: React.CSSProperties
-  productId: string
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  function handleMouseMove(e: React.MouseEvent) {
-    const el = ref.current
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%')
-    el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%')
-  }
-  return (
-    <div
-      ref={ref}
-      data-product-id={productId}
-      onMouseMove={handleMouseMove}
-      className={`lab-card beam ${className ?? ''}`}
-      style={{ '--mx': '50%', '--my': '30%', ...style } as React.CSSProperties}
-    >
-      {children}
-    </div>
-  )
+function formatMoney(value: number | null) {
+  if (value == null || !Number.isFinite(value) || value <= 0) return 'Not listed'
+  return `£${value.toFixed(2)}`
 }
 
-function fmt(n: number) {
-  return n < 10 ? `£${n.toFixed(2)}` : `£${Math.round(n)}`
+function reviewSnippet(value: string) {
+  const clean = value.trim().replace(/\s+/g, ' ')
+  return clean.length <= 90 ? clean : `${clean.slice(0, 89).trimEnd()}…`
 }
 
-// Strict character cap for the latest-review snippet on a card (F12) so a long
-// review can't blow out the card height. Collapses whitespace, then truncates.
-const SNIPPET_MAX = 90
-function reviewSnippet(text: string) {
-  const t = text.trim().replace(/\s+/g, ' ')
-  return t.length <= SNIPPET_MAX ? t : t.slice(0, SNIPPET_MAX - 1).trimEnd() + '…'
-}
-
-// Compact star row matching the product-detail review styling (same SVG path).
 function MiniStars({ value }: { value: number }) {
   return (
     <span className="inline-flex shrink-0" aria-label={`${value} out of 5 stars`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <svg key={i} width={11} height={11} viewBox="0 0 24 24"
-          fill={i <= value ? '#e8a020' : 'none'} stroke={i <= value ? '#e8a020' : '#3a3a3a'}
+      {[1, 2, 3, 4, 5].map((index) => (
+        <svg key={index} width={12} height={12} viewBox="0 0 24 24"
+          fill={index <= value ? '#e8a020' : 'none'} stroke={index <= value ? '#e8a020' : '#7c7e72'}
           strokeWidth="2" strokeLinejoin="round">
           <path d="M12 2 15 9l7 .5-5.3 4.6L18.5 21 12 17.3 5.5 21 7.3 14.1 2 9.5 9 9z" />
         </svg>
@@ -119,631 +71,336 @@ function MiniStars({ value }: { value: number }) {
   )
 }
 
-const SORT_KEYS: SortKey[] = ['score', 'name', 'brand', 'value', 'budget']
-
-type UrlParams = { category: string; sort: SortKey; q: string; group: string | null }
-
-// Reads the deep-link params (?category= ?sort= ?q= ?group=) and hands them to
-// the grid once on mount. This lives in its own Suspense-wrapped child because
-// useSearchParams() in the grid itself would force the whole statically
-// rendered /products page to bail out to client rendering — which is exactly
-// what put a "Loading…" shell in the HTML crawlers and no-JS users received.
-// Validated against the known category/sort lists so a junk param can't wedge
-// the filter on an empty set.
-function UrlParamSync({ onParams }: { onParams: (p: UrlParams) => void }) {
-  const searchParams = useSearchParams()
-  useEffect(() => {
-    const c = searchParams.get('category')
-    const so = searchParams.get('sort')
-    onParams({
-      category: c && CATEGORIES.some((cat) => cat.slug === c) ? c : 'all',
-      sort: so && SORT_KEYS.includes(so as SortKey) ? (so as SortKey) : 'score',
-      q: searchParams.get('q') ?? '',
-      group: searchParams.get('group'),
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
-  return null
-}
-
 export default function ProductGrid({ initialProducts }: { initialProducts: ScoredProduct[] }) {
   const { inStack, toggle } = useLocalStack()
-  const [groupParam, setGroupParam] = useState<string | null>(null)
-  const groupCategories = useMemo(() => {
-    if (!groupParam) return null
-    const g = CATEGORY_GROUPS.find((g) => g.slug === groupParam)
-    return g ? g.categories : null
-  }, [groupParam])
-
-  // Seeded from the server-rendered catalogue, so the first paint (and the raw
-  // HTML) already lists every product. The client refetch below only kicks in
-  // as a fallback if the server fetch came back empty (e.g. a transient DB
-  // hiccup at build / revalidate time).
-  const [all, setAll] = useState<ScoredProduct[]>(initialProducts)
-  const [reviewSummary, setReviewSummary] = useState<Record<string, ReviewSummary>>({})
+  const [all, setAll] = useState(initialProducts)
   const [loading, setLoading] = useState(initialProducts.length === 0)
   const [category, setCategory] = useState('all')
   const [sort, setSort] = useState<SortKey>('score')
   const [query, setQuery] = useState('')
+  const [groupParam, setGroupParam] = useState<string | null>(null)
   const [selected, setSelected] = useState<string[]>([])
-  const [favs, setFavs] = useState<Set<string>>(new Set())
-  // null = auth not resolved yet. Tri-state so FavouriteButton can wait rather
-  // than default-to-signed-out and bounce a logged-in user to /auth (F10).
+  const [favourites, setFavourites] = useState<Set<string>>(new Set())
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const [isOnly, setIsOnly] = useState(false)
   const [brandFilter, setBrandFilter] = useState<Set<string>>(new Set())
   const [brandPanelOpen, setBrandPanelOpen] = useState(false)
-  const [categoryPanelOpen, setCategoryPanelOpen] = useState(false)
+  const [reviewSummary, setReviewSummary] = useState<Record<string, ReviewSummary>>({})
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Authoritative auth check — independent of the favourites endpoint. Uses the
-  // same session the rest of the app relies on (see TopNav), so a 401/500 from
-  // /api/favourites can never make a signed-in user look logged out.
   useEffect(() => {
     let cancelled = false
     createClient().auth.getUser()
-      .then(({ data }) => { if (!cancelled) setSignedIn(!!data.user) })
+      .then(({ data }) => { if (!cancelled) setSignedIn(Boolean(data.user)) })
       .catch(() => { if (!cancelled) setSignedIn(false) })
     return () => { cancelled = true }
   }, [])
 
-  // Load the user's favourite ids for the heart fill state. A non-ok response
-  // here only leaves favs empty — it no longer affects signed-in state.
   useEffect(() => {
     let cancelled = false
     fetch('/api/favourites')
-      .then((r) => (r.ok ? r.json() : null))
+      .then((response) => response.ok ? response.json() : null)
       .then((data) => {
-        if (cancelled || !data) return
-        setFavs(new Set<string>(Array.isArray(data.ids) ? data.ids : []))
+        if (!cancelled && data) setFavourites(new Set(Array.isArray(data.ids) ? data.ids : []))
       })
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
 
-  // Fallback only: the catalogue normally arrives server-rendered via props.
   useEffect(() => {
     if (initialProducts.length > 0) return
     let cancelled = false
     fetch('/api/products?sort=score')
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data) => {
         if (cancelled) return
         setAll(Array.isArray(data) ? data : [])
         setLoading(false)
       })
       .catch(() => {
-        if (cancelled) return
-        setAll([])
-        setLoading(false)
+        if (!cancelled) { setAll([]); setLoading(false) }
       })
     return () => { cancelled = true }
-  }, [initialProducts])
+  }, [initialProducts.length])
 
-  // Per-product review aggregates for the cards (F12). Fetched in parallel; a
-  // failure here just leaves cards without a review line — never blocks the grid.
   useEffect(() => {
     let cancelled = false
     fetch('/api/products/reviews-summary')
-      .then((r) => (r.ok ? r.json() : null))
+      .then((response) => response.ok ? response.json() : null)
       .then((data) => {
-        if (cancelled || !data || typeof data !== 'object') return
-        setReviewSummary(data as Record<string, ReviewSummary>)
+        if (!cancelled && data && typeof data === 'object') setReviewSummary(data as Record<string, ReviewSummary>)
       })
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
 
+  const groupCategories = useMemo(() => {
+    if (!groupParam) return null
+    return CATEGORY_GROUPS.find((group) => group.slug === groupParam)?.categories ?? null
+  }, [groupParam])
+
   const activeCategories = useMemo(() => {
-    const present = new Set(all.map((p) => p.category))
-    return CATEGORIES.filter((c) => present.has(c.slug))
+    const present = new Set(all.map((product) => product.category))
+    return CATEGORIES.filter((item) => present.has(item.slug))
   }, [all])
 
-  const availableBrands = useMemo(() => {
-    const brands = new Set(all.map((p) => p.brand))
-    return Array.from(brands).sort()
-  }, [all])
+  const availableBrands = useMemo(() => Array.from(new Set(all.map((product) => product.brand))).sort(), [all])
 
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    let list = all
-    // A specific category pick overrides the group scope (the category chips list
-    // every category, so selecting one outside the current group must not intersect
-    // to an empty set). Group scope only applies while category is 'all'.
-    if (category !== 'all') list = list.filter((p) => p.category === category)
-    else if (groupCategories) list = list.filter((p) => groupCategories.includes(p.category))
-    if (isOnly) list = list.filter((p) => p.informed_sport === true)
-    if (brandFilter.size) list = list.filter((p) => brandFilter.has(p.brand))
-    if (q) list = list.filter((p) => `${p.brand} ${p.name}`.toLowerCase().includes(q))
-    return sortScored(list, sort)
-  }, [all, category, sort, query, isOnly, groupCategories, brandFilter])
+    const search = query.trim().toLowerCase()
+    let products = all
+    if (category !== 'all') products = products.filter((product) => product.category === category)
+    else if (groupCategories) products = products.filter((product) => groupCategories.includes(product.category))
+    if (isOnly) products = products.filter((product) => product.informed_sport === true)
+    if (brandFilter.size) products = products.filter((product) => brandFilter.has(product.brand))
+    if (search) products = products.filter((product) => `${product.brand} ${product.name}`.toLowerCase().includes(search))
+    return sortScored(products, sort)
+  }, [all, brandFilter, category, groupCategories, isOnly, query, sort])
+
+  const selectedProducts = selected
+    .map((id) => all.find((product) => product.id === id))
+    .filter((product): product is ScoredProduct => Boolean(product))
+
+  const heading = category !== 'all'
+    ? categoryLabel(category)
+    : groupParam
+      ? CATEGORY_GROUPS.find((group) => group.slug === groupParam)?.label ?? 'All supplements'
+      : 'All supplements'
 
   function handleSearch(value: string) {
     setQuery(value)
     if (searchTimer.current) clearTimeout(searchTimer.current)
-    if (value.trim()) {
-      searchTimer.current = setTimeout(() => track('search_query', { search_term: value.trim() }), 600)
-    }
+    if (value.trim()) searchTimer.current = setTimeout(() => track('search_query', { search_term: value.trim() }), 600)
   }
 
   function toggleSelect(id: string) {
-    setSelected((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id)
-      if (prev.length >= 3) return prev
-      return [...prev, id]
-    })
+    setSelected((current) => current.includes(id)
+      ? current.filter((item) => item !== id)
+      : current.length < 3 ? [...current, id] : current)
   }
 
-  function setFav(id: string, favourited: boolean) {
-    setFavs((prev) => {
-      const next = new Set(prev)
-      if (favourited) next.add(id)
-      else next.delete(id)
+  function setFavourite(id: string, active: boolean) {
+    setFavourites((current) => {
+      const next = new Set(current)
+      if (active) next.add(id); else next.delete(id)
       return next
     })
   }
 
   function toggleBrand(brand: string) {
-    setBrandFilter((prev) => {
-      const next = new Set(prev)
-      if (next.has(brand)) next.delete(brand)
-      else next.add(brand)
+    setBrandFilter((current) => {
+      const next = new Set(current)
+      if (next.has(brand)) next.delete(brand); else next.add(brand)
       return next
     })
   }
 
-  const topLabel = sort === 'value' ? 'Best Value Pick' : sort === 'budget' ? 'Best Budget Pick' : 'Top Pick'
-
-  // Dynamic heading word: category chip > group filter > default
-  const headingWord = category !== 'all'
-    ? categoryLabel(category)
-    : groupParam
-    ? (CATEGORY_GROUPS.find((g) => g.slug === groupParam)?.label ?? 'Supplement')
-    : 'Supplement'
-
   return (
-    <div className="space-y-4 pb-28">
+    <div className="space-y-6 pb-44">
       <Suspense fallback={null}>
-        <UrlParamSync
-          onParams={(p) => {
-            setCategory(p.category)
-            setSort(p.sort)
-            setQuery(p.q)
-            setGroupParam(p.group)
-          }}
-        />
+        <UrlParamSync onParams={({ category: nextCategory, sort: nextSort, q, group }) => {
+          setCategory(nextCategory); setSort(nextSort); setQuery(q); setGroupParam(group)
+        }} />
       </Suspense>
-      {/* dynamic heading */}
-      <div className="flex items-start justify-between mb-2">
+
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          {/* Visual heading only — the crawlable page <h1> is server-rendered in
-              page.tsx (this grid is client-only). Demoted to <h2> so the page has
-              exactly one h1. */}
-          <h2
-            className="text-2xl uppercase leading-none tracking-tight"
-            style={{ fontFamily: 'var(--font-anton), Impact, sans-serif', transform: 'skewX(-4deg)' }}
-          >
-            {headingWord}{' '}
-            <span style={{ color: '#a6e22e', textShadow: '0 0 12px rgba(166,226,46,0.4)' }}>
-              Showdown
-            </span>
-          </h2>
-          <p className="text-[11px] text-white/40 mt-1 uppercase tracking-widest">
-            {claimsReviewFor(category) ? 'Claims under review · Products are not ranked' : 'Unassessed products are not ranked'}
-          </p>
+          <p className="tll-eyebrow">{loading ? 'Loading products' : `${visible.length} products`}</p>
+          <h2 className="tll-display mt-1 text-4xl leading-none text-white">{heading}</h2>
         </div>
-        <div className="shrink-0 pt-1">
-          <MethodologyModal category={category === 'all' ? undefined : category} />
-        </div>
+        <MethodologyModal category={category === 'all' ? undefined : category} />
       </div>
 
       <ClaimsReviewNotice category={category} />
 
-      {/* search */}
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => handleSearch(e.target.value)}
-        placeholder="Search by product or brand…"
-        className="w-full bg-lab-panel text-white border border-lab-border rounded-xl px-4 py-3 focus:outline-none focus:border-lab-lime transition-colors"
-      />
+      <label className="block">
+        <span className="sr-only">Search products</span>
+        <input type="search" value={query} onChange={(event) => handleSearch(event.target.value)}
+          placeholder="Search by product or brand…"
+          className="min-h-12 w-full rounded-md border border-[#7c7e72] bg-lab-panel px-4 text-base text-white" />
+      </label>
 
-      {/* filters row */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {/* Category filter (single-select dropdown — replaces the chip row to save space) */}
-        <div className="relative">
-          <button
-            onClick={() => setCategoryPanelOpen((v) => !v)}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-colors ${
-              category !== 'all'
-                ? 'bg-lab-lime text-black border-lab-lime'
-                : 'bg-lab-panel text-lab-muted border-lab-border hover:border-lab-lime hover:text-white'
-            }`}
-          >
-            <span>{category !== 'all' ? categoryLabel(category) : 'Category'}</span>
-            <span>{categoryPanelOpen ? '▴' : '▾'}</span>
-          </button>
-          {categoryPanelOpen && (
-            <div className="absolute top-full left-0 mt-1 z-50 bg-lab-panel-2 border border-lab-border rounded-xl shadow-xl p-3 min-w-[180px] max-h-64 overflow-y-auto">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-[10px] uppercase tracking-widest font-bold text-lab-muted">Filter category</span>
-                {category !== 'all' && (
-                  <button
-                    onClick={() => { setCategory('all'); setCategoryPanelOpen(false) }}
-                    className="text-[10px] text-lab-lime font-bold uppercase"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={() => { setCategory('all'); setCategoryPanelOpen(false) }}
-                className={`w-full text-left text-xs px-2 py-1.5 rounded-lg mb-0.5 font-bold transition-colors ${
-                  category === 'all'
-                    ? 'bg-lab-lime/20 text-lab-lime'
-                    : 'text-white/70 hover:bg-lab-border/40 hover:text-white'
-                }`}
-              >
-                {category === 'all' ? '✓ ' : ''}All
-              </button>
-              {activeCategories.map((c) => (
-                <button
-                  key={c.slug}
-                  onClick={() => { setCategory(c.slug); setCategoryPanelOpen(false) }}
-                  className={`w-full text-left text-xs px-2 py-1.5 rounded-lg mb-0.5 font-bold transition-colors ${
-                    category === c.slug
-                      ? 'bg-lab-lime/20 text-lab-lime'
-                      : 'text-white/70 hover:bg-lab-border/40 hover:text-white'
-                  }`}
-                >
-                  {category === c.slug ? '✓ ' : ''}{c.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Informed Sport toggle */}
-        <button
-          onClick={() => setIsOnly((v) => !v)}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-colors ${
-            isOnly
-              ? 'bg-lab-lime text-black border-lab-lime'
-              : 'bg-lab-panel text-lab-muted border-lab-border hover:border-lab-lime hover:text-white'
-          }`}
-        >
-          <span>🛡️</span>
-          <span>Informed Sport</span>
+      <div className="hide-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter by category">
+        <button type="button" onClick={() => setCategory('all')} aria-pressed={category === 'all'}
+          className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold ${category === 'all' ? 'border-[#14140f] bg-[#14140f] text-[#a6e22e]' : 'border-[#7c7e72] bg-lab-panel text-white'}`}>
+          All
         </button>
-
-        {/* Brand filter */}
-        <div className="relative">
-          <button
-            onClick={() => setBrandPanelOpen((v) => !v)}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-colors ${
-              brandFilter.size > 0
-                ? 'bg-lab-lime text-black border-lab-lime'
-                : 'bg-lab-panel text-lab-muted border-lab-border hover:border-lab-lime hover:text-white'
-            }`}
-          >
-            <span>Brands {brandFilter.size > 0 ? `(${brandFilter.size})` : ''}</span>
-            <span>{brandPanelOpen ? '▴' : '▾'}</span>
+        {activeCategories.map((item) => (
+          <button type="button" key={item.slug} onClick={() => setCategory(item.slug)} aria-pressed={category === item.slug}
+            className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold ${category === item.slug ? 'border-[#14140f] bg-[#14140f] text-[#a6e22e]' : 'border-[#7c7e72] bg-lab-panel text-white'}`}>
+            {item.label}
           </button>
-          {brandPanelOpen && (
-            <div className="absolute top-full left-0 mt-1 z-50 bg-lab-panel-2 border border-lab-border rounded-xl shadow-xl p-3 min-w-[180px] max-h-64 overflow-y-auto">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-[10px] uppercase tracking-widest font-bold text-lab-muted">Filter brands</span>
-                {brandFilter.size > 0 && (
-                  <button
-                    onClick={() => setBrandFilter(new Set())}
-                    className="text-[10px] text-lab-lime font-bold uppercase"
-                  >
-                    Clear
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => setIsOnly((value) => !value)} aria-pressed={isOnly}
+            className={`min-h-11 rounded-md border px-3 text-sm font-semibold ${isOnly ? 'border-[#14140f] bg-[#14140f] text-[#a6e22e]' : 'border-[#7c7e72] bg-lab-panel text-white'}`}>
+            Informed Sport
+          </button>
+          <div className="relative">
+            <button type="button" onClick={() => setBrandPanelOpen((value) => !value)} aria-expanded={brandPanelOpen}
+              className="min-h-11 rounded-md border border-[#7c7e72] bg-lab-panel px-3 text-sm font-semibold text-white">
+              Brands{brandFilter.size ? ` (${brandFilter.size})` : ''} {brandPanelOpen ? '▴' : '▾'}
+            </button>
+            {brandPanelOpen && (
+              <div className="absolute left-0 top-full z-30 mt-1 max-h-72 min-w-56 overflow-y-auto rounded-md border border-lab-border bg-lab-panel p-2 shadow-xl">
+                {availableBrands.map((brand) => (
+                  <button type="button" key={brand} onClick={() => toggleBrand(brand)}
+                    className={`block min-h-11 w-full rounded px-2 text-left text-sm ${brandFilter.has(brand) ? 'bg-[#eef5dc] font-semibold text-[#4a6e0b]' : 'text-white hover:bg-lab-panel-2'}`}>
+                    {brandFilter.has(brand) ? '✓ ' : ''}{brand}
                   </button>
-                )}
+                ))}
               </div>
-              {availableBrands.map((brand) => (
-                <button
-                  key={brand}
-                  onClick={() => toggleBrand(brand)}
-                  className={`w-full text-left text-xs px-2 py-1.5 rounded-lg mb-0.5 font-bold transition-colors ${
-                    brandFilter.has(brand)
-                      ? 'bg-lab-lime/20 text-lab-lime'
-                      : 'text-white/70 hover:bg-lab-border/40 hover:text-white'
-                  }`}
-                >
-                  {brandFilter.has(brand) ? '✓ ' : ''}{brand}
-                </button>
-              ))}
-            </div>
-          )}
+            )}
+          </div>
         </div>
+        <label className="flex min-h-11 w-full min-w-0 flex-col items-stretch gap-1 text-sm text-lab-muted sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+          <span>Sort by</span>
+          <select aria-label="Sort products" value={sort} onChange={(event) => setSort(event.target.value as SortKey)}
+            className="min-h-11 w-full min-w-0 max-w-full rounded-md border border-[#7c7e72] bg-lab-panel px-3 text-sm text-white sm:w-auto">
+            {SORTS.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
+          </select>
+        </label>
       </div>
 
-      {/* contextual guide link */}
-      {category !== 'all' && GUIDE_SLUGS.includes(category) && (
-        <Link
-          href={`/guide/${category}`}
-          className="flex items-center gap-3 bg-lab-panel border border-lab-border rounded-xl px-4 py-3 hover:border-lab-lime transition-colors"
-        >
-          <span className="text-lg shrink-0">📖</span>
-          <span className="text-sm text-white/90 min-w-0 flex-1">
-            New to {categoryLabel(category).toLowerCase()}? Read our{' '}
-            <span className="text-lab-lime font-bold">{categoryLabel(category)} buyer&apos;s guide</span>
-          </span>
-          <span className="text-lab-lime text-lg shrink-0">→</span>
-        </Link>
-      )}
-
-      {/* sort + count */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-lab-muted text-xs uppercase tracking-widest font-bold shrink-0">
-          {loading ? 'Loading…' : `${visible.length} product${visible.length === 1 ? '' : 's'}`}
-        </span>
-        <select
-          aria-label="Sort products"
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortKey)}
-          className="min-w-0 max-w-full bg-lab-panel text-white text-xs border border-lab-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-lab-lime"
-        >
-          {SORTS.map((s) => (
-            <option key={s.key} value={s.key}>{s.label}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* grid */}
       {!loading && visible.length === 0 && (
-        <div className="text-center py-12 text-gray-600">
-          <p className="text-4xl mb-3">🗂️</p>
+        <div className="rounded-xl border border-lab-border bg-lab-panel py-16 text-center text-lab-muted">
           <p className="text-sm">No products match your filters.</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {visible.map((p, i) => {
-          const isSel = selected.includes(p.id)
-          const assessment = assessmentDisplayFor(p)
-          const ranked = isRankingCandidate(p, sort)
-          const isTop = ranked && i === 0
-          const medal = ranked ? MEDALS[i] ?? null : null
-          const stacked = inStack(p.id)
-          const benefits = CATEGORY_BENEFITS[p.category] ?? null
-          const dosingNote = hasApprovedAssessment(p) && p.score != null
-            ? p.score >= 70
-              ? p.score >= 90 ? '· Excellent dosing' : '· Good dosing'
-              : p.score >= 50
-              ? '· Partially dosed'
-              : '· Below effective dose'
-            : ''
-          const scoreFlag = !hasApprovedAssessment(p)
-            ? { color: '#9ca3af', text: assessment.explanation }
-            : benefits
-            ? {
-                color: p.score != null && p.score >= 70 ? '#a6e22e' : p.score != null && p.score >= 50 ? '#f5b342' : '#ff5c5c',
-                text: benefits + (p.score != null ? ' ' + dosingNote : ''),
-              }
-            : p.score != null
-            ? {
-                color: p.score >= 70 ? '#a6e22e' : p.score >= 50 ? '#f5b342' : '#ff5c5c',
-                text: p.score >= 70 ? (p.score >= 90 ? 'Excellent Effectiveness Match' : 'Strong Effectiveness Match') : p.score >= 50 ? 'Partial Effectiveness Match' : 'Below effective threshold',
-              }
-            : null
-
+      <div className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {visible.map((product) => {
+          const isSelected = selected.includes(product.id)
+          const stacked = inStack(product.id)
+          const assessment = assessmentDisplayFor(product)
+          const nutrients = product.nutrients ?? []
+          const reviews = reviewSummary[product.id]
           return (
-            <PointerCard
-              key={p.id}
-              productId={p.id}
-              className="p-4"
-              style={isTop ? {
-                borderColor: 'rgba(166,226,46,0.45)',
-                boxShadow: '0 6px 30px rgba(0,0,0,0.5), 0 0 22px rgba(166,226,46,0.12), inset 0 1px 0 rgba(255,255,255,0.05)',
-              } : isSel ? {
-                borderColor: 'rgba(166,226,46,0.45)',
-              } : {}}
-            >
-              {/* top row: pack shot left, score + fav right */}
-              <div className="flex items-start gap-3">
-                <Link href={`/products/${p.id}`} className="shrink-0 mt-0.5">
-                  <ProductImage src={p.image_url} alt={`${p.brand} ${p.name}`} size={88} />
-                </Link>
+            <article key={product.id} data-product-id={product.id} className={`lab-card grid gap-3 p-4 sm:p-5 ${isSelected ? 'border-[#7c7e72]' : ''}`}>
+              <Link href={`/products/${product.id}`} className="grid aspect-[4/3] place-items-center rounded-lg bg-lab-panel-2 p-4">
+                <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={180} className="max-h-full max-w-full" />
+              </Link>
 
-                <div className="min-w-0 flex-1">
-                  {/* brand + title share the same left edge; medal sits after the brand */}
-                  <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
-                    <span
-                      className="text-[11px] uppercase tracking-widest font-bold truncate"
-                      style={{ color: '#2E8FE0', textShadow: '0 1px 2px rgba(0,0,0,0.7), 0 0 8px rgba(46,143,224,0.35)' }}
-                    >{p.brand}</span>
-                    {medal && <span className="text-sm leading-none shrink-0">{medal}</span>}
-                  </div>
-                  <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors block min-w-0">
-                    <p className="text-white text-sm font-black leading-tight">
-                      {p.name} <span className="text-lab-lime text-xs">›</span>
-                    </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">{product.brand}</p>
+                  <Link href={`/products/${product.id}`} className="mt-0.5 block text-[17px] font-semibold leading-6 text-white hover:underline">
+                    {product.name}
                   </Link>
-
-                  {/* badges */}
-                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    <span className="text-[8px] uppercase tracking-widest font-semibold bg-lab-panel-2 text-lab-muted px-1.5 py-0.5 rounded-full">
-                      {categoryLabel(p.category)}
-                    </span>
-                    {p.informed_sport && (
-                      <span className="badge-is text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full border">
-                        IS Certified
-                      </span>
-                    )}
-                    {isTop && (
-                      <span className="text-[10px] uppercase tracking-widest font-black bg-lab-lime text-black px-2 py-0.5 rounded-full">
-                        {topLabel}
-                      </span>
-                    )}
-                  </div>
+                  <p className="mt-1 text-xs text-lab-muted">{categoryLabel(product.category)}</p>
                 </div>
-
-                <div className="shrink-0 flex flex-col items-end gap-2">
-                  <Link href={`/products/${p.id}`} className="shrink-0">
-                    <ProductAssessment product={p} size="sm" />
-                  </Link>
-                  <FavouriteButton
-                    productId={p.id}
-                    favourited={favs.has(p.id)}
-                    signedIn={signedIn}
-                    onChange={(fav) => setFav(p.id, fav)}
-                  />
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <ProductAssessment product={product} size="sm" />
+                  <FavouriteButton productId={product.id} favourited={favourites.has(product.id)} signedIn={signedIn}
+                    onChange={(active) => setFavourite(product.id, active)} />
                 </div>
               </div>
 
-              {(() => {
-                const highlights = cardHighlights(p.category, p.nutrients)
-                if (!highlights.length) return null
-                const cols = `repeat(${highlights.length}, minmax(0, 1fr))`
-                return (
-                  <div className="grid gap-1.5 mt-2" style={{ gridTemplateColumns: cols }}>
-                    {highlights.map((h) => (
-                      <div key={h.label} className="bg-black/30 rounded-md px-1.5 py-1 text-center min-w-0">
-                        <div className="text-[8px] text-lab-muted uppercase tracking-wide truncate">{h.label}</div>
-                        <div className="text-xs font-bold mt-0.5" style={{ color: h.value === '\u2014' ? '#77796d' : '#14140f' }}>
-                          {h.value}
-                        </div>
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 rounded-lg bg-lab-panel-2 p-3">
+                <div className="min-w-0">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Listed / serving</span>
+                  <b className="mt-1 block font-mono text-lg text-white" title={trueCostReason(product) ?? undefined}>
+                    {product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : 'Not listed'}
+                  </b>
+                </div>
+                <div className="min-w-0">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Servings</span>
+                  <b className="mt-1 block font-mono text-sm text-white">{product.servings_per_container ?? 'Not listed'}</b>
+                </div>
+                <div className="min-w-0">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Pack price</span>
+                  <b className="mt-1 block font-mono text-sm text-white">{formatMoney(product.retail_price)}</b>
+                </div>
+              </div>
+
+              <dl className="grid grid-cols-[1fr_auto] gap-x-3 text-sm">
+                <dt className="text-lab-muted">Serving size</dt>
+                <dd className="m-0 text-right font-mono text-white">
+                  {product.serving_size != null ? `${product.serving_size}${product.serving_unit ?? ''}` : 'Not listed'}
+                </dd>
+                <dt className="text-lab-muted">Assessment</dt>
+                <dd className="m-0 text-right font-medium text-white">{assessment.label}</dd>
+              </dl>
+
+              {nutrients.length > 0 && (
+                <div>
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[.08em] text-lab-muted">Per serving</p>
+                  <dl className="divide-y divide-lab-border">
+                    {nutrients.map((nutrient) => (
+                      <div key={`${nutrient.nutrient_name}-${nutrient.amount}-${nutrient.unit}`} className="grid grid-cols-[1fr_auto] gap-3 py-1.5 text-sm">
+                        <dt className="text-lab-muted">{nutrient.nutrient_name}</dt>
+                        <dd className="m-0 font-mono text-white">{nutrient.amount}{nutrient.unit}</dd>
                       </div>
                     ))}
-                  </div>
-                )
-              })()}
-
-              {/* 3 metrics mini-grid */}
-              <div className="grid grid-cols-3 gap-1.5 mt-2">
-                <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
-                  <div className="text-[8px] text-lab-muted uppercase tracking-wide">Match</div>
-                  <div className="text-xs font-bold text-white mt-0.5">
-                    {assessment.label}
-                  </div>
-                </div>
-                <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
-                  <div className="text-[8px] text-lab-muted uppercase tracking-wide">True Cost / srv</div>
-                  <div
-                    className="mt-0.5"
-                    title={trueCostReason(p) ?? undefined}
-                    style={p.cost_per_serving != null ? { fontSize: '12px', fontWeight: 800, color: '#14140f' } : { fontSize: '11px', fontWeight: 600, color: '#77796d' }}
-                  >
-                    {p.cost_per_serving != null ? `${formatListedServingPrice(p.cost_per_serving)}` : '—'}
-                    {p.cost_per_serving == null && (
-                      <span className="block text-[8px] normal-case tracking-normal leading-tight">{trueCostReason(p)}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
-                  <div className="text-[8px] text-lab-muted uppercase tracking-wide">Retail</div>
-                  <div className="mt-0.5" style={p.retail_price != null ? { fontSize: '12px', fontWeight: 800, color: '#14140f' } : { fontSize: '11px', fontWeight: 600, color: '#77796d' }}>
-                    {p.retail_price != null ? fmt(p.retail_price) : 'Pending'}
-                  </div>
-                </div>
-              </div>
-
-              {/* verdict flag */}
-              {scoreFlag && (
-                <div className="flex items-start gap-1.5 mt-3">
-                  <span className="text-xs leading-none mt-0.5 shrink-0" style={{ color: scoreFlag.color }}>●</span>
-                  <span className="text-[11px] text-gray-300 leading-snug">{scoreFlag.text}</span>
+                  </dl>
                 </div>
               )}
 
-              {/* reviews (F12): star rating + latest snippet, graceful empty state */}
-              {(() => {
-                const rs = reviewSummary[p.id]
-                if (!rs || rs.count === 0) {
-                  return (
-                    <p className="text-[10px] text-lab-muted/40 mt-3 uppercase tracking-widest">
-                      No reviews yet
-                    </p>
-                  )
-                }
-                return (
-                  <div className="mt-3 space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <MiniStars value={Math.round(rs.average)} />
-                      <span className="text-[11px] font-bold text-white leading-none">{rs.average.toFixed(1)}</span>
-                      <span className="text-[11px] text-lab-muted leading-none">
-                        ({rs.count} review{rs.count === 1 ? '' : 's'})
-                      </span>
-                    </div>
-                    {rs.latest && (
-                      <p className="text-[11px] text-white/55 italic leading-snug truncate">
-                        “{reviewSnippet(rs.latest)}”
-                      </p>
-                    )}
-                  </div>
-                )
-              })()}
+              {product.informed_sport && <p className="rounded bg-[#e6eef8] px-2 py-1 text-xs font-semibold text-[#1f4f8a]">Informed Sport certified</p>}
 
-              {/* action row: stack + compare + buy */}
-              <div className="grid grid-cols-3 gap-1.5 mt-2">
-                <button
-                  onClick={() => {
-                    toggle({ id: p.id, name: p.name, brand: p.brand, category: p.category, score: p.score })
-                    track(stacked ? 'remove_from_stack' : 'add_to_stack', { item_brand: p.brand, item_name: p.name })
-                  }}
-                  className={`text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border transition-colors ${
-                    stacked
-                      ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
-                      : 'border-lab-border text-lab-muted hover:text-white'
-                  }`}
-                >
-                  {stacked ? '✓ Stack' : '+ Stack'}
+              {reviews && reviews.count > 0 && (
+                <div className="space-y-1 border-t border-lab-border pt-3">
+                  <div className="flex items-center gap-2">
+                    <MiniStars value={Math.round(reviews.average)} />
+                    <span className="text-xs font-semibold text-white">{reviews.average.toFixed(1)} · {reviews.count} review{reviews.count === 1 ? '' : 's'}</span>
+                  </div>
+                  {reviews.latest && <p className="truncate text-xs italic text-lab-muted">“{reviewSnippet(reviews.latest)}”</p>}
+                </div>
+              )}
+
+              <ProductOfferLink product={product}
+                className="w-full rounded-md bg-[#14140f] py-3 text-sm font-semibold uppercase tracking-wide text-[#a6e22e]" />
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[#14140f] bg-[#eef5dc] text-[#4a6e0b]' : 'border-[#7c7e72] text-white'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>
+                  <input type="checkbox" checked={isSelected} disabled={!isSelected && selected.length >= 3}
+                    onChange={() => toggleSelect(product.id)} className="h-[18px] w-[18px] accent-[#14140f]" />
+                  {isSelected ? 'Compared' : 'Compare'}
+                </label>
+                <button type="button" aria-pressed={stacked} onClick={() => {
+                  toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
+                  track(stacked ? 'remove_from_stack' : 'add_to_stack', { item_brand: product.brand, item_name: product.name })
+                }} className={`min-h-11 rounded-md border px-3 text-sm font-semibold ${stacked ? 'border-[#14140f] bg-[#eef5dc] text-[#4a6e0b]' : 'border-[#7c7e72] text-white'}`}>
+                  {stacked ? '✓ In stack' : '+ My stack'}
                 </button>
-                <button
-                  onClick={() => toggleSelect(p.id)}
-                  disabled={!isSel && selected.length >= 3}
-                  className={`text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl border transition-colors disabled:opacity-30 ${
-                    isSel
-                      ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
-                      : 'border-lab-border text-lab-muted hover:text-white'
-                  }`}
-                >
-                  {isSel ? 'Added ✓' : 'Compare'}
-                </button>
-                <ProductOfferLink
-                  product={p}
-                  className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl transition-all"
-                  style={isTop ? {
-                    background: 'linear-gradient(145deg, color-mix(in srgb, #a6e22e 80%, #fff), #a6e22e 45%, color-mix(in srgb, #a6e22e 72%, #000))',
-                    color: '#0d0d0d',
-                    boxShadow: '0 0 12px rgba(166,226,46,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
-                  } : {
-                    background: '#ffffff',
-                    color: '#4a6e0b',
-                    border: '1px solid #7c7e72',
-                  }}
-                />
               </div>
 
-            </PointerCard>
+              <p className="text-xs leading-4 text-lab-muted">
+                Research record only. Check the retailer page for the current pack, price and stock. Informational only, not medical advice.
+              </p>
+            </article>
           )
         })}
       </div>
 
-      {/* sticky compare bar */}
       {selected.length > 0 && (
-        <div className="fixed bottom-0 inset-x-0 z-30 bg-lab-panel-2 border-t border-lab-border">
-          <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
-            <span className="text-sm text-white font-bold">
-              {selected.length} selected{' '}
-              <span className="text-lab-muted font-normal">(up to 3)</span>
-            </span>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSelected([])}
-                className="text-xs text-lab-muted hover:text-white uppercase tracking-widest font-bold"
-              >
-                Clear
-              </button>
-              <Link
-                href={`/compare?ids=${selected.join(',')}`}
-                onClick={() => track('compare_start', { count: selected.length })}
-                className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-4 py-2 rounded-lg hover:opacity-90"
-              >
-                Compare →
+        <div className="fixed inset-x-3 bottom-3 z-30 mx-auto max-w-6xl rounded-xl border border-[#2a2c26] bg-[#0d0d0d] p-3 text-[#f2f2ee] shadow-2xl sm:inset-x-6 sm:p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="grid flex-1 grid-cols-3 gap-2">
+              {[0, 1, 2].map((index) => {
+                const product = selectedProducts[index]
+                return product ? (
+                  <div key={product.id} className="flex min-h-11 min-w-0 items-center gap-2 rounded-md border border-[#6c6f63] px-2 sm:px-3">
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium sm:text-sm">{product.name}</span>
+                    <button type="button" onClick={() => toggleSelect(product.id)} aria-label={`Remove ${product.name} from comparison`}
+                      className="min-h-9 min-w-9 shrink-0 rounded text-lg">×</button>
+                  </div>
+                ) : (
+                  <div key={index} className="grid min-h-11 place-items-center rounded-md border border-dashed border-[#6c6f63] px-2 text-xs text-[#a9ac9f]">
+                    Empty slot
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex items-center justify-between gap-3 lg:justify-end">
+              <span className="text-xs text-[#a9ac9f]">Choose up to three</span>
+              <button type="button" onClick={() => setSelected([])} className="min-h-11 px-2 text-sm font-semibold text-[#a9ac9f]">Clear</button>
+              <Link href={`/compare?ids=${selected.join(',')}`} onClick={() => track('compare_start', { count: selected.length })}
+                className="inline-flex min-h-11 items-center rounded-md bg-[#a6e22e] px-5 text-sm font-semibold text-[#14140f]">
+                Compare side by side
               </Link>
             </div>
           </div>

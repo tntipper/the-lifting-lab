@@ -33,26 +33,21 @@ export default async function StackPage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav signedInInitial />
-      <div className="max-w-2xl mx-auto px-6 py-12">
-        <AccountNavigation />
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <Link href="/account" className="text-lab-muted text-sm hover:text-white transition-colors">
-              ← My account
-            </Link>
-            <h1 className="text-3xl font-black uppercase tracking-wide mt-3">
-              My <span className="text-lab-lime">Stack</span>
-            </h1>
-            <p className="text-lab-muted text-sm mt-2">
-              Keep your supplement records, inspect legacy assessment status and review available nutrient alerts.
-            </p>
-            <p className="text-lab-muted/50 text-xs mt-1">
-              For informational purposes only. Not medical advice.
-            </p>
-          </div>
+      <header className="tll-on-dark bg-black text-white">
+        <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+          <Link href="/account" className="text-sm text-lab-muted transition-colors hover:text-white">← My account</Link>
+          <p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-lab-lime">Saved to your account</p>
+          <h1 className="tll-display mt-2 text-5xl uppercase leading-none text-white sm:text-7xl">Build your stack</h1>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-lab-muted sm:text-base">
+            Bring your products together, inspect their recorded ingredients and open each available retailer listing when you are ready.
+          </p>
         </div>
-        <StackBuilder />
-      </div>
+      </header>
+      <main className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
+        <AccountNavigation />
+        <div className="mt-8"><StackBuilder /></div>
+        <p className="mt-8 border-t border-lab-border pt-5 text-xs text-lab-muted">For informational purposes only. Not medical advice.</p>
+      </main>
     </div>
   )
 }

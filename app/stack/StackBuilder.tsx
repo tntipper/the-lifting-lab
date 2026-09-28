@@ -290,21 +290,29 @@ export default function StackBuilder() {
   const rdaTracked = dailyTotals.filter((t) => t.rdaPercent != null)
 
   return (
-    <div className="space-y-6">
-      <div role="status" aria-live="polite" className="text-sm text-lab-muted space-y-2">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,.75fr)] lg:items-start">
+      <div role="status" aria-live="polite" className="space-y-2 text-sm text-lab-muted lg:col-span-2">
         {state.busy && <p>Saving stack…</p>}
         {state.identity && state.guest.length > 0 && <p>{state.guest.length} browser item(s) awaiting confirmation in your account. <button type="button" className="underline" disabled={state.busy || state.loading} onClick={retry}>Save browser items</button></p>}
         {Boolean(state.snapshot?.recoveryConflicts) && <p>Earlier saved stacks contain differing serving amounts. Original entries are preserved for support review; conflicting amounts have not been added together.</p>}
         {state.error && <p className="text-amber-300">{state.error} {state.retryable && <button type="button" className="underline" disabled={state.busy} onClick={retry}>Retry sync</button>}</p>}
         {detailsError && <p className="text-amber-300">{detailsError} <button type="button" className="underline" onClick={() => setDetailAttempt(n => n + 1)}>Retry details</button></p>}
       </div>
-      {unresolved.length > 0 && <div className="border border-amber-400/40 rounded-xl p-4 text-sm text-amber-200 space-y-2">
+      {unresolved.length > 0 && <div className="space-y-2 rounded-xl border border-amber-400/40 p-4 text-sm text-amber-800 lg:col-span-2">
         <p>Serving amounts need review. These saved items are excluded from totals and stack analysis until corrected; no default dose has been substituted.</p>
         {unresolved.map(item => <div key={item.product_id} className="flex justify-between gap-3"><span>{item.products?.brand} {item.products?.name || 'Unavailable saved product'} — amount unresolved</span><button type="button" className="underline" disabled={state.busy} onClick={() => remove(item.product_id)}>Remove</button></div>)}
       </div>}
       {/* No combined-stack or product effectiveness assessment is approved. */}
       {!loading && stackItems.length > 0 && (
-        <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-2xl p-5">
+        <section className="tll-on-dark order-3 rounded-xl bg-black p-6 text-white lg:col-start-2 lg:row-start-2">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-lab-lime">Stack summary</p>
+          <h2 className="tll-display mt-2 text-3xl uppercase text-white">Your daily setup</h2>
+          <dl className="mt-5 divide-y divide-white/15 border-y border-white/15">
+            <div className="flex justify-between py-3"><dt className="text-sm text-lab-muted">Products</dt><dd className="font-bold text-white">{stack.length}</dd></div>
+            <div className="flex justify-between py-3"><dt className="text-sm text-lab-muted">Ingredients tracked</dt><dd className="font-bold text-white">{dailyTotals.length}</dd></div>
+            <div className="flex justify-between py-3"><dt className="text-sm text-lab-muted">Retailers represented</dt><dd className="font-bold text-white">{retailerGroups.length}</dd></div>
+          </dl>
+          <div className="mt-5 flex items-start gap-4">
           <div className="shrink-0 text-2xl font-bold text-lab-muted" aria-label="Assessment unavailable">
             {assessmentSummary.average === null ? '—' : `${assessmentSummary.average}/100`}
           </div>
@@ -312,12 +320,14 @@ export default function StackBuilder() {
             <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Product assessment unavailable</p>
             <p className="text-white text-sm mt-1">{assessmentSummary.text}</p>
           </div>
-        </div>
+          </div>
+          <p className="mt-5 text-xs leading-relaxed text-lab-muted">This is a research record, not one combined retailer basket. Check every product, pack, price and stock status before leaving the site.</p>
+        </section>
       )}
 
       {/* Safety flags */}
       {flags.length > 0 && (
-        <div className="space-y-2">
+        <div className="order-0 space-y-2 lg:col-span-2">
           {flags.map((flag) => (
             <div
               key={flag.nutrientName}
@@ -345,10 +355,10 @@ export default function StackBuilder() {
 
       {/* Action row: share + daily totals toggle */}
       {!loading && stackItems.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="order-4 grid gap-2 sm:grid-cols-3 lg:col-start-2 lg:grid-cols-1">
           <button
             onClick={() => setShowShare((v) => !v)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-black uppercase tracking-widest transition-colors ${
+            className={`tll-primary-button w-full gap-1.5 text-xs uppercase tracking-widest ${
               showShare
                 ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
                 : 'border-lab-lime text-lab-lime hover:bg-lab-lime/10'
@@ -359,7 +369,7 @@ export default function StackBuilder() {
           </button>
           <button
             onClick={() => setShowTotals((v) => !v)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border text-xs font-black uppercase tracking-widest transition-colors ${
+            className={`tll-secondary-button w-full gap-1.5 text-xs uppercase tracking-widest ${
               showTotals
                 ? 'border-lab-lime text-lab-lime bg-lab-lime/10'
                 : 'border-lab-border text-lab-muted hover:text-white'
@@ -370,7 +380,7 @@ export default function StackBuilder() {
           </button>
           <a
             href={emailUrl}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-lab-border text-lab-muted text-xs font-black uppercase tracking-widest hover:text-white transition-colors"
+            className="tll-secondary-button w-full gap-1.5 text-xs uppercase tracking-widest"
           >
             <span>📧</span>
             <span>Email Stack</span>
@@ -380,7 +390,7 @@ export default function StackBuilder() {
 
       {/* Social share panel */}
       {showShare && !loading && stackItems.length > 0 && (
-        <div className="bg-lab-panel border border-lab-border rounded-2xl p-5 space-y-3">
+        <div className="order-5 space-y-3 rounded-xl border border-lab-border bg-lab-panel p-5 lg:col-start-2">
           <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Share your stack</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <a href={xShare} target="_blank" rel="noopener noreferrer"
@@ -409,7 +419,7 @@ export default function StackBuilder() {
 
       {/* Individual listings — grouped by retailer */}
       {!loading && retailerGroups.length > 0 && (
-        <div className="bg-lab-panel border border-lab-border rounded-2xl p-5 space-y-3">
+        <div className="order-7 space-y-3 rounded-xl border border-lab-border bg-lab-panel p-5 lg:col-span-2">
           <div>
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Retailer listings</p>
             <p className="text-[10px] text-gray-600 mt-0.5">
@@ -434,7 +444,7 @@ export default function StackBuilder() {
 
       {/* Daily totals table */}
       {showTotals && dailyTotals.length > 0 && (
-        <div className="bg-lab-panel border border-lab-border rounded-2xl overflow-hidden">
+        <div className="order-6 overflow-hidden rounded-xl border border-lab-border bg-lab-panel lg:col-start-2">
           <div className="px-4 py-3 border-b border-lab-border flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-widest font-bold text-lab-muted">Daily Intake Totals</p>
@@ -519,13 +529,19 @@ export default function StackBuilder() {
       )}
 
       {/* Search */}
-      <div className="relative">
+      <div className="relative order-1 lg:col-start-1 lg:row-start-2">
+        <div className="mb-4 flex items-end justify-between gap-3 border-b border-lab-border pb-3">
+          <div><p className="tll-eyebrow">Your products</p><h2 className="tll-display mt-1 text-3xl uppercase">Build your stack</h2></div>
+          <span className="text-sm text-lab-muted">{stack.length} product{stack.length === 1 ? '' : 's'}</span>
+        </div>
+        <label htmlFor="stack-product-search" className="mb-2 block text-xs font-bold uppercase tracking-widest text-lab-muted">Add a product</label>
         <input
-          type="text"
+          id="stack-product-search"
+          type="search"
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Search products to add to your stack…"
-          className="w-full bg-lab-panel text-white border border-lab-border rounded-xl px-4 py-3 focus:outline-none focus:border-lab-lime transition-colors"
+          placeholder="Search the catalogue…"
+          className="w-full rounded-lg border border-lab-border bg-lab-panel px-4 py-3 text-white transition-colors focus:border-black focus:outline-none"
         />
         {(searchResults.length > 0 || searching) && (
           <div className="absolute top-full mt-1 left-0 right-0 bg-lab-panel border border-lab-border rounded-xl overflow-hidden z-10">
@@ -568,12 +584,12 @@ export default function StackBuilder() {
       {loading ? (
         <p className="text-lab-muted text-sm">Loading your stack…</p>
       ) : stack.length === 0 && !state.error && !detailsError ? (
-        <div className="text-center py-12 text-gray-600">
-          <p className="text-4xl mb-3">🧪</p>
-          <p className="text-sm">Your stack is empty. Search above to add products.</p>
+        <div className="order-2 rounded-xl border border-dashed border-lab-border bg-lab-panel px-6 py-14 text-center lg:col-start-1">
+          <p className="tll-display text-3xl uppercase">Start with one product</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-lab-muted">Search above to add products. Your saved stack stays connected to your account.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="order-2 space-y-3 lg:col-start-1">
           {stackItems.map((item) => {
             const product = item.products
             if (!product) return null
@@ -584,7 +600,7 @@ export default function StackBuilder() {
             return (
               <div
                 key={item.id}
-                className="flex gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
+                className="flex gap-4 rounded-xl border border-lab-border bg-lab-panel p-4"
               >
                 <ProductAssessment product={assessedProduct} />
                 <div className="min-w-0 flex-1">
