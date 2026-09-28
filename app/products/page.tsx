@@ -81,20 +81,7 @@ export default async function ProductsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
-      <section className="tll-on-dark tll-dark-section border-b border-[#2a2c26]">
-        <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10">
-          <p className="text-xs font-semibold uppercase tracking-[.08em] text-[#a9ac9f]">
-            {products.length} products · label and price records
-          </p>
-          <h1 className="tll-display mt-2 text-4xl leading-none text-white sm:text-5xl">
-            Browse supplement research records &amp; listed prices
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#a9ac9f]">
-            Choose up to three products, compare them side by side, then add the products you want to My Stack.
-          </p>
-        </div>
-      </section>
-      <main className="mx-auto max-w-7xl px-5 py-6 sm:px-6 sm:py-8">
+      <main id="shop-products" className="mx-auto max-w-7xl scroll-mt-36 px-5 py-5 sm:px-6 sm:py-7">
         <ProductGrid initialProducts={products} />
       </main>
     </div>

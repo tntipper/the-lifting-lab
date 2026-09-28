@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const sb = createPublicClient()
   const { data: products, error } = await sb
     .from('products')
-    .select('id, name, brand, category, serving_size, serving_unit, buy_url')
+    .select('id, name, brand, category, serving_size, serving_unit, servings_per_container, retail_price, buy_url')
     .in('id', ids)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

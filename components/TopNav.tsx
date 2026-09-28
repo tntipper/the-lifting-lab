@@ -6,212 +6,102 @@ import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { isSyntheticPreview } from '@/lib/preview-mode'
 import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
-import { StagingCartButton } from './StagingCartActions'
+import { useLocalStack } from './LocalStackContext'
+import { useStagingCart } from './StagingCartContext'
 
-const AR = '166,226,46'
+const SHOP_LINKS = [
+  { href: '/products', label: 'Shop all' },
+  { href: '/products?group=protein', label: 'Protein' },
+  { href: '/products?category=creatine', label: 'Creatine' },
+  { href: '/products?category=pre-workout', label: 'Pre-workout' },
+  { href: '/products?category=hydration', label: 'Hydration' },
+  { href: '/products?category=protein-bar', label: 'Bars' },
+  { href: '/products?group=wellbeing', label: 'Health' },
+]
 
-const NAV_LINKS = [
-  { href: '/products', label: 'Browse' },
+const MORE_LINKS = [
   { href: '/best', label: 'Research' },
   { href: '/value', label: 'Value review' },
   { href: '/deals', label: 'Deals' },
   { href: '/brand', label: 'Brands' },
-  { href: '/vs', label: 'Compare' },
+  { href: '/compare', label: 'Compare' },
   { href: '/wizard', label: 'Find My Stack' },
   { href: '/calculators', label: 'Calculators' },
-  { href: '/leaderboard', label: 'Leaderboard' },
 ]
+
+function BasketControl() {
+  const cart = useStagingCart()
+  const quantity = cart?.view && ['empty', 'ready', 'held', 'pending'].includes(cart.view.state) ? cart.view.quantity : 0
+  const classes = 'inline-flex min-h-11 items-center gap-2 rounded-lg bg-lab-lime px-3 text-xs font-black text-black transition-transform hover:-translate-y-px sm:min-h-14 sm:gap-3 sm:px-6 sm:text-base'
+  if (cart?.enabled) {
+    return <button type="button" onClick={cart.open} className={classes} aria-label={`Basket, ${quantity} items`}>
+      <span className="max-[480px]:hidden">Basket</span><span className="font-mono">{quantity}</span>
+    </button>
+  }
+  return <Link href="/cart" className={classes} aria-label="Basket, 0 items"><span className="max-[480px]:hidden">Basket</span><span className="font-mono">0</span></Link>
+}
 
 export default function TopNav({ signedInInitial }: { signedInInitial?: boolean } = {}) {
   const pathname = usePathname()
-  const sweepRef = useRef<HTMLDivElement>(null)
-  const prevPath = useRef(pathname)
+  const { stack } = useLocalStack()
   const menuButton = useRef<HTMLButtonElement>(null)
   const menuId = useId()
   const [menuOpen, setMenuOpen] = useState(false)
-  // null = unknown (still checking), then true/false once auth resolves
   const [signedIn, setSignedIn] = useState<boolean | null>(signedInInitial ?? null)
 
   useEffect(() => {
     if (signedInInitial !== undefined) return
-    createClient()
-      .auth.getUser()
-      .then(({ data }) => setSignedIn(!!data.user))
-      .catch(() => setSignedIn(false))
+    createClient().auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user))).catch(() => setSignedIn(false))
   }, [signedInInitial])
 
-  useEffect(() => {
-    if (prevPath.current === pathname) return
-    prevPath.current = pathname
-    setMenuOpen(false) // close mobile menu on navigation
-    const el = sweepRef.current
-    if (!el) return
-    el.classList.remove('run')
-    void el.offsetWidth
-    el.classList.add('run')
-  }, [pathname])
+  useEffect(() => { setMenuOpen(false) }, [pathname])
 
-  function isActive(href: string) {
-    if (href === '/') return pathname === '/'
-    return pathname.startsWith(href)
-  }
-
-  // Account button target: signed-in → dashboard, signed-out → ordinary /auth
-  // or staging Customer Account entry when public staging-customer flags are on.
-  // While auth is unknown we point at /account, which itself redirects
-  // unauthenticated users to the same sign-in entry — so the link is always safe.
   const accountHref = isSyntheticPreview() ? '/preview' : signedIn === false ? accountSignInHref() : '/account'
-  const accountLabel = isSyntheticPreview() ? 'Preview only' : signedIn === false ? 'Sign In' : 'My Account'
+  const accountLabel = isSyntheticPreview() ? 'Preview information' : signedIn === false ? 'Sign In' : 'My Account'
 
-  return (
-    <>
-      {/* light sweep — fixed, full height, triggers on nav change */}
-      <div ref={sweepRef} className="lab-sweep" />
+  return <header onKeyDown={(event) => {
+    if (event.key === 'Escape' && menuOpen) { setMenuOpen(false); menuButton.current?.focus() }
+  }} className="tll-on-dark sticky top-0 z-40 border-b border-[#2a2c26] bg-[#0d0d0d] text-white">
+    <div className="mx-auto max-w-[1920px] px-3 sm:px-7">
+      <div className="flex min-h-[84px] items-center justify-between gap-3 border-b border-[#2a2c26] sm:min-h-[116px]">
+        <Link href="/" className="grid shrink-0 select-none text-white" aria-label="THE LIFTINGLAB">
+          <span className="ml-[42%] text-[9px] font-black uppercase leading-none tracking-[.08em] sm:text-[11px]">The</span>
+          <span className="tll-display mt-0.5 text-[23px] uppercase leading-[.78] tracking-[.035em] sm:text-[38px]">Lifting <span className="text-lab-lime">Lab</span></span>
+        </Link>
 
-      <header
-        onKeyDown={(event) => {
-          if (event.key === 'Escape' && menuOpen) {
-            setMenuOpen(false)
-            menuButton.current?.focus()
-          }
-        }}
-        className="tll-on-dark sticky top-0 z-20"
-        style={{
-          background: '#0d0d0d',
-          borderBottom: '1px solid #2a2c26',
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
-          {/* wordmark — Anton, skewed, LAB in lime */}
-          <Link
-            href="/"
-            className="shrink-0 select-none text-white"
-            style={{
-              fontFamily: 'var(--font-anton), Impact, "Arial Narrow Bold", sans-serif',
-              fontSize: 'clamp(16px, 3.2vw, 20px)',
-              letterSpacing: '0.3px',
-              display: 'inline-block',
-              lineHeight: 1,
-            }}
-          >
-            THE LIFTING<span style={{ color: '#a6e22e' }}>LAB</span>
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <Link href="/stack" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#6c6f63] px-2.5 text-xs font-black text-white sm:min-h-14 sm:gap-3 sm:px-6 sm:text-base">
+            <span className="hidden sm:inline">My </span><span className="max-[480px]:hidden">stack</span><span className="font-mono text-lab-lime">{stack.length}</span>
           </Link>
-
-          <nav aria-label="Main navigation" className="flex items-center gap-2 sm:gap-4">
-            {/* Keep the full navigation collapsed until it fits with the brand/account. */}
-            <div className="hidden xl:flex items-center gap-4">
-              {NAV_LINKS.map(({ href, label }) => {
-                const active = isActive(href)
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    aria-current={active ? 'page' : undefined}
-                    className="relative text-[11px] font-bold uppercase tracking-widest min-h-11 inline-flex items-center transition-colors"
-                    style={active
-                      ? { color: '#a6e22e' }
-                      : { color: '#a3a3a3' }
-                    }
-                  >
-                    {active && (
-                      <>
-                        <span
-                          className="pointer-events-none absolute"
-                          style={{
-                            top: '-20px', left: '50%', transform: 'translateX(-50%)',
-                            width: '42px', height: '18px',
-                            background: `radial-gradient(ellipse at top, rgba(${AR},0.3) 0%, transparent 80%)`,
-                            filter: 'blur(4px)',
-                          }}
-                        />
-                        <span
-                          className="pointer-events-none absolute"
-                          style={{
-                            top: '-19px', left: '50%', transform: 'translateX(-50%)',
-                            width: '42px', height: '1px',
-                            background: `linear-gradient(90deg, transparent, #a6e22e, transparent)`,
-                            boxShadow: '0 0 8px #a6e22e',
-                          }}
-                        />
-                      </>
-                    )}
-                    {label}
-                  </Link>
-                )
-              })}
-            </div>
-
-            <span className="hidden xl:contents"><StagingCartButton /></span>
-            {/* My Account — ghost outline button, always visible */}
-            <Link
-              href={accountHref}
-              className="text-[11px] font-black uppercase tracking-widest rounded-lg px-2 sm:px-3 min-h-11 inline-flex items-center transition-all whitespace-nowrap"
-              style={{
-                color: '#a6e22e',
-                border: `1px solid rgba(${AR},0.6)`,
-                background: '#151613',
-              }}
-            >
-              {accountLabel}
-            </Link>
-
-            {/* hamburger — mobile only, toggles the nav-link panel */}
-            <button
-              type="button"
-              ref={menuButton}
-              aria-label={menuOpen ? "Close navigation" : "Open navigation"}
-              aria-controls={menuId}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((v) => !v)}
-              className="xl:hidden flex flex-col items-center justify-center w-11 h-11 gap-[5px] rounded-lg transition-colors"
-              style={{ border: '1px solid #6c6f63' }}
-            >
-              <span
-                className="block w-4 h-[2px] rounded-full transition-all"
-                style={{
-                  background: menuOpen ? '#a6e22e' : '#e5e5e5',
-                  transform: menuOpen ? 'translateY(3.5px) rotate(45deg)' : 'none',
-                }}
-              />
-              <span
-                className="block w-4 h-[2px] rounded-full transition-all"
-                style={{
-                  background: menuOpen ? '#a6e22e' : '#e5e5e5',
-                  transform: menuOpen ? 'translateY(-3.5px) rotate(-45deg)' : 'none',
-                }}
-              />
-            </button>
-          </nav>
+          <BasketControl />
+          <Link href={accountHref} aria-label={accountLabel} title={accountLabel}
+            className="grid h-11 w-11 place-items-center rounded-lg border border-[#6c6f63] text-base text-white xl:hidden">
+            <span aria-hidden="true">●</span>
+          </Link>
+          <button ref={menuButton} type="button" aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} aria-controls={menuId} aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-lg border border-[#6c6f63] sm:h-12 sm:w-12 xl:hidden">
+            <span aria-hidden="true" className="text-xl">{menuOpen ? '×' : '≡'}</span>
+          </button>
         </div>
+      </div>
 
-        {/* mobile dropdown panel — only rendered when open */}
-        {menuOpen && (
-          <div
-            id={menuId}
-            className="xl:hidden border-t"
-            style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(12,12,12,0.98)' }}
-          >
-            <div className="max-w-5xl mx-auto px-4 py-2 flex flex-col">
-              {NAV_LINKS.map(({ href, label }) => {
-                const active = isActive(href)
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    aria-current={active ? 'page' : undefined}
-                    onClick={() => setMenuOpen(false)}
-                    className="text-[13px] font-bold uppercase tracking-widest py-3 transition-colors"
-                    style={active ? { color: '#a6e22e' } : { color: '#d4d4d4' }}
-                  >
-                    {label}
-                  </Link>
-                )
-              })}
-              <StagingCartButton />
-            </div>
-          </div>
-        )}
-      </header>
-    </>
-  )
+      <div className="hidden min-h-[70px] items-center justify-between gap-8 xl:flex">
+        <nav aria-label="Shop categories" className="flex items-center gap-8 xl:gap-10">
+          {SHOP_LINKS.map(({ href, label }, index) => <Link key={href} href={href} aria-label={index === 0 ? 'Browse' : undefined}
+            className="inline-flex min-h-11 items-center whitespace-nowrap text-[15px] font-bold text-white transition-colors hover:text-lab-lime xl:text-[17px]">{label}</Link>)}
+          <a href="https://theliftinglab.app" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center whitespace-nowrap text-[15px] font-bold text-lab-lime xl:text-[17px]">LIFT App ↗</a>
+        </nav>
+        <Link href={accountHref} className="text-sm font-bold text-[#a9ac9f] hover:text-white">{accountLabel}</Link>
+      </div>
+
+      {menuOpen && <div id={menuId} className="border-t border-[#2a2c26] py-4 xl:hidden">
+        <nav aria-label="Mobile navigation" className="grid gap-1 sm:grid-cols-2">
+          {[...SHOP_LINKS, ...MORE_LINKS].map(({ href, label }, index) => <Link key={`${href}-${label}`} href={href} aria-label={index === 0 ? 'Browse' : undefined}
+            className="flex min-h-11 items-center rounded-md px-3 text-sm font-bold text-white hover:bg-[#151613] hover:text-lab-lime">{label}</Link>)}
+          <a href="https://theliftinglab.app" target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center rounded-md px-3 text-sm font-bold text-lab-lime">LIFT App ↗</a>
+          <Link href={accountHref} className="flex min-h-11 items-center rounded-md px-3 text-sm font-bold text-white">{accountLabel}</Link>
+        </nav>
+      </div>}
+    </div>
+  </header>
 }

@@ -203,17 +203,11 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
         }} />
       </Suspense>
 
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="tll-eyebrow">{loading ? 'Loading products' : `${visible.length} products`}</p>
-          <h2 className="tll-display mt-1 text-4xl leading-none text-white">{heading}</h2>
-        </div>
-        <MethodologyModal category={category === 'all' ? undefined : category} />
-      </div>
+      <h1 className="sr-only">{heading}</h1>
 
       <ClaimsReviewNotice category={category} />
 
-      <label className="block">
+      <label className="block max-w-xl">
         <span className="sr-only">Search products</span>
         <input type="search" value={query} onChange={(event) => handleSearch(event.target.value)}
           placeholder="Search by product or brand…"
@@ -255,6 +249,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               </div>
             )}
           </div>
+          <MethodologyModal category={category === 'all' ? undefined : category} />
         </div>
         <label className="flex min-h-11 w-full min-w-0 flex-col items-stretch gap-1 text-sm text-lab-muted sm:w-auto sm:flex-row sm:items-center sm:gap-2">
           <span>Sort by</span>
@@ -301,22 +296,24 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
 
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 rounded-lg bg-lab-panel-2 p-3">
                 <div className="min-w-0">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Listed / serving</span>
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">True cost</span>
                   <b className="mt-1 block font-mono text-lg text-white" title={trueCostReason(product) ?? undefined}>
                     {product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : 'Not listed'}
                   </b>
                 </div>
                 <div className="min-w-0">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Servings</span>
-                  <b className="mt-1 block font-mono text-sm text-white">{product.servings_per_container ?? 'Not listed'}</b>
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Per serving</span>
+                  <b className="mt-1 block font-mono text-sm text-white">{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b>
                 </div>
                 <div className="min-w-0">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Pack price</span>
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Our price</span>
                   <b className="mt-1 block font-mono text-sm text-white">{formatMoney(product.retail_price)}</b>
                 </div>
               </div>
 
               <dl className="grid grid-cols-[1fr_auto] gap-x-3 text-sm">
+                <dt className="text-lab-muted">Servings</dt>
+                <dd className="m-0 text-right font-mono text-white">{product.servings_per_container ?? 'Not listed'}</dd>
                 <dt className="text-lab-muted">Serving size</dt>
                 <dd className="m-0 text-right font-mono text-white">
                   {product.serving_size != null ? `${product.serving_size}${product.serving_unit ?? ''}` : 'Not listed'}
@@ -351,6 +348,14 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 </div>
               )}
 
+              <div className="rounded-lg border border-lab-border px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-lab-muted">Price check</p>
+                <div className="mt-1 grid grid-cols-[1fr_auto] gap-3 text-sm">
+                  <span className="font-semibold">Recorded catalogue price</span>
+                  <span className="font-mono font-bold">{formatMoney(product.retail_price)}</span>
+                </div>
+              </div>
+
               <ProductOfferLink product={product}
                 className="w-full rounded-md bg-[#14140f] py-3 text-sm font-semibold uppercase tracking-wide text-[#a6e22e]" />
 
@@ -364,7 +369,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
                   track(stacked ? 'remove_from_stack' : 'add_to_stack', { item_brand: product.brand, item_name: product.name })
                 }} className={`min-h-11 rounded-md border px-3 text-sm font-semibold ${stacked ? 'border-[#14140f] bg-[#eef5dc] text-[#4a6e0b]' : 'border-[#7c7e72] text-white'}`}>
-                  {stacked ? '✓ In stack' : '+ My stack'}
+                  {stacked ? '✓ In stack' : '+ Stack'}
                 </button>
               </div>
 

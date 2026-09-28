@@ -39,7 +39,6 @@ export default function AccessibleDialog({
       aria-labelledby={labelledBy}
       className={`tll-dialog ${className}`}
       onCancel={(event) => { event.preventDefault(); onClose() }}
-      onClose={() => { if (open && !ref.current?.open) onClose() }}
       onKeyDown={(event) => {
         if (event.key !== 'Tab') return
         const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex], [contenteditable="true"]')]

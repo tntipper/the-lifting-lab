@@ -4,6 +4,9 @@ import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import CategoryGrid from '@/components/CategoryGrid'
 import FeaturedSlot from '@/components/FeaturedSlot'
+import ShopHero from '@/components/ShopHero'
+import TopProductsTable from '@/components/TopProductsTable'
+import { fetchCatalogue } from '@/lib/product-data'
 
 export const metadata: Metadata = {
   title: 'The Lifting Lab — Supplement research',
@@ -60,50 +63,18 @@ const researchLinks = [
   { href: '/calculators', label: 'Calculators', detail: 'Plan training and nutrition' },
 ]
 
-export default function Home() {
+export default async function Home() {
+  const products = await fetchCatalogue()
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(orgLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(websiteLd) }} />
       <TopNav />
 
-      <section className="tll-on-dark tll-dark-section border-b border-[#2a2c26]">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-6 sm:py-18 lg:grid-cols-[1.25fr_.75fr] lg:items-end lg:gap-16 lg:py-20">
-          <div className="max-w-3xl">
-            <p className="mb-5 text-xs font-semibold uppercase tracking-[.12em] text-[#a9ac9f]">Independent supplement research · UK</p>
-            <h1 className="tll-display max-w-3xl text-[clamp(44px,8vw,76px)] leading-[.95] text-white">
-              Compare the label. Understand the price.
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-[#a9ac9f] sm:text-lg">
-              Research supplement labels, listed prices and cost per serving in one calm, evidence-led place. Build your stack and move to checkout when a product is available here.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/products" className="tll-primary-button">Browse products</Link>
-              <Link href="/wizard" className="tll-secondary-button">Find my stack</Link>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[#2a2c26] bg-[#151613] p-5 sm:p-6">
-            <p className="text-xs font-semibold uppercase tracking-[.1em] text-[#a9ac9f]">What you can do here</p>
-            <dl className="mt-4 divide-y divide-[#2a2c26]">
-              <div className="grid grid-cols-[1fr_auto] gap-4 py-3 first:pt-0">
-                <dt className="text-sm font-semibold text-white">Compare records</dt>
-                <dd className="font-mono text-sm text-[#c8e86a]">Up to 3</dd>
-              </div>
-              <div className="grid grid-cols-[1fr_auto] gap-4 py-3">
-                <dt className="text-sm font-semibold text-white">Build your stack</dt>
-                <dd className="font-mono text-sm text-[#c8e86a]">Saved locally</dd>
-              </div>
-              <div className="grid grid-cols-[1fr_auto] gap-4 py-3 last:pb-0">
-                <dt className="text-sm font-semibold text-white">Keep one account</dt>
-                <dd className="font-mono text-sm text-[#c8e86a]">TLL</dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-      </section>
+      <ShopHero products={products} shopHref="/products" />
 
       <main className="tll-paper-section">
+        <TopProductsTable products={products} />
         <div className="mx-auto max-w-7xl space-y-16 px-5 py-12 sm:px-6 sm:py-16">
           <section aria-labelledby="category-heading">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
