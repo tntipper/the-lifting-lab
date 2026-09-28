@@ -6,7 +6,7 @@ import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
 export const STAGING_GENERATION_23_CONSUMER_DIAGNOSTIC_ENABLED = false
 export const JOURNAL_PATH = resolve(import.meta.dirname,
-  '../../implementation-state/staging/tll-generation-23-consumer-diagnostic-v16.json')
+  '../../implementation-state/staging/tll-generation-23-consumer-diagnostic-v17.json')
 export const STAGES = Object.freeze([
   'preview_build', 'deployment_identity', 'website_request',
   'website_response_validation', 'broker_service_key', 'broker_request',

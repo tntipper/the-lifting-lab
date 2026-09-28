@@ -24,26 +24,26 @@ export const GENERATION_23_PRIOR_GATE_SHA256 = 'ab4e3d26ccdd6d6530bfe578d9edaa2c
 // Each of these is a one-use record owned by a fixed Gen23 component. A
 // previous or uncertain attempt closes this entry before any credential read.
 export const GENERATION_23_LAUNCH_RECORD_NAMES = Object.freeze([
-  'tll-generation-23-whole-route-v16.json',
-  'tll-generation-23-predecessor-read-v16.json',
-  'tll-generation-23-database-setup-v16.json',
-  'tll-generation-23-database-activate-v16.json',
-  'tll-generation-23-database-shutdown-v16.json',
-  'tll-generation-23-database-retire-v16.json',
-  'tll-generation-23-provider-enable-v16.json',
-  'tll-generation-23-provider-disable-v16.json',
-  'tll-generation-23-settings-v16.json',
-  'tll-generation-23-surface-enable-v16.json',
-  'tll-generation-23-surface-freeze-v16.json',
-  'tll-generation-23-checkout-enable-v16.json',
-  'tll-generation-23-checkout-freeze-v16.json',
-  'tll-generation-23-preview-enabled-v16.json',
-  'tll-generation-23-preview-held-v16.json',
-  'tll-generation-23-preview-consumer-v16.json',
-  'tll-generation-23-consumer-diagnostic-v16.json',
-  'tll-generation-23-broker-gate-retire-v16.json',
-  'tll-generation-23-final-read-v16.json',
-  'tll-generation-23-restricted-connections-v16.json',
+  'tll-generation-23-whole-route-v17.json',
+  'tll-generation-23-predecessor-read-v17.json',
+  'tll-generation-23-database-setup-v17.json',
+  'tll-generation-23-database-activate-v17.json',
+  'tll-generation-23-database-shutdown-v17.json',
+  'tll-generation-23-database-retire-v17.json',
+  'tll-generation-23-provider-enable-v17.json',
+  'tll-generation-23-provider-disable-v17.json',
+  'tll-generation-23-settings-v17.json',
+  'tll-generation-23-surface-enable-v17.json',
+  'tll-generation-23-surface-freeze-v17.json',
+  'tll-generation-23-checkout-enable-v17.json',
+  'tll-generation-23-checkout-freeze-v17.json',
+  'tll-generation-23-preview-enabled-v17.json',
+  'tll-generation-23-preview-held-v17.json',
+  'tll-generation-23-preview-consumer-v17.json',
+  'tll-generation-23-consumer-diagnostic-v17.json',
+  'tll-generation-23-broker-gate-retire-v17.json',
+  'tll-generation-23-final-read-v17.json',
+  'tll-generation-23-restricted-connections-v17.json',
 ])
 const result = status => Object.freeze({ status })
 let used = false
@@ -70,7 +70,7 @@ function recordsUnused() {
     } catch { return false }
   }
   for (const name of GENERATION_23_LAUNCH_RECORD_NAMES) {
-    if (!name.endsWith('-v16.json')) return false
+    if (!name.endsWith('-v17.json')) return false
     try { lstatSync(resolve(STATE, name)); return false }
     catch (error) { if (error?.code !== 'ENOENT') return false }
   }
