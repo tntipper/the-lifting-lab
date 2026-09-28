@@ -22,7 +22,7 @@ const NAV_LINKS = [
   { href: '/leaderboard', label: 'Leaderboard' },
 ]
 
-export default function TopNav() {
+export default function TopNav({ signedInInitial }: { signedInInitial?: boolean } = {}) {
   const pathname = usePathname()
   const sweepRef = useRef<HTMLDivElement>(null)
   const prevPath = useRef(pathname)
@@ -30,14 +30,15 @@ export default function TopNav() {
   const menuId = useId()
   const [menuOpen, setMenuOpen] = useState(false)
   // null = unknown (still checking), then true/false once auth resolves
-  const [signedIn, setSignedIn] = useState<boolean | null>(null)
+  const [signedIn, setSignedIn] = useState<boolean | null>(signedInInitial ?? null)
 
   useEffect(() => {
+    if (signedInInitial !== undefined) return
     createClient()
       .auth.getUser()
       .then(({ data }) => setSignedIn(!!data.user))
       .catch(() => setSignedIn(false))
-  }, [])
+  }, [signedInInitial])
 
   useEffect(() => {
     if (prevPath.current === pathname) return
@@ -57,9 +58,9 @@ export default function TopNav() {
 
   // Account button target: signed-in → dashboard, signed-out → ordinary /auth
   // or staging Customer Account entry when public staging-customer flags are on.
-  // While auth is unknown we point at /dashboard, which itself redirects
+  // While auth is unknown we point at /account, which itself redirects
   // unauthenticated users to the same sign-in entry — so the link is always safe.
-  const accountHref = isSyntheticPreview() ? '/preview' : signedIn === false ? accountSignInHref() : '/dashboard'
+  const accountHref = isSyntheticPreview() ? '/preview' : signedIn === false ? accountSignInHref() : '/account'
   const accountLabel = isSyntheticPreview() ? 'Preview only' : signedIn === false ? 'Sign In' : 'My Account'
 
   return (

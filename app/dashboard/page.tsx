@@ -8,6 +8,7 @@ import CopyButton from '@/components/CopyButton'
 import TopNav from '@/components/TopNav'
 import CategoryGrid from '@/components/CategoryGrid'
 import DashboardFavourites from './DashboardFavourites'
+import AccountNavigation from '@/components/AccountNavigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -111,8 +112,20 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-lab-bg text-white">
-      <TopNav />
+      <TopNav signedInInitial />
       <div className="max-w-4xl mx-auto px-5 py-8 space-y-6">
+
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-lab-lime">One TLL account</p>
+          <h1 className="mt-1 text-3xl font-black uppercase tracking-wide">My account</h1>
+          <p className="mt-2 max-w-2xl text-sm text-lab-muted">
+            {unifiedCustomer
+              ? 'Your profile, saved research, supplement stack, cart and shop orders live together here.'
+              : 'Your profile, saved research, supplement stack and rewards live together here.'}
+          </p>
+        </div>
+
+        <AccountNavigation />
 
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -132,7 +145,7 @@ export default async function DashboardPage() {
         {unifiedCustomer && <Link href="/account/orders" className="block bg-lab-panel border border-lab-border rounded-2xl p-4 hover:border-lab-lime/50 transition-colors">
           <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">TLL Shop</p>
           <div className="flex items-center justify-between gap-4 mt-2"><p className="font-black text-lg">My orders</p><span className="text-lab-lime text-sm font-bold">View shop history →</span></div>
-          <p className="text-xs text-lab-muted mt-1">Your comparison tools and shop history use this account.</p>
+          <p className="text-xs text-lab-muted mt-1">The same sign-in protects your shop history and saved TLL research.</p>
         </Link>}
 
         {/* Stat cards */}

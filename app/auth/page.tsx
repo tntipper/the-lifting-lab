@@ -61,7 +61,7 @@ function AuthPageForm() {
     setError('')
     const supabase = createClient()
     // Carry any referral code through the OAuth round-trip via the callback URL.
-    const next = safeAuthReturnPath(refCode ? `/dashboard?ref=${encodeURIComponent(refCode)}` : '/dashboard')
+    const next = safeAuthReturnPath(refCode ? `/account?ref=${encodeURIComponent(refCode)}` : '/account')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

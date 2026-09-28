@@ -13,7 +13,7 @@ const release=change=>({status:'reconciled',transactionId:'c0000000-0000-4000-80
 
 test('writes only a bounded tokens-only SSR session after exact reconciled release',()=>{
   const response=stagingCustomerSessionResponse(release(),NOW)
-  assert.equal(response.status,303);assert.equal(response.headers.get('location'),'/dashboard');assert.match(response.headers.get('cache-control'),/no-store/)
+  assert.equal(response.status,303);assert.equal(response.headers.get('location'),'/account');assert.match(response.headers.get('cache-control'),/no-store/)
   const cookies=response.headers.getSetCookie(),storage='sb-qdmvngjwkcsilzmqksme-auth-token'
   assert.ok(cookies.some(value=>value.startsWith('__Host-tll-customer-start=')&&value.includes('HttpOnly')&&value.includes('Max-Age=0')))
   assert.ok(cookies.some(value=>value.startsWith('__Host-tll-customer-transaction=')&&value.includes('HttpOnly')&&value.includes('Max-Age=0')))

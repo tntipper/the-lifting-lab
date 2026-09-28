@@ -49,7 +49,7 @@ export function stagingCustomerSessionResponse(release: CustomerFinalRelease, no
         name: `${STORAGE}.${index}`, value: value.slice(index * CHUNK, (index + 1) * CHUNK),
       }))
     ensure(chunks.length <= MAX_CHUNKS)
-    const response = new Response(null, { status: 303, headers: { location: '/dashboard',
+    const response = new Response(null, { status: 303, headers: { location: '/account',
       'cache-control': 'no-store, private', pragma: 'no-cache', 'referrer-policy': 'no-referrer',
       'x-content-type-options': 'nosniff', vary: 'Cookie' } })
     const expired = 'Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT'

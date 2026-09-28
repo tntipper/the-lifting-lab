@@ -122,8 +122,8 @@ test('startStagingCustomerSignIn stays held on prepare failure and never fetches
 test('TopNav Sign In uses accountSignInHref; auth page fails closed to customer entry when staging enabled', () => {
   const topNav = readFileSync(new URL('../components/TopNav.tsx', import.meta.url), 'utf8')
   assert.match(topNav, /accountSignInHref/)
-  assert.match(topNav, /signedIn === false \? accountSignInHref\(\) : '\/dashboard'/)
-  assert.doesNotMatch(topNav, /signedIn === false \? '\/auth' : '\/dashboard'/)
+  assert.match(topNav, /signedIn === false \? accountSignInHref\(\) : '\/account'/)
+  assert.doesNotMatch(topNav, /signedIn === false \? '\/auth' : '\/account'/)
 
   const authPage = readFileSync(new URL('../app/auth/page.tsx', import.meta.url), 'utf8')
   assert.match(authPage, /stagingCustomerUiEnabled/)

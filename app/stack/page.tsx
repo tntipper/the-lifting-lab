@@ -4,6 +4,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import StackBuilder from './StackBuilder'
+import TopNav from '@/components/TopNav'
+import AccountNavigation from '@/components/AccountNavigation'
 
 export default async function StackPage() {
   const cookieStore = await cookies()
@@ -30,11 +32,13 @@ export default async function StackPage() {
 
   return (
     <div className="min-h-screen bg-lab-bg text-white">
+      <TopNav signedInInitial />
       <div className="max-w-2xl mx-auto px-6 py-12">
+        <AccountNavigation />
         <div className="flex items-center justify-between mb-8">
           <div>
-            <Link href="/dashboard" className="text-lab-muted text-sm hover:text-white transition-colors">
-              ← Dashboard
+            <Link href="/account" className="text-lab-muted text-sm hover:text-white transition-colors">
+              ← My account
             </Link>
             <h1 className="text-3xl font-black uppercase tracking-wide mt-3">
               My <span className="text-lab-lime">Stack</span>

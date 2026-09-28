@@ -43,8 +43,8 @@ export default async function RewardsPage() {
           </Link>
         )}
         {user && (
-          <Link href="/dashboard" className="inline-block mt-8 text-[11px] font-black uppercase tracking-widest text-lab-lime hover:underline">
-            Back to dashboard →
+          <Link href="/account" className="inline-block mt-8 text-[11px] font-black uppercase tracking-widest text-lab-lime hover:underline">
+            Back to my account →
           </Link>
         )}
       </div>

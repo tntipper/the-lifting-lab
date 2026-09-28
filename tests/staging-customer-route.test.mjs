@@ -80,7 +80,7 @@ test('final callback writes a tokens-only SSR session only after exact reconcili
     async hold(){throw Error('not expected')},
   }})
   const response=await stagingCustomerRoute(finalRequest(),'callback',runtimeFactory)
-  assert.equal(response.status,303);assert.equal(response.headers.get('location'),'/dashboard');assert.equal(complete,1);assert.equal(closed,1)
+  assert.equal(response.status,303);assert.equal(response.headers.get('location'),'/account');assert.equal(complete,1);assert.equal(closed,1)
   assert.ok(response.headers.getSetCookie().some(value=>value.startsWith('sb-qdmvngjwkcsilzmqksme-auth-token=base64-')))
 })
 

@@ -231,7 +231,7 @@ test('mounted final callback releases tokens-only SSR session through App Router
   try {
     const response = await finalCallbackGet(navigate('callback?code=aaaaaaaa-1111-4222-8333-444444444444'))
     assert.equal(response.status, 303)
-    assert.equal(response.headers.get('location'), '/dashboard')
+    assert.equal(response.headers.get('location'), '/account')
     assert.equal(complete, 1)
     assert.equal(heldCalls, 0)
     assert.equal(closed.count, 1)
