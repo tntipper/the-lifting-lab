@@ -8,9 +8,11 @@ type RuntimeFactory = typeof createStagingPostgresRuntime
 export const STAGING_BROKER_READINESS_ENABLED = false
 const PROJECT_URL = 'https://qdmvngjwkcsilzmqksme.supabase.co'
 const WINDOW_ID = 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef'
-export const STAGING_BROKER_READINESS_REVISION = 'tll-gen23-v9-guard-audit-1'
+export const STAGING_BROKER_READINESS_REVISION = 'tll-gen23-v9-guard-audit-2'
 const WINDOW_NAME = 'TLL_STAGING_BROKER_READINESS_WINDOW'
 const GUARD_AUDIT_HEADER = 'tll-gen23-guard-audit/v1'
+const TRACE_ID = 'b120e4c4-0673-40ca-a3f0-523db406243d'
+const TRACE_END = Date.parse('2026-09-28T10:00:00.000Z')
 function activeWindow(env: Environment, now: number) {
   const parts = env[WINDOW_NAME]?.split('|')
   if (!parts || parts.length !== 3 || parts[0] !== WINDOW_ID
@@ -33,15 +35,31 @@ const equal = (left: string | null, right: string): boolean => {
 
 /** Dedicated staging function. Authenticates before any connection or secret read. */
 export function createStagingBrokerReadinessHandler(env: Environment,
-  runtimeFactory: RuntimeFactory = createStagingPostgresRuntime, now = Date.now) {
+  runtimeFactory: RuntimeFactory = createStagingPostgresRuntime, now = Date.now,
+  log: (message: string) => void = console.info) {
   return async (request: Request): Promise<Response> => {
-    const window = activeWindow(env, now())
+    const observedAt = now()
+    const window = activeWindow(env, observedAt)
     const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY
-    const authenticated = !!serviceKey && serviceKey.length >= 32
+    const serviceKeyUsable = !!serviceKey && serviceKey.length >= 32
+    const authorizationMatches = serviceKeyUsable
       && equal(request.headers.get('authorization'), `Bearer ${serviceKey}`)
+    const apikeyMatches = serviceKeyUsable
       && equal(request.headers.get('apikey'), serviceKey)
-    // An authenticated, staging-only probe proves the guards before temporary
-    // database logins are created. It never opens a connection or reveals values.
+    const authenticated = authorizationMatches && apikeyMatches
+    // One bounded staging trace records only fixed booleans privately. The
+    // public response remains the same held response for a wrong credential.
+    if (observedAt < TRACE_END && new URL(request.url).searchParams.get('tll_guard_trace') === TRACE_ID) {
+      log(JSON.stringify({ event: 'TLL_BROKER_GUARD_TRACE', correlationId: TRACE_ID,
+        revision: STAGING_BROKER_READINESS_REVISION,
+        auditHeaderMatches: request.headers.get('x-tll-broker-guard-audit') === GUARD_AUDIT_HEADER,
+        methodIsGet: request.method === 'GET', serviceKeyUsable,
+        authorizationPresent: request.headers.has('authorization'), authorizationMatches,
+        apikeyPresent: request.headers.has('apikey'), apikeyMatches,
+        projectUrlMatches: env.SUPABASE_URL === PROJECT_URL,
+        brokerFlagOff: env.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED === 'false',
+        window: window ? 'active' : env[WINDOW_NAME] ? 'invalid' : 'absent' }))
+    }
     if (request.headers.get('x-tll-broker-guard-audit') === GUARD_AUDIT_HEADER) {
       if (!authenticated || request.method !== 'GET') return response(404, 'held')
       return new Response(JSON.stringify({ status: 'GUARDS',

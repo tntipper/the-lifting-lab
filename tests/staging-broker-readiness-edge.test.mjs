@@ -32,7 +32,7 @@ test('ordinary deployed source keeps the Edge probe off before credential access
   const result = await ordinary.createStagingBrokerReadinessHandler({ ...env,
     TLL_STAGING_BROKER_READINESS_WINDOW: undefined }, () => { constructed = true }, now)(request())
   assert.equal(result.status, 404)
-  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-2')
   assert.equal(constructed, false)
 })
 
@@ -43,7 +43,7 @@ test('ordinary deployed source accepts only the short-lived staging window', asy
   } } }, async close() {} })
   const live = await ordinary.createStagingBrokerReadinessHandler(env, runtime, now)(request())
   assert.equal(live.status, 200)
-  assert.equal(live.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
+  assert.equal(live.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-2')
   assert.equal(connected, 1)
   for (const setting of [undefined,
     `wrong-window|${startsAt}|${expiresAt}`,
@@ -51,7 +51,7 @@ test('ordinary deployed source accepts only the short-lived staging window', asy
     const held = await ordinary.createStagingBrokerReadinessHandler({ ...env,
       TLL_STAGING_BROKER_READINESS_WINDOW: setting }, runtime, now)(request())
     assert.equal(held.status, 404)
-    assert.equal(held.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
+    assert.equal(held.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-2')
   }
   const expired = await ordinary.createStagingBrokerReadinessHandler(env, runtime,
     () => Date.parse(expiresAt))(request())
@@ -84,7 +84,7 @@ test('the authenticated Edge probe uses its own installed broker password and re
   }, now)
   const result = await handler(request())
   assert.equal(result.status, 200)
-  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-2')
   assert.deepEqual(await result.json(), { status: 'PASS', windowId: 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef', expiresAt })
   assert.doesNotMatch(JSON.stringify(Object.fromEntries(result.headers)), /SYNTHETIC/)
 })
@@ -95,7 +95,7 @@ test('Edge connection errors stay private and give no false pass', async () => {
   }), now)
   const result = await handler(request())
   assert.equal(result.status, 503)
-  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-1')
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-guard-audit-2')
   assert.deepEqual(await result.json(), { status: 'FAIL' })
 })
 
@@ -116,6 +116,7 @@ test('guard audit reports only safe conditions and never opens a database connec
   const wrongKey = await ordinary.createStagingBrokerReadinessHandler(env, noConnection, now)(
     diagnostic({ authorization: 'Bearer wrong', apikey: 'wrong' }))
   assert.equal(wrongKey.status, 404)
+  assert.deepEqual(await wrongKey.json(), { status: 'held' })
   const wrongSettings = await ordinary.createStagingBrokerReadinessHandler({ ...env,
     SUPABASE_URL: 'https://other.supabase.co', TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'true',
     TLL_STAGING_BROKER_READINESS_WINDOW: 'invalid' }, noConnection, now)(diagnostic({
@@ -123,5 +124,44 @@ test('guard audit reports only safe conditions and never opens a database connec
     }))
   assert.deepEqual(await wrongSettings.json(), { status: 'GUARDS', projectUrlMatches: false,
     brokerFlagOff: false, window: 'invalid' })
+  assert.equal(connected, false)
+})
+
+test('bounded private trace classifies headers without changing the public held response', async () => {
+  const traceId = 'b120e4c4-0673-40ca-a3f0-523db406243d'
+  const traceUrl = `https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9?tll_guard_trace=${traceId}`
+  let connected = false
+  const noConnection = () => { connected = true; throw Error('must not connect') }
+  const logs = []
+  const environment = { ...env, TLL_STAGING_BROKER_READINESS_WINDOW: undefined }
+  const handler = ordinary.createStagingBrokerReadinessHandler(environment, noConnection,
+    () => Date.parse('2026-09-28T09:20:00.000Z'), value => logs.push(value))
+  const publicReply = await handler(new Request(traceUrl, { headers: {
+    authorization: 'Bearer wrong', apikey: 'wrong',
+  } }))
+  assert.equal(publicReply.status, 404)
+  assert.deepEqual(await publicReply.json(), { status: 'held' })
+  assert.equal(logs.length, 1)
+  const record = JSON.parse(logs[0])
+  assert.deepEqual(record, { event: 'TLL_BROKER_GUARD_TRACE', correlationId: traceId,
+    revision: 'tll-gen23-v9-guard-audit-2', auditHeaderMatches: false,
+    methodIsGet: true, serviceKeyUsable: true,
+    authorizationPresent: true, authorizationMatches: false,
+    apikeyPresent: true, apikeyMatches: false,
+    projectUrlMatches: true, brokerFlagOff: true, window: 'absent' })
+  assert.doesNotMatch(logs[0], /SYNTHETIC_SERVICE_KEY|Bearer wrong|\"wrong\"/)
+  await handler(new Request(traceUrl, { headers: {
+    authorization: `Bearer ${serviceKey}`, apikey: serviceKey,
+    'x-tll-broker-guard-audit': 'tll-gen23-guard-audit/v1',
+  } }))
+  assert.equal(logs.length, 2)
+  assert.equal(JSON.parse(logs[1]).auditHeaderMatches, true)
+  assert.equal(JSON.parse(logs[1]).authorizationMatches, true)
+  assert.equal(JSON.parse(logs[1]).apikeyMatches, true)
+  const expiredLogs = []
+  const expired = ordinary.createStagingBrokerReadinessHandler(environment, noConnection,
+    () => Date.parse('2026-09-28T10:00:00.000Z'), value => expiredLogs.push(value))
+  await expired(new Request(traceUrl))
+  assert.equal(expiredLogs.length, 0)
   assert.equal(connected, false)
 })
