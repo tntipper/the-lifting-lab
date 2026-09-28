@@ -3,7 +3,9 @@ import assert from 'node:assert/strict'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createStagingPreviewDeploymentVerifier, STAGING_PREVIEW_DEPLOYMENT_VERIFIER_ENABLED } from '../scripts/staging-surface-preview-deployment-verifier.mjs'
+import { createStagingPreviewDeploymentVerifier, PREVIEW_BUILD_DEADLINE_MS,
+  PREVIEW_BUILD_POLL_LIMIT, PREVIEW_POST_READY_DEADLINE_MS,
+  STAGING_PREVIEW_DEPLOYMENT_VERIFIER_ENABLED } from '../scripts/staging-surface-preview-deployment-verifier.mjs'
 import { createStagingPreviewDeploymentPost } from '../scripts/staging-surface-preview-deployment-post.mjs'
 import { createStagingPreviewDeploymentJournal } from '../scripts/staging-surface-preview-deployment-journal.mjs'
 import { createStagingSurfaceNativeBinding, VERCEL_PROJECT_ID, VERCEL_TEAM_ID } from '../scripts/staging-surface-activation-native-binding.mjs'
@@ -90,6 +92,9 @@ function fixture({ selectedInput = input, actualSha = selectedInput.sourceCommit
 
 test('one accepted Preview is polled, source-pinned and proved through the protected alias and runtime', async () => {
   assert.equal(STAGING_PREVIEW_DEPLOYMENT_VERIFIER_ENABLED, false)
+  assert.equal(PREVIEW_BUILD_POLL_LIMIT, 300)
+  assert.equal(PREVIEW_BUILD_DEADLINE_MS, 600_000)
+  assert.equal(PREVIEW_POST_READY_DEADLINE_MS, 120_000)
   const f = fixture()
   const priorClaim = f.journal.claim(input)
   assert.deepEqual(await f.verifier.verify(input, { signal, priorClaim }), {
@@ -148,7 +153,7 @@ test('failed or never-ready build has bounded reads and stops without a second P
       new Promise(resolve => setTimeout(() => resolve('held'), 20))]), 'held')
     assert.equal(f.posts, 1); assert.equal(f.stops, 1)
     assert.equal(f.journal.read().phase, 'POST_ACK')
-    assert.ok(f.stateReads <= 90)
+    assert.ok(f.stateReads <= PREVIEW_BUILD_POLL_LIMIT)
     f.postHost.dispose()
   }
 })
@@ -166,7 +171,7 @@ test('a public Preview or unavailable alias cannot receive a verified result', a
 })
 
 test('protection checks cannot finish after the deadline or an abort', async () => {
-  for (const options of [{ advanceOnProtectionMs: 181_000 },
+  for (const options of [{ advanceOnProtectionMs: PREVIEW_POST_READY_DEADLINE_MS + 1 },
     { abortOnFinalAlias: new AbortController() }]) {
     const f = fixture({ ...options, states: ['READY'] })
     const selectedSignal = options.abortOnFinalAlias?.signal ?? signal
@@ -177,4 +182,19 @@ test('protection checks cannot finish after the deadline or an abort', async () 
     assert.equal(f.journal.read().phase, 'POST_ACK')
     f.postHost.dispose()
   }
+})
+
+test('a slow healthy build receives a fresh post-ready verification budget', async () => {
+  // 84 waits model the 165-second build observed in the v17 recovery. Under
+  // the old shared 180-second clock this left too little time for protection
+  // checks; it must now complete normally.
+  const states = [...Array(84).fill('BUILDING'), 'READY']
+  const f = fixture({ states, advanceOnProtectionMs: 60_000 })
+  const result = await f.verifier.verify(input, { signal })
+  assert.equal(result.status, 'PROTECTED_PREVIEW_VERIFIED')
+  assert.equal(f.posts, 1)
+  assert.equal(f.stateReads, 85)
+  assert.equal(f.stops, 0)
+  assert.equal(f.journal.read().phase, 'VERIFIED')
+  f.postHost.dispose()
 })

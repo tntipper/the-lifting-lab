@@ -6,9 +6,15 @@ import { VERCEL_PROJECT_ID, VERCEL_TEAM_ID } from './staging-surface-activation-
 import { buildStagingPreviewDeploymentRequest } from './staging-surface-preview-deployment-request.mjs'
 
 export const STAGING_PREVIEW_DEPLOYMENT_VERIFIER_ENABLED = false
-export const PREVIEW_BUILD_POLL_LIMIT = 90
+// Vercel can legitimately spend several minutes building a healthy Preview.
+// Keep build waiting separate from the security checks that follow READY so a
+// slow build cannot consume the time reserved for identity and protection
+// verification. The outer Gen23 worker still owns the overall run deadline and
+// the shutdown reserve.
+export const PREVIEW_BUILD_POLL_LIMIT = 300
 export const PREVIEW_BUILD_POLL_INTERVAL_MS = 2000
-export const PREVIEW_BUILD_DEADLINE_MS = 180000
+export const PREVIEW_BUILD_DEADLINE_MS = 600000
+export const PREVIEW_POST_READY_DEADLINE_MS = 120000
 const unavailable = () => { throw new Error('Staging Preview deployment verification unavailable') }
 const validId = value => typeof value === 'string' && /^dpl_[A-Za-z0-9]+$/.test(value)
 const validSignal = signal => signal && typeof signal.aborted === 'boolean'
@@ -89,7 +95,18 @@ export function createStagingPreviewDeploymentVerifier({ postHost, journal, bind
         const afterBuild = now()
         if (!ready || !validSignal(signal) || !Number.isFinite(afterBuild)
           || afterBuild < started || afterBuild - started > PREVIEW_BUILD_DEADLINE_MS) unavailable()
+        // READY begins a new, bounded verification phase. Previously these
+        // checks shared the build clock, so a healthy but slow build could
+        // leave only seconds for the required safety proof.
+        const readyAt = afterBuild
+        const requirePostReadyBudget = () => {
+          const observed = now()
+          if (!validSignal(signal) || !Number.isFinite(observed)
+            || observed < readyAt || observed - readyAt > PREVIEW_POST_READY_DEADLINE_MS) unavailable()
+        }
+        requirePostReadyBudget()
         const identity = await binding.readDeployment(STAGING_SURFACE_TARGET, accepted.deploymentId, { signal })
+        requirePostReadyBudget()
         const created = Date.parse(identity?.createdAt ?? '')
         if (identity?.deploymentId !== accepted.deploymentId || identity.ready !== true
           || identity.sourceCommit !== input.sourceCommit || identity.manifestSha256 !== input.manifestSha256
@@ -99,11 +116,10 @@ export function createStagingPreviewDeploymentVerifier({ postHost, journal, bind
           immutableUrl: identity.immutableUrl, gitSourceCommit: identity.sourceCommit }))
         if (typeof reader?.readBaseline !== 'function' || typeof reader?.dispose !== 'function') unavailable()
         const protectedResult = await reader.readBaseline({ signal })
-        const afterProof = now()
-        if (!validSignal(signal) || !Number.isFinite(afterProof)
-          || afterProof < started || afterProof - started > PREVIEW_BUILD_DEADLINE_MS) unavailable()
+        requirePostReadyBudget()
         verifyProtectedResult(protectedResult, identity, input)
         const protection = await protectionProbe.verify({ immutableUrl: identity.immutableUrl, signal })
+        requirePostReadyBudget()
         if (protection?.status !== 'PUBLIC_ACCESS_DENIED' || protection.immutableUrl !== identity.immutableUrl
           || protection.alias !== STAGING_ALIAS) unavailable()
         const finalAlias = await binding.resolveAlias(STAGING_SURFACE_TARGET,
@@ -111,9 +127,7 @@ export function createStagingPreviewDeploymentVerifier({ postHost, journal, bind
             branch: STAGING_BRANCH }, { signal })
         if (finalAlias?.deploymentId !== identity.deploymentId
           || finalAlias.immutableUrl !== identity.immutableUrl || finalAlias.alias !== STAGING_ALIAS) unavailable()
-        const afterProtection = now()
-        if (!validSignal(signal) || !Number.isFinite(afterProtection)
-          || afterProtection < started || afterProtection - started > PREVIEW_BUILD_DEADLINE_MS) unavailable()
+        requirePostReadyBudget()
         journal.verified(accepted.journal)
         postHost.dispose()
         return Object.freeze({ status: 'PROTECTED_PREVIEW_VERIFIED', deploymentId: identity.deploymentId,

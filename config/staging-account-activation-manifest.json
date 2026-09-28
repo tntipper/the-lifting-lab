@@ -1021,7 +1021,7 @@
       },
       {
         "path": "scripts/staging-surface-preview-deployment-verifier.mjs",
-        "sha256": "0fcec45ff0fc852e276758c3783c66a62abfa090edc012427d283ae0f5e8551d"
+        "sha256": "979dcf527c2da39c489513b5e4491a4101ae8172f8be28e1366971e942410ada"
       },
       {
         "path": "scripts/staging-surface-preview-deployment-supervisor.mjs",
@@ -1801,7 +1801,7 @@
       },
       {
         "path": "tests/staging-surface-preview-deployment-verifier.test.mjs",
-        "sha256": "1adce0242f260d1b9e0b63a81531f929dbd4d6ae54695f7d1f0deb64d847fbc9"
+        "sha256": "78740e42ec45b54ed7b82b9d3ef5a30f108b0d23e1d7e6be986f78b110e2dcc9"
       },
       {
         "path": "tests/staging-surface-preview-deployment-supervisor.test.mjs",
