@@ -23,7 +23,7 @@ export default function StackFAB() {
       <AccessibleDialog open={open} onClose={() => setOpen(false)} labelledBy={titleId}
         className="tll-stack-dialog">
         <div
-          className="mx-auto max-w-lg rounded-t-2xl"
+          className="tll-on-dark mx-auto max-w-lg rounded-t-2xl"
           style={{
             background: 'linear-gradient(160deg,#161616 0%,#0f0f0f 100%)',
             border: '1px solid rgba(255,255,255,0.08)',
@@ -158,7 +158,7 @@ export default function StackFAB() {
       {/* FAB — always bottom right */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-5 right-4 z-40 flex items-center justify-center transition-all active:scale-95"
+        className="tll-on-dark fixed bottom-5 right-4 z-40 flex items-center justify-center transition-all active:scale-95"
         style={{
           width: '58px',
           height: '58px',

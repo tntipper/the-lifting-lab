@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-lab-bg: #0d0d0d;
+  --color-lab-bg: #f4f4ef;
   --color-lab-nav: #0c0c0c;
-  --color-lab-panel: #161616;
-  --color-lab-panel-2: #1c1c1c;
-  --color-lab-border: #262626;
+  --color-lab-panel: #ffffff;
+  --color-lab-panel-2: #ecece4;
+  --color-lab-border: #dcdcd2;
   --color-lab-lime: #a6e22e;
   --color-lab-amber: #e8a020;
   --color-lab-red: #e05a2b;
-  --color-lab-muted: #9b9b9b;
+  --color-lab-muted: #55574c;
   --color-lab-brand: #2e8fe0;
   --color-lab-cyan: #3fc9d6;
   --color-lab-saved: #f0247a;
@@ -17,13 +17,27 @@
 }
 
 :root {
-  --background: #0d0d0d;
-  --foreground: #f2f2f2;
+  --background: #f4f4ef;
+  --foreground: #14140f;
+
+  --paper: #f4f4ef;
+  --surface: #ffffff;
+  --surface-sunk: #ecece4;
+  --line: #dcdcd2;
+  --line-strong: #7c7e72;
+  --ink: #14140f;
+  --ink-muted: #55574c;
+  --lab-black: #0d0d0d;
+  --on-lab-black: #f2f2ee;
+  --lime: #a6e22e;
+  --lime-ink: #4a6e0b;
+  --lime-wash: #eef5dc;
+  --focus: #2458c6;
 
   /* accent rgb triplet for glow/translucent fills */
   --ar: 166, 226, 46;
-  /* card gradient */
-  --card-grad: linear-gradient(160deg, #161616 0%, #0f0f0f 100%);
+  /* Kept as a variable because existing cards already use it. */
+  --card-grad: #ffffff;
 }
 
 html, body {
@@ -36,6 +50,77 @@ body {
     Roboto, Helvetica, Arial, sans-serif;
 }
 
+/*
+ * Paper theme adapted from the supplied TLL design reference.
+ * The existing app was written as an all-dark interface and uses `text-white`
+ * throughout. These shared rules turn those existing labels into readable ink
+ * on paper, while `.tll-on-dark` restores light text in intentional black areas.
+ */
+:where(.text-white, [class*="text-white/"]) { color: var(--ink) !important; }
+:where(.tll-on-dark) { color: var(--on-lab-black); }
+:where(.tll-on-dark) :where(.text-white, [class*="text-white/"]) { color: var(--on-lab-black) !important; }
+:where(.tll-on-dark) .text-lab-muted { color: #a9ac9f !important; }
+
+.text-lab-lime { color: var(--lime-ink) !important; }
+.bg-lab-lime { background-color: var(--lime) !important; }
+.tll-on-dark .text-lab-lime { color: var(--lime) !important; }
+
+input, select, textarea { color: var(--ink); }
+::placeholder { color: #77796d; opacity: 1; }
+
+.tll-display {
+  font-family: var(--font-anton), Impact, "Arial Narrow Bold", sans-serif;
+  font-weight: 400;
+  letter-spacing: .01em;
+}
+
+.tll-eyebrow {
+  color: var(--ink-muted);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  line-height: 1rem;
+  text-transform: uppercase;
+}
+
+.tll-paper-section { background: var(--paper); color: var(--ink); }
+.tll-dark-section { background: var(--lab-black); color: var(--on-lab-black); }
+
+.tll-primary-button,
+.lab-cta {
+  align-items: center;
+  background: var(--ink) !important;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: none !important;
+  color: var(--lime) !important;
+  display: inline-flex;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: 24px;
+}
+
+.tll-on-dark .tll-primary-button,
+.tll-on-dark .lab-cta {
+  background: var(--lime) !important;
+  border-color: var(--lime);
+  color: #14140f !important;
+}
+
+.tll-secondary-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  color: inherit;
+  display: inline-flex;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: 24px;
+}
+
 /* hide scrollbars on horizontal chip rows */
 .hide-scroll::-webkit-scrollbar { display: none; }
 .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
@@ -43,61 +128,39 @@ body {
 /* ─── Card depth system ─── */
 .lab-card {
   position: relative;
-  background:
-    radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%),
-      rgba(255,255,255, var(--glint, 0)), transparent 60%),
-    var(--card-grad);
-  border: 1px solid rgba(var(--ar), 0.12);
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: none;
   overflow: hidden;
   transition: transform .25s, box-shadow .25s, border-color .25s;
 }
-.lab-card::before {
-  content: "";
-  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(var(--ar),0.35), transparent);
-  pointer-events: none;
-}
+.lab-card::before { display: none; }
 .lab-card:hover {
-  --glint: 0.06;
-  transform: translateY(-3px);
-  border-color: rgba(var(--ar), 0.25);
-  box-shadow: 0 10px 34px rgba(0,0,0,0.55), 0 0 18px rgba(var(--ar),0.1),
-    inset 0 1px 0 rgba(255,255,255,0.05);
+  transform: translateY(-2px);
+  border-color: var(--line-strong);
+  box-shadow: 0 8px 24px rgba(20,20,15,.08);
 }
 
 /* ─── Glow utilities ─── */
-.lab-glow { box-shadow: 0 0 14px rgba(166, 226, 46, 0.22); }
+.lab-glow { box-shadow: none; }
 
-.lab-glow-sm { box-shadow: 0 0 8px rgba(166, 226, 46, 0.3); }
+.lab-glow-sm { box-shadow: none; }
 
 /* ─── Ambient screen glow ─── */
 .lab-ambient {
   position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
   width: 340px; height: 200px; pointer-events: none; z-index: 0;
-  background: radial-gradient(ellipse at center, rgba(var(--ar),0.1) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(var(--ar),0.08) 0%, transparent 70%);
   filter: blur(22px);
 }
 
 /* ─── Primary CTA bloom ─── */
 .lab-cta {
   position: relative;
-  background: #a6e22e; /* color-mix() fallback */
-  background: linear-gradient(145deg,
-    color-mix(in srgb, #a6e22e 80%, #fff) 0%,
-    #a6e22e 45%,
-    color-mix(in srgb, #a6e22e 72%, #000) 100%);
-  color: #0d0d0d;
-  box-shadow: 0 0 14px rgba(var(--ar),0.4), 0 0 28px rgba(var(--ar),0.14),
-    inset 0 1px 0 rgba(255,255,255,0.3);
 }
 .lab-cta-bloom {
-  position: absolute; inset: -8px; border-radius: 24px; pointer-events: none;
-  background: radial-gradient(ellipse at center,
-    rgba(var(--ar),0.3) 0%, rgba(var(--ar),0.1) 50%, transparent 75%);
-  filter: blur(8px);
-  z-index: -1;
+  display: none;
 }
 
 /* ─── Beam animation ─── */
@@ -116,7 +179,7 @@ body {
   filter: drop-shadow(0 0 5px rgba(var(--ar),0.7));
   opacity: 0; transition: opacity .35s;
 }
-.beam:hover::after { opacity: 1; animation: beamSpin 2.2s linear infinite; }
+.beam:hover::after { opacity: 0; animation: none; }
 @keyframes beamSpin { to { --beam-angle: 360deg; } }
 
 /* ─── Light-sweep page transition ─── */
@@ -153,4 +216,5 @@ body {
 .tll-dialog::backdrop { background: rgb(0 0 0 / 75%); backdrop-filter: blur(4px); }
 .tll-centered-dialog { width: calc(100% - 24px); max-width: 28rem; max-height: 90dvh; margin: auto; overflow-y: auto; }
 .tll-stack-dialog { position: fixed; inset: auto 0 0; width: 100%; max-width: none; max-height: 90dvh; margin: 0; padding: 0; border: 0; background: transparent; overflow-y: auto; }
-:where(a, button, input, select, textarea):focus-visible { outline: 2px solid #a6e22e; outline-offset: 3px; }
+:where(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.tll-on-dark :where(a, button, input, select, textarea):focus-visible { outline-color: #8cc4ff; }

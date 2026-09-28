@@ -603,7 +603,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                     {highlights.map((h) => (
                       <div key={h.label} className="bg-black/30 rounded-md px-1.5 py-1 text-center min-w-0">
                         <div className="text-[8px] text-lab-muted uppercase tracking-wide truncate">{h.label}</div>
-                        <div className="text-xs font-bold mt-0.5" style={{ color: h.value === '\u2014' ? 'rgba(255,255,255,0.35)' : '#f2f2f2' }}>
+                        <div className="text-xs font-bold mt-0.5" style={{ color: h.value === '\u2014' ? '#77796d' : '#14140f' }}>
                           {h.value}
                         </div>
                       </div>
@@ -625,7 +625,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   <div
                     className="mt-0.5"
                     title={trueCostReason(p) ?? undefined}
-                    style={p.cost_per_serving != null ? { fontSize: '12px', fontWeight: 800, color: '#f2f2f2' } : { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}
+                    style={p.cost_per_serving != null ? { fontSize: '12px', fontWeight: 800, color: '#14140f' } : { fontSize: '11px', fontWeight: 600, color: '#77796d' }}
                   >
                     {p.cost_per_serving != null ? `${formatListedServingPrice(p.cost_per_serving)}` : '—'}
                     {p.cost_per_serving == null && (
@@ -635,7 +635,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 </div>
                 <div className="bg-black/30 rounded-md px-1.5 py-1 text-center">
                   <div className="text-[8px] text-lab-muted uppercase tracking-wide">Retail</div>
-                  <div className="mt-0.5" style={p.retail_price != null ? { fontSize: '12px', fontWeight: 800, color: '#f2f2f2' } : { fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>
+                  <div className="mt-0.5" style={p.retail_price != null ? { fontSize: '12px', fontWeight: 800, color: '#14140f' } : { fontSize: '11px', fontWeight: 600, color: '#77796d' }}>
                     {p.retail_price != null ? fmt(p.retail_price) : 'Pending'}
                   </div>
                 </div>
@@ -711,9 +711,9 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                     color: '#0d0d0d',
                     boxShadow: '0 0 12px rgba(166,226,46,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
                   } : {
-                    background: 'rgba(255,255,255,0.06)',
-                    color: '#a6e22e',
-                    border: '1px solid rgba(166,226,46,0.5)',
+                    background: '#ffffff',
+                    color: '#4a6e0b',
+                    border: '1px solid #7c7e72',
                   }}
                 />
               </div>

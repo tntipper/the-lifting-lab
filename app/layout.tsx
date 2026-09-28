@@ -7,6 +7,7 @@ import { serializeJsonForHtml } from "@/lib/json-for-html";
 import { LocalStackProvider } from "@/components/LocalStackContext";
 import StackFAB from "@/components/StackFAB";
 import StagingCartProvider from "@/components/StagingCartProvider";
+import SiteFooter from "@/components/SiteFooter";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -75,6 +76,7 @@ export default function RootLayout({
         )}
         <StagingCartProvider><LocalStackProvider>
           {children}
+          <SiteFooter />
           <StackFAB />
         </LocalStackProvider></StagingCartProvider>
       </body>

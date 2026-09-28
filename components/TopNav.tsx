@@ -75,28 +75,26 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
             menuButton.current?.focus()
           }
         }}
-        className="sticky top-0 z-20 backdrop-blur"
+        className="tll-on-dark sticky top-0 z-20"
         style={{
-          background: 'rgba(12,12,12,0.92)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: '#0d0d0d',
+          borderBottom: '1px solid #2a2c26',
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2">
           {/* wordmark — Anton, skewed, LAB in lime */}
           <Link
             href="/"
-            className="shrink-0 uppercase select-none"
+            className="shrink-0 select-none text-white"
             style={{
               fontFamily: 'var(--font-anton), Impact, "Arial Narrow Bold", sans-serif',
               fontSize: 'clamp(16px, 3.2vw, 20px)',
-              letterSpacing: '0.5px',
-              transform: 'skewX(-6deg)',
+              letterSpacing: '0.3px',
               display: 'inline-block',
               lineHeight: 1,
             }}
           >
-            THE LIFTING
-            <span style={{ color: '#a6e22e', textShadow: `0 0 14px rgba(${AR},0.45)` }}>LAB</span>
+            THE LIFTING<span style={{ color: '#a6e22e' }}>LAB</span>
           </Link>
 
           <nav aria-label="Main navigation" className="flex items-center gap-2 sm:gap-4">
@@ -111,7 +109,7 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
                     aria-current={active ? 'page' : undefined}
                     className="relative text-[11px] font-bold uppercase tracking-widest min-h-11 inline-flex items-center transition-colors"
                     style={active
-                      ? { color: '#a6e22e', textShadow: `0 0 8px rgba(${AR},0.5)` }
+                      ? { color: '#a6e22e' }
                       : { color: '#a3a3a3' }
                     }
                   >
@@ -151,7 +149,7 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
               style={{
                 color: '#a6e22e',
                 border: `1px solid rgba(${AR},0.6)`,
-                boxShadow: `0 0 8px rgba(${AR},0.2), inset 0 0 8px rgba(${AR},0.05)`,
+                background: '#151613',
               }}
             >
               {accountLabel}
@@ -166,7 +164,7 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
               className="xl:hidden flex flex-col items-center justify-center w-11 h-11 gap-[5px] rounded-lg transition-colors"
-              style={{ border: '1px solid rgba(255,255,255,0.12)' }}
+              style={{ border: '1px solid #6c6f63' }}
             >
               <span
                 className="block w-4 h-[2px] rounded-full transition-all"
