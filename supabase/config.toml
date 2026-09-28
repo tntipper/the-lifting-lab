@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.tll-broker-readiness]
 verify_jwt = false
+
+[functions.tll-broker-readiness-g23-v9]
+verify_jwt = false

@@ -21,9 +21,9 @@ const env = Object.freeze({ SUPABASE_URL: 'https://qdmvngjwkcsilzmqksme.supabase
   SUPABASE_SERVICE_ROLE_KEY: serviceKey, TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'false',
   TLL_STAGING_BROKER_DATABASE_PASSWORD: 'SYNTHETIC_BROKER_PASSWORD_' + 'y'.repeat(40),
   TLL_STAGING_POSTGRES_CA_PEM: 'public-ca-fixture', TLL_STAGING_POSTGRES_CA_SHA256: 'a'.repeat(64),
-  TLL_STAGING_BROKER_READINESS_WINDOW: `f910c5cb-1a94-410a-8e8d-2c9704c1536a|${startsAt}|${expiresAt}` })
+  TLL_STAGING_BROKER_READINESS_WINDOW: `da4a6ec0-ff46-4db0-ba9d-db24eccbdaef|${startsAt}|${expiresAt}` })
 const request = (authorization = `Bearer ${serviceKey}`, apikey = serviceKey) => new Request(
-  'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness', {
+  'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9', {
     headers: { authorization, apikey },
   })
 
@@ -32,6 +32,7 @@ test('ordinary deployed source keeps the Edge probe off before credential access
   const result = await ordinary.createStagingBrokerReadinessHandler({ ...env,
     TLL_STAGING_BROKER_READINESS_WINDOW: undefined }, () => { constructed = true }, now)(request())
   assert.equal(result.status, 404)
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
   assert.equal(constructed, false)
 })
 
@@ -42,13 +43,15 @@ test('ordinary deployed source accepts only the short-lived staging window', asy
   } } }, async close() {} })
   const live = await ordinary.createStagingBrokerReadinessHandler(env, runtime, now)(request())
   assert.equal(live.status, 200)
+  assert.equal(live.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
   assert.equal(connected, 1)
   for (const setting of [undefined,
     `wrong-window|${startsAt}|${expiresAt}`,
-    `f910c5cb-1a94-410a-8e8d-2c9704c1536a|${startsAt}|2026-09-27T22:00:01.000Z`]) {
+    `da4a6ec0-ff46-4db0-ba9d-db24eccbdaef|${startsAt}|2026-09-27T22:00:01.000Z`]) {
     const held = await ordinary.createStagingBrokerReadinessHandler({ ...env,
       TLL_STAGING_BROKER_READINESS_WINDOW: setting }, runtime, now)(request())
     assert.equal(held.status, 404)
+    assert.equal(held.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
   }
   const expired = await ordinary.createStagingBrokerReadinessHandler(env, runtime,
     () => Date.parse(expiresAt))(request())
@@ -81,7 +84,8 @@ test('the authenticated Edge probe uses its own installed broker password and re
   }, now)
   const result = await handler(request())
   assert.equal(result.status, 200)
-  assert.deepEqual(await result.json(), { status: 'PASS', windowId: 'f910c5cb-1a94-410a-8e8d-2c9704c1536a', expiresAt })
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
+  assert.deepEqual(await result.json(), { status: 'PASS', windowId: 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef', expiresAt })
   assert.doesNotMatch(JSON.stringify(Object.fromEntries(result.headers)), /SYNTHETIC/)
 })
 
@@ -91,5 +95,6 @@ test('Edge connection errors stay private and give no false pass', async () => {
   }), now)
   const result = await handler(request())
   assert.equal(result.status, 503)
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v9-da4a6ec0')
   assert.deepEqual(await result.json(), { status: 'FAIL' })
 })

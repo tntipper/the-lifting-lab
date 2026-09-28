@@ -7,7 +7,8 @@ type Environment = Readonly<Record<string, string | undefined>>
 type RuntimeFactory = typeof createStagingPostgresRuntime
 export const STAGING_BROKER_READINESS_ENABLED = false
 const PROJECT_URL = 'https://qdmvngjwkcsilzmqksme.supabase.co'
-const WINDOW_ID = 'f910c5cb-1a94-410a-8e8d-2c9704c1536a'
+const WINDOW_ID = 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef'
+export const STAGING_BROKER_READINESS_REVISION = 'tll-gen23-v9-da4a6ec0'
 const WINDOW_NAME = 'TLL_STAGING_BROKER_READINESS_WINDOW'
 function activeWindow(env: Environment, now: number) {
   const parts = env[WINDOW_NAME]?.split('|')
@@ -21,7 +22,8 @@ function activeWindow(env: Environment, now: number) {
 }
 const response = (status: number, value: string) => new Response(JSON.stringify({ status: value }), {
   status, headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store',
-    'x-robots-tag': 'noindex, nofollow', 'referrer-policy': 'no-referrer' },
+    'x-robots-tag': 'noindex, nofollow', 'referrer-policy': 'no-referrer',
+    'x-tll-broker-revision': STAGING_BROKER_READINESS_REVISION },
 })
 const equal = (left: string | null, right: string): boolean => {
   if (!left || Buffer.byteLength(left) !== Buffer.byteLength(right)) return false
@@ -62,7 +64,8 @@ export function createStagingBrokerReadinessHandler(env: Environment,
       return response(404, 'held')
     return new Response(JSON.stringify({ status: 'PASS', ...stillActive }), { status: 200,
       headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store',
-        'x-robots-tag': 'noindex, nofollow', 'referrer-policy': 'no-referrer' } })
+        'x-robots-tag': 'noindex, nofollow', 'referrer-policy': 'no-referrer',
+        'x-tll-broker-revision': STAGING_BROKER_READINESS_REVISION } })
   }
 }
 

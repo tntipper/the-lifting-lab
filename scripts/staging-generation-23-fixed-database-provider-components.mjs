@@ -109,7 +109,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       if (!Buffer.isBuffer(projectSecret) || projectSecret.length < 32 || controller.signal.aborted) unavailable()
       diagnostic?.verified('broker_service_key')
       diagnostic?.pending('broker_request')
-      const url = 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness'
+      const url = 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9'
       const response = await bounded(fetcher(url, Object.freeze({ method: 'GET', redirect: 'error', cache: 'no-store',
         headers: Object.freeze({ authorization: `Bearer ${projectSecret.toString('utf8')}`,
           apikey: projectSecret.toString('utf8'), accept: 'application/json', 'accept-encoding': 'identity' }),
@@ -118,6 +118,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       diagnostic?.pending('broker_response_validation')
       if (controller.signal.aborted || response?.status !== (expected === 'PASS' ? 200 : 404) || response.redirected === true
         || response.url && response.url !== url
+        || response.headers?.get?.('x-tll-broker-revision') !== 'tll-gen23-v9-da4a6ec0'
         || !/^application\/json(?:;|$)/i.test(response.headers?.get?.('content-type') ?? '')
         || response.headers?.get?.('content-encoding') && response.headers.get('content-encoding') !== 'identity'
         || !response.body || typeof response.body.getReader !== 'function') unavailable()

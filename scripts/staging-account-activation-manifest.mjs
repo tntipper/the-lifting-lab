@@ -31,6 +31,7 @@ const edgeSources = [
   'supabase/functions/tll-broker-token/index.ts', 'supabase/functions/tll-broker-token/deno.json',
   'supabase/functions/tll-broker-userinfo/index.ts', 'supabase/functions/tll-broker-userinfo/deno.json',
   'supabase/functions/tll-broker-readiness/index.ts', 'supabase/functions/tll-broker-readiness/deno.json',
+  'supabase/functions/tll-broker-readiness-g23-v9/index.ts', 'supabase/functions/tll-broker-readiness-g23-v9/deno.json',
   'lib/identity/staging-broker-readiness-edge.ts',
   'lib/identity/customer-subject-broker-edge.ts', 'lib/identity/customer-subject-broker.ts',
   'lib/identity/customer-subject-broker-repository.ts', 'lib/server/staging-postgres.ts',

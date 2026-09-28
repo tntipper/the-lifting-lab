@@ -28,7 +28,7 @@ async function armedFixture() {
   return import(`data:text/javascript;base64,${Buffer.from(armed).toString('base64')}`)
 }
 
-test('Gen23 SQL is disconnected and pins the retired Gen23 v7 predecessor', async () => {
+test('Gen23 SQL is disconnected and pins the retired Gen23 v8 predecessor', async () => {
   assert.equal(STAGING_GENERATION_23_CREDENTIALS_ENABLED, false)
   assert.throws(() => buildStagingGeneration23CredentialSql({ verifiers: verifiers(), expiresAt, nowMs }), /unavailable/)
   assert.equal(PREDECESSOR.generation, 23)
@@ -40,7 +40,7 @@ test('Gen23 SQL is disconnected and pins the retired Gen23 v7 predecessor', asyn
   assert.match(sql, /^BEGIN;\nSET LOCAL lock_timeout='5s';\nSET LOCAL statement_timeout='30s';/)
   assert.match(sql, /operator_project_ref='qdmvngjwkcsilzmqksme'/)
   assert.match(sql, /operator_project_ref='wrhgscovsgsudtedbljr'/)
-  assert.match(sql, /'generation',23,'windowId','f910c5cb-1a94-410a-8e8d-2c9704c1536a'/)
+  assert.match(sql, /'generation',23,'windowId','da4a6ec0-ff46-4db0-ba9d-db24eccbdaef'/)
   assert.match(sql, /generation":23.*state":"retired"/)
   assert.match(sql, /rolvaliduntil='infinity'::timestamptz/)
   assert.match(sql, /NOT rolbypassrls/)

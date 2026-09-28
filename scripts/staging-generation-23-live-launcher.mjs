@@ -15,35 +15,35 @@ export const GENERATION_23_LAUNCH_BRANCH = 'codex/tll-integration'
 export const GENERATION_23_LAUNCH_MIN_REMAINING_MS = 45 * 60 * 1000
 const ROOT = resolve(import.meta.dirname, '..')
 const STATE = resolve(ROOT, '../implementation-state/staging')
-export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v7.json'
-export const GENERATION_23_PRIOR_HOLD_SHA256 = '2f7a328c610d0fc5e9b84f2ef6dd61003790baf39ca47f8de72889dcc28e7deb'
-export const GENERATION_23_PRIOR_RETIRE_NAME = 'tll-generation-23-database-retire-v7.json'
-export const GENERATION_23_PRIOR_RETIRE_SHA256 = '74b4f19ad2dd4a0fcff49280fe7b4dc5cfe43cacac7cdc4e1db75fe659bac56c'
-export const GENERATION_23_PRIOR_GATE_NAME = 'tll-generation-23-broker-gate-retire-v7.json'
-export const GENERATION_23_PRIOR_GATE_SHA256 = '243c953ea5ff5ad14d3ff31976e1dfb7ff580326c4d7ebf91ab024048182912c'
+export const GENERATION_23_PRIOR_HOLD_NAME = 'tll-generation-23-whole-route-v8.json'
+export const GENERATION_23_PRIOR_HOLD_SHA256 = '5fe7bc0acb40f86f3ef00a513dfe8beeb21eae856b4cd41b61e2c2029c789a2a'
+export const GENERATION_23_PRIOR_RETIRE_NAME = 'tll-generation-23-database-retire-v8.json'
+export const GENERATION_23_PRIOR_RETIRE_SHA256 = '1540b07e16ab8f66ac857ae097be36038c706012820cb9a22f3c774331b4fcac'
+export const GENERATION_23_PRIOR_GATE_NAME = 'tll-generation-23-broker-gate-retire-v8.json'
+export const GENERATION_23_PRIOR_GATE_SHA256 = 'd116fab6d206ab88418a9a3a4635bdce79bcb9a0ee9641582e199b3fd3ed1c00'
 // Each of these is a one-use record owned by a fixed Gen23 component. A
 // previous or uncertain attempt closes this entry before any credential read.
 export const GENERATION_23_LAUNCH_RECORD_NAMES = Object.freeze([
-  'tll-generation-23-whole-route-v8.json',
-  'tll-generation-23-predecessor-read-v8.json',
-  'tll-generation-23-database-setup-v8.json',
-  'tll-generation-23-database-activate-v8.json',
-  'tll-generation-23-database-shutdown-v8.json',
-  'tll-generation-23-database-retire-v8.json',
-  'tll-generation-23-provider-enable-v8.json',
-  'tll-generation-23-provider-disable-v8.json',
-  'tll-generation-23-settings-v8.json',
-  'tll-generation-23-surface-enable-v8.json',
-  'tll-generation-23-surface-freeze-v8.json',
-  'tll-generation-23-checkout-enable-v8.json',
-  'tll-generation-23-checkout-freeze-v8.json',
-  'tll-generation-23-preview-enabled-v8.json',
-  'tll-generation-23-preview-held-v8.json',
-  'tll-generation-23-preview-consumer-v8.json',
-  'tll-generation-23-consumer-diagnostic-v8.json',
-  'tll-generation-23-broker-gate-retire-v8.json',
-  'tll-generation-23-final-read-v8.json',
-  'tll-generation-23-restricted-connections-v8.json',
+  'tll-generation-23-whole-route-v9.json',
+  'tll-generation-23-predecessor-read-v9.json',
+  'tll-generation-23-database-setup-v9.json',
+  'tll-generation-23-database-activate-v9.json',
+  'tll-generation-23-database-shutdown-v9.json',
+  'tll-generation-23-database-retire-v9.json',
+  'tll-generation-23-provider-enable-v9.json',
+  'tll-generation-23-provider-disable-v9.json',
+  'tll-generation-23-settings-v9.json',
+  'tll-generation-23-surface-enable-v9.json',
+  'tll-generation-23-surface-freeze-v9.json',
+  'tll-generation-23-checkout-enable-v9.json',
+  'tll-generation-23-checkout-freeze-v9.json',
+  'tll-generation-23-preview-enabled-v9.json',
+  'tll-generation-23-preview-held-v9.json',
+  'tll-generation-23-preview-consumer-v9.json',
+  'tll-generation-23-consumer-diagnostic-v9.json',
+  'tll-generation-23-broker-gate-retire-v9.json',
+  'tll-generation-23-final-read-v9.json',
+  'tll-generation-23-restricted-connections-v9.json',
 ])
 const result = status => Object.freeze({ status })
 let used = false
@@ -70,7 +70,7 @@ function recordsUnused() {
     } catch { return false }
   }
   for (const name of GENERATION_23_LAUNCH_RECORD_NAMES) {
-    if (!name.endsWith('-v8.json')) return false
+    if (!name.endsWith('-v9.json')) return false
     try { lstatSync(resolve(STATE, name)); return false }
     catch (error) { if (error?.code !== 'ENOENT') return false }
   }

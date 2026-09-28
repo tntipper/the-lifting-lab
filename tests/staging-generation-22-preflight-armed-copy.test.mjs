@@ -34,6 +34,8 @@ function isolatedCopy() {
     'lib/server/staging-consumer-readiness.ts',
     'supabase/functions/tll-broker-readiness/index.ts',
     'supabase/functions/tll-broker-readiness/deno.json',
+    'supabase/functions/tll-broker-readiness-g23-v9/index.ts',
+    'supabase/functions/tll-broker-readiness-g23-v9/deno.json',
     'lib/identity/staging-broker-readiness-edge.ts']) {
     const destination = join(root, name)
     mkdirSync(dirname(destination), { recursive: true })

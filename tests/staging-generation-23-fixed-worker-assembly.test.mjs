@@ -89,10 +89,22 @@ test('joins the fourteen phase adapters to their fixed factories and one whole-r
   assert.deepEqual(await f.captured.runPreviewBuild({ input: {}, journal: journal(), signal }),
     { status: 'PROTECTED_PREVIEW_VERIFIED' })
   assert.deepEqual(await built.core.run({ signal }), { status: 'LOCAL_SEQUENCE_PASS' })
+  assert.deepEqual(await built.ports.readBaseline({ signal }), { status: 'BASELINE_HELD_VERIFIED' })
   assert.deepEqual(await built.ports.readFinal({ signal }), { status: 'FINAL_HELD_VERIFIED' })
   assert.deepEqual(calls.slice(0, 5), ['hosted', 'database', 'surface', 'assembly', 'preview-worker'])
   built.dispose()
   assert.deepEqual(calls.slice(-5), ['dispose:core', 'dispose:surface', 'dispose:variant', 'dispose:database', 'dispose:hosted'])
+})
+
+test('starting-state check refuses a broker response without the reviewed source', async () => {
+  const f = factories([], { broker: 'UNPROVEN_SOURCE' })
+  const built = armed.createStagingGeneration23FixedWorkerAssembly({
+    credentials: { ...credentials }, fetch: async () => {}, expiresAt: expiry, preflight,
+    checkoutTarget: checkout, runCli: async () => ({ status: 'COMPLETED' }), now: () => now,
+    factories: f,
+  })
+  try { await assert.rejects(built.ports.readBaseline({ signal }), /unavailable/) }
+  finally { built.dispose() }
 })
 
 test('refuses a malformed fixed input before any factory can run', () => {
@@ -230,14 +242,15 @@ test('assembled consumers record real website and broker boundaries before activ
             : JSON.stringify(scenario.website), { status: 200,
             headers: { 'content-type': 'application/json' } })
         }
-        if (url === 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness') {
+        if (url === 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9') {
           requests.broker++
           assert.equal(options.headers.authorization, `Bearer ${'s'.repeat(48)}`)
           if (scenario.brokerThrows) throw Error('synthetic broker network failure')
           const status = scenario.brokerStatus ?? 200
           return new Response(JSON.stringify(status === 200
-            ? { status: 'PASS', windowId: 'f910c5cb-1a94-410a-8e8d-2c9704c1536a', expiresAt: expiry }
-            : { status: 'FAIL' }), { status, headers: { 'content-type': 'application/json' } })
+            ? { status: 'PASS', windowId: 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef', expiresAt: expiry }
+            : { status: 'FAIL' }), { status, headers: { 'content-type': 'application/json',
+              'x-tll-broker-revision': 'tll-gen23-v9-da4a6ec0' } })
         }
         throw Error('unexpected synthetic target')
       }
