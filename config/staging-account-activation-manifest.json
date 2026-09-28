@@ -51,7 +51,7 @@
       "supabase/functions"
     ],
     "fileCount": 82,
-    "sha256": "fbe4812e3e7cfa8815d74f10ce5f2f3e26c4bf82f613c3dbb7b44d8338f38d45"
+    "sha256": "a99f7ad2792e64df4c0bb1f169a17ca3cc9ef97910ce88dac4f82680d76f1376"
   },
   "stageSafety": {
     "sources": [
@@ -466,7 +466,7 @@
       },
       {
         "path": "lib/identity/staging-broker-readiness-edge.ts",
-        "sha256": "7041efb0288d4f8de68b9d29af36ae96346bd5f8aeb4cc7958adefede6b1b3f8"
+        "sha256": "b057ed833a8f9aa53fc0b975c59a060005aeafa25035c66a7bd086961a2da006"
       },
       {
         "path": "lib/identity/customer-subject-broker-edge.ts",

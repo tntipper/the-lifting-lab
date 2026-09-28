@@ -8,7 +8,7 @@ type RuntimeFactory = typeof createStagingPostgresRuntime
 export const STAGING_BROKER_READINESS_ENABLED = false
 const PROJECT_URL = 'https://qdmvngjwkcsilzmqksme.supabase.co'
 const WINDOW_ID = 'da4a6ec0-ff46-4db0-ba9d-db24eccbdaef'
-export const STAGING_BROKER_READINESS_REVISION = 'tll-gen23-v9-guard-audit-2'
+export const STAGING_BROKER_READINESS_REVISION = 'tll-gen23-v9-secret-key-1'
 const WINDOW_NAME = 'TLL_STAGING_BROKER_READINESS_WINDOW'
 const GUARD_AUDIT_HEADER = 'tll-gen23-guard-audit/v1'
 const TRACE_ID = 'b120e4c4-0673-40ca-a3f0-523db406243d'
@@ -32,6 +32,15 @@ const equal = (left: string | null, right: string): boolean => {
   if (!left || Buffer.byteLength(left) !== Buffer.byteLength(right)) return false
   return timingSafeEqual(Buffer.from(left), Buffer.from(right))
 }
+function defaultSecretKey(env: Environment): string | undefined {
+  const raw = env.SUPABASE_SECRET_KEYS
+  if (!raw || raw.length > 8192) return undefined
+  try {
+    const values = JSON.parse(raw)
+    const key = values && typeof values === 'object' && !Array.isArray(values) ? values.default : undefined
+    return typeof key === 'string' && /^sb_secret_[A-Za-z0-9_-]{24,256}$/.test(key) ? key : undefined
+  } catch { return undefined }
+}
 
 /** Dedicated staging function. Authenticates before any connection or secret read. */
 export function createStagingBrokerReadinessHandler(env: Environment,
@@ -46,7 +55,9 @@ export function createStagingBrokerReadinessHandler(env: Environment,
       && equal(request.headers.get('authorization'), `Bearer ${serviceKey}`)
     const apikeyMatches = serviceKeyUsable
       && equal(request.headers.get('apikey'), serviceKey)
-    const authenticated = authorizationMatches && apikeyMatches
+    const secretKey = defaultSecretKey(env)
+    const secretApikeyMatches = !!secretKey && equal(request.headers.get('apikey'), secretKey)
+    const authenticated = secretApikeyMatches
     // One bounded staging trace records only fixed booleans privately. The
     // public response remains the same held response for a wrong credential.
     if (observedAt < TRACE_END && new URL(request.url).searchParams.get('tll_guard_trace') === TRACE_ID) {
@@ -56,6 +67,7 @@ export function createStagingBrokerReadinessHandler(env: Environment,
         methodIsGet: request.method === 'GET', serviceKeyUsable,
         authorizationPresent: request.headers.has('authorization'), authorizationMatches,
         apikeyPresent: request.headers.has('apikey'), apikeyMatches,
+        defaultSecretKeyUsable: !!secretKey, secretApikeyMatches,
         projectUrlMatches: env.SUPABASE_URL === PROJECT_URL,
         brokerFlagOff: env.TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED === 'false',
         window: window ? 'active' : env[WINDOW_NAME] ? 'invalid' : 'absent' }))
@@ -107,6 +119,7 @@ export function brokerReadinessEnvironment(): Environment {
   const get = (name: string) => deno?.env?.get(name)
   return Object.freeze({ SUPABASE_URL: get('SUPABASE_URL'),
     SUPABASE_SERVICE_ROLE_KEY: get('SUPABASE_SERVICE_ROLE_KEY'),
+    SUPABASE_SECRET_KEYS: get('SUPABASE_SECRET_KEYS'),
     TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: get('TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED'),
     TLL_STAGING_BROKER_DATABASE_PASSWORD: get('TLL_STAGING_BROKER_DATABASE_PASSWORD'),
     TLL_STAGING_BROKER_READINESS_WINDOW: get(WINDOW_NAME),
