@@ -1,38 +1,54 @@
 import Link from 'next/link'
-import ProductAssessment from './ProductAssessment'
+import ProductImage from './ProductImage'
 import { formatListedServingPrice, type ScoredProduct } from '@/lib/products'
+
+function formatPackPrice(price: number | null) {
+  return typeof price === 'number' && Number.isFinite(price) && price > 0 ? `£${price.toFixed(2)}` : 'Unavailable'
+}
 
 export default function TopProductsTable({ products }: { products: ScoredProduct[] }) {
   const rows = [...products]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .slice(0, 5)
+    .sort((a, b) => {
+      const completeA = Number(Boolean(a.image_url)) + Number(a.retail_price !== null) + Number(a.cost_per_serving !== null)
+      const completeB = Number(Boolean(b.image_url)) + Number(b.retail_price !== null) + Number(b.cost_per_serving !== null)
+      return completeB - completeA || a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
+    })
+    .slice(0, 6)
 
-  return <section aria-labelledby="top-products-heading" className="mx-auto max-w-[1920px] px-5 py-14 sm:px-8 sm:py-20">
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4 sm:mb-12">
-      <h2 id="top-products-heading" className="text-3xl font-black tracking-tight sm:text-4xl">Product research this month</h2>
-      <Link href="/products" className="text-lg font-black text-[#4a6e0b] underline decoration-2 underline-offset-4">See all {products.length} products</Link>
+  return <section aria-labelledby="top-products-heading" className="mx-auto max-w-[1920px] px-5 py-10 sm:px-8 sm:py-14 lg:px-11">
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
+      <h2 id="top-products-heading" className="text-3xl font-black tracking-tight sm:text-4xl">Our top picks this month</h2>
+      <Link href="/products" className="text-base font-black text-[#4a6e0b] underline decoration-2 underline-offset-4 sm:text-lg">See all {products.length} products</Link>
     </div>
-    <div className="overflow-hidden rounded-2xl border border-lab-border bg-white">
-      {rows.length === 0 ? <p className="px-6 py-14 text-center text-lab-muted">Product records are unavailable in this visual preview.</p> : rows.map((product, index) => <article key={product.id}
-        className="grid min-h-[126px] items-center gap-5 border-b border-lab-border px-5 py-5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:px-7">
-        <div className="grid min-w-0 grid-cols-[2.5rem_1fr] gap-3">
-          <span className="font-mono text-lg font-black text-lab-muted">{String(index + 1).padStart(2, '0')}</span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-black uppercase tracking-[.06em] text-lab-muted">{product.brand}</p>
-            <h3 className="mt-1 text-xl font-black leading-tight sm:text-2xl">{product.name}</h3>
-          </div>
-        </div>
-        <div className="justify-self-start rounded-lg bg-[#e6eef8] px-4 py-3 sm:justify-self-end">
-          <ProductAssessment product={product} size="lg" />
-        </div>
-        <div className="flex items-center justify-between gap-5 sm:justify-end">
-          <div className="text-right">
-            <p className="text-xs font-black uppercase tracking-[.05em] text-lab-muted">Listed cost</p>
-            <p className="font-mono text-2xl font-black">{product.cost_per_serving ? formatListedServingPrice(product.cost_per_serving) : '—'}</p>
-          </div>
-          <Link href={`/products/${product.id}`} className="inline-flex min-h-14 items-center rounded-xl border border-[#7c7e72] px-7 text-base font-black">View</Link>
-        </div>
-      </article>)}
-    </div>
+
+    {rows.length === 0 ? (
+      <div className="rounded-2xl border border-[#ddddd3] bg-white px-6 py-14 text-center text-[#62645a]">Product records are unavailable in this visual preview.</div>
+    ) : (
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {rows.map((product) => (
+          <Link key={product.id} href={`/products/${product.id}`} className="group overflow-hidden rounded-xl border border-[#ddddd3] bg-white text-[#12120f] transition-colors hover:border-[#77786d]">
+            <div className="aspect-square overflow-hidden border-b border-[#e2e2d9] bg-[#ecece4] p-3 sm:p-4">
+              <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={260} fill className="transition-transform duration-200 group-hover:scale-[1.02]" />
+            </div>
+            <div className="p-3.5 sm:p-4">
+              <h3 className="tll-display text-[22px] leading-none sm:text-[25px]">{product.brand}</h3>
+              <p className="mt-1.5 min-h-10 text-sm font-normal leading-5 text-[#55574f]">{product.name}</p>
+              <dl className="mt-4 grid grid-cols-2 gap-2 border-t border-[#e2e2d9] pt-3">
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-[.05em] text-[#6d6f65]">Total cost</dt>
+                  <dd className="mt-1 font-mono text-sm font-black">{formatPackPrice(product.retail_price)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-[.05em] text-[#6d6f65]">Per serving</dt>
+                  <dd className="mt-1 font-mono text-sm font-black">{product.cost_per_serving !== null ? formatListedServingPrice(product.cost_per_serving) : 'Unavailable'}</dd>
+                </div>
+              </dl>
+            </div>
+          </Link>
+        ))}
+      </div>
+    )}
+
+    <p className="mt-4 text-xs leading-5 text-[#686a61]">Current catalogue selection based on complete product records. This is not an effectiveness ranking.</p>
   </section>
 }

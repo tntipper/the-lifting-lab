@@ -84,7 +84,7 @@ export default async function Home() {
               </div>
               <Link href="/products" className="min-h-11 py-3 text-sm font-semibold text-lab-lime underline underline-offset-4">See all products</Link>
             </div>
-            <CategoryGrid />
+            <CategoryGrid products={products} variant="compact" />
           </section>
 
           <FeaturedSlot />
