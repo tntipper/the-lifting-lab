@@ -122,7 +122,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       diagnostic?.pending('broker_response_validation')
       if (controller.signal.aborted || response?.status !== (expected === 'HELD' ? 404 : 200) || response.redirected === true
         || response.url && response.url !== url
-        || response.headers?.get?.('x-tll-broker-revision') !== 'tll-gen23-v12-cart-route-1'
+        || response.headers?.get?.('x-tll-broker-revision') !== 'tll-gen23-v13-cart-route-1'
         || !/^application\/json(?:;|$)/i.test(response.headers?.get?.('content-type') ?? '')
         || response.headers?.get?.('content-encoding') && response.headers.get('content-encoding') !== 'identity'
         || !response.body || typeof response.body.getReader !== 'function') unavailable()

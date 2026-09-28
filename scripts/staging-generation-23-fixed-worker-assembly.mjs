@@ -43,10 +43,11 @@ const wait = (milliseconds, signal) => new Promise((resolve, reject) => {
 
 /** Read only: leave the one-use retirement record untouched until sessions drain. */
 export async function waitForRetirementDrain({ readState, signal, deadlineAt,
-  now = Date.now, pause = wait } = {}) {
+  now = Date.now, pause = wait, maxWaitMs = 120_000 } = {}) {
   if (typeof readState !== 'function' || !signalOk(signal) || typeof now !== 'function'
-    || typeof pause !== 'function' || !Number.isFinite(Date.parse(deadlineAt))) return false
-  const start = now(), stop = Math.min(start + 120_000, Date.parse(deadlineAt) - 30_000)
+    || typeof pause !== 'function' || !Number.isSafeInteger(maxWaitMs)
+    || maxWaitMs < 1 || maxWaitMs > 300_000 || !Number.isFinite(Date.parse(deadlineAt))) return false
+  const start = now(), stop = Math.min(start + maxWaitMs, Date.parse(deadlineAt) - 30_000)
   if (!Number.isFinite(start) || stop <= start) return false
   while (signalOk(signal) && now() < stop) {
     let state
@@ -68,7 +69,15 @@ export async function waitForProviderDrain({ readState, signal, deadlineAt,
   now = Date.now, pause = wait } = {}) {
   if (typeof readState !== 'function' || !signalOk(signal) || typeof now !== 'function'
     || typeof deadlineAt !== 'string' || !Number.isFinite(Date.parse(deadlineAt))) return false
-  const stopAt = Math.min(now() + 120_000, Date.parse(deadlineAt) - 20 * 60_000)
+  // Protected Preview probes can leave Supavisor sessions for more than two
+  // minutes. Keep the check read-only and preserve the full 20-minute
+  // provider-plus-shutdown reserve, but allow up to five minutes for those
+  // already-closing sessions to disappear.
+  const maxWaitMs = 300_000
+  // The provider operation has its own two-minute cap. Stop observing with
+  // 22 minutes left so that even its latest completion preserves a full
+  // 20-minute shutdown reserve.
+  const stopAt = Math.min(now() + maxWaitMs, Date.parse(deadlineAt) - 22 * 60_000)
   if (!Number.isFinite(stopAt) || stopAt <= now()) return false
   const boundedRead = async () => {
     const remaining = Math.min(30_000, stopAt - now())
@@ -90,7 +99,7 @@ export async function waitForProviderDrain({ readState, signal, deadlineAt,
   // The shared helper reserves its own final 30 seconds. Subtract that here
   // so its observation cutoff is exactly stopAt.
   return waitForRetirementDrain({ readState: boundedRead, signal,
-    deadlineAt: new Date(stopAt + 30_000).toISOString(), now, pause })
+    deadlineAt: new Date(stopAt + 30_000).toISOString(), now, pause, maxWaitMs })
 }
 /** Cap the entire provider preflight, update and readback before shutdown reserve. */
 export async function runProviderBeforeShutdownReserve({ run, signal, deadlineAt,
@@ -98,7 +107,7 @@ export async function runProviderBeforeShutdownReserve({ run, signal, deadlineAt
   if (typeof run !== 'function' || !signalOk(signal) || typeof now !== 'function'
     || typeof deadlineAt !== 'string' || !Number.isFinite(Date.parse(deadlineAt)))
     return Object.freeze({ status: 'PROVIDER_DEADLINE_HOLD' })
-  const remaining = Math.min(120_000, Date.parse(deadlineAt) - 15 * 60_000 - now())
+  const remaining = Math.min(120_000, Date.parse(deadlineAt) - 20 * 60_000 - now())
   if (!Number.isFinite(remaining) || remaining <= 0)
     return Object.freeze({ status: 'PROVIDER_DEADLINE_HOLD' })
   const controller = new AbortController()
@@ -192,14 +201,14 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
   const journals = Object.freeze({
     whole: requireJournal(makeWholeJournal(), ['claim', 'dispatch', 'verify', 'ownerFailure', 'skipOwner', 'hold', 'holdBeforeDispatch', 'read']),
     settings: requireJournal(makeSettingsJournal(), ['claim', 'dispatch', 'confirm', 'hold', 'read']),
-    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v12.json` }), ['read', 'recordIntent', 'transition']),
-    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v12.json` }), ['read', 'recordIntent', 'transition']),
-    consumerPreview: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-consumer-v12.json` }), ['read', 'claim']),
+    enableSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-enable-v13.json` }), ['read', 'recordIntent', 'transition']),
+    freezeSurface: requireJournal(makeSurfaceJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-surface-freeze-v13.json` }), ['read', 'recordIntent', 'transition']),
+    consumerPreview: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-consumer-v13.json` }), ['read', 'claim']),
     consumerDiagnostic: requireJournal(makeConsumerDiagnostic(), ['read', 'claim', 'pending', 'verified', 'finish', 'hold']),
     checkoutEnable: requireJournal(makeCheckoutJournal({ action: 'ENABLE' }), ['read', 'recordIntent', 'transition']),
     checkoutFreeze: requireJournal(makeCheckoutJournal({ action: 'FREEZE' }), ['read', 'recordIntent', 'transition']),
-    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v12.json` }), ['read', 'claim']),
-    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v12.json` }), ['read', 'claim']),
+    previewEnabled: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-enabled-v13.json` }), ['read', 'claim']),
+    previewHeld: requireJournal(makePreviewJournal({ path: `${import.meta.dirname}/../../implementation-state/staging/tll-generation-23-preview-held-v13.json` }), ['read', 'claim']),
   })
   if (journals.previewEnabled === journals.previewHeld || journals.enableSurface === journals.freezeSurface) unavailable()
 
@@ -313,7 +322,7 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
         if (!drained) return Object.freeze({ status: 'SESSION_DRAIN_HOLD' })
         return runProviderBeforeShutdownReserve({ signal, deadlineAt: phaseDeadlineAt, now,
           run: ({ signal: child }) => database.components.providerEnable({ expiresAt, signal: child,
-            latestDispatchAt: new Date(Date.parse(phaseDeadlineAt) - 17 * 60_000).toISOString() }),
+            latestDispatchAt: new Date(Date.parse(phaseDeadlineAt) - 21 * 60_000).toISOString() }),
         })
       },
       enableDatabase: ({ signal, phaseDeadlineAt }) => database.components.controlsEnable.run({ expiresAt, deadlineAt: phaseDeadlineAt, signal }),

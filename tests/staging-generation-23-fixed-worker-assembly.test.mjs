@@ -44,7 +44,7 @@ function factories(calls, final = {}) {
     createDatabase() { calls.push('database'); return { components: {
       databaseSetup: { run: async () => { calls.push('database-setup'); return { status: 'SETUP_VERIFIED' } } },
       restrictedConnections: { prove: databaseResult('PASS_RESTRICTED_CONNECTIONS') },
-      providerEnable: async () => { calls.push('provider-enable'); return { status: 'PROVIDER_ENABLED_VERIFIED' } },
+      providerEnable: async input => { calls.push('provider-enable'); captured.providerEnable = input; return { status: 'PROVIDER_ENABLED_VERIFIED' } },
       controlsEnable: { run: databaseResult('CONTROL_ACTIVATION_VERIFIED') },
       controlsDisable: { run: databaseResult('SHUTDOWN_VERIFIED') }, providerDisable: databaseResult('PROVIDER_DISABLED_VERIFIED'),
       readBackendState: async () => { calls.push('backend-state'); return {
@@ -190,7 +190,15 @@ test('provider waits for temporary Preview-probe sessions before claiming its wr
       runtimeSessions: 5 }), signal, deadlineAt, now: () => clock,
     pause: async milliseconds => { clock += milliseconds },
   }), false)
-  assert.equal(clock - secondStart <= 120_000, true)
+  assert.equal(clock - secondStart <= 300_000, true)
+
+  let longerClock = now, longerReads = 0
+  assert.equal(await armed.waitForProviderDrain({
+    readState: async () => ({ projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false,
+      runtimeSessions: longerReads++ < 13 ? 5 : 0 }), signal, deadlineAt,
+    now: () => longerClock, pause: async milliseconds => { longerClock += milliseconds },
+  }), true)
+  assert.equal(longerClock - now, 130_000)
   assert.equal(await armed.waitForProviderDrain({
     readState: async () => { throw Error('read failed') }, signal, deadlineAt,
     now: () => now, pause: async () => assert.fail('no wait after failed read'),
@@ -205,6 +213,19 @@ test('provider waits for temporary Preview-probe sessions before claiming its wr
     readState: async () => assert.fail('no read without shutdown reserve'), signal,
     deadlineAt: new Date(now + 15 * 60_000).toISOString(), now: () => now,
   }), false)
+  for (const remaining of [22 * 60_000 - 1, 22 * 60_000]) {
+    assert.equal(await armed.waitForProviderDrain({
+      readState: async () => assert.fail('no read at or below the 22-minute boundary'), signal,
+      deadlineAt: new Date(now + remaining).toISOString(), now: () => now,
+    }), false)
+  }
+  let boundaryReads = 0
+  assert.equal(await armed.waitForProviderDrain({
+    readState: async () => { boundaryReads += 1; return { projectRef: 'qdmvngjwkcsilzmqksme',
+      controlsEnabled: false, runtimeSessions: 0 } }, signal,
+    deadlineAt: new Date(now + 22 * 60_000 + 1).toISOString(), now: () => now,
+  }), true)
+  assert.equal(boundaryReads, 1)
 
   const hanging = new AbortController()
   const pending = armed.waitForProviderDrain({
@@ -216,22 +237,24 @@ test('provider waits for temporary Preview-probe sessions before claiming its wr
 
   let lateClock = now
   assert.equal(await armed.waitForProviderDrain({
-    readState: async () => { lateClock += 3 * 60_000; return {
+    readState: async () => { lateClock += 6 * 60_000; return {
       projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false, runtimeSessions: 0 } },
     signal, deadlineAt, now: () => lateClock,
   }), false)
 })
 
 test('assembled provider step reads zero sessions before the provider write', async () => {
-  const calls = [], built = armed.createStagingGeneration23FixedWorkerAssembly({
+  const calls = [], f = factories(calls), built = armed.createStagingGeneration23FixedWorkerAssembly({
     credentials: { ...credentials }, fetch: async () => {}, expiresAt: expiry, preflight,
     checkoutTarget: checkout, runCli: async () => ({ status: 'COMPLETED' }),
-    now: () => now, factories: factories(calls),
+    now: () => now, factories: f,
   })
   try {
     assert.equal((await built.ports.enableProvider({ signal,
       phaseDeadlineAt: expiry })).status, 'PROVIDER_ENABLED_VERIFIED')
     assert.deepEqual(calls.slice(-2), ['backend-state', 'provider-enable'])
+    assert.equal(f.captured.providerEnable.latestDispatchAt,
+      new Date(Date.parse(expiry) - 21 * 60_000).toISOString())
   } finally { built.dispose() }
 })
 
@@ -242,7 +265,7 @@ test('provider step stops a hung update or readback before the shutdown reserve'
       run: ({ signal: child }) => new Promise(() => {
         child.addEventListener('abort', () => { cancelled = true }, { once: true })
       }),
-      signal, deadlineAt: new Date(now + 15 * 60_000 + 20).toISOString(),
+      signal, deadlineAt: new Date(now + 20 * 60_000 + 20).toISOString(),
       now: () => now,
     })
     assert.equal(result.status, 'PROVIDER_DEADLINE_HOLD', label)
@@ -250,7 +273,7 @@ test('provider step stops a hung update or readback before the shutdown reserve'
   }
   assert.equal((await armed.runProviderBeforeShutdownReserve({
     run: async () => assert.fail('no provider call after reserve'), signal,
-    deadlineAt: new Date(now + 15 * 60_000).toISOString(), now: () => now,
+    deadlineAt: new Date(now + 20 * 60_000).toISOString(), now: () => now,
   })).status, 'PROVIDER_DEADLINE_HOLD')
 })
 
@@ -348,9 +371,9 @@ test('assembled consumers record real website and broker boundaries before activ
           if (scenario.brokerThrows) throw Error('synthetic broker network failure')
           const status = scenario.brokerStatus ?? 200
           return new Response(JSON.stringify(status === 200
-            ? { status: 'PASS', windowId: 'b04834a8-89a7-4f3f-b941-623c925786d5', expiresAt: expiry }
+            ? { status: 'PASS', windowId: 'c216a47f-5445-4076-860c-451aa8d2931e', expiresAt: expiry }
             : { status: 'FAIL' }), { status, headers: { 'content-type': 'application/json',
-              'x-tll-broker-revision': 'tll-gen23-v12-cart-route-1' } })
+              'x-tll-broker-revision': 'tll-gen23-v13-cart-route-1' } })
         }
         throw Error('unexpected synthetic target')
       }
