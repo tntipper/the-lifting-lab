@@ -42,12 +42,14 @@ function factories(calls, final = {}) {
     createHosted(input) { calls.push('hosted'); assert.equal(input.expectedDeployment.gitSourceCommit, preflight.requirements.sourceCommit)
       return { ports: hostedPorts, getDatabaseMaterial: () => ({ passwords: {}, verifiers: {} }), dispose() { calls.push('dispose:hosted') } } },
     createDatabase() { calls.push('database'); return { components: {
-      databaseSetup: { run: databaseResult('SETUP_VERIFIED') }, restrictedConnections: { prove: databaseResult('PASS_RESTRICTED_CONNECTIONS') },
+      databaseSetup: { run: async () => { calls.push('database-setup'); return { status: 'SETUP_VERIFIED' } } },
+      restrictedConnections: { prove: databaseResult('PASS_RESTRICTED_CONNECTIONS') },
       providerEnable: databaseResult('PROVIDER_ENABLED_VERIFIED'), controlsEnable: { run: databaseResult('CONTROL_ACTIVATION_VERIFIED') },
       controlsDisable: { run: databaseResult('SHUTDOWN_VERIFIED') }, providerDisable: databaseResult('PROVIDER_DISABLED_VERIFIED'),
       readBackendState: async () => ({ projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false, runtimeSessions: 0 }),
       databaseRetire: { run: databaseResult('RETIREMENT_VERIFIED') }, readRetiredState: databaseResult(final.database ?? 'PASS_FINAL_RETIRED'),
       readBrokerHeld: databaseResult(final.broker ?? 'HELD'),
+      readBrokerWindowActive: async () => { calls.push('broker-guard'); return { status: final.guard ?? 'ACTIVE_GUARDS' } },
     }, dispose() { calls.push('dispose:database') } } },
     createVariantReader() { return { read: async () => ({ status: 'SHOPIFY_STAGING_VARIANT_PRICE_VERIFIED' }), dispose() { calls.push('dispose:variant') } } },
     createConsumerProof() { return { prove: async () => ({ status: 'CONSUMERS_READY_VERIFIED', deployment: { deploymentId: 'dpl_consumer' } }) } },
@@ -105,6 +107,22 @@ test('starting-state check refuses a broker response without the reviewed source
   })
   try { await assert.rejects(built.ports.readBaseline({ signal }), /unavailable/) }
   finally { built.dispose() }
+})
+
+test('settings read proves an active broker window before database setup is called', async () => {
+  for (const guard of ['ACTIVE_GUARDS', 'HELD']) {
+    const calls = [], built = armed.createStagingGeneration23FixedWorkerAssembly({
+      credentials: { ...credentials }, fetch: async () => {}, expiresAt: expiry, preflight,
+      checkoutTarget: checkout, runCli: async () => ({ status: 'COMPLETED' }), now: () => now,
+      factories: factories(calls, { guard }),
+    })
+    try {
+      if (guard === 'ACTIVE_GUARDS') assert.equal((await built.ports.readSettings({ signal })).status, 'SETTINGS_METADATA_VERIFIED')
+      else await assert.rejects(built.ports.readSettings({ signal }), /unavailable/)
+      assert.equal(calls.filter(value => value === 'broker-guard').length, 1)
+      assert.equal(calls.includes('database-setup'), false)
+    } finally { built.dispose() }
+  }
 })
 
 test('refuses a malformed fixed input before any factory can run', () => {

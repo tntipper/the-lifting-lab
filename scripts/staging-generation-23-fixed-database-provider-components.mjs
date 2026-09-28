@@ -98,6 +98,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
   }
   const readBrokerState = async ({ signal, expected, diagnostic }) => {
     requireLive(signal)
+    if (!['PASS', 'HELD', 'ACTIVE_GUARDS'].includes(expected)) unavailable()
     const binding = makeSupabase({ fetch: fetcher, managementToken })
     let brokerKey
     const controller = new AbortController()
@@ -114,11 +115,12 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       const url = 'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9'
       const response = await bounded(fetcher(url, Object.freeze({ method: 'GET', redirect: 'error', cache: 'no-store',
         headers: Object.freeze({ apikey: brokerKey.toString('utf8'),
+          ...(expected === 'ACTIVE_GUARDS' ? { 'x-tll-broker-guard-audit': 'tll-gen23-guard-audit/v1' } : {}),
           accept: 'application/json', 'accept-encoding': 'identity' }),
         signal: controller.signal })), controller.signal)
       diagnostic?.verified('broker_request', response?.status)
       diagnostic?.pending('broker_response_validation')
-      if (controller.signal.aborted || response?.status !== (expected === 'PASS' ? 200 : 404) || response.redirected === true
+      if (controller.signal.aborted || response?.status !== (expected === 'HELD' ? 404 : 200) || response.redirected === true
         || response.url && response.url !== url
         || response.headers?.get?.('x-tll-broker-revision') !== 'tll-gen23-v10-secret-key-1'
         || !/^application\/json(?:;|$)/i.test(response.headers?.get?.('content-type') ?? '')
@@ -137,7 +139,10 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
         const value = JSON.parse(bytes.toString('utf8'))
         if (expected === 'PASS' ? (!exact(value, ['status', 'windowId', 'expiresAt'])
           || value.status !== 'PASS' || value.windowId !== READINESS_WINDOW_ID || value.expiresAt !== expiresAt)
-          : (!exact(value, ['status']) || value.status !== 'held')) unavailable()
+          : expected === 'ACTIVE_GUARDS' ? (!exact(value, ['status', 'projectUrlMatches', 'brokerFlagOff', 'window'])
+            || value.status !== 'GUARDS' || value.projectUrlMatches !== true || value.brokerFlagOff !== true
+            || value.window !== 'active')
+            : (!exact(value, ['status']) || value.status !== 'held')) unavailable()
         diagnostic?.verified('broker_response_validation')
         return Object.freeze({ status: expected })
       } finally { bytes.fill(0); try { void reader.cancel().catch(() => {}) } catch {}; try { reader.releaseLock() } catch {} }
@@ -176,6 +181,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       providerEnable: ({ signal, expiresAt }) => withProvider({ action: 'ENABLE', signal, expiresAt }),
       readBrokerConsumer: ({ signal, diagnostic }) => readBrokerState({ signal, expected: 'PASS', diagnostic }),
       readBrokerHeld: ({ signal }) => readBrokerState({ signal, expected: 'HELD' }),
+      readBrokerWindowActive: ({ signal }) => readBrokerState({ signal, expected: 'ACTIVE_GUARDS' }),
       providerDisable: ({ signal, expiresAt }) => withProvider({ action: 'DISABLE', signal, expiresAt }),
       readBackendState: ({ signal, expiresAt }) => backendState({ signal, expiresAt }),
       readRetiredState: async ({ signal } = {}) => {

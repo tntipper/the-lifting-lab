@@ -228,7 +228,15 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
         return baseline
       },
       replaceSettings: input => hosted.ports.replaceSettings(input),
-      readSettings: input => hosted.ports.readSettings(input),
+      readSettings: async input => {
+        const result = await hosted.ports.readSettings(input)
+        if (result?.status !== 'SETTINGS_METADATA_VERIFIED') unavailable()
+        // The deployed broker must recognise this exact window before any
+        // temporary database login is installed. This audit does no DB I/O.
+        const guard = await database.components.readBrokerWindowActive(input)
+        if (guard?.status !== 'ACTIVE_GUARDS') unavailable()
+        return result
+      },
       setupDatabase: async ({ signal, phaseDeadlineAt }) => {
         const material = hosted.getDatabaseMaterial()
         return database.components.databaseSetup.run({ expiresAt, deadlineAt: phaseDeadlineAt, verifiers: material.verifiers, signal })

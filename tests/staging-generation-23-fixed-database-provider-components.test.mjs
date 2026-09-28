@@ -148,6 +148,32 @@ test('broker diagnostic records the request status before rejecting an active 50
   } finally { component.dispose() }
 })
 
+test('broker window audit accepts only the authenticated active staging guard before database setup', async () => {
+  const create = await armed()
+  let header, requests = 0
+  const make = window => create({ credentials: { managementToken,
+    vercelToken: Buffer.from('v'), previewBypass: Buffer.from('b') }, sourceCommit: 'a'.repeat(40), expiresAt,
+  fetch: async (_url, options) => {
+    requests++
+    header = options.headers['x-tll-broker-guard-audit']
+    assert.equal(options.headers.authorization, undefined)
+    assert.equal(options.headers.apikey, `sb_secret_${'d'.repeat(32)}`)
+    return new Response(JSON.stringify({ status: 'GUARDS', projectUrlMatches: true,
+      brokerFlagOff: true, window }), { status: 200,
+      headers: { 'content-type': 'application/json', 'x-tll-broker-revision': 'tll-gen23-v10-secret-key-1' } })
+  }, factories: { createSupabase: () => ({
+    async readNamedSecretKey() { return Buffer.from(`sb_secret_${'d'.repeat(32)}`) }, dispose() {},
+  }) } })
+  const active = make('active')
+  try { assert.deepEqual(await active.components.readBrokerWindowActive({ signal }), { status: 'ACTIVE_GUARDS' }) }
+  finally { active.dispose() }
+  const absent = make('absent')
+  try { await assert.rejects(absent.components.readBrokerWindowActive({ signal }), /unavailable/) }
+  finally { absent.dispose() }
+  assert.equal(header, 'tll-gen23-guard-audit/v1')
+  assert.equal(requests, 2)
+})
+
 test('broker held read rejects a gateway or stale source before setup', async () => {
   const create = await armed()
   for (const revision of [undefined, 'tll-gen23-v8-old']) {

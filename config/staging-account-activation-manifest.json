@@ -1341,7 +1341,7 @@
       },
       {
         "path": "scripts/staging-generation-23-fixed-database-provider-components.mjs",
-        "sha256": "b339f86f96305e25fd9e7fe835e7db8538eed67938e050fbace1a08ba64eab11"
+        "sha256": "63e1ae7bb38285aeeb94dbee75e073d8197e91db3a8523f2e051d122d3aa0847"
       },
       {
         "path": "scripts/staging-generation-23-fixed-hosted-adapters.mjs",
@@ -1353,7 +1353,7 @@
       },
       {
         "path": "scripts/staging-generation-23-fixed-worker-assembly.mjs",
-        "sha256": "68d18446bc2dc24910995b67af2b81f4b1e3a5142803732556070b9331e93a45"
+        "sha256": "7a6edcc70b0e5dc83699d8850b96d46d45fcb5a3dcd54f75285cdb88d66bc0ec"
       },
       {
         "path": "scripts/staging-generation-23-broker-gate-retire.mjs",
@@ -2093,7 +2093,7 @@
       },
       {
         "path": "tests/staging-generation-23-fixed-database-provider-components.test.mjs",
-        "sha256": "991fd4c1b06fafc6c36bfe26f1a888c9a17da1069a47aacc02b8a61bc963b166"
+        "sha256": "f78d9a0051e70a5f189f47e3cf44ee6f242b89db49e775ba8acb6a8e152246ab"
       },
       {
         "path": "tests/staging-generation-23-fixed-hosted-adapters.test.mjs",
@@ -2105,7 +2105,7 @@
       },
       {
         "path": "tests/staging-generation-23-fixed-worker-assembly.test.mjs",
-        "sha256": "1ab74f8cf1b3aa75b756afa2ecc3d25b529e320561737ccbe00c7eaf1790e638"
+        "sha256": "b292251c48ead5b73110b4e5eaa4d3021d908ffcb1ed68e6cbfec886cafbf4f8"
       },
       {
         "path": "tests/staging-generation-23-consumer-diagnostic.test.mjs",
