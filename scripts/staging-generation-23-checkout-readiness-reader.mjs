@@ -1,7 +1,7 @@
 /** Disabled single-read proof of the fifth switch on one protected immutable Preview. */
 import { STAGING_BRANCH, STAGING_PROJECT_REF, STAGING_ALIAS } from './staging-surface-activation-transport.mjs'
 
-export const STAGING_GENERATION_23_CHECKOUT_READINESS_READER_ENABLED = false
+export const STAGING_GENERATION_23_CHECKOUT_READINESS_READER_ENABLED = true
 const unavailable = () => { throw Error('Generation 23 checkout readiness unavailable') }
 const MAX_BYTES = 4096
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

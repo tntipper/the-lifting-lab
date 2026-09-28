@@ -3,7 +3,7 @@ import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline
 import { VERCEL_PASSWORD_NAMES } from './staging-generation-23-password-material.mjs'
 import { validateStagingGeneration23VercelPatchReceipt } from './staging-generation-23-vercel-targets.mjs'
 
-export const STAGING_GENERATION_23_VERCEL_REPLACER_ENABLED = false
+export const STAGING_GENERATION_23_VERCEL_REPLACER_ENABLED = true
 const MAX_RESPONSE_BYTES = 65_536
 const unavailable = () => { throw new Error('Generation 23 Vercel replacement unavailable') }
 const validToken = value => Buffer.isBuffer(value) && value.length >= 8 && value.length <= 1024

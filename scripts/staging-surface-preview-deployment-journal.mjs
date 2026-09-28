@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildStagingPreviewDeploymentRequest } from './staging-surface-preview-deployment-request.mjs'
 
-export const STAGING_PREVIEW_DEPLOYMENT_JOURNAL_ENABLED = false
+export const STAGING_PREVIEW_DEPLOYMENT_JOURNAL_ENABLED = true
 export const DEFAULT_PREVIEW_DEPLOYMENT_JOURNAL = fileURLToPath(new URL('../../implementation-state/staging/tll-preview-deployment-v1.json', import.meta.url))
 const SCHEMA = 'tll-staging-preview-deployment/v1'
 const unavailable = () => { throw new Error('Staging Preview deployment journal unavailable') }

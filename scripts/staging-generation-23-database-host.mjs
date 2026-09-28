@@ -7,7 +7,7 @@ import { prepareStagingGeneration23RecoverySql,
 import { prepareStagingGeneration23ControlShutdownSql,
   validateStagingGeneration23ControlShutdownReceipt } from './staging-generation-23-control-shutdown.mjs'
 
-export const STAGING_GENERATION_23_DATABASE_HOST_ENABLED = false
+export const STAGING_GENERATION_23_DATABASE_HOST_ENABLED = true
 const unavailable = () => { throw Error('Generation 23 database host unavailable') }
 
 /** The future launcher must bind `post` to the fixed staging SQL API and supervise its process group. */

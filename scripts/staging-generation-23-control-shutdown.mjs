@@ -7,7 +7,7 @@ import { EXACT_MIGRATIONS } from './staging-generation-21-retirement-preflight.m
 import { IDENTITIES } from './staging-generation-21-credentials.mjs'
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
 
-export const STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED = false
+export const STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED = true
 export const SHUTDOWN_ID = 'tll-staging-generation-23-control-shutdown/v1'
 const REASON = 'generation_23_shutdown'
 const preparedSql = new WeakMap()

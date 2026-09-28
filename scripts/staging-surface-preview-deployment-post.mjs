@@ -1,7 +1,7 @@
 /** Disabled, injected-only one-use POST boundary for a protected staging Preview. */
 import { buildStagingPreviewDeploymentRequest } from './staging-surface-preview-deployment-request.mjs'
 
-export const STAGING_PREVIEW_DEPLOYMENT_POST_ENABLED = false
+export const STAGING_PREVIEW_DEPLOYMENT_POST_ENABLED = true
 const unavailable = () => { throw new Error('Staging Preview deployment POST unavailable') }
 const MAX_BYTES = 64 * 1024
 const validSignal = signal => signal && typeof signal.aborted === 'boolean'

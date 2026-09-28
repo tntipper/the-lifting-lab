@@ -11,7 +11,7 @@ import {
 } from './staging-surface-activation-transport.mjs'
 import { STAGING_EDGE_FUNCTION } from './staging-surface-activation-native-adapter.mjs'
 
-export const NATIVE_SURFACE_ACTIVATION_BINDING_ENABLED = false
+export const NATIVE_SURFACE_ACTIVATION_BINDING_ENABLED = true
 export const VERCEL_PROJECT_ID = 'prj_kI5iqqor8Qa63EGRyhsi8e2yxpg4'
 export const VERCEL_PROJECT = 'the-lifting-lab'
 export const VERCEL_SCOPE = 'my-lifting-lab-s-projects'

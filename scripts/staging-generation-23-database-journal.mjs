@@ -4,7 +4,7 @@ import * as fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_DATABASE_JOURNAL_ENABLED = false
+export const STAGING_GENERATION_23_DATABASE_JOURNAL_ENABLED = true
 const ACTIONS = Object.freeze(['SETUP', 'ACTIVATE', 'SHUTDOWN', 'RETIRE'])
 const SCHEMA = 'tll-generation-23-database-dispatch/v1'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/

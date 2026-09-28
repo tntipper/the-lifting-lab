@@ -1,7 +1,7 @@
 /** Disabled, injected-only control for the extra Preview checkout handoff switch. */
 import { STAGING_BRANCH } from './staging-surface-activation-transport.mjs'
 
-export const STAGING_GENERATION_23_CHECKOUT_SETTING_ENABLED = false
+export const STAGING_GENERATION_23_CHECKOUT_SETTING_ENABLED = true
 export const CHECKOUT_SETTING_NAME = 'TLL_STAGING_CART_CHECKOUT_HANDOFF_ENABLED'
 const unavailable = () => { throw Error('Generation 23 checkout setting unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

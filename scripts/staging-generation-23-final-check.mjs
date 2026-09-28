@@ -7,7 +7,7 @@ import { GENERATION, PROJECT_REF } from './staging-generation-23-password-materi
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
 import { ACTIVE_WINDOW_EXPIRES_AT, WINDOW_ID } from './staging-generation-23-credentials.mjs'
 
-export const STAGING_GENERATION_23_FINAL_CHECK_ENABLED = false
+export const STAGING_GENERATION_23_FINAL_CHECK_ENABLED = true
 export const QUERY_ID = 'tll-staging-generation-23-final-check/v1'
 const unavailable = () => { throw new Error('Generation 23 final check unavailable') }
 const quote = value => `'${value.replaceAll("'", "''")}'`

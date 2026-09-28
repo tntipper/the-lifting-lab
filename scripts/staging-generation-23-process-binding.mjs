@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runBoundedBrokerRotationWorker, MAX_REVIEWED_EXTENDED_WORKER_MS } from './staging-provider-broker-rotation-process-control.mjs'
 
-export const STAGING_GENERATION_23_PROCESS_BINDING_ENABLED = false
+export const STAGING_GENERATION_23_PROCESS_BINDING_ENABLED = true
 export const GENERATION_23_WHOLE_WORKER_PROOF = 'TLL_STAGING_GENERATION_23_WHOLE_SUPERVISOR_V1'
 export const GENERATION_23_WHOLE_WORKER_PATH = fileURLToPath(
   new URL('./staging-generation-23-worker-entry.mjs', import.meta.url))

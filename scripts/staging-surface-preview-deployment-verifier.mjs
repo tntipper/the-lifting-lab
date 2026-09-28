@@ -5,7 +5,7 @@ import {
 import { VERCEL_PROJECT_ID, VERCEL_TEAM_ID } from './staging-surface-activation-native-binding.mjs'
 import { buildStagingPreviewDeploymentRequest } from './staging-surface-preview-deployment-request.mjs'
 
-export const STAGING_PREVIEW_DEPLOYMENT_VERIFIER_ENABLED = false
+export const STAGING_PREVIEW_DEPLOYMENT_VERIFIER_ENABLED = true
 export const PREVIEW_BUILD_POLL_LIMIT = 90
 export const PREVIEW_BUILD_POLL_INTERVAL_MS = 2000
 export const PREVIEW_BUILD_DEADLINE_MS = 180000
