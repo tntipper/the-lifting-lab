@@ -140,7 +140,7 @@ export async function runStagingGeneration23OwnerJourney({ immutableUrl, applica
     await verifyAlias({ signal })
     await page.goto(`${applicationOrigin}/products/${PRODUCT_ID}`,
       { waitUntil: 'domcontentloaded', timeout: 30_000 })
-    await page.getByRole('button', { name: /^Test cart, / }).click({ timeout: 15_000 })
+    await page.getByRole('button', { name: /^Basket, / }).click({ timeout: 15_000 })
     const cart = page.getByRole('dialog', { name: 'Test cart', exact: true })
     await cart.waitFor({ timeout: 15_000 })
     await cart.getByRole('button', { name: 'Connect guest cart' }).click({ timeout: 15_000 })

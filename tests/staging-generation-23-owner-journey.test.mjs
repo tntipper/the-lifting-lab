@@ -155,9 +155,11 @@ test('owner journey checks identity, isolation, cart amount and guarded checkout
   assert.equal(events.includes(`goto:${STAGING_ALIAS}/api/account/orders`), true)
   const guestAdd = events.indexOf('click:button:Add to test cart')
   const signIn = events.indexOf(`signed-in:${STAGING_ALIAS}/dashboard`)
+  const basketOpen = events.indexOf('click:button:/^Basket, /')
   const transfer = events.indexOf('click:dialog:Test cart > button:Connect guest cart')
   const checkout = events.indexOf('click:dialog:Test cart > button:Prepare staging checkout')
-  assert.ok(guestAdd >= 0 && guestAdd < signIn && signIn < transfer && transfer < checkout)
+  assert.ok(guestAdd >= 0 && guestAdd < signIn && signIn < basketOpen
+    && basketOpen < transfer && transfer < checkout)
   assert.equal(events.includes('guarded-checkout-get'), true)
   assert.equal(events.includes('click:button:Sign out of TLL and shop'), true)
   assert.equal(events.includes(`signed-in:${STAGING_ALIAS}/auth`), true)

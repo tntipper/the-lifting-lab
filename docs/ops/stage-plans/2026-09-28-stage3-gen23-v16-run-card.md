@@ -8,7 +8,7 @@ V16 is the fresh successor to the consumed and safely retired v15 attempt. V15 s
 
 V16 keeps the same credential, permission, staging-target, no-purchase and shutdown controls. It changes only the connection convergence behaviour: each role may use at most three fresh runtimes, with the existing fixed 16-second wait between attempts. The password is never changed or logged, every failed runtime is closed, the last failure still produces a safe HOLD, and no later phase can run unless all five restricted roles pass their exact identity, membership, function and denial checks.
 
-The renamed Basket control introduced by the approved website design is also reflected in the isolated browser test. This is a test-label correction only; it does not change basket behaviour.
+The renamed Basket control introduced by the approved website design is also reflected in both the isolated browser test and the supervised owner journey. This is a test-selector correction only; it does not change basket behaviour.
 
 ## Disabled v16 identity
 
