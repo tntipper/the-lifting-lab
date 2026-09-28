@@ -33,7 +33,7 @@ test('shutdown is one pinned transaction using narrow operator controls', async 
   assert.equal((sql.match(/\bCOMMIT;/g) ?? []).length, 1)
   assert.match(sql, /qdmvngjwkcsilzmqksme/)
   assert.match(sql, /wrhgscovsgsudtedbljr/)
-  assert.match(sql, /759bc8ed-5ecd-475c-8a4c-e35fcf628a73/)
+  assert.match(sql, /d5180b08-79ee-43e8-96d4-4f73621fecbf/)
   assert.match(sql, /operator_set_enabled\(false,'generation_23_shutdown'\)/)
   assert.match(sql, /rolconnlimit=2/)
   for (const setting of ['statement_timeout=10s', 'lock_timeout=5s',
@@ -49,7 +49,7 @@ test('only an exact, disabled-control receipt is accepted', async () => {
   const receipt = { status: 'PASS_CONTROLS_DISABLED',
     shutdownId: 'tll-staging-generation-23-control-shutdown/v1',
     projectRef: 'qdmvngjwkcsilzmqksme', generation: 23,
-    windowId: '759bc8ed-5ecd-475c-8a4c-e35fcf628a73', expiresAt,
+    windowId: 'd5180b08-79ee-43e8-96d4-4f73621fecbf', expiresAt,
     controlsEnabled: 0 }
   assert.match(validate([{ tll_generation_23_control_shutdown: receipt }],
     { expiresAt }).receiptSha256, /^[a-f0-9]{64}$/)
