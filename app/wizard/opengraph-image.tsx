@@ -9,7 +9,7 @@ export default function Image() {
   return renderOgCard({
     eyebrow: 'Find My Stack',
     title: 'Build Your Stack',
-    subtitle: 'Answer a few questions and get a personalised, evidence-based supplement stack.',
+    subtitle: 'Product recommendations unavailable. Browse research records and build a manual stack.',
     tag: 'Free Tool',
   })
 }

@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import TopNav from '@/components/TopNav'
 import FavouritesList from './FavouritesList'
+import AccountNavigation from '@/components/AccountNavigation'
 
 export const metadata: Metadata = {
   title: 'My Favourites — The Lifting Lab',
@@ -40,8 +41,9 @@ export default async function FavouritesPage() {
 
   return (
     <div className="min-h-screen bg-lab-bg text-white">
-      <TopNav />
+      <TopNav signedInInitial />
       <div className="max-w-5xl mx-auto px-6 py-10">
+        <AccountNavigation />
         <div className="mb-8">
           <h1 className="text-3xl font-black uppercase tracking-wide">
             My <span className="text-lab-lime">Favourites</span>

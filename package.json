@@ -12,14 +12,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "check:live-boundaries": "node scripts/staging-live-boundary-check.mjs",
+    "test": "npm run check:live-boundaries && node scripts/staging-account-activation-manifest.mjs --check && node scripts/staging-account-hosted-baseline-manifest.mjs --check && node --experimental-strip-types --test --test-concurrency=4 tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "test:integration": "node --test tests/integration/*.test.mjs"
+    "test:integration": "node --test tests/integration/*.test.mjs",
+    "test:accessibility": "node tests/browser/accessibility.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
+    "csv-parse": "7.0.2",
+    "jose": "6.2.12",
     "next": "15.5.25",
+    "pg": "8.23.0",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
@@ -27,14 +32,20 @@
     "@eslint/eslintrc": "3.3.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "0.28.2",
     "eslint": "^9",
     "eslint-config-next": "15.5.25",
+    "playwright": "1.62.1",
+    "supabase": "2.118.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vercel": "60.1.3"
   },
   "overrides": {
+    "tar": "7.5.22",
     "next": {
       "postcss": "8.5.28",
       "sharp": "0.35.4"

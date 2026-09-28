@@ -14,12 +14,14 @@ const callback = query => new URL(`/auth/callback${query ? `?${query}` : ''}`, o
 const validExchange = async () => ({ data: { session: { user: { id: 'test-user' } } }, error: null })
 
 for (const destination of [
+  '/account',
+  '/account/orders',
   '/dashboard',
   '/stack',
   '/favourites',
   '/account/settings',
   '/stack?view=saved#products',
-  '/dashboard?ref=TEST-CREW',
+  '/account?ref=TEST-CREW',
   '/favourites?search=vitamin%20C',
   '/stack?label=caf%C3%A9',
   '/stack?label=R%26D',
@@ -48,7 +50,7 @@ for (const destination of [
 ]) {
   const label = destination?.length > 100 ? `${destination.slice(0, 60)}… (${destination.length} characters)` : destination
   test(`rejects unsupported or ambiguous destination ${JSON.stringify(label)}`, () => {
-    assert.equal(safeAuthReturnPath(destination), '/dashboard')
+    assert.equal(safeAuthReturnPath(destination), '/account')
   })
 }
 
@@ -68,7 +70,7 @@ test('successful exchange is required before returning to a supported local rout
 test('successful exchange defaults safely for missing, external or duplicate next parameters', async () => {
   for (const query of ['code=test', 'code=test&next=https%3A%2F%2Foutside.example', 'code=test&next=%2Fstack&next=%2Ffavourites']) {
     const response = await completeAuthCallback(callback(query), validExchange)
-    assert.equal(response.headers.get('location'), `${origin}/dashboard`)
+    assert.equal(response.headers.get('location'), `${origin}/account`)
   }
 })
 

@@ -1,265 +1,125 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
-import { scoreColor } from '@/components/ScoreBadge'
-import type { ScoredProduct } from '@/lib/products'
+import { formatListedServingPrice, type ScoredProduct } from '@/lib/products'
 
-type GroupStats = { count: number; topScore: number | null }
+type GroupStats = { count: number; lowestServingCost: number | null }
+type CategoryGridProps = { products?: ScoredProduct[]; variant?: 'full' | 'compact' }
+const EMPTY_PRODUCTS: ScoredProduct[] = []
 
-function hexToRgb(hex: string) {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `${r},${g},${b}`
+const COMPACT_CATEGORIES = [
+  { slug: 'protein', label: 'Protein', href: '/products?group=protein', categories: ['whey', 'whey-isolate', 'casein'] },
+  { slug: 'creatine', label: 'Creatine', href: '/products?category=creatine', categories: ['creatine'] },
+  { slug: 'pre-workout', label: 'Pre-workout', href: '/products?category=pre-workout', categories: ['pre-workout'] },
+  { slug: 'hydration', label: 'Hydration', href: '/products?category=hydration', categories: ['hydration'] },
+  { slug: 'bars', label: 'Bars', href: '/products?category=protein-bar', categories: ['protein-bar'] },
+  {
+    slug: 'health',
+    label: 'Health',
+    href: '/products?group=wellbeing',
+    categories: CATEGORY_GROUPS.find((group) => group.slug === 'wellbeing')?.categories ?? [],
+  },
+] as const
+
+function statsFor(products: ScoredProduct[], categories: readonly string[]): GroupStats {
+  const matches = products.filter((product) => categories.includes(product.category))
+  const servingCosts = matches
+    .map((product) => product.cost_per_serving)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0)
+
+  return {
+    count: matches.length,
+    lowestServingCost: servingCosts.length > 0 ? Math.min(...servingCosts) : null,
+  }
 }
 
-function TileCard({
-  group,
-  stats,
-}: {
-  group: (typeof CATEGORY_GROUPS)[0]
-  stats: GroupStats | undefined
-}) {
-  const ref = useRef<HTMLAnchorElement>(null)
-  const topScore = stats?.topScore ?? null
-  const scoreCol = topScore != null ? scoreColor(topScore) : null
-  const rgb = hexToRgb(group.accent)
-
-  function handleMouseMove(e: React.MouseEvent) {
-    const el = ref.current
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%')
-    el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%')
-  }
-
+function TileCard({ group, stats }: { group: (typeof CATEGORY_GROUPS)[0]; stats: GroupStats | undefined }) {
   return (
-    <>
-      <style>{`
-        .tile-${group.slug} {
-          --glint: 0;
-        }
-        .tile-${group.slug}:hover {
-          --glint: 0.06;
-          border-color: rgba(${rgb},0.4) !important;
-          box-shadow: 0 8px 28px rgba(0,0,0,0.55), 0 0 16px rgba(${rgb},0.15), inset 0 1px 0 rgba(255,255,255,0.06) !important;
-          transform: translateY(-3px);
-        }
-      `}</style>
-      <Link
-        ref={ref}
-        href={`/products?group=${group.slug}`}
-        onMouseMove={handleMouseMove}
-        className={`tile-${group.slug} beam group relative block rounded-2xl transition-all duration-250 active:scale-[0.97]`}
-        style={
-          {
-            '--mx': '50%',
-            '--my': '30%',
-            background: `
-              radial-gradient(240px circle at var(--mx) var(--my), rgba(255,255,255,var(--glint,0)) 0%, transparent 60%),
-              linear-gradient(160deg, rgba(${rgb},0.09) 0%, #0f0f0f 55%)
-            `,
-            border: `1px solid rgba(${rgb},0.2)`,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-          } as React.CSSProperties
-        }
-      >
-        {/* shimmer top edge */}
-        <span
-          className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
-          style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.4),transparent)` }}
-        />
-
-      <div className="flex flex-col gap-0 p-4">
-        {/* icon tile — larger */}
-        <div
-          className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shrink-0"
-          style={{
-            background: `linear-gradient(160deg, rgba(${rgb},0.16), rgba(${rgb},0.06))`,
-            border: `1px solid rgba(${rgb},0.35)`,
-            boxShadow: `0 8px 20px rgba(0,0,0,0.55), 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)`,
-          }}
-        >
-          {/* icon bloom */}
-          <span
-            className="pointer-events-none absolute inset-[-6px] rounded-[18px]"
-            style={{
-              background: `radial-gradient(ellipse at center, rgba(${rgb},0.25) 0%, transparent 70%)`,
-              filter: 'blur(7px)',
-            }}
-          />
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="relative z-10 w-8 h-8"
-            style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.5' }}
-            dangerouslySetInnerHTML={{ __html: group.iconSvg }}
-          />
+    <Link href={`/products?group=${group.slug}`} className="group flex min-h-36 flex-col justify-between rounded-xl border border-lab-border bg-lab-panel p-4 transition-colors hover:border-[#7c7e72]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="tll-display text-[26px] leading-7 text-white">{group.label}</p>
+          <p className="mt-2 text-sm leading-5 text-lab-muted">{group.tagline}</p>
         </div>
-
-        {/* label + tagline */}
-        <p className="text-white font-black text-[18px] leading-none tracking-tight">{group.label}</p>
-        <p className="text-[12px] mt-1.5 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>{group.tagline}</p>
-
-        {/* bottom row: product count + top score */}
-        <div className="flex items-center justify-between mt-4 pt-3" style={{ borderTop: `1px solid rgba(${rgb},0.12)` }}>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-white/35">
-            {stats ? `${stats.count} ranked` : '…'}
-          </span>
-          {topScore != null && scoreCol && (
-            <span
-              className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border"
-              style={{ color: scoreCol, borderColor: `${scoreCol}44`, background: `${scoreCol}14` }}
-            >
-              top {topScore}
-            </span>
-          )}
-        </div>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 shrink-0" style={{ stroke: group.accent, strokeWidth: '1.5' }} dangerouslySetInnerHTML={{ __html: group.iconSvg }} />
+      </div>
+      <div className="mt-5 flex items-center justify-between gap-3 border-t border-lab-border pt-3 text-xs text-lab-muted">
+        <span>{stats ? `${stats.count} listed` : 'Loading…'}</span>
+        <span className="font-semibold text-lab-lime group-hover:underline">Explore →</span>
       </div>
     </Link>
-    </>
   )
 }
 
 function GuideTile() {
-  const rgb = '166,226,46'
   return (
-    <Link
-      href="/guide"
-      className="beam relative block rounded-2xl transition-all duration-250 active:scale-[0.97]"
-      style={{
-        background: `linear-gradient(160deg, rgba(${rgb},0.07) 0%, #0f0f0f 55%)`,
-        border: `1px solid rgba(${rgb},0.15)`,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-      }}
-    >
-      <span
-        className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
-        style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.3),transparent)` }}
-      />
-      <div className="flex flex-col gap-0 p-4">
-        <div
-          className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shrink-0"
-          style={{
-            background: `linear-gradient(160deg, rgba(${rgb},0.14), rgba(${rgb},0.05))`,
-            border: `1px solid rgba(${rgb},0.3)`,
-            boxShadow: `0 8px 20px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.1)`,
-          }}
-        >
-          <span
-            className="pointer-events-none absolute inset-[-6px] rounded-[18px]"
-            style={{
-              background: `radial-gradient(ellipse at center, rgba(${rgb},0.2) 0%, transparent 70%)`,
-              filter: 'blur(7px)',
-            }}
-          />
-          <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 w-8 h-8" style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.5' }}>
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/>
-          </svg>
-        </div>
-        <p className="text-white font-black text-[18px] leading-none tracking-tight">Guides</p>
-        <p className="text-[12px] mt-1.5 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>How to supplement smart</p>
-        <div className="flex items-center mt-4 pt-3" style={{ borderTop: `1px solid rgba(${rgb},0.1)` }}>
-          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>Read guides →</span>
-        </div>
+    <Link href="/guide" className="group flex min-h-36 flex-col justify-between rounded-xl border border-lab-border bg-lab-panel p-4 transition-colors hover:border-[#7c7e72]">
+      <div>
+        <p className="tll-display text-[26px] leading-7 text-white">Guides</p>
+        <p className="mt-2 text-sm leading-5 text-lab-muted">How to research supplements with confidence.</p>
       </div>
+      <span className="mt-5 border-t border-lab-border pt-3 text-xs font-semibold text-lab-lime group-hover:underline">Read guides →</span>
     </Link>
   )
 }
 
-// LIFT app — external tile. Same dark treatment as the category tiles,
-// ice blue used only as the accent. Plain <a> (external link), new tab.
 function LiftAppTile() {
-  const rgb = '165,227,245' // #A5E3F5 ice blue
   return (
-    <>
-      <style>{`
-        .tile-liftapp:hover {
-          border-color: rgba(${rgb},0.4) !important;
-          box-shadow: 0 8px 28px rgba(0,0,0,0.55), 0 0 16px rgba(${rgb},0.15), inset 0 1px 0 rgba(255,255,255,0.06) !important;
-          transform: translateY(-3px);
-        }
-      `}</style>
-      <a
-        href="https://trylift.app"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="tile-liftapp beam relative block rounded-2xl transition-all duration-250 active:scale-[0.97]"
-        style={{
-          background: `linear-gradient(160deg, rgba(${rgb},0.07) 0%, #0f0f0f 55%)`,
-          border: `1px solid rgba(${rgb},0.15)`,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)',
-        }}
-      >
-        <span
-          className="pointer-events-none absolute top-0 left-[10%] right-[10%] h-px"
-          style={{ background: `linear-gradient(90deg,transparent,rgba(${rgb},0.3),transparent)` }}
-        />
-        <div className="flex flex-col gap-0 p-4">
-          <div
-            className="relative w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shrink-0"
-            style={{
-              background: `linear-gradient(160deg, rgba(${rgb},0.14), rgba(${rgb},0.05))`,
-              border: `1px solid rgba(${rgb},0.3)`,
-              boxShadow: `0 8px 20px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.1)`,
-            }}
-          >
-            <span
-              className="pointer-events-none absolute inset-[-6px] rounded-[18px]"
-              style={{
-                background: `radial-gradient(ellipse at center, rgba(${rgb},0.2) 0%, transparent 70%)`,
-                filter: 'blur(7px)',
-              }}
-            />
-            <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 w-8 h-8" style={{ stroke: `rgba(${rgb},1)`, strokeWidth: '1.5' }}>
-              <rect x="7" y="2" width="10" height="20" rx="2.5" />
-              <path d="M11 18.5h2" />
-            </svg>
-          </div>
-          <p className="text-white font-black text-[18px] leading-none tracking-tight">LIFT App</p>
-          <p className="text-[12px] mt-1.5 leading-tight" style={{ color: `rgba(${rgb},0.75)` }}>Free iPhone beta — training, nutrition &amp; recovery</p>
-          <div className="flex items-center mt-4 pt-3" style={{ borderTop: `1px solid rgba(${rgb},0.1)` }}>
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: `rgba(${rgb},0.6)` }}>Get the app →</span>
-          </div>
-        </div>
-      </a>
-    </>
+    <a href="https://trylift.app" target="_blank" rel="noopener noreferrer" className="group flex min-h-36 flex-col justify-between rounded-xl border border-lab-border bg-lab-panel p-4 transition-colors hover:border-[#7c7e72]">
+      <div>
+        <p className="tll-display text-[26px] leading-7 text-white">LIFT App</p>
+        <p className="mt-2 text-sm leading-5 text-lab-muted">Free iPhone beta for training, nutrition and recovery.</p>
+      </div>
+      <span className="mt-5 border-t border-lab-border pt-3 text-xs font-semibold text-lab-lime group-hover:underline">Get the app ↗</span>
+    </a>
   )
 }
 
-export default function CategoryGrid() {
-  const [stats, setStats] = useState<Record<string, GroupStats>>({})
+export default function CategoryGrid({ products: suppliedProducts, variant = 'full' }: CategoryGridProps) {
+  const initialProducts = suppliedProducts ?? EMPTY_PRODUCTS
+  const [products, setProducts] = useState(initialProducts)
 
   useEffect(() => {
+    if (initialProducts.length > 0) {
+      setProducts(initialProducts)
+      return
+    }
+
     fetch('/api/products?sort=score')
-      .then((r) => r.json())
-      .then((products: ScoredProduct[]) => {
-        const computed: Record<string, GroupStats> = {}
-        for (const group of CATEGORY_GROUPS) {
-          const matches = products.filter((p) => group.categories.includes(p.category))
-          const scores = matches.map((p) => p.score).filter((s): s is number => s != null)
-          computed[group.slug] = {
-            count: matches.length,
-            topScore: scores.length > 0 ? Math.max(...scores) : null,
-          }
-        }
-        setStats(computed)
-      })
+      .then((response) => response.json())
+      .then((catalogue: ScoredProduct[]) => setProducts(catalogue))
       .catch(() => {})
-  }, [])
+  }, [suppliedProducts, initialProducts])
+
+  const fullStats = useMemo(() => Object.fromEntries(
+    CATEGORY_GROUPS.map((group) => [group.slug, statsFor(products, group.categories)]),
+  ) as Record<string, GroupStats>, [products])
+
+  if (variant === 'compact') {
+    return (
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6">
+        {COMPACT_CATEGORIES.map((category) => {
+          const stats = statsFor(products, category.categories)
+          const countLabel = `${stats.count} ${stats.count === 1 ? 'product' : 'products'}`
+          const priceLabel = stats.lowestServingCost !== null ? ` · from ${formatListedServingPrice(stats.lowestServingCost)}` : ''
+
+          return (
+            <Link key={category.slug} href={category.href} className="group flex min-h-[76px] flex-col justify-center rounded-xl border border-[#ddddd3] bg-white px-3.5 py-3 text-[#12120f] transition-colors hover:border-[#77786d] sm:min-h-[82px] sm:px-4">
+              <span className="tll-display text-[21px] leading-none sm:text-[24px]">{category.label}</span>
+              <span className="mt-2 text-[11px] leading-none text-[#62645a] sm:text-xs">{countLabel}{priceLabel}</span>
+            </Link>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {CATEGORY_GROUPS.map((group) => (
-        <TileCard key={group.slug} group={group} stats={stats[group.slug]} />
-      ))}
-      {/* Guides — static tile, always last */}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {CATEGORY_GROUPS.map((group) => <TileCard key={group.slug} group={group} stats={fullStats[group.slug]} />)}
       <GuideTile />
-      {/* LIFT app — external, ice-blue accent */}
       <LiftAppTile />
     </div>
   )

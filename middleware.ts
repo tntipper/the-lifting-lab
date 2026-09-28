@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { isSyntheticPreview, isHostedStaging, isPreviewAccountPath, previewUnavailableResponse, stagingConnectionPolicy } from './lib/preview-mode'
+import { isSyntheticPreview, isHostedStaging, isPreviewAccountPath, isPreviewFixtureRead, previewUnavailableResponse, stagingConnectionPolicy } from './lib/preview-mode'
 
 export function middleware(request: NextRequest) {
   if (!isSyntheticPreview()) {
@@ -12,7 +12,8 @@ export function middleware(request: NextRequest) {
     return response
   }
   const path = request.nextUrl.pathname
-  if (path === '/api' || path.startsWith('/api/') || !['GET', 'HEAD'].includes(request.method)) {
+  const apiPath = path === '/api' || path.startsWith('/api/')
+  if ((apiPath && !isPreviewFixtureRead(path, request.method)) || !['GET', 'HEAD'].includes(request.method)) {
     return previewUnavailableResponse()
   }
   const response = isPreviewAccountPath(path)

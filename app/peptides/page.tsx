@@ -79,8 +79,7 @@ export default function PeptidesPage() {
           &ldquo;Peptides&rdquo; is one of the most hyped words in fitness right now, and most of what is being sold
           online is unlicensed injectables with the marketing miles ahead of the evidence. Here is the honest
           version: the few peptides that are actually proven and legal to buy, the powerful ones that are
-          prescription medicines, and the grey-market vials to steer clear of — scored in the same green, amber
-          and red we use on products.
+          prescription medicines, and the grey-market vials to steer clear of. Historical product scores are unverified and do not grant effectiveness recommendations.
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
           {itemCount()} of the most-searched peptides below, and only {worksN} are things you can genuinely buy
@@ -210,19 +209,14 @@ export default function PeptidesPage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Spend on what actually moves the needle</h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            The unglamorous truth is that the things that build muscle, aid recovery and support your hormones are
-            the boring, proven, legal ones — enough protein, creatine, sleep and a sensible base of supplements at
-            a proper dose. Every product we track is scored 0&ndash;100 on how closely it matches the evidence, with
-            the true cost per effective serving, or let the wizard build a clean, sensible stack in a minute.
-          </p>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Explore product research records</h2>
+          <p className="text-lab-muted text-sm leading-relaxed mb-5">No approved effectiveness assessment is available. Historical scores cannot choose products or validate a dose. Browse recorded labels and listed prices, or build a manual research stack.</p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best supplements 2026 →
+              Product research →
             </Link>
             <Link
               href="/wizard"
