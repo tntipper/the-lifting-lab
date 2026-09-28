@@ -8,6 +8,8 @@ V15 is the fresh successor to the consumed v14 attempt. V14 safely reached the f
 
 V15 removes Vercel CLI from the four customer/cart setting changes. It instead updates four already verified setting IDs through Vercel's HTTPS management API, then reads each setting back in decrypted form and requires the exact expected value, branch, Preview target, project and setting type. Every request has a twenty-second deadline and a late response cannot be accepted after a timeout. The Supabase command-line tool remains limited to the single Edge-secret operation it already completed successfully.
 
+The first fresh hosted inventory after disabled publication found that the cart setting's current ID contains `n`, not `8`. No live window or v15 record existed, all five settings were still off, and the Preview was still building. The fixed ID and a regression test were corrected before any arming change.
+
 ## Disabled v15 identity
 
 - Active window ID: `35b6910a-3a5c-4721-9452-f5074829f91c`.
@@ -19,7 +21,7 @@ V15 removes Vercel CLI from the four customer/cart setting changes. It instead u
 
 ## Evidence before publication
 
-- Full automated suite: 3,271 passed, two skipped, zero failed.
+- Full automated suite after the hosted-ID correction: 3,272 passed, two skipped, zero failed.
 - Type checking and the production build passed.
 - Lint completed with zero errors and 19 existing warnings outside this correction.
 - Both generated manifests, the live-boundary policy and `git diff --check` passed.

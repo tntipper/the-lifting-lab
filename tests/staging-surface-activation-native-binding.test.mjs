@@ -110,6 +110,22 @@ test('Vercel mutation rejects a decrypted readback that disagrees with the reque
   assert.equal(calls, 2, 'the rejected result must come from the independent decrypted readback')
 })
 
+test('Vercel cart mutation is pinned to the current hosted setting ID', async () => {
+  const calls = []
+  const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async (url, options) => {
+      calls.push({ url, method: options.method })
+      return jsonResponse(200, { id: '0pdakPUlRtuXn8pj', key: 'TLL_STAGING_CART_ENABLED',
+        gitBranch: 'codex/tll-integration', target: ['preview'], type: 'encrypted', visibility: 'config',
+        ...(options.method === 'GET' ? { decrypted: true, value: 'true' } : {}) }, url)
+    } })
+  await host.setVercelFlag(STAGING_SURFACE_TARGET, 'TLL_STAGING_CART_ENABLED', 'true', { signal })
+  assert.deepEqual(calls, [
+    { url: `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env/0pdakPUlRtuXn8pj?teamId=${VERCEL_TEAM_ID}`, method: 'PATCH' },
+    { url: `https://api.vercel.com/v1/projects/${VERCEL_PROJECT_ID}/env/0pdakPUlRtuXn8pj?teamId=${VERCEL_TEAM_ID}`, method: 'GET' },
+  ])
+})
+
 test('Vercel flag request aborts its own transport and never reads after an uncertain write', async () => {
   let calls = 0, aborted = false
   const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),

@@ -23,7 +23,7 @@ const MAX_RESPONSE_BYTES = 64 * 1024
 const STAGING_ALIAS_HOST = new URL(STAGING_ALIAS).hostname
 const VERCEL_SURFACE_FLAGS = Object.freeze({
   TLL_STAGING_CUSTOMER_ENABLED: Object.freeze({ id: 'd7igdi7ZsCPX37Dc', value: ['true', 'false'] }),
-  TLL_STAGING_CART_ENABLED: Object.freeze({ id: '0pdakPUlRtuX8pj', value: ['true', 'false'] }),
+  TLL_STAGING_CART_ENABLED: Object.freeze({ id: '0pdakPUlRtuXn8pj', value: ['true', 'false'] }),
   NEXT_PUBLIC_TLL_STAGING_CUSTOMER: Object.freeze({ id: 'FfUAQa5ND6RAnn2x', value: ['enabled', 'disabled'] }),
   NEXT_PUBLIC_TLL_STAGING_CART: Object.freeze({ id: '9f9dTcJFE1wcsPcA', value: ['enabled', 'disabled'] }),
 })
