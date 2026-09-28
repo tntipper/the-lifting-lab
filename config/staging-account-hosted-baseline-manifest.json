@@ -92,7 +92,7 @@
     },
     {
       "path": "package-lock.json",
-      "sha256": "007d5ca416d24c2dcd9d33285d2e047bcff822ec055d8bd67f68182b0df931d4"
+      "sha256": "40e1262c6290bc408c112bfd0d5bbd15d5c1ae2cb84d379125bd6f9fb407e0b9"
     },
     {
       "path": "docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md",
