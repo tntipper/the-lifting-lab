@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { PROJECT_REF, VERCEL_PASSWORD_NAMES, EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME } from './staging-generation-23-password-material.mjs'
 import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
 
-export const STAGING_GENERATION_23_SETTINGS_JOURNAL_ENABLED = true
+export const STAGING_GENERATION_23_SETTINGS_JOURNAL_ENABLED = false
 export const JOURNAL_PATH = resolve(import.meta.dirname,
   '../../implementation-state/staging/tll-generation-23-settings-v8.json')
 export const OPERATION_IDS = Object.freeze([

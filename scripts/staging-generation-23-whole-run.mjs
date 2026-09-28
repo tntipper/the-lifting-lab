@@ -1,5 +1,5 @@
 /** Disabled, injected-only flight plan for a complete protected Stage 3 rehearsal. */
-export const STAGING_GENERATION_23_WHOLE_RUN_ENABLED = true
+export const STAGING_GENERATION_23_WHOLE_RUN_ENABLED = false
 
 // Each operation is supplied by the test or, after separate review, a bounded
 // staging connector. This module owns no credentials and makes no requests.

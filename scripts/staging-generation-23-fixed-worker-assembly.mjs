@@ -28,7 +28,7 @@ import { runStagingPreviewDeploymentWorker } from './staging-surface-preview-dep
 import { STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_MAX_MS } from './staging-generation-23-restricted-connections.mjs'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_FIXED_WORKER_ASSEMBLY_ENABLED = true
+export const STAGING_GENERATION_23_FIXED_WORKER_ASSEMBLY_ENABLED = false
 
 const unavailable = () => { throw Error('Generation 23 fixed worker assembly unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

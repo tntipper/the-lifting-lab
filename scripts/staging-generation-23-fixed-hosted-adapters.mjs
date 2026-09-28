@@ -24,7 +24,7 @@ import { BROKER_SECRET_NAME } from './staging-provider-broker-rotation.mjs'
 import { HELD_SURFACE_FLAGS, STAGING_BRANCH, STAGING_ALIAS } from './staging-surface-activation-transport.mjs'
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
 
-export const STAGING_GENERATION_23_FIXED_HOSTED_ADAPTERS_ENABLED = true
+export const STAGING_GENERATION_23_FIXED_HOSTED_ADAPTERS_ENABLED = false
 const unavailable = () => { throw Error('Generation 23 fixed hosted adapters unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')

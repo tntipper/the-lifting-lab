@@ -1,7 +1,7 @@
 /** One protected, read-only Shopify staging-variant price proof before surface activation. */
 import { createStagingGeneration23ProtectedFetch } from './staging-generation-23-protected-fetch.mjs'
 
-export const STAGING_GENERATION_23_VARIANT_READINESS_READER_ENABLED = true
+export const STAGING_GENERATION_23_VARIANT_READINESS_READER_ENABLED = false
 export const STAGING_VARIANT_ID = 'gid://shopify/ProductVariant/57160491139412'
 const unavailable = () => { throw Error('Generation 23 variant readiness unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

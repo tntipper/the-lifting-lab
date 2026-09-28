@@ -6,7 +6,7 @@
  * must pass the already-armed, fixed-target ports and journals from the Gen23
  * modules.  A missing port stops before the whole-route runner is entered.
  */
-export const STAGING_GENERATION_23_HOSTED_ASSEMBLY_ENABLED = true
+export const STAGING_GENERATION_23_HOSTED_ASSEMBLY_ENABLED = false
 
 const unavailable = () => { throw Error('Generation 23 hosted assembly unavailable') }
 const signalOk = signal => signal && typeof signal.aborted === 'boolean'

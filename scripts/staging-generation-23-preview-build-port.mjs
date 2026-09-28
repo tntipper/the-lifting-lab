@@ -1,7 +1,7 @@
 /** Disabled bridge from the whole Gen23 route to two existing one-use Preview workers. */
 import { STAGING_BRANCH, STAGING_SURFACE_TARGET } from './staging-surface-activation-transport.mjs'
 
-export const STAGING_GENERATION_23_PREVIEW_BUILD_PORT_ENABLED = true
+export const STAGING_GENERATION_23_PREVIEW_BUILD_PORT_ENABLED = false
 const unavailable = () => { throw new Error('Generation 23 Preview build port unavailable') }
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

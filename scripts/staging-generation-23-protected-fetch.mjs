@@ -9,7 +9,7 @@
  */
 import { STAGING_ALIAS } from './staging-surface-activation-transport.mjs'
 
-export const STAGING_GENERATION_23_PROTECTED_FETCH_ENABLED = true
+export const STAGING_GENERATION_23_PROTECTED_FETCH_ENABLED = false
 export const STAGING_GENERATION_23_PROTECTED_READINESS_PATHS = Object.freeze([
   '/api/staging/readiness',
   '/api/staging/checkout-readiness',

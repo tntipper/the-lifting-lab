@@ -12,11 +12,11 @@ import { createStagingGeneration23FixedWorkerAssembly } from './staging-generati
 import { createStagingGeneration23FixedPreflight } from './staging-generation-23-fixed-preflight.mjs'
 import { readStagingGeneration23ArmingSourceFixed } from './staging-generation-23-arming-source-proof.mjs'
 
-export const STAGING_GENERATION_23_WORKER_ENTRY_ENABLED = true
+export const STAGING_GENERATION_23_WORKER_ENTRY_ENABLED = false
 // This independent switch makes the worker factory unavailable until a single
 // reviewed arming diff names every real port, journal and window expiry.
-export const STAGING_GENERATION_23_HOSTED_WORKER_ASSEMBLY_ENABLED = true
-export const STAGING_GENERATION_23_WORKER_CLI_ARMED = true
+export const STAGING_GENERATION_23_HOSTED_WORKER_ASSEMBLY_ENABLED = false
+export const STAGING_GENERATION_23_WORKER_CLI_ARMED = false
 export const GENERATION_23_WHOLE_WORKER_TERMINAL_SCHEMA = 'tll-staging-generation-23-whole-worker-terminal/v1'
 export const GENERATION_23_ORDERLY_ABORT_MS = 58 * 60 * 1000
 const unavailable = () => { throw Error('Generation 23 whole worker unavailable') }

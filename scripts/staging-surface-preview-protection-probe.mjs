@@ -1,7 +1,7 @@
 /** Credential-free proof that the new Preview and fixed alias deny public reads. */
 import { STAGING_ALIAS } from './staging-surface-activation-transport.mjs'
 
-export const STAGING_PREVIEW_PROTECTION_PROBE_ENABLED = true
+export const STAGING_PREVIEW_PROTECTION_PROBE_ENABLED = false
 const unavailable = () => { throw new Error('Staging Preview protection proof unavailable') }
 const MAX_BYTES = 8192
 const validSignal = signal => signal && typeof signal.aborted === 'boolean'

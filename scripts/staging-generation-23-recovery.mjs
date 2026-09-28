@@ -7,7 +7,7 @@ import { GENERATION, PROJECT_REF } from './staging-generation-23-password-materi
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
 import { ACTIVE_WINDOW_EXPIRES_AT, WINDOW_ID } from './staging-generation-23-credentials.mjs'
 
-export const STAGING_GENERATION_23_RECOVERY_ENABLED = true
+export const STAGING_GENERATION_23_RECOVERY_ENABLED = false
 export const RECOVERY_ID = 'tll-staging-generation-23-recovery/v1'
 const unavailable = () => { throw new Error('Generation 23 recovery unavailable') }
 const preparedSql = new WeakMap()

@@ -2,7 +2,7 @@
 import { HOSTED_BASELINE_VERCEL_TARGET } from './staging-account-hosted-baseline-vercel.mjs'
 import { selectStagingGeneration23VercelPasswordTargets } from './staging-generation-23-vercel-targets.mjs'
 
-export const STAGING_GENERATION_23_VERCEL_INVENTORY_READER_ENABLED = true
+export const STAGING_GENERATION_23_VERCEL_INVENTORY_READER_ENABLED = false
 const URL = `https://api.vercel.com/v10/projects/${HOSTED_BASELINE_VERCEL_TARGET.projectId}/env?limit=100&teamId=${HOSTED_BASELINE_VERCEL_TARGET.teamId}`
 const MAX_RESPONSE_BYTES = 65_536
 const unavailable = () => { throw new Error('Generation 23 Vercel inventory unavailable') }

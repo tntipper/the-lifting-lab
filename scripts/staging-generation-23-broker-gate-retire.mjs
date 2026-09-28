@@ -4,7 +4,7 @@ import * as fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { EDGE_READINESS_WINDOW_NAME, PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_BROKER_GATE_RETIRE_ENABLED = true
+export const STAGING_GENERATION_23_BROKER_GATE_RETIRE_ENABLED = false
 export const JOURNAL_PATH = resolve(import.meta.dirname,
   '../../implementation-state/staging/tll-generation-23-broker-gate-retire-v8.json')
 const URL = `https://api.supabase.com/v1/projects/${PROJECT_REF}/secrets`

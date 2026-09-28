@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-export const NATIVE_SURFACE_ACTIVATION_TRANSPORT_ENABLED = true
+export const NATIVE_SURFACE_ACTIVATION_TRANSPORT_ENABLED = false
 export const STAGING_PROJECT_REF = 'qdmvngjwkcsilzmqksme'
 export const PRODUCTION_PROJECT_REF = 'wrhgscovsgsudtedbljr'
 export const STAGING_BRANCH = 'codex/tll-integration'

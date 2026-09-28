@@ -7,8 +7,8 @@ import { GENERATION, PROJECT_REF } from './staging-generation-23-password-materi
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
 import { EXACT_MIGRATIONS } from './staging-generation-21-retirement-preflight.mjs'
 
-export const STAGING_GENERATION_23_CREDENTIALS_ENABLED = true
-export const ACTIVE_WINDOW_EXPIRES_AT = '2026-09-28T08:47:00.000Z'
+export const STAGING_GENERATION_23_CREDENTIALS_ENABLED = false
+export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'
 export const WINDOW_ID = 'f910c5cb-1a94-410a-8e8d-2c9704c1536a'
 export const PACKAGE_ID = 'tll-staging-generation-23-credentials/v1'
 export const MAX_WINDOW_MS = 60 * 60 * 1000

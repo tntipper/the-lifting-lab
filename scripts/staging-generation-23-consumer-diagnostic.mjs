@@ -4,7 +4,7 @@ import * as fs from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 
-export const STAGING_GENERATION_23_CONSUMER_DIAGNOSTIC_ENABLED = true
+export const STAGING_GENERATION_23_CONSUMER_DIAGNOSTIC_ENABLED = false
 export const JOURNAL_PATH = resolve(import.meta.dirname,
   '../../implementation-state/staging/tll-generation-23-consumer-diagnostic-v8.json')
 export const STAGES = Object.freeze([

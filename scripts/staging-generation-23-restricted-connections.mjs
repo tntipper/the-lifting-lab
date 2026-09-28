@@ -11,7 +11,7 @@ import { PROJECT_REF } from './staging-generation-23-password-material.mjs'
 import { IDENTITIES } from './staging-generation-6-credentials.mjs'
 import { checkServerIdentity } from 'node:tls'
 
-export const STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_ENABLED = true
+export const STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_ENABLED = false
 export const STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_MAX_MS = 360_000
 export const STAGING_GENERATION_23_CORRECT_ROLES_MAX_MS = 180_000
 export const STAGING_GENERATION_23_DRAIN_MAX_MS = 150_000

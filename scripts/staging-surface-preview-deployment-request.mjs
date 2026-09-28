@@ -5,7 +5,7 @@
 import { VERCEL_PROJECT, VERCEL_PROJECT_ID, VERCEL_TEAM_ID } from './staging-surface-activation-native-binding.mjs'
 import { STAGING_BRANCH } from './staging-surface-activation-transport.mjs'
 
-export const STAGING_PREVIEW_DEPLOYMENT_REQUEST_ENABLED = true
+export const STAGING_PREVIEW_DEPLOYMENT_REQUEST_ENABLED = false
 export const STAGING_GITHUB_REPOSITORY_ID = 1264363509
 export const STAGING_GITHUB_ORG = 'tntipper'
 export const STAGING_GITHUB_REPO = 'the-lifting-lab'
