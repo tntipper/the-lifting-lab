@@ -59,12 +59,16 @@ function bounded(promise, signal) {
   })
 }
 
-async function emptyReply(response, signal) {
+async function boundedReply(response, signal) {
   const length = response.headers?.get?.('content-length')
   const encoding = response.headers?.get?.('content-encoding')
   if (length != null && (!/^\d+$/.test(length) || Number(length) > 256)
-    || encoding != null && encoding !== '' && encoding !== 'identity'
-    || !response.body || typeof response.body.getReader !== 'function') unavailable()
+    || encoding != null && encoding !== '' && encoding !== 'identity') unavailable()
+  // The official API documents HTTP 200 with {}, but an empty response body
+  // has also accompanied a successful deletion. The subsequent names read,
+  // not response text, is the proof that this exact setting is absent.
+  if (!response.body) return
+  if (typeof response.body.getReader !== 'function') unavailable()
   const reader = response.body.getReader()
   let bytes = Buffer.alloc(0)
   try {
@@ -75,7 +79,6 @@ async function emptyReply(response, signal) {
       if (!(chunk.value instanceof Uint8Array) || bytes.length + chunk.value.length > 256) unavailable()
       const next = Buffer.concat([bytes, chunk.value]); bytes.fill(0); chunk.value.fill?.(0); bytes = next
     }
-    if (bytes.toString('utf8').trim() !== '{}') unavailable()
   } finally { bytes.fill(0); try { void reader.cancel().catch(() => {}) } catch {}; try { reader.releaseLock() } catch {} }
 }
 
@@ -107,7 +110,7 @@ export function createStagingGeneration23BrokerGateRetire({ token, fetch: fetche
           body: JSON.stringify([EDGE_READINESS_WINDOW_NAME]), signal: controller.signal })), controller.signal)
         if (controller.signal.aborted || response?.status !== 200 || response.redirected === true
           || response.url && response.url !== URL) unavailable()
-        await emptyReply(response, controller.signal)
+        await boundedReply(response, controller.signal)
         const names = await bounded(readNames({ signal: controller.signal }), controller.signal)
         if (controller.signal.aborted || !Array.isArray(names) || names.includes(EDGE_READINESS_WINDOW_NAME)) unavailable()
         persist(path, { ...record, state: 'VERIFIED' }, false)

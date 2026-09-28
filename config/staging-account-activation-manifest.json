@@ -1245,7 +1245,7 @@
       },
       {
         "path": "scripts/staging-generation-23-provider-control.mjs",
-        "sha256": "8b424e2e32a342aaa62b0c56ac8ca95d1d5b39538718299f271d562540245cb8"
+        "sha256": "d3b1e037e0be6e9c73f7dd09091395cfdf7d68560a3d3c772113f8308ec77fc5"
       },
       {
         "path": "scripts/staging-generation-23-provider-port.mjs",
@@ -1341,7 +1341,7 @@
       },
       {
         "path": "scripts/staging-generation-23-fixed-database-provider-components.mjs",
-        "sha256": "63e1ae7bb38285aeeb94dbee75e073d8197e91db3a8523f2e051d122d3aa0847"
+        "sha256": "3e661046edadc939a2d26a868a40dc5b29775ec2ed64aa169c1930f4ecd1aad2"
       },
       {
         "path": "scripts/staging-generation-23-fixed-hosted-adapters.mjs",
@@ -1353,11 +1353,11 @@
       },
       {
         "path": "scripts/staging-generation-23-fixed-worker-assembly.mjs",
-        "sha256": "7a6edcc70b0e5dc83699d8850b96d46d45fcb5a3dcd54f75285cdb88d66bc0ec"
+        "sha256": "930f4d05d2723573dcce137c7a5a45af240796f7a4f7014cee2531a6466884bc"
       },
       {
         "path": "scripts/staging-generation-23-broker-gate-retire.mjs",
-        "sha256": "eb4f8fd26efe3d10408afd7d37b18e7fa2cf37fa03898414cdee79d4c947e8c1"
+        "sha256": "0e61f3bdd58fea2a6a3a487e83d616494b84e0f6c39016a75bc6e0a3b198ec1c"
       },
       {
         "path": "scripts/staging-generation-23-consumer-diagnostic.mjs",
@@ -2009,7 +2009,7 @@
       },
       {
         "path": "tests/staging-generation-23-provider-control.test.mjs",
-        "sha256": "e45662bf3ed7ca3fd347b7166abd6b3c4ee5ac1bcdab899def30af06c7475e80"
+        "sha256": "a625cc48928c9e34345b0f8c16342923dbc846115bf16254297e4eb7101808c7"
       },
       {
         "path": "tests/staging-generation-23-provider-port.test.mjs",
@@ -2069,7 +2069,7 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "4f115d0bf7de54e07dbab0b23827fd6f672189986d50315217e629d6c2148f17"
+        "sha256": "6a7fb73346fe273ea7d8ba9b041dafee9e64104158662a8cdacbb30dc431d813"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
@@ -2105,7 +2105,7 @@
       },
       {
         "path": "tests/staging-generation-23-fixed-worker-assembly.test.mjs",
-        "sha256": "b292251c48ead5b73110b4e5eaa4d3021d908ffcb1ed68e6cbfec886cafbf4f8"
+        "sha256": "b6ed4f785eb5931bde18fa9ea139085066aceaddaac6af26905e290f16aef2b0"
       },
       {
         "path": "tests/staging-generation-23-consumer-diagnostic.test.mjs",
@@ -2117,7 +2117,7 @@
       },
       {
         "path": "tests/staging-generation-23-broker-gate-retire.test.mjs",
-        "sha256": "ba69d8e85fd57b238cfb53c82e33b91273c149d6ce851ae878fdceb6c4908813"
+        "sha256": "e5e5073f7fec56445a958493a1a40074eddfd3f7a11ddfb0cab7d80108b1cede"
       },
       {
         "path": "tests/staging-generation-23-hosted-assembly.test.mjs",

@@ -54,6 +54,22 @@ test('uncertain delete response holds the one-use record', () => workspace(async
   assert.equal(JSON.parse(await readFile(path, 'utf8')).state, 'HOLD')
 }))
 
+test('empty successful delete reply is resolved by the independent names read', () => workspace(async path => {
+  const retire = armed.createStagingGeneration23BrokerGateRetire({ token, path, makeRunId: () => runId,
+    fetch: async () => new Response(null, { status: 200 }), readNames: async () => [] })
+  assert.deepEqual(await retire.retire({ signal: new AbortController().signal }),
+    { status: 'BROKER_GATE_RETIRED_VERIFIED' })
+  assert.equal(JSON.parse(await readFile(path, 'utf8')).state, 'VERIFIED')
+}))
+
+test('a successful reply cannot hide a setting that is still present', () => workspace(async path => {
+  const retire = armed.createStagingGeneration23BrokerGateRetire({ token, path, makeRunId: () => runId,
+    fetch: async () => new Response(null, { status: 200 }),
+    readNames: async () => [EDGE_READINESS_WINDOW_NAME] })
+  await assert.rejects(retire.retire({ signal: new AbortController().signal }), /unavailable/)
+  assert.equal(JSON.parse(await readFile(path, 'utf8')).state, 'HOLD')
+}))
+
 test('an uncooperative network promise stops when the window is cancelled', () => workspace(async path => {
   const controller = new AbortController()
   const retire = armed.createStagingGeneration23BrokerGateRetire({ token, path, makeRunId: () => runId,

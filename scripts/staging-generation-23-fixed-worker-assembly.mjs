@@ -63,6 +63,57 @@ export async function waitForRetirementDrain({ readState, signal, deadlineAt,
   }
   return false
 }
+/** Stop observing early enough for provider preflight and the shutdown reserve. */
+export async function waitForProviderDrain({ readState, signal, deadlineAt,
+  now = Date.now, pause = wait } = {}) {
+  if (typeof readState !== 'function' || !signalOk(signal) || typeof now !== 'function'
+    || typeof deadlineAt !== 'string' || !Number.isFinite(Date.parse(deadlineAt))) return false
+  const stopAt = Math.min(now() + 120_000, Date.parse(deadlineAt) - 20 * 60_000)
+  if (!Number.isFinite(stopAt) || stopAt <= now()) return false
+  const boundedRead = async () => {
+    const remaining = Math.min(30_000, stopAt - now())
+    if (!signalOk(signal) || remaining <= 0) throw Error('Provider drain deadline reached')
+    const controller = new AbortController()
+    const abort = () => controller.abort()
+    signal.addEventListener('abort', abort, { once: true })
+    const timer = setTimeout(abort, remaining)
+    try {
+      return await Promise.race([
+        Promise.resolve().then(() => readState({ signal: controller.signal })),
+        new Promise((_, reject) => controller.signal.addEventListener('abort',
+          () => reject(Error('Provider drain read stopped')), { once: true })),
+      ])
+    } finally {
+      clearTimeout(timer); signal.removeEventListener('abort', abort); controller.abort()
+    }
+  }
+  // The shared helper reserves its own final 30 seconds. Subtract that here
+  // so its observation cutoff is exactly stopAt.
+  return waitForRetirementDrain({ readState: boundedRead, signal,
+    deadlineAt: new Date(stopAt + 30_000).toISOString(), now, pause })
+}
+/** Cap the entire provider preflight, update and readback before shutdown reserve. */
+export async function runProviderBeforeShutdownReserve({ run, signal, deadlineAt,
+  now = Date.now } = {}) {
+  if (typeof run !== 'function' || !signalOk(signal) || typeof now !== 'function'
+    || typeof deadlineAt !== 'string' || !Number.isFinite(Date.parse(deadlineAt)))
+    return Object.freeze({ status: 'PROVIDER_DEADLINE_HOLD' })
+  const remaining = Math.min(120_000, Date.parse(deadlineAt) - 15 * 60_000 - now())
+  if (!Number.isFinite(remaining) || remaining <= 0)
+    return Object.freeze({ status: 'PROVIDER_DEADLINE_HOLD' })
+  const controller = new AbortController()
+  const abort = () => controller.abort()
+  signal.addEventListener('abort', abort, { once: true })
+  const timer = setTimeout(abort, remaining)
+  try {
+    return await Promise.race([
+      Promise.resolve().then(() => run({ signal: controller.signal })),
+      new Promise((_, reject) => controller.signal.addEventListener('abort',
+        () => reject(Error('Provider step stopped')), { once: true })),
+    ])
+  } catch { return Object.freeze({ status: 'PROVIDER_DEADLINE_HOLD' }) }
+  finally { clearTimeout(timer); signal.removeEventListener('abort', abort); controller.abort() }
+}
 const token = value => Buffer.isBuffer(value) && value.length >= 8 && value.length <= 4096
   && !value.includes(0) && /^[\x21-\x7e]+$/.test(value.toString('utf8'))
 const iso = value => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.000Z$/.test(value)
@@ -252,7 +303,19 @@ export function createStagingGeneration23FixedWorkerAssembly({ credentials, fetc
       },
       proveConsumers: ({ signal }) => consumerProof.prove({ sourceCommit: preflight.requirements.sourceCommit,
         manifestSha256: preflight.requirements.manifestSha256, signal }),
-      enableProvider: ({ signal }) => database.components.providerEnable({ expiresAt, signal }),
+      enableProvider: async ({ signal, phaseDeadlineAt }) => {
+        // The protected consumer proof can leave idle Supavisor sessions behind.
+        // Wait read-only before claiming the provider's one-use write journal.
+        const drained = await waitForProviderDrain({
+          readState: ({ signal: child }) => database.components.readBackendState({ expiresAt, signal: child }),
+          signal, deadlineAt: phaseDeadlineAt, now,
+        })
+        if (!drained) return Object.freeze({ status: 'SESSION_DRAIN_HOLD' })
+        return runProviderBeforeShutdownReserve({ signal, deadlineAt: phaseDeadlineAt, now,
+          run: ({ signal: child }) => database.components.providerEnable({ expiresAt, signal: child,
+            latestDispatchAt: new Date(Date.parse(phaseDeadlineAt) - 17 * 60_000).toISOString() }),
+        })
+      },
       enableDatabase: ({ signal, phaseDeadlineAt }) => database.components.controlsEnable.run({ expiresAt, deadlineAt: phaseDeadlineAt, signal }),
       enableSurface: input => surface.ports.enableSurface(input),
       runOwnerJourney: input => surface.ports.runOwnerJourney(input),

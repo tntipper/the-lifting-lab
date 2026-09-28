@@ -44,9 +44,11 @@ function factories(calls, final = {}) {
     createDatabase() { calls.push('database'); return { components: {
       databaseSetup: { run: async () => { calls.push('database-setup'); return { status: 'SETUP_VERIFIED' } } },
       restrictedConnections: { prove: databaseResult('PASS_RESTRICTED_CONNECTIONS') },
-      providerEnable: databaseResult('PROVIDER_ENABLED_VERIFIED'), controlsEnable: { run: databaseResult('CONTROL_ACTIVATION_VERIFIED') },
+      providerEnable: async () => { calls.push('provider-enable'); return { status: 'PROVIDER_ENABLED_VERIFIED' } },
+      controlsEnable: { run: databaseResult('CONTROL_ACTIVATION_VERIFIED') },
       controlsDisable: { run: databaseResult('SHUTDOWN_VERIFIED') }, providerDisable: databaseResult('PROVIDER_DISABLED_VERIFIED'),
-      readBackendState: async () => ({ projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false, runtimeSessions: 0 }),
+      readBackendState: async () => { calls.push('backend-state'); return {
+        projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false, runtimeSessions: 0 } },
       databaseRetire: { run: databaseResult('RETIREMENT_VERIFIED') }, readRetiredState: databaseResult(final.database ?? 'PASS_FINAL_RETIRED'),
       readBrokerHeld: databaseResult(final.broker ?? 'HELD'),
       readBrokerWindowActive: async () => { calls.push('broker-guard'); return { status: final.guard ?? 'ACTIVE_GUARDS' } },
@@ -171,6 +173,85 @@ test('later customer sessions drain before the one-use retirement write is claim
       controlsEnabled: false, runtimeSessions: 0 } }, signal: cancelled.signal,
     deadlineAt: new Date(now + 5 * 60_000).toISOString(), now: () => now,
   }), false)
+})
+
+test('provider waits for temporary Preview-probe sessions before claiming its write', async () => {
+  let clock = now, reads = 0
+  const deadlineAt = new Date(now + 45 * 60_000).toISOString()
+  assert.equal(await armed.waitForProviderDrain({
+    readState: async () => ({ projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false,
+      runtimeSessions: reads++ < 2 ? 5 : 0 }), signal, deadlineAt,
+    now: () => clock, pause: async milliseconds => { clock += milliseconds },
+  }), true)
+  assert.equal(reads, 3)
+  const secondStart = clock
+  assert.equal(await armed.waitForProviderDrain({
+    readState: async () => ({ projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false,
+      runtimeSessions: 5 }), signal, deadlineAt, now: () => clock,
+    pause: async milliseconds => { clock += milliseconds },
+  }), false)
+  assert.equal(clock - secondStart <= 120_000, true)
+  assert.equal(await armed.waitForProviderDrain({
+    readState: async () => { throw Error('read failed') }, signal, deadlineAt,
+    now: () => now, pause: async () => assert.fail('no wait after failed read'),
+  }), false)
+  const cancelled = new AbortController()
+  assert.equal(await armed.waitForProviderDrain({
+    readState: async () => { cancelled.abort(); return { projectRef: 'qdmvngjwkcsilzmqksme',
+      controlsEnabled: false, runtimeSessions: 0 } }, signal: cancelled.signal,
+    deadlineAt, now: () => now,
+  }), false)
+  assert.equal(await armed.waitForProviderDrain({
+    readState: async () => assert.fail('no read without shutdown reserve'), signal,
+    deadlineAt: new Date(now + 15 * 60_000).toISOString(), now: () => now,
+  }), false)
+
+  const hanging = new AbortController()
+  const pending = armed.waitForProviderDrain({
+    readState: async () => new Promise(() => {}), signal: hanging.signal,
+    deadlineAt, now: () => now,
+  })
+  hanging.abort()
+  assert.equal(await pending, false)
+
+  let lateClock = now
+  assert.equal(await armed.waitForProviderDrain({
+    readState: async () => { lateClock += 3 * 60_000; return {
+      projectRef: 'qdmvngjwkcsilzmqksme', controlsEnabled: false, runtimeSessions: 0 } },
+    signal, deadlineAt, now: () => lateClock,
+  }), false)
+})
+
+test('assembled provider step reads zero sessions before the provider write', async () => {
+  const calls = [], built = armed.createStagingGeneration23FixedWorkerAssembly({
+    credentials: { ...credentials }, fetch: async () => {}, expiresAt: expiry, preflight,
+    checkoutTarget: checkout, runCli: async () => ({ status: 'COMPLETED' }),
+    now: () => now, factories: factories(calls),
+  })
+  try {
+    assert.equal((await built.ports.enableProvider({ signal,
+      phaseDeadlineAt: expiry })).status, 'PROVIDER_ENABLED_VERIFIED')
+    assert.deepEqual(calls.slice(-2), ['backend-state', 'provider-enable'])
+  } finally { built.dispose() }
+})
+
+test('provider step stops a hung update or readback before the shutdown reserve', async () => {
+  for (const label of ['update', 'readback']) {
+    let cancelled = false
+    const result = await armed.runProviderBeforeShutdownReserve({
+      run: ({ signal: child }) => new Promise(() => {
+        child.addEventListener('abort', () => { cancelled = true }, { once: true })
+      }),
+      signal, deadlineAt: new Date(now + 15 * 60_000 + 20).toISOString(),
+      now: () => now,
+    })
+    assert.equal(result.status, 'PROVIDER_DEADLINE_HOLD', label)
+    assert.equal(cancelled, true, label)
+  }
+  assert.equal((await armed.runProviderBeforeShutdownReserve({
+    run: async () => assert.fail('no provider call after reserve'), signal,
+    deadlineAt: new Date(now + 15 * 60_000).toISOString(), now: () => now,
+  })).status, 'PROVIDER_DEADLINE_HOLD')
 })
 
 // Exercise the actual nested website wrapper, protected body copy, broker read,

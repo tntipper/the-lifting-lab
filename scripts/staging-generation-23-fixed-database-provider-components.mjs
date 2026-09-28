@@ -80,7 +80,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
     return Object.freeze({ projectRef: state.projectRef, controlsEnabled: state.controlsEnabled,
       runtimeSessions: state.runtimeSessions })
   }
-  const withProvider = async ({ action, expiresAt, signal }) => {
+  const withProvider = async ({ action, expiresAt, signal, latestDispatchAt }) => {
     requireLive(signal)
     const binding = makeSupabase({ fetch: fetcher, managementToken })
     let projectSecret, port
@@ -90,7 +90,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
       port = makeProviderPort({ projectSecret, fetcher,
         readBackendState: async (_target, { signal: child }) => backendState({ expiresAt, signal: child }) })
       const journal = makeProviderJournal({ action })
-      return await runProvider({ action, port, journal, signal })
+      return await runProvider({ action, port, journal, signal, latestDispatchAt })
     } finally {
       try { port?.dispose?.() } catch {}
       projectSecret?.fill?.(0); binding?.dispose?.()
@@ -178,7 +178,7 @@ export function createStagingGeneration23FixedDatabaseProviderComponents({ crede
           return activation.activate({ context })
         } }).run(input)
       } },
-      providerEnable: ({ signal, expiresAt }) => withProvider({ action: 'ENABLE', signal, expiresAt }),
+      providerEnable: ({ signal, expiresAt, latestDispatchAt }) => withProvider({ action: 'ENABLE', signal, expiresAt, latestDispatchAt }),
       readBrokerConsumer: ({ signal, diagnostic }) => readBrokerState({ signal, expected: 'PASS', diagnostic }),
       readBrokerHeld: ({ signal }) => readBrokerState({ signal, expected: 'HELD' }),
       readBrokerWindowActive: ({ signal }) => readBrokerState({ signal, expected: 'ACTIVE_GUARDS' }),

@@ -480,7 +480,8 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
     case 'providerEnable':
       assert.equal((await providerControl.runStagingGeneration23ProviderControl({ action: 'ENABLE',
         port: providerPort, journal: providerJournal('ENABLE'),
-        signal })).status, 'PROVIDER_ENABLED_VERIFIED')
+        signal, latestDispatchAt: new Date(Date.parse(database.expiresAt) - 17 * 60_000).toISOString(),
+        now: () => Date.parse(database.expiresAt) - 45 * 60_000 })).status, 'PROVIDER_ENABLED_VERIFIED')
       break
     case 'databaseEnable':
       assert.equal(databaseEnabled, false)

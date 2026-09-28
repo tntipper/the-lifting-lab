@@ -112,19 +112,25 @@ export function createStagingGeneration23ProviderJournal({ action, path = PROVID
 }
 
 /** The injected port must be bounded by the eventual supervised worker. */
-export async function runStagingGeneration23ProviderControl({ action, port, journal, signal } = {}) {
+export async function runStagingGeneration23ProviderControl({ action, port, journal, signal,
+  latestDispatchAt, now = Date.now } = {}) {
   if (!STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED || !['ENABLE', 'DISABLE'].includes(action)
     || journal?.action !== action || typeof journal.read !== 'function'
     || typeof journal.claim !== 'function' || typeof journal.finish !== 'function'
     || typeof port?.readProvider !== 'function' || typeof port?.updateProvider !== 'function'
     || typeof port?.readBackendState !== 'function'
-    || !signal || signal.aborted || typeof signal.addEventListener !== 'function') unavailable()
+    || !signal || signal.aborted || typeof signal.addEventListener !== 'function'
+    || typeof now !== 'function') unavailable()
   try { if (journal.read()) return Object.freeze({ status: 'REPLAY_REJECTED' }) }
   catch { return Object.freeze({ status: 'HOLD_RECONCILE' }) }
 
   const enabled = action === 'ENABLE'
+  const withinDispatchBudget = () => !enabled
+    || typeof latestDispatchAt === 'string' && Number.isFinite(Date.parse(latestDispatchAt))
+      && now() + 30_000 < Date.parse(latestDispatchAt)
   let before
   try {
+    if (!withinDispatchBudget()) unavailable()
     const backend = await port.readBackendState(STAGING_PROVIDER_TARGET, { signal })
     if (!exact(backend, ['projectRef', 'controlsEnabled', 'runtimeSessions'])
       || backend.projectRef !== STAGING_PROJECT_REF || backend.controlsEnabled !== false
@@ -134,13 +140,13 @@ export async function runStagingGeneration23ProviderControl({ action, port, jour
     // customer sessions remain. Session drain is required before role retirement.
     before = structuredClone(await port.readProvider(STAGING_PROVIDER_TARGET, { signal }))
     strictProvider(before, !enabled)
-    if (signal.aborted) unavailable()
+    if (signal.aborted || !withinDispatchBudget()) unavailable()
   } catch { return Object.freeze({ status: 'STOPPED_BEFORE_DISPATCH' }) }
 
   let intent
   try { intent = journal.claim(before) } catch { return Object.freeze({ status: 'HOLD_RECONCILE' }) }
   try {
-    if (signal.aborted) unavailable()
+    if (signal.aborted || !withinDispatchBudget()) unavailable()
     const result = await port.updateProvider(STAGING_PROVIDER_TARGET, PROVIDER_IDENTIFIER,
       Object.freeze({ enabled }), { signal })
     if (!exact(result, ['status', 'projectRef', 'identifier'])

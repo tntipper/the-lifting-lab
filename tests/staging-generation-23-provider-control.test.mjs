@@ -67,15 +67,25 @@ function fixture(api, { loseReply = false, drift = false, backendEnabled = false
 test('ordinary source has no provider update authority', async () => {
   await assert.rejects(runStagingGeneration23ProviderControl({}), /unavailable/)
 })
+const enableBudget = { latestDispatchAt: new Date(Date.parse(start) + 60_000).toISOString(),
+  now: () => Date.parse(start) }
+
+test('provider enable cannot be called without a dispatch deadline', async () => {
+  const api = await armed(), f = fixture(api), journal = f.journal('ENABLE')
+  assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
+    port: f.port, journal, signal: new AbortController().signal })).status, 'STOPPED_BEFORE_DISPATCH')
+  assert.equal(journal.read(), null)
+  assert.equal(f.writes, 0)
+})
 
 test('one enable and one separate disable preserve every other provider field', async () => {
   const api = await armed(), f = fixture(api), signal = new AbortController().signal
   const enable = f.journal('ENABLE')
   assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
-    port: f.port, journal: enable, signal })).status, 'PROVIDER_ENABLED_VERIFIED')
+    port: f.port, journal: enable, signal, ...enableBudget })).status, 'PROVIDER_ENABLED_VERIFIED')
   assert.equal(enable.read().state, 'VERIFIED')
   assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
-    port: f.port, journal: enable, signal })).status, 'REPLAY_REJECTED')
+    port: f.port, journal: enable, signal, ...enableBudget })).status, 'REPLAY_REJECTED')
   const disable = f.journal('DISABLE')
   assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'DISABLE',
     port: f.port, journal: disable, signal })).status, 'PROVIDER_DISABLED_VERIFIED')
@@ -93,10 +103,10 @@ test('lost reply or changed provider field consumes only its one-use record', as
   for (const options of [{ loseReply: true }, { drift: true }]) {
     const f = fixture(api, options), journal = f.journal('ENABLE')
     assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
-      port: f.port, journal, signal })).status, 'HOLD_RECONCILE')
+      port: f.port, journal, signal, ...enableBudget })).status, 'HOLD_RECONCILE')
     assert.equal(journal.read().state, 'HOLD')
     assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
-      port: f.port, journal, signal })).status, 'REPLAY_REJECTED')
+      port: f.port, journal, signal, ...enableBudget })).status, 'REPLAY_REJECTED')
     assert.equal(f.writes, 1)
   }
 })
@@ -104,7 +114,21 @@ test('lost reply or changed provider field consumes only its one-use record', as
 test('wrong target state stops before record or update', async () => {
   const api = await armed(), f = fixture(api, { backendEnabled: true }), journal = f.journal('ENABLE')
   const result = await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
-    port: f.port, journal, signal: new AbortController().signal })
+    port: f.port, journal, signal: new AbortController().signal, ...enableBudget })
+  assert.equal(result.status, 'STOPPED_BEFORE_DISPATCH')
+  assert.equal(journal.read(), null)
+  assert.equal(f.writes, 0)
+})
+
+test('provider preflight cannot claim a write after the dispatch reserve is spent', async () => {
+  const api = await armed(), f = fixture(api), journal = f.journal('ENABLE')
+  const originalRead = f.port.readProvider
+  let clock = Date.parse(start)
+  f.port.readProvider = async (...args) => { const result = await originalRead(...args)
+    clock += 40_000; return result }
+  const result = await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
+    port: f.port, journal, signal: new AbortController().signal,
+    latestDispatchAt: new Date(Date.parse(start) + 60_000).toISOString(), now: () => clock })
   assert.equal(result.status, 'STOPPED_BEFORE_DISPATCH')
   assert.equal(journal.read(), null)
   assert.equal(f.writes, 0)
@@ -114,12 +138,12 @@ test('enable requires drained sessions but disable proceeds after backend OFF wi
   const api = await armed(), signal = new AbortController().signal
   const blocked = fixture(api, { runtimeSessions: 1 }), blockedJournal = blocked.journal('ENABLE')
   assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
-    port: blocked.port, journal: blockedJournal, signal })).status, 'STOPPED_BEFORE_DISPATCH')
+    port: blocked.port, journal: blockedJournal, signal, ...enableBudget })).status, 'STOPPED_BEFORE_DISPATCH')
   assert.equal(blockedJournal.read(), null)
 
   const f = fixture(api), enabled = f.journal('ENABLE')
   assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'ENABLE',
-    port: f.port, journal: enabled, signal })).status, 'PROVIDER_ENABLED_VERIFIED')
+    port: f.port, journal: enabled, signal, ...enableBudget })).status, 'PROVIDER_ENABLED_VERIFIED')
   f.setRuntimeSessions(1)
   const disabled = f.journal('DISABLE')
   assert.equal((await api.runStagingGeneration23ProviderControl({ action: 'DISABLE',
