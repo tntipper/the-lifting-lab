@@ -21,6 +21,12 @@ const VERCEL_API = 'https://api.vercel.com'
 const EDGE_TOKEN_URL = `https://${STAGING_PROJECT_REF}.supabase.co/functions/v1/tll-broker-token`
 const MAX_RESPONSE_BYTES = 64 * 1024
 const STAGING_ALIAS_HOST = new URL(STAGING_ALIAS).hostname
+const VERCEL_SURFACE_FLAGS = Object.freeze({
+  TLL_STAGING_CUSTOMER_ENABLED: Object.freeze({ id: 'd7igdi7ZsCPX37Dc', value: ['true', 'false'] }),
+  TLL_STAGING_CART_ENABLED: Object.freeze({ id: '0pdakPUlRtuX8pj', value: ['true', 'false'] }),
+  NEXT_PUBLIC_TLL_STAGING_CUSTOMER: Object.freeze({ id: 'FfUAQa5ND6RAnn2x', value: ['enabled', 'disabled'] }),
+  NEXT_PUBLIC_TLL_STAGING_CART: Object.freeze({ id: '9f9dTcJFE1wcsPcA', value: ['enabled', 'disabled'] }),
+})
 
 const unavailable = () => { throw new Error('Staging surface native binding unavailable') }
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right)
@@ -78,19 +84,68 @@ async function json(response, url, expectedStatus) {
     for (const chunk of chunks) chunk.fill(0)
   }
 }
+function raceAbort(pending, signal) {
+  if (signal.aborted) return Promise.reject(Error('aborted'))
+  let onAbort
+  const aborted = new Promise((_, reject) => { onAbort = () => reject(Error('aborted')) })
+  signal.addEventListener('abort', onAbort, { once: true })
+  if (signal.aborted) onAbort()
+  return Promise.race([pending, aborted]).finally(() => signal.removeEventListener('abort', onAbort))
+}
+async function requestSurfaceFlag({ fetcher, token, url, method, value, signal, timeoutMs }) {
+  const controller = new AbortController()
+  const forward = () => controller.abort()
+  signal.addEventListener('abort', forward, { once: true })
+  const timeout = setTimeout(forward, timeoutMs)
+  let response, reader
+  try {
+    if (signal.aborted) unavailable()
+    const pending = Promise.resolve().then(() => {
+      if (controller.signal.aborted) unavailable()
+      return fetcher(url, Object.freeze({ method, redirect: 'error', headers: Object.freeze({
+        ...headersForVercel(token), 'accept-encoding': 'identity', ...(method === 'PATCH' ? { 'content-type': 'application/json' } : {}),
+      }), ...(method === 'PATCH' ? { body: JSON.stringify({ value }) } : {}), signal: controller.signal }))
+    })
+    void pending.then(late => { if (controller.signal.aborted) Promise.resolve(late?.body?.cancel?.()).catch(() => {}) }, () => {})
+    response = await raceAbort(pending, controller.signal)
+    if (controller.signal.aborted || response?.status !== 200 || response.redirected === true
+      || response.url && response.url !== url || !/^application\/json(?:;|$)/i.test(response.headers?.get?.('content-type') ?? '')) unavailable()
+    const length = response.headers?.get?.('content-length'), encoding = response.headers?.get?.('content-encoding')
+    if (length != null && (!/^\d+$/.test(length) || Number(length) > MAX_RESPONSE_BYTES)
+      || encoding != null && encoding !== '' && encoding !== 'identity' || !response.body?.getReader) unavailable()
+    reader = response.body.getReader()
+    const chunks = []
+    let size = 0
+    try {
+      while (true) {
+        const next = reader.read()
+        void next.then(item => { if (controller.signal.aborted) item?.value?.fill?.(0) }, () => {})
+        const item = await raceAbort(next, controller.signal)
+        if (controller.signal.aborted || !item || typeof item.done !== 'boolean') unavailable()
+        if (item.done) break
+        if (!(item.value instanceof Uint8Array) || size + item.value.byteLength > MAX_RESPONSE_BYTES) {
+          item.value?.fill?.(0); unavailable()
+        }
+        size += item.value.byteLength; chunks.push(Buffer.from(item.value)); item.value.fill(0)
+      }
+      const bytes = Buffer.concat(chunks, size)
+      try { return JSON.parse(bytes.toString('utf8')) } finally { bytes.fill(0) }
+    } finally { for (const chunk of chunks) chunk.fill(0) }
+  } catch { unavailable() } finally {
+    controller.abort(); clearTimeout(timeout); signal.removeEventListener('abort', forward)
+    try { await reader?.cancel?.() } catch {}
+    try { reader?.releaseLock() } catch {}
+    if (!reader) try { await response?.body?.cancel?.() } catch {}
+  }
+}
 async function settled(operation) { try { return await operation() } catch { unavailable() } }
-function cliCommandForVercel(args, bytes) {
-  const names = Object.freeze({
-    TLL_STAGING_CUSTOMER_ENABLED: ['true', 'false'],
-    TLL_STAGING_CART_ENABLED: ['true', 'false'],
-    NEXT_PUBLIC_TLL_STAGING_CUSTOMER: ['enabled', 'disabled'],
-    NEXT_PUBLIC_TLL_STAGING_CART: ['enabled', 'disabled'],
-  })
-  if (!Array.isArray(args) || args.some(item => typeof item !== 'string') || !Buffer.isBuffer(bytes)) unavailable()
-  const name = args[3]
-  const expected = ['vercel', 'env', 'add', name, 'preview', '--git-branch', STAGING_BRANCH, '--no-sensitive', '--force', '--yes',
-    '--project', VERCEL_PROJECT, '--scope', VERCEL_SCOPE, '--non-interactive', '--no-color']
-  if (!Object.hasOwn(names, name) || !same(args, expected) || !names[name].includes(bytes.toString('utf8'))) unavailable()
+function surfaceFlagObservation(payload, name, expected, decrypted) {
+  const flag = VERCEL_SURFACE_FLAGS[name]
+  if (!flag || !payload || typeof payload !== 'object' || Array.isArray(payload)
+    || payload.id !== flag.id || payload.key !== name || payload.gitBranch !== STAGING_BRANCH
+    || !(payload.target === 'preview' || Array.isArray(payload.target) && payload.target.length === 1 && payload.target[0] === 'preview')
+    || payload.type !== 'encrypted' || payload.visibility !== 'config'
+    || (decrypted && (payload.decrypted !== true || payload.value !== expected))) unavailable()
 }
 function edgeCommand(enabled) {
   return Object.freeze({
@@ -138,9 +193,10 @@ function aliasReceipt(value) {
  * default implementation, so importing this module cannot contact either provider.
  */
 export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher,
-  protectedFetch, vercelToken } = {}) {
+  protectedFetch, vercelToken, surfaceFlagTimeoutMs = 20_000 } = {}) {
   if (typeof runCli !== 'function' || typeof fetcher !== 'function'
-    || protectedFetch !== undefined && typeof protectedFetch !== 'function') unavailable()
+    || protectedFetch !== undefined && typeof protectedFetch !== 'function'
+    || !Number.isSafeInteger(surfaceFlagTimeoutMs) || surfaceFlagTimeoutMs < 1 || surfaceFlagTimeoutMs > 20_000) unavailable()
   const token = validateVercelToken(vercelToken)
   const deployments = new Map()
   const readPinnedRepository = async signal => {
@@ -199,9 +255,17 @@ export function createStagingSurfaceNativeBinding({ runCli, fetch: fetcher,
     // The adapter owns the two fixed TLS probes; this wrapper only normalizes
     // an injected transport failure after its request has settled.
     fetch: boundFetch,
-    async runVercel(args, bytes, inputFd, { signal } = {}) {
-      validateSignal(signal); if (inputFd !== 0) unavailable(); cliCommandForVercel(args, bytes)
-      validateRunnerReceipt(await settled(() => runCli(args, bytes, inputFd, { signal })))
+    async setVercelFlag(target, name, value, { signal } = {}) {
+      validateTarget(target); validateSignal(signal)
+      const flag = VERCEL_SURFACE_FLAGS[name]
+      if (!flag || !flag.value.includes(value)) unavailable()
+      const patchUrl = `${VERCEL_API}/v9/projects/${VERCEL_PROJECT_ID}/env/${flag.id}?teamId=${VERCEL_TEAM_ID}`
+      const patched = await requestSurfaceFlag({ fetcher, token, url: patchUrl, method: 'PATCH', value, signal, timeoutMs: surfaceFlagTimeoutMs })
+      surfaceFlagObservation(patched, name, value, false)
+      const getUrl = `${VERCEL_API}/v1/projects/${VERCEL_PROJECT_ID}/env/${flag.id}?teamId=${VERCEL_TEAM_ID}`
+      const observed = await requestSurfaceFlag({ fetcher, token, url: getUrl, method: 'GET', signal, timeoutMs: surfaceFlagTimeoutMs })
+      surfaceFlagObservation(observed, name, value, true)
+      return Object.freeze({ target: STAGING_SURFACE_TARGET, name, value })
     },
     async setEdgeFlag(target, functionName, enabled, { signal } = {}) {
       validateTarget(target); validateSignal(signal)

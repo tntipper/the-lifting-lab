@@ -39,7 +39,7 @@ test('fixed construction selects distinct database journals and forwards the man
       createSupabase: () => ({ async readProjectSecret() { return Buffer.from('s'.repeat(48)) }, dispose() {} }),
       createProviderPort: () => ({ dispose() {} }),
       createActivation: () => ({ async activate() { return { status: 'CONTROLS_ENABLED', target: 'qdmvngjwkcsilzmqksme', generation: 23,
-        windowId: 'e2cb29d6-3900-44d4-813b-dad37292d412', receiptHash: 'a'.repeat(64) } } }),
+        windowId: '35b6910a-3a5c-4721-9452-f5074829f91c', receiptHash: 'a'.repeat(64) } } }),
       createFinalJournal: () => ({}),
       createFinal: () => ({ async observe() { return { status: 'PASS_FINAL_RETIRED', projectRef: 'qdmvngjwkcsilzmqksme' } } }),
       postFinal: async () => [], validateFinal() {},
@@ -105,14 +105,14 @@ test('broker consumer and held reads accept only the exact authenticated staging
     }) },
   })
   const pass = make(new Response(JSON.stringify({ status: 'PASS',
-    windowId: 'e2cb29d6-3900-44d4-813b-dad37292d412', expiresAt }),
+    windowId: '35b6910a-3a5c-4721-9452-f5074829f91c', expiresAt }),
   { status: 200, headers: { 'content-type': 'application/json',
-    'x-tll-broker-revision': 'tll-gen23-v14-cart-route-1' } }))
+    'x-tll-broker-revision': 'tll-gen23-v15-cart-route-1' } }))
   try { assert.deepEqual(await pass.components.readBrokerConsumer({ signal }), { status: 'PASS' }) }
   finally { pass.dispose() }
   const held = make(new Response(JSON.stringify({ status: 'held' }),
     { status: 404, headers: { 'content-type': 'application/json',
-      'x-tll-broker-revision': 'tll-gen23-v14-cart-route-1' } }))
+      'x-tll-broker-revision': 'tll-gen23-v15-cart-route-1' } }))
   try { assert.deepEqual(await held.components.readBrokerHeld({ signal }), { status: 'HELD' }) }
   finally { held.dispose() }
   assert.equal(observed.length, 2)
@@ -160,7 +160,7 @@ test('broker window audit accepts only the authenticated active staging guard be
     assert.equal(options.headers.apikey, `sb_secret_${'d'.repeat(32)}`)
     return new Response(JSON.stringify({ status: 'GUARDS', projectUrlMatches: true,
       brokerFlagOff: true, window }), { status: 200,
-      headers: { 'content-type': 'application/json', 'x-tll-broker-revision': 'tll-gen23-v14-cart-route-1' } })
+      headers: { 'content-type': 'application/json', 'x-tll-broker-revision': 'tll-gen23-v15-cart-route-1' } })
   }, factories: { createSupabase: () => ({
     async readNamedSecretKey() { return Buffer.from(`sb_secret_${'d'.repeat(32)}`) }, dispose() {},
   }) } })

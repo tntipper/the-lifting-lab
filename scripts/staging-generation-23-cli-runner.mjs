@@ -1,29 +1,21 @@
 /**
  * The narrowly scoped CLI bridge for the Generation 23 surface binding.
  *
- * It is intentionally not a general command launcher: only the four named
- * Preview flags and the one staging Edge flag can reach a child process. The
+ * It is intentionally not a general command launcher: only the staging Edge
+ * flag can reach a child process. Preview flags use Vercel's fixed-ID API. The
  * caller must supply short-lived tokens; importing this file performs no I/O.
  */
 import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 export const STAGING_GENERATION_23_CLI_RUNNER_ENABLED = false
 export const STAGING_GENERATION_23_CLI_RUNNER_TIMEOUT_MS = 45_000
 export const STAGING_GENERATION_23_CLI_RUNNER_MAX_OUTPUT_BYTES = 16 * 1024
 
-const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)))
-// Vercel's repo-local entrypoint uses `#!/usr/bin/env node`. The supervised
-// environment intentionally excludes /usr/local/bin, so execute known Node.
-export const STAGING_GENERATION_23_NODE = '/usr/local/bin/node'
-const VERCEL = resolve(ROOT, 'node_modules/.bin/vercel')
+const ROOT = resolve(import.meta.dirname, '..')
 // The Supabase JavaScript wrapper forwards only fd 0-2 to its native child.
 // Use the version-pinned native binary directly so /dev/fd/3 reaches it.
 const SUPABASE = resolve(ROOT, 'node_modules/@supabase/cli-darwin-arm64/bin/supabase')
-const BRANCH = 'codex/tll-integration'
-const PROJECT = 'the-lifting-lab'
-const SCOPE = 'my-lifting-lab-s-projects'
 const PROJECT_REF = 'qdmvngjwkcsilzmqksme'
 const EDGE_FLAG = 'TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED'
 const unavailable = () => { throw Error('Generation 23 CLI runner unavailable') }
@@ -35,19 +27,6 @@ const validToken = token => Buffer.isBuffer(token) && token.length >= 8 && token
 
 function classify(args, input, inputFd) {
   if (!Array.isArray(args) || args.some(item => typeof item !== 'string') || !Buffer.isBuffer(input)) unavailable()
-  const names = Object.freeze({
-    TLL_STAGING_CUSTOMER_ENABLED: ['true', 'false'],
-    TLL_STAGING_CART_ENABLED: ['true', 'false'],
-    NEXT_PUBLIC_TLL_STAGING_CUSTOMER: ['enabled', 'disabled'],
-    NEXT_PUBLIC_TLL_STAGING_CART: ['enabled', 'disabled'],
-  })
-  const name = args[3]
-  const expectedVercel = ['vercel', 'env', 'add', name, 'preview', '--git-branch', BRANCH,
-    '--no-sensitive', '--force', '--yes', '--project', PROJECT, '--scope', SCOPE, '--non-interactive', '--no-color']
-  if (Object.hasOwn(names, name) && inputFd === 0 && same(args, expectedVercel)
-    && names[name].includes(input.toString('utf8'))) {
-    return Object.freeze({ binary: STAGING_GENERATION_23_NODE, args: Object.freeze([VERCEL, ...args.slice(1)]), envName: 'VERCEL_TOKEN', inputFd: 0 })
-  }
   const expectedSupabase = ['supabase', 'secrets', 'set', '--env-file', '/dev/fd/3', '--project-ref', PROJECT_REF, '--output', 'json']
   if (inputFd === 3 && same(args, expectedSupabase)
     && (input.equals(Buffer.from(`${EDGE_FLAG}=true\n`)) || input.equals(Buffer.from(`${EDGE_FLAG}=false\n`)))) {
@@ -57,7 +36,7 @@ function classify(args, input, inputFd) {
 }
 
 function cleanEnvironment(name, token) {
-  // Both CLIs support these explicit environment variables. Do not inherit a
+  // The CLI supports this explicit environment variable. Do not inherit a
   // user's shell environment or saved CLI configuration into the supervised run.
   return Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C.UTF-8', NO_UPDATE_NOTIFIER: '1', [name]: token.toString('utf8') })
 }
@@ -69,7 +48,7 @@ function killGroup(child, kill = process.kill) {
 
 function runLocalVersion({ script, spawnProcess = spawn, timeoutMs = 10_000,
   maxOutputBytes = 4 * 1024, scheduleTimeout = setTimeout, clearScheduledTimeout = clearTimeout } = {}) {
-  if (![VERCEL, SUPABASE].includes(script) || typeof spawnProcess !== 'function'
+  if (script !== SUPABASE || typeof spawnProcess !== 'function'
     || !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30_000
     || !Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1 || maxOutputBytes > 16 * 1024
     || typeof scheduleTimeout !== 'function' || typeof clearScheduledTimeout !== 'function') unavailable()
@@ -84,8 +63,7 @@ function runLocalVersion({ script, spawnProcess = spawn, timeoutMs = 10_000,
     }
     const stop = () => { killGroup(child); finish(false) }
     try {
-      child = spawnProcess(script === VERCEL ? STAGING_GENERATION_23_NODE : SUPABASE,
-        script === VERCEL ? [script, '--version'] : ['--version'], { cwd: ROOT,
+      child = spawnProcess(SUPABASE, ['--version'], { cwd: ROOT,
         env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C.UTF-8', NO_UPDATE_NOTIFIER: '1' }),
         stdio: ['ignore', 'pipe', 'pipe'] })
       if (!child?.stdout || !child?.stderr || typeof child.once !== 'function') unavailable()
@@ -103,7 +81,6 @@ function runLocalVersion({ script, spawnProcess = spawn, timeoutMs = 10_000,
 
 /** Local-only installation proof. It neither reads credentials nor contacts a provider. */
 export async function verifyStagingGeneration23CliInstallation(options = {}) {
-  await runLocalVersion({ ...options, script: VERCEL })
   await runLocalVersion({ ...options, script: SUPABASE })
   return Object.freeze({ status: 'LOCAL_CLI_INSTALLATION_VERIFIED' })
 }
@@ -124,7 +101,7 @@ export function createStagingGeneration23CliRunner({ vercelToken, managementToke
   return async (args, input, inputFd, { signal } = {}) => {
     if (!validSignal(signal) || signal.aborted) unavailable()
     const command = classify(args, input, inputFd)
-    const token = command.envName === 'VERCEL_TOKEN' ? vercelToken : managementToken
+    const token = managementToken
     return new Promise((resolveResult, rejectResult) => {
       let child, timer, settled = false, outputSize = 0
       const finish = success => {

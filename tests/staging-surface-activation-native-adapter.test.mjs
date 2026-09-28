@@ -20,9 +20,8 @@ function hostedFixture() {
     deployments: new Map([[oldDeployment.deploymentId, oldDeployment]]), calls: [] }
   const makePorts = ({ execute = completedExecutor, edgeAck } = {}) => createStagingSurfaceNativePorts({
     execute,
-    runVercel: async (args, bytes, _fd, { signal }) => {
-      assert.equal(signal.aborted, false); state.calls.push(['vercel', args])
-      const name = args[args.indexOf('add') + 1], value = bytes.toString()
+    setVercelFlag: async (_target, name, value, { signal }) => {
+      assert.equal(signal.aborted, false); state.calls.push(['vercel', name, value])
       if (name === 'TLL_STAGING_CUSTOMER_ENABLED') state.flags.privateCustomer = value === 'true'
       if (name === 'TLL_STAGING_CART_ENABLED') state.flags.privateCart = value === 'true'
       if (name === 'NEXT_PUBLIC_TLL_STAGING_CUSTOMER') state.flags.publicCustomer = value === 'enabled'
@@ -79,8 +78,12 @@ test('ports satisfy freeze then fresh-process enable with exact target-bound rec
   const enableJournal = journal()
   const enabled = await enableStagingSurfaces({ ports: fixture.makePorts(), heldEvidence: frozen.deployment, requirements, journal: enableJournal, now })
   assert.equal(enabled.status, 'SURFACES_ENABLED_VERIFIED'); assert.equal(enableJournal.read().state, 'ENABLE_VERIFIED')
-  assert.ok(fixture.state.calls.filter(([kind]) => kind === 'vercel').every(([, args]) =>
-    args.includes('--project') && args.includes('the-lifting-lab') && args.includes('--scope') && args.includes('my-lifting-lab-s-projects')))
+  assert.deepEqual(fixture.state.calls.filter(([kind]) => kind === 'vercel').map(([, name, value]) => [name, value]), [
+    ['TLL_STAGING_CUSTOMER_ENABLED', 'false'], ['TLL_STAGING_CART_ENABLED', 'false'],
+    ['NEXT_PUBLIC_TLL_STAGING_CUSTOMER', 'disabled'], ['NEXT_PUBLIC_TLL_STAGING_CART', 'disabled'],
+    ['TLL_STAGING_CUSTOMER_ENABLED', 'true'], ['TLL_STAGING_CART_ENABLED', 'true'],
+    ['NEXT_PUBLIC_TLL_STAGING_CUSTOMER', 'enabled'], ['NEXT_PUBLIC_TLL_STAGING_CART', 'enabled'],
+  ])
 })
 
 test('target, branch, invalid runtime ID and alias drift fail before dependencies', async () => {
@@ -111,7 +114,7 @@ test('opposite Edge acknowledgement and malformed TLS response fail closed', asy
   const fixture = hostedFixture()
   await assert.rejects(fixture.makePorts({ edgeAck: false }).setEdgeEnabled(STAGING_SURFACE_TARGET, true), /unavailable/)
   const noop = async () => ({}), malformed = createStagingSurfaceNativePorts({ execute: completedExecutor,
-    runVercel: noop, setEdgeFlag: noop, readEdgeFlag: noop, readVercelFlags: noop,
+    setVercelFlag: noop, setEdgeFlag: noop, readEdgeFlag: noop, readVercelFlags: noop,
     createDeployment: noop, readDeployment: noop, resolveAlias: noop, fetch: async () => ({}) })
   await assert.rejects(malformed.probeTls(STAGING_SURFACE_TARGET, oldDeployment.immutableUrl), /unavailable/)
 })
@@ -119,7 +122,7 @@ test('opposite Edge acknowledgement and malformed TLS response fail closed', asy
 test('only the exact Vercel SSO challenge or a 401 proves protected endpoint reachability', async () => {
   const noop = async () => ({})
   const portsFor = fetch => createStagingSurfaceNativePorts({ execute: completedExecutor,
-    runVercel: noop, setEdgeFlag: noop, readEdgeFlag: noop, readVercelFlags: noop,
+    setVercelFlag: noop, setEdgeFlag: noop, readEdgeFlag: noop, readVercelFlags: noop,
     createDeployment: noop, readDeployment: noop, resolveAlias: noop, fetch })
   const target = oldDeployment.immutableUrl
   assert.deepEqual(await portsFor(async () => ({ status: 401, url: new URL(target).href, redirected: false }))
@@ -150,7 +153,7 @@ test('cancelled mutation settles before rejection and a cancelled read never bec
     signal.addEventListener('abort', () => { mutationSettled = true; resolve({ target: STAGING_SURFACE_TARGET,
       functionName: 'customer-subject-broker', enabled: true }) }, { once: true }))
   const noop = async () => ({})
-  const ports = createStagingSurfaceNativePorts({ execute, runVercel: noop, setEdgeFlag: waitForAbort, readEdgeFlag: noop,
+  const ports = createStagingSurfaceNativePorts({ execute, setVercelFlag: noop, setEdgeFlag: waitForAbort, readEdgeFlag: noop,
     readVercelFlags: noop, createDeployment: noop, readDeployment: noop, resolveAlias: noop, fetch: noop })
   await assert.rejects(ports.setEdgeEnabled(STAGING_SURFACE_TARGET, true), /unavailable/)
   assert.equal(mutationSettled, true)

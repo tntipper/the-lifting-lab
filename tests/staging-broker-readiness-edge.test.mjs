@@ -23,7 +23,7 @@ const env = Object.freeze({ SUPABASE_URL: 'https://qdmvngjwkcsilzmqksme.supabase
   TLL_STAGING_SUBJECT_BROKER_EDGE_ENABLED: 'false',
   TLL_STAGING_BROKER_DATABASE_PASSWORD: 'SYNTHETIC_BROKER_PASSWORD_' + 'y'.repeat(40),
   TLL_STAGING_POSTGRES_CA_PEM: 'public-ca-fixture', TLL_STAGING_POSTGRES_CA_SHA256: 'a'.repeat(64),
-  TLL_STAGING_BROKER_READINESS_WINDOW: `e2cb29d6-3900-44d4-813b-dad37292d412|${startsAt}|${expiresAt}` })
+  TLL_STAGING_BROKER_READINESS_WINDOW: `35b6910a-3a5c-4721-9452-f5074829f91c|${startsAt}|${expiresAt}` })
 const request = (authorization = null, apikey = secretKey) => new Request(
   'https://qdmvngjwkcsilzmqksme.supabase.co/functions/v1/tll-broker-readiness-g23-v9', {
     headers: { ...(authorization ? { authorization } : {}), apikey },
@@ -34,7 +34,7 @@ test('ordinary deployed source keeps the Edge probe off before credential access
   const result = await ordinary.createStagingBrokerReadinessHandler({ ...env,
     TLL_STAGING_BROKER_READINESS_WINDOW: undefined }, () => { constructed = true }, now)(request())
   assert.equal(result.status, 404)
-  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v14-cart-route-1')
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v15-cart-route-1')
   assert.equal(constructed, false)
 })
 
@@ -45,15 +45,15 @@ test('ordinary deployed source accepts only the short-lived staging window', asy
   } } }, async close() {} })
   const live = await ordinary.createStagingBrokerReadinessHandler(env, runtime, now)(request())
   assert.equal(live.status, 200)
-  assert.equal(live.headers.get('x-tll-broker-revision'), 'tll-gen23-v14-cart-route-1')
+  assert.equal(live.headers.get('x-tll-broker-revision'), 'tll-gen23-v15-cart-route-1')
   assert.equal(connected, 1)
   for (const setting of [undefined,
     `wrong-window|${startsAt}|${expiresAt}`,
-    `e2cb29d6-3900-44d4-813b-dad37292d412|${startsAt}|2026-09-27T22:00:01.000Z`]) {
+    `35b6910a-3a5c-4721-9452-f5074829f91c|${startsAt}|2026-09-27T22:00:01.000Z`]) {
     const held = await ordinary.createStagingBrokerReadinessHandler({ ...env,
       TLL_STAGING_BROKER_READINESS_WINDOW: setting }, runtime, now)(request())
     assert.equal(held.status, 404)
-    assert.equal(held.headers.get('x-tll-broker-revision'), 'tll-gen23-v14-cart-route-1')
+    assert.equal(held.headers.get('x-tll-broker-revision'), 'tll-gen23-v15-cart-route-1')
   }
   const expired = await ordinary.createStagingBrokerReadinessHandler(env, runtime,
     () => Date.parse(expiresAt))(request())
@@ -101,8 +101,8 @@ test('the authenticated Edge probe uses its own installed broker password and re
   }, now)
   const result = await handler(request())
   assert.equal(result.status, 200)
-  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v14-cart-route-1')
-  assert.deepEqual(await result.json(), { status: 'PASS', windowId: 'e2cb29d6-3900-44d4-813b-dad37292d412', expiresAt })
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v15-cart-route-1')
+  assert.deepEqual(await result.json(), { status: 'PASS', windowId: '35b6910a-3a5c-4721-9452-f5074829f91c', expiresAt })
   assert.doesNotMatch(JSON.stringify(Object.fromEntries(result.headers)), /SYNTHETIC/)
 })
 
@@ -112,7 +112,7 @@ test('Edge connection errors stay private and give no false pass', async () => {
   }), now)
   const result = await handler(request())
   assert.equal(result.status, 503)
-  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v14-cart-route-1')
+  assert.equal(result.headers.get('x-tll-broker-revision'), 'tll-gen23-v15-cart-route-1')
   assert.deepEqual(await result.json(), { status: 'FAIL' })
 })
 
@@ -161,7 +161,7 @@ test('bounded private trace classifies headers without changing the public held 
   assert.equal(logs.length, 1)
   const record = JSON.parse(logs[0])
   assert.deepEqual(record, { event: 'TLL_BROKER_GUARD_TRACE', correlationId: traceId,
-    revision: 'tll-gen23-v14-cart-route-1', auditHeaderMatches: false,
+    revision: 'tll-gen23-v15-cart-route-1', auditHeaderMatches: false,
     methodIsGet: true, serviceKeyUsable: true,
     authorizationPresent: true, authorizationMatches: false,
     apikeyPresent: true, apikeyMatches: false,

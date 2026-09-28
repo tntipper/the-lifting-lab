@@ -62,7 +62,7 @@ test('Gen23 recovery receipt rejects wrong project, state, count, expiry and ext
   const { validateStagingGeneration23RecoveryReceipt: validate } = await armedFixture()
   const receipt = { status: 'PASS_RETIRED', recoveryId: 'tll-staging-generation-23-recovery/v1',
     projectRef: 'qdmvngjwkcsilzmqksme', generation: 23,
-    windowId: 'e2cb29d6-3900-44d4-813b-dad37292d412', expiresAt,
+    windowId: '35b6910a-3a5c-4721-9452-f5074829f91c', expiresAt,
     controlsEnabled: false, runtimeCount: 5 }
   const rows = [{ tll_generation_23_recovery_receipt: receipt }]
   assert.equal(validate(rows, { expiresAt }).status, 'PASS_RETIRED')

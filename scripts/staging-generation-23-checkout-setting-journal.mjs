@@ -13,7 +13,7 @@ const unavailable = () => { throw Error('Generation 23 checkout setting journal 
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
   && Object.keys(value).sort().join('|') === [...keys].sort().join('|')
 const pathFor = action => resolve(import.meta.dirname,
-  `../../implementation-state/staging/tll-generation-23-checkout-${action.toLowerCase()}-v14.json`)
+  `../../implementation-state/staging/tll-generation-23-checkout-${action.toLowerCase()}-v15.json`)
 
 function validate(value, action) {
   if (!exact(value, ['schema', 'action', 'settingName', 'settingId', 'branch', 'runId', 'state', 'createdAt'])

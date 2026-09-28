@@ -74,11 +74,8 @@ export function surfaceFixture({ losePublicReply = false } = {}) {
   makeRunId: () => `reviewed-${action}-run` })
   const nativePorts = (signal, { createDeployment } = {}) => {
     const pending = new Map()
-    const write = async (args, bytes) => {
-      assert.ok(args.includes('--project') && args.includes('the-lifting-lab'))
-      assert.ok(args.includes('--scope') && args.includes('my-lifting-lab-s-projects'))
-      assert.ok(args.includes('--git-branch') && args.includes(STAGING_BRANCH))
-      const name = args[args.indexOf('add') + 1], value = bytes.toString()
+    const write = async (target, name, value, { signal: writeSignal }) => {
+      check(target); assert.equal(writeSignal, signal)
       const group = name.startsWith('NEXT_PUBLIC_') ? 'public' : 'private'
       pending.set(name, value)
       const names = group === 'public'
@@ -94,7 +91,7 @@ export function surfaceFixture({ losePublicReply = false } = {}) {
     }
     return createStagingSurfaceNativePorts({
       execute: async operation => ({ status: 'COMPLETED', value: await operation(signal) }),
-      runVercel: write,
+      setVercelFlag: write,
       setEdgeFlag: async (target, functionName, enabled) => {
         assert.equal(functionName, 'customer-subject-broker')
         await ports.setEdgeEnabled(target, enabled)

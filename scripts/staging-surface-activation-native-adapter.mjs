@@ -43,11 +43,6 @@ const flagNames = Object.freeze({
   privateCustomer: 'TLL_STAGING_CUSTOMER_ENABLED', privateCart: 'TLL_STAGING_CART_ENABLED',
   publicCustomer: 'NEXT_PUBLIC_TLL_STAGING_CUSTOMER', publicCart: 'NEXT_PUBLIC_TLL_STAGING_CART',
 })
-// Vercel CLI 60 treats options before the subcommand as deployment-command
-// options. Keep `--yes` after `env add` so its branch-only flag is parsed by
-// the environment command rather than rejected by the deployment command.
-const vercelCommand = args => ['vercel', ...args, '--yes', '--project', VERCEL_PROJECT, '--scope', VERCEL_SCOPE, '--non-interactive', '--no-color']
-const writeCommand = name => vercelCommand(['env', 'add', name, 'preview', '--git-branch', STAGING_BRANCH, '--no-sensitive', '--force'])
 
 function validateIdentity(value, requirements) {
   if (!exact(value, ['deploymentId', 'immutableUrl', 'sourceCommit', 'manifestSha256', 'ready', 'createdAt'])
@@ -85,16 +80,15 @@ async function invokeBounded(execute, operation, options) {
 
 /** Build only the exact ports consumed by the reviewed surface state machine. */
 export function createStagingSurfaceNativePorts({
-  execute, runVercel, setEdgeFlag, readEdgeFlag, readVercelFlags,
+  execute, setVercelFlag, setEdgeFlag, readEdgeFlag, readVercelFlags,
   createDeployment, readDeployment, resolveAlias, fetch: fetcher,
 } = {}) {
-  if ([execute, runVercel, setEdgeFlag, readEdgeFlag, readVercelFlags, createDeployment, readDeployment, resolveAlias, fetcher]
+  if ([execute, setVercelFlag, setEdgeFlag, readEdgeFlag, readVercelFlags, createDeployment, readDeployment, resolveAlias, fetcher]
     .some(operation => typeof operation !== 'function')) unavailable()
   const call = (operation, ...args) => invokeBounded(execute, signal => operation(...args, { signal }))
   const deployments = new Map()
   const write = async (name, value) => {
-    const bytes = Buffer.from(value)
-    try { await call(runVercel, writeCommand(name), bytes, 0) } finally { bytes.fill(0) }
+    await call(setVercelFlag, STAGING_SURFACE_TARGET, name, value)
   }
 
   return Object.freeze({

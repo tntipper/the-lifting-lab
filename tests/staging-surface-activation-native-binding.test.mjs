@@ -14,7 +14,7 @@ const deployment = Object.freeze({ id: deploymentId, url: 'tll-abc.vercel.app', 
   gitSource: { type: 'github', repoId: 1264363509, ref: 'codex/tll-integration', sha: 'a'.repeat(40) },
   meta: { githubCommitRef: 'codex/tll-integration', githubCommitSha: 'a'.repeat(40), tllManifestSha256: 'b'.repeat(64) } })
 const jsonResponse = (status, body, _url, length = null) => new Response(JSON.stringify(body), { status,
-  headers: { ...(length === null ? {} : { 'content-length': length }),
+  headers: { 'content-type': 'application/json', ...(length === null ? {} : { 'content-length': length }),
     ...(status === 503 && body?.error === 'temporarily_unavailable' ? { 'x-tll-staging-edge-control': 'disabled' } : {}) } })
 
 function binding({ onFetch = () => {}, onCli = () => ({ status: 'COMPLETED' }) } = {}) {
@@ -74,12 +74,94 @@ test('deployment preflight rejects a changed repository, project, or aborted sig
   await assert.rejects(binding().readPinnedRepository(aborted.signal), /unavailable/)
 })
 
-test('Vercel mutations accept only the four fixed commands and forward the abort signal', async () => {
-  const calls = [], ports = binding({ onCli: (args, input, fd, options) => { calls.push({ args, input: input.toString(), fd, options }); return { status: 'COMPLETED' } } })
-  await ports.runVercel(['vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--yes', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('true'), 0, { signal })
-  assert.equal(calls.length, 1); assert.equal(calls[0].options.signal, signal)
-  await assert.rejects(ports.runVercel(['vercel', 'env'], Buffer.from('true'), 0, { signal }), /unavailable/)
-  await assert.rejects(ports.runVercel(['vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--yes', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('enabled'), 0, { signal }), /unavailable/)
+test('Vercel mutations use only fixed IDs and verify a decrypted readback', async () => {
+  const calls = []
+  const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async (url, options) => {
+      calls.push({ url, options })
+      const id = 'd7igdi7ZsCPX37Dc'
+      return jsonResponse(200, { id, key: 'TLL_STAGING_CUSTOMER_ENABLED', gitBranch: 'codex/tll-integration',
+        target: 'preview', type: 'encrypted', visibility: 'config', ...(options.method === 'GET' ? { decrypted: true, value: 'true' } : {}) }, url)
+    } })
+  assert.deepEqual(await host.setVercelFlag(STAGING_SURFACE_TARGET, 'TLL_STAGING_CUSTOMER_ENABLED', 'true', { signal }),
+    { target: STAGING_SURFACE_TARGET, name: 'TLL_STAGING_CUSTOMER_ENABLED', value: 'true' })
+  assert.equal(calls.length, 2)
+  assert.equal(calls[0].url, `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/env/d7igdi7ZsCPX37Dc?teamId=${VERCEL_TEAM_ID}`)
+  assert.equal(calls[0].options.method, 'PATCH'); assert.equal(calls[0].options.body, JSON.stringify({ value: 'true' }))
+  assert.equal(calls[1].url, `https://api.vercel.com/v1/projects/${VERCEL_PROJECT_ID}/env/d7igdi7ZsCPX37Dc?teamId=${VERCEL_TEAM_ID}`)
+  assert.equal(calls[1].options.method, 'GET')
+  await assert.rejects(host.setVercelFlag(STAGING_SURFACE_TARGET, 'TLL_STAGING_CUSTOMER_ENABLED', 'enabled', { signal }), /unavailable/)
+  await assert.rejects(host.setVercelFlag(STAGING_SURFACE_TARGET, 'OTHER', 'true', { signal }), /unavailable/)
+})
+
+test('Vercel mutation rejects a decrypted readback that disagrees with the requested value', async () => {
+  let calls = 0
+  const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async (url, options) => {
+      calls += 1
+      return jsonResponse(200, { id: 'd7igdi7ZsCPX37Dc', key: 'TLL_STAGING_CUSTOMER_ENABLED',
+        gitBranch: 'codex/tll-integration', target: 'preview', type: 'encrypted', visibility: 'config',
+        ...(options.method === 'GET' ? { decrypted: true, value: 'false' } : {}) }, url)
+    } })
+  await assert.rejects(
+    host.setVercelFlag(STAGING_SURFACE_TARGET, 'TLL_STAGING_CUSTOMER_ENABLED', 'true', { signal }),
+    /unavailable/,
+  )
+  assert.equal(calls, 2, 'the rejected result must come from the independent decrypted readback')
+})
+
+test('Vercel flag request aborts its own transport and never reads after an uncertain write', async () => {
+  let calls = 0, aborted = false
+  const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    surfaceFlagTimeoutMs: 1,
+    fetch: async (_url, options) => new Promise(resolve => {
+      calls += 1
+      options.signal.addEventListener('abort', () => { aborted = true; resolve(jsonResponse(200, {})) }, { once: true })
+    }) })
+  await assert.rejects(host.setVercelFlag(STAGING_SURFACE_TARGET, 'TLL_STAGING_CUSTOMER_ENABLED', 'true', { signal }), /unavailable/)
+  assert.equal(aborted, true)
+  assert.equal(calls, 1, 'an uncertain PATCH must prevent the decrypted GET verification request')
+})
+
+test('Vercel flag request forwards an outer abort and cancels a late response body', async () => {
+  let cancelled = false, released = false
+  const controller = new AbortController()
+  let fetchStarted
+  const started = new Promise(resolve => { fetchStarted = resolve })
+  const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async (_url, options) => new Promise(resolve => {
+      fetchStarted()
+      options.signal.addEventListener('abort', () => resolve({ status: 200, url: '', redirected: false,
+        headers: new Headers({ 'content-type': 'application/json' }), body: {
+          cancel: async () => { cancelled = true },
+          getReader: () => ({ read: async () => new Promise(() => {}), cancel: async () => { cancelled = true },
+            releaseLock: () => { released = true } }),
+        } }), { once: true })
+    }) })
+  const pending = host.setVercelFlag(STAGING_SURFACE_TARGET, 'TLL_STAGING_CUSTOMER_ENABLED', 'true', { signal: controller.signal })
+  await started
+  controller.abort()
+  await assert.rejects(pending, /unavailable/)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(cancelled, true)
+  assert.equal(released, false, 'a late body is cancelled before a reader is acquired')
+})
+
+test('Vercel flag request cancels and releases an in-progress body reader on abort', async () => {
+  let started, cancelled = false, released = false
+  const controller = new AbortController()
+  const host = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async () => ({ status: 200, url: '', redirected: false, headers: new Headers({ 'content-type': 'application/json' }), body: {
+      getReader: () => ({ read: () => new Promise(resolve => { started = resolve }), cancel: async () => { cancelled = true },
+        releaseLock: () => { released = true } }),
+    } }) })
+  const pending = host.setVercelFlag(STAGING_SURFACE_TARGET, 'TLL_STAGING_CUSTOMER_ENABLED', 'true', { signal: controller.signal })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(typeof started, 'function')
+  controller.abort()
+  await assert.rejects(pending, /unavailable/)
+  assert.equal(cancelled, true)
+  assert.equal(released, true)
 })
 
 test('edge write uses an exact private-fd command and runner acknowledgement', async () => {
@@ -274,6 +356,7 @@ test('adapter fetch boundary rejects unrelated URLs and methods before dispatch'
 })
 
 test('injected secret diagnostics are replaced by the fixed binding error', async () => {
-  const ports = binding({ onCli: () => { throw new Error('private-vercel-token must never be reported') } })
-  await assert.rejects(ports.runVercel(['vercel', 'env', 'add', 'TLL_STAGING_CUSTOMER_ENABLED', 'preview', '--git-branch', 'codex/tll-integration', '--no-sensitive', '--force', '--yes', '--project', 'the-lifting-lab', '--scope', 'my-lifting-lab-s-projects', '--non-interactive', '--no-color'], Buffer.from('true'), 0, { signal }), error => error.message === 'Staging surface native binding unavailable' && !error.message.includes('private'))
+  const ports = createStagingSurfaceNativeBinding({ vercelToken: token(), runCli: async () => ({ status: 'COMPLETED' }),
+    fetch: async () => { throw new Error('private-vercel-token must never be reported') } })
+  await assert.rejects(ports.setVercelFlag(STAGING_SURFACE_TARGET, 'TLL_STAGING_CUSTOMER_ENABLED', 'true', { signal }), error => error.message === 'Staging surface native binding unavailable' && !error.message.includes('private'))
 })

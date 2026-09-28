@@ -6,9 +6,9 @@ import { EXACT_MIGRATIONS } from './staging-generation-21-retirement-preflight.m
 import { PROJECT_REF, PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
 import { GENERATION } from './staging-generation-23-password-material.mjs'
 
-/** Fixed from the consumed and separately retired Gen23 v13 window. */
-export const PREDECESSOR_EXPIRES_AT = '2026-09-28T13:44:00.000Z'
-export const PREDECESSOR_WINDOW_ID = 'c216a47f-5445-4076-860c-451aa8d2931e'
+/** Fixed from the consumed and separately retired Gen23 v14 window. */
+export const PREDECESSOR_EXPIRES_AT = '2026-09-28T14:27:00.000Z'
+export const PREDECESSOR_WINDOW_ID = 'e2cb29d6-3900-44d4-813b-dad37292d412'
 
 export const STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED = false
 export const QUERY_ID = 'tll-staging-generation-23-predecessor-check/v1'
