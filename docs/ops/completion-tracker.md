@@ -1,0 +1,41 @@
+# TLL comparison and shop completion tracker
+
+Current checkpoint: 29 September 2026. This is the durable **work status**, not a declaration that a stage has passed. The approved [G0-G6 programme](../../../TLL-Unified-Commerce-Implementation-Plan-2026-09-15.md) supplies the acceptance criteria. The single issue register is [`implementation-state/delivery-register.csv`](../../../implementation-state/delivery-register.csv), now 74 rows: the original 73 requirements plus `I01` for the v18 stop. Its severity is inherited from the original priority; an open row is not automatically a reproduced defect on the current deployment. The [Stage 3 checklist](stage-plans/2026-09-28-stage3-completion-register.md) records the eight customer-journey checks only.
+
+## Verified starting state and limits
+
+- Local integration checkout: branch `codex/tll-integration`, HEAD `c66c056`; existing untracked files are preserved. GitHub readback on 29 September: integration ref `4bc8a7a`, `main` ref `727c4f9`. The local commit only documents the v18 outcome.
+- Last **recorded**, not freshly rechecked, protected held Preview: `dpl_HNvrJ1JpHGdf3kGpafqsiVnNP6aQ` from disabled `4bc8a7a`; the 28 September recovery independently read all customer/cart/checkout controls OFF, provider disabled and temporary database roles retired. Fresh Vercel/Shopify runtime reads are still required before any further hosted action.
+- GitHub's Vercel commit status reports success for integration `4bc8a7a` at deployment `dpl_HNvrJ1JpHGdf3kGpafqsiVnNP6aQ` and for `main` `727c4f9` at `dpl_4AebhGSLSpthdZRoyMt3EAcE7NpV`. This confirms build status for those commits, not the currently served public or protected alias. Read-only Vercel alias requests returned HTTP 403, so neither alias binding has been freshly proved here.
+- v18 did not reach a customer browser, sign-in, checkout page, order or payment. Its initiating cause remains unknown after read-only diagnosis. The [incident checkpoint](incidents/2026-09-29-gen23-v18-readonly-diagnosis.md) records the exact evidence limit. The owner has kept another live Stage 3 run on hold pending a concrete approval request.
+- `npm audit --omit=dev --audit-level=high --json` completed on 29 September with **zero reported production dependency vulnerabilities**. This is current advisory evidence for the local lockfile, not a build, hosted dependency proof or G0 pass. The local npm executable is 11.6.2; the project specifies npm 11.19.0 for reproducible installation.
+
+## Ordered work packages and gate status
+
+| Package | State | Current evidence and next action | Gate |
+| --- | --- | --- | --- |
+| 1. Baseline and issue register | **Active** | Git and saved recovery reconciled; 74-row register classified by severity, journey, correction and acceptance. Fresh protected Preview, production deployment and Shopify configuration readbacks remain unavailable from this environment. Preserve untracked files and obtain those reads through authorised access. | Entry to G0-G6 |
+| 2. Diagnose v18 | **Active / blocked on missing cause evidence** | Preserved records prove `POST_ACK` without verification; Vercel says the backend build later became `READY`. Local safety check and 12 focused tests pass, but no exact failing substep is recorded. Event and alias GETs return HTTP 403 with the current token. Seek authorised Vercel events and process evidence; do not prepare a successor while cause is unknown. | G3 entry |
+| 3. Safe baseline and commercial truth | **Active source assessment; gate closure pending** | The current local-lockfile production dependency audit reports zero vulnerabilities. Other G0 release and recovery checks remain open. The exact-offer eligibility function exists and has local tests, but a source scan found no application-route caller; F03 records that gap. Reconcile hosted variants, supplier terms and costs before wiring purchase decisions. Use the newer £6 TropShip fee per supplier order; hold uncertain products and prices. | G0, G1 |
+| 4. Stock and order operations | **Pending gate closure** | Disabled inventory ledger and local checks exist. Complete approved worker and seven-day operational evidence before unattended dispatch. | G2 |
+| 5. Unified customer journey | **Held** | One held-Preview check is documented; seven required checks still need a single supervised customer run and final shutdown proof. A new run requires cause diagnosis, independent review and specific owner approval. | G3 |
+| 6. Evidence, consent and pricing | **Pending** | Review research and claims, prove consent and suppression, then complete price observation and a separately approved limited pilot. Do not infer approval from a sellable product or a local calculation. | G4, G5 |
+| 7. Release and operations | **Pending** | Verify the exact release candidate, authorised no-charge order lifecycle, recovery, monitoring and cohort results before asking for production approval. | G6 |
+
+No gate G0-G6 is marked passed here because the required complete, current evidence is not assembled. Launch blockers are the unclassified v18 stop for G3 and any unresolved P0 item that affects the proposed release. Required completion work follows each gate's approved criteria. Optional visual polish does not hold a gate unless it breaks an agreed criterion.
+
+## Bounded gap assessment
+
+This table points into the single register; it does not create another issue list. An untested journey is an evidence gap, not a claim that the feature is broken.
+
+| Agreed area | Current source/evidence position | Register references |
+| --- | --- | --- |
+| Comparison data, exact matching, sorting, serving value and sources | Eligibility and pricing calculation foundations exist. The exact-offer eligibility function is not called by application routes, and current live mapping and research approvals are unverified. | F03, F10-F13, F18, F25, F35-F38; S01-S09; C01-C25 |
+| Navigation, search, comparison, mobile layout and accessibility | The newer branch contains the redesigned UI and passed earlier local browser checks. Final hosted feature continuity, Safari, zoom and spoken-navigation evidence remains open. | F15-F17, F23-F24 |
+| Shopify catalogue, basket, checkout, discounts, shipping, tax and orders | Staging-only fixture and local controls exist. No supervised customer sign-in, basket transfer, real checkout-page view or order lifecycle has passed; current pack costs and supplier terms remain held. | F03-F04, F07-F08, F17, F30-F31, F34, F36-F37, I01 |
+| Accounts, authentication, privacy, consent and analytics | Account and security foundations have local/isolated evidence. The shared hosted customer identity, order isolation, consent send/suppress and production privacy controls have not passed final acceptance. | F01-F02, F05, F07-F09, F19-F22, F28-F29, F34, F39 |
+| Loading/errors, deployment and operations | Existing safety controls and recovery evidence are substantial, including v18 shutdown. Complete live monitoring, backup/restore, worker drills and production cohort acceptance are open. | F04, F21-F22, F24, F32-F33, I01; G2 and G6 criteria |
+
+## Work rule
+
+For each issue, update the register with its source revision, test environment, result and deployed revision before marking it closed. Group corrections by cause. Run focused checks after a coherent change and broader checks at a gate. Keep external work disabled after any failed or uncertain action, reconcile from separate reads, and never replay a consumed one-use record. Update this table and `.agent/HANDOVER.md` when a package or blocking fact changes.
