@@ -1,5 +1,15 @@
 # TLL comparison and shop completion tracker
 
+## 30 September connected readback
+
+The current local branch is `codex/tll-integration` at documentation commit `ee2853d`; the GitHub integration ref remains `4bc8a7a` and `main` remains `727c4f9`. Existing untracked files are preserved. The connected Vercel app directly resolves the protected branch alias to held Preview `dpl_HNvrJ1JpHGdf3kGpafqsiVnNP6aQ` from `4bc8a7a`, and `www.theliftinglab.co.uk` to production `dpl_4AebhGSLSpthdZRoyMt3EAcE7NpV` from `727c4f9`; both are `READY`. These fresh direct alias reads supersede the 29 September access limit below.
+
+The connected Supabase app confirms staging project `qdmvngjwkcsilzmqksme` is healthy. A read-only aggregate found all five private controls disabled, zero active temporary runtime sessions and zero temporary roles with login permission. Shopify configuration, the external provider, Edge secret, five Vercel setting values and protected runtime still need fresh readback before any hosted action. Vercel's connected build-log tool was unavailable, and the v18 enabled deployment had no error-level runtime logs in the 20:58–21:03 UTC window. The exact v18 stop cause is still unknown; package 2 remains active and Stage 3 remains held. See the [incident update](incidents/2026-09-29-gen23-v18-readonly-diagnosis.md).
+
+The staging Supabase security advisor reported one `ERROR` for `public.public_profiles`, plus warnings for functions that run with database-owner privileges. Source migration `202609150001_integrity_boundaries.sql` explicitly grants the public profile view to visitors. A read-only database check confirms its owner is `postgres`, it lacks `security_invoker`, and `anon` can select it; the projection contains profile display fields and points. This may be deliberate, but its allowed public fields and underlying row access need a focused G0 review before release. The advisor also reports 23 private tables with RLS and no policies; those may be intentionally inaccessible. See [Supabase's view advisory](https://supabase.com/docs/guides/database/database-linter?lint=0010_security_definer_view). No database change was made.
+
+The following checkpoint text records the earlier 29 September position and should be read with this newer update.
+
 Current checkpoint: 29 September 2026. This is the durable **work status**, not a declaration that a stage has passed. The approved [G0-G6 programme](../../../TLL-Unified-Commerce-Implementation-Plan-2026-09-15.md) supplies the acceptance criteria. The single issue register is [`implementation-state/delivery-register.csv`](../../../implementation-state/delivery-register.csv), now 74 rows: the original 73 requirements plus `I01` for the v18 stop. Its severity is inherited from the original priority; an open row is not automatically a reproduced defect on the current deployment. The [Stage 3 checklist](stage-plans/2026-09-28-stage3-completion-register.md) records the eight customer-journey checks only.
 
 ## Verified starting state and limits
