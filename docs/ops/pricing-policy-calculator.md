@@ -2,17 +2,17 @@
 
 `lib/commerce/pricing-policy.ts` is a pure, deterministic planning module. It has no service connections, records, price writes or checkout enforcement. Every assessment has `liveEnabled: false` and `checkoutVerified: false`. Mathematical eligibility describes the supplied reviewed inputs; it is not publication or checkout authority. A trusted integration must authenticate and preserve approvals rather than trust arbitrary caller-provided `approved: true` values.
 
-## Current account-specific policy — 24 September 2026
+## Current account-specific policy — set 24 September, confirmed 30 September 2026
 
-The existing 35% target contribution margin, 25% minimum and £3 minimum contribution for a single-item sale remain unchanged. Tropicana's 14 September 2026 welcome email for this TropShip account says **£5 plus VAT for each TropShip order**. It assigns free delivery above £100 to a separate wholesale account. Version `tll-tropship-standard-uk-order-2026-09-24-v3` therefore budgets £6 unrecoverable cost once per supplier order at every wholesale total. TLL is not VAT registered; input VAT is unrecoverable and no output VAT is charged.
+The existing 35% target contribution margin, 25% minimum and £3 minimum contribution for a single-item sale remain unchanged. Tropicana's 14 September 2026 welcome email for this TropShip account says **£5 plus VAT for each TropShip order**. A further [written reply pasted by the owner on 30 September](evidence/2026-09-30-owner-pasted-tropship-reply.md) explicitly confirms **£6 for every TropShip order regardless of value**. Version `tll-tropship-standard-uk-order-2026-09-24-v3` already budgets that amount once per supplier order. TLL is not VAT registered; input VAT is unrecoverable and no output VAT is charged.
 
 | One TropShip supplier order | Supplier quoted delivery, ex VAT | Gross cash/economic planning cost | Decision |
 | --- | ---: | ---: | --- |
 | Any supported wholesale total | £5 | £6 | Charged once per supplier order |
 
-The public [Tropicana delivery terms](https://www.tropicanawholesale.com/help/delivery/) describe a general £100 free-delivery threshold without separating the account type. The account-specific email contradicts applying that rule to TLL's TropShip orders and takes precedence for conservative planning. Confirm the account tariff with Tropicana before price publication; a different written answer requires another version and review. The public terms describe next **working** day delivery and possible delays; this calculator makes no delivery-time guarantee. [TropShip's service page](https://www.tropicanawholesale.com/TROPSHIP/) separately describes a 4pm cut-off and DPD tracking.
+The public [Tropicana delivery terms](https://www.tropicanawholesale.com/help/delivery/) describe a general £100 free-delivery threshold without separating the account type. The account-specific reply directly confirms that the threshold does not apply to TLL's TropShip orders. A future different written answer would require another tariff version and review. The public terms describe next **working** day delivery and possible delays; this calculator makes no delivery-time guarantee. [TropShip's service page](https://www.tropicanawholesale.com/TROPSHIP/) separately describes a 4pm cut-off and DPD tracking.
 
-The old per-item rule and VAT-registered examples are [superseded historical evidence](history/pricing-policy-v1-superseded.md). The later v2 free-above-£100 rule is also superseded for this TropShip account. The supplier email does **not** confirm any product's wholesale amount, VAT basis/rate, pack or sellable-unit definition. Those inputs remain HOLD until independently approved.
+The old per-item rule and VAT-registered examples are [superseded historical evidence](history/pricing-policy-v1-superseded.md). The later v2 free-above-£100 rule is also superseded for this TropShip account. The newer reply confirms 20% VAT for products classified as VAT-applicable and that a purchase supplies the quantity stated in its listing, with a 12 × 60 g Grenade box as its example. It does **not** establish any current product's wholesale amount, the XML `ProductPrice` VAT basis, final classification of every SKU or an exact Shopify-variant-to-listing pack match. Those inputs remain HOLD until independently approved.
 
 ## Input contract and version lineage
 

@@ -2,6 +2,8 @@
 
 Status: **research and draft only**. Nothing here has been published to customers. The owner asked TLL to check Tropicana's documents and supplement retailers' customer-service practice before choosing wording. Reviewed 24 September 2026.
 
+**30 September supplier update:** A later [TropShip reply pasted by the owner](evidence/2026-09-30-owner-pasted-tropship-reply.md) confirms the £6 fee on every supplier order and gives its standard sealed-return route: log within 14 days of purchase; an optional DPD Pickup Shop QR return costs £6 deducted from the processed refund, or TLL can arrange carriage at its own cost. Damage, faults and missing items should be reported promptly; cancellation depends on processing stage. These are supplier-to-TLL operating terms. The required return arrival period, failed-delivery charges, faulty-return costs, TLL customer delivery charge and final customer-facing policy remain open. The older research below is historical where it says account-specific returns were not confirmed.
+
 ## What can be said now
 
 - The owner's direct 14 September TropShip welcome email says dropshipping is limited to **mainland UK**, Tropicana sends directly to customers by DPD, and the TLL account pays £5 plus VAT delivery for each supplier order. It distinguishes a separate wholesale account's £100 free-delivery offer. The email contains access information; do not copy it into this repository or use it as an instruction to connect.
