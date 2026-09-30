@@ -1,5 +1,9 @@
 # TLL comparison and shop completion tracker
 
+**30 September supplier-data result:** the owner's saved TropShip connection worked as a read-only SFTP download, but the supplier's `DropshipProductFeed.xml` failed complete-file XML validation near line 140915. Its listing was last modified on 29 September, with no stated time zone. The readable prefix matches 60 of the 74 active Shopify SKUs and contains duplicate rows for 24 matched codes; none of the 13 active £0 placeholders appears in it. The [supplier read record](evidence/2026-09-30-tropship-feed-read.md) explains the exact limits. G1 cost/pack approvals and G2 stock availability remain **held** until a corrected, complete and sufficiently fresh supplier file is obtained and reconciled. The separate order API was not called.
+
+**30 September Stage 3 diagnosis:** the retained parent process output now fixes v18's generic failure time at 21:00:29 UTC, about 132 seconds after the Preview acknowledgement. The ten-minute build limit and 21:47 window expiry cannot explain that stop. The failing substep remains unidentified, so I01 and the no-run hold stay open. See the [incident record](incidents/2026-09-29-gen23-v18-readonly-diagnosis.md).
+
 ## 30 September G1 catalogue checkpoint
 
 **Owner scope decision:** the first shop release should make **all 63 currently active products** sellable once verified, covering 74 variants. A smaller opening range is no longer the target. The 74 variants divide into 13 £0 products without an old supplier-feed link, 12 ISO-XP variants in one zero-stock/continue-selling product, two explicit multipacks, and 47 other old-feed-linked products. The [G1 evidence note](evidence/2026-09-30-g1-shopify-readback.md) records the proof needed for each group. This is a full-range G1 workload; no item becomes approved merely because it is active or published in Shopify.
