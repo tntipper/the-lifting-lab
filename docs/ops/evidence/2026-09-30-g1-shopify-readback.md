@@ -23,4 +23,18 @@ The current 98 handle/SKU pairs match the [25 September Shopify export screen](.
 
 The current pure pricing policy already charges **£6 gross for every TropShip supplier order**, including orders at or above £100 wholesale; price writes remain disabled. The old threshold sentence in `docs/ops/supplier-feed-ingestion.md` was corrected in this evidence batch. The commercial decisions still require current supplier tax and pack evidence, payment and reserve costs, owner-reviewed stock policy and exact comparison identity. Research approval remains a separate decision from sale approval.
 
+## Owner's first-release range decision
+
+On 30 September the owner chose **all 63 currently active products** for the first shop release, rather than a smaller opening range. That makes all **74 active variants** part of the G1 sellable target; the 24 draft variants remain unavailable. The earlier 25 September small-range recommendation is superseded as a scope choice, while its evidence and safety holds remain valid. The 74 variants form four non-overlapping work groups:
+
+| Group | Products | Variants | Main proof still needed |
+| --- | ---: | ---: | --- |
+| Active £0 placeholders without a 14 September supplier-feed link | 13 | 13 | Establish a real supply/pack/cost path and approved positive price, or explain why that product cannot join the requested release. |
+| Applied Nutrition ISO-XP, tracked at zero but set to keep selling | 1 | 12 | Confirm each flavour/size and current supplier stock path; block zero-stock overselling before opening. |
+| Explicit supplier multipacks: Grenade bar and Warrior bar | 2 | 2 | Prove carton quantity, billed unit, customer pack and case economics. |
+| Other active, old-feed-linked products | 47 | 47 | Obtain current pack/label, supplier cost and stock, payment/returns assumptions, then approve each exact price and Shopify variant link. |
+| **Total first-release target** | **63** | **74** | All must pass the applicable G1 checks before the owner-selected full-range opening. |
+
+The 25 September [74-SKU supplier research queue](../../research/data/tropship-first-evidence-queue-2026-09-25.csv) still marks **all 74 feed-linked variants** `HOLD` for exact-label and commercial approval; only 61 of them are in the owner's current active target. Its 14 September feed quote and stock values are stale for release. The 13 active £0 placeholders have no old feed link at all. A fresh complete supplier source and account-specific VAT/pack terms, together with current manufacturer label evidence, are the main remaining inputs. Do not convert the old `YES` feed link or size-text match into approval.
+
 **Next gate work:** prepare a reviewed Shopify correction for the 13 published zero-price and 12 published overselling variants **before disabling the storefront password**. A permitted read-only storefront visibility and non-purchase checkout-boundary check remains useful afterward. Both the custom shop domain and the `myshopify.com` product URL were inaccessible from this environment (the shell could not resolve either host and the web fetch could not open them), so the individual product page was not observed. Reconcile the 60 distinct historical links and 38 unlinked Shopify variants against current labels, supplier SKU/pack, price and cost evidence. Resolve the one duplicate comparison identity. Only then can G1 approve exact own-shop links; G2 must separately prove supplier stock and order operations. No charge or test order is needed for this screen.
