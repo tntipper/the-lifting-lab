@@ -40,7 +40,7 @@ Barcode leading zeroes are preserved. Missing, malformed, all-zero or checksum-f
 
 Every candidate is `DRAFT_CANDIDATE_ONLY`. The planner has no existing-catalogue input and does not claim that a candidate is a newly created SKU or an update. A later reconciliation worker must match it to trusted existing mappings before proposing any action. No mapping, formula, cost basis, price, stock availability or product status is approved by ingestion.
 
-The separate [pricing policy](pricing-policy-calculator.md) uses the owner-confirmed versioned TropShip supplier-order tariff: £5 ex VAT / £6 unrecoverable gross below £100 ex-VAT wholesale, free strictly above it, and HOLD with a £6 estimate at exactly £100. This supersedes the earlier per-item assumption. The parser does not approve product wholesale VAT bases, infer supplier-order grouping, or supply price-write authority. Customer shipping revenue remains outside the feed contract.
+The separate [pricing policy](pricing-policy-calculator.md) uses the newer account-specific TropShip tariff: £5 ex VAT / £6 unrecoverable gross for **every supplier order**, at any wholesale total. The older £100 wholesale free-delivery assumption belongs to a different account and is superseded for TLL's TropShip pricing. The parser does not approve product wholesale VAT bases, infer supplier-order grouping, or supply price-write authority. Customer shipping revenue remains outside the feed contract.
 
 ## Freshness and supplier grain
 

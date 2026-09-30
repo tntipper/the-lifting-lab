@@ -1,5 +1,11 @@
 # TLL comparison and shop completion tracker
 
+## 30 September G1 catalogue checkpoint
+
+The connected Shopify Admin read covered **87 products and all 98 variants** on the current shop. The [readback](evidence/2026-09-30-shopify-variant-readback.csv) and [per-variant disposition](evidence/2026-09-30-g1-variant-dispositions.csv) are complete against that Admin result: 24 draft variants remain unavailable and all 74 active variants are held for G1 review; none has been approved as an exact own-shop offer. All 63 active products are marked published to the Online Store channel. Thirteen active variants have a £0 price and 12 active ISO-XP variants allow continued selling at zero tracked stock. Shopify confirms the Online Store password is **enabled**, limiting ordinary public access now. `onlineStoreUrl` is null despite the publication flag, and individual storefront pages could not be read here; do not use either fact to approve the product settings. The [G1 evidence note](evidence/2026-09-30-g1-shopify-readback.md) gives the exact limits and next actions.
+
+The 61 historical comparison mapping rows still refer to current Shopify IDs, but represent only 60 distinct variants because two TLL records share `STM008`. The other 38 Shopify variants have no historical comparison mapping; 168 of 229 historical comparison products remain unmapped. This is a finite identity and commercial-review task, not permission to connect products by title. The current pure pricing policy and 87 focused tests confirm £6 gross delivery for **every** TropShip supplier order, including orders over £100 wholesale. A stale supplier-feed guide sentence was corrected. G1 is still **open**, while G3's live hold is unchanged.
+
 ## 30 September connected readback
 
 The current local branch is `codex/tll-integration` at documentation commit `ee2853d`; the GitHub integration ref remains `4bc8a7a` and `main` remains `727c4f9`. Existing untracked files are preserved. The connected Vercel app directly resolves the protected branch alias to held Preview `dpl_HNvrJ1JpHGdf3kGpafqsiVnNP6aQ` from `4bc8a7a`, and `www.theliftinglab.co.uk` to production `dpl_4AebhGSLSpthdZRoyMt3EAcE7NpV` from `727c4f9`; both are `READY`. These fresh direct alias reads supersede the 29 September access limit below.
