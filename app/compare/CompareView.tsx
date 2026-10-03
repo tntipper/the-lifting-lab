@@ -93,10 +93,19 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
         </div>
       )}
 
-      {/* product headers */}
+      <p id="comparison-scroll-hint" className="text-xs text-lab-muted md:hidden">
+        Swipe or scroll sideways if needed to see all products →
+        <span className="sr-only"> Keyboard users can focus the comparison and use the arrow keys.</span>
+      </p>
+
+      {/* Keep the image, score and padded header inside each product column. */}
       <div
-        className="grid gap-3"
-        style={{ gridTemplateColumns: `minmax(120px,1.2fr) repeat(${products.length}, minmax(0,1fr))` }}
+        role="region"
+        aria-label="Product comparison"
+        aria-describedby="comparison-scroll-hint"
+        tabIndex={0}
+        className="grid gap-3 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-lab-lime"
+        style={{ gridTemplateColumns: `minmax(140px,1.2fr) repeat(${products.length}, minmax(180px,1fr))` }}
       >
         <div />
         {products.map((p) => (
