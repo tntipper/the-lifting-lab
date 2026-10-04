@@ -178,24 +178,31 @@ export const GUIDES: Guide[] = [
     ],
   },
   {
-    slug: 'hormone-support',
-    h1: 'Testosterone and Hormone Support Supplements',
-    metaTitle: 'Testosterone Support Supplements UK 2026 — Honest Guide | The Lifting Lab',
-    metaDescription:
-      'Most testosterone-booster ingredients are unproven. Here is what the evidence says about the few that help correct deficiencies, and how to read the labels.',
-    intro:
-      'Testosterone and hormone-support supplements are one of the most over-promised categories on the shelf. The honest position is that no over-the-counter product reliably raises testosterone in healthy men with normal levels; the genuine benefit, where it exists, is in correcting deficiencies in nutrients that hormone production depends on.',
-    paras: [
-      'A handful of ingredients have reasonable evidence in specific situations. Zinc and magnesium support normal testosterone production if you are deficient, which is why ZMA-style products exist; if your levels are already adequate, topping up does little. Vitamin D works the same way — correcting a deficiency can help, but more is not better.',
-      'Ashwagandha is one of the better-studied herbal options, with evidence for reducing stress markers and modest effects on testosterone and recovery in some trials. Tongkat ali and fenugreek have weaker, more mixed evidence. Many proprietary "test boosters" lean on tribulus and similar ingredients that have largely failed to show an effect in controlled studies.',
-      'Beware big blends that combine many half-doses of trendy ingredients behind a proprietary label. They are designed to look impressive rather than to deliver any single ingredient at a researched dose, and we penalise that hiding heavily in our scores.',
-      'Most importantly: if you suspect genuinely low testosterone — through fatigue, low libido, mood changes or poor recovery — that is a medical matter, not a supplement one. Get a blood test and speak to a qualified clinician rather than self-treating with over-the-counter boosters. Supplements can support the basics, but they are not a substitute for proper medical assessment.',
+    "slug": "hormone-support",
+    "h1": "Hormone Support: Claims Under Review",
+    "metaTitle": "Hormone Supplements — Claims Under Review | The Lifting Lab",
+    "metaDescription": "Hormone-supplement claims are under review. Existing scores do not establish testosterone benefits. Read the evidence limitations and when to seek medical assessment.",
+    "intro": "TLL is reviewing hormone-supplement claims by ingredient, preparation, population and outcome. We have paused this guide’s product recommendations. Existing scores should not be read as predictions of testosterone or recovery benefits.",
+    "paras": [
+      "NCCIH describes limited evidence for a possible testosterone effect from ashwagandha. Studies have used different preparations and often small samples. A finding for one extract and group cannot establish that every product will benefit someone with normal testosterone.",
+      "NCCIH also notes uncertainty about long-term ashwagandha safety, rare reports of liver injury and potential medicine interactions. It advises avoiding use during pregnancy and breastfeeding. A natural label does not establish safety.",
+      "Nutrition adequacy and treatment of testosterone deficiency are different questions. We do not assume that adding zinc, magnesium, vitamin D or a herb will improve testosterone because it appears on a label or meets a formula threshold.",
+      "If you suspect low testosterone, speak to a clinician. The Endocrine Society recommends diagnosis in men only with compatible symptoms and consistently low levels, confirmed by repeat morning fasting testing, followed by assessment of the cause. Do not self-treat a suspected hormone disorder with supplements."
     ],
-    faqs: [
-      { q: 'Do testosterone boosters actually work?', a: 'No over-the-counter product reliably raises testosterone in healthy men. The real benefit is correcting deficiencies in nutrients like zinc, magnesium and vitamin D that hormone production relies on.' },
-      { q: 'Is ashwagandha good for testosterone?', a: 'It is among the better-studied options, with evidence for lowering stress markers and modest effects on testosterone and recovery in some trials, though results vary.' },
-      { q: 'Should I see a doctor about low testosterone?', a: 'Yes. Suspected low testosterone should be assessed with a blood test by a qualified clinician, not self-treated with supplements.' },
-    ],
+    "faqs": [
+      {
+        "q": "Does TLL recommend a testosterone booster here?",
+        "a": "No. Product recommendations on this guide are paused while the supporting claims are reviewed. Existing hormone scores are not validated predictions of benefit."
+      },
+      {
+        "q": "Is ashwagandha proven to help everyone’s testosterone?",
+        "a": "No. NCCIH describes limited evidence and small studies using different preparations. Effects and safety cannot be assumed to be the same across products or people."
+      },
+      {
+        "q": "Should I see a doctor about low testosterone?",
+        "a": "Yes. Suspected testosterone deficiency needs clinical assessment. Symptoms and a single test or supplement score cannot establish the diagnosis."
+      }
+    ]
   },
   {
     slug: 'post-workout',
@@ -238,24 +245,31 @@ export const GUIDES: Guide[] = [
     ],
   },
   {
-    slug: 'cycle-support',
-    h1: 'Cycle Support and Organ Health Supplements',
-    metaTitle: 'Cycle Support Supplements UK 2026 — Honest Guide | The Lifting Lab',
-    metaDescription:
-      'Cycle support products aim to protect the liver, heart and other organs during demanding regimes. Here is what the ingredients do and where medical advice is essential.',
-    intro:
-      'Cycle support products are marketed at people putting their bodies under heavy demand, with the goal of protecting the liver, heart and other organs. They typically combine antioxidants, liver-support compounds and cardiovascular ingredients. The honest framing is that these are supportive supplements, not a safety net that makes a risky regime safe.',
-    paras: [
-      'Common ingredients include milk thistle (silymarin) and NAC (N-acetylcysteine), both studied for liver support, along with TUDCA in some products. For heart and blood-lipid support you will see things like omega-3, garlic extract and CoQ10. The evidence for these ranges from reasonable to modest, and a properly dosed single ingredient is worth more than a sprinkle of many.',
-      'Dosing transparency matters even more here than usual. Many organ-support blends hide small amounts of expensive ingredients behind a proprietary label, so you cannot tell whether the NAC or milk thistle is at a researched dose or just present for the label. We penalise that hiding heavily, because with organ health you want to know exactly what you are taking.',
-      'These products cannot offset the underlying stressor. If someone is using anabolic steroids, prohormones or other compounds that strain the liver and cardiovascular system, no supplement removes that risk. Bloodwork and medical supervision are what protect you, and a cycle-support tub is at best a minor adjunct to proper monitoring.',
-      'If you are considering or already using anything that demands organ support, the most important step is regular blood testing and a conversation with a qualified clinician who can interpret your liver enzymes, lipids and blood pressure. Supplements may play a small supporting role, but they are not a substitute for medical oversight. Our scores reward transparent, sensibly-dosed support formulas, but no score replaces a doctor.',
+    "slug": "cycle-support",
+    "h1": "Cycle Support: Claims and Safety Under Review",
+    "metaTitle": "Cycle Support — Claims Under Review | The Lifting Lab",
+    "metaDescription": "Cycle-support claims are under review. Existing scores do not establish organ protection or safe steroid use. Read the evidence limitations and safety information.",
+    "intro": "TLL is reviewing the claims attached to cycle-support supplements. We are not recommending these products to prevent liver or cardiovascular harm, and an existing category score is not a measure of protection.",
+    "paras": [
+      "The NHS lists heart attack, stroke, liver and kidney problems among the risks of anabolic steroid misuse. Do not interpret supplements, blood testing or medical supervision as making non-medical steroid use safe. Speak to a clinician about use, symptoms and stopping safely.",
+      "NCCIH reports that milk-thistle trials in liver disease have conflicting or insufficient results. This does not support a general promise of liver protection. Evidence in a particular disease or treatment setting cannot be assumed to show prevention of harm during steroid use.",
+      "The existing formula includes weights and flags for NAC, TUDCA and other ingredients. Those outputs are under review: neither an ingredient being present nor a missing-ingredient flag proves protection. We have paused this guide’s product recommendations while the claims are checked.",
+      "If you use medicines or have a health condition, discuss supplements with a pharmacist or clinician. This page is general information and cannot provide an individual risk assessment."
     ],
-    faqs: [
-      { q: 'What is cycle support used for?', a: 'It aims to support the liver, heart and other organs during demanding regimes, typically using ingredients like milk thistle, NAC, omega-3 and CoQ10.' },
-      { q: 'Does cycle support make a steroid cycle safe?', a: 'No. No supplement offsets the underlying risk. Regular bloodwork and supervision from a qualified clinician are what protect your health, not a support product.' },
-      { q: 'Which cycle-support ingredients have evidence?', a: 'Milk thistle and NAC have reasonable evidence for liver support, and omega-3 and CoQ10 for cardiovascular markers, but dosing and quality vary widely between products.' },
-    ],
+    "faqs": [
+      {
+        "q": "What does cycle support mean?",
+        "a": "It is a marketing category for supplement blends, not a validated measure of organ protection. TLL’s associated claims and scoring interpretation are under review."
+      },
+      {
+        "q": "Does cycle support make a steroid cycle safe?",
+        "a": "No. Do not use a supplement, score or monitoring plan as reassurance that steroid use is safe. The NHS describes serious risks from anabolic steroid misuse; seek clinical advice about use and stopping safely."
+      },
+      {
+        "q": "Does a missing-TUDCA flag show that a product is unsafe?",
+        "a": "No. It is an output of the legacy formula, not a clinical safety finding. We have not validated it as a predictor of liver injury or protection."
+      }
+    ]
   },
   {
     slug: 'meal-replacement',
@@ -338,24 +352,31 @@ export const GUIDES: Guide[] = [
     ],
   },
   {
-    slug: 'zma',
-    h1: 'ZMA: Zinc, Magnesium and Sleep, Honestly Assessed',
-    metaTitle: 'Best ZMA UK 2026 — Zinc Magnesium B6 Buyer’s Guide | The Lifting Lab',
-    metaDescription:
-      'ZMA combines zinc, magnesium and vitamin B6. Here is what the evidence really says about sleep and testosterone, sensible dosing, and the best UK options.',
-    intro:
-      'ZMA is a simple blend of zinc, magnesium and vitamin B6, marketed for sleep, recovery and testosterone. The honest read on the evidence is that it mainly helps by correcting deficiencies in two minerals that a lot of active people are short of, rather than acting as a hormonal booster in those who already have enough.',
-    paras: [
-      'Zinc and magnesium both play real roles in sleep quality, muscle function and, when you are deficient, testosterone production. Hard training and heavy sweating can deplete both, so an athlete running low may genuinely feel a benefit from topping them up. Someone whose diet already supplies enough is unlikely to notice much.',
-      'The testosterone claims are where ZMA is oversold. Studies in people who are not deficient generally show no meaningful rise in testosterone. The takeaway is that ZMA helps restore normal function if you are short of zinc or magnesium, but it will not push a healthy man above his normal range.',
-      'Where many people do report a benefit is sleep. Magnesium in particular is associated with more restful sleep, and taking ZMA before bed is the conventional approach. Forms matter: magnesium glycinate or citrate are better absorbed and gentler than oxide, and a sensible product avoids overdoing zinc, since too much over time can interfere with copper.',
-      'Treat ZMA as a low-cost way to cover two commonly-short minerals plus B6, not as a hormone supplement. Take it away from calcium-rich foods, which can blunt absorption, and keep zinc within sensible limits. Our scores reward well-absorbed forms and honest, fully-disclosed dosing over proprietary blends and inflated claims.',
+    "slug": "zma",
+    "h1": "ZMA: Mineral Blend, Claims Under Review",
+    "metaTitle": "ZMA — Hormone Claims Under Review | The Lifting Lab",
+    "metaDescription": "ZMA combines zinc, magnesium and vitamin B6. Its hormone, sleep and recovery claims are under review here; existing scores are not validated predictions of benefit.",
+    "intro": "ZMA combines zinc, magnesium and vitamin B6. TLL is reviewing the hormone, sleep and recovery claims attached to this category and has paused this guide’s product recommendations.",
+    "paras": [
+      "A nutrient’s role in the body does not establish that a particular blend will improve testosterone, sleep or performance. Nutrient adequacy, a measured deficiency and a clinical hormone disorder need different assessments.",
+      "Do not read an existing score or dose flag as a prediction of benefit. The next review must check the studied formulation, participants, baseline nutrient status, outcomes and safety before recommending a product.",
+      "Check the amounts across all supplements you take and ask a pharmacist or clinician about overlap and medicine interactions. Avoid assuming that larger amounts are better.",
+      "Suspected low testosterone needs clinical assessment. This page does not offer a dosing plan or a treatment recommendation."
     ],
-    faqs: [
-      { q: 'Does ZMA boost testosterone?', a: 'Mainly only if you are deficient in zinc or magnesium. In people who already have enough, studies generally show no meaningful rise in testosterone.' },
-      { q: 'Does ZMA help you sleep?', a: 'Many people find it does, largely thanks to magnesium. Taking it before bed in a well-absorbed form is the usual approach.' },
-      { q: 'When should I take ZMA?', a: 'Typically before bed, and away from calcium-rich foods or dairy, which can reduce absorption of the zinc and magnesium.' },
-    ],
+    "faqs": [
+      {
+        "q": "Does a high ZMA score establish a testosterone benefit?",
+        "a": "No. TLL’s ZMA claims and scoring interpretation are under review. A mineral blend or formula threshold does not establish a hormone benefit."
+      },
+      {
+        "q": "Does this guide recommend ZMA for sleep?",
+        "a": "No. Sleep and recovery claims need their own outcome-specific evidence review. Recommendations on this guide are paused."
+      },
+      {
+        "q": "What is in ZMA?",
+        "a": "ZMA combines zinc, magnesium and vitamin B6. Check the actual label and all other supplements you take; products can differ."
+      }
+    ]
   },
   {
     slug: 'gut-digestion',

@@ -1,3 +1,4 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -10,6 +11,8 @@ import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type ScoredProduct } from '@/lib/products'
 import { MIN_RANKED } from '@/lib/best-categories'
+import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
+import { claimsReviewFor } from '@/lib/claims-review'
 
 export const revalidate = 86400 // refresh top products daily
 
@@ -72,7 +75,8 @@ export default async function GuidePage({
   const guide = getGuide(category)
   if (!guide) notFound()
 
-  const allScored = await categoryScored(guide.slug)
+  const review = claimsReviewFor(guide.slug)
+  const allScored = review ? [] : await categoryScored(guide.slug)
   const products = allScored.slice(0, 3)
   // A full /best/[category] ranking page exists only when the category has
   // enough scored products (same gate as that page + the sitemap).
@@ -101,13 +105,13 @@ export default async function GuidePage({
   // for this YMYL (health) content in search.
   const articleJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'MedicalWebPage',
+    '@type': review ? 'WebPage' : 'MedicalWebPage',
     name: guide.h1,
     headline: guide.metaTitle,
     description: guide.metaDescription,
     url,
     inLanguage: 'en-GB',
-    lastReviewed: '2026-06-15',
+    ...(!review && { lastReviewed: '2026-06-15' }),
     publisher: {
       '@type': 'Organization',
       name: 'The Lifting Lab',
@@ -115,7 +119,7 @@ export default async function GuidePage({
     },
     ...(citations.length > 0 && {
       citation: citations.map((c) => ({
-        '@type': 'ScholarlyArticle',
+        '@type': review ? 'WebPage' : 'ScholarlyArticle',
         name: c.title,
         author: c.authors,
         ...(c.year && { datePublished: c.year }),
@@ -167,20 +171,20 @@ export default async function GuidePage({
       <TopNav />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(articleJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
       {itemListJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }}
         />
       )}
 
@@ -208,6 +212,7 @@ export default async function GuidePage({
         </h1>
 
         <p className="text-lg text-white/90 leading-relaxed mb-6">{guide.intro}</p>
+        <ClaimsReviewNotice category={guide.slug} />
 
         {guide.paras.map((p, i) => (
           <p key={i} className="text-lab-muted leading-relaxed mb-5">

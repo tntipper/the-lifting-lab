@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { getGuide } from '@/lib/guides'
 import { categoryLabel } from '@/lib/categories'
+import { claimsReviewFor } from '@/lib/claims-review'
 
 export const runtime = 'edge'
 export const alt = 'The Lifting Lab — Supplement Buyer’s Guide'
@@ -79,7 +80,7 @@ export default async function Image({ params }: { params: Promise<{ category: st
         {/* footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#374151', fontSize: 13, letterSpacing: 2 }}>
-            Effective-dose analysis · UK pricing · Not medical advice
+            {claimsReviewFor(category) ? 'Claims under review · Not medical advice' : 'Effective-dose analysis · UK pricing · Not medical advice'}
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab

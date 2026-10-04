@@ -1,8 +1,8 @@
 import { ImageResponse } from 'next/og'
+import { parseShareProductIds } from '@/lib/share-products'
+import { getShareProducts } from '@/lib/share-products-server'
 
 export const runtime = 'edge'
-
-type StackEntry = { brand: string; name: string; score: number | null; category: string }
 
 const W = 1080
 const H = 1920
@@ -21,35 +21,16 @@ function scoreLabel(score: number | null): string {
   return 'Weak'
 }
 
-function archetype(items: StackEntry[]): string {
-  const cats = new Set(items.map((i) => i.category))
-  if (cats.has('cycle-support') || cats.has('hormone-support')) return 'Enhanced Athlete'
-  if (cats.has('pre-workout') && (cats.has('creatine') || cats.has('whey'))) return 'Performance Focused'
-  if (cats.has('creatine') && (cats.has('whey') || cats.has('whey-isolate'))) return 'Strength Builder'
-  if (cats.has('multivitamin') && cats.has('omega')) return 'Health-First Lifter'
-  if (cats.has('pre-workout')) return 'Stimmed-Up Athlete'
-  if (cats.has('creatine')) return 'Creatine Maximiser'
-  return 'Supplement Stack'
-}
-
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const raw = searchParams.get('data')
-
-  let score: number | null = null
-  let items: StackEntry[] = []
-
-  if (raw) {
-    try {
-      const parsed = JSON.parse(decodeURIComponent(raw))
-      score = parsed.score ?? null
-      items = parsed.items ?? []
-    } catch {}
+  const ids = parseShareProductIds(new URL(request.url).searchParams)
+  if (ids === null) {
+    return Response.json({ error: 'Supply at most 50 product IDs; custom card data is not accepted' }, { status: 400 })
   }
-
-  const arc = archetype(items)
-  const displayScore = score != null ? String(score) : '—'
-  const col = scoreColor(score)
+  const result = await getShareProducts(ids)
+  if (!result.ok) {
+    return Response.json({ error: result.error }, { status: result.status, headers: { 'Cache-Control': 'no-store' } })
+  }
+  const items = result.products
   const maxItems = 10
 
   return new ImageResponse(
@@ -80,7 +61,7 @@ export async function GET(request: Request) {
           </span>
         </div>
 
-        {/* Hero score block */}
+        {/* A personal selection is not an assessed combined stack. */}
         <div
           style={{
             display: 'flex',
@@ -90,40 +71,17 @@ export async function GET(request: Request) {
             borderRadius: 32,
             padding: '60px 40px',
             marginBottom: 48,
-            border: `2px solid ${col}22`,
+            border: '2px solid #a6e22e22',
           }}
         >
-          {/* Score ring */}
-          <div
-            style={{
-              width: 200,
-              height: 200,
-              borderRadius: '50%',
-              border: `8px solid ${col}`,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#0d0d0d',
-              marginBottom: 32,
-              boxShadow: `0 0 40px ${col}44`,
-            }}
-          >
-            <span style={{ color: col, fontSize: 72, fontWeight: 900, lineHeight: 1 }}>{displayScore}</span>
-            <span style={{ color: '#6b7280', fontSize: 16, letterSpacing: 4, textTransform: 'uppercase', marginTop: 6 }}>
-              Score
-            </span>
-          </div>
-
-          {/* Archetype */}
-          <span style={{ color: '#4b5563', fontSize: 16, letterSpacing: 6, textTransform: 'uppercase', marginBottom: 12 }}>
-            Archetype
+          <span style={{ color: '#ffffff', fontSize: 48, fontWeight: 900, textAlign: 'center' }}>
+            My Supplement Selection
           </span>
-          <span style={{ color: '#ffffff', fontSize: 48, fontWeight: 900, lineHeight: 1.1, letterSpacing: -1, textAlign: 'center' }}>
-            {arc}
+          <span style={{ color: '#9ca3af', fontSize: 22, marginTop: 24 }}>
+            {items.length} product{items.length === 1 ? '' : 's'} · Individual catalogue scores
           </span>
-          <span style={{ color: '#374151', fontSize: 18, marginTop: 16 }}>
-            {items.length} product{items.length === 1 ? '' : 's'} · Effectiveness Match scoring
+          <span style={{ color: '#9ca3af', fontSize: 20, marginTop: 16, textAlign: 'center' }}>
+            This selection has not been assessed as a combined stack.
           </span>
         </div>
 
@@ -195,7 +153,7 @@ export async function GET(request: Request) {
           }}
         >
           <span style={{ color: '#374151', fontSize: 14, letterSpacing: 2 }}>
-            EFSA reference doses · Not medical advice
+            Individual product assessments · Not medical advice
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab
@@ -203,6 +161,6 @@ export async function GET(request: Request) {
         </div>
       </div>
     ),
-    { width: W, height: H }
+    { width: W, height: H, headers: { 'Cache-Control': 'no-store' } }
   )
 }

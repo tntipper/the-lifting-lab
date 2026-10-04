@@ -1,3 +1,4 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
@@ -54,8 +55,8 @@ export default function MythsPage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
         {/* breadcrumb */}
@@ -155,7 +156,7 @@ export default function MythsPage() {
               <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">Related</p>
               <p className="text-sm font-black uppercase tracking-wide text-white">Testosterone Support</p>
               <p className="text-xs text-lab-muted leading-snug mt-1">
-                The honest, evidence-based verdict on natural testosterone boosters — what works, what is weak, and what to skip.
+                Testosterone supplement claims are under review. Read the evidence limitations and when to seek clinical assessment.
               </p>
             </div>
             <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>

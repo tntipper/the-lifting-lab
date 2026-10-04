@@ -1,9 +1,17 @@
 'use client'
 
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { authErrorMessage, safeAuthReturnPath } from '@/lib/auth-flow'
 
 export default function AuthPage() {
+  return isSyntheticPreview() ? <PreviewUnavailableContent /> : <AuthPageForm />
+}
+
+function AuthPageForm() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -14,8 +22,10 @@ export default function AuthPage() {
   // Capture a referral code from ?ref= (read client-side to avoid the
   // useSearchParams Suspense requirement on this otherwise-static page).
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get('ref')
+    const parameters = new URLSearchParams(window.location.search)
+    const code = parameters.get('ref')
     if (code) setRefCode(code)
+    setError(authErrorMessage(parameters.get('error')))
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -45,7 +55,7 @@ export default function AuthPage() {
     setError('')
     const supabase = createClient()
     // Carry any referral code through the OAuth round-trip via the callback URL.
-    const next = refCode ? `/dashboard?ref=${encodeURIComponent(refCode)}` : '/dashboard'
+    const next = safeAuthReturnPath(refCode ? `/dashboard?ref=${encodeURIComponent(refCode)}` : '/dashboard')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -127,7 +137,7 @@ export default function AuthPage() {
           </div>
 
           {error && (
-            <p className="text-lab-red text-sm">{error}</p>
+            <p role="alert" className="text-lab-red text-sm">{error}</p>
           )}
 
           <button

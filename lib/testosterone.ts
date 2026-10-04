@@ -1,3 +1,4 @@
+// Legacy verdicts are withheld from /testosterone pending a claim-specific evidence review.
 // Natural testosterone-support data — powers the /testosterone hub. Pure static
 // data, zero DB, so the page can never fail at runtime. Every entry is
 // evidence-based and deliberately clinician-safe: we rate what the research

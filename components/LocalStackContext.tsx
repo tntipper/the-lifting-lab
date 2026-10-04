@@ -30,7 +30,6 @@ export function LocalStackProvider({ children }: { children: ReactNode }) {
   const [stack, setStack] = useState<LocalStackProduct[]>([])
 
   // hydrate from localStorage after mount (avoids SSR mismatch)
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setStack(getStack()) }, [])
 
   const toggle = useCallback((product: LocalStackProduct) => {

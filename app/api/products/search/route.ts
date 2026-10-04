@@ -1,3 +1,4 @@
+import { guardedSupabaseFetch } from '@/lib/preview-mode'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -11,6 +12,7 @@ export async function GET(request: Request) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: guardedSupabaseFetch },
       cookies: {
         getAll() { return cookieStore.getAll() },
         setAll() {},

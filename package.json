@@ -2,30 +2,42 @@
   "name": "the-lifting-lab",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.19.0",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0 <25",
+    "npm": ">=11.19.0 <12"
   },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:integration": "node --test tests/integration/*.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
-    "next": "^15.5.19",
+    "next": "15.5.25",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "3.3.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.0-preview.0",
+    "eslint-config-next": "15.5.25",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.28",
+      "sharp": "0.35.4"
+    }
   }
 }

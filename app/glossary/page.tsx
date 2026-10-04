@@ -1,3 +1,4 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
@@ -67,11 +68,11 @@ export default function GlossaryPage() {
       <GlossaryTracker />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(definedTermSetJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(definedTermSetJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
 
       <div className="max-w-4xl mx-auto px-6 py-12">

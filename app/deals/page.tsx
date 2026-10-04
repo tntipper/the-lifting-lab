@@ -1,3 +1,4 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
@@ -80,11 +81,11 @@ export default function DealsPage() {
       <TopNav />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
 
       <main className="max-w-3xl mx-auto px-6 py-12">

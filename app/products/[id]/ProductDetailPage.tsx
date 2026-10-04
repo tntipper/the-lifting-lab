@@ -13,6 +13,8 @@ import { trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
 import MethodologyModal from '@/components/MethodologyModal'
+import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
+import { claimsReviewFor } from '@/lib/claims-review'
 import ReviewSection from '@/components/ReviewSection'
 import ShareModal from '@/components/ShareModal'
 import TopNav from '@/components/TopNav'
@@ -53,8 +55,10 @@ export default function ProductDetailPage({
   const { inStack, toggle } = useLocalStack()
   const [shareOpen, setShareOpen] = useState(false)
 
+  const review = claimsReviewFor(product.category)
   const costReason = trueCostReason(product)
   const flags = verdictFlags(product.nutrients, product.score, product.informed_sport)
+    .filter((flag) => !review || !flag.text.includes('Effectiveness Match'))
   const color = product.score != null ? scoreColor(product.score) : '#4b5563'
   const stacked = inStack(product.id)
   const retailers = getRetailerLinks(product.brand, product.name)
@@ -92,6 +96,7 @@ export default function ProductDetailPage({
               {product.brand}
             </Link>
             <h1 className="text-2xl font-black italic mt-1">{product.name}</h1>
+            <ClaimsReviewNotice category={product.category} />
             <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
               <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                 {categoryLabel(product.category)}
@@ -200,20 +205,22 @@ export default function ProductDetailPage({
             <MethodologyModal category={product.category} />
           </div>
           <p className="text-sm text-white/70 leading-relaxed">
+            {review ? <>Existing formula score: <span className="font-bold">{product.score ?? '–'}/100</span>. Claims and ingredient flags are under review; this score is not a validated prediction of health benefits.</> : <>
             This product scores{' '}
             <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our
             evidence-based reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
             dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
+            </>}
           </p>
-          <div className="flex gap-3 mt-3 flex-wrap">
+          {!review && <div className="flex gap-3 mt-3 flex-wrap">
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">● Green = meets dose</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">● Amber = below optimal</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
-          </div>
+          </div>}
         </div>
 
         {/* better-rated alternatives in the same category */}
-        <RelatedProducts items={related} productId={product.id} category={product.category} score={product.score} brand={product.brand} name={product.name} />
+        {!review && <RelatedProducts items={related} productId={product.id} category={product.category} score={product.score} brand={product.brand} name={product.name} />}
 
         {/* reviews */}
         <ReviewSection productId={product.id} productName={product.name} />

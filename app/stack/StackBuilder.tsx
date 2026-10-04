@@ -123,19 +123,9 @@ function buildEmailLink(score: number | null, items: StackItem[]): string {
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`
 }
 
-function buildShareUrl(score: number | null, items: StackItem[]): string {
-  const data = {
-    score,
-    items: items
-      .filter((i) => i.products)
-      .map((i) => ({
-        brand: i.products!.brand,
-        name: i.products!.name,
-        score: scoreFor(i.products!.brand, i.products!.name),
-        category: i.products!.category,
-      })),
-  }
-  return `/api/stack/sharecard?data=${encodeURIComponent(JSON.stringify(data))}`
+function buildShareUrl(items: StackItem[]): string {
+  const ids = items.flatMap(item => item.products ? [item.products.id] : [])
+  return `/api/stack/sharecard?${new URLSearchParams({ ids: ids.join(',') })}`
 }
 
 type Product = {
@@ -264,7 +254,6 @@ export default function StackBuilder() {
         loadServerStack()
       }
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadLocalStack(localStack)
     }
   }, [signedIn, localStack, loadServerStack, loadLocalStack, localClear])
@@ -332,7 +321,7 @@ export default function StackBuilder() {
       : null
 
   const dailyTotals = getDailyTotals(stackItems, sex)
-  const shareUrl = buildShareUrl(avgScore, stackItems)
+  const shareUrl = buildShareUrl(stackItems)
   const emailUrl = buildEmailLink(avgScore, stackItems)
 
   // Buy All — group products by retailer so each supplier opens in its own tab.
