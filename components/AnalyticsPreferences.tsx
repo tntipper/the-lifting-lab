@@ -1,6 +1,5 @@
 'use client'
 
-import Script from 'next/script'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { GA_MEASUREMENT_ID } from '@/lib/gtag'
@@ -10,8 +9,18 @@ import {
   readAnalyticsChoice, saveAnalyticsChoice, type AnalyticsChoice,
 } from '@/lib/analytics-consent'
 
+type AnalyticsFrameWindow = Window & {
+  tllAnalyticsStart?: (config: Record<string, unknown>) => void
+  tllAnalyticsDispatch?: (command: unknown[]) => void
+  tllAnalyticsStop?: () => void
+}
+function frameWindow(): AnalyticsFrameWindow | null {
+  return (document.getElementById('tll-analytics-frame') as HTMLIFrameElement | null)?.contentWindow as AnalyticsFrameWindow | null
+}
+
 const disableKey = `ga-disable-${GA_MEASUREMENT_ID}`
 function disableAnalytics() {
+  frameWindow()?.tllAnalyticsStop?.()
   Object.assign(window, { [disableKey]: true })
   window.gtag = undefined
   window.dataLayer = []
@@ -133,24 +142,21 @@ export default function AnalyticsPreferences() {
         )}
       </div>
       {ready && choice === 'accepted' && (
-        <Script id="tll-ga4" referrerPolicy="no-referrer" src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive"
-          onReady={() => {
+        <iframe id="tll-analytics-frame" src="/analytics-frame.html" title="Optional analytics transport"
+          hidden aria-hidden="true" tabIndex={-1} referrerPolicy="no-referrer"
+          onLoad={() => {
             if (!active.current || !analyticsAllowed()) { disableAnalytics(); return }
-            if (initialised.current) return
+            const child = frameWindow()
+            if (!child?.tllAnalyticsStart || initialised.current) return
             initialised.current = true
-            Object.assign(window, { [disableKey]: false })
-            window.dataLayer = window.dataLayer || []
-            // gtag requires an arguments object rather than an array.
-            // eslint-disable-next-line prefer-rest-params
-            window.gtag = function () { window.dataLayer?.push(arguments) }
-            window.gtag('set', 'linker', { accept_incoming: false, domains: [], decorate_forms: false })
-            window.gtag('set', { ...analyticsPageFields(), ...NO_CAMPAIGN_ATTRIBUTION, url_passthrough: false })
-            window.gtag('js', new Date())
-            window.gtag('config', GA_MEASUREMENT_ID, {
+            child.tllAnalyticsStart({
               ...analyticsPageFields(), ...NO_CAMPAIGN_ATTRIBUTION,
               url_passthrough: false, send_page_view: false, cookie_domain: 'none', cookie_flags: 'SameSite=Lax;Secure',
               allow_google_signals: false, allow_ad_personalization_signals: false,
             })
+            window.gtag = (...command) => {
+              if (active.current && analyticsAllowed()) child.tllAnalyticsDispatch?.(command)
+            }
             pageView()
           }} />
       )}

@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>Optional analytics transport</title></head><body>
+<script>
+// This inert same-origin frame has no main-page URL query, input or referrer.
+// It never starts on direct navigation and does not accept cross-origin messages.
+(() => {
+  const id = 'G-R3YMG6TYXF';
+  const disableKey = 'ga-disable-' + id;
+  let active = false, initialised = false, loading = false, pending = [];
+  function accepted() {
+    if (parent === window) return false;
+    try {
+      if (document.cookie.split(';').some(x => x.trim() === 'tll_analytics_rejected_v1=1')) return false;
+      const record = JSON.parse(localStorage.getItem('tll.analytics-choice.v1') || 'null');
+      return record?.version === 1 && record.choice === 'accepted' &&
+        typeof record.expiresAt === 'number' && record.expiresAt > Date.now() &&
+        record.expiresAt <= Date.now() + 180 * 86400000;
+    } catch { return false; }
+  }
+  window.tllAnalyticsStop = () => {
+    active = false; window[disableKey] = true; pending = [];
+    window.gtag = undefined; window.dataLayer = [];
+  };
+  window.tllAnalyticsDispatch = command => {
+    if (!active || !accepted()) return;
+    if (initialised) window.gtag(...command);
+    else pending.push(command);
+  };
+  window.tllAnalyticsStart = config => {
+    if (loading || !accepted()) return;
+    active = true; loading = true;
+    const script = document.createElement('script');
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+    script.referrerPolicy = 'no-referrer';
+    script.onload = () => {
+      if (!active || !accepted()) { window.tllAnalyticsStop(); return; }
+      window[disableKey] = false; window.dataLayer = [];
+      window.gtag = function () { window.dataLayer.push(arguments); };
+      window.gtag('set', 'linker', { accept_incoming: false, domains: [], decorate_forms: false });
+      window.gtag('set', config);
+      window.gtag('js', new Date());
+      window.gtag('config', id, config);
+      initialised = true;
+      for (const command of pending) window.tllAnalyticsDispatch(command);
+      pending = [];
+    };
+    document.head.append(script);
+  };
+})();
+</script></body></html>
