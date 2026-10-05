@@ -30,7 +30,9 @@ async function isolatedPythonHelper(t, securitySource) {
   const source = await readFile(GENERATION_22_KEYCHAIN_HELPER, 'utf8')
   assert.equal(source.includes('GENERATION_22_KEYCHAIN_ENABLED = False'), true)
   assert.equal(source.includes('"/usr/bin/security"'), true)
+  assert.equal(source.includes('sys.platform != "darwin"'), true)
   writeFileSync(helperPath, source
+    .replace('import sys', 'import sys\nsys.platform = "darwin"  # synthetic helper only')
     .replace('GENERATION_22_KEYCHAIN_ENABLED = False', 'GENERATION_22_KEYCHAIN_ENABLED = True')
     .replace('"/usr/bin/security"', JSON.stringify(securityPath)), { mode: 0o600 })
   return helperPath

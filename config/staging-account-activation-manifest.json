@@ -2217,7 +2217,7 @@
       },
       {
         "path": "tests/staging-generation-22-default-process.test.mjs",
-        "sha256": "75c88b8b43d153f031108f4fa654da08145e1af2a751bdffb80f2a72ed70046f"
+        "sha256": "73f5209a48b8fd40de33180e3a674734ee69f998b9d04df361c5993ef4db9d35"
       },
       {
         "path": "tests/fixtures/staging-generation-22-default-success.mjs",
@@ -2229,7 +2229,7 @@
       },
       {
         "path": "tests/staging-generation-22-keychain-reader.test.mjs",
-        "sha256": "4ba06ef5723866b80a500458f7959e0d8950559b7ad7f57bf3efe4ea2b5dd9bc"
+        "sha256": "4f9d73bde35d5048713baa5526b28d09bf62a6abb49f765873d987bbda85fce8"
       },
       {
         "path": "tests/staging-generation-22-preflight-assessment.test.mjs",

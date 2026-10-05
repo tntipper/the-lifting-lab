@@ -284,7 +284,9 @@ exit 9
   const helper = readFileSync(helperPath, 'utf8')
   assert.ok(helper.includes('GENERATION_22_KEYCHAIN_ENABLED = False'))
   assert.ok(helper.includes('"/usr/bin/security"'))
+  assert.ok(helper.includes('sys.platform != "darwin"'))
   writeFileSync(helperPath, helper
+    .replace('import sys', 'import sys\nsys.platform = "darwin"  # synthetic helper only')
     .replace('GENERATION_22_KEYCHAIN_ENABLED = False', 'GENERATION_22_KEYCHAIN_ENABLED = True')
     .replace('"/usr/bin/security"', JSON.stringify(securityPath)))
   const [{ createStagingGeneration22FixedSpawner: createSpawner,

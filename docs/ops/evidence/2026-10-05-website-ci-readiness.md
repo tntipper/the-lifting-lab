@@ -19,3 +19,7 @@ Local limitations: Docker inspection could not proceed because automatic approva
 ## Release boundaries
 
 No gates enabled, credentials changed, hosted calls made, supplier integration added, merge or production deployment performed. v17 recovery is evidence of all-off recovery; v18 successor has no current live-journey proof. Customer account/cart/checkout and supplier fulfilment still need staged independent acceptance before release approval. No landing recommendation until exact candidate CI and independent review pass.
+
+## First hosted candidate and correction
+
+Exact commit `e6f890e99539de0250c595d959a4a5de61b165c9` received independent review PASS. Draft PR59 targets integration. Run 37300805696 passed the complete Gen23 offline rehearsal in 26.5 seconds, and repaired process/path tests. Application recorded 3263 pass / 3 fail / 16 skip: the synthetic Python copies still hit the real helper's `sys.platform != "darwin"` guard on Linux. Follow-up changes the platform only inside disposable copied helpers after asserting the production guard is present; production source and its Mac-only restriction remain unchanged. Exact follow-up Linux run pending. Branch Preview was automatically built by the existing Vercel GitHub integration; no production deploy or control activation requested.
