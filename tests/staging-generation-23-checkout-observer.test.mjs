@@ -106,7 +106,7 @@ test('wrong shop, checkout syntax, URL extras and expired deadline stop before b
 })
 
 test('real browser observes a loopback checkout redirect at its final address without sending a POST',
-  { timeout: 30_000 }, async () => {
+  { timeout: 30_000 }, async t => {
     const { observeStagingCheckout: observe } = await armedLoopback()
     const seen = []
     const fixture = await loopback((request, response) => {
@@ -117,7 +117,8 @@ test('real browser observes a loopback checkout redirect at its final address wi
       response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
       response.end('<!doctype html><body>£12.00<button id="submit">Place order</button><button id="popup">New tab</button><script>document.getElementById("submit").onclick=()=>fetch(location.href,{method:"POST"}).catch(()=>{});document.getElementById("popup").onclick=()=>window.open(location.href)</script></body>')
     })
-    const browser = await chromium.launch({ headless: true, channel: 'chrome' })
+    t.after(() => fixture.close())
+    const browser = await chromium.launch({ headless: true, ...(process.platform === 'darwin' ? { channel: 'chrome' } : {}) })
     try {
       const context = await browser.newContext({ serviceWorkers: 'block' }), page = await context.newPage()
       const initial = `${fixture.url}/cart/c/syntheticCheckout123?key=syntheticSecret123`
@@ -134,10 +135,10 @@ test('real browser observes a loopback checkout redirect at its final address wi
       await popup.locator('#submit').waitFor()
       assert.equal(seen.filter(item => item.startsWith('POST')).length, 0)
       await context.close()
-    } finally { await browser.close(); await fixture.close() }
+    } finally { await browser.close() }
   })
 
-test('a forbidden checkout redirect is rejected before its destination receives any request', async () => {
+test('a forbidden checkout redirect is rejected before its destination receives any request', async t => {
   const { observeStagingCheckout: observe } = await armedLoopback()
   let reached = 0
   const forbidden = await loopback((_request, response) => { reached++; response.end('forbidden') })
@@ -145,14 +146,15 @@ test('a forbidden checkout redirect is rejected before its destination receives 
     response.writeHead(302, { location: `http://localhost:${new URL(forbidden.url).port}/checkouts/cn/other` })
     response.end()
   })
-  const browser = await chromium.launch({ headless: true, channel: 'chrome' })
+  t.after(() => source.close()); t.after(() => forbidden.close())
+  const browser = await chromium.launch({ headless: true, ...(process.platform === 'darwin' ? { channel: 'chrome' } : {}) })
   try {
     const context = await browser.newContext({ serviceWorkers: 'block' }), page = await context.newPage()
     await assert.rejects(observe({ page, checkoutUrl: `${source.url}/cart/c/syntheticCheckout123`,
       signal, deadlineAt: deadlineAt() }), /unavailable/)
     assert.equal(reached, 0)
     await context.close()
-  } finally { await browser.close(); await source.close(); await forbidden.close() }
+  } finally { await browser.close() }
 })
 
 test('an HTTP error at the pinned checkout cannot count as an observed handoff', async () => {

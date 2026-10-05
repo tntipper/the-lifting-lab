@@ -1,7 +1,10 @@
+import { localFixtureConfig, assertOwnedFixture } from '../fixtures/local-pg-fixture.mjs'
+const fixture = localFixtureConfig()
+assertOwnedFixture(fixture)
 import { spawn, execFileSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 
-export const C = 'tll-stage0-postgres', D = 'tll_account_operations_v1', BRIDGE = 'tll_ao1_bridge_executor'
+export const C = fixture.postgres, D = 'tll_account_operations_v1', BRIDGE = 'tll_ao1_bridge_executor'
 const opts = { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 16 * 1024 * 1024, timeout: 15_000 }, clients = new Set()
 export function admin(input) { try { return execFileSync('docker', ['exec', '-i', C, 'psql', '-XqAt', '-U', 'postgres', '-d', D, '-v', 'ON_ERROR_STOP=1'], { ...opts, input }).trim() } catch { throw Error('Synthetic account SQL failed') } }
 export function assertFixture() { if (admin("SELECT current_database()||':'||coalesce(shobj_description(oid,'pg_database'),'') FROM pg_database WHERE datname=current_database()") !== D + ':tll-account-operations-synthetic-v1') throw Error('Wrong account-operation fixture') }

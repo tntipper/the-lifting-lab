@@ -1,3 +1,6 @@
+import { localFixtureConfig, assertOwnedFixture } from './fixtures/local-pg-fixture.mjs'
+const fixture = localFixtureConfig()
+assertOwnedFixture(fixture)
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync, spawn } from 'node:child_process'
@@ -38,19 +41,19 @@ test('database baseline has one immutable staging-only read-only query and liter
 
 test('when the existing local PostgreSQL fixture is running, PostgreSQL accepts the exact JSONB marker comparison', t => {
   let running = ''
-  try { running = execFileSync('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres'], { encoding: 'utf8' }).trim() } catch { t.skip('local PostgreSQL fixture is unavailable'); return }
+  try { running = execFileSync('docker', ['inspect', '--format', '{{.State.Running}}', fixture.postgres], { encoding: 'utf8' }).trim() } catch { t.skip('local PostgreSQL fixture is unavailable'); return }
   if (running !== 'true') { t.skip('local PostgreSQL fixture is not running'); return }
   const exactMarker = JSON.stringify({ expiresAt: GENERATION_21_RETIRED_EXPIRES_AT, generation: 21, projectRef: PROJECT_REF, state: 'retired', windowId: receipt.windowId }).replaceAll("'", "''")
   const sql = `SELECT ('${exactMarker}'::jsonb IS DISTINCT FROM jsonb_build_object('expiresAt','${GENERATION_21_RETIRED_EXPIRES_AT}','generation',21,'projectRef','${PROJECT_REF}','state','retired','windowId','${receipt.windowId}'))::text, ('${exactMarker}'::jsonb || '{\"extra\":true}'::jsonb IS DISTINCT FROM jsonb_build_object('expiresAt','${GENERATION_21_RETIRED_EXPIRES_AT}','generation',21,'projectRef','${PROJECT_REF}','state','retired','windowId','${receipt.windowId}'))::text;`
-  const output = execFileSync('docker', ['exec', '-i', 'tll-stage0-postgres', 'psql', '-XqAt', '-U', 'postgres', '-d', 'postgres'], { input: sql, encoding: 'utf8' }).trim()
+  const output = execFileSync('docker', ['exec', '-i', fixture.postgres, 'psql', '-XqAt', '-U', 'postgres', '-d', 'postgres'], { input: sql, encoding: 'utf8' }).trim()
   assert.equal(output, 'false|true')
 })
 
 test('read-only role detects another user session without relying on hidden backend_type', async t => {
   let running = ''
-  try { running = execFileSync('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres'], { encoding: 'utf8' }).trim() } catch { t.skip('local PostgreSQL fixture is unavailable'); return }
+  try { running = execFileSync('docker', ['inspect', '--format', '{{.State.Running}}', fixture.postgres], { encoding: 'utf8' }).trim() } catch { t.skip('local PostgreSQL fixture is unavailable'); return }
   if (running !== 'true') { t.skip('local PostgreSQL fixture is not running'); return }
-  const sleeper = spawn('docker', ['exec', '-i', 'tll-stage0-postgres', 'psql', '-XqAt', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'postgres'], { stdio: ['pipe', 'pipe', 'pipe'] })
+  const sleeper = spawn('docker', ['exec', '-i', fixture.postgres, 'psql', '-XqAt', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'postgres'], { stdio: ['pipe', 'pipe', 'pipe'] })
   sleeper.stdin.end('SELECT pg_backend_pid(); SELECT pg_sleep(3);\n')
   try {
     const pid = await new Promise((resolve, reject) => {
@@ -69,7 +72,7 @@ SELECT pg_has_role(current_user,'pg_read_all_stats','USAGE'),
   count(*) FILTER (WHERE usename='postgres' AND pid=${pid}),
   count(*) FILTER (WHERE usename='postgres' AND pid=${pid} AND backend_type='client backend')
 FROM pg_stat_activity; COMMIT;`
-    const result = execFileSync('docker', ['exec', '-i', 'tll-stage0-postgres', 'psql', '-XqAt', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'postgres'], { input: probe, encoding: 'utf8' }).trim()
+    const result = execFileSync('docker', ['exec', '-i', fixture.postgres, 'psql', '-XqAt', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'postgres'], { input: probe, encoding: 'utf8' }).trim()
     assert.equal(result, 'f|1|0')
   } finally {
     if (sleeper.exitCode === null) sleeper.kill('SIGTERM')

@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { execFileSync, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
+import { processRunning as running } from './fixtures/process-status.mjs'
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -13,10 +14,7 @@ import { acceptSupervisorPipe } from '../scripts/staging-provider-broker-recover
 const options = args => ({ executable: process.execPath, args, cwd: process.cwd(),
   env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, proof: 'OFFLINE_ROTATION_PROOF',
   deadlineMs: 700, stopGraceMs: 500 })
-const running = pid => {
-  try { return !/^[Z]/.test(execFileSync('/bin/ps', ['-o', 'stat=', '-p', String(pid)], { encoding: 'utf8' }).trim()) }
-  catch { return false }
-}
+
 async function stopped(pid) {
   for (let attempt = 0; attempt < 30 && running(pid); attempt++) await new Promise(resolve => setTimeout(resolve, 20))
   return !running(pid)
@@ -170,7 +168,7 @@ for (const phase of ['keychain', 'post']) {
       + (phase === 'post'
         ? `const http=await import('node:http');let received;const receivedPromise=new Promise(resolve=>{received=resolve});`
           + `const server=http.createServer((_request,_response)=>received());`
-          + `await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));`
+          + `await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve)});`
           + `const request=http.request({host:'127.0.0.1',port:server.address().port,method:'POST'});request.end();`
           + `await receivedPromise;`
         : '')
@@ -178,6 +176,7 @@ for (const phase of ['keychain', 'post']) {
       + `fs.renameSync(process.argv[1]+'.tmp',process.argv[1]);`
       + (phase === 'keychain' ? `await new Promise(resolve => child.once('close', resolve));` : `await new Promise(()=>{});`)
       + `fs.writeFileSync(process.argv[1]+'.finished','unexpected');process.stdout.write('SUCCESS')})`
+      + `.catch(error=>{require('node:fs').writeFileSync(process.argv[1]+'.startup-error',JSON.stringify({code:error.code==='EPERM'?'EPERM':'STARTUP_FAILED'}));process.exitCode=1})`
     const supervisorCode = `import(${JSON.stringify(controlUrl)}).then(m => m.runBoundedBrokerRotationWorker({`
       + `executable:process.execPath,args:['-e',${JSON.stringify(worker)},process.argv[1]],`
       + `cwd:process.cwd(),env:{PATH:'/usr/bin:/bin',LANG:'C.UTF-8'},`
@@ -186,7 +185,8 @@ for (const phase of ['keychain', 'post']) {
     let workerPid
     try {
       for (let attempt = 0; attempt < 100 && !existsSync(file); attempt++) await new Promise(resolve => setTimeout(resolve, 10))
-      assert.equal(existsSync(file), true)
+      assert.equal(existsSync(file), true, existsSync(`${file}.startup-error`)
+        ? `Fixture startup: ${readFileSync(`${file}.startup-error`, 'utf8')}` : 'Fixture readiness marker missing')
       const pids = JSON.parse(readFileSync(file, 'utf8'))
       workerPid = pids.worker
       supervisor.kill('SIGKILL')
