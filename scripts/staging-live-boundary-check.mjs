@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -44,6 +44,13 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
     violations.push('policy:currentHold')
   }
 
+  const successorEdge = join(projectRoot, 'lib/identity/staging-owner-successor-broker-readiness-edge.ts')
+  if (existsSync(successorEdge)) {
+    const gates = read(successorEdge).match(/^export const OWNER_SUCCESSOR_BROKER_READINESS_ENABLED = .*$/gm) ?? []
+    if (gates.length !== 1 || gates[0] !== 'export const OWNER_SUCCESSOR_BROKER_READINESS_ENABLED = false')
+      violations.push(`enabled-native-gate:${display(successorEdge)}`)
+  }
+
   for (const path of filesBelow(join(projectRoot, 'tests')).filter(path => /\.(?:mjs|js|ts|tsx)$/.test(path))) {
     const source = read(path)
     if (/runNativeGeneration\d*CredentialWindow\s*\(/.test(source)) violations.push(`test-native-call:${display(path)}`)
@@ -74,8 +81,8 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
         violations.push(`enabled-native-gate:${display(path)}`)
       }
     }
-    if (/^staging-owner-successor-sql-(credentials|shutdown|backend-state|retirement|final-check)\.mjs$/.test(file)) {
-      const assignments = source.match(/^[ \t]*export const OWNER_SUCCESSOR_NATIVE_SQL_[A-Z0-9_]*ENABLED[ \t]*=.*$/gm) ?? []
+    if (/^staging-owner-successor-(?:sql-(?:credentials|shutdown|backend-state|retirement|final-check)|password-material|settings-coordinator|edge-replacer|fixed-hosted-adapters|database-host|control-enable-host|supabase-query|final-query|restricted-connections|connection-diagnostic|fixed-database-provider-components|fixed-worker-assembly|whole-run|whole-route-journal|final-observer|final-journal)\.mjs$/.test(file)) {
+      const assignments = source.match(/^[ \t]*export const OWNER_SUCCESSOR_NATIVE_[A-Z0-9_]*ENABLED[ \t]*=.*$/gm) ?? []
       if (assignments.length !== 1 || !assignments[0].endsWith('= false')) {
         violations.push(`enabled-native-gate:${display(path)}`)
       }

@@ -27,6 +27,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:accessibility
       - run: node tests/browser/staging-cart.mjs
+      - run: node tests/browser/comparison-reconciliation.mjs
 
   stacks:
     runs-on: ubuntu-latest
