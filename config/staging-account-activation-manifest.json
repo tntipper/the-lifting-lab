@@ -681,7 +681,7 @@
       },
       {
         "path": "scripts/staging-provider-broker-rotation-process-control.mjs",
-        "sha256": "2400c3dd7100726ac7196a377a6a798a36d0cf1ef01004b2366bae0a29e42731"
+        "sha256": "43d2aa68a279f551e204d65337e5dccdd3834e30be8964ee4bd1955db7efdbb8"
       },
       {
         "path": "scripts/staging-provider-broker-rotation-keychain.py",
@@ -1253,11 +1253,11 @@
       },
       {
         "path": "scripts/staging-owner-successor-fixed-hosted-adapters.mjs",
-        "sha256": "d32b6ecc4eba864d23c43d4e19eb995a1bbe6e96d57c6137872b68d0a5ba38a0"
+        "sha256": "bbba7f858702a2c98499505f1022070936a85a144c6301b2758f8dc9a7711eff"
       },
       {
         "path": "scripts/staging-owner-successor-fixed-worker-assembly.mjs",
-        "sha256": "6690f9c5ca162997ef8323e8b5bc54907a927b306d25aaf9477c9d654c89f62e"
+        "sha256": "d7e157fd65c140bb2b68e0334896ff0e619597d494a3c50b3e37754c376a42c0"
       },
       {
         "path": "scripts/staging-owner-successor-native-context.mjs",
@@ -1277,7 +1277,39 @@
       },
       {
         "path": "scripts/staging-owner-successor-source-proof.mjs",
-        "sha256": "a42d7ab24ca7ecf054c1d62cfe9eaa9874b1bc925eb8d0f4639a7a42b088d1a2"
+        "sha256": "aa63ab57b0845325d5e92252167f1186487881d98dbe8245c85c8d281c32b89f"
+      },
+      {
+        "path": "scripts/staging-owner-successor-fixed-source-reader.mjs",
+        "sha256": "b63bcfa447b5f4d78ce8453967548cfd31556ea2703d2618f4baba94447978bf"
+      },
+      {
+        "path": "scripts/staging-owner-successor-process-binding.mjs",
+        "sha256": "d7450675bbd51afe5ad510e1ccf6386a4d048ed161006bb2378d09c9cb8673b6"
+      },
+      {
+        "path": "scripts/staging-owner-successor-worker-entry.mjs",
+        "sha256": "86c24cff99c9ec6395ae2db4611137d42b7f3eab390d8ebfc9c4907462544015"
+      },
+      {
+        "path": "scripts/staging-owner-successor-cli-runner.mjs",
+        "sha256": "694b34f21c612501d826c05c63d657f44657f48144c3df39a3027519d75df4a8"
+      },
+      {
+        "path": "scripts/staging-owner-successor-cleanup-assembly.mjs",
+        "sha256": "8d4c9d8423cb6de55deae25b279f62beb89c9f2c1212801811f06f7287284a1b"
+      },
+      {
+        "path": "scripts/staging-owner-successor-cleanup-entry.mjs",
+        "sha256": "e29eba8c4b8e8fde602728a9756ed1980d1d1c48c09eebd4a2f5a8659a9a540f"
+      },
+      {
+        "path": "scripts/staging-owner-successor-cleanup-worker-entry.mjs",
+        "sha256": "f116139e3ebef887130a194c5d29ccf4d5b7cc8acc0941e63927846ee4c2936f"
+      },
+      {
+        "path": "config/staging-owner-successor-source-policy.json",
+        "sha256": "66c73afd01fad42312dc05d7d1b16b88b59137aa9d8265ebece0fac111213ecf"
       },
       {
         "path": "scripts/staging-owner-successor-supabase-query.mjs",
@@ -2084,6 +2116,38 @@
         "sha256": "a6ffd41f88811fbcf3ae8326b58106b5e49cecbfcb52153b5252901fab53b827"
       },
       {
+        "path": "tests/fixtures/owner-successor-control-database.mjs",
+        "sha256": "14c12ba72cf48e5b4a6f5db68feb49244e0604f2ab296eeb77e2b83e5824ecf2"
+      },
+      {
+        "path": "tests/fixtures/owner-successor-default-qualification.mjs",
+        "sha256": "3c262691df4451c7bc9325c325c0245b31953e2769ce3f4fa7f36ba4b412059b"
+      },
+      {
+        "path": "tests/fixtures/owner-successor-default-database.mjs",
+        "sha256": "b46580e171560b50435a3bacc9630e6768b96d1336223f7483b44fe3b8bbfd89"
+      },
+      {
+        "path": "tests/fixtures/owner-successor-default-http.mjs",
+        "sha256": "d4369b1887a26da221e11b84792d541c9d6fa43dca440a578a789e6b623f918a"
+      },
+      {
+        "path": "tests/fixtures/owner-successor-default-pg.mjs",
+        "sha256": "2c583955c3e4e0fbfc767fa255a85ea7c3492cadc35ce4f3545a1358e3e8da32"
+      },
+      {
+        "path": "tests/fixtures/owner-successor-default-playwright.mjs",
+        "sha256": "1d338288ef3a8673fc3e4be65b6caa123d04803ae24bdeac460c046e1a10a5df"
+      },
+      {
+        "path": "tests/fixtures/owner-successor-default-supervisor.mjs",
+        "sha256": "c97e772dccb89247d6de9f69649673f09f4d4f84d6603423518d9f11d648bcd5"
+      },
+      {
+        "path": "tests/fixtures/owner-successor-default-transport-denial.mjs",
+        "sha256": "d036fd03b6672a5efbe741b6a31735603efc8ce344d00d9b775fd59f84cec7ca"
+      },
+      {
         "path": "tests/staging-owner-successor-broker-readiness.test.mjs",
         "sha256": "6d66ba2ac3f7e0eb08d33424c116d9c04ef2c9ae8a0cd4166c8a41f580799d36"
       },
@@ -2105,11 +2169,35 @@
       },
       {
         "path": "tests/staging-owner-successor-native-lifecycle.test.mjs",
-        "sha256": "a5900e3bc669e6f9ee69c0f344bfe15f3f37c8e6cf3f329715891fd48cecc6dd"
+        "sha256": "b2c26326a404224499c6afeb7b763fece962c6a3f6c86a5d1bb603a873dafeb6"
       },
       {
         "path": "tests/staging-owner-successor-source-proof.test.mjs",
         "sha256": "82379282cf2d114a9e92c31a70ca10edd496f549dbe3fba499d56eb27be4caa0"
+      },
+      {
+        "path": "tests/staging-owner-successor-worker-entry.test.mjs",
+        "sha256": "e4ed98f4d4e8d9235c27ae806c17200cb218a59e3e028f5dfacaeb1da50c6a33"
+      },
+      {
+        "path": "tests/staging-owner-successor-cli-runner.test.mjs",
+        "sha256": "b96621232b4af12c9d030427371ec9c82a690949dc6cbd72a73001b400f54db2"
+      },
+      {
+        "path": "tests/staging-owner-successor-cleanup-assembly.test.mjs",
+        "sha256": "5f576c7e12028f3d3cfa06aceb7f12ffce2ee4dbdaf957d18a827be60013816a"
+      },
+      {
+        "path": "tests/staging-owner-successor-native-control-acceptance.test.mjs",
+        "sha256": "28052d4d55feff1e1739873c126bdfb08e1ce6ba0f33cc500c68ba64a1de44aa"
+      },
+      {
+        "path": "tests/staging-owner-successor-fixed-source-reader.test.mjs",
+        "sha256": "fbd62366fe00df44c5ac5b2ec12794a230d23bbf7376375a278c982472ca0fdd"
+      },
+      {
+        "path": "tests/staging-owner-successor-default-qualification.test.mjs",
+        "sha256": "0dc09369a67c68e11141445342ca34c4375edc993c1f100e718f8274a9a7d20a"
       },
       {
         "path": "tests/staging-owner-successor-whole-route-journal.test.mjs",

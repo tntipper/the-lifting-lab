@@ -72,23 +72,18 @@ export function createOwnerSuccessorFixedHostedAdapters({ credentials, fetch: fe
     makeEdge, makeCoordinator, makeReadback, readPredecessor].some(item => typeof item !== 'function')) unavailable()
 
   assertOwnerSuccessorSetupClock(expiresAt, now())
-  const controller = new AbortController(), callerListeners = new Map()
+  const controller = new AbortController()
   const bindSignal = caller => {
     if (disposed || !validSignal(caller) || controller.signal.aborted) unavailable()
-    if (!callerListeners.has(caller)) {
-      const abort = () => controller.abort()
-      caller.addEventListener('abort', abort, { once: true }); callerListeners.set(caller, abort)
-    }
-    if (caller.aborted) controller.abort()
-    return controller.signal
+    // A completed bounded operation may abort its own signal. It must not
+    // dispose the component or cancel later independent retirement reads.
+    return AbortSignal.any([controller.signal, caller])
   }
   let disposed = false, settingsStarted = false, targets, passwords, verifiers
   const dispose = () => {
     if (disposed) return
     disposed = true
     controller.abort()
-    for (const [caller, abort] of callerListeners) caller.removeEventListener('abort', abort)
-    callerListeners.clear()
     eraseStagingGeneration23Passwords(passwords)
     passwords = undefined; verifiers = undefined; targets = undefined
   }

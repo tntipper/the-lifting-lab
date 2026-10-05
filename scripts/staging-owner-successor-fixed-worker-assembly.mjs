@@ -220,23 +220,18 @@ export function createOwnerSuccessorFixedWorkerAssembly({ credentials, fetch: fe
   })
   if (journals.previewEnabled === journals.previewHeld || journals.enableSurface === journals.freezeSurface) unavailable()
 
-  const controller = new AbortController(), callerListeners = new Map()
+  const controller = new AbortController()
   const bindSignal = caller => {
     if (disposed || !signalOk(caller) || controller.signal.aborted) unavailable()
-    if (!callerListeners.has(caller)) {
-      const abort = () => controller.abort()
-      caller.addEventListener('abort', abort, { once: true }); callerListeners.set(caller, abort)
-    }
-    if (caller.aborted) controller.abort()
-    return controller.signal
+    // A completed bounded operation may abort its own signal. It must not
+    // dispose the component or cancel later independent retirement reads.
+    return AbortSignal.any([controller.signal, caller])
   }
   let hosted, database, surface, variant, gateRetire, core, disposed = false
   const dispose = () => {
     if (disposed) return
     disposed = true
     controller.abort()
-    for (const [caller, abort] of callerListeners) caller.removeEventListener('abort', abort)
-    callerListeners.clear()
     try { core?.dispose?.() } finally {
       try { surface?.dispose?.() } finally {
         try { variant?.dispose?.() } finally {

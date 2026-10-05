@@ -142,4 +142,8 @@ export async function verifyOwnerSuccessorArmingSource({ runGit, policy, root = 
 }
 
 /** Native entry remains unavailable; a gate flip alone does not supply a transport or authority. */
-export function readOwnerSuccessorArmingSourceFixed() { return HOLD }
+export function readOwnerSuccessorArmingSourceFixed(options) {
+  if (!OWNER_SUCCESSOR_SOURCE_PROOF_ENABLED) return HOLD
+  return import('./staging-owner-successor-fixed-source-reader.mjs')
+    .then(module => module.readFixedOwnerSuccessorSource(options)).catch(() => HOLD)
+}

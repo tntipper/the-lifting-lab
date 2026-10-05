@@ -178,3 +178,17 @@ for (const [field, value] of [['sourceCommit', 'c'.repeat(40)], ['windowId', 'd5
       assert.throws(() => journal.verify(claimed, 'baseline'), /unavailable/)
     } finally { rmSync(directory, { recursive: true, force: true }) }
   })
+test('completed retirement child cancellation does not poison a subsequent independent read', async () => {
+  let reads = 0
+  const factory = hostedFactory({ createSupabase: () => ({
+    async readEdgeSecretNames({ signal }) { assert.equal(signal.aborted, false); reads++; return ['synthetic-name'] },
+    dispose() {},
+  }) })
+  try {
+    const boundedChild = new AbortController(), nextRead = new AbortController()
+    assert.deepEqual(await factory.ports.readEdgeNamesForRetire({ signal: boundedChild.signal }), ['synthetic-name'])
+    boundedChild.abort()
+    assert.deepEqual(await factory.ports.readEdgeNamesForRetire({ signal: nextRead.signal }), ['synthetic-name'])
+    assert.equal(reads, 2)
+  } finally { factory.dispose() }
+})
