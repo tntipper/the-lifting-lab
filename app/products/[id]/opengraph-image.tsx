@@ -3,16 +3,10 @@ import { getShareProducts } from '@/lib/share-products-server'
 import { claimsReviewFor } from '@/lib/claims-review'
 
 export const runtime = 'edge'
-export const alt = 'The Lifting Lab — Product Score'
+export const alt = 'The Lifting Lab — Product research status'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-function scoreColor(score: number | null): string {
-  if (score == null) return '#6b7280'
-  if (score >= 70) return '#a6e22e'
-  if (score >= 50) return '#f5b342'
-  return '#ff5c5c'
-}
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -20,11 +14,11 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   if (!result.ok) {
     return new Response(result.error, { status: result.status, headers: { 'Cache-Control': 'no-store' } })
   }
-  const { brand, name, category: categorySlug, score } = result.products[0]
+  const { brand, name, category: categorySlug } = result.products[0]
   const category = categorySlug.replace(/-/g, ' ').toUpperCase()
   const review = claimsReviewFor(categorySlug)
-  const col = review ? '#f5b342' : scoreColor(score)
-  const displayScore = score != null ? String(score) : '—'
+  const col = '#9ca3af'
+  const displayScore = '—'
 
   return new ImageResponse(
     (
@@ -46,7 +40,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             THE LIFTING LAB
           </span>
           <span style={{ color: '#374151', fontSize: 14, letterSpacing: 3, textTransform: 'uppercase' }}>
-            {review ? 'Claims Under Review' : 'Evidence-Based Scoring'}
+            {review ? 'Claims Under Review' : 'Not assessed'}
           </span>
         </div>
 
@@ -70,7 +64,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           >
             <span style={{ color: col, fontSize: 72, fontWeight: 900, lineHeight: 1 }}>{displayScore}</span>
             <span style={{ color: '#6b7280', fontSize: 13, letterSpacing: 4, textTransform: 'uppercase', marginTop: 6 }}>
-              Score
+              Assessment
             </span>
           </div>
 
@@ -109,7 +103,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         {/* footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#374151', fontSize: 13, letterSpacing: 2 }}>
-            {review ? 'Existing formula score · Benefits not validated · Not medical advice' : 'Effective-dose analysis · EFSA reference values · Not medical advice'}
+            No benefit recommendation · Research record · Not medical advice
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab

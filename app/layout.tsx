@@ -1,11 +1,11 @@
 import { isSyntheticPreview, isHostedStaging, isIsolatedEnvironment, PREVIEW_UNAVAILABLE_MESSAGE } from '@/lib/preview-mode'
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Anton } from "next/font/google";
-import Script from "next/script";
-import { GA_MEASUREMENT_ID } from "@/lib/gtag";
-import { serializeJsonForHtml } from "@/lib/json-for-html";
+import AnalyticsPreferences from "@/components/AnalyticsPreferences";
 import { LocalStackProvider } from "@/components/LocalStackContext";
 import StackFAB from "@/components/StackFAB";
+import StagingCartProvider from "@/components/StagingCartProvider";
+import SiteFooter from "@/components/SiteFooter";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,9 +25,9 @@ const anton = Anton({
 });
 
 const SITE_URL = "https://www.theliftinglab.co.uk";
-const SITE_TITLE = "The Lifting Lab — Evidence-Based Supplement Scoring (UK)";
+const SITE_TITLE = "The Lifting Lab — Supplement Research & Listed Prices (UK)";
 const SITE_DESCRIPTION =
-  "UK supplements ranked against evidence-based reference doses. Browse 200+ products by category, compare head-to-head, and build a safe, effective stack.";
+  "Browse supplement research records, compare labels and listed prices, and manage your manual stack. Effectiveness recommendations are unavailable pending scientific review.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -61,10 +61,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body data-theme="lab" className="min-h-full flex flex-col">
         {isSyntheticPreview() && (
           <aside role="status" data-testid="synthetic-preview-notice" className="border-b border-lab-lime bg-lab-lime px-4 py-3 text-center text-sm font-semibold text-black">
-            {PREVIEW_UNAVAILABLE_MESSAGE} Product lists may be empty.
+            {PREVIEW_UNAVAILABLE_MESSAGE} Product cards use a read-only catalogue snapshot; My Stack is saved only in this browser.
           </aside>
         )}
         {isHostedStaging() && (
@@ -72,25 +72,14 @@ export default function RootLayout({
             Staging test site. Synthetic products and test accounts only.
           </aside>
         )}
-        <LocalStackProvider>
+        <StagingCartProvider><LocalStackProvider>
+          {!isIsolatedEnvironment() && <AnalyticsPreferences />}
           {children}
+          <SiteFooter />
           <StackFAB />
-        </LocalStackProvider>
+        </LocalStackProvider></StagingCartProvider>
       </body>
-      {!isIsolatedEnvironment() && <>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="ga4-init" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', ${serializeJsonForHtml(GA_MEASUREMENT_ID)});
-        `}
-      </Script>
-      </>}
+
     </html>
   );
 }

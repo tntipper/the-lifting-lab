@@ -1,0 +1,77 @@
+/** Disabled, fixed-target Supabase query transport for the reviewed Gen22 installer. */
+import https from 'node:https'
+import { consumeStagingGeneration22PreparedSql } from './staging-generation-22-credentials.mjs'
+import { PROJECT_REF } from './staging-generation-22-material.mjs'
+
+export const STAGING_GENERATION_22_SUPABASE_QUERY_ENABLED = false
+export const ENDPOINT = Object.freeze({ hostname: 'api.supabase.com',
+  path: `/v1/projects/${PROJECT_REF}/database/query`, method: 'POST' })
+const MAX_RESPONSE_BYTES = 65_536
+const unavailable = () => { throw new Error('Generation 22 Supabase query unavailable') }
+
+/** The caller owns `token`; this function does not log or persist it or the SQL. */
+export async function postStagingGeneration22CredentialSql(packet, { token, signal, request = https.request } = {}) {
+  if (!STAGING_GENERATION_22_SUPABASE_QUERY_ENABLED || typeof request !== 'function'
+    || !Buffer.isBuffer(token) || token.length < 16 || token.length > 512
+    || !/^sbp_(?:oauth_|v0_)?[a-f0-9]{40}$/.test(token.toString('utf8'))
+    || !signal || signal.aborted || typeof signal.addEventListener !== 'function') unavailable()
+  const sql = consumeStagingGeneration22PreparedSql(packet)
+  if (sql.length > 100_000) unavailable()
+  const body = Buffer.from(JSON.stringify({ query: sql, read_only: false }))
+  const chunks = []
+  let req, response, timer, settled = false, size = 0
+  try {
+    return await new Promise((resolve, reject) => {
+      const finish = (error, rows) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
+        signal.removeEventListener('abort', onAbort)
+        if (error) reject(new Error('Generation 22 Supabase query unavailable'))
+        else resolve(rows)
+      }
+      const onAbort = () => {
+        try { req?.destroy() } catch {}
+        try { response?.destroy() } catch {}
+        finish(true)
+      }
+      signal.addEventListener('abort', onAbort, { once: true })
+      timer = setTimeout(onAbort, 30_000)
+      if (signal.aborted) { onAbort(); return }
+      try {
+        req = request({ protocol: 'https:', hostname: ENDPOINT.hostname, port: 443,
+          path: ENDPOINT.path, method: ENDPOINT.method, minVersion: 'TLSv1.2',
+          rejectUnauthorized: true, servername: ENDPOINT.hostname, agent: false,
+          headers: { Authorization: `Bearer ${token.toString('utf8')}`, 'Content-Type': 'application/json',
+            'Content-Length': body.length, Accept: 'application/json', 'Accept-Encoding': 'identity' } }, res => {
+          response = res
+          const length = res.headers?.['content-length']
+          const encoding = res.headers?.['content-encoding']
+          if (res.statusCode !== 201 || !/^application\/json(?:;|$)/i.test(String(res.headers?.['content-type'] ?? ''))
+            || (length != null && (!/^\d+$/.test(String(length)) || Number(length) > MAX_RESPONSE_BYTES))
+            || (encoding != null && encoding !== 'identity')) { onAbort(); return }
+          res.on('error', onAbort); res.on('aborted', onAbort)
+          res.on('data', chunk => {
+            if (!Buffer.isBuffer(chunk) || size + chunk.length > MAX_RESPONSE_BYTES) { onAbort(); return }
+            size += chunk.length; chunks.push(Buffer.from(chunk)); chunk.fill(0)
+          })
+          res.on('end', () => {
+            if (settled) return
+            const output = Buffer.concat(chunks, size)
+            try {
+              const rows = JSON.parse(output.toString('utf8'))
+              if (!Array.isArray(rows) || rows.length !== 1) unavailable()
+              finish(null, rows)
+            } catch { onAbort() }
+            finally { output.fill(0) }
+          })
+        })
+        req.on('error', onAbort)
+        req.end(body)
+      } catch { onAbort() }
+    })
+  } finally {
+    body.fill(0)
+    for (const chunk of chunks) chunk.fill(0)
+  }
+}

@@ -180,21 +180,21 @@ export default function MythsPage() {
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">Skip the myths, get the products right</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Every product we track is scored 0–100 on how closely it matches the evidence, so you only
-            pay for what actually works — or let the wizard build your whole stack in a minute.
+            Browse recorded product labels and listed prices while scientific assessments are under
+            review. You can make a manual research stack; the wizard does not select products yet.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/wizard"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Build my stack →
+              Explore my stack →
             </Link>
             <Link
               href="/best"
               className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
             >
-              Best of 2026
+              Product research
             </Link>
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">

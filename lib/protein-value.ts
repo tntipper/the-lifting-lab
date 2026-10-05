@@ -59,7 +59,8 @@ export function proteinValueRows(products: Product[]): ProteinValueRow[] {
       retail_price == null
     )
       continue
-    if (serving_size <= 0 || protein_yield <= 0 || servings_per_container <= 0 || retail_price <= 0)
+    if (![serving_size, protein_yield, servings_per_container, retail_price].every(value => typeof value === 'number' && Number.isFinite(value) && value > 0)
+      || protein_yield > 100 || !['g', 'gram', 'grams'].includes((p.serving_unit ?? '').toLowerCase()))
       continue
 
     const proteinPerServing = (serving_size * protein_yield) / 100

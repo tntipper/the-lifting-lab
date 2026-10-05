@@ -10,6 +10,8 @@
 // or null rather than a 500. Scores are attached via the existing withScore()
 // helper — the scoring formula itself is untouched here.
 import { createPublicClient } from '@/lib/supabase-public'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
 import {
   PRODUCT_COLUMNS,
   withScore,
@@ -24,6 +26,7 @@ type NutrientRow = Nutrient & { product_id: string }
 
 /** Full active catalogue, score-desc. Backs the /products grid + ItemList schema. */
 export async function fetchCatalogue(): Promise<ScoredProduct[]> {
+  if (isSyntheticPreview()) return sortScored(PREVIEW_PRODUCTS.map((product) => ({ ...withScore(product), nutrients: product.nutrients })), 'score')
   try {
     const sb = createPublicClient()
     const { data, error } = await sb
@@ -57,6 +60,7 @@ export async function fetchCatalogue(): Promise<ScoredProduct[]> {
 
 /** Active products in one category, score-desc (RelatedProducts module). */
 export async function fetchCategory(category: string): Promise<ScoredProduct[]> {
+  if (isSyntheticPreview()) return sortScored(PREVIEW_PRODUCTS.filter((product) => product.category === category).map(withScore), 'score')
   try {
     const sb = createPublicClient()
     const { data, error } = await sb
@@ -73,6 +77,10 @@ export async function fetchCategory(category: string): Promise<ScoredProduct[]> 
 
 /** One active product with its full nutrient label, or null if not found. */
 export async function fetchProductDetail(id: string): Promise<ComparedProduct | null> {
+  if (isSyntheticPreview()) {
+    const product = PREVIEW_PRODUCTS.find((item) => item.id === id)
+    return product ? { ...withScore(product), nutrients: product.nutrients } : null
+  }
   try {
     const sb = createPublicClient()
     const { data: product, error } = await sb
@@ -108,6 +116,10 @@ export function parseCompareIds(raw: string | string[] | undefined): string[] {
 /** Up to 3 products with nutrients, in the requested order (the /compare page). */
 export async function fetchCompareProducts(ids: string[]): Promise<ComparedProduct[]> {
   if (!ids.length) return []
+  if (isSyntheticPreview()) return ids.flatMap((id) => {
+    const product = PREVIEW_PRODUCTS.find((item) => item.id === id)
+    return product ? [{ ...withScore(product), nutrients: product.nutrients }] : []
+  })
   try {
     const sb = createPublicClient()
     const { data: products, error } = await sb

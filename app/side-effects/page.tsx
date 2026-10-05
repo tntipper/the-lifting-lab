@@ -201,24 +201,23 @@ export default function SideEffectsPage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Skip the risky stuff, get the proven few right</h2>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Research products carefully</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            The safest supplements are usually the proven ones with a single clear ingredient. Every
-            product we track is scored 0&ndash;100 on how closely it matches the evidence — or let the
-            wizard build a clean, sensible stack for you in a minute.
+            Check recorded ingredients and relevant cautions before choosing a product. Product-level
+            effectiveness assessments are still under review; the wizard does not choose a stack for you.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/wizard"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Build my stack →
+              Explore my stack →
             </Link>
             <Link
               href="/best"
               className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
             >
-              Best of 2026
+              Product research
             </Link>
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
