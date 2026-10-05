@@ -525,7 +525,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
       ensureCartFixture()
       run(process.execPath, ['--test', 'tests/staging-cart-account/acceptance.test.mjs'])
       run(process.execPath, ['tests/browser/staging-cart.mjs'], {
-        ...process.env, TEST_BROWSER_CHANNEL: 'chrome',
+        ...process.env,
       })
       // The separate Chrome test proves interception in a browser. Here the
       // same disabled guard is joined to the complete OFF-to-OFF phase order.

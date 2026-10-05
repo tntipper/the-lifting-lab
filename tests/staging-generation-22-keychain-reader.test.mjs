@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, realpathSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { EventEmitter } from 'node:events'
 import { readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -15,6 +15,7 @@ import { WORKER_TERMINAL_SCHEMA } from '../scripts/staging-generation-22-process
 import { WINDOW_ID } from '../scripts/staging-generation-22-credentials.mjs'
 import { GENERATION, PROJECT_REF } from '../scripts/staging-generation-22-material.mjs'
 
+const testPython = realpathSync(process.platform === 'darwin' ? GENERATION_22_PYTHON : '/usr/bin/python3')
 const scripts = new URL('../scripts/', import.meta.url)
 const root = fileURLToPath(new URL('../', import.meta.url))
 const supabase = `sbp_${'a'.repeat(40)}`
@@ -69,7 +70,7 @@ test('both live gates reject before reading Keychain or spawning a helper', asyn
     signal: new AbortController().signal, stopWorkerGroup() {}, spawnProcess() { spawned++ } }), /unavailable/)
   assert.equal(spawned, 0)
   for (const selector of ['supabase', 'vercel']) {
-    assert.throws(() => execFileSync(GENERATION_22_PYTHON,
+    assert.throws(() => execFileSync(testPython,
       ['-I', '-S', GENERATION_22_KEYCHAIN_HELPER, selector], { stdio: 'ignore', timeout: 2_000 }))
   }
 })
@@ -82,13 +83,13 @@ if [ "$4" = 'TLL Hosted Baseline Vercel API' ] && [ "$6" = prj_kI5iqqor8Qa63EGRy
 exit 9
 `)
   for (const [selector, expected] of [['supabase', supabase], ['vercel', vercel]]) {
-    const output = execFileSync(GENERATION_22_PYTHON, ['-I', '-S', helper, selector], {
+    const output = execFileSync(testPython, ['-I', '-S', helper, selector], {
       encoding: 'utf8', timeout: 3_000,
       env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
     })
     assert.equal(output, expected)
   }
-  assert.throws(() => execFileSync(GENERATION_22_PYTHON, ['-I', '-S', helper, 'other'], {
+  assert.throws(() => execFileSync(testPython, ['-I', '-S', helper, 'other'], {
     stdio: 'pipe', timeout: 3_000,
     env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
   }))
@@ -96,12 +97,12 @@ exit 9
 
 test('isolated Python helper never returns malformed or failed command output', async t => {
   const malformed = await isolatedPythonHelper(t, '#!/bin/sh\nprintf bad\n')
-  assert.throws(() => execFileSync(GENERATION_22_PYTHON, ['-I', '-S', malformed, 'supabase'], {
+  assert.throws(() => execFileSync(testPython, ['-I', '-S', malformed, 'supabase'], {
     stdio: 'pipe', timeout: 3_000,
     env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
   }), error => error.status === 1 && error.stdout.length === 0 && error.stderr.length === 0)
   const failed = await isolatedPythonHelper(t, '#!/bin/sh\nexit 7\n')
-  assert.throws(() => execFileSync(GENERATION_22_PYTHON, ['-I', '-S', failed, 'vercel'], {
+  assert.throws(() => execFileSync(testPython, ['-I', '-S', failed, 'vercel'], {
     stdio: 'pipe', timeout: 3_000,
     env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
   }), error => error.status === 1 && error.stdout.length === 0 && error.stderr.length === 0)

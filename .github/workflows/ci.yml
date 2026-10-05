@@ -111,7 +111,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: docker pull postgres:17-alpine
+      - run: bash tests/run-application-ci.sh
       - run: npm run test:integration
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build

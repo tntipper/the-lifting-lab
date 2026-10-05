@@ -42,7 +42,11 @@ test('only the exact Gen23 worker proof can use the longer ceiling', async () =>
     deadlineMs: BROKER_ROTATION_MAX_WORKER_MS + 1,
     deadlineCeilingMs: MAX_REVIEWED_EXTENDED_WORKER_MS,
     spawnProcess(executable, _args, options) {
-      return spawn(executable, ['-e', 'process.stdout.write("OK")'], options)
+      const moduleUrl = new URL('../scripts/staging-provider-broker-recovery-process-control.mjs', import.meta.url).href
+      const program = `import(${JSON.stringify(moduleUrl)}).then(async m => {`
+        + `const release=await m.acceptSupervisorPipe({proof:'TLL_STAGING_GENERATION_23_WHOLE_SUPERVISOR_V1'});`
+        + `release();process.stdout.write('OK')})`
+      return spawn(executable, ['-e', program], options)
     } })
   assert.equal(result.status, 'EXITED')
   assert.equal(result.output.toString('utf8'), 'OK')

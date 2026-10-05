@@ -6,6 +6,7 @@ import { chmodSync, cpSync, existsSync, mkdtempSync, readFileSync, realpathSync,
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { GENERATION_22_PYTHON } from '../scripts/staging-generation-22-keychain-reader.mjs'
 import { runStagingGeneration22Parent } from '../scripts/staging-generation-22-parent-launcher.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
@@ -94,6 +95,9 @@ function isolatedSources(t) {
       'export const $1 = true')
     assert.notEqual(updated, source, `expected one gate in ${name}`)
     source = updated
+    if (name === 'keychain-reader') source = source.replace(
+      /export const GENERATION_22_PYTHON = '[^']+'/,
+      `export const GENERATION_22_PYTHON = ${JSON.stringify(realpathSync(process.platform === 'darwin' ? GENERATION_22_PYTHON : '/usr/bin/python3'))}`)
     if (name === 'credentials') source = source.replace(
       "export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'",
       `export const ACTIVE_WINDOW_EXPIRES_AT = '${active}'`)

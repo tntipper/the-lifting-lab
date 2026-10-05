@@ -1545,7 +1545,7 @@
       },
       {
         "path": "tests/staging-provider-broker-rotation-process-control.test.mjs",
-        "sha256": "4db390d0a09cd369fa11f2cb90523b94d667ad915b3139b801f0524007e57c8c"
+        "sha256": "0b140422d701d52665502bccd0857bdca2ef6103983eba9e4ad05e0fea44ba77"
       },
       {
         "path": "tests/staging-provider-broker-rotation-keychain.test.mjs",
@@ -1877,7 +1877,7 @@
       },
       {
         "path": "tests/staging-preview-git-publish-live-launcher.test.mjs",
-        "sha256": "316c5b6290db9b7741b7d747217ab59afe5734bc9bef8b77b9091789ef1f589f"
+        "sha256": "e69a2f864a00ed6c9d4bf37b99a94b5effd85daf254692fd81020486c2269de4"
       },
       {
         "path": "tests/staging-preview-source-observer.test.mjs",
@@ -2069,7 +2069,7 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "77001c02a749005a889a9cc0105357b62d015c8f1235ebe0da779bf1870d4596"
+        "sha256": "b40b571bb91bd4e7dea5be6d4efbeb8a3477aefbb841874891b98c86503b9f58"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
@@ -2217,7 +2217,7 @@
       },
       {
         "path": "tests/staging-generation-22-default-process.test.mjs",
-        "sha256": "6b4ad35984cb22fa2c42fd5ea53620ca1d74ebab0eabb68a9c9165710f5b738c"
+        "sha256": "75c88b8b43d153f031108f4fa654da08145e1af2a751bdffb80f2a72ed70046f"
       },
       {
         "path": "tests/fixtures/staging-generation-22-default-success.mjs",
@@ -2229,7 +2229,7 @@
       },
       {
         "path": "tests/staging-generation-22-keychain-reader.test.mjs",
-        "sha256": "5910cc239fa55d79220174cc1579bde0393118a7e2ba3eca8c71eba21147161d"
+        "sha256": "4ba06ef5723866b80a500458f7959e0d8950559b7ad7f57bf3efe4ea2b5dd9bc"
       },
       {
         "path": "tests/staging-generation-22-preflight-assessment.test.mjs",

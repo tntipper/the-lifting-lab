@@ -10,9 +10,10 @@ const path = 'scripts/staging-preview-git-publish-live-launcher.mjs'
 test('staging publication launcher is disabled before any Git, manifest or journal work', () => {
   const source = readFileSync(path, 'utf8')
   const root = resolve(import.meta.dirname, '..')
+  const sourceRoot = resolve(root, '../implementation-integration')
   const armScriptDir = resolve(root, '../implementation-preview-publish-arm-v2/scripts')
   assert.match(source, /const sourceRoot = resolve\(import\.meta\.dirname, '\.\.\/\.\.\/implementation-integration'\)/)
-  assert.equal(resolve(armScriptDir, '../../implementation-integration'), root)
+  assert.equal(resolve(armScriptDir, '../../implementation-integration'), sourceRoot)
   assert.match(source, /export const STAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED = false/)
   assert.match(source, /if \(STAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED !== true\)/)
   assert.match(source, /createPreviewGitPublishJournalV2\(\)/)
