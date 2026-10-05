@@ -2197,7 +2197,7 @@
       },
       {
         "path": "tests/staging-owner-successor-default-qualification.test.mjs",
-        "sha256": "0a2aa22848579f05f85ccb1e87be4c6862f2f942dacd3361c506ef1d945ec2b1"
+        "sha256": "857275845cf2f0064fb2bc0f79db7f178d9cbf0c3ed2756e96bf3ec95dece187"
       },
       {
         "path": "tests/staging-owner-successor-whole-route-journal.test.mjs",

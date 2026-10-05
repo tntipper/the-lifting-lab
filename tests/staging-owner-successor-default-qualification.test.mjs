@@ -159,13 +159,13 @@ for (const mode of ['lost-setting-reply', 'crash-setup', 'lost-parent', 'cancel-
       assert.ok(events.some(e => e.event === 'cancel_parent_before_late_setup_reply'))
       assert.equal(events.some(e => e.event === 'late_setup_reply'), false)
       assert.equal(record.pendingPhase, 'databaseSetup')
-      assert.equal(events.some(e => e.event.startsWith('runtime_auth:')), false)
+      assert.equal(events.some(e => /^(?:pg_authenticated|pg_query):/.test(e.event)), false)
     }
     if (mode === 'lost-parent') {
       assert.ok(events.some(e => e.event === 'lost_parent_setup_reply_withheld'))
       assert.equal(record.pendingPhase, 'databaseSetup')
       assert.equal(record.nextIndex, 2)
-      assert.equal(events.some(e => e.event.startsWith('runtime_auth:')), false)
+      assert.equal(events.some(e => /^(?:pg_authenticated|pg_query):/.test(e.event)), false)
     }
     const readerCount = events.filter(e => e.event.startsWith('credential_selector:')).length
     const effectCount = events.filter(e => e.event.startsWith('sql_effect_or_readback:')).length
