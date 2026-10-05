@@ -87,8 +87,8 @@ export default function TopNav() {
           </Link>
 
           <nav className="flex items-center gap-4">
-            {/* nav links — hidden on mobile, shown from sm breakpoint up */}
-            <div className="hidden sm:flex items-center gap-5">
+            {/* nav links — hidden on mobile, shown only when the complete row fits */}
+            <div className="hidden xl:flex items-center gap-5">
               {NAV_LINKS.map(({ href, label }) => {
                 const active = isActive(href)
                 return (
@@ -148,7 +148,7 @@ export default function TopNav() {
               aria-label="Toggle menu"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
-              className="sm:hidden flex flex-col items-center justify-center w-8 h-8 gap-[5px] rounded-lg transition-colors"
+              className="xl:hidden flex flex-col items-center justify-center w-8 h-8 gap-[5px] rounded-lg transition-colors"
               style={{ border: '1px solid rgba(255,255,255,0.12)' }}
             >
               <span
@@ -172,7 +172,7 @@ export default function TopNav() {
         {/* mobile dropdown panel — only rendered when open */}
         {menuOpen && (
           <div
-            className="sm:hidden border-t"
+            className="xl:hidden border-t"
             style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(12,12,12,0.98)' }}
           >
             <div className="max-w-5xl mx-auto px-4 py-2 flex flex-col">

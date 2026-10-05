@@ -10,6 +10,15 @@ import { createClient } from '@/lib/supabase'
 import { useLocalStack } from '@/components/LocalStackContext'
 import type { LocalStackProduct } from '@/lib/local-stack'
 import { track } from '@/lib/gtag'
+import { useBrowserSnapshot } from '@/lib/browser-snapshot'
+
+function readStoredSex(): Sex {
+  try {
+    return window.localStorage.getItem('tll-rda-sex') === 'female' ? 'female' : 'male'
+  } catch {
+    return 'male'
+  }
+}
 
 // Friendly retailer name from a buy URL hostname (for the Buy All panel).
 function retailerLabel(url: string): string {
@@ -179,19 +188,15 @@ export default function StackBuilder() {
   const [flags, setFlags] = useState<SafetyFlag[]>([])
   const [showTotals, setShowTotals] = useState(false)
   const [showShare, setShowShare] = useState(false)
-  const [sex, setSex] = useState<Sex>('male')
+  const storedSex = useBrowserSnapshot(readStoredSex, 'male' as Sex)
+  const [chosenSex, setSex] = useState<Sex | null>(null)
+  const sex = chosenSex ?? storedSex
   // null = auth unresolved. Drives single-source-of-truth: logged-out reads local
   // (localStorage); logged-in reads server and merges any local items on first load.
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const mergedRef = useRef(false)
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Persist the RDA baseline (gender toggle) so it survives reloads.
-  useEffect(() => {
-    const stored = typeof window !== 'undefined' ? window.localStorage.getItem('tll-rda-sex') : null
-    if (stored === 'male' || stored === 'female') setSex(stored)
-  }, [])
 
   function changeSex(next: Sex) {
     setSex(next)

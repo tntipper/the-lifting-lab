@@ -1,33 +1,32 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useBrowserSnapshot } from '@/lib/browser-snapshot'
 import { track } from '@/lib/gtag'
 
 // Honour-system share modal: pre-written copy + social links, then a manual
 // "I've shared this" claim that awards points (DB enforces cooldown/age).
-export default function ShareModal({
-  open, onClose, productId, productName, brand, score,
-}: {
+type Props = {
   open: boolean
   onClose: () => void
   productId: string
   productName: string
   brand: string
   score: number | null
-}) {
-  const [url, setUrl] = useState('')
+}
+
+export default function ShareModal(props: Props) {
+  return props.open ? <ShareModalContents key={props.productId} {...props} /> : null
+}
+
+function ShareModalContents({
+  onClose, productId, productName, brand, score,
+}: Props) {
+  const origin = useBrowserSnapshot(() => window.location.origin, '')
+  const url = `${origin}/products/${productId}`
   const [claimed, setClaimed] = useState<null | number>(null)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
-
-  useEffect(() => {
-    if (open && typeof window !== 'undefined') {
-      setUrl(`${window.location.origin}/products/${productId}`)
-      setClaimed(null); setNote('')
-    }
-  }, [open, productId])
-
-  if (!open) return null
 
   const caption =
     `Just checked ${brand} ${productName}${score != null ? ` — scored ${score}/100` : ''} on The Lifting Lab, evidence-based UK supplement scoring. ${url}`
