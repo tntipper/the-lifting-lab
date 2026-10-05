@@ -34,3 +34,11 @@ Run `node --test tests/privacy/consent.test.mjs`, `npm run lint`, `npx tsc --noE
 This branch starts at main `e12f0ed6cface85416771e25d8f94413710b0092`, preserving PR #58. It must be independently reviewed at its frozen SHA and reconciled with the website integration branch before eventual landing; do not cherry-pick or merge without approval. Preserve the integration branch's isolation/test-mode guards while reconciling root layout and analytics imports. No staging fixture files are changed.
 
 Unresolved gates: complete independent A01–A12 coverage (including actual shop headers/password gate, browser zoom and region/browser variations), GA retention/sharing/admin configuration, and baseline dependency/lint findings. No legal-compliance certification is asserted.
+
+## URL and event data minimisation (local successor, publication HOLD)
+
+Only known static pathname identities are retained, with no query-string allowlist and no fragments. Dynamic pages are labelled by route template (`/products/:item`, etc.); unknown paths become `/other`. All page fields use these identities, with a generic path-based title rather than arbitrary document text. Same-origin referrers follow the same contract; external referrers are omitted. Config, global defaults, manual views and helper events all receive minimised page fields. The loader has no-referrer policy.
+
+Arbitrary UTM/campaign attribution is deliberately disabled with fixed campaign fields; incoming linker acceptance, link decoration and URL passthrough are disabled. No UTM or `_gl` value is considered safe by its name alone. The natural-request synthetic harness checks URL/body/complete-header markers, including GA campaign fields and query site-search. Free-text search helper parameters become capped numeric length only; helper `href` fields become a public route class or `external`. No event caller can override reserved page/campaign/linker fields. Other Google enhanced-measurement/admin features remain a separate configuration review; this contract does not certify all possible remote-property changes.
+
+References: [Google configuration](https://developers.google.com/analytics/devguides/collection/ga4/reference/config), [linker controls](https://developers.google.com/tag-platform/devguides/cross-domain). Natural outbound checks must be rerun if GA settings or event inputs change.

@@ -4,6 +4,7 @@ import Script from 'next/script'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { GA_MEASUREMENT_ID } from '@/lib/gtag'
+import { analyticsPageFields, NO_CAMPAIGN_ATTRIBUTION } from '@/lib/analytics-data'
 import {
   ANALYTICS_CHOICE_KEY, analyticsAllowed, clearAnalyticsCookies,
   readAnalyticsChoice, saveAnalyticsChoice, type AnalyticsChoice,
@@ -69,7 +70,10 @@ export default function AnalyticsPreferences() {
     const page = window.location.href
     if (lastPage.current === page) return
     lastPage.current = page
-    window.gtag('event', 'page_view', { page_location: page, page_title: document.title })
+    const fields = analyticsPageFields()
+    window.gtag('set', fields)
+    window.gtag('config', GA_MEASUREMENT_ID, { update: true, send_page_view: false, ...fields })
+    window.gtag('event', 'page_view', fields)
   }
 
   useEffect(() => {
@@ -119,7 +123,7 @@ export default function AnalyticsPreferences() {
             <h2 id="analytics-heading" ref={heading} tabIndex={-1} className="text-lg font-bold">Optional analytics</h2>
             <p className="text-sm my-3">We use Google Analytics to understand page visits and feature use, with cookies that identify your browser. Analytics stays off until you accept. You can reject or withdraw here at any time. Essential account and saved-stack features work either way. <a href="/privacy" className="underline text-lab-lime">Privacy policy</a>.</p>
             <p className="text-sm mb-3">Current choice: {choice === 'accepted' ? 'analytics on' : choice === 'rejected' ? 'analytics off (rejected)' : 'analytics off (no saved choice)'}.</p>
-            {error && <p role="alert" className="text-sm mb-3">Your browser could not save the choice. Analytics remains off. Allow site storage to save a preference, or continue without analytics.</p>}
+            {error && <p role="alert" className="text-sm mb-3">Your browser could not save the choice. Analytics is stopped in this page, but your browser could not remember the change. An older saved choice may apply on your next visit. Allow site storage to save a preference.</p>}
             <div className="flex flex-wrap gap-3">
               <button type="button" className={buttonClass} onClick={() => choose('rejected')}>{choice === 'accepted' ? 'Withdraw analytics consent' : 'Reject analytics'}</button>
               <button type="button" className={buttonClass} onClick={() => choose('accepted')}>Accept analytics</button>
@@ -129,7 +133,7 @@ export default function AnalyticsPreferences() {
         )}
       </div>
       {ready && choice === 'accepted' && (
-        <Script id="tll-ga4" src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive"
+        <Script id="tll-ga4" referrerPolicy="no-referrer" src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive"
           onReady={() => {
             if (!active.current || !analyticsAllowed()) { disableAnalytics(); return }
             if (initialised.current) return
@@ -139,9 +143,12 @@ export default function AnalyticsPreferences() {
             // gtag requires an arguments object rather than an array.
             // eslint-disable-next-line prefer-rest-params
             window.gtag = function () { window.dataLayer?.push(arguments) }
+            window.gtag('set', 'linker', { accept_incoming: false, domains: [], decorate_forms: false })
+            window.gtag('set', { ...analyticsPageFields(), ...NO_CAMPAIGN_ATTRIBUTION, url_passthrough: false })
             window.gtag('js', new Date())
             window.gtag('config', GA_MEASUREMENT_ID, {
-              send_page_view: false, cookie_domain: 'none', cookie_flags: 'SameSite=Lax;Secure',
+              ...analyticsPageFields(), ...NO_CAMPAIGN_ATTRIBUTION,
+              url_passthrough: false, send_page_view: false, cookie_domain: 'none', cookie_flags: 'SameSite=Lax;Secure',
               allow_google_signals: false, allow_ad_personalization_signals: false,
             })
             pageView()

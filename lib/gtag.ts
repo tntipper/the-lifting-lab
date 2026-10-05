@@ -1,3 +1,4 @@
+import { analyticsPageFields, minimiseEventParams } from './analytics-data'
 import { analyticsAllowed } from './analytics-consent'
 
 // GA4 is initialised only by AnalyticsPreferences after explicit acceptance.
@@ -15,7 +16,7 @@ declare global {
 // Fire a GA4 event. No-ops safely on the server or before gtag loads.
 export function track(event: string, params: GtagParams = {}): void {
   if (typeof window === 'undefined' || !analyticsAllowed() || typeof window.gtag !== 'function') return
-  window.gtag('event', event, params)
+  window.gtag('event', event, { ...minimiseEventParams(params), ...analyticsPageFields() })
 }
 
 function outboundHost(href: string): string | undefined {
