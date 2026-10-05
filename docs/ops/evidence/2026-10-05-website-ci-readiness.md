@@ -23,3 +23,7 @@ No gates enabled, credentials changed, hosted calls made, supplier integration a
 ## First hosted candidate and correction
 
 Exact commit `e6f890e99539de0250c595d959a4a5de61b165c9` received independent review PASS. Draft PR59 targets integration. Run 37300805696 passed the complete Gen23 offline rehearsal in 26.5 seconds, and repaired process/path tests. Application recorded 3263 pass / 3 fail / 16 skip: the synthetic Python copies still hit the real helper's `sys.platform != "darwin"` guard on Linux. Follow-up changes the platform only inside disposable copied helpers after asserting the production guard is present; production source and its Mac-only restriction remain unchanged. Exact follow-up Linux run pending. Branch Preview was automatically built by the existing Vercel GitHub integration; no production deploy or control activation requested.
+
+## Second hosted candidate
+
+`9c0d5cab598b514e54f932421e31e8381c1881c4` independently reviewed PASS; run 37301322962 passed all 3266 application tests (16 existing Linux skips), including the full Gen23 rehearsal (26.2s). It then exposed an older auth integration expectation: next.config.ts redirects `/dashboard` to canonical `/account`, but the test expected immediate `/auth`. Follow-up verifies both redirect hops and no anonymous account/user fetch; no runtime change. Build/audit/runtime remained skipped after integration failed; final candidate checks pending.
