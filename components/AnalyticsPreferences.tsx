@@ -76,7 +76,6 @@ export default function AnalyticsPreferences() {
     if (initialised.current) pageView()
     // The effect tracks supported pathname navigation; current browser URL and
     // preference are read at dispatch time, not captured from an earlier render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
   function choose(next: AnalyticsChoice) {
@@ -93,7 +92,8 @@ export default function AnalyticsPreferences() {
       active.current = false
       return
     }
-    if (choice === 'accepted' && next === 'rejected') {
+    if ((choice === 'accepted' && next === 'rejected') ||
+        (next === 'accepted' && initialised.current && choice !== 'accepted')) {
       window.location.reload()
       return
     }
