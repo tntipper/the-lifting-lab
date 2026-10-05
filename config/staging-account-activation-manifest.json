@@ -2129,7 +2129,7 @@
       },
       {
         "path": "tests/fixtures/owner-successor-default-http.mjs",
-        "sha256": "d4369b1887a26da221e11b84792d541c9d6fa43dca440a578a789e6b623f918a"
+        "sha256": "2fc36a0d6f69ebe7c933e7d0b277a03f980fa90ba6be0f1262df42e7f17ff906"
       },
       {
         "path": "tests/fixtures/owner-successor-default-pg.mjs",
@@ -2197,7 +2197,7 @@
       },
       {
         "path": "tests/staging-owner-successor-default-qualification.test.mjs",
-        "sha256": "dba5c4989004e42fa6f463271e64ed1a2560115eac56a19dc2e7b854050e07e1"
+        "sha256": "0a2aa22848579f05f85ccb1e87be4c6862f2f942dacd3361c506ef1d945ec2b1"
       },
       {
         "path": "tests/staging-owner-successor-whole-route-journal.test.mjs",

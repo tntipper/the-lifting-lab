@@ -90,6 +90,12 @@ https.request = (options, callback) => {
     const input = JSON.parse(bytes.toString()); const response = new PassThrough()
     queueMicrotask(() => { try {
       const result = management(input.query)
+      if (config.mode === 'lost-parent' && /AS tll_owner_successor_credential_receipt;/.test(input.query)) {
+        // The real SQL effect completed, but supervisor loss leaves its reply uncertain.
+        // Do not hand a successful response to the worker before SIGKILL takes effect.
+        trace('lost_parent_setup_reply_withheld')
+        return
+      }
       if (config.mode === 'cancel-setup' && /AS tll_owner_successor_credential_receipt;/.test(input.query)) {
         trace('cancel_parent_before_late_setup_reply'); process.kill(process.ppid, 'SIGTERM')
         awaitLateReply(response, callback, result); return

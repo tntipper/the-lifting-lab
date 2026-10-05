@@ -161,6 +161,12 @@ for (const mode of ['lost-setting-reply', 'crash-setup', 'lost-parent', 'cancel-
       assert.equal(record.pendingPhase, 'databaseSetup')
       assert.equal(events.some(e => e.event.startsWith('runtime_auth:')), false)
     }
+    if (mode === 'lost-parent') {
+      assert.ok(events.some(e => e.event === 'lost_parent_setup_reply_withheld'))
+      assert.equal(record.pendingPhase, 'databaseSetup')
+      assert.equal(record.nextIndex, 2)
+      assert.equal(events.some(e => e.event.startsWith('runtime_auth:')), false)
+    }
     const readerCount = events.filter(e => e.event.startsWith('credential_selector:')).length
     const effectCount = events.filter(e => e.event.startsWith('sql_effect_or_readback:')).length
     const replay = invoke(); assert.deepEqual(JSON.parse(replay.output), { status: 'HOLD_RECONCILE', authorization: 'NONE' })
@@ -177,7 +183,9 @@ for (const mode of ['lost-setting-reply', 'crash-setup', 'lost-parent', 'cancel-
       assert.deepEqual(cleanupResult, { status: 'HOLD_RECONCILE', authorization: 'NONE' })
       assert.equal(readEvents().filter(e => e.event.startsWith('credential_selector:')).length, readerCount)
     } else {
-      assert.deepEqual(cleanupResult, { status: 'CLEANUP_SEQUENCE_PASS', authorization: 'NONE' }, JSON.stringify(readEvents().slice(-20)))
+      assert.deepEqual(cleanupResult, { status: 'CLEANUP_SEQUENCE_PASS', authorization: 'NONE' }, JSON.stringify({ original: {
+        state: record.state, pendingPhase: record.pendingPhase, nextIndex: record.nextIndex, phases: record.phases },
+      reaping, events: readEvents().slice(-20) }))
       assert.equal(database.controls(), 'false,false,false,false,false')
       assert.equal(database.managed("SELECT count(*) FROM pg_authid WHERE rolname ~ '^tll_(customer|cart|broker|provisional|bridge)_runtime$' AND NOT rolcanlogin AND rolpassword IS NULL AND rolvaliduntil='infinity'::timestamptz"), '5')
       const cleanedEvents = readEvents(), cleanedReaderCount = cleanedEvents.filter(e => e.event.startsWith('credential_selector:')).length
