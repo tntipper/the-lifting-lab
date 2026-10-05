@@ -71,6 +71,32 @@ test('actual fixed supervisor and child admit fd3 before exact synthetic credent
 
 
 const actualDefaultOptions = { timeout: 180_000, skip: dockerAbsent ? 'Docker binary absent; full default SQL qualification not executed' : false }
+async function waitForOwnedWorkerReaping(copy) {
+  const ownershipPath = join(copy.root, '.agent/owner-successor/cd4130c8-a8b8-462b-bdbe-5c3e6250a02d/worker-ownership.json')
+  const originalBytes = readFileSync(ownershipPath)
+  const { pid, supervisorPid } = JSON.parse(originalBytes)
+  assert.ok(Number.isSafeInteger(pid) && pid >= 2 && Number.isSafeInteger(supervisorPid) && supervisorPid >= 2 && pid !== supervisorPid)
+  const probes = () => [pid, -pid, supervisorPid].map(target => {
+    try { process.kill(target, 0); return { target, state: 'PRESENT' } }
+    catch (error) { return { target, state: error.code ?? 'UNKNOWN' } }
+  })
+  const deadline = Date.now() + 15_000
+  let evidence = probes()
+  while (evidence.some(probe => probe.state !== 'ESRCH') && Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 50))
+    evidence = probes()
+  }
+  assert.deepEqual(readFileSync(ownershipPath), originalBytes, 'waiting must not alter the native ownership lease')
+  if (evidence.some(probe => probe.state !== 'ESRCH')) {
+    const ps = spawnSync('ps', ['-eo', 'pid,ppid,pgid,stat,comm'], { encoding: 'utf8', timeout: 2000 })
+    const ownedRows = (ps.stdout ?? '').split('\n').filter(row => {
+      const columns = row.trim().split(/\s+/)
+      return [pid, supervisorPid].includes(Number(columns[0])) || Number(columns[2]) === pid
+    })
+    assert.fail(`owned worker reaping timed out: ${JSON.stringify({ pid, supervisorPid, probes: evidence, ownedRows, psError: ps.error?.code ?? null })}`)
+  }
+  return evidence
+}
 async function qualifyDefault(mode, verify) {
   const { createOwnerSuccessorDefaultDatabase } = await import('./fixtures/owner-successor-default-database.mjs')
   const database = await createOwnerSuccessorDefaultDatabase()
@@ -120,7 +146,7 @@ for (const mode of ['success', 'owner-failure', 'owner-budget']) test(`actual fi
   })
 })
 for (const mode of ['lost-setting-reply', 'crash-setup', 'lost-parent', 'cancel-setup']) test(`actual fixed default uncertainty: ${mode}; no reader or effect replay`, actualDefaultOptions, async () => {
-  await qualifyDefault(mode, ({ result, observed, events, record, database, copy, invoke, readEvents }) => {
+  await qualifyDefault(mode, async ({ result, observed, events, record, database, copy, invoke, readEvents }) => {
     if (mode === 'lost-parent') { assert.equal(result, null); assert.equal(observed.signal, 'SIGKILL') }
     else assert.deepEqual(result, { status: 'HOLD_RECONCILE', authorization: 'NONE' }, JSON.stringify({ phases: record.phases, events: [...events.filter(e => e.event.startsWith('browser_')), ...events.slice(-25)] }))
     assert.notEqual(record.state, 'PASS'); assert.equal(database.controls(), 'false,false,false,false,false')
@@ -143,6 +169,9 @@ for (const mode of ['lost-setting-reply', 'crash-setup', 'lost-parent', 'cancel-
     assert.equal(after.filter(e => e.event.startsWith('sql_effect_or_readback:')).length, effectCount)
     const originalPath = join(copy.root, '.agent/owner-successor/cd4130c8-a8b8-462b-bdbe-5c3e6250a02d/whole-route.json')
     const originalBytes = readFileSync(originalPath)
+    // SIGKILL of the parent can return before its orphaned child/group is reaped by init.
+    // Admission requires actual ESRCH; never substitute zombie state or edit its lease.
+    const reaping = mode === 'lost-parent' ? await waitForOwnedWorkerReaping(copy) : null
     const cleanup = invoke(true), cleanupResult = JSON.parse(cleanup.output)
     if (mode === 'lost-setting-reply') {
       assert.deepEqual(cleanupResult, { status: 'HOLD_RECONCILE', authorization: 'NONE' })
@@ -164,6 +193,6 @@ for (const mode of ['lost-setting-reply', 'crash-setup', 'lost-parent', 'cancel-
     assert.equal(readEvents().filter(e => e.event.startsWith('sql_effect_or_readback:')).length, settledEffects)
     assert.deepEqual(readFileSync(originalPath), originalBytes)
     console.log(JSON.stringify({ qualification: mode, authorization: 'NONE', journalState: record.state, pendingPhase: record.pendingPhase,
-      replay: 'DENIED_BEFORE_CREDENTIAL_READER', cleanup: cleanupResult.status, originalJournal: 'UNCHANGED', ordinaryReplay: 'STILL_DENIED' }))
+      replay: 'DENIED_BEFORE_CREDENTIAL_READER', cleanup: cleanupResult.status, reaping, originalJournal: 'UNCHANGED', ordinaryReplay: 'STILL_DENIED' }))
   })
 })
