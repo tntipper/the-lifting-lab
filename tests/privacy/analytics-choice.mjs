@@ -84,6 +84,20 @@ try {
     assert.equal(result.requests.filter(x=>x.path.includes('/collect')).length,0)
     await noCookies()
   })
+  await run('synthetic pending load with all preference writes blocked',async({context,page,result,wait,open,accept,noCookies})=>{
+    let release;const gate=new Promise(resolve=>{release=resolve})
+    let reached;const loaded=new Promise(resolve=>{reached=resolve})
+    await context.route('https://www.googletagmanager.com/gtag/js?*',async route=>{reached();await gate;await route.continue().catch(()=>{})})
+    await page.goto(origin);await accept();await loaded
+    await page.evaluate(()=>{
+      Storage.prototype.setItem=()=>{throw new Error('synthetic blocked writes')}
+      const descriptor=Object.getOwnPropertyDescriptor(Document.prototype,'cookie')
+      Object.defineProperty(document,'cookie',{get(){return descriptor.get.call(document)},set(){throw new Error('synthetic blocked cookies')}})
+    })
+    await open();await page.getByRole('button',{name:'Withdraw analytics consent',exact:true}).click()
+    await page.getByRole('alert').filter({hasText:'Your browser could not save'}).waitFor();release();await wait()
+    assert.equal(result.requests.filter(x=>x.path.includes('/collect')).length,0);await noCookies()
+  })
   await run('synthetic legacy domains and secure host-only cookie boundary',async({context,page,result,wait,snapshot,accept,open,withdraw})=>{
     // Only local HTML/assets are mapped to the main hostname. Google requests
     // remain natural and unblocked; synthetic cookies contain fake values only.

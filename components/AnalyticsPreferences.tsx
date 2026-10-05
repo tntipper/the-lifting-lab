@@ -113,7 +113,7 @@ export default function AnalyticsPreferences() {
       {ready && choice === 'accepted' && (
         <Script id="tll-ga4" src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive"
           onReady={() => {
-            if (!analyticsAllowed()) { disableAnalytics(); return }
+            if (!active.current || !analyticsAllowed()) { disableAnalytics(); return }
             if (initialised.current) return
             initialised.current = true
             Object.assign(window, { [disableKey]: false })
