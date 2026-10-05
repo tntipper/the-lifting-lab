@@ -8,7 +8,7 @@ const browser = await chromium.launch({ headless: true })
 const ga = url => /googletagmanager|google-analytics|doubleclick|G-R3YMG6TYXF/.test(url)
 async function run(name, task, options = {}) {
   const context = await browser.newContext({viewport:{width:390,height:844},locale:'en-GB',timezoneId:'Europe/London',...options})
-  await context.route(/https:\/\/[^/]*(?:google-analytics\.com|doubleclick\.net)\/.*collect(?:[/?]|$)/, route => route.fulfill({ status: 204, body: '' }))
+  await context.route(/https:\/\/[^/]*(?:google-analytics\.com|doubleclick\.net)\//, route => route.fulfill({ status: 204, body: '' }))
   const page = await context.newPage()
   const result = { name, initial: await context.storageState(), initialURL:page.url(),requests:[],responses:[], snapshots:[],errors:[] }
   report.cases.push(result)
