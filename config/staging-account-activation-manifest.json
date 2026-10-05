@@ -1281,7 +1281,7 @@
       },
       {
         "path": "scripts/staging-generation-23-owner-journey.mjs",
-        "sha256": "2e1055b477f7f70b31e7e0ed4b5c016b58897a950ea2b526b639956f6e4d79da"
+        "sha256": "1543f28bdca17e63f6e580705d0e3a5b46ad0be14ab3e7238946de620c668630"
       },
       {
         "path": "scripts/staging-generation-23-process-binding.mjs",
@@ -2041,7 +2041,7 @@
       },
       {
         "path": "tests/staging-generation-23-owner-journey.test.mjs",
-        "sha256": "4f92bfd2c725349a767d8f268a4effff09debae7928bba4aabebf65fc4953b89"
+        "sha256": "51d832ae95b939f3a29ebe1d061789df9589e29f0b1b00939f804598cd1279b5"
       },
       {
         "path": "tests/staging-generation-23-process-binding.test.mjs",
