@@ -18,3 +18,7 @@ test('pending load and accepted queued events cannot survive withdrawal',()=>{
 test('successful frame initialises once and dispatches accepted queued view',()=>{
  const f=fixture();f.window.tllAnalyticsStart({send_page_view:false});f.window.tllAnalyticsStart({});f.window.tllAnalyticsDispatch(['event','page_view',{}]);f.scripts[0].onload();assert.equal(f.scripts.length,1);assert.equal(f.window.dataLayer.filter(x=>x[0]==='event'&&x[1]==='page_view').length,1)
 })
+
+test('loader-established data layer remains hooked after script completion',()=>{
+ const f=fixture();f.window.tllAnalyticsStart({send_page_view:false});const hooked=[];f.window.dataLayer=hooked;f.scripts[0].onload();assert.equal(f.window.dataLayer,hooked);assert.ok(hooked.length>0)
+})

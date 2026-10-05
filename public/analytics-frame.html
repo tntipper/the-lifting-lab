@@ -33,7 +33,7 @@
     script.referrerPolicy = 'no-referrer';
     script.onload = () => {
       if (!active || !accepted()) { window.tllAnalyticsStop(); return; }
-      window[disableKey] = false; window.dataLayer = [];
+      window[disableKey] = false; window.dataLayer = window.dataLayer || [];
       window.gtag = function () { window.dataLayer.push(arguments); };
       window.gtag('set', 'linker', { accept_incoming: false, domains: [], decorate_forms: false });
       window.gtag('set', config);
