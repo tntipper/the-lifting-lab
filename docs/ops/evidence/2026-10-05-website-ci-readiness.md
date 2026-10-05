@@ -27,3 +27,7 @@ Exact commit `e6f890e99539de0250c595d959a4a5de61b165c9` received independent rev
 ## Second hosted candidate
 
 `9c0d5cab598b514e54f932421e31e8381c1881c4` independently reviewed PASS; run 37301322962 passed all 3266 application tests (16 existing Linux skips), including the full Gen23 rehearsal (26.2s). It then exposed an older auth integration expectation: next.config.ts redirects `/dashboard` to canonical `/account`, but the test expected immediate `/auth`. Follow-up verifies both redirect hops and no anonymous account/user fetch; no runtime change. Build/audit/runtime remained skipped after integration failed; final candidate checks pending.
+
+## Third hosted candidate and Preview asset isolation
+
+`665676db9104b74760c47b224f1c6ae123b0f485` independently reviewed PASS. Run 37301958376 passed application tests, auth integration, audit and production build. Post-build inherited-production Preview proof then failed the existing security assertion: production Supabase image origins were compiled from `lib/preview-products.ts`. Local reproduction confirmed only the bundled preview product image strings caused the full-origin matches. Correction retains the byte scan/network guards and replaces seven images with existing exact-ID public/catalogue files; three absent exact files use null and the honest image fallback. No catalogue values, offers or production database are modified. Added regression verifies exact-ID local assets, existence and absent buy links. Final exact-SHA proof pending.
