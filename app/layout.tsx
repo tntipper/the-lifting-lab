@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Anton } from "next/font/google";
-import Script from "next/script";
-import { GA_MEASUREMENT_ID } from "@/lib/gtag";
+import AnalyticsPreferences from "@/components/AnalyticsPreferences";
 import { LocalStackProvider } from "@/components/LocalStackContext";
 import StackFAB from "@/components/StackFAB";
 import "./globals.css";
@@ -60,22 +59,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <LocalStackProvider>
+          <AnalyticsPreferences />
           {children}
           <StackFAB />
         </LocalStackProvider>
       </body>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="ga4-init" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}');
-        `}
-      </Script>
     </html>
   );
 }

@@ -1,4 +1,6 @@
-// GA4 event helper. Measurement ID injected via layout.tsx gtag.js.
+import { analyticsAllowed } from './analytics-consent'
+
+// GA4 is initialised only by AnalyticsPreferences after explicit acceptance.
 export const GA_MEASUREMENT_ID = 'G-R3YMG6TYXF'
 
 type GtagParams = Record<string, string | number | boolean | undefined>
@@ -12,7 +14,7 @@ declare global {
 
 // Fire a GA4 event. No-ops safely on the server or before gtag loads.
 export function track(event: string, params: GtagParams = {}): void {
-  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return
+  if (typeof window === 'undefined' || !analyticsAllowed() || typeof window.gtag !== 'function') return
   window.gtag('event', event, params)
 }
 
