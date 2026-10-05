@@ -16,7 +16,8 @@
     "test": "npm run check:live-boundaries && node scripts/staging-account-activation-manifest.mjs --check && node scripts/staging-account-hosted-baseline-manifest.mjs --check && node --experimental-strip-types --test --test-concurrency=4 tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "test:integration": "node --test tests/integration/*.test.mjs",
-    "test:accessibility": "node tests/browser/accessibility.mjs"
+    "test:accessibility": "node tests/browser/accessibility.mjs",
+    "test:privacy": "node --test tests/privacy/*.test.mjs tests/dependencies/*.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
