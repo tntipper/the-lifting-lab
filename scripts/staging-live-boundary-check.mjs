@@ -74,6 +74,18 @@ export function inspectStagingLiveBoundary({ projectRoot = root } = {}) {
         violations.push(`enabled-native-gate:${display(path)}`)
       }
     }
+    if (/^staging-owner-successor-sql-(credentials|shutdown|backend-state|retirement|final-check)\.mjs$/.test(file)) {
+      const assignments = source.match(/^[ \t]*export const OWNER_SUCCESSOR_NATIVE_SQL_[A-Z0-9_]*ENABLED[ \t]*=.*$/gm) ?? []
+      if (assignments.length !== 1 || !assignments[0].endsWith('= false')) {
+        violations.push(`enabled-native-gate:${display(path)}`)
+      }
+    }
+    if (file === 'staging-owner-successor-sql-context.mjs') {
+      for (const name of ['ACTIVE_WINDOW_STARTED_AT', 'ACTIVE_WINDOW_EXPIRES_AT']) {
+        if (!exactAssignments(new RegExp(`^[ \\t]*export const ${name}[ \\t]*=.*$`, 'gm'),
+          `export const ${name} = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'`)) violations.push(`armed-expiry:${display(path)}`)
+      }
+    }
     if (/^staging-generation-23-.*\.mjs$/.test(file)) {
       const assignments = source.match(/^[ \t]*export const STAGING_GENERATION_23_[A-Z0-9_]*ENABLED[ \t]*=.*$/gm) ?? []
       const expectedCount = file === 'staging-generation-23-worker-entry.mjs' ? 2 : 1

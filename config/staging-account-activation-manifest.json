@@ -61,7 +61,7 @@
       },
       {
         "path": "scripts/staging-live-boundary-check.mjs",
-        "sha256": "ed1e8c8d049ac3f8933d189e23a3d00f60c79bf6b6bba33c95c41beb6c81dbbf"
+        "sha256": "daca543c98193a3b8a20ec30e308bd4d7e2b94c4fef44b309f37f4918ccf5b4e"
       },
       {
         "path": "scripts/staging-window-phase-journal.mjs",
@@ -1208,6 +1208,30 @@
         "sha256": "4883c93048bb410c9a8775875f960a42005ef47887937e2937ac692897148d65"
       },
       {
+        "path": "scripts/staging-owner-successor-sql-context.mjs",
+        "sha256": "dfc9216313237b1b57393cdbb899f5c18eb6cd2fdc67b63563684103dfa0a566"
+      },
+      {
+        "path": "scripts/staging-owner-successor-sql-credentials.mjs",
+        "sha256": "8608cb35e76ad859cde68f1b8fc12a0347a7a485350418cc710575038410abce"
+      },
+      {
+        "path": "scripts/staging-owner-successor-sql-shutdown.mjs",
+        "sha256": "1b87a3968f2e6e67eb93d0662fef99a0ace5af51e7b057d9a1eb9e2594502561"
+      },
+      {
+        "path": "scripts/staging-owner-successor-sql-backend-state.mjs",
+        "sha256": "53a4feec9818f48ec610b62db2cb9f6d7240a53fd9f7d4f2a7af5d1c7ff96665"
+      },
+      {
+        "path": "scripts/staging-owner-successor-sql-retirement.mjs",
+        "sha256": "85589638659126b035f767ebeef0d6332186d9905d0671575274fb546d2e88b1"
+      },
+      {
+        "path": "scripts/staging-owner-successor-sql-final-check.mjs",
+        "sha256": "3c93bf445be2c548f96d03f9be48db1c59b6b46b0eac701a4697951e6110e62c"
+      },
+      {
         "path": "scripts/staging-generation-23-recovery.mjs",
         "sha256": "6b52c6aaa237a27049c59cd01716db79c26f3e16176286e98af32e841b014af4"
       },
@@ -1970,6 +1994,10 @@
       {
         "path": "tests/staging-generation-23-credentials.test.mjs",
         "sha256": "f3a9aae294dc8a33c690679b601d555b8f8d504f9591485e243c258a8a14e5db"
+      },
+      {
+        "path": "tests/staging-owner-successor-sql-family.test.mjs",
+        "sha256": "9e7d7ad7280e66158eb3082e8667a90a5bc765ad8d588663eca0e0bc38da44c5"
       },
       {
         "path": "tests/staging-generation-23-recovery.test.mjs",
