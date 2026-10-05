@@ -1,3 +1,5 @@
+import { localFixtureConfig, assertOwnedFixture, ownedFixtureAction } from './fixtures/local-pg-fixture.mjs'
+const fixture = localFixtureConfig()
 /** Opt-in, networkless composite rehearsal. Hosted APIs remain injected. */
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
@@ -92,8 +94,9 @@ let databaseJournalDirectory, settingsDirectory, providerDirectory, previewDirec
   wholeRouteDirectory,
   syntheticToken, providerPort
 function ensureCartFixture() {
-  if (run('docker', ['inspect', '--format', '{{.State.Running}}', 'tll-stage0-postgres']).trim() === 'false') {
-    run('docker', ['start', 'tll-stage0-postgres'])
+  assertOwnedFixture(fixture)
+  if (run('docker', ['inspect', '--format', '{{.State.Running}}', fixture.postgres]).trim() === 'false') {
+    fixture.namespace ? ownedFixtureAction(fixture, 'start') : run('docker', ['start', fixture.postgres])
     existingCartFixtureStarted = true
   }
 }
@@ -761,7 +764,7 @@ const operations = Object.fromEntries(PHASES.map(phase => [phase, async ({ signa
   }
 } finally {
   if (existingCartFixtureStarted) {
-    try { run('docker', ['stop', 'tll-stage0-postgres']) } catch { /* preserve primary failure */ }
+    try { fixture.namespace ? ownedFixtureAction(fixture, 'stop') : run('docker', ['stop', fixture.postgres]) } catch { /* preserve primary failure */ }
   }
   database.dispose()
   providerPort?.dispose()

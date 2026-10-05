@@ -1,3 +1,6 @@
+import { localFixtureConfig, assertOwnedFixture } from './fixtures/local-pg-fixture.mjs'
+const fixture = localFixtureConfig()
+assertOwnedFixture(fixture)
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -58,7 +61,7 @@ const adapt = source => Object.entries(aliases).reduce((text, [from, to]) => tex
   .replaceAll("session_user<>'postgres'", 'false')
 function managed(sql, { allowFailure = false } = {}) {
   try {
-    return execFileSync('docker', ['exec', '-i', 'tll-stage0-postgres', 'psql', '-XqAt', '-U', 'postgres', '-d', 'tll_account_operations_v1', '-v', 'ON_ERROR_STOP=1'],
+    return execFileSync('docker', ['exec', '-i', fixture.postgres, 'psql', '-XqAt', '-U', 'postgres', '-d', 'tll_account_operations_v1', '-v', 'ON_ERROR_STOP=1'],
       { input: `SET SESSION AUTHORIZATION ${OPERATOR};\n${sql}`, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
   } catch (error) {
     if (allowFailure) return null
@@ -67,7 +70,7 @@ function managed(sql, { allowFailure = false } = {}) {
 }
 function rejectedAs(role, sql) {
   try {
-    execFileSync('docker', ['exec', '-i', 'tll-stage0-postgres', 'psql', '-XqAt', '-U', 'postgres', '-d', 'tll_account_operations_v1', '-v', 'ON_ERROR_STOP=1'],
+    execFileSync('docker', ['exec', '-i', fixture.postgres, 'psql', '-XqAt', '-U', 'postgres', '-d', 'tll_account_operations_v1', '-v', 'ON_ERROR_STOP=1'],
       { input: `BEGIN; SET SESSION AUTHORIZATION ${role}; ${sql}`, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] })
     assert.fail('expected PostgreSQL rejection')
   } catch (error) {

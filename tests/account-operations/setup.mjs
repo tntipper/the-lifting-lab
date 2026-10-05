@@ -1,8 +1,11 @@
+import { localFixtureConfig, assertOwnedFixture } from '../fixtures/local-pg-fixture.mjs'
+const fixture = localFixtureConfig()
+assertOwnedFixture(fixture)
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 
-const C = 'tll-stage0-postgres', D = 'tll_account_operations_v1', M = 'tll_account_migrator_v1'
+const C = fixture.postgres, D = 'tll_account_operations_v1', M = 'tll_account_migrator_v1'
 const run = (args, input) => execFileSync('docker', args, { input, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], maxBuffer: 16 * 1024 * 1024 })
 const sql = (db, input) => run(['exec', '-i', C, 'psql', '-XqAt', '-U', 'postgres', '-d', db, '-v', 'ON_ERROR_STOP=1'], input)
 if (process.argv.slice(2).join(' ') !== '--create-once') throw Error('Explicit --create-once required')

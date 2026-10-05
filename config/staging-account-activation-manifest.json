@@ -1545,7 +1545,7 @@
       },
       {
         "path": "tests/staging-provider-broker-rotation-process-control.test.mjs",
-        "sha256": "0b140422d701d52665502bccd0857bdca2ef6103983eba9e4ad05e0fea44ba77"
+        "sha256": "7832df737d96aad323b3d3e1a11a1f99e5c710b0cfa39f71d680b274ae70034d"
       },
       {
         "path": "tests/staging-provider-broker-rotation-keychain.test.mjs",
@@ -1581,7 +1581,7 @@
       },
       {
         "path": "tests/staging-provider-broker-recovery-process-control.test.mjs",
-        "sha256": "aab5f1d1bdbd094cc58017d9bb66492a9cd14c88436d8776091f3a863e89ed4e"
+        "sha256": "03eb35045c614798b3c8605d46f58943af86412b411bf9064061f344a4fc5d57"
       },
       {
         "path": "tests/staging-provider-broker-native-adapter.test.mjs",
@@ -1769,7 +1769,7 @@
       },
       {
         "path": "tests/staging-control-activation-actual.mjs",
-        "sha256": "e1c12008c651dc4b11576ee7c8aad37e82009fd6afeb494148b3d0460030925e"
+        "sha256": "a686cfba19df78c74da6dac367fada936cf3038c0f82d363d9f736e2f3d2cd1e"
       },
       {
         "path": "tests/staging-database-native-adapter.test.mjs",
@@ -2061,7 +2061,7 @@
       },
       {
         "path": "tests/staging-generation-23-whole-process-offline.test.mjs",
-        "sha256": "73153dd505cfc529701e06adcdc2a9e5ce345a91373a9689dc5613bcf80904fc"
+        "sha256": "9e2b69d1eed598000ff9621941b01ceb0af66f268cef4988a46b072407abd7c2"
       },
       {
         "path": "tests/staging-generation-23-database-acceptance.mjs",
@@ -2069,7 +2069,7 @@
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",
-        "sha256": "b40b571bb91bd4e7dea5be6d4efbeb8a3477aefbb841874891b98c86503b9f58"
+        "sha256": "0b8300ebb3986bd0e35c02aefde5dbb2bf156ec242a9c94be06778337f85e80f"
       },
       {
         "path": "tests/staging-generation-23-whole-run.test.mjs",
@@ -2580,7 +2580,7 @@
       },
       {
         "path": "tests/staging-generation-6-credentials-actual.mjs",
-        "sha256": "d6fec236c17e2864656fbb82b2a5f7c0bf84360bd07428b6dfb078eda75ffbc5"
+        "sha256": "b84e3c7285918e8df3cd26a2dc7b4254368cf4c4d11594e9070199a0483b0aa4"
       },
       {
         "path": "tests/staging-generation-6-transport.test.mjs",
