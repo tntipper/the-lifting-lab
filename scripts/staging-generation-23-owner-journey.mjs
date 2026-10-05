@@ -30,6 +30,32 @@ export async function verifyOrdersDeniedByApplication(response) {
   if (!body || Object.keys(body).length !== 1 || body.status !== 'held') unavailable()
 }
 
+/** Read-only account stack proof. Never add, clear, or repair the owner's items. */
+export async function verifyOwnerStackResponse(response, applicationOrigin) {
+  if (applicationOrigin !== STAGING_ALIAS || !response
+    || response.url() !== `${applicationOrigin}/api/stack`
+    || response.request().method() !== 'GET' || response.status() !== 200
+    || response.headers()['cache-control'] !== 'private, no-store') unavailable()
+  let body
+  try { body = await response.json() } catch { unavailable() }
+  const uuid = value => typeof value === 'string'
+    && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value)
+  if (!body || !uuid(body.userId) || !(body.stackId === null || uuid(body.stackId))
+    || !Number.isSafeInteger(body.revision) || body.revision < 0
+    || !Number.isSafeInteger(body.recoveryConflicts) || body.recoveryConflicts < 0
+    || !Array.isArray(body.items) || body.items.length > 100
+    || !body.items.every(item => item && uuid(item.product_id)
+      && (item.servings_per_day === null || typeof item.servings_per_day === 'string'
+        || typeof item.servings_per_day === 'number' && Number.isFinite(item.servings_per_day)))
+    || new Set(body.items.map(item => item.product_id)).size !== body.items.length
+    || body.stackId === null && body.items.length !== 0) unavailable()
+  // Keep identity and servings in memory only; the public outcome contains no user data.
+  return JSON.stringify({ userId: body.userId, stackId: body.stackId,
+    revision: body.revision, recoveryConflicts: body.recoveryConflicts,
+    items: body.items.map(item => [item.product_id, item.servings_per_day])
+      .sort(([left], [right]) => left.localeCompare(right)) })
+}
+
 /** Exchange the bypass once for a browser cookie scoped to the reviewed alias. */
 export async function bootstrapProtectedPreviewCookie(context, applicationOrigin, bypass) {
   if (!STAGING_GENERATION_23_OWNER_JOURNEY_ENABLED || applicationOrigin !== STAGING_ALIAS
@@ -64,7 +90,10 @@ export async function installProtectedPreviewRoute(context, applicationOrigin) {
       if (request.headers()['x-vercel-protection-bypass']) {
         await route.abort('blockedbyclient'); return
       }
-      if (url.origin === applicationOrigin) {
+      if (url.origin === applicationOrigin && url.pathname === '/api/stack'
+        && !['GET', 'HEAD'].includes(request.method())) {
+        await route.abort('blockedbyclient')
+      } else if (url.origin === applicationOrigin) {
         await route.fallback()
       } else if (url.hostname === 'theliftinglab.co.uk' || url.hostname === 'www.theliftinglab.co.uk'
         || url.hostname === 'shop.theliftinglab.co.uk'
@@ -117,9 +146,32 @@ export async function runStagingGeneration23OwnerJourney({ immutableUrl, applica
     step = 'owner_sign_in'
     await verifyAlias({ signal })
     await page.goto(`${applicationOrigin}/auth/customer`, { waitUntil: 'domcontentloaded', timeout: 30_000 })
-    await page.waitForURL(`${applicationOrigin}/dashboard`, { timeout })
+    await page.waitForURL(`${applicationOrigin}/account`, { timeout })
     if (signal.aborted || Date.now() >= Date.parse(deadlineAt)) unavailable()
     await verifyAlias({ signal })
+    await page.getByText(OWNER_EMAIL, { exact: true }).waitFor({ timeout: 15_000 })
+    step = 'owner_saved_stack'
+    const stackRead = () => page.waitForResponse(response =>
+      response.url() === `${applicationOrigin}/api/stack`
+      && response.request().method() === 'GET', { timeout: 15_000 })
+    await page.getByRole('navigation', { name: 'My account', exact: true })
+      .getByRole('link', { name: 'My Stack', exact: true }).click({ timeout: 15_000 })
+    await page.waitForURL(`${applicationOrigin}/stack`, { timeout: 15_000 })
+    await page.getByRole('heading', { name: 'What are you training for?', exact: true })
+      .waitFor({ timeout: 15_000 })
+    // Full reloads trigger the root stack provider's GET even when client navigation
+    // retained its existing snapshot. Observe the real UI request, not a test API call.
+    const [firstStack] = await Promise.all([stackRead(),
+      page.reload({ waitUntil: 'domcontentloaded', timeout: 30_000 })])
+    const savedStack = await verifyOwnerStackResponse(firstStack, applicationOrigin)
+    const [reloadedStack] = await Promise.all([stackRead(),
+      page.reload({ waitUntil: 'domcontentloaded', timeout: 30_000 })])
+    if (await verifyOwnerStackResponse(reloadedStack, applicationOrigin) !== savedStack) unavailable()
+    await page.getByRole('heading', { name: 'Your products', exact: true }).waitFor({ timeout: 15_000 })
+    // Use the account navigation before opening its basket, not a product-page shortcut.
+    await page.getByRole('navigation', { name: 'My account', exact: true })
+      .getByRole('link', { name: 'Overview', exact: true }).click({ timeout: 15_000 })
+    await page.waitForURL(`${applicationOrigin}/account`, { timeout: 15_000 })
     await page.getByText(OWNER_EMAIL, { exact: true }).waitFor({ timeout: 15_000 })
     await page.goto(`${applicationOrigin}/account/orders`, { waitUntil: 'domcontentloaded', timeout: 30_000 })
     await page.getByRole('heading', { name: 'My orders' }).waitFor({ timeout: 15_000 })
@@ -138,7 +190,7 @@ export async function runStagingGeneration23OwnerJourney({ immutableUrl, applica
 
     step = 'explicit_guest_cart_transfer'
     await verifyAlias({ signal })
-    await page.goto(`${applicationOrigin}/products/${PRODUCT_ID}`,
+    await page.goto(`${applicationOrigin}/account`,
       { waitUntil: 'domcontentloaded', timeout: 30_000 })
     await page.getByRole('button', { name: /^Basket, / }).click({ timeout: 15_000 })
     const cart = page.getByRole('dialog', { name: 'Test cart', exact: true })
@@ -185,7 +237,7 @@ export async function runStagingGeneration23OwnerJourney({ immutableUrl, applica
     await verifyAlias({ signal })
     outcome = Object.freeze({ status: 'OWNER_JOURNEY_VERIFIED_NO_PURCHASE',
       account: 'owner_identity_orders_and_logout', cart: 'explicit_guest_transfer_mapped_product_and_price',
-      checkout: 'staging_get_only' })
+      stack: 'account_navigation_saved_stack_read_and_reload_unchanged', checkout: 'staging_get_only' })
   } catch { failed = true }
   finally {
     clearTimeout(deadlineTimer)
