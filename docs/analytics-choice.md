@@ -16,7 +16,7 @@ Only localStorage key `tll.analytics-choice.v1` enables analytics: `{version: 1,
 - GA collection: Google Analytics `/g/collect` endpoints (observed `region1.google-analytics.com`); the browser tests also detect other `google-analytics`, Tag Manager and DoubleClick URLs and any request containing the measurement ID.
 - No first-party analytics proxy or analytics resource hints are added.
 - Existing `track()` calls are gated by the current accepted record. OFF-period events are not queued or replayed.
-- Exactly one initialisation per document; Google sends one initial current-page view. Same-document page views depend on GA's enhanced history measurement; the harness measures visible Privacy navigation rather than claiming a GA-admin setting. Reload starts one new document/view. Saving unchanged acceptance adds no initialisation/view.
+- Exactly one initialisation per document; Automatic initial page views are disabled with `send_page_view: false`; the app sends one initial current-page view and one view per subsequent pathname navigation, deduplicated against the current URL. Query-only changes on the same pathname do not add a view. Reload starts one new document/view. The current property did not emit an enhanced-history view in the measured navigation case; later GA configuration changes need re-verification for duplicates. Saving unchanged acceptance adds no initialisation/view.
 - The code requests `allow_google_signals: false` and `allow_ad_personalization_signals: false`; this is not evidence of the GA property's administrative advertising/sharing configuration.
 
 ## Cookies and withdrawal

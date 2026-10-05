@@ -1,6 +1,7 @@
 'use client'
 
 import Script from 'next/script'
+import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { GA_MEASUREMENT_ID } from '@/lib/gtag'
 import {
@@ -17,6 +18,8 @@ function disableAnalytics() {
 }
 
 export default function AnalyticsPreferences() {
+  const pathname = usePathname()
+  const lastPage = useRef<string | null>(null)
   const [choice, setChoice] = useState<AnalyticsChoice | null>(null)
   const [ready, setReady] = useState(false)
   const [open, setOpen] = useState(false)
@@ -60,6 +63,21 @@ export default function AnalyticsPreferences() {
       window.clearInterval(expiry)
     }
   }, [])
+
+  function pageView() {
+    if (!active.current || !analyticsAllowed() || !window.gtag) return
+    const page = window.location.href
+    if (lastPage.current === page) return
+    lastPage.current = page
+    window.gtag('event', 'page_view', { page_location: page, page_title: document.title })
+  }
+
+  useEffect(() => {
+    if (initialised.current) pageView()
+    // The effect tracks supported pathname navigation; current browser URL and
+    // preference are read at dispatch time, not captured from an earlier render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   function choose(next: AnalyticsChoice) {
     if (busy.current) return
@@ -123,9 +141,10 @@ export default function AnalyticsPreferences() {
             window.gtag = function () { window.dataLayer?.push(arguments) }
             window.gtag('js', new Date())
             window.gtag('config', GA_MEASUREMENT_ID, {
-              cookie_domain: 'none', cookie_flags: 'SameSite=Lax;Secure',
+              send_page_view: false, cookie_domain: 'none', cookie_flags: 'SameSite=Lax;Secure',
               allow_google_signals: false, allow_ad_personalization_signals: false,
             })
+            pageView()
           }} />
       )}
     </>
