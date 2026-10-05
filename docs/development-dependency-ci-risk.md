@@ -57,3 +57,5 @@ PRIVACY_APP_URL=http://localhost:3177 node tests/privacy/url-minimisation.mjs
 ```
 
 They require a running local app, installed Chromium and an existing `evidence/privacy` directory; they write evidence there. They contact real Google analytics after synthetic acceptance, so they are separate from offline/no-hosted-write checks and were not executed here. Use the accepted privacy lane's explicit authority before repeating that external telemetry. Intercepted Google responses cannot substitute for their natural-network positive proof. Optional accessibility command already exists as `npm run test:accessibility`.
+
+Integration resolution retains the newer native dependency versions instead of the older main-based privacy pins; consent, minimisation and native CSS/image regressions must pass on the final combined SHA. The unsupported newer hooks-rule suppression was removed to retain the pinned compatible eslint-config-next15.5.25; preference behavior is unchanged. Local verification explicitly installs and logs npm11.19.0. No official-CI execution version is inferred from that local proof.

@@ -47,7 +47,6 @@ export default function AnalyticsPreferences() {
     else clearAnalyticsCookies(true)
     active.current = stored === 'accepted'
     // Browser storage is read after hydration; the server always renders OFF.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setChoice(stored)
     setOpen(stored === null)
     setReady(true)
