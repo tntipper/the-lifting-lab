@@ -1281,7 +1281,7 @@
       },
       {
         "path": "scripts/staging-owner-successor-fixed-source-reader.mjs",
-        "sha256": "b63bcfa447b5f4d78ce8453967548cfd31556ea2703d2618f4baba94447978bf"
+        "sha256": "a0998bf6dc33912fd6f2fa036a91d5af83a402a6ed81c07547fb2ff28a0ac1ce"
       },
       {
         "path": "scripts/staging-owner-successor-process-binding.mjs",
@@ -2193,7 +2193,7 @@
       },
       {
         "path": "tests/staging-owner-successor-fixed-source-reader.test.mjs",
-        "sha256": "fbd62366fe00df44c5ac5b2ec12794a230d23bbf7376375a278c982472ca0fdd"
+        "sha256": "15e0a5f11418853630c316d901d7ae4a61035f1b3bd06d349be63e04cc60a8f8"
       },
       {
         "path": "tests/staging-owner-successor-default-qualification.test.mjs",

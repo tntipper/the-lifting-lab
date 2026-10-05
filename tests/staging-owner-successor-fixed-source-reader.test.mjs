@@ -144,3 +144,18 @@ test('actual fixed Git scan yields to cancellation before later admission', asyn
   setImmediate(() => controller.abort())
   assert.deepEqual(await pending, { status: 'OWNER_SUCCESSOR_SOURCE_HOLD', authorization: 'NONE' })
 })
+
+test('hidden index flags and stat-cache config cannot admit modified tracked runtime bytes', async t => {
+  const f = await fixture(t)
+  for (const flag of ['--assume-unchanged', '--skip-worktree']) {
+    const path = 'scripts/staging-preview-git-source-preflight.mjs'
+    execute(f.root, ['update-index', flag, path])
+    put(f.root, path, readFileSync(join(f.root, path), 'utf8') + '// hidden unreviewed runtime byte\n')
+    assert.equal(execute(f.root, ['status', '--porcelain=v1', '--untracked-files=no']), '')
+    assert.equal((await f.read()).status, 'OWNER_SUCCESSOR_SOURCE_HOLD')
+    execute(f.root, ['update-index', flag === '--assume-unchanged' ? '--no-assume-unchanged' : '--no-skip-worktree', path]); f.reset()
+  }
+  execute(f.root, ['config', 'core.ignorestat', 'true'])
+  put(f.root, 'scripts/staging-owner-successor-whole-run.mjs', readFileSync(join(f.root, 'scripts/staging-owner-successor-whole-run.mjs'), 'utf8') + '// dirty with ignorestat\n')
+  assert.equal((await f.read()).status, 'OWNER_SUCCESSOR_SOURCE_HOLD')
+})

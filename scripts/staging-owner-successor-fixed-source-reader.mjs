@@ -1,7 +1,8 @@
 /** Disabled fixed Git binding. Owner-supplied review hashes are not execution authority. */
+import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { setImmediate as yieldToSupervisor } from 'node:timers/promises'
-import { lstatSync, readFileSync } from 'node:fs'
+import { lstatSync, readFileSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { verifyOwnerSuccessorArmingSource, OWNER_SUCCESSOR_SOURCE_SCHEMA } from './staging-owner-successor-source-proof.mjs'
 import { stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady } from './staging-preview-git-source-preflight.mjs'
@@ -43,6 +44,7 @@ export function ownerSuccessorGitProcessOptions(args, maxBuffer, policy) {
     'config\0--local\0--get\0remote.origin.url', 'status\0--porcelain=v1\0--untracked-files=no',
     'rev-parse\0HEAD', ['rev-list', '--parents', '-n', '1', 'HEAD'].join('\0'), `ls-remote\0--heads\0${ORIGIN}\0refs/heads/${BRANCH}`])
   let limit = simple.has(joined) ? 4096 : null
+  if (joined === 'ls-files\0-v\0-z' || joined === 'ls-tree\0-r\0-z\0HEAD') limit = 262144
   if (new RegExp(`^diff-tree\\x00--no-commit-id\\x00--name-status\\x00-r\\x00-z\\x00${sha}\\x00${sha}$`).test(joined)) limit = 16384
   const show = args.length === 2 && args[0] === 'show' && /^([a-f0-9]{40}):(.+)$/.exec(args[1])
   if (show && (show[2] === MANIFEST || Object.hasOwn(policy.gates, show[2]))) limit = 262144
@@ -80,7 +82,47 @@ export async function readFixedOwnerSuccessorSource({ handoff, signal, now = Dat
       }
       return result.stdout
     }
+    const verifyWorkingBytes = async () => {
+      const index = await runGit(['ls-files', '-v', '-z'], 262144)
+      const tree = await runGit(['ls-tree', '-r', '-z', 'HEAD'], 262144)
+      try {
+        const records = bytes => {
+          if (!bytes.length || bytes.at(-1) !== 0) throw Error('Successor Git unavailable')
+          const decoded = bytes.toString('utf8')
+          if (!Buffer.from(decoded, 'utf8').equals(bytes)) throw Error('Successor Git unavailable')
+          return decoded.slice(0, -1).split('\0')
+        }
+        const tracked = new Set()
+        for (const line of records(index)) {
+          if (!line.startsWith('H ') || tracked.has(line.slice(2))) throw Error('Successor Git unavailable')
+          tracked.add(line.slice(2))
+        }
+        if (tracked.size > 4000) throw Error('Successor Git unavailable')
+        let total = 0
+        for (const [position, record] of records(tree).entries()) {
+          if (position % 32 === 0) { await yieldToSupervisor(undefined, { signal }); readClock() }
+          const entry = /^(100644|100755) blob ([a-f0-9]{40})\t([^\0]+)$/.exec(record)
+          if (!entry || !tracked.delete(entry[3]) || entry[3].split('/').some(part => !part || part === '.' || part === '..')) throw Error('Successor Git unavailable')
+          const path = resolve(ROOT, entry[3]), stat = lstatSync(path)
+          if (realpathSync(path) !== path || !stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1
+            || stat.size > 16 * 1024 * 1024 || (stat.mode & 0o111) !== (entry[1] === '100755' ? 0o111 : 0)) throw Error('Successor Git unavailable')
+          total += stat.size
+          if (total > 256 * 1024 * 1024) throw Error('Successor Git unavailable')
+          const bytes = readFileSync(path)
+          try {
+            const actual = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')
+            if (bytes.length !== stat.size || actual !== entry[2]) throw Error('Successor Git unavailable')
+          } finally { bytes.fill(0) }
+        }
+        if (tracked.size) throw Error('Successor Git unavailable')
+      } finally { index.fill(0); tree.fill(0) }
+    }
+    await verifyWorkingBytes()
     const result = await verifyOwnerSuccessorArmingSource({ runGit, policy, root: ROOT, now: readClock })
+    if (result.status !== 'OWNER_SUCCESSOR_SOURCE_VERIFIED') return result
+    await verifyWorkingBytes()
+    const head = await runGit(['rev-parse', 'HEAD'], 4096)
+    try { if (head.toString('utf8').trim() !== result.executionCommit) return HOLD } finally { head.fill(0) }
     readClock()
     return result
   } catch { return HOLD }
