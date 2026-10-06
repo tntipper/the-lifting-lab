@@ -38,7 +38,8 @@ BEGIN
   OR current_user<>session_user OR current_setting('server_version_num')::int<170000
   OR (SELECT rolsuper OR NOT rolcreaterole FROM pg_roles WHERE rolname=operator_name)
   OR NOT has_table_privilege(operator_name,'pg_authid','SELECT')
-  OR NOT pg_has_role(operator_name,'pg_read_all_stats','MEMBER') THEN
+  OR NOT pg_has_role(operator_name,'pg_read_all_stats','MEMBER')
+  OR NOT pg_has_role(operator_name,'pg_read_all_stats','USAGE') THEN
   RAISE EXCEPTION 'Generation 23 final check operator mismatch'; END IF;
  IF to_regclass('tll_staging_private.environment') IS NULL
   OR (SELECT count(*) FROM tll_staging_private.environment)<>1

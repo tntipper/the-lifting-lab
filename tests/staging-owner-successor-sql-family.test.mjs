@@ -46,11 +46,14 @@ for (const config of configurations) {
     assert.throws(() => api[`buildOwnerSuccessor${builder}`](input()), /unavailable/)
     assert.throws(() => api[`validateOwnerSuccessor${validator}`]([], input()), /unavailable/)
   })
-  test(`${name}: fresh-window port preserves original SQL guards byte-for-byte`, async () => {
+  test(`${name}: fresh-window port preserves every original guard and requires effective statistics privileges`, async () => {
     const oldSource = await readFile(new URL(`staging-generation-23-${original}.mjs`, scripts), 'utf8')
     const newSource = await readFile(new URL(`staging-owner-successor-sql-${name}.mjs`, scripts), 'utf8')
     const guardBody = source => source.slice(source.indexOf('SET LOCAL lock_timeout'), source.indexOf('\nSELECT jsonb_build_object'))
-    assert.equal(guardBody(newSource), guardBody(oldSource))
+    const expected = guardBody(oldSource).replace(/( +)OR NOT pg_has_role\((\w+),'pg_read_all_stats','MEMBER'\) THEN/,
+      (_, indent, who) => `${indent}OR NOT pg_has_role(${who},'pg_read_all_stats','MEMBER')\n${indent}OR NOT pg_has_role(${who},'pg_read_all_stats','USAGE') THEN`)
+    assert.match(expected, /pg_read_all_stats','USAGE'/)
+    assert.equal(guardBody(newSource), expected)
     const api = await armed(config, await context())
     const sql = api[`buildOwnerSuccessor${builder}`](input())
     assert.ok(sql.includes(OWNER_SUCCESSOR_WINDOW_ID))

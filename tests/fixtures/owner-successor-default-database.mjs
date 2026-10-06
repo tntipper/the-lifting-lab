@@ -18,6 +18,13 @@ const docker = (args, input) => {
     // execFileSync embeds argv (including synthetic passwords) in its Error: do not propagate it.
     const error = new Error('Owned synthetic PostgreSQL fixture command failed')
     error.code = /(?:ERROR|FATAL):\s+([0-9A-Z]{5}):/.exec(String(failure.stderr))?.[1] ?? 'FIXTURE_COMMAND_FAILED'
+    // Expose only a fixed predicate category; never forward argv or arbitrary database errors.
+    const stderr = String(failure.stderr)
+    const operatorErrors = ['Generation 23 predecessor check operator mismatch', 'Generation 23 operator mismatch',
+      'Generation 23 recovery operator mismatch', 'Generation 23 final check operator mismatch',
+      'Gen23 backend read requires exact staging operator', 'Gen23 shutdown requires exact managed staging postgres operator']
+    error.predicate = operatorErrors.some(message => stderr.includes(`P0001: ${message}\n`)) ? 'OPERATOR'
+      : stderr.includes('P0001: Generation 23 predecessor check runtime sessions remain\n') ? 'RUNTIME_SESSIONS' : undefined
     throw error
   }
 }
@@ -47,7 +54,7 @@ export async function createOwnerSuccessorDefaultDatabase() {
     assert.equal(ready, true)
     admin(`CREATE ROLE postgres LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS CREATEROLE;
 GRANT CREATE ON DATABASE postgres TO postgres; ALTER SCHEMA public OWNER TO postgres;
-GRANT SELECT ON pg_authid TO postgres; GRANT pg_read_all_stats TO postgres;
+GRANT SELECT ON pg_authid TO postgres; GRANT pg_read_all_stats TO postgres WITH INHERIT TRUE, SET FALSE;
 CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN;
 CREATE SCHEMA auth AUTHORIZATION postgres;
 CREATE SCHEMA tll_staging_private AUTHORIZATION postgres;`)

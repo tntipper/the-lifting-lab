@@ -54,7 +54,8 @@ BEGIN
    OR coalesce((SELECT rolsuper FROM pg_roles WHERE rolname=current_user),true)
    OR NOT coalesce((SELECT rolcreaterole FROM pg_roles WHERE rolname=current_user),false)
    OR NOT has_table_privilege(current_user,'pg_authid','SELECT')
-   OR NOT pg_has_role(current_user,'pg_read_all_stats','MEMBER') THEN
+   OR NOT pg_has_role(current_user,'pg_read_all_stats','MEMBER')
+   OR NOT pg_has_role(current_user,'pg_read_all_stats','USAGE') THEN
    RAISE EXCEPTION 'Gen23 shutdown requires exact managed staging postgres operator'; END IF;
  IF to_regclass('tll_staging_private.environment') IS NULL
    OR (SELECT count(*) FROM tll_staging_private.environment)<>1

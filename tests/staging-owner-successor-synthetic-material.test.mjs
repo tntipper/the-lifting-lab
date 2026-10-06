@@ -20,10 +20,13 @@ test('deterministic mock setup SQL binds fresh window, preserves guards and unco
   assert.throws(() => consumeSyntheticSuccessorSetup({}))
   assert.throws(() => prepareSyntheticSuccessorSetup({ capability, observedPins: input.pins, nowMs: input.startedAtMs }))
 })
-test('the ported SQL builder body preserves unchanged historical preflight/postflight guards byte-for-byte', () => {
+test('the synthetic SQL body preserves every historical guard and adds effective statistics privileges', () => {
   const original = readFileSync(new URL('../scripts/staging-generation-23-credentials.mjs', import.meta.url), 'utf8')
   const successor = readFileSync(new URL('../scripts/staging-owner-successor-synthetic-material.mjs', import.meta.url), 'utf8')
   const guards = source => source.slice(source.indexOf('SET LOCAL lock_timeout'), source.indexOf('/** Issue one opaque') < 0
     ? source.indexOf('/** No caller') : source.indexOf('/** Issue one opaque')).trim()
-  assert.equal(guards(successor), guards(original))
+  const expected = guards(original).replace("  OR NOT pg_has_role(operator_name,'pg_read_all_stats','MEMBER') THEN",
+    "  OR NOT pg_has_role(operator_name,'pg_read_all_stats','MEMBER')\n  OR NOT pg_has_role(operator_name,'pg_read_all_stats','USAGE') THEN")
+  assert.ok(expected.includes("pg_read_all_stats','USAGE'"))
+  assert.equal(guards(successor), expected)
 })

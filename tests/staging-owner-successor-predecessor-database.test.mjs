@@ -5,6 +5,8 @@ import { readFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { createOwnerSuccessorDefaultDatabase } from './fixtures/owner-successor-default-database.mjs'
 import { PREDECESSOR_WINDOW_ID, PREDECESSOR_EXPIRES_AT } from '../scripts/staging-owner-successor-predecessor-check.mjs'
+import { successorFixtureModules } from './fixtures/owner-successor-native-modules.mjs'
+import { deriveScramVerifier } from '../scripts/staging-generation-6-transport.mjs'
 
 const quote = value => `'${value.replaceAll("'", "''")}'`
 const marker = delta => `tll-runtime-window/v1 ${JSON.stringify({ expiresAt: PREDECESSOR_EXPIRES_AT,
@@ -33,6 +35,30 @@ test('strict retired-v18 SQL accepts only its exact state and rejects identity, 
     try {
       pass()
       assert.throws(() => db.admin(sql), error => error.code === 'P0001', 'superuser is not the managed operator')
+      // Only this owned, network-none database models effective and ineffective operators.
+      // Production predicates and source gates are never edited by the fixture.
+      const startedAt = new Date(Math.floor(Date.now() / 1000) * 1000).toISOString()
+      const expiresAt = new Date(Date.parse(startedAt) + 60 * 60_000).toISOString()
+      const modules = await successorFixtureModules({ startedAt, expiresAt })
+      const guarded = [['predecessor', sql]]
+      for (const [name, builder] of [['credentials', 'CredentialSql'], ['retirement', 'RecoverySql'],
+        ['shutdown', 'ControlShutdownSql'], ['backend-state', 'BackendStateSql'], ['final-check', 'FinalCheckSql']]) {
+        const phase = await modules.import(`staging-owner-successor-sql-${name}.mjs`)
+        const verifiers = Object.fromEntries(['customer', 'cart', 'broker', 'provisional', 'bridge']
+          .map((purpose, index) => [purpose, deriveScramVerifier(`synthetic-visibility-${purpose}`.repeat(4), Buffer.alloc(18, index + 1))]))
+        guarded.push([name, phase[`buildOwnerSuccessor${builder}`]({ expiresAt, verifiers, nowMs: Date.now() })])
+      }
+      db.admin('GRANT pg_read_all_stats TO postgres WITH INHERIT FALSE, SET FALSE')
+      try {
+        assert.equal(db.managed("SELECT pg_has_role(current_user,'pg_read_all_stats','MEMBER')||','||pg_has_role(current_user,'pg_read_all_stats','USAGE')"), 'true,false')
+        for (const [name, phaseSql] of guarded) {
+          assert.throws(() => db.managed(phaseSql), error => error.code === 'P0001' && error.predicate === 'OPERATOR',
+            `${name}: ineffective statistics membership must fail at the operator predicate`)
+          assert.equal(db.controls(), 'false,false,false,false,false')
+        }
+      } finally { db.admin('GRANT pg_read_all_stats TO postgres WITH INHERIT TRUE, SET FALSE') }
+      assert.equal(db.managed("SELECT pg_has_role(current_user,'pg_read_all_stats','MEMBER')||','||pg_has_role(current_user,'pg_read_all_stats','USAGE')"), 'true,true')
+      pass()
       const cases = [
         ['foreign project', "UPDATE tll_staging_private.environment SET operator_project_ref='wrhgscovsgsudtedbljr'",
           "UPDATE tll_staging_private.environment SET operator_project_ref='qdmvngjwkcsilzmqksme'"],
@@ -69,7 +95,7 @@ test('strict retired-v18 SQL accepts only its exact state and rejects identity, 
       // Establish a session, then retire login admission; the unchanged session predicate must reject it.
       db.admin('ALTER ROLE tll_customer_runtime LOGIN')
       sleeper = spawn('docker', ['exec', '-i', db.containerName, 'psql', '-XqAt', '-U', 'tll_customer_runtime',
-        '-d', 'postgres', '-c', 'SELECT pg_sleep(60)'], { stdio: 'ignore' })
+        '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-c', 'SET statement_timeout=120000; SELECT pg_sleep(90)'], { stdio: 'ignore' })
       let observed = false
       for (let n = 0; n < 50; n++) {
         if (db.admin("SELECT count(*) FROM pg_stat_activity WHERE usename='tll_customer_runtime'") === '1') { observed = true; break }
@@ -77,7 +103,11 @@ test('strict retired-v18 SQL accepts only its exact state and rejects identity, 
       }
       assert.equal(observed, true, 'owned runtime session must exist before testing session denial')
       db.admin('ALTER ROLE tll_customer_runtime NOLOGIN')
-      reject()
+      const visible = "SELECT count(*) FROM pg_stat_activity WHERE backend_type='client backend' AND usename='tll_customer_runtime'"
+      assert.equal(db.managed(visible), '1', 'effective operator must see the lingering client backend')
+      assert.throws(() => db.managed(sql), error => error.code === 'P0001' && error.predicate === 'RUNTIME_SESSIONS',
+        'the strict session predicate must reject the observed lingering backend')
+      assert.equal(db.managed(visible), '1', 'session must remain alive after the strict query rejects it')
       assert.equal(db.admin("SELECT pg_terminate_backend(pid,5000) FROM pg_stat_activity WHERE usename='tll_customer_runtime'"), 't')
       assert.equal(db.admin("SELECT count(*) FROM pg_stat_activity WHERE usename='tll_customer_runtime'"), '0')
       sleeper.kill(); sleeper = undefined

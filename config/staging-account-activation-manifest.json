@@ -1177,7 +1177,7 @@
       },
       {
         "path": "scripts/staging-owner-successor-predecessor-check.mjs",
-        "sha256": "2911adc286511bcf486243c6879fa3a33197d596a558a627548fb124e17244d6"
+        "sha256": "748b321806de8b085f6a6162153bbe83ced1529b782b8c29d3cdebd082b3e7dd"
       },
       {
         "path": "scripts/staging-generation-23-predecessor-query.mjs",
@@ -1337,23 +1337,23 @@
       },
       {
         "path": "scripts/staging-owner-successor-sql-credentials.mjs",
-        "sha256": "aa6b01271be3d655242681e35c7f9a0bb1d37b1746f1e9aa0bf66cbb69510170"
+        "sha256": "1616cfc574348f29e43718a3fac153ac9b8414d13c13602162346e46f82b8c23"
       },
       {
         "path": "scripts/staging-owner-successor-sql-shutdown.mjs",
-        "sha256": "1b87a3968f2e6e67eb93d0662fef99a0ace5af51e7b057d9a1eb9e2594502561"
+        "sha256": "94cc586e8bee46671906814d365bf0dfa507c43aeba335056b55267d9efe6e44"
       },
       {
         "path": "scripts/staging-owner-successor-sql-backend-state.mjs",
-        "sha256": "53a4feec9818f48ec610b62db2cb9f6d7240a53fd9f7d4f2a7af5d1c7ff96665"
+        "sha256": "0ee41415af3faa04f6116626347c9168e9a476f22dd3d2d7206baccf4fcd9759"
       },
       {
         "path": "scripts/staging-owner-successor-sql-retirement.mjs",
-        "sha256": "85589638659126b035f767ebeef0d6332186d9905d0671575274fb546d2e88b1"
+        "sha256": "5b26b31f6d7dae0a38c1c3ae1309d048fd116a974fb622df14c032f25eaad448"
       },
       {
         "path": "scripts/staging-owner-successor-sql-final-check.mjs",
-        "sha256": "3c93bf445be2c548f96d03f9be48db1c59b6b46b0eac701a4697951e6110e62c"
+        "sha256": "bb8e75fe6c49da3481b33c71842ad63b4660021b3932c897075e583dbac681d2"
       },
       {
         "path": "scripts/staging-generation-23-recovery.mjs",
@@ -2077,7 +2077,7 @@
       },
       {
         "path": "tests/staging-owner-successor-predecessor-check.test.mjs",
-        "sha256": "4c580477f34b2aeeb91d16a784053fe4a9a07a56fb744b27486936c88c6f5118"
+        "sha256": "3b16edd280edd276bbf8a4dc0a18b1fa405cd03c79a0602eb7e2cb4c31fd5b89"
       },
       {
         "path": "tests/staging-generation-23-predecessor-query.test.mjs",
@@ -2089,7 +2089,7 @@
       },
       {
         "path": "tests/staging-owner-successor-predecessor-database.test.mjs",
-        "sha256": "035c584786286af1256456e95df40db3df6e942f949fa0ac7083c4b70315f813"
+        "sha256": "76873aab80190c6a274f9314161c68c5668b87b1011618b8f99a7d53a63bf76d"
       },
       {
         "path": "tests/staging-generation-23-predecessor-journal.test.mjs",
@@ -2137,7 +2137,7 @@
       },
       {
         "path": "tests/fixtures/owner-successor-control-database.mjs",
-        "sha256": "14c12ba72cf48e5b4a6f5db68feb49244e0604f2ab296eeb77e2b83e5824ecf2"
+        "sha256": "7859f2599a159db18e2e96c86b353d96e6f5bfb5b4728d3c28258050d9cf7234"
       },
       {
         "path": "tests/fixtures/owner-successor-default-qualification.mjs",
@@ -2145,7 +2145,7 @@
       },
       {
         "path": "tests/fixtures/owner-successor-default-database.mjs",
-        "sha256": "1b55fd75543f60e78f77563c682a6a02d18503142558605e450ff5b210b00638"
+        "sha256": "0f92115752bd9de7d459d4895e5dbfe70a58ead890f6d21d1849af1a7f3fe43e"
       },
       {
         "path": "tests/fixtures/owner-successor-default-http.mjs",
@@ -2233,7 +2233,7 @@
       },
       {
         "path": "tests/staging-owner-successor-sql-family.test.mjs",
-        "sha256": "78bc62fa30d1a54eec29f3302b1007860075f3b0dd547d353c3d863ba291e0b4"
+        "sha256": "b56e8d225db52da801c8a3c96456680bee60ad931540aee79501ad750b935753"
       },
       {
         "path": "tests/staging-generation-23-recovery.test.mjs",

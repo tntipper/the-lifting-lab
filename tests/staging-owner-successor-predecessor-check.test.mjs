@@ -71,7 +71,7 @@ test('only the exact retired owner successor v18 receipt is accepted', async () 
   assert.throws(() => validate([{ tll_generation_23_predecessor_check: value }]), /unavailable/)
 })
 
-test('every SQL retirement guard is unchanged after exact identity and receipt-name substitution', async () => {
+test('every SQL retirement guard is preserved with the additional effective-statistics requirement', async () => {
   const scripts = new URL('../scripts/', import.meta.url)
   const source = (await readFile(new URL('staging-generation-23-predecessor-check.mjs', scripts), 'utf8'))
     .replace('export const STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED = false',
@@ -84,6 +84,9 @@ test('every SQL retirement guard is unchanged after exact identity and receipt-n
     .replaceAll('2026-09-28T21:05:00.000Z', predecessorExpiry)
     .replaceAll('tll-staging-generation-23-predecessor-check/v1', 'tll-owner-successor-predecessor-check/v1')
     .replaceAll('tll_generation_23_predecessor_check', 'tll_owner_successor_predecessor_check')
+    .replace("  OR NOT pg_has_role(operator_name,'pg_read_all_stats','MEMBER') THEN",
+      "  OR NOT pg_has_role(operator_name,'pg_read_all_stats','MEMBER')\n  OR NOT pg_has_role(operator_name,'pg_read_all_stats','USAGE') THEN")
+  assert.ok(expected.includes("pg_has_role(operator_name,'pg_read_all_stats','USAGE')"))
   assert.equal(successor.buildOwnerSuccessorPredecessorCheckSql(), expected)
   assert.equal(legacy.PREDECESSOR_WINDOW_ID, '759bc8ed-5ecd-475c-8a4c-e35fcf628a73')
   assert.notEqual(legacy.PREDECESSOR_WINDOW_ID, successor.PREDECESSOR_WINDOW_ID)

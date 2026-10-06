@@ -32,7 +32,7 @@ export async function createOwnerSuccessorControlDatabase(context) {
     const marker = `tll-runtime-window/v1 ${JSON.stringify({ expiresAt: context.expiresAt, generation: context.generation,
       projectRef: 'qdmvngjwkcsilzmqksme', state: 'active', windowId: context.windowId })}`
     const statements = [`CREATE ROLE postgres LOGIN NOINHERIT NOSUPERUSER NOBYPASSRLS CREATEROLE;
-GRANT SELECT ON pg_authid TO postgres; GRANT pg_read_all_stats TO postgres;
+GRANT SELECT ON pg_authid TO postgres; GRANT pg_read_all_stats TO postgres WITH INHERIT TRUE, SET FALSE;
 CREATE SCHEMA tll_staging_private;
 CREATE TABLE tll_staging_private.environment(singleton boolean PRIMARY KEY,environment text,operator_project_ref text,
  operator_context text,identity_basis text,bootstrap_version text,source_commit text,integrity_sha256 text);
