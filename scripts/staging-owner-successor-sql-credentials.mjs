@@ -3,7 +3,7 @@ import { assertOwnerSuccessorSqlWindow, assertOwnerSuccessorSetupClock } from '.
 /** Pure, disconnected SQL package for a future reviewed staging credential window. */
 import { createHash } from 'node:crypto'
 import { PRODUCTION_PROJECT_REF } from './staging-account-hosted-baseline-database.mjs'
-import { PREDECESSOR_EXPIRES_AT, PREDECESSOR_WINDOW_ID, QUERY_ID as PREDECESSOR_QUERY_ID } from './staging-generation-23-predecessor-check.mjs'
+import { PREDECESSOR_EXPIRES_AT, PREDECESSOR_WINDOW_ID, QUERY_ID as PREDECESSOR_QUERY_ID } from './staging-owner-successor-predecessor-check.mjs'
 import { IDENTITIES } from './staging-generation-21-credentials.mjs'
 import { GENERATION, PROJECT_REF } from './staging-owner-successor-sql-context.mjs'
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'

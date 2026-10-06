@@ -2,7 +2,7 @@
 import { ownerSuccessorRegistrationDescriptor, OWNER_SUCCESSOR_WINDOW_ID, OWNER_SUCCESSOR_EDGE_REVISION,
   OWNER_SUCCESSOR_TARGETS } from './staging-owner-successor-registration.mjs'
 import { SUCCESSOR_PHASES } from './staging-owner-successor-fixture.mjs'
-import { PREDECESSOR_WINDOW_ID, PREDECESSOR_EXPIRES_AT } from './staging-generation-23-predecessor-check.mjs'
+import { PREDECESSOR_WINDOW_ID, PREDECESSOR_EXPIRES_AT } from './staging-owner-successor-predecessor-check.mjs'
 export const OWNER_SUCCESSOR_WINDOW_NATIVE_ENABLED = false
 const issued = new WeakMap(), bindings = new WeakSet(), denied = () => { throw Error('Successor synthetic window binding unavailable') }
 const exact = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)

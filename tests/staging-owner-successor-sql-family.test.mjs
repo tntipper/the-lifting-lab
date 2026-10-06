@@ -55,7 +55,11 @@ for (const config of configurations) {
     const sql = api[`buildOwnerSuccessor${builder}`](input())
     assert.ok(sql.includes(OWNER_SUCCESSOR_WINDOW_ID))
     assert.ok(sql.includes(expiresAt))
-    assert.ok(!sql.includes('d5180b08-79ee-43e8-96d4-4f73621fecbf'))
+    if (name === 'credentials') {
+      assert.equal(api.PREDECESSOR.windowId, 'd5180b08-79ee-43e8-96d4-4f73621fecbf')
+      assert.ok(sql.includes(api.PREDECESSOR.expiresAt))
+      assert.ok(!sql.includes('759bc8ed-5ecd-475c-8a4c-e35fcf628a73'))
+    } else assert.ok(!sql.includes('d5180b08-79ee-43e8-96d4-4f73621fecbf'))
     assert.ok(!sql.includes('UNSET_REQUIRES_REVIEWED_ARMING_DIFF'))
     assert.ok(sql.includes('qdmvngjwkcsilzmqksme') && sql.includes('wrhgscovsgsudtedbljr'))
     assert.match(sql, /operator mismatch|exact.*staging.*operator/)

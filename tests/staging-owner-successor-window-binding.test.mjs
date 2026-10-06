@@ -13,6 +13,8 @@ test('fixed fresh window/source/readiness and journal identities remain syntheti
   const input = freshWindowInput(), { binding, capability } = prepareSyntheticSuccessorWindow(input)
   input.pins.sourceSha = 'd'.repeat(40); input.predecessor.state = 'active'
   assert.equal(binding.source.sourceSha, 'a'.repeat(40)); assert.equal(binding.predecessor.state, 'retired')
+  assert.equal(binding.predecessor.windowId, 'd5180b08-79ee-43e8-96d4-4f73621fecbf')
+  assert.equal(binding.predecessor.expiresAt, '2026-09-28T21:47:00.000Z')
   assert.equal(binding.readiness, `${OWNER_SUCCESSOR_WINDOW_ID}|2030-01-01T12:00:00.000Z|2030-01-01T12:45:00.000Z`)
   assert.equal(binding.historicalOutcome, 'UNKNOWN'); assert.equal(binding.authorization, 'NONE')
   assert.equal(new Set(Object.values(binding.recordNames)).size, SUCCESSOR_PHASES.length)
@@ -26,6 +28,11 @@ test('invalid clocks, duration, active/foreign predecessor and old-window/revisi
     assert.throws(() => prepareSyntheticSuccessorWindow({ ...freshWindowInput(), expiresAtMs }))
   for (const field of ['state', 'windowId', 'expiresAt', 'runtimeSessions', 'controlsEnabled', 'providerEnabled', 'retiredRoles', 'provenance']) {
     const input = freshWindowInput(); input.predecessor[field] = 'wrong'
+    assert.throws(() => prepareSyntheticSuccessorWindow(input))
+  }
+  for (const drift of [{ windowId: '759bc8ed-5ecd-475c-8a4c-e35fcf628a73', expiresAt: '2026-09-28T21:05:00.000Z' },
+    { state: 'active' }, { runtimeSessions: 1 }, { controlsEnabled: true }, { providerEnabled: true }, { retiredRoles: 4 }]) {
+    const input = freshWindowInput(); Object.assign(input.predecessor, drift)
     assert.throws(() => prepareSyntheticSuccessorWindow(input))
   }
   for (const delta of [{ windowId: 'd5180b08-79ee-43e8-96d4-4f73621fecbf' }, { edgeRevision: 'tll-gen23-v18-cart-route-1' }, { extra: true }]) {

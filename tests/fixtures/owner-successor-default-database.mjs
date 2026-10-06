@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { createHash, randomUUID } from 'node:crypto'
 import { EXACT_MIGRATIONS } from '../../scripts/staging-generation-21-retirement-preflight.mjs'
-import { PREDECESSOR_EXPIRES_AT, PREDECESSOR_WINDOW_ID } from '../../scripts/staging-generation-23-predecessor-check.mjs'
+import { PREDECESSOR_EXPIRES_AT, PREDECESSOR_WINDOW_ID } from '../../scripts/staging-owner-successor-predecessor-check.mjs'
 
 const purposes = ['customer', 'cart', 'broker', 'provisional', 'bridge']
 const quote = value => `'${value.replaceAll("'", "''")}'`

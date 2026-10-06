@@ -39,13 +39,14 @@ async function nativeTestSql(expiresAt) {
 
 test('fresh native SQL installs five restricted SCRAM roles, retires and proves final OFF state',
   { skip: dockerAbsent ? 'Docker binary absent; actual PostgreSQL proof not executed' : false, timeout: 180_000 }, async () => {
-    const fixture = await createStagingGeneration23LocalDatabaseFixture()
+    const fixture = await createStagingGeneration23LocalDatabaseFixture({ predecessor: 'OWNER_SUCCESSOR_RETIRED_V18' })
     try {
       const api = await nativeTestSql(fixture.expiresAt)
       const setup = api.credentials.buildOwnerSuccessorCredentialSql({ expiresAt: fixture.expiresAt,
         verifiers: fixture.verifiers, nowMs: Date.now() })
       assert.ok(setup.includes(OWNER_SUCCESSOR_WINDOW_ID))
-      assert.ok(!setup.includes('d5180b08-79ee-43e8-96d4-4f73621fecbf'))
+      assert.equal(api.credentials.PREDECESSOR.windowId, 'd5180b08-79ee-43e8-96d4-4f73621fecbf')
+      assert.ok(!setup.includes('759bc8ed-5ecd-475c-8a4c-e35fcf628a73'))
       // Existing fixture parses the SQL's actual JSON result under its legacy wrapper key.
       // Adapt only that JavaScript wrapper; SQL and database receipt remain unmodified.
       const observedSetup = fixture.executeSetupSql(setup)[0].tll_generation_23_credential_receipt

@@ -4,7 +4,7 @@ import { PRODUCTION_PROJECT_REF } from './staging-account-hosted-baseline-databa
 import { IDENTITIES } from './staging-generation-21-credentials.mjs'
 import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
 import { EXACT_MIGRATIONS } from './staging-generation-21-retirement-preflight.mjs'
-import { PREDECESSOR_EXPIRES_AT, PREDECESSOR_WINDOW_ID } from './staging-generation-23-predecessor-check.mjs'
+import { PREDECESSOR_EXPIRES_AT, PREDECESSOR_WINDOW_ID } from './staging-owner-successor-predecessor-check.mjs'
 import { generateStagingGeneration23Passwords, eraseStagingGeneration23Passwords } from './staging-generation-23-password-material.mjs'
 import { deriveScramVerifier } from './staging-generation-6-transport.mjs'
 import { OWNER_SUCCESSOR_WINDOW_ID, OWNER_SUCCESSOR_TARGETS } from './staging-owner-successor-registration.mjs'

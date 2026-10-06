@@ -60,11 +60,11 @@
     "scripts/staging-generation-23-owner-journey.mjs": [
       "STAGING_GENERATION_23_OWNER_JOURNEY_ENABLED"
     ],
-    "scripts/staging-generation-23-predecessor-check.mjs": [
-      "STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED"
+    "scripts/staging-owner-successor-predecessor-check.mjs": [
+      "OWNER_SUCCESSOR_PREDECESSOR_CHECK_ENABLED"
     ],
-    "scripts/staging-generation-23-predecessor-query.mjs": [
-      "STAGING_GENERATION_23_PREDECESSOR_QUERY_ENABLED"
+    "scripts/staging-owner-successor-predecessor-query.mjs": [
+      "OWNER_SUCCESSOR_PREDECESSOR_QUERY_ENABLED"
     ],
     "scripts/staging-generation-23-preview-build-port.mjs": [
       "STAGING_GENERATION_23_PREVIEW_BUILD_PORT_ENABLED"

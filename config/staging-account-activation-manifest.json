@@ -1176,8 +1176,16 @@
         "sha256": "b5621def980018b0f150864dc440f2a46505d9ed6fe91d775289604768da10cc"
       },
       {
+        "path": "scripts/staging-owner-successor-predecessor-check.mjs",
+        "sha256": "2911adc286511bcf486243c6879fa3a33197d596a558a627548fb124e17244d6"
+      },
+      {
         "path": "scripts/staging-generation-23-predecessor-query.mjs",
         "sha256": "d9d5e65492cf6eef0de416d1ec4c334b01b7115df07108d7430bd0685ce64fe7"
+      },
+      {
+        "path": "scripts/staging-owner-successor-predecessor-query.mjs",
+        "sha256": "387c02967fc913eb5513d6717a1ae56d0e8f498866736b7237b87b9fcdd6ca36"
       },
       {
         "path": "scripts/staging-generation-23-predecessor-journal.mjs",
@@ -1253,7 +1261,7 @@
       },
       {
         "path": "scripts/staging-owner-successor-fixed-hosted-adapters.mjs",
-        "sha256": "bbba7f858702a2c98499505f1022070936a85a144c6301b2758f8dc9a7711eff"
+        "sha256": "996b6f2f7c3259bae62af08c3ad63cb094ea520dce7650b639e82b44e53da7df"
       },
       {
         "path": "scripts/staging-owner-successor-fixed-worker-assembly.mjs",
@@ -1309,7 +1317,7 @@
       },
       {
         "path": "config/staging-owner-successor-source-policy.json",
-        "sha256": "66c73afd01fad42312dc05d7d1b16b88b59137aa9d8265ebece0fac111213ecf"
+        "sha256": "8153524383e4f3a451fd53cfdfbb710f46f723dde632465ac09c2d2d01e0600d"
       },
       {
         "path": "scripts/staging-owner-successor-supabase-query.mjs",
@@ -1329,7 +1337,7 @@
       },
       {
         "path": "scripts/staging-owner-successor-sql-credentials.mjs",
-        "sha256": "8608cb35e76ad859cde68f1b8fc12a0347a7a485350418cc710575038410abce"
+        "sha256": "aa6b01271be3d655242681e35c7f9a0bb1d37b1746f1e9aa0bf66cbb69510170"
       },
       {
         "path": "scripts/staging-owner-successor-sql-shutdown.mjs",
@@ -2068,8 +2076,20 @@
         "sha256": "9558c01652b7710c989ec63b634f0478ce00acf75d91d0bb756da907b6a8e24e"
       },
       {
+        "path": "tests/staging-owner-successor-predecessor-check.test.mjs",
+        "sha256": "4c580477f34b2aeeb91d16a784053fe4a9a07a56fb744b27486936c88c6f5118"
+      },
+      {
         "path": "tests/staging-generation-23-predecessor-query.test.mjs",
         "sha256": "11911d2981c1946f74e90aa130ef30c184a853c4f8d852b752f60e50b9d8b094"
+      },
+      {
+        "path": "tests/staging-owner-successor-predecessor-query.test.mjs",
+        "sha256": "4dfd6c116d6c550813a0205b5100f2755c7d342dd19a9150758e12b1b3fad25a"
+      },
+      {
+        "path": "tests/staging-owner-successor-predecessor-database.test.mjs",
+        "sha256": "035c584786286af1256456e95df40db3df6e942f949fa0ac7083c4b70315f813"
       },
       {
         "path": "tests/staging-generation-23-predecessor-journal.test.mjs",
@@ -2125,7 +2145,7 @@
       },
       {
         "path": "tests/fixtures/owner-successor-default-database.mjs",
-        "sha256": "b46580e171560b50435a3bacc9630e6768b96d1336223f7483b44fe3b8bbfd89"
+        "sha256": "1b55fd75543f60e78f77563c682a6a02d18503142558605e450ff5b210b00638"
       },
       {
         "path": "tests/fixtures/owner-successor-default-http.mjs",
@@ -2153,7 +2173,7 @@
       },
       {
         "path": "tests/staging-owner-successor-database-acceptance.test.mjs",
-        "sha256": "b7f8938dfd274afddc0b5938a06345fc2c23149f2dfe3a284770d0f4ded68416"
+        "sha256": "6c43e63f895c0f014530697707bffdff0d06fdebc9ba992412cc60174e3f5dfd"
       },
       {
         "path": "tests/staging-owner-successor-fixed-database-provider-components.test.mjs",
@@ -2213,7 +2233,7 @@
       },
       {
         "path": "tests/staging-owner-successor-sql-family.test.mjs",
-        "sha256": "9e7d7ad7280e66158eb3082e8667a90a5bc765ad8d588663eca0e0bc38da44c5"
+        "sha256": "78bc62fa30d1a54eec29f3302b1007860075f3b0dd547d353c3d863ba291e0b4"
       },
       {
         "path": "tests/staging-generation-23-recovery.test.mjs",
@@ -2309,7 +2329,7 @@
       },
       {
         "path": "tests/staging-generation-23-database-acceptance.mjs",
-        "sha256": "b13ab798c6699930ef4c5dd992ee62a69dcfc4b159df4d7ff12b04d15e23e43c"
+        "sha256": "34b7d46fc8473aafd2c6629ae0984df1d1f0a6a0265dac00cfedd51bfb8e8340"
       },
       {
         "path": "tests/staging-generation-23-composite-local-acceptance.mjs",

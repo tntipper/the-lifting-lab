@@ -18,8 +18,8 @@ import { createOwnerSuccessorSettingsCoordinator } from './staging-owner-success
 import { createStagingGeneration23SettingsReadback } from './staging-generation-23-settings-readback.mjs'
 import { generateStagingGeneration23Passwords, projectStagingGeneration23Passwords,
   deriveStagingGeneration23Verifiers, eraseStagingGeneration23Passwords, clearStagingGeneration23Projection, EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME } from './staging-owner-successor-password-material.mjs'
-import { postStagingGeneration23PredecessorCheck } from './staging-generation-23-predecessor-query.mjs'
-import { validateStagingGeneration23PredecessorCheck } from './staging-generation-23-predecessor-check.mjs'
+import { postOwnerSuccessorPredecessorCheck } from './staging-owner-successor-predecessor-query.mjs'
+import { validateOwnerSuccessorPredecessorCheck } from './staging-owner-successor-predecessor-check.mjs'
 import { projectOfficialStagingProvider } from './staging-provider-broker-native-adapter.mjs'
 import { BROKER_SECRET_NAME } from './staging-provider-broker-rotation.mjs'
 import { HELD_SURFACE_FLAGS, STAGING_BRANCH, STAGING_ALIAS } from './staging-surface-activation-transport.mjs'
@@ -65,8 +65,8 @@ export function createOwnerSuccessorFixedHostedAdapters({ credentials, fetch: fe
   const makeCoordinator = make('createCoordinator', input => createOwnerSuccessorSettingsCoordinator(input))
   const makeReadback = make('createReadback', input => createStagingGeneration23SettingsReadback(input))
   const readPredecessor = make('readPredecessor', async ({ token: managementToken, signal }) => {
-    const rows = await postStagingGeneration23PredecessorCheck({ token: managementToken, signal })
-    return validateStagingGeneration23PredecessorCheck(rows)
+    const rows = await postOwnerSuccessorPredecessorCheck({ token: managementToken, signal })
+    return validateOwnerSuccessorPredecessorCheck(rows)
   })
   if ([makeSupabase, makeVercel, makeSurface, makeInventory, makeReplacer,
     makeEdge, makeCoordinator, makeReadback, readPredecessor].some(item => typeof item !== 'function')) unavailable()
