@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase-public'
 import { categoryLabel } from '@/lib/categories'
+import { hasApprovedAssessment } from '@/lib/assessment-display'
 import { claimsReviewFor } from '@/lib/claims-review'
 import { getGuide } from '@/lib/guides'
 import { fetchProductDetail, fetchCategory } from '@/lib/product-data'
@@ -54,9 +55,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const review = claimsReviewFor(product.category)
   const description = review
     ? `${product.brand} ${product.name}. ${review.title}. Existing category scores are not validated health-benefit assessments.`
-    : score != null
+    : hasApprovedAssessment(product)
     ? `${product.brand} ${product.name} scores ${score}/100 on our Effectiveness Match ${cat.toLowerCase()} rating. Dose-for-dose analysis vs EFSA reference values.`
-    : `${product.brand} ${product.name} — evidence-based ${cat.toLowerCase()} analysis from The Lifting Lab.`
+    : `${product.brand} ${product.name} — not assessed. Browse ${cat.toLowerCase()} label information from The Lifting Lab.`
 
   return {
     title,
@@ -97,7 +98,7 @@ export default async function Page({ params }: Props) {
       // The Lifting Lab's editorial Effectiveness Match score, expressed on its
       // native 0-100 scale. We are an independent reviewer of these products
       // (not the seller), so this is a legitimate editorial Review.
-      ...(score != null && !claimsReviewFor(product.category) && {
+      ...(hasApprovedAssessment(product) && {
         review: {
           '@type': 'Review',
           name: `${fullName} Effectiveness Match analysis`,
@@ -120,16 +121,8 @@ export default async function Page({ params }: Props) {
           worstRating: 1,
         },
       }),
-      // Only advertise an offer when we have both a price and a real buy link.
-      ...(product.retail_price != null && product.buy_url && {
-        offers: {
-          '@type': 'Offer',
-          price: product.retail_price,
-          priceCurrency: 'GBP',
-          availability: 'https://schema.org/InStock',
-          url: product.buy_url,
-        },
-      }),
+      // Legacy prices/URLs do not establish a current purchasable offer or stock.
+      // Offer markup awaits an approved exact-product commerce projection.
     }
 
     const crumbs: { name: string; item: string }[] = [

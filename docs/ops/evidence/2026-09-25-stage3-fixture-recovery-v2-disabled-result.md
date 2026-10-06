@@ -1,0 +1,11 @@
+# Stage 3 fixture recovery V2 — disabled preparation result
+
+**Outcome:** The distinct V2 recovery package is prepared and disabled. No real Keychain deletion, fixture cleanup, armed binary build, customer action or hosted change ran. V1 journals remain terminal and consumed. Stage 3 provider/account/cart remains HOLD.
+
+**Why this version exists:** V1 could accept a new Keychain baseline between separately launched phases. V2 saves one complete, ordered run-start baseline in an exclusive private file and binds its digest to a separate one-use journal and exact source/binary identities. Each native phase compares the current Keychain state to that same baseline before an effect; a mismatch stops later deletion. The final native phase is read-only.
+
+**Review and proof:** An independent read-only reviewer initially found four issues: deletion-target checks were ordered before slow baseline observations, builder/launcher artifact reads were not sufficiently bound, tests did not exercise native observation drift, and scratch cleanup could remove unexpected content. All four were corrected; the reviewer returned **GO for committing disabled V2 preparation only**, with no approval to arm or execute. Focused V2 and manifest tests passed (25/25), Swift offline predicates passed (40 groups), live Swift source typechecked, targeted lint and live-boundary checks passed, and the full test suite passed (2,534 passed, 2 skipped, 0 failed). TypeScript typecheck passed.
+
+**Limits:** These checks prove the disabled code and injected failure behaviour. They do not prove that a future live cleanup will succeed or make POSIX name-based deletion atomic against a hostile same-user process. The full Keychain list may legitimately include an additional entry; V2 preserves its run-start value rather than assuming a single entry.
+
+**Next gate:** Obtain a fresh read-only fixture, Keychain and journal baseline; inspect the exact four-switch/hash arming proposal and immutable source/binary build; independently review the one-run execution plan; obtain action-time owner approval. Only then may one V2 run be considered. Do not replay V1, lift Stage 3 HOLD, normalise the provider, or activate account/cart on this preparation result alone.

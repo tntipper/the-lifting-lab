@@ -75,7 +75,7 @@ try {
     assert.ok(!/<form\b/.test(html), path)
     if (!['/', '/products'].includes(path)) assert.ok(html.includes('No email will be sent'), path)
   }
-  for (const [path, method] of [['/api/products', 'GET'], ['/api/contact', 'POST'], ['/api/profile', 'DELETE'], ['/auth/signout', 'POST']]) {
+  for (const [path, method] of [['/api/products', 'GET'], ['/api/cart', 'GET'], ['/api/cart', 'PATCH'], ['/api/contact', 'POST'], ['/api/profile', 'DELETE'], ['/auth/signout', 'POST']]) {
     const response = await fetch(`${origin}${path}`, { method })
     assert.equal(response.status, 503, path)
     assert.equal((await response.json()).code, 'synthetic_preview_unavailable')

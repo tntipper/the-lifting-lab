@@ -22,6 +22,10 @@ type Data = {
   currentSeasonId: string | null
 }
 
+async function fetchAvatars() {
+  return fetch('/api/avatars').then((r) => r.json()).catch(() => null)
+}
+
 export default function AvatarPicker({ onUpdate }: { onUpdate?: () => void }) {
   const [data, setData] = useState<Data | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -30,10 +34,14 @@ export default function AvatarPicker({ onUpdate }: { onUpdate?: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function load() {
-    const d = await fetch('/api/avatars').then((r) => r.json()).catch(() => null)
+    const d = await fetchAvatars()
     if (d) setData(d)
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    let active = true
+    fetchAvatars().then((d) => { if (active && d) setData(d) })
+    return () => { active = false }
+  }, [])
 
   if (!data) return <p className="text-lab-muted text-sm">Loading avatars…</p>
 

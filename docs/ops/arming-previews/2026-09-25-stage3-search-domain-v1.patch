@@ -1,0 +1,21 @@
+diff --git a/scripts/staging-provider-keychain-search-domain-diagnostic.swift b/scripts/staging-provider-keychain-search-domain-diagnostic.swift
+--- a/scripts/staging-provider-keychain-search-domain-diagnostic.swift
++++ b/scripts/staging-provider-keychain-search-domain-diagnostic.swift
+@@ -8 +8 @@
+-private let tllSearchDomainDiagnosticEnabled = false
++private let tllSearchDomainDiagnosticEnabled = true
+diff --git a/scripts/staging-provider-keychain-search-domain-live-launcher.mjs b/scripts/staging-provider-keychain-search-domain-live-launcher.mjs
+--- a/scripts/staging-provider-keychain-search-domain-live-launcher.mjs
++++ b/scripts/staging-provider-keychain-search-domain-live-launcher.mjs
+@@ -12 +12 @@
+-export const TLL_SEARCH_DOMAIN_LIVE_ENABLED = false
++export const TLL_SEARCH_DOMAIN_LIVE_ENABLED = true
+diff --git a/config/staging-account-activation-manifest.json b/config/staging-account-activation-manifest.json
+--- a/config/staging-account-activation-manifest.json
++++ b/config/staging-account-activation-manifest.json
+@@ -775 +775 @@
+-        "sha256": "49e04ddc4e08f9604a4711e0d9cb2f7fe731679fcb7ef7125c8ae2e979ace75e"
++        "sha256": "374c9e79307616f75c09fca9c556418445d936a2b2a8b3e959fe07ca86ad0e53"
+@@ -791 +791 @@
+-        "sha256": "cd0c5b9de1e126bb8dfb90373e29c562e0f5dc7a3518abcf942c0e81bb594c83"
++        "sha256": "25a17c9c3816ee97e6ec4e8c245a6c806a3cb2108c22cf7fef88ed5e3e457baa"

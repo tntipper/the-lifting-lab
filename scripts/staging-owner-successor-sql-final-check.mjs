@@ -1,0 +1,120 @@
+import { assertOwnerSuccessorSqlWindow } from './staging-owner-successor-sql-context.mjs'
+/** Disconnected successor SQL port; native gate OFF. No transport, reader or hosted authority. */
+/** Read-only proof that the Generation 23 window has been fully retired. */
+import { createHash } from 'node:crypto'
+import { IDENTITIES } from './staging-generation-21-credentials.mjs'
+import { PRODUCTION_PROJECT_REF } from './staging-account-hosted-baseline-database.mjs'
+import { EXACT_MIGRATIONS } from './staging-generation-21-retirement-preflight.mjs'
+import { GENERATION, PROJECT_REF } from './staging-owner-successor-sql-context.mjs'
+import { PASSWORD_PURPOSES } from './staging-generation-22-material.mjs'
+import { ACTIVE_WINDOW_EXPIRES_AT, WINDOW_ID } from './staging-owner-successor-sql-context.mjs'
+
+export const OWNER_SUCCESSOR_NATIVE_SQL_FINAL_CHECK_ENABLED = false
+export const QUERY_ID = 'tll-owner-successor-final-check/v1'
+const unavailable = () => { throw new Error('Generation 23 final check unavailable') }
+const quote = value => `'${value.replaceAll("'", "''")}'`
+const roles = PASSWORD_PURPOSES.map(purpose => IDENTITIES[purpose].login)
+const roleList = roles.map(quote).join(',')
+const membershipList = PASSWORD_PURPOSES.map(purpose => quote(IDENTITIES[purpose].membership)).join(',')
+const migrationPairs = EXACT_MIGRATIONS.map(([version, hash]) => `(${quote(version)},${quote(hash)})`).join(',')
+export const OWNER_SUCCESSOR_RETIRED_MARKER = `tll-runtime-window/v1 ${JSON.stringify({ expiresAt: ACTIVE_WINDOW_EXPIRES_AT,
+  generation: GENERATION, projectRef: PROJECT_REF, state: 'retired', windowId: WINDOW_ID })}`
+export const isExpectedOwnerSuccessorRetiredMarker = value => value === OWNER_SUCCESSOR_RETIRED_MARKER
+
+export function buildOwnerSuccessorFinalCheckSql() {
+  const expiresAt = ACTIVE_WINDOW_EXPIRES_AT
+  if (!OWNER_SUCCESSOR_NATIVE_SQL_FINAL_CHECK_ENABLED) unavailable()
+  assertOwnerSuccessorSqlWindow(expiresAt)
+  const marker = OWNER_SUCCESSOR_RETIRED_MARKER
+  const controls = PASSWORD_PURPOSES.map(purpose => `(SELECT count(*) FROM tll_${purpose}_private.control)<>1
+    OR EXISTS(SELECT 1 FROM tll_${purpose}_private.control WHERE NOT singleton OR enabled)`).join('\n    OR ')
+  return `BEGIN READ ONLY;
+SET LOCAL lock_timeout='5s';
+SET LOCAL statement_timeout='20s';
+DO $check$
+DECLARE r text; marker text; operator_name name:=session_user;
+BEGIN
+ IF current_database()<>'postgres' OR current_user<>'postgres' OR session_user<>'postgres'
+  OR current_user<>session_user OR current_setting('server_version_num')::int<170000
+  OR (SELECT rolsuper OR NOT rolcreaterole FROM pg_roles WHERE rolname=operator_name)
+  OR NOT has_table_privilege(operator_name,'pg_authid','SELECT')
+  OR NOT pg_has_role(operator_name,'pg_read_all_stats','MEMBER') THEN
+  RAISE EXCEPTION 'Generation 23 final check operator mismatch'; END IF;
+ IF to_regclass('tll_staging_private.environment') IS NULL
+  OR (SELECT count(*) FROM tll_staging_private.environment)<>1
+  OR NOT EXISTS(SELECT FROM tll_staging_private.environment WHERE singleton AND environment='tll-hosted-staging-v1'
+    AND operator_project_ref='${PROJECT_REF}' AND operator_context='supabase-dashboard:${PROJECT_REF}:staging-bootstrap:reviewed'
+    AND identity_basis='explicit-operator-dashboard-binding' AND bootstrap_version='2026-09-15-v2'
+    AND source_commit='a50e37ff05d8e731dc8ffceea1e96492079e5ff3'
+    AND integrity_sha256='2d5175eb47a891ca626d635281fbb28237b16bec0d89eebe168455935117922c')
+  OR EXISTS(SELECT FROM tll_staging_private.environment WHERE operator_project_ref='${PRODUCTION_PROJECT_REF}') THEN
+  RAISE EXCEPTION 'Generation 23 final check staging binding mismatch'; END IF;
+ IF (SELECT count(*) FROM tll_staging_private.applied_migrations)<>${EXACT_MIGRATIONS.length}
+  OR (SELECT count(*) FROM (VALUES ${migrationPairs}) AS expected(version,source_sha256)
+    JOIN tll_staging_private.applied_migrations actual USING(version,source_sha256))<>${EXACT_MIGRATIONS.length} THEN
+  RAISE EXCEPTION 'Generation 23 final check migration mismatch'; END IF;
+ IF (SELECT count(*) FROM pg_roles WHERE rolname IN(${roleList}) AND NOT rolcanlogin
+    AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole
+    AND NOT rolreplication AND NOT rolbypassrls
+    AND rolvaliduntil='infinity'::timestamptz)<>5
+  OR EXISTS(SELECT 1 FROM pg_authid WHERE rolname IN(${roleList}) AND rolpassword IS NOT NULL) THEN
+  RAISE EXCEPTION 'Generation 23 final check credentials remain'; END IF;
+ -- PostgreSQL records object ownership as a shared dependency on the role.
+ -- An owned object grants authority even when its ACL has no explicit grant.
+ IF EXISTS(SELECT 1 FROM pg_shdepend d JOIN pg_roles g ON g.oid=d.refobjid
+   WHERE d.refclassid='pg_authid'::regclass AND d.deptype='o'
+     AND g.rolname IN(${roleList})) THEN
+  RAISE EXCEPTION 'Generation 23 final check runtime ownership drift'; END IF;
+ FOREACH r IN ARRAY ARRAY[${roleList}] LOOP
+  SELECT shobj_description(oid,'pg_authid') INTO marker FROM pg_roles WHERE rolname=r;
+  IF marker IS DISTINCT FROM ${quote(marker)} THEN RAISE EXCEPTION 'Generation 23 final check marker mismatch'; END IF;
+ END LOOP;
+ IF EXISTS(SELECT 1 FROM pg_auth_members e JOIN pg_roles m ON m.oid=e.member
+    WHERE m.rolname IN(${roleList}))
+  OR (SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
+    WHERE g.rolname IN(${roleList}) OR m.rolname IN(${roleList}))<>5
+  OR (SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
+    WHERE g.rolname IN(${roleList}) AND m.rolname=operator_name
+    AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)<>5 THEN
+  RAISE EXCEPTION 'Generation 23 final check runtime grants drift'; END IF;
+ IF (SELECT count(*) FROM pg_auth_members e JOIN pg_roles g ON g.oid=e.roleid JOIN pg_roles m ON m.oid=e.member
+    WHERE g.rolname IN(${membershipList}) AND m.rolname=operator_name
+    AND e.admin_option AND NOT e.inherit_option AND NOT e.set_option)<>5 THEN
+  RAISE EXCEPTION 'Generation 23 final check inert operator links changed'; END IF;
+ IF EXISTS(SELECT 1 FROM pg_stat_activity WHERE backend_type='client backend' AND usename IN(${roleList})) THEN
+  RAISE EXCEPTION 'Generation 23 final check runtime sessions remain'; END IF;
+ IF EXISTS(
+  SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(n.nspacl) a
+    WHERE n.nspname LIKE 'tll\\_%\\_private' ESCAPE '\\' AND a.grantee=0 AND a.privilege_type='USAGE'
+  UNION ALL SELECT 1 FROM pg_namespace n CROSS JOIN LATERAL aclexplode(n.nspacl) a JOIN pg_roles g ON g.oid=a.grantee
+    WHERE n.nspname LIKE 'tll\\_%\\_private' ESCAPE '\\' AND g.rolname IN(${roleList})
+  UNION ALL SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace CROSS JOIN LATERAL aclexplode(c.relacl) a
+    JOIN pg_roles g ON g.oid=a.grantee WHERE n.nspname LIKE 'tll\\_%\\_private' ESCAPE '\\' AND g.rolname IN(${roleList})
+  UNION ALL SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace CROSS JOIN LATERAL aclexplode(p.proacl) a
+    JOIN pg_roles g ON g.oid=a.grantee WHERE n.nspname LIKE 'tll\\_%\\_private' ESCAPE '\\' AND g.rolname IN(${roleList})) THEN
+  RAISE EXCEPTION 'Generation 23 final check private authority drift'; END IF;
+ IF ${controls} THEN RAISE EXCEPTION 'Generation 23 final check controls changed'; END IF;
+END $check$;
+SELECT jsonb_build_object('status','PASS_FINAL_RETIRED','queryId','${QUERY_ID}',
+ 'projectRef','${PROJECT_REF}','generation',${GENERATION},'windowId','${WINDOW_ID}',
+ 'expiresAt',${quote(expiresAt)},'controlsEnabled',false,'runtimeCount',5,'runtimeSessions',0)
+ AS tll_owner_successor_final_check;
+COMMIT;
+`
+}
+
+export function validateOwnerSuccessorFinalCheck(rows) {
+  const expiresAt = ACTIVE_WINDOW_EXPIRES_AT
+  if (!OWNER_SUCCESSOR_NATIVE_SQL_FINAL_CHECK_ENABLED
+    || !Array.isArray(rows) || rows.length !== 1 || !rows[0] || typeof rows[0] !== 'object'
+    || Object.keys(rows[0]).join('|') !== 'tll_owner_successor_final_check') unavailable()
+  assertOwnerSuccessorSqlWindow(expiresAt)
+  const value = rows[0].tll_owner_successor_final_check
+  const keys = ['status','queryId','projectRef','generation','windowId','expiresAt','controlsEnabled','runtimeCount','runtimeSessions']
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).sort().join('|') !== keys.sort().join('|')
+    || value.status !== 'PASS_FINAL_RETIRED' || value.queryId !== QUERY_ID || value.projectRef !== PROJECT_REF
+    || value.generation !== GENERATION || value.windowId !== WINDOW_ID || value.expiresAt !== expiresAt
+    || value.controlsEnabled !== false || value.runtimeCount !== 5 || value.runtimeSessions !== 0) unavailable()
+  return Object.freeze({ status: 'PASS_FINAL_RETIRED', projectRef: PROJECT_REF, queryId: QUERY_ID,
+    receiptSha256: createHash('sha256').update(JSON.stringify(value)).digest('hex') })
+}

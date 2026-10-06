@@ -40,6 +40,16 @@ export const guardedSupabaseFetch: typeof fetch = (input, init) => {
 }
 
 export function isPreviewAccountPath(pathname: string): boolean {
-  return ['/auth', '/account', '/dashboard', '/favourites', '/stack', '/rewards', '/contact', '/submit']
+  return ['/auth', '/account', '/dashboard', '/favourites', '/rewards', '/contact', '/submit']
     .some(path => pathname === path || pathname.startsWith(path + '/'))
+}
+
+/** The only preview APIs that may run. Each one returns bundled, read-only
+ * catalogue fixtures and cannot reach Supabase, accounts or checkout. */
+export function isPreviewFixtureRead(pathname: string, method: string): boolean {
+  return ['GET', 'HEAD'].includes(method) && [
+    '/api/products/batch',
+    '/api/products/search',
+    '/api/stack/assessments',
+  ].includes(pathname)
 }
