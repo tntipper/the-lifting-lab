@@ -2009,7 +2009,7 @@
       },
       {
         "path": "tests/staging-preview-git-publish-native-read.test.mjs",
-        "sha256": "894b470d012efb1a9ac2901b065ce2bd628e0fb0d207744ca5b1dece2c24131d"
+        "sha256": "131f403c1ac52d1fad66f337aa110d1e7ce3abfad4e465bc406b0bb6cca48ac7"
       },
       {
         "path": "tests/staging-preview-git-publish-native-push.test.mjs",
