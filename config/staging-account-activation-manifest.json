@@ -1061,7 +1061,7 @@
       },
       {
         "path": "scripts/staging-preview-git-source-preflight.mjs",
-        "sha256": "2a28d1bc901e3c7f185fcb342b3685253f53f86939ec4e7db26a50c92ac0942c"
+        "sha256": "2c60ba5489f0292cc9d11bf26aa99f54196af74a3351935571cb8956cbdd375a"
       },
       {
         "path": "scripts/staging-preview-git-acceptance.mjs",
