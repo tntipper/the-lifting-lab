@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "test:integration": "node --test tests/integration/*.test.mjs",
     "test:accessibility": "node tests/browser/accessibility.mjs",
-    "test:privacy": "node --test tests/privacy/*.test.mjs tests/dependencies/*.test.mjs"
+    "test:privacy": "node --test tests/privacy/*.test.mjs tests/dependencies/*.test.mjs",
+    "test:historical-provenance": "node scripts/staging-readonly-historical-design-qualification.mjs && node --test tests/historical/staging-readonly-native-design.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

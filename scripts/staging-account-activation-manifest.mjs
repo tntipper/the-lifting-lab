@@ -520,6 +520,11 @@ const preflightSources = [
   'scripts/staging-readonly-preflight-manifest.mjs',
   'config/staging-readonly-preflight-manifest.json',
   'tests/staging-readonly-preflight-actual.mjs',
+  'scripts/staging-readonly-historical-design-qualification.mjs',
+  'tests/staging-readonly-preflight.test.mjs',
+  'tests/staging-readonly-retired-design-nonexecution.test.mjs',
+  'tests/historical/staging-readonly-native-design.test.mjs',
+  'docs/ops/staging-readonly-evidence-contract.md',
 ]
 const disabledMigrationInstallSources = [
   'scripts/staging-disabled-migrations-012-016.prepare.mjs',

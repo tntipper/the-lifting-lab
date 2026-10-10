@@ -1,8 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
-import { ENDPOINT, EXPECTED_RECEIPT, FIXED_QUERY, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, NATIVE_HELPER_TIMEOUT_MS, PROJECT_REF, QUERY_ID, consumeNativeTokenOutput, nativeDesignReference, normalizeKeychainToken, runPreflightOnce, validateResult, validateSupabaseProfile } from '../scripts/staging-readonly-preflight.mjs'
+import { ENDPOINT, EXPECTED_RECEIPT, FIXED_QUERY, KEYCHAIN_ACCOUNT, KEYCHAIN_SERVICE, NATIVE_ACCESS_APPROVED, NATIVE_HELPER_TIMEOUT_MS, PROJECT_REF, QUERY_ID, consumeNativeTokenOutput, normalizeKeychainToken, runPreflightOnce, validateResult, validateSupabaseProfile } from '../scripts/staging-readonly-preflight.mjs'
 
 const receipt = EXPECTED_RECEIPT
 
@@ -56,21 +57,27 @@ test('package has no mutation launcher dependency or caller-controlled dispatch 
   assert.deepEqual(JSON.parse(output), { status: 'NATIVE_ACCESS_DISABLED', target: PROJECT_REF, queryId: QUERY_ID })
 })
 
-test('reviewed native Keychain design is hash-pinned without enabling it', { skip: process.platform !== 'darwin' }, () => {
-  const reference = nativeDesignReference()
+test('current native helper is pinned while retired design provenance stays explicitly unresolved', () => {
   execFileSync(process.execPath, ['scripts/staging-readonly-preflight-manifest.mjs', '--check'], { stdio: 'pipe' })
   const manifest = JSON.parse(readFileSync('config/staging-readonly-preflight-manifest.json', 'utf8'))
-  assert.equal(reference.service, 'Supabase CLI'); assert.equal(reference.account, 'supabase')
-  assert.match(reference.sha256, /^[a-f0-9]{64}$/)
+  assert.equal(manifest.schema, 'tll-staging-readonly-preflight/v5')
   assert.equal(manifest.nativeAccessApproved, false)
   assert.equal(manifest.target, PROJECT_REF)
-  assert.equal(manifest.schema, 'tll-staging-readonly-preflight/v4')
-  assert.equal(manifest.keychain.reviewedDesignSha256, reference.sha256)
   assert.equal(manifest.transport.maxRequests, 1)
   assert.equal(manifest.query.id, QUERY_ID)
   assert.equal(manifest.query.assertionsInReadOnlyTransaction, true)
   assert.equal(manifest.query.finalStatementLiteralReceipt, true)
-  assert.match(manifest.query.sha256, /^[a-f0-9]{64}$/)
+  assert.equal(manifest.keychain.service, KEYCHAIN_SERVICE)
+  assert.equal(manifest.keychain.account, KEYCHAIN_ACCOUNT)
+  assert.deepEqual(manifest.historicalDesign, {
+    path: '../../implementation-state/staging/generation-launcher-2026-09-18/native_adapter.py',
+    sha256: '835cc3394a3f01e18df91d2e111d384aa48592f10e8a239c603b59cd56627bed',
+    evidenceStatus: 'UNVERIFIED', qualification: 'BLOCKED', runtimeDependency: false,
+    command: 'node scripts/staging-readonly-historical-design-qualification.mjs',
+  })
+  assert.equal(manifest.keychain.reviewedDesignPath, manifest.historicalDesign.path)
+  assert.equal(manifest.keychain.reviewedDesignSha256, manifest.historicalDesign.sha256)
+  for (const pin of manifest.sourcePins) assert.equal(createHash('sha256').update(readFileSync(pin.path)).digest('hex'), pin.sha256)
   assert.deepEqual(manifest.sourcePins.map(pin => pin.path), ['scripts/staging-readonly-preflight.mjs', 'scripts/staging-readonly-preflight-keychain.py'])
   assert.match(readFileSync('scripts/staging-readonly-preflight-manifest.mjs', 'utf8'), /native access flags disagree/)
 })
