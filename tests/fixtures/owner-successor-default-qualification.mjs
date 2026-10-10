@@ -40,6 +40,10 @@ export function createSuccessorDefaultQualificationSource() {
     writeFileSync(fixedReader, readFileSync(fixedReader, 'utf8')
       .replace(/const GIT = '[^']+'/, `const GIT = '${qualifiedBin}'`)
       .replace(/const EXEC = '[^']+'/, `const EXEC = '${qualifiedExec}'`))
+    const preparation = join(root, 'scripts/staging-owner-successor-source-preparation.mjs')
+    writeFileSync(preparation, readFileSync(preparation, 'utf8')
+      .replace(/const GIT = '[^']+'/, `const GIT = '${qualifiedBin}'`)
+      .replace(/const EXEC = '[^']+'/, `const EXEC = '${qualifiedExec}'`))
     for (const path of ['lib/server/staging-postgres.ts', 'lib/identity/staging-owner-successor-broker-readiness-edge.ts']) {
       mkdirSync(dirname(join(root, path)), { recursive: true }); cpSync(join(repository, path), join(root, path))
     }

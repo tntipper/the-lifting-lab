@@ -9,6 +9,7 @@ import { createStagingGeneration23FixedPreflight } from './staging-generation-23
 import { createOwnerSuccessorFixedCleanupAssembly, readOwnerSuccessorCleanupAdmission } from './staging-owner-successor-cleanup-assembly.mjs'
 import { createOwnerSuccessorFixedWorkerAssembly } from './staging-owner-successor-fixed-worker-assembly.mjs'
 import { readOwnerSuccessorArmingSourceFixed } from './staging-owner-successor-source-proof.mjs'
+import { prepareOwnerSuccessorSourceMetadata } from './staging-owner-successor-source-preparation.mjs'
 import { ownerSuccessorSourceIdentity } from './staging-owner-successor-native-context.mjs'
 import { ACTIVE_WINDOW_EXPIRES_AT, WINDOW_ID } from './staging-owner-successor-sql-context.mjs'
 export const OWNER_SUCCESSOR_NATIVE_WORKER_ENTRY_ENABLED = false
@@ -131,7 +132,7 @@ function runFixedWorker(cleanup) {
   let handoff, admittedProof
   return runWorker({ signal, now, native: true, cleanup,
     accept: () => acceptSupervisorPipe({ proof: cleanup ? OWNER_SUCCESSOR_CLEANUP_SUPERVISOR_PROOF : OWNER_SUCCESSOR_SUPERVISOR_PROOF }),
-    readSource: async ({ signal }) => { handoff = readOwnerSuccessorReviewHandoff(); admittedProof = await readOwnerSuccessorArmingSourceFixed({ handoff, signal, now }); return admittedProof },
+    readSource: async ({ signal }) => { await prepareOwnerSuccessorSourceMetadata({ signal }); handoff = readOwnerSuccessorReviewHandoff(); admittedProof = await readOwnerSuccessorArmingSourceFixed({ handoff, signal, now }); return admittedProof },
     readCredentials: ({ signal }) => {
       if (cleanup) readOwnerSuccessorCleanupAdmission({ sourceProof: admittedProof, now })
       else {

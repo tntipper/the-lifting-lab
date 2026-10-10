@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runBoundedBrokerRotationWorker, MAX_REVIEWED_EXTENDED_WORKER_MS } from './staging-provider-broker-rotation-process-control.mjs'
 import { readOwnerSuccessorArmingSourceFixed } from './staging-owner-successor-source-proof.mjs'
+import { prepareOwnerSuccessorSourceMetadata } from './staging-owner-successor-source-preparation.mjs'
 import { ownerSuccessorSourceIdentity } from './staging-owner-successor-native-context.mjs'
 import { ACTIVE_WINDOW_EXPIRES_AT } from './staging-owner-successor-sql-context.mjs'
 import { OWNER_SUCCESSOR_CLEANUP_SUPERVISOR_PROOF, OWNER_SUCCESSOR_SUPERVISOR_PROOF, OWNER_SUCCESSOR_TERMINAL_SCHEMA, readOwnerSuccessorReviewHandoff } from './staging-owner-successor-worker-entry.mjs'
@@ -40,7 +41,9 @@ async function runBoundedFixedWorker(cleanup) {
     last = at; return at
   }
   try {
-    const signal = new AbortController().signal, handoff = readOwnerSuccessorReviewHandoff()
+    const signal = new AbortController().signal
+    await prepareOwnerSuccessorSourceMetadata({ signal })
+    const handoff = readOwnerSuccessorReviewHandoff()
     const proof = await readOwnerSuccessorArmingSourceFixed({ handoff, signal, now: clock })
     const identity = ownerSuccessorSourceIdentity(proof, clock())
     const deadlineMs = Date.parse(ACTIVE_WINDOW_EXPIRES_AT) - clock() - 2000

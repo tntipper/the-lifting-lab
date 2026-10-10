@@ -154,6 +154,7 @@ test('parent rejects invalid or backwards terminal clocks and erases synthetic t
       let source = (await readFile(new URL('../scripts/staging-owner-successor-process-binding.mjs', import.meta.url), 'utf8'))
         .replace('OWNER_SUCCESSOR_NATIVE_PROCESS_BINDING_ENABLED = false', 'OWNER_SUCCESSOR_NATIVE_PROCESS_BINDING_ENABLED = true')
       const replacements = {
+        './staging-owner-successor-source-preparation.mjs': stub('export async function prepareOwnerSuccessorSourceMetadata(){}'),
         './staging-provider-broker-rotation-process-control.mjs': stub('export const MAX_REVIEWED_EXTENDED_WORKER_MS=3598000; export async function runBoundedBrokerRotationWorker(){return globalThis.__tllClockFixture.finish()}'),
         './staging-owner-successor-source-proof.mjs': stub(`export async function readOwnerSuccessorArmingSourceFixed(){return ${JSON.stringify(proof())}}`),
         './staging-owner-successor-native-context.mjs': await modules.url('staging-owner-successor-native-context.mjs'),

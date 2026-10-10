@@ -1292,12 +1292,16 @@
         "sha256": "a0998bf6dc33912fd6f2fa036a91d5af83a402a6ed81c07547fb2ff28a0ac1ce"
       },
       {
+        "path": "scripts/staging-owner-successor-source-preparation.mjs",
+        "sha256": "1a76b8875d28e8e0ec8924e13449909bc08773f8bc838295dbd511918307a54a"
+      },
+      {
         "path": "scripts/staging-owner-successor-process-binding.mjs",
-        "sha256": "d7450675bbd51afe5ad510e1ccf6386a4d048ed161006bb2378d09c9cb8673b6"
+        "sha256": "08c536dac5360df1e5ea8a72a1ba128b1eafe2660d9d378653dd3fe9faa40c16"
       },
       {
         "path": "scripts/staging-owner-successor-worker-entry.mjs",
-        "sha256": "86c24cff99c9ec6395ae2db4611137d42b7f3eab390d8ebfc9c4907462544015"
+        "sha256": "c35095065da0a498831fad2b75126620940f794f265365c1c1d8a30023468b7d"
       },
       {
         "path": "scripts/staging-owner-successor-cli-runner.mjs",
@@ -2141,7 +2145,7 @@
       },
       {
         "path": "tests/fixtures/owner-successor-default-qualification.mjs",
-        "sha256": "3c262691df4451c7bc9325c325c0245b31953e2769ce3f4fa7f36ba4b412059b"
+        "sha256": "e59d42a0b24b5363c0fc28427782e96807f0a78c00b81cef1e21786271cd4a30"
       },
       {
         "path": "tests/fixtures/owner-successor-default-database.mjs",
@@ -2197,7 +2201,7 @@
       },
       {
         "path": "tests/staging-owner-successor-worker-entry.test.mjs",
-        "sha256": "e4ed98f4d4e8d9235c27ae806c17200cb218a59e3e028f5dfacaeb1da50c6a33"
+        "sha256": "7ae45c82935a1033049990f5da3faf0c6d199b0e6952448e8f2bf6d418560983"
       },
       {
         "path": "tests/staging-owner-successor-cli-runner.test.mjs",
@@ -2214,6 +2218,14 @@
       {
         "path": "tests/staging-owner-successor-fixed-source-reader.test.mjs",
         "sha256": "15e0a5f11418853630c316d901d7ae4a61035f1b3bd06d349be63e04cc60a8f8"
+      },
+      {
+        "path": "tests/staging-owner-successor-source-preparation.test.mjs",
+        "sha256": "a8df598d48c1bf070d1284d2cdd4fb13d683697a596ddbfbfc350dd83d36771c"
+      },
+      {
+        "path": "tests/fixtures/owner-successor-admission-denial.mjs",
+        "sha256": "9e765692fc25d70273b26b4caca6c7f8cb3a2503c346edd1eae3c1535f9d1b8d"
       },
       {
         "path": "tests/staging-owner-successor-default-qualification.test.mjs",
