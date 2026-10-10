@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { writeFile } from 'node:fs/promises'
+import { collectorUrl } from './collector-url.mjs'
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright')
 const origin=process.env.PRIVACY_APP_URL||'http://localhost:3181'
 const markers=['SYNTHETIC_QUERY_PRIVATE','SYNTHETIC_FRAGMENT_PRIVATE','SYNTHETIC_UTM_PRIVATE','SYNTHETIC_LINKER_PRIVATE','SYNTHETIC_REFERRER_PRIVATE','SYNTHETIC_SEARCH_PRIVATE']
@@ -10,7 +11,8 @@ try{for(const mode of ['initial','persisted-reload','same-origin-referrer','exte
  const c=await browser.newContext({viewport:{width:1440,height:1000}});await c.route(/https:\/\/[^/]*(?:google-analytics\.com|doubleclick\.net)\//,route=>route.fulfill({status:204,body:''}));const p=await c.newPage();const r={mode,initial:await c.storageState(),requests:[],responses:[]};report.cases.push(r);const pending=[]
  c.on('request',q=>{if(/google-analytics|googletagmanager|doubleclick|G-R3YMG6TYXF/.test(q.url()))pending.push((async()=>{
   const headers=await q.allHeaders();const raw=decode(q.url()+' '+(q.postData()||'')+' '+JSON.stringify(headers));const u=new URL(q.url());const body=new URLSearchParams(q.postData()||'');const location=u.searchParams.get('dl')||body.get('dl');const referrer=u.searchParams.get('dr')||body.get('dr');
-  r.requests.push({path:u.pathname,origin:u.origin,keys:[...u.searchParams.keys()],bodyKeys:[...body.keys()],event:u.searchParams.get('en')||body.get('en'),markerLeaks:markers.filter(x=>raw.includes(x)),location:location&&new URL(location).origin+new URL(location).pathname,locationHasQueryOrFragment:location?!!(new URL(location).search||new URL(location).hash):false,referrerHasQueryOrFragment:referrer?!!(new URL(referrer).search||new URL(referrer).hash):false})
+  const locationUrl=location&&collectorUrl(location,origin),referrerUrl=referrer&&collectorUrl(referrer,origin)
+  r.requests.push({path:u.pathname,origin:u.origin,keys:[...u.searchParams.keys()],bodyKeys:[...body.keys()],event:u.searchParams.get('en')||body.get('en'),markerLeaks:markers.filter(x=>raw.includes(x)),location:locationUrl&&locationUrl.origin+locationUrl.pathname,locationHasQueryOrFragment:locationUrl?!!(locationUrl.search||locationUrl.hash):false,referrerHasQueryOrFragment:referrerUrl?!!(referrerUrl.search||referrerUrl.hash):false})
  })())})
  c.on('response',s=>{if(/google-analytics|googletagmanager/.test(s.url()))r.responses.push({path:new URL(s.url()).pathname,status:s.status()})})
  const referer=mode==='external-referrer'?'https://referrer.example.invalid/'+markers[4]+'?token='+markers[4]:origin+'/privacy?token='+markers[4]
