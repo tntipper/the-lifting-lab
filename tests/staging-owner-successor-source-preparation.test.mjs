@@ -3,7 +3,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdirSync, writeFileSync, readFileSync, cpSync, chmodSync, linkSync, lstatSync, unlinkSync, symlinkSync, existsSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { createSuccessorDefaultQualificationSource } from './fixtures/owner-successor-default-qualification.mjs'
 const reviewPath = root => join(root, '.agent/owner-successor/cd4130c8-a8b8-462b-bdbe-5c3e6250a02d')
 function fixture() {
@@ -70,5 +70,21 @@ test('preparation rejects cancellation without admitting source', async () => {
     const preparation = await f.copy.import('staging-owner-successor-source-preparation.mjs'), controller = new AbortController()
     controller.abort()
     await assert.rejects(preparation.prepareOwnerSuccessorSourceMetadata({ signal: controller.signal }), /unavailable/)
+  } finally { f.copy.dispose() }
+})
+
+test('exclusive-copy collision preserves pre-existing evidence and rejects preparation', async () => {
+  const f = fixture()
+  try {
+    linkSync(f.handoff, join(f.copy.root, 'collision-source-alias'))
+    const temporary = join(dirname(f.handoff), `.owner-source-copy-${process.pid}-0`)
+    const evidence = Buffer.from('pre-existing evidence must survive\n')
+    writeFileSync(temporary, evidence, { flag: 'wx', mode: 0o600 })
+    const preparation = await f.copy.import('staging-owner-successor-source-preparation.mjs')
+    await assert.rejects(preparation.prepareOwnerSuccessorSourceMetadata({ signal: new AbortController().signal }), { code: 'EEXIST' })
+    assert.deepEqual(readFileSync(temporary), evidence)
+    assert.equal(lstatSync(f.handoff).nlink, 2)
+    assert.equal(existsSync(join(reviewPath(f.copy.root), 'worker-ownership.json')), false)
+    assert.equal(f.copy.git(['status', '--porcelain=v1', '--untracked-files=no']), '')
   } finally { f.copy.dispose() }
 })

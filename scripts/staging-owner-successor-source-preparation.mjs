@@ -85,15 +85,15 @@ export async function prepareOwnerSuccessorSourceMetadata({ signal } = {}) {
     if (!same(before, file.stat) || sha256(bytes) !== file.digest) denied()
     if (before.nlink !== 1) {
       const temporary = resolve(dirname(file.path), `.owner-source-copy-${process.pid}-${replaced}`)
-      let fd
+      let fd, created = false
       try {
-        fd = openSync(temporary, 'wx', before.mode & 0o777)
+        fd = openSync(temporary, 'wx', before.mode & 0o777); created = true
         writeFileSync(fd, bytes); fchmodSync(fd, before.mode & 0o777); fsyncSync(fd); closeSync(fd); fd = undefined
         if (!same(before, metadata(file.path, file.privateFile))) denied()
         renameSync(temporary, file.path); replaced++
       } finally {
         if (fd !== undefined) closeSync(fd)
-        try { unlinkSync(temporary) } catch (error) { if (error.code !== 'ENOENT') throw error }
+        if (created) { try { unlinkSync(temporary) } catch (error) { if (error.code !== 'ENOENT') throw error } }
       }
     }
     const after = metadata(file.path, file.privateFile)
