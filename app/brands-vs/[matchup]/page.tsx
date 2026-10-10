@@ -1,11 +1,13 @@
+import { formatListedServingPrice } from '@/lib/products'
+import { hasApprovedAssessment } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel, CATEGORIES } from '@/lib/categories'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
 import {
@@ -67,10 +69,8 @@ export async function generateMetadata({
   if (!pair) return { title: 'Brand comparison not found — The Lifting Lab' }
   const [a, b] = pair
   const url = `${SITE}/brands-vs/${matchup}`
-  const t = `${a.brand} vs ${b.brand} — Which Supplement Brand Is Better? (UK ${YEAR}) | The Lifting Lab`
-  const description = `${a.brand} vs ${b.brand}: average Effectiveness Match${
-    a.avgScore != null && b.avgScore != null ? ` (${a.avgScore} vs ${b.avgScore})` : ''
-  }, catalogue range and true cost per serving, scored against evidence-based dosing standards.`
+  const t = `${a.brand} vs ${b.brand} — Brand Research Comparison (UK ${YEAR}) | The Lifting Lab`
+  const description = 'No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research. Listed prices are not confirmed offers; formulations and serving sizes differ.'
   return {
     title: t,
     description,
@@ -82,7 +82,7 @@ export async function generateMetadata({
 
 // Top scored product a brand fields in a given category (products are pre-sorted desc).
 function topIn(stat: BrandStat, category: string): ScoredProduct | undefined {
-  return stat.products.find((p) => p.category === category && p.score != null)
+  return stat.products.find((p) => p.category === category)
 }
 
 export default async function BrandMatchupPage({
@@ -107,10 +107,12 @@ export default async function BrandMatchupPage({
       : null
   const scoreTie = a.avgScore != null && b.avgScore != null && a.avgScore === b.avgScore
 
-  // Better value: lower average true cost per serving (only when both have it).
+  // Lower listed average price: lower average true cost per serving (only when both have it).
   const valueWinner =
     a.avgCostPerServing != null && b.avgCostPerServing != null
-      ? a.avgCostPerServing < b.avgCostPerServing
+      ? a.avgCostPerServing === b.avgCostPerServing
+        ? null
+        : a.avgCostPerServing < b.avgCostPerServing
         ? a
         : b
       : null
@@ -126,7 +128,7 @@ export default async function BrandMatchupPage({
     ? `${scoreWinner.brand} edges it on average Effectiveness Match (${scoreWinner.avgScore} vs ${
         scoreWinner === a ? b.avgScore : a.avgScore
       }) across the products we score.`
-    : `Neither brand has enough scored products to call an average-score winner.`
+    : `No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.`
 
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
@@ -165,14 +167,14 @@ export default async function BrandMatchupPage({
         ? [
             {
               '@type': 'Question',
-              name: `Which is better value, ${a.brand} or ${b.brand}?`,
+              name: `Which is lower listed average price, ${a.brand} or ${b.brand}?`,
               acceptedAnswer: {
                 '@type': 'Answer',
-                text: `${valueWinner.brand} averages the lower true cost per serving at £${valueWinner.avgCostPerServing!.toFixed(
+                text: `${valueWinner.brand} has the lower listed average price per known serving at £${valueWinner.avgCostPerServing!.toFixed(
                   2,
                 )}, versus £${(valueWinner === a ? b.avgCostPerServing! : a.avgCostPerServing!).toFixed(
                   2,
-                )} for ${valueWinner === a ? b.brand : a.brand}.`,
+                )} for ${valueWinner === a ? b.brand : a.brand}. Catalogue mixes and serving sizes differ; this is not an equivalent-dose or effectiveness comparison. Delivery and checkout costs are excluded, and no approved purchase offer is implied.`,
               },
             },
           ]
@@ -182,7 +184,7 @@ export default async function BrandMatchupPage({
 
   const statRows: { label: string; a: string; b: string; winner: 'a' | 'b' | null }[] = [
     {
-      label: 'Products scored',
+      label: 'Research records',
       a: String(a.count),
       b: String(b.count),
       winner: a.count === b.count ? null : a.count > b.count ? 'a' : 'b',
@@ -205,7 +207,7 @@ export default async function BrandMatchupPage({
       winner: scoreWinner ? (scoreWinner === a ? 'a' : 'b') : null,
     },
     {
-      label: 'Best score',
+      label: 'Approved best score',
       a: a.bestScore != null ? String(a.bestScore) : '—',
       b: b.bestScore != null ? String(b.bestScore) : '—',
       winner:
@@ -247,11 +249,7 @@ export default async function BrandMatchupPage({
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
           {a.brand} <span className="text-lab-lime">vs</span> {b.brand}
         </h1>
-        <p className="text-lg text-white/90 leading-relaxed mb-8">
-          We score every {a.brand} and {b.brand} product against the same evidence-based clinical
-          reference, so you can see which brand doses better, ranges wider and costs less per
-          effective serving — judged on what is in the tub, never reputation or marketing.
-        </p>
+        <p className="text-lg text-white/90 leading-relaxed mb-8">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
 
         {/* verdict */}
         <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-5 lab-glow mb-10">
@@ -259,12 +257,12 @@ export default async function BrandMatchupPage({
           <p className="text-white text-sm">{verdictText}</p>
           {valueWinner && (
             <p className="text-lab-muted text-xs mt-1">
-              Better value per serving:{' '}
+              Lower listed average price per serving:{' '}
               <span className="text-white font-bold">{valueWinner.brand}</span> at{' '}
               <span className="text-lab-lime font-bold">
                 £{valueWinner.avgCostPerServing!.toFixed(2)}/serving
               </span>{' '}
-              on average.
+              on average. Catalogue mixes and serving sizes differ; this is not an equivalent-dose or effectiveness comparison. Delivery and checkout costs are excluded, and no approved purchase offer is implied.
             </p>
           )}
         </div>
@@ -310,15 +308,15 @@ export default async function BrandMatchupPage({
               Category <span className="text-lab-lime">head-to-head</span>
             </h2>
             <p className="text-lab-muted text-sm mb-5">
-              Where both brands compete, here is each one&apos;s top-scoring pick.
+              Alphabetically selected research examples where both brands have records; no product winner is selected.
             </p>
             <div className="space-y-4">
               {sharedCategories.map((cat) => {
                 const pa = topIn(a, cat)
                 const pb = topIn(b, cat)
                 if (!pa || !pb) return null
-                const aWins = (pa.score ?? -1) > (pb.score ?? -1)
-                const bWins = (pb.score ?? -1) > (pa.score ?? -1)
+                const aWins = hasApprovedAssessment(pa) && hasApprovedAssessment(pb) && pa.score > pb.score
+                const bWins = hasApprovedAssessment(pa) && hasApprovedAssessment(pb) && pb.score > pa.score
                 return (
                   <div key={cat} className="bg-lab-panel border border-lab-border rounded-2xl p-4">
                     <p className="text-[10px] uppercase tracking-widest text-lab-lime mb-3">
@@ -359,17 +357,9 @@ export default async function BrandMatchupPage({
 
         <section className="mt-14 bg-lab-panel border border-lab-border rounded-2xl p-6">
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">How we score</h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-3">
-            Every product earns an Effectiveness Match score (0–100) measuring how closely its active
-            ingredient doses match the evidence-based clinical reference for its category. Brand
-            averages are taken across the products we score, so a brand is rewarded for consistently
-            dosing well — not for one hero product. Proprietary blends and amino-spiked formulas are
-            penalised because they hide the real dose. We are independent — scores are never
-            influenced by brands or affiliate deals.
-          </p>
+          <p className="text-lab-muted text-sm leading-relaxed mb-3">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
           <p className="text-lab-muted/70 text-xs leading-relaxed">
-            Informational only — not medical advice. Buy links are affiliate links; we may earn a
-            commission at no extra cost to you. This never affects scoring.
+            Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring.
           </p>
         </section>
       </main>
@@ -412,30 +402,26 @@ function PickCard({
 }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <ScoreBadge score={product.score} />
+      <ProductAssessment product={product} />
       <p className="text-[10px] uppercase tracking-widest text-lab-muted mt-2">{brand}</p>
       <Link href={`/products/${product.id}`} className="hover:text-lab-lime transition-colors">
         <p className="text-white text-xs font-bold leading-tight mt-0.5">{product.name}</p>
       </Link>
       {product.cost_per_serving != null && (
-        <p className="text-[11px] text-white/60 mt-1">£{product.cost_per_serving.toFixed(2)}/serving</p>
+        <p className="text-[11px] text-white/60 mt-1">{formatListedServingPrice(product.cost_per_serving)}/serving</p>
       )}
       {winner && (
         <p className="mt-1 text-[9px] uppercase tracking-widest font-black text-lab-lime">★ Winner</p>
       )}
-      <a
-        href={buyLink(product.brand, product.name, product.buy_url)}
-        target="_blank"
-        rel="noopener noreferrer nofollow"
+      <ProductOfferLink
+        product={product}
         className="mt-2 w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg"
         style={{
           background: 'rgba(166,226,46,0.12)',
           color: '#a6e22e',
           border: '1px solid rgba(166,226,46,0.5)',
         }}
-      >
-        Buy →
-      </a>
+      />
     </div>
   )
 }

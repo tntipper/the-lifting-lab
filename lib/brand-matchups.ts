@@ -1,3 +1,4 @@
+import { hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
 // Brand-tier head-to-head helpers for the /brands-vs comparison pages.
 //
 // "[Brand A] vs [Brand B]" (e.g. "Bulk vs Myprotein", "Optimum Nutrition vs
@@ -47,10 +48,10 @@ export function buildBrandStats(products: ScoredProduct[]): BrandStat[] {
   const stats: BrandStat[] = []
   for (const [brand, arr] of byBrand) {
     const sorted = [...arr].sort(
-      (x, y) => (y.score ?? -1) - (x.score ?? -1) || x.name.localeCompare(y.name),
+      (x, y) => x.name.localeCompare(y.name) || x.id.localeCompare(y.id),
     )
-    const scores = sorted.map((p) => p.score).filter((s): s is number => s != null)
-    const costs = sorted
+    const scores = sorted.filter(hasApprovedAssessment).map((p) => p.score).filter((s): s is number => s != null)
+    const costs = sorted.filter(hasPositiveServingCost)
       .map((p) => p.cost_per_serving)
       .filter((c): c is number => c != null && c > 0)
     stats.push({
@@ -63,7 +64,7 @@ export function buildBrandStats(products: ScoredProduct[]): BrandStat[] {
         : null,
       bestScore: scores.length ? Math.max(...scores) : null,
       avgCostPerServing: costs.length
-        ? Math.round((costs.reduce((a, b) => a + b, 0) / costs.length) * 100) / 100
+        ? costs.reduce((a, b) => a + b, 0) / costs.length
         : null,
       products: sorted,
     })

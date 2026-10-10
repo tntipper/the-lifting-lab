@@ -204,15 +204,15 @@ export default function TimingPage() {
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">Now get the products right</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Timing only helps once the supplement itself is properly dosed. Every product we track is scored 0–100
-            on how closely it matches the evidence — or let the wizard build your whole stack in a minute.
+            Timing only helps once the supplement itself is appropriate for your needs. Explore the
+            available product labels and research while assessments remain under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/wizard"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Build my stack →
+              Explore my stack →
             </Link>
             <Link
               href="/calculators"
@@ -224,7 +224,7 @@ export default function TimingPage() {
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Timing guidance is general and evidence-based for healthy
             adults; if you have a health condition, are pregnant or take medication, speak to a clinician first.
-            Buy links are affiliate links; we may earn a commission at no extra cost to you.
+            Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

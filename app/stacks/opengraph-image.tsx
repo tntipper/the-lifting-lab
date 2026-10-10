@@ -9,7 +9,7 @@ export default function Image() {
   return renderOgCard({
     eyebrow: 'Goal-Based Stacks',
     title: 'Supplement Stacks',
-    subtitle: 'Complete, evidence-based stacks for every goal — no hype, just what works.',
+    subtitle: 'Goal research records. Product and combined-stack recommendations are unavailable.',
     tag: 'Stacks 2026',
   })
 }

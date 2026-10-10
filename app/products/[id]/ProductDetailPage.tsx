@@ -1,14 +1,19 @@
 'use client'
+import { formatListedServingPrice } from '@/lib/products'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
+import { scoreColor } from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
-import { buyLink } from '@/lib/affiliate'
-import { track, trackBuyClick } from '@/lib/gtag'
+import ProductOfferLink from '@/components/ProductOfferLink'
+import { amazonSearch, bulkSearch } from '@/lib/affiliate'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import { track } from '@/lib/gtag'
 import { trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
@@ -20,21 +25,23 @@ import ShareModal from '@/components/ShareModal'
 import TopNav from '@/components/TopNav'
 import RelatedProducts from './RelatedProducts'
 
-function getRetailerLinks(brand: string, name: string): { label: string; url: string }[] {
+function getRetailerLinks(brand: string, name: string): { label: string; url: string; affiliate: boolean }[] {
+  if (isSyntheticPreview()) return []
   const q = encodeURIComponent(`${brand} ${name}`)
-  const links: { label: string; url: string }[] = []
+  const links: { label: string; url: string; affiliate: boolean }[] = []
 
   if (brand.toLowerCase() !== 'bulk') {
-    links.push({ label: 'Amazon UK', url: `https://www.amazon.co.uk/s?k=${q}&tag=theliftinglab-21` })
+    links.push({ label: 'Amazon UK', url: amazonSearch(brand, name), affiliate: true })
   }
   if (brand.toLowerCase() !== 'myprotein') {
-    links.push({ label: 'MyProtein', url: `https://www.myprotein.com/sport-nutrition/search.list?q=${q}` })
+    links.push({ label: 'MyProtein', url: `https://www.myprotein.com/sport-nutrition/search.list?q=${q}`, affiliate: false })
   }
-  links.push({ label: 'The Protein Works', url: `https://www.theproteinworks.com/search?query=${q}` })
+  links.push({ label: 'The Protein Works', url: `https://www.theproteinworks.com/search?query=${q}`, affiliate: false })
   if (brand.toLowerCase() !== 'bulk') {
     links.push({
       label: 'Bulk.com',
-      url: `https://www.awin1.com/cread.php?awinmid=4822&awinaffid=2919631&ued=${encodeURIComponent(`https://www.bulk.com/uk/search?q=${encodeURIComponent(name)}`)}`
+      url: bulkSearch(name),
+      affiliate: true,
     })
   }
   return links.slice(0, 4)
@@ -56,10 +63,12 @@ export default function ProductDetailPage({
   const [shareOpen, setShareOpen] = useState(false)
 
   const review = claimsReviewFor(product.category)
+  const assessment = assessmentDisplayFor(product)
+  const canRecommend = hasApprovedAssessment(product)
   const costReason = trueCostReason(product)
   const flags = verdictFlags(product.nutrients, product.score, product.informed_sport)
-    .filter((flag) => !review || !flag.text.includes('Effectiveness Match'))
-  const color = product.score != null ? scoreColor(product.score) : '#4b5563'
+    .filter(flag => canRecommend || flag.kind === 'safety')
+  const color = canRecommend && product.score != null ? scoreColor(product.score) : '#9ca3af'
   const stacked = inStack(product.id)
   const retailers = getRetailerLinks(product.brand, product.name)
 
@@ -84,9 +93,9 @@ export default function ProductDetailPage({
       <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 space-y-6">
         {/* hero */}
         <div className="flex flex-col lg:flex-row lg:items-start lg:text-left items-center text-center gap-6 lg:gap-10">
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-4 max-w-full">
             <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} />
-            <ScoreBadge score={product.score} size="lg" />
+            <ProductAssessment product={product} size="lg" />
           </div>
           <div>
             <Link
@@ -126,7 +135,7 @@ export default function ProductDetailPage({
               {product.retail_price != null ? <span>£{product.retail_price.toFixed(2)} retail</span> : <span>Retail price —</span>}
               <span className="mx-2">·</span>
               {product.cost_per_serving != null ? (
-                <span className="text-white font-bold">£{product.cost_per_serving.toFixed(2)} True Cost / serving</span>
+                <span className="text-white font-bold">{formatListedServingPrice(product.cost_per_serving)} listed price / serving</span>
               ) : (
                 <span title={costReason ?? undefined}>True Cost — <span className="text-xs">({costReason})</span></span>
               )}
@@ -168,7 +177,7 @@ export default function ProductDetailPage({
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-4">Full Label</p>
             <div>
               {product.nutrients.map((n, i) => {
-                const nColor = nutrientColor(n.nutrient_name, n.amount)
+                const nColor = canRecommend ? nutrientColor(n.nutrient_name, n.amount) : null
                 return (
                   <div
                     key={i}
@@ -205,14 +214,14 @@ export default function ProductDetailPage({
             <MethodologyModal category={product.category} />
           </div>
           <p className="text-sm text-white/70 leading-relaxed">
-            {review ? <>Existing formula score: <span className="font-bold">{product.score ?? '–'}/100</span>. Claims and ingredient flags are under review; this score is not a validated prediction of health benefits.</> : <>
-            This product scores{' '}
+            {!canRecommend ? assessment.explanation : <>
+            Existing formula score (scientific review incomplete):{' '}
             <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our
             evidence-based reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
             dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
             </>}
           </p>
-          {!review && <div className="flex gap-3 mt-3 flex-wrap">
+          {canRecommend && <div className="flex gap-3 mt-3 flex-wrap">
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">● Green = meets dose</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">● Amber = below optimal</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
@@ -225,11 +234,11 @@ export default function ProductDetailPage({
         {/* reviews */}
         <ReviewSection productId={product.id} productName={product.name} />
 
-        {/* compare prices across retailers */}
-        <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
-          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">Compare Prices</p>
+        {/* Explicit retailer searches, separate from a product offer. */}
+        {retailers.length > 0 && <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
+          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">Search other retailers</p>
           <p className="text-xs text-gray-500 mb-4">
-            Search for this product across UK retailers — prices vary.
+            Search results do not confirm the exact product, pack, price or stock.
           </p>
           <div className="grid grid-cols-2 gap-2">
             {retailers.map((r) => (
@@ -237,19 +246,18 @@ export default function ProductDetailPage({
                 key={r.label}
                 href={r.url}
                 target="_blank"
-                rel="noopener noreferrer nofollow"
-                onClick={() => track('retailer_click', { item_brand: product.brand, item_name: product.name, retailer: r.label })}
+                rel={r.affiliate ? 'noopener noreferrer nofollow sponsored' : 'noopener noreferrer nofollow'}
+                onClick={() => track('retailer_search_click', { retailer: r.label })}
                 className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-lab-border hover:border-lab-lime/50 hover:bg-lab-lime/5 transition-colors group"
               >
                 <span className="text-white text-xs font-medium">{r.label}</span>
-                <span className="text-lab-muted text-xs group-hover:text-lab-lime transition-colors">Search →</span>
+                <span className="text-lab-muted text-[10px] text-right group-hover:text-lab-lime transition-colors">
+                  Search ↗<br />{r.affiliate ? 'Affiliate link · we may earn a commission' : 'External link'}
+                </span>
               </a>
             ))}
           </div>
-          <p className="text-[10px] text-gray-600 mt-3">
-            We may earn a commission on purchases via affiliate links. Check retailer for current pricing.
-          </p>
-        </div>
+        </div>}
       </div>
 
       {/* sticky action bar */}
@@ -274,24 +282,10 @@ export default function ProductDetailPage({
           >
             Compare
           </Link>
-          <a
-            href={buyLink(product.brand, product.name, product.buy_url)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            onClick={() => {
-              const href = buyLink(product.brand, product.name, product.buy_url)
-              trackBuyClick({
-                product_id: product.id,
-                product_name: product.name,
-                brand: product.brand,
-                category: product.category,
-                href,
-              })
-            }}
+          <ProductOfferLink
+            product={product}
             className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
-          >
-            Buy Now →
-          </a>
+          />
         </div>
       </div>
 
@@ -301,7 +295,6 @@ export default function ProductDetailPage({
         productId={product.id}
         productName={product.name}
         brand={product.brand}
-        score={product.score}
       />
     </div>
   )

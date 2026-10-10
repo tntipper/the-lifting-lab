@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createPublicClient } from '@/lib/supabase-public'
+import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
+import { isSyntheticPreview } from '@/lib/preview-mode'
 
 type NutrientRow = { product_id: string; nutrient_name: string; amount: number; unit: string }
 
@@ -17,10 +19,29 @@ export async function GET(request: Request) {
 
   if (!ids.length) return NextResponse.json([])
 
+  if (isSyntheticPreview()) {
+    const products = PREVIEW_PRODUCTS
+      .filter((product) => ids.includes(product.id))
+      .map((product) => ({
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        category: product.category,
+        serving_size: product.serving_size,
+        serving_unit: product.serving_unit,
+        servings_per_container: product.servings_per_container,
+        retail_price: product.retail_price,
+        buy_url: null,
+        product_nutrients: product.nutrients,
+      }))
+      .sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
+    return NextResponse.json(products, { headers: { 'Cache-Control': 'no-store', 'X-TLL-Preview': 'synthetic' } })
+  }
+
   const sb = createPublicClient()
   const { data: products, error } = await sb
     .from('products')
-    .select('id, name, brand, category, serving_size, serving_unit, buy_url')
+    .select('id, name, brand, category, serving_size, serving_unit, servings_per_container, retail_price, buy_url')
     .in('id', ids)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

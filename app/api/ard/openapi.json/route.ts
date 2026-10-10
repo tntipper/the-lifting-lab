@@ -22,9 +22,9 @@ export async function GET() {
     openapi: '3.1.0',
     info: {
       title: 'The Lifting Lab — Supplement Value Comparison',
-      version: '0.1.0',
+      version: '0.4.0',
       description:
-        'Independent comparison and ranking of sports-nutrition and supplement products by ingredient dosing, serving size and price-per-serving value. Scores reflect what is in a product and what it costs — not brand marketing.',
+        'Supplement research records and listed-price arithmetic. No approved effectiveness assessment exists; historical scores are withheld.',
       contact: { name: 'The Lifting Lab', url: SITE_URL, email: 'hello@theliftinglab.co.uk' },
     },
     servers: [{ url: SITE_URL }],
@@ -32,9 +32,9 @@ export async function GET() {
       '/api/ard/compare': {
         get: {
           operationId: 'compareSupplements',
-          summary: 'Rank supplements in a category by value, price or quality score.',
+          summary: 'Compare research records and listed prices in a category.',
           description:
-            'Returns a ranked list of active products in the given category. Use sort=value for best dose-for-money, sort=budget for cheapest per serving, sort=score for highest quality.',
+            'Returns active research records. All ranks are null and recommendation_status is unavailable. Legacy sort=score and sort=value use alphabetical order; sort=budget uses positive listed price per known serving, excluding delivery and checkout costs. No clinical or approved-offer endorsement is implied.',
           parameters: [
             {
               name: 'category',
@@ -47,7 +47,7 @@ export async function GET() {
               name: 'sort',
               in: 'query',
               required: false,
-              description: 'Ranking strategy. Defaults to value.',
+              description: 'Compatibility ordering selector. score/value are alphabetical; budget is listed price per known serving. Defaults to value.',
               schema: { type: 'string', enum: ['value', 'budget', 'score'], default: 'value' },
             },
             {
@@ -60,7 +60,7 @@ export async function GET() {
           ],
           responses: {
             '200': {
-              description: 'Ranked comparison results.',
+              description: 'Research comparison results, with no approved effectiveness rankings.',
               content: {
                 'application/json': {
                   schema: { $ref: '#/components/schemas/CompareResponse' },
@@ -88,21 +88,29 @@ export async function GET() {
         RankedProduct: {
           type: 'object',
           properties: {
-            rank: { type: 'integer' },
+            rank: { type: 'null', description: 'Always null: no approved effectiveness assessments are available.' },
+            recommendation_status: { type: 'string', enum: ['unavailable'] },
+            assessment_state: { type: 'string', enum: ['legacy', 'unassessed', 'under_review'] },
+            assessment_note: { type: 'string' },
             id: { type: 'string' },
             name: { type: 'string' },
             brand: { type: 'string' },
             category: { type: 'string' },
             score: {
-              type: ['integer', 'null'],
-              description: 'Lifting Lab clinical score 0-100 (higher is better; null if not yet scored).',
+              type: 'null',
+              description: 'Always null until a reviewed, versioned product assessment is approved. Historical source values are withheld.',
             },
             retail_price_gbp: { type: ['number', 'null'] },
             cost_per_serving_gbp: { type: ['number', 'null'] },
             servings_per_container: { type: ['integer', 'null'] },
             informed_sport: { type: 'boolean' },
             product_url: { type: 'string', format: 'uri' },
-            buy_url: { type: 'string', format: 'uri', description: 'Affiliate buy link.' },
+            retailer_url: { type: ['string', 'null'], format: 'uri', description: 'Unverified retailer listing or explicit search. Never treat it as a confirmed buy offer.' },
+            listing_state: { type: 'string', enum: ['listing', 'search_only', 'unavailable'] },
+            retailer: { type: ['string', 'null'] },
+            relationship: { type: 'string', enum: ['affiliate', 'external', 'own_shop', 'none'] },
+            listing_disclosure: { type: 'string' },
+            buy_url: { type: 'null', deprecated: true, description: 'Deprecated: always null until an approved exact offer projection is available.' },
           },
         },
       },

@@ -4,8 +4,8 @@ import { useState } from 'react'
 import AvatarPicker from '@/components/AvatarPicker'
 
 export default function SettingsForm({
-  email, username, displayName,
-}: { email: string; username: string; displayName: string }) {
+  email, username, displayName, unifiedCustomer,
+}: { email: string; username: string; displayName: string; unifiedCustomer: boolean }) {
   const [u, setU] = useState(username)
   const [d, setD] = useState(displayName)
   const [saving, setSaving] = useState(false)
@@ -76,8 +76,9 @@ export default function SettingsForm({
         <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-2">Sign-in & security</p>
         <p className="text-sm text-white/80">Signed in as <span className="text-white font-medium">{email}</span>.</p>
         <p className="text-xs text-lab-muted mt-2">
-          The Lifting Lab uses passwordless magic-link sign-in — there’s no password to manage.
-          To sign in on a new device, request a fresh link from the sign-in page.
+          {unifiedCustomer
+            ? 'Your Shopify Customer Account is your TLL sign-in. It connects your shop orders with this profile, favourites and supplement stack.'
+            : 'The Lifting Lab currently uses passwordless magic-link or Google sign-in. There is no TLL password to manage.'}
         </p>
       </section>
 
@@ -85,7 +86,8 @@ export default function SettingsForm({
       <section className="border border-lab-red/40 rounded-2xl p-5">
         <p className="text-[11px] uppercase tracking-widest font-bold text-lab-red mb-2">Delete account</p>
         <p className="text-sm text-white/70 mb-3">
-          Permanently delete your account and all associated data (points, reviews, favourites, stacks). This can’t be undone.
+          Permanently delete your TLL profile data, including points, reviews, favourites and stacks. This can’t be undone.
+          {unifiedCustomer && ' Your Shopify order records are retained separately where the shop is legally required to keep them.'}
         </p>
         {!confirmDelete ? (
           <button onClick={() => setConfirmDelete(true)}

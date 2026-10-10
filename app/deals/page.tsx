@@ -16,7 +16,7 @@ const YEAR = 2026
 export const metadata: Metadata = {
   title: 'Supplement Discount Codes & Deals UK 2026 — MyProtein Code + Verified Offers',
   description:
-    'A verified MyProtein refer-a-friend discount code plus the current deals from the UK supplement brands we actually partner with. We only publish codes we can stand behind, and show you the smarter way to save: cost per effective serving.',
+    'A verified MyProtein refer-a-friend discount code plus the current deals from the UK supplement brands we actually partner with. We only publish codes we can stand behind, and show you the smarter way to save: listed price per known serving.',
   alternates: { canonical: URL },
   openGraph: {
     title: 'Supplement Discount Codes & Deals UK 2026',
@@ -52,7 +52,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Is a discount code the best way to save on supplements?',
-    a: 'Usually not. The biggest lever is cost per effective serving, not the headline discount. A cheap, heavily discounted tub that is under-dosed still is not value. Use our Best Value and Cheapest Per Serving pages to find products that are genuinely cheap for a dose that works, then stack a code on top.',
+    a: 'Compare current retailer prices and total checkout costs. Our listed serving-price comparison uses recorded prices and known serving counts; it does not establish effectiveness, equivalent doses or an approved offer. Historical scores cannot identify a best buy.',
   },
 ]
 
@@ -132,24 +132,14 @@ export default function DealsPage() {
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">
             The honest way to <span className="text-lab-lime">actually save</span>
           </h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-3">
-            A discount code trims the sticker price. It does nothing about the number that decides
-            what a supplement really costs you: the price of a single{' '}
-            <span className="text-white/80">effective</span> serving. A £30 tub at 30% off is no
-            bargain if it is under-dosed, uses a proprietary blend, or amino-spikes its protein — you
-            are just paying less for something that still does not work.
-          </p>
-          <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            So do it in this order: pick a product that clears our evidence-based dosing bar, sort by
-            cost per serving, then stack a code on top of the winner. That way the discount lands on
-            something worth buying.
-          </p>
+          <p className="text-lab-muted text-sm leading-relaxed mb-3">No approved effectiveness assessment is available. Historical scores cannot choose products or validate a dose. Browse recorded labels and listed prices, or build a manual research stack.</p>
+
           <div className="flex flex-wrap gap-2">
             <Link
               href="/value"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best value (per pound) →
+              Effectiveness value unavailable →
             </Link>
             <Link
               href="/cheapest"
@@ -167,7 +157,7 @@ export default function DealsPage() {
               href="/best"
               className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
             >
-              Best by score
+              Category research
             </Link>
           </div>
         </section>

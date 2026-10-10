@@ -1,9 +1,10 @@
+import { hasApprovedAssessment } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { getIngredient, INGREDIENT_SLUGS, type EvidenceLevel } from '@/lib/ingredients'
 import { matchupsForIngredient } from '@/lib/ingredient-matchups'
 import { GUIDE_SLUGS } from '@/lib/guides'
@@ -61,7 +62,7 @@ async function topProducts(category: string | undefined, limit = 3): Promise<Sco
       .eq('status', 'active')
       .eq('category', category)
     if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore), 'score').slice(0, limit)
+    return sortScored((data as Product[]).map(withScore).filter(hasApprovedAssessment), 'score').slice(0, limit)
   } catch {
     return []
   }
@@ -240,7 +241,7 @@ export default async function IngredientPage({
                   key={p.id}
                   className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
                 >
-                  <ScoreBadge score={p.score} />
+                  <ProductAssessment product={p} />
                   <div className="min-w-0 flex-1">
                     <p className="text-white text-sm font-bold truncate">{p.brand}</p>
                     <p className="text-lab-muted text-xs truncate">{p.name}</p>

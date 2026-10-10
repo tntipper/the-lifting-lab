@@ -78,7 +78,7 @@ export const GLOSSARY: GlossaryGroup[] = [
         term: 'Serving-size games',
         aka: ['serving inflation'],
         def: 'Quoting doses across two or three scoops, or shrinking the scoop, to make a tub look better value or better dosed than it is.',
-        why: 'A "full dose" spread over 3 scoops means a tub lasts a third as long, so the real cost per effective serving triples. We normalise everything to cost per full effective serving so a big cheap tub with tiny scoops cannot hide.',
+        why: 'Recorded serving sizes can use different units and amounts. Listed serving-price comparisons use the recorded pack serving count, not an assumed effective dose. Check the current label before comparing.',
         link: { href: '/value', label: 'Best by true cost' },
       },
       {
@@ -94,30 +94,30 @@ export const GLOSSARY: GlossaryGroup[] = [
   {
     key: 'dosing',
     title: 'Dosing & effectiveness',
-    blurb: 'The concepts our whole scoring engine is built on. This is where "does it actually work" gets decided.',
+    blurb: 'Research terminology. Historical scoring is unverified and cannot establish effectiveness.',
     terms: [
       {
         id: 'clinical-dose',
         term: 'Clinical / effective dose',
         aka: ['evidence-based dose', 'reference dose'],
         def: 'The amount of an ingredient shown in human studies to produce the effect it is sold for.',
-        why: 'This is the number that matters. A product can contain the right ingredients and still do nothing if they sit below their clinical dose. Every category on the site has an evidence-based reference range, and we score products against it.',
-        link: { href: '/methodology', label: 'The reference doses' },
+        why: 'Study findings depend on the formulation, dose, population and outcome. No approved product assessment is available; historical targets do not establish that a marketed product is effective.',
+        link: { href: '/methodology', label: 'Historical methodology' },
       },
       {
         id: 'effectiveness-match',
         term: 'Effectiveness Match',
         aka: ['the score', 'match score'],
-        def: 'The Lifting Lab 0-100 score for how closely a product’s active doses match the evidence-based clinical reference for its category.',
-        why: 'Green (70+) means the doses line up with the evidence. Amber (50-69) is partial. Red (under 50) is underdosed or padded. It is an editorial opinion built from the label, not a safety rating or a claim a product is defective.',
-        link: { href: '/best', label: 'The highest scorers' },
+        def: 'The previous 0–100 formula output, retained as an unverified historical value.',
+        why: 'Historical percentages use a neutral display. They are not approved quality grades, effective-dose findings, safety ratings or recommendations. Effectiveness rankings are unavailable.',
+        link: { href: '/best', label: 'Category research' },
       },
       {
         id: 'true-cost',
         term: 'True cost / cost per serving',
         aka: ['cost per effective serving'],
-        def: 'Price divided by the number of full, effective servings in the tub — not the sticker price.',
-        why: 'A £20 tub that gives 15 real servings is dearer than a £35 tub that gives 40. Sticker price and even price-per-100g both lie once doses and scoop sizes differ. Cost per effective serving is the only fair way to compare value.',
+        def: 'Positive listed price divided by the recorded number of servings in the pack.',
+        why: 'This arithmetic excludes delivery and checkout adjustments. Formulas and serving sizes may differ, so it is not an equivalent-dose, effectiveness or approved-offer comparison.',
         link: { href: '/cheapest', label: 'Cheapest per serving' },
       },
       {

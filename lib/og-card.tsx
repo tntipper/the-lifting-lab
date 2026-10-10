@@ -128,7 +128,7 @@ export function renderVsCard({ tag, a, b }: { tag: string; a: string; b: string 
         {/* footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#374151', fontSize: 13, letterSpacing: 2 }}>
-            Effective-dose analysis · UK pricing · Not medical advice
+            Research records · Listed prices · Assessment review incomplete
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab
@@ -204,7 +204,7 @@ export function renderOgCard({ eyebrow, title, subtitle, tag }: OgCard) {
         {/* footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#374151', fontSize: 13, letterSpacing: 2 }}>
-            Effective-dose analysis · UK pricing · Not medical advice
+            Research records · Listed prices · Assessment review incomplete
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab
