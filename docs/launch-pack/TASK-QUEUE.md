@@ -1,6 +1,6 @@
 # TLL Task Queue (v2)
 
-Base branch: `codex/tll-integration` until T13. One ticket = one branch = one PR. Estimates are hands-on days.
+Default base branch: `codex/tll-integration` until T13; explicit ticket or Toby branch instructions take precedence. One ticket = one branch = one PR. Estimates are hands-on days.
 
 ## Target timeline
 | Week | Tickets | Milestone |
@@ -18,8 +18,10 @@ Base branch: `codex/tll-integration` until T13. One ticket = one branch = one PR
 - **Out of scope:** code changes.
 
 ### T02: Docs into the repo (0.25 day)
-- **Goal:** revise `AGENTS.md`, and add `docs/LAUNCH-DEFINITION.md`, `docs/HARNESS-SPEC.md` and `docs/TASK-QUEUE.md` (merging with the existing content). `CLAUDE.md` already references `AGENTS.md`.
-- **Acceptance:** files are on the base branch and CI is green.
+- **Goal:** make `docs/launch-pack/` the single location for [LAUNCH-DEFINITION.md](LAUNCH-DEFINITION.md), [HARNESS-SPEC.md](HARNESS-SPEC.md), this task queue and [HOW-TO-RUN-CODEX.md](HOW-TO-RUN-CODEX.md). Reconcile the [root AGENTS.md](../../AGENTS.md) with still-valid content from `git show 42a16dd:AGENTS.md` and the repo; keep it concise. Replace this folder’s AGENTS.md with a root pointer, ensure [CLAUDE.md](../../CLAUDE.md) references it, and add a short [README index](README.md).
+- **Branch:** `codex/t02-docs`, based on `codex/t01-reconcile`; stay on it.
+- **Acceptance:** files are consistent, links resolve, `git diff --check` and `npm run check:live-boundaries` pass. Prepend a note of 10 lines or fewer to `.agent/HANDOVER.md`, preserving all existing content.
+- **Delivery restriction:** leave changes in the working tree; do not attempt a commit in this sandbox (Git writes are blocked). Do not push, merge, deploy, change env vars, call live Shopify/supplier APIs or flip live flags. Hosted CI and a PR are deferred until authorised Git access is available.
 
 ### T03: Integrate the approved fix PRs (1 day)
 - **Goal:** merge the chain T01 approved (for example #61 → #63 → #64, #66 dependency/lint fixes, #54 eligibility wording) in order.

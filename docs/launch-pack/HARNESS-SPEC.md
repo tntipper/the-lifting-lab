@@ -1,5 +1,7 @@
 # Supplier Harness Spec (v2): TypeScript in lib/commerce
 
+This is the planned system for [launch Gates D and F](LAUNCH-DEFINITION.md), delivered through [TASK-QUEUE.md](TASK-QUEUE.md). The harness folder, tables and jobs below are planned unless explicitly listed as existing code; they are not live features. All code paths below are relative to the repo root.
+
 ## 0. Reuse first
 | Need | Existing code to extend | Port from Python connector (reference) |
 |---|---|---|
@@ -18,7 +20,7 @@
 - **reservations (new table):** the existing inventory ledger has no reservation feature, so add one by porting the connector's reservation logic. A paid line reserves stock before submission, and the reservation is released on cancel or reject.
 - **supplier_orders:** Shopify order and line, supplier, quantity, local key (unique), status (`pending → submitted → accepted → shipped`, or `rejected`, `uncertain`, `cancelled`), supplier_ref, tracking, attempts, last_error.
 - **customer_delivery_payloads:** private schema, encrypted address, minimal role access, deleted N days after shipment (Toby sets N).
-- **manual_queue** and **harness_runs**, as in v1.
+- **manual_queue** (unresolved items for an operator) and **harness_runs** (run results and evidence-window progress): new tables in T08/T09.
 
 ## 2. Sync jobs (Vercel Cron)
 | Job | Schedule | Rules |

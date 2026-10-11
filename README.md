@@ -1,3 +1,7 @@
+# The Lifting Lab
+
+Start with the [canonical launch-pack index](docs/launch-pack/README.md) for the launch requirements, supplier system plan, task queue and Codex workflow. Project instructions are in [AGENTS.md](AGENTS.md); the latest work note is at the top of [.agent/HANDOVER.md](.agent/HANDOVER.md).
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

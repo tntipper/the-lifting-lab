@@ -1,3 +1,12 @@
+**11 October T02 note (codex/t02-docs, based on codex/t01-reconcile):**
+- Canonical docs: [launch-pack index](../docs/launch-pack/README.md); the four launch documents exist only there.
+- Root AGENTS reconciles the old Next.js guidance, corrects paths and distinguishes planned work from existing code.
+- Launch-pack AGENTS is a root pointer; root README links the pack; CLAUDE already imports root AGENTS.
+- T02 and Codex prompts now match the canonical paths, assigned branch and prepend-only handover rule.
+- Evidence: local document links/anchors and uniqueness pass; git diff --check passes; check:live-boundaries PASS, 0 violations.
+- Documentation changes only; prior handover preserved verbatim below. No commit attempt, push, merge, deploy, env/API/flag changes.
+- Hosted CI/PR not run; Git writes are blocked in this sandbox. Next: review the working-tree diff, then commit/PR with authorised Git access.
+
 # Agent handover — The Lifting Lab integration
 
 **11 October T01 note (codex/t01-reconcile):**

@@ -1,6 +1,8 @@
 # TLL Launch Definition (v2): what "live" means
 
-TLL is live when every box below is ticked and has evidence linked (a test run, a screenshot or an order number). The Shopify password comes off only when Gates A–E are all green. Target soft open: **end of week 4**. Full launch: **week 6** (see TASK-QUEUE timeline).
+TLL is live when every box below is ticked and has evidence linked (a test run, a screenshot or an order number). The Shopify password comes off only when Gates A–E are all green. Target soft open: **end of week 4**. Full launch: **week 6** (see the [TASK-QUEUE timeline](TASK-QUEUE.md#target-timeline)).
+
+These are launch acceptance requirements, not a statement that the features already exist. See [HARNESS-SPEC.md](HARNESS-SPEC.md) for the planned supplier system and [T01 reconciliation](../ops/2026-10-reconcile.md) for signed-off decisions.
 
 ## Decisions recorded (Toby, 11 Oct 2026)
 - Customers pay **£4.99 delivery** on each order. TLL absorbs the gap to the supplier's dispatch charge (TropShip £6 per supplier order). This gap is a margin line in `lib/commerce/pricing-policy.ts` / `commercial-burden.ts`, never a hidden adjustment.
@@ -9,7 +11,7 @@ TLL is live when every box below is ticked and has evidence linked (a test run, 
 - The supplier evidence window is **3 days** of clean ingestion and reconciliation before unattended dispatch. Supervised dispatch may start on day 1.
 
 ## Gate A: Product truth
-- [ ] Every one of the **59 products / 70 variants** in preparation (per `docs/ops/stage-plans/2026-10-05-catalogue-to-launch-completion.md`) has a recorded decision: approved, held (with reason) or excluded.
+- [ ] Every one of the **59 products / 70 variants** in preparation (per the [5 October preparation plan](../ops/stage-plans/2026-10-05-catalogue-to-launch-completion.md)) has a recorded decision: approved, held (with reason) or excluded.
 - [ ] Approved rows are saved in the mapping table built on `ExactMapping` (`lib/commerce/catalogue-eligibility.ts`), each with Shopify variant, supplier + SKU, pack, flavour, cost (ex VAT), and active. Duplicates are resolved (for example `STM008`).
 - [ ] Test: `npm run mapping:check` reports 0 errors. 20 approved rows are checked by hand against the feed and the label.
 
