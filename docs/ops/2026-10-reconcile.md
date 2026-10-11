@@ -1,6 +1,6 @@
 # T01 — October reconciliation for Toby
 
-**11 October 2026 · Draft for sign-off.** Decisions below follow [launch pack v2](../launch-pack/LAUNCH-DEFINITION.md) and [T01](../launch-pack/TASK-QUEUE.md). PR recommendations need Toby’s approval; no merge, closure, push or live action is authorised by this page.
+**11 October 2026 · Signed off by Toby, 11 Oct 2026.** Decisions below follow [launch pack v2](../launch-pack/LAUNCH-DEFINITION.md) and [T01](../launch-pack/TASK-QUEUE.md). PR recommendations need Toby’s approval; no merge, closure, push or live action is authorised by this page.
 
 ## Decisions table
 
@@ -37,4 +37,4 @@
 - GitHub CLI could not connect; Git’s missing-object lookup also failed DNS. Read-only GitHub connector supplied PR metadata, filenames and ancestry instead. Comparing local `42a16dd` remotely returned 404, so its relationship to the remote tip is unverified. Proposed fix: T03 reconcile both histories through authorised Git access before integration; no repeated fetch or branch rewrite here.
 - **Commit blocked:** `git add` could not create `audit-code/.git/worktrees/implementation-integration/index.lock`: Operation not permitted. This linked checkout’s Git records are outside the allowed writable folders. Nothing was staged or committed; proposed fix: allow that Git metadata folder in a new authorised session, or commit these three files locally from an unrestricted terminal. No retry or metadata relocation.
 - **Acceptance pending:** Toby’s sign-off. No push means no new hosted CI/PR evidence for this commit; earlier PR test claims are not a fresh T01 CI pass.
-- **Toby:** approve or amend the PR dispositions/order, and confirm T03 should reconcile this local base with remote integration before applying #54. Sign-off: **pending** (name/date to be recorded after explicit approval). Delivery is settled and needs no further choice.
+- **Toby:** approve or amend the PR dispositions/order, and confirm T03 should reconcile this local base with remote integration before applying #54. Sign-off: **Signed off by Toby, 11 Oct 2026** (PR keep/park list and reconcile-branches-first approved). Delivery is settled and needs no further choice.

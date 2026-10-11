@@ -59,7 +59,7 @@ Never resubmit an *uncertain* order automatically. A unique key in our own datab
 4. Add no new safety layers, frameworks, queues, staging "generations" or arm/disarm cycles without a ticket. Add no scope (TikTok, repricing, new categories) without a ticket.
 5. Live payments, theme, production prices, real supplier orders and publishing all need a flag **plus** Toby's explicit approval for that specific operation.
 6. Keep secrets out of code, logs and PRs.
-7. At the end of every task, update `.agent/HANDOVER.md` with **10 lines or fewer**: what changed, the evidence, what's next and any blockers. No other handover documents.
+7. At the end of every task, add a note of **10 lines or fewer at the top of `.agent/HANDOVER.md`** (what changed, the evidence, what's next and any blockers). **Never truncate or rewrite the rest of the file.** No other handover documents.
 
 ## Definition of done (per task)
 The ticket's acceptance tests pass, CI is green, the PR shows the evidence, the HANDOVER note is updated, nothing outside the ticket's scope is touched, and Toby can check it in 10 minutes.
