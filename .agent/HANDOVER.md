@@ -1,3 +1,10 @@
+**11 October T03 note (codex/t03-reconcile → codex/t03b-pr54):**
+- Merged remote codex/tll-integration 3f603e7 into local line (merge 9694a18, no rebase); HANDOVER checkpoints kept from both sides; activation manifest regenerated (86 files, --check PASS).
+- Merged PR #54 head 7a60d39 on codex/t03b-pr54 (clean; 164 focused tests pass). #60–#66 already included via 3f603e7.
+- npm test on merge: 3560 pass, 2 fail, 8 skipped; tsc clean. Both failures environmental: git-publish native-read test also fails on pristine 3f603e7 (pinned Codex-runtime git path); Gen23 whole-process test passes when the same commit runs outside iCloud (KILLED under the iCloud path).
+- Nothing pushed. codex/tll-integration (local and remote) not moved; fast-forward needs Toby's approval.
+- Next: T04 catalogue review with Lifty (human sign-off), T11 Bodypower discovery in parallel.
+
 **11 October T02 note (codex/t02-docs, based on codex/t01-reconcile):**
 - Canonical docs: [launch-pack index](../docs/launch-pack/README.md); the four launch documents exist only there.
 - Root AGENTS reconciles the old Next.js guidance, corrects paths and distinguishes planned work from existing code.
