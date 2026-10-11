@@ -1,5 +1,7 @@
 # TropShip account reply supplied by the owner
 
+**5 October correction:** the original attached reply explicitly confirms ProductPrice excludes VAT. The incomplete pasted-reply interpretation below is historical; see [original-email evidence](2026-10-05-supplier-terms-scope-and-baseline.md). No further supplier email is required as the next step.
+
 On 30 September 2026 the owner pasted the text of a Tropicana TropShip email into this task. The email's original send date, headers and attachment were not provided. This note records the meaning of that owner-supplied written reply for G1, G2 and customer-service work; it does not change a Shopify, supplier or customer setting.
 
 | Question | What the reply settles | What remains open for release |

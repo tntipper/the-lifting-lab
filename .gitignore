@@ -45,3 +45,7 @@ yarn-error.log*
 next-env.d.ts
 
 /test-results/
+
+# local generated outputs and private staging evidence (kept in iCloud, not versioned)
+/outputs/
+/implementation-state/
