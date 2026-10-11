@@ -13,10 +13,11 @@ const helperApproval = /^APPROVED_NATIVE_READ = (True|False)$/m.exec(helperSourc
 if (helperApproval === undefined || NATIVE_ACCESS_APPROVED !== (helperApproval === 'True')) throw new Error('native access flags disagree')
 
 const manifest = {
-  schema: 'tll-staging-readonly-preflight/v4', target: PROJECT_REF, productionExcluded: PRODUCTION_PROJECT_REF,
+  schema: 'tll-staging-readonly-preflight/v5', target: PROJECT_REF, productionExcluded: PRODUCTION_PROJECT_REF,
   nativeAccessApproved: NATIVE_ACCESS_APPROVED, query: { id: QUERY_ID, sha256: sha256(FIXED_QUERY), beginsReadOnly: true, assertionsInReadOnlyTransaction: true, finalStatementLiteralReceipt: true },
   sourcePins: await Promise.all(['scripts/staging-readonly-preflight.mjs', 'scripts/staging-readonly-preflight-keychain.py'].map(pin)),
   keychain: { service: KEYCHAIN_SERVICE, account: KEYCHAIN_ACCOUNT, reviewedDesignPath: '../../implementation-state/staging/generation-launcher-2026-09-18/native_adapter.py', reviewedDesignSha256: '835cc3394a3f01e18df91d2e111d384aa48592f10e8a239c603b59cd56627bed' },
+  historicalDesign: { path: '../../implementation-state/staging/generation-launcher-2026-09-18/native_adapter.py', sha256: '835cc3394a3f01e18df91d2e111d384aa48592f10e8a239c603b59cd56627bed', evidenceStatus: 'UNVERIFIED', qualification: 'BLOCKED', runtimeDependency: false, command: 'node scripts/staging-readonly-historical-design-qualification.mjs' },
   transport: { ...ENDPOINT, redirects: false, maxAgeMs: MAX_AGE_MS, nativeHelperTimeoutMs: NATIVE_HELPER_TIMEOUT_MS, maxRequests: 1 },
   output: ['target', 'queryId', 'timestamp', 'status', 'counts', 'receiptHash'],
 }

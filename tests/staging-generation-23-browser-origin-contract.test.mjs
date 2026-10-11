@@ -16,7 +16,7 @@ test('real browser requests reach the mounted cart handler only on the registere
     service: { open: async () => { opens++; return emptyCart() },
       read: async () => { reads++; return emptyCart() } },
     transition: {}, currentActor: async () => null })
-  const browser = await chromium.launch({ channel: 'chrome', headless: true })
+  const browser = await chromium.launch({ headless: true, ...(process.platform === 'darwin' ? { channel: 'chrome' } : {}) })
   try {
     const context = await browser.newContext({ serviceWorkers: 'block' })
     await context.route('**/*', async route => {

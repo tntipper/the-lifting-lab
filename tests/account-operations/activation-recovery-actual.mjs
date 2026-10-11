@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { admin, assertFixture } from './local-pg.mjs'
+import { admin, assertFixture, C } from './local-pg.mjs'
 
 // Actual PostgreSQL 17 proof. The synthetic operator is deliberately a
 // non-superuser with the managed staging BYPASSRLS attribute but no direct
@@ -25,7 +25,7 @@ const q = value => `'${value.replaceAll("'", "''")}'`
 const adapt = source => Object.entries(aliases).reduce((text, [from, to]) => text.replace(new RegExp(`(?<![A-Za-z0-9_$])${from}(?![A-Za-z0-9_$])`, 'g'), to), source)
 const setMarker = (role, value) => admin(`COMMENT ON ROLE ${role} IS ${q(value)}`)
 function managed(sql) {
-  try { return execFileSync('docker', ['exec','-i','tll-stage0-postgres','psql','-XqAt','-U','postgres','-d','tll_account_operations_v1','-v','ON_ERROR_STOP=1'], { input: sql, encoding: 'utf8', stdio: ['pipe','pipe','pipe'] }) }
+  try { return execFileSync('docker', ['exec','-i',C,'psql','-XqAt','-U','postgres','-d','tll_account_operations_v1','-v','ON_ERROR_STOP=1'], { input: sql, encoding: 'utf8', stdio: ['pipe','pipe','pipe'] }) }
   catch (error) { throw Error(String(error.stderr || error.message)) }
 }
 let installed = false

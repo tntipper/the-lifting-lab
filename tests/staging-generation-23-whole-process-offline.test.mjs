@@ -1,3 +1,4 @@
+import { fixtureEnvironment } from './fixtures/local-pg-fixture.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
@@ -11,7 +12,7 @@ test('the entire networkless Gen23 route finishes under one parent process limit
   { timeout: 100_000 }, async () => {
     const result = await runBoundedBrokerRotationWorker({ executable: process.execPath,
       args: [child, '--run-supervised-offline-once'], cwd: root,
-      env: { PATH: process.env.PATH, LANG: 'C.UTF-8' },
+      env: { PATH: process.env.PATH, LANG: 'C.UTF-8', ...fixtureEnvironment() },
       proof: 'TLL_GEN23_WHOLE_OFFLINE_V1', deadlineMs: 90_000,
       maxOutputBytes: 1024, strictGroupCleanup: true })
     try {

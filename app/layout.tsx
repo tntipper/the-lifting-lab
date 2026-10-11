@@ -1,9 +1,7 @@
 import { isSyntheticPreview, isHostedStaging, isIsolatedEnvironment, PREVIEW_UNAVAILABLE_MESSAGE } from '@/lib/preview-mode'
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Anton } from "next/font/google";
-import Script from "next/script";
-import { GA_MEASUREMENT_ID } from "@/lib/gtag";
-import { serializeJsonForHtml } from "@/lib/json-for-html";
+import AnalyticsPreferences from "@/components/AnalyticsPreferences";
 import { LocalStackProvider } from "@/components/LocalStackContext";
 import StackFAB from "@/components/StackFAB";
 import StagingCartProvider from "@/components/StagingCartProvider";
@@ -75,25 +73,13 @@ export default function RootLayout({
           </aside>
         )}
         <StagingCartProvider><LocalStackProvider>
+          {!isIsolatedEnvironment() && <AnalyticsPreferences />}
           {children}
           <SiteFooter />
           <StackFAB />
         </LocalStackProvider></StagingCartProvider>
       </body>
-      {!isIsolatedEnvironment() && <>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="ga4-init" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', ${serializeJsonForHtml(GA_MEASUREMENT_ID)});
-        `}
-      </Script>
-      </>}
+
     </html>
   );
 }

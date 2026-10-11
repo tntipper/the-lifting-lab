@@ -1,5 +1,5 @@
 {
-  "schema": "tll-staging-readonly-preflight/v4",
+  "schema": "tll-staging-readonly-preflight/v5",
   "target": "qdmvngjwkcsilzmqksme",
   "productionExcluded": "wrhgscovsgsudtedbljr",
   "nativeAccessApproved": false,
@@ -25,6 +25,14 @@
     "account": "supabase",
     "reviewedDesignPath": "../../implementation-state/staging/generation-launcher-2026-09-18/native_adapter.py",
     "reviewedDesignSha256": "835cc3394a3f01e18df91d2e111d384aa48592f10e8a239c603b59cd56627bed"
+  },
+  "historicalDesign": {
+    "path": "../../implementation-state/staging/generation-launcher-2026-09-18/native_adapter.py",
+    "sha256": "835cc3394a3f01e18df91d2e111d384aa48592f10e8a239c603b59cd56627bed",
+    "evidenceStatus": "UNVERIFIED",
+    "qualification": "BLOCKED",
+    "runtimeDependency": false,
+    "command": "node scripts/staging-readonly-historical-design-qualification.mjs"
   },
   "transport": {
     "hostname": "api.supabase.com",

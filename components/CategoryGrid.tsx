@@ -88,8 +88,8 @@ export default function CategoryGrid({ products: suppliedProducts, variant = 'fu
     }
 
     fetch('/api/products?sort=score')
-      .then((response) => response.json())
-      .then((catalogue: ScoredProduct[]) => setProducts(catalogue))
+      .then((response) => response.ok ? response.json() : [])
+      .then((catalogue: unknown) => setProducts(Array.isArray(catalogue) ? catalogue : []))
       .catch(() => {})
   }, [suppliedProducts, initialProducts])
 

@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { execFileSync, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
+import { processRunning as running } from './fixtures/process-status.mjs'
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -10,10 +11,7 @@ import { BROKER_RECOVERY_PROCESS_CONTROL_ENABLED, runBoundedDetachedWorker,
 const options = args => ({ executable: process.execPath, args, cwd: process.cwd(),
   env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' }, proof: 'OFFLINE_TEST_PROOF',
   deadlineMs: 500, stopGraceMs: 500 })
-const running = pid => {
-  try { return !/^[Z]/.test(execFileSync('/bin/ps', ['-o', 'stat=', '-p', String(pid)], { encoding: 'utf8' }).trim()) }
-  catch { return false }
-}
+
 
 test('process control targets a group, not only its leader', () => {
   assert.equal(BROKER_RECOVERY_PROCESS_CONTROL_ENABLED, false)

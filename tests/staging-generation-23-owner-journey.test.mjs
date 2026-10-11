@@ -60,6 +60,9 @@ test('protected Preview browser guard carries no bypass header and blocks purcha
   for (const [url, method] of [
     ['https://tll-integration-staging.myshopify.com/cart/c/example', 'POST'],
     ['https://payments.shopify.com/submit', 'POST'],
+    [`${STAGING_ALIAS}/api/stack`, 'POST'],
+    [`${STAGING_ALIAS}/api/stack`, 'DELETE'],
+    [`${STAGING_ALIAS}/api/stack`, 'PATCH'],
     ['https://theliftinglab.co.uk/', 'GET'],
   ]) {
     const blocked = route(url, method)
@@ -98,10 +101,11 @@ test('logout proof rejects a retained session and a generic protection or runtim
     json: async () => ({ status: 'service_error' }) }), /unavailable/)
 })
 
-test('owner journey checks identity, isolation, cart amount and guarded checkout before closing browser', async () => {
+for (const stackFailure of [null, 'held', 'changed-account', 'changed-servings', 'timeout']) {
+test(`owner journey ${stackFailure || 'checks identity, stack, isolation, cart and guarded checkout'}`, async () => {
   const { runStagingGeneration23OwnerJourney: run } = await armed()
   const events = [], contexts = []
-  let signedOut = false
+  let signedOut = false, stackReads = 0
   const locator = name => ({
     getByRole: (role, options) => locator(`${name} > ${role}:${options?.name}`),
     getByText: text => locator(`${name} > text:${text}`),
@@ -129,6 +133,23 @@ test('owner journey checks identity, isolation, cart amount and guarded checkout
           headers: () => ({ 'cache-control': 'no-store, private' }),
           json: async () => ({ status: 'held' }) } },
           waitForURL: async url => { events.push(`signed-in:${url}`) },
+          waitForResponse: async predicate => {
+            stackReads++
+            if (stackFailure === 'timeout' && stackReads === 2) throw Error('stack read timeout')
+            const body = stackFailure === 'held' ? { status: 'held' }
+              : stackFailure === 'changed-account' && stackReads === 2
+                ? { ...stackBody, userId: '22222222-2222-4222-8222-222222222222' }
+                : stackFailure === 'changed-servings'
+                  ? { ...stackBody, stackId: '22222222-2222-4222-8222-222222222222',
+                    items: [{ product_id: '33333333-3333-4333-8333-333333333333',
+                      servings_per_day: stackReads === 1 ? null : 1 }] }
+                  : stackBody
+            const response = stackResponse(body)
+            assert.equal(predicate(response), true)
+            events.push('stack-read')
+            return response
+          },
+          reload: async () => { events.push('stack-reload') },
           getByText: (text) => locator(`text:${text}`),
           getByRole: (role, options) => locator(`${role}:${options?.name}`),
           locator: name => locator(name),
@@ -150,16 +171,31 @@ test('owner journey checks identity, isolation, cart amount and guarded checkout
       return { status: 'STAGING_CHECKOUT_OBSERVED_NO_MUTATION', shop: 'tll-integration-staging.myshopify.com' }
     },
   })
+  if (stackFailure) {
+    assert.equal(result.status, 'OWNER_JOURNEY_FAILED_VERIFIED')
+    assert.equal(events.includes('guarded-checkout-get'), false)
+    assert.equal(events.includes('click:dialog:Test cart > button:Connect guest cart'), false)
+    assert.equal(contexts.every(context => context.closed), true)
+    assert.equal(events.at(-1), 'close-browser')
+    return
+  }
   assert.equal(result.status, 'OWNER_JOURNEY_VERIFIED_NO_PURCHASE')
-  assert.equal(events.includes(`signed-in:${STAGING_ALIAS}/dashboard`), true)
+  assert.equal(events.includes(`signed-in:${STAGING_ALIAS}/account`), true)
   assert.equal(events.includes(`goto:${STAGING_ALIAS}/api/account/orders`), true)
   const guestAdd = events.indexOf('click:button:Add to test cart')
-  const signIn = events.indexOf(`signed-in:${STAGING_ALIAS}/dashboard`)
+  const signIn = events.indexOf(`signed-in:${STAGING_ALIAS}/account`)
   const basketOpen = events.indexOf('click:button:/^Basket, /')
   const transfer = events.indexOf('click:dialog:Test cart > button:Connect guest cart')
   const checkout = events.indexOf('click:dialog:Test cart > button:Prepare staging checkout')
   assert.ok(guestAdd >= 0 && guestAdd < signIn && signIn < basketOpen
     && basketOpen < transfer && transfer < checkout)
+  assert.equal(result.stack, 'account_navigation_saved_stack_read_and_reload_unchanged')
+  const stackOpen = events.indexOf('click:navigation:My account > link:My Stack')
+  const stackReload = events.indexOf('stack-reload')
+  const overview = events.indexOf('click:navigation:My account > link:Overview')
+  assert.ok(signIn < stackOpen && stackOpen < stackReload && stackReload < overview && overview < basketOpen)
+  assert.equal(events.filter(item => item === 'stack-read').length, 2)
+  assert.equal(events.includes(`goto:${STAGING_ALIAS}/account`), true)
   assert.equal(events.includes('guarded-checkout-get'), true)
   assert.equal(events.includes('click:button:Sign out of TLL and shop'), true)
   assert.equal(events.includes(`signed-in:${STAGING_ALIAS}/auth`), true)
@@ -169,6 +205,7 @@ test('owner journey checks identity, isolation, cart amount and guarded checkout
   assert.equal(contexts.every(context => context.closed), true)
   assert.equal(events.at(-1), 'close-browser')
 })
+}
 
 test('a failed owner sign-in closes the browser and never opens checkout', async () => {
   const { runStagingGeneration23OwnerJourney: run } = await armed()
@@ -218,6 +255,8 @@ test('an uncertain logout result cannot be reported as a known owner failure', a
     newPage: async () => ({ goto: async () => ({ status: () => 409,
       headers: () => ({ 'cache-control': 'no-store, private' }), json: async () => ({ status: 'held' }) }),
       waitForURL: async () => {},
+      waitForResponse: async predicate => { const response = stackResponse(); assert.equal(predicate(response), true); return response },
+      reload: async () => {},
       getByRole: (role, options) => locator(`${role}:${options?.name}`),
       getByText: text => locator(`text:${text}`), locator }) }),
   close: async () => { closed++ } }
@@ -247,4 +286,39 @@ test('uncertain browser closure does not claim a verified owner failure', async 
     deadlineAt: new Date(Date.now() + 60_000).toISOString(), launch: async () => browser,
     checkoutObserver: async () => { throw Error('should not reach checkout') },
   }), /unavailable/)
+})
+
+const stackBody = { userId: '11111111-1111-4111-8111-111111111111', stackId: null,
+  revision: 0, recoveryConflicts: 0, items: [] }
+function stackResponse(body = stackBody, { status = 200, method = 'GET', origin = STAGING_ALIAS,
+  cache = 'private, no-store' } = {}) {
+  return { url: () => `${origin}/api/stack`, request: () => ({ method: () => method }),
+    status: () => status, headers: () => ({ 'cache-control': cache }), json: async () => body }
+}
+
+test('saved stack proof rejects guest, cacheable, other-origin, and malformed responses', async () => {
+  const { verifyOwnerStackResponse: verify } = await armed()
+  for (const options of [{ status: 401 }, { status: 503 }, { method: 'POST' },
+    { origin: immutableUrl }, { cache: 'public, max-age=60' }]) {
+    await assert.rejects(verify(stackResponse(stackBody, options), STAGING_ALIAS), /unavailable/)
+  }
+  for (const body of [{ status: 'held' }, { ...stackBody, userId: null },
+    { ...stackBody, revision: -1 }, { ...stackBody, recoveryConflicts: undefined },
+    { ...stackBody, items: [{ product_id: 'bad', servings_per_day: 1 }] },
+    { ...stackBody, items: [{ product_id: stackBody.userId, servings_per_day: 1 }] }]) {
+    await assert.rejects(verify(stackResponse(body), STAGING_ALIAS), /unavailable/)
+  }
+  assert.equal(typeof await verify(stackResponse(), STAGING_ALIAS), 'string')
+})
+
+test('saved stack proof detects identity, revision, and servings changes without rewriting legacy doses', async () => {
+  const { verifyOwnerStackResponse: verify } = await armed()
+  const original = { ...stackBody, stackId: '22222222-2222-4222-8222-222222222222', revision: 2,
+    items: [{ product_id: '33333333-3333-4333-8333-333333333333', servings_per_day: null }] }
+  const baseline = await verify(stackResponse(original), STAGING_ALIAS)
+  for (const changed of [{ ...original, userId: original.stackId },
+    { ...original, revision: 3 }, { ...original, items: [{ ...original.items[0], servings_per_day: 1 }] }]) {
+    assert.notEqual(await verify(stackResponse(changed), STAGING_ALIAS), baseline)
+  }
+  assert.equal(original.items[0].servings_per_day, null)
 })

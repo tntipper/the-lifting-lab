@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
+import { useBrowserSnapshot } from '@/lib/browser-snapshot'
 import AccessibleDialog from '@/components/AccessibleDialog'
 import { assessmentText } from '@/lib/stack-assessment'
 import { useCatalogueAssessments } from '@/components/useCatalogueAssessments'
@@ -8,31 +9,27 @@ import { track } from '@/lib/gtag'
 
 // Honour-system share modal: pre-written copy + social links, then a manual
 // "I've shared this" claim that awards points (DB enforces cooldown/age).
-export default function ShareModal({
-  open, onClose, productId, productName, brand,
-}: {
+type Props = {
   open: boolean
   onClose: () => void
   productId: string
   productName: string
   brand: string
-}) {
+}
+
+export default function ShareModal(props: Props) {
+  return props.open ? <ShareModalContents key={props.productId} {...props} /> : null
+}
+
+function ShareModalContents({ open, onClose, productId, productName, brand }: Props) {
   const titleId = useId()
   const catalogue = useCatalogueAssessments([productId], open)
   const claimStatus = useRef<HTMLParagraphElement>(null)
-  const [url, setUrl] = useState('')
+  const origin = useBrowserSnapshot(() => window.location.origin, '')
+  const url = `${origin}/products/${productId}`
   const [claimed, setClaimed] = useState<null | number>(null)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
-
-  useEffect(() => {
-    if (open && typeof window !== 'undefined') {
-      setUrl(`${window.location.origin}/products/${productId}`)
-      setClaimed(null); setNote('')
-    }
-  }, [open, productId])
-
-  if (!open) return null
 
   const product = catalogue.products[0]
   const caption = product

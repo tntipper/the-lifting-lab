@@ -9,6 +9,8 @@ import { IDENTITIES } from '../scripts/staging-generation-21-credentials.mjs'
 import { PASSWORD_PURPOSES } from '../scripts/staging-generation-22-material.mjs'
 import { PREDECESSOR_WINDOW_ID } from '../scripts/staging-generation-23-predecessor-check.mjs'
 import { PREDECESSOR_EXPIRES_AT } from '../scripts/staging-generation-23-predecessor-check.mjs'
+import { PREDECESSOR_WINDOW_ID as OWNER_PREDECESSOR_WINDOW_ID,
+  PREDECESSOR_EXPIRES_AT as OWNER_PREDECESSOR_EXPIRES_AT } from '../scripts/staging-owner-successor-predecessor-check.mjs'
 import { deriveScramVerifier } from '../scripts/staging-generation-6-transport.mjs'
 import { EDGE_PASSWORD_NAME, EDGE_READINESS_WINDOW_NAME, READINESS_WINDOW_ID, VERCEL_PASSWORD_NAMES } from '../scripts/staging-generation-23-password-material.mjs'
 
@@ -29,7 +31,10 @@ const passwords = Object.fromEntries(PASSWORD_PURPOSES.map((purpose, index) => [
 const verifiers = Object.fromEntries(PASSWORD_PURPOSES.map((purpose, index) => [purpose,
   deriveScramVerifier(passwords[purpose], Buffer.alloc(18, index + 1))]))
 
-function fixtureSql() {
+function fixtureSql(predecessor) {
+  const selectedMarker = predecessor === 'OWNER_SUCCESSOR_RETIRED_V18'
+    ? `tll-runtime-window/v1 ${JSON.stringify({ expiresAt: OWNER_PREDECESSOR_EXPIRES_AT, generation: 23,
+      projectRef, state: 'retired', windowId: OWNER_PREDECESSOR_WINDOW_ID })}` : retiredMarker
   const environment = `CREATE ROLE postgres LOGIN CREATEROLE;
 CREATE SCHEMA tll_staging_private;
 CREATE TABLE tll_staging_private.environment(singleton boolean PRIMARY KEY, environment text,
@@ -51,7 +56,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA tll_staging_private TO postgres;`
 CREATE ROLE ${login} NOLOGIN NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS VALID UNTIL 'infinity';
 GRANT ${membership} TO postgres WITH ADMIN TRUE, INHERIT FALSE, SET FALSE;
 GRANT ${login} TO postgres WITH ADMIN TRUE, INHERIT FALSE, SET FALSE;
-COMMENT ON ROLE ${login} IS ${quote(retiredMarker)};
+COMMENT ON ROLE ${login} IS ${quote(selectedMarker)};
 CREATE SCHEMA tll_${purpose}_private;
 CREATE TABLE tll_${purpose}_private.control(singleton boolean PRIMARY KEY,enabled boolean NOT NULL);
 INSERT INTO tll_${purpose}_private.control VALUES(true,false);
@@ -87,7 +92,8 @@ async function armedModules() {
 }
 
 /** One disposable, networkless fixture shared by the standalone and joined tests. */
-export async function createStagingGeneration23LocalDatabaseFixture() {
+export async function createStagingGeneration23LocalDatabaseFixture({ predecessor = 'LEGACY_RETIRED_V17' } = {}) {
+  assert.ok(['LEGACY_RETIRED_V17', 'OWNER_SUCCESSOR_RETIRED_V18'].includes(predecessor), 'unsupported synthetic predecessor')
   assert.match(docker(['context', 'inspect', '--format', '{{(index .Endpoints "docker").Host}}']), /^unix:\/\//)
   assert.equal(docker(['ps', '-a', '--filter', `name=^/${name}$`, '--format', '{{.Names}}']), '')
   docker(['run', '--rm', '-d', '--name', name, '--network', 'none',
@@ -105,7 +111,7 @@ export async function createStagingGeneration23LocalDatabaseFixture() {
   }
   assert.equal(ready, true, 'isolated database did not become ready')
   assert.match(docker(['inspect', '--format', '{{.Config.Image}} {{.HostConfig.NetworkMode}}', name]), /^postgres:17-alpine none$/)
-  sql('tll_local_admin', fixtureSql())
+  sql('tll_local_admin', fixtureSql(predecessor))
   const { credentials, recovery, credentialUrl, recoveryUrl } = await armedModules()
   let state = 'READY', built, recoverySql, removed = false
   const executeSetup = input => {

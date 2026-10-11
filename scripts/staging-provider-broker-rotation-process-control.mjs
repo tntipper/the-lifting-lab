@@ -9,6 +9,10 @@ export const BROKER_ROTATION_MAX_WORKER_MS = 1_800_000
 export const MAX_REVIEWED_EXTENDED_WORKER_MS = 3_598_000
 const GENERATION_23_PROOF = 'TLL_STAGING_GENERATION_23_WHOLE_SUPERVISOR_V1'
 const GENERATION_23_WORKER = fileURLToPath(new URL('./staging-generation-23-worker-entry.mjs', import.meta.url))
+const SUCCESSOR_PROOF = 'TLL_OWNER_SUCCESSOR_SUPERVISOR_cd4130c8-a8b8-462b-bdbe-5c3e6250a02d'
+const SUCCESSOR_WORKER = fileURLToPath(new URL('./staging-owner-successor-worker-entry.mjs', import.meta.url))
+const SUCCESSOR_CLEANUP_PROOF = 'TLL_OWNER_SUCCESSOR_CLEANUP_cd4130c8-a8b8-462b-bdbe-5c3e6250a02d'
+const SUCCESSOR_CLEANUP_WORKER = fileURLToPath(new URL('./staging-owner-successor-cleanup-worker-entry.mjs', import.meta.url))
 const unavailable = () => { throw Error('Staging broker rotation process control unavailable') }
 
 /**
@@ -25,8 +29,10 @@ export function runBoundedBrokerRotationWorker({ executable, args, cwd, env, pro
     || proof.length < 8 || proof.length > 128 || !Number.isSafeInteger(deadlineMs)
     || ![BROKER_ROTATION_MAX_WORKER_MS, MAX_REVIEWED_EXTENDED_WORKER_MS].includes(deadlineCeilingMs)
     || (deadlineCeilingMs === MAX_REVIEWED_EXTENDED_WORKER_MS
-      && (proof !== GENERATION_23_PROOF || args.length !== 1
-        || args[0] !== GENERATION_23_WORKER || !strictGroupCleanup))
+      && (args.length !== 1 || !strictGroupCleanup
+        || !(proof === GENERATION_23_PROOF && args[0] === GENERATION_23_WORKER
+          || proof === SUCCESSOR_PROOF && args[0] === SUCCESSOR_WORKER
+          || proof === SUCCESSOR_CLEANUP_PROOF && args[0] === SUCCESSOR_CLEANUP_WORKER)))
     || deadlineMs < 1 || deadlineMs > deadlineCeilingMs
     || !Number.isSafeInteger(maxOutputBytes) || maxOutputBytes < 1 || maxOutputBytes > 4096
     || !Number.isSafeInteger(stopGraceMs) || stopGraceMs < 1 || stopGraceMs > 5_000

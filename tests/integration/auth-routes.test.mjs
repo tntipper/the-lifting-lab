@@ -116,7 +116,11 @@ test('auth routes preserve session cookies and complete POST sign-out', { timeou
   await t.test('signed-out dashboard redirects to the sign-in page', async () => {
     const response = await request('/dashboard')
     assert.equal(response.status, 307)
-    assert.equal(new URL(response.headers.get('location'), appOrigin).pathname, '/auth')
+    assert.equal(new URL(response.headers.get('location'), appOrigin).pathname, '/account')
+    const account = await request('/account')
+    assert.equal(account.status, 307)
+    assert.equal(new URL(account.headers.get('location'), appOrigin).pathname, '/auth')
+    assert.equal(calls.filter(call => call.url.startsWith('/auth/v1/user')).length, 0)
   })
 
   await t.test('sign-in destination is a GET page and sign-out rejects GET', async () => {

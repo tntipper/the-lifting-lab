@@ -68,13 +68,24 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
         No approved effectiveness assessment is available. Price and serving tags describe the recorded numbers only; they are not product recommendations.
       </p>
 
-      <div className="overflow-x-auto rounded-xl border border-lab-border bg-lab-panel">
+      <p id="comparison-scroll-hint" className="text-xs text-lab-muted md:hidden">
+        Swipe or scroll sideways if needed to see all products →
+        <span className="sr-only"> Keyboard users can focus the comparison and use the arrow keys.</span>
+      </p>
+
+      <div
+        role="region"
+        aria-label="Product comparison"
+        aria-describedby="comparison-scroll-hint"
+        tabIndex={0}
+        className="overflow-x-auto rounded-xl border border-lab-border bg-lab-panel focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-lab-lime"
+      >
         <table className="w-full min-w-[720px] border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
               <th className="sticky left-0 z-10 w-44 min-w-44 border-b border-lab-border bg-lab-panel p-4 text-left text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">Compare</th>
               {products.map((product) => (
-                <th key={product.id} className="min-w-44 border-b border-lab-border p-4 text-left align-top">
+                <th key={product.id} className="min-w-[180px] border-b border-lab-border p-4 text-left align-top">
                   <div className="grid gap-3">
                     <div className="grid h-28 place-items-center rounded-lg bg-lab-panel-2">
                       <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={88} />
@@ -92,7 +103,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
                 </th>
               ))}
               {Array.from({ length: Math.max(0, 3 - products.length) }).map((_, index) => (
-                <th key={`empty-${index}`} className="min-w-44 border-b border-lab-border p-4 align-top">
+                <th key={`empty-${index}`} className="min-w-[180px] border-b border-lab-border p-4 align-top">
                   <Link href="/products" className="grid min-h-44 place-items-center rounded-lg border border-dashed border-[#7c7e72] px-3 text-center text-sm font-medium text-lab-muted">
                     Add another product
                   </Link>

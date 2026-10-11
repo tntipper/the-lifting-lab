@@ -1,8 +1,11 @@
+import { localFixtureConfig, assertOwnedFixture } from '../fixtures/local-pg-fixture.mjs'
+const fixture = localFixtureConfig()
+assertOwnedFixture(fixture)
 import test,{beforeEach}from'node:test'
 import assert from'node:assert/strict'
 import{execFileSync,spawn}from'node:child_process'
 import{randomUUID}from'node:crypto'
-const C='tll-stage0-postgres',D='tll_cart_account_v2',G='tll_ca2_gateway'
+const C=fixture.postgres,D='tll_cart_account_v2',G='tll_ca2_gateway'
 const run=(input,role)=>{try{return execFileSync('docker',['exec','-i',C,'psql','-XqAt','-U','postgres','-d',D,'-v','ON_ERROR_STOP=1'],{input:(role?`SET ROLE ${role};`:'')+input,encoding:'utf8',stdio:['pipe','pipe','pipe']}).trim()}catch{throw Error('Cart account SQL failed')}}
 const q=v=>"'"+String(v).replaceAll("'","''")+"'",env={v:1,alg:'A256GCM',kid:'k',iv:'a'.repeat(16),tag:'b'.repeat(22),ciphertext:'cipher'}
 const rpc=(name,args)=>JSON.parse(run(`SELECT public.tll_cart_transition_${name}(${args.join(',')})`,G))

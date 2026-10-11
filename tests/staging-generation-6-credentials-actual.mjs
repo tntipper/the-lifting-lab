@@ -1,3 +1,6 @@
+import { localFixtureConfig, assertOwnedFixture } from './fixtures/local-pg-fixture.mjs'
+const fixture = localFixtureConfig()
+assertOwnedFixture(fixture)
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { admin, assertFixture } from './account-operations/local-pg.mjs'
@@ -24,7 +27,7 @@ const adapt = source => Object.entries(aliases).reduce((text, [from, to]) => tex
   .replaceAll('tll_cart_private', 'tll_g6_cart_private')
   .replaceAll("current_database()<>'postgres'", 'false').replaceAll("current_user<>'postgres'", 'false').replaceAll("session_user<>'postgres'", 'false')
 function managed(sql) {
-  try { return execFileSync('docker', ['exec','-i','tll-stage0-postgres','psql','-XqAt','-U','postgres','-d','tll_account_operations_v1','-v','ON_ERROR_STOP=1'], { input: sql, encoding: 'utf8', stdio: ['pipe','pipe','pipe'] }) }
+  try { return execFileSync('docker', ['exec','-i',fixture.postgres,'psql','-XqAt','-U','postgres','-d','tll_account_operations_v1','-v','ON_ERROR_STOP=1'], { input: sql, encoding: 'utf8', stdio: ['pipe','pipe','pipe'] }) }
   catch (error) { throw Error(String(error.stderr || error.message)) }
 }
 
@@ -70,7 +73,7 @@ try {
   assert.equal(admin(`SELECT count(DISTINCT shobj_description(oid,'pg_authid')) FROM pg_roles WHERE rolname IN (${runtimes.map(q).join(',')})`), '1')
   assert.match(admin(`SELECT shobj_description(oid,'pg_authid') FROM pg_roles WHERE rolname=${q(runtimes[0])}`), /"generation":6/)
   for (const [index,purpose] of Object.keys(IDENTITIES).entries()) {
-    const login=execFileSync('docker',['exec','-e',`PGPASSWORD=${passwords[purpose]}`,'tll-stage0-postgres','psql','-XqAt','-h','127.0.0.1','-U',runtimes[index],'-d','tll_account_operations_v1','-v','ON_ERROR_STOP=1','-c','SELECT current_user'],{encoding:'utf8'}).trim()
+    const login=execFileSync('docker',['exec','-e',`PGPASSWORD=${passwords[purpose]}`,fixture.postgres,'psql','-XqAt','-h','127.0.0.1','-U',runtimes[index],'-d','tll_account_operations_v1','-v','ON_ERROR_STOP=1','-c','SELECT current_user'],{encoding:'utf8'}).trim()
     assert.equal(login,runtimes[index])
   }
   console.log('PASS: generation-6 credential transaction rejected wrong predecessor/control state, then installed five exact restricted PostgreSQL 17 identities')

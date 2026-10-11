@@ -13,6 +13,12 @@ import { StagingCartAdd } from '@/components/StagingCartActions'
 import { analysisServings, validStackServings } from '@/lib/stack-sync'
 import { useLocalStack } from '@/components/LocalStackContext'
 import CombinedDosePanel from '@/components/CombinedDosePanel'
+import { useBrowserSnapshot } from '@/lib/browser-snapshot'
+
+function readStoredSex(): Sex {
+  try { return window.localStorage.getItem('tll-rda-sex') === 'female' ? 'female' : 'male' }
+  catch { return 'male' }
+}
 
 // Batch product shape returned by /api/products/batch
 type BatchProduct = {
@@ -159,6 +165,13 @@ const CATEGORY_LABELS: Record<string, string> = {
 const STACK_GOALS = ['Strength', 'Muscle', 'Endurance', 'Recovery', 'General health'] as const
 type StackGoal = typeof STACK_GOALS[number]
 
+function readStoredGoal(): StackGoal {
+  try {
+    const stored = window.localStorage.getItem('tll-stack-goal')
+    return STACK_GOALS.includes(stored as StackGoal) ? stored as StackGoal : 'Strength'
+  } catch { return 'Strength' }
+}
+
 function timingFor(category: string): 'Any time' | 'Pre-training' | 'Post-training' | 'Evening' {
   if (['pre-workout', 'intra-workout', 'hydration'].includes(category)) return 'Pre-training'
   if (['post-workout', 'whey', 'whey-isolate', 'eaas'].includes(category)) return 'Post-training'
@@ -180,21 +193,14 @@ export default function StackBuilder() {
   const flags = analyseStack(stackItems)
   const [showTotals, setShowTotals] = useState(false)
   const [showShare, setShowShare] = useState(false)
-  const [sex, setSex] = useState<Sex>('male')
-  const [goal, setGoal] = useState<StackGoal>('Strength')
+  const storedSex = useBrowserSnapshot(readStoredSex, 'male' as Sex)
+  const [chosenSex, setSex] = useState<Sex | null>(null)
+  const sex = chosenSex ?? storedSex
+  const storedGoal = useBrowserSnapshot(readStoredGoal, 'Strength' as StackGoal)
+  const [chosenGoal, setGoal] = useState<StackGoal | null>(null)
+  const goal = chosenGoal ?? storedGoal
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchInput = useRef<HTMLInputElement>(null)
-
-  // Persist the RDA baseline (gender toggle) so it survives reloads.
-  useEffect(() => {
-    const stored = typeof window !== 'undefined' ? window.localStorage.getItem('tll-rda-sex') : null
-    if (stored === 'male' || stored === 'female') setSex(stored)
-  }, [])
-
-  useEffect(() => {
-    const stored = typeof window !== 'undefined' ? window.localStorage.getItem('tll-stack-goal') : null
-    if (STACK_GOALS.includes(stored as StackGoal)) setGoal(stored as StackGoal)
-  }, [])
 
   function changeGoal(next: StackGoal) {
     setGoal(next)
