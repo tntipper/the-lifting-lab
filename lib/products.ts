@@ -1,6 +1,7 @@
 // Shared product types + score attachment for the browse/compare features.
 import { scoreFor } from '@/lib/scores'
 import { hasPositiveServingCost, isRankingCandidate } from './assessment-display'
+import type { CataloguePresentation } from './commerce/catalogue-presentation'
 
 export type Product = {
   id: string
@@ -17,6 +18,8 @@ export type Product = {
   proprietary_blend: boolean | null
   amino_spiked: boolean | null
   protein_yield: number | null
+  /** Optional reviewed server projection; not a supplier field or database column. */
+  cataloguePresentation?: CataloguePresentation | null
 }
 
 export type ScoredProduct = Product & {

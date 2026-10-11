@@ -5,14 +5,21 @@ import { resolveProductListing } from '@/lib/affiliate'
 import { track } from '@/lib/gtag'
 import { StagingCartAdd } from './StagingCartActions'
 import { useStagingCart } from './StagingCartContext'
+import { catalogueAvailabilityFor, type CataloguePresentation } from '@/lib/commerce/catalogue-presentation'
 
 /** Interim listing navigation, until a verified commerce projection supplies exact offers. */
 export default function ProductOfferLink({ product, className, style }: {
-  product: { id?: string; brand: string; name: string; buy_url: string | null }
+  product: { id?: string; brand: string; name: string; buy_url: string | null; cataloguePresentation?: CataloguePresentation | null }
   className?: string
   style?: CSSProperties
 }) {
   const cart = useStagingCart()
+  const availability = catalogueAvailabilityFor(product)
+  if (availability) return <span className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-lab-border px-2 py-2 text-center text-[10px] text-lab-muted"
+    data-offer-state={availability}>
+    <span>{availability === 'out_of_stock' ? 'Out of stock' : availability === 'available' ? 'In stock' : 'Availability under review'}</span>
+    <span className="text-[9px]">{availability === 'out_of_stock' ? 'Currently unavailable to buy' : 'Purchasing not enabled'}</span>
+  </span>
   if (cart?.enabled && product.id && cart.view?.productId === product.id) return <span className="flex min-w-0 flex-col gap-1" data-offer-state="staging_test_cart">
     <StagingCartAdd productId={product.id} />
     <span className="text-center text-[9px] text-lab-muted">Synthetic test item · no checkout</span>

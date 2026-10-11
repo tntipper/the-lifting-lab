@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { evaluateCatalogueEligibility } from '../lib/commerce/catalogue-eligibility.ts'
+import { presentCatalogueEligibility, catalogueAvailabilityFor } from '../lib/commerce/catalogue-presentation.ts'
 import { calculatePriceFloor, TLL_POLICY_VALUES, SUPPLIER_DELIVERY_TARIFF_VERSION, SUPPLIER_DELIVERY_TARIFF_VALUES } from '../lib/commerce/pricing-policy.ts'
 
 const NOW = 1800000000000
@@ -25,6 +26,91 @@ function fixture() {
   }
 }
 function held(decision, code) { assert.equal(decision.status,'hold'); assert.ok(decision.reasons.some(r => r.code===code),JSON.stringify(decision)) }
+
+test('public stock view follows reviewed depletion and restock without disclosing supplier or enabling purchases', () => {
+  const value=fixture()
+  for (const [stock, expected] of [[0,'out_of_stock'],[3,'available']]) {
+    value.stock.availableToSell=stock
+    const presentation=presentCatalogueEligibility(value.product.id,evaluateCatalogueEligibility(value))
+    assert.deepEqual(Object.keys(presentation).sort(),['availability','productId','purchaseEnabled'])
+    assert.equal(catalogueAvailabilityFor({id:value.product.id,cataloguePresentation:presentation}),expected)
+    assert.equal(presentation.purchaseEnabled,false)
+  }
+  value.stock.basis='supplier_raw'
+  assert.equal(presentCatalogueEligibility(value.product.id,evaluateCatalogueEligibility(value)).availability,'unavailable')
+})
+
+test('stock presentation rejects another product, absent projection and purchase-enabled projections', () => {
+  assert.equal(presentCatalogueEligibility('other',evaluateCatalogueEligibility(fixture())),null)
+  const missing=fixture();missing.product=null
+  assert.equal(presentCatalogueEligibility('product-a',evaluateCatalogueEligibility(missing)),null)
+  const view=presentCatalogueEligibility('product-a',evaluateCatalogueEligibility(fixture()))
+  assert.equal(catalogueAvailabilityFor({id:'other',cataloguePresentation:view}),null)
+  assert.equal(catalogueAvailabilityFor({id:'product-a'}),null)
+  assert.equal(catalogueAvailabilityFor({id:'product-a',cataloguePresentation:{...view,purchaseEnabled:true}}),null)
+  assert.equal(catalogueAvailabilityFor({id:'product-a',cataloguePresentation:{...view,availability:'unknown'}}),null)
+})
+
+test('approved zero-stock variant retains its catalogue entry without a purchase target', () => {
+  const value=fixture(); value.stock.availableToSell=0
+  const result=evaluateCatalogueEligibility(value)
+  held(result.commerce,'OUT_OF_STOCK')
+  assert.equal(result.display.catalogueState,'research_listed')
+  assert.equal(result.display.availability,'out_of_stock')
+  assert.equal(result.purchaseTarget,null)
+  assert.equal(result.linkState,'unavailable')
+  assert.equal(result.valueRankingEligible,false)
+  assert.equal(result.liveEnabled,false)
+})
+
+test('fresh approved restock reuses the same product and exact variant', () => {
+  const value=fixture(); value.stock.availableToSell=0
+  const before=evaluateCatalogueEligibility(value)
+  value.stock.availableToSell=3
+  value.stock.observedAtMs=NOW
+  value.stock.review=review('stock-restock-2')
+  const after=evaluateCatalogueEligibility(value)
+  assert.equal(before.display.availability,'out_of_stock')
+  assert.equal(after.display.availability,'available')
+  assert.equal(after.display.catalogueState,before.display.catalogueState)
+  assert.equal(after.purchaseTarget.shopifyVariantId,value.mapping.shopifyVariantId)
+  assert.equal(after.versions.mapping,before.versions.mapping)
+  assert.equal(after.versions.stock,'stock-restock-2')
+})
+
+test('zero stock preserves shop-only and unassessed listings without inventing science', () => {
+  for (const kind of ['shop_only','unassessed']) {
+    const value=fixture(); value.stock.availableToSell=0
+    if (kind==='shop_only') value.product.publication='shop_only'
+    else value.research=null
+    const result=evaluateCatalogueEligibility(value)
+    assert.equal(result.display.catalogueState,kind)
+    assert.equal(result.display.availability,'out_of_stock')
+    assert.equal(result.purchaseTarget,null)
+    assert.equal(result.evidenceRankingEligible,false)
+  }
+})
+
+test('unverified stock and other product holds cannot become restock-ready listings', () => {
+  for (const mutate of [
+    v=>v.stock.observedAtMs=NOW-60000,
+    v=>v.stock.basis='supplier_raw',
+    v=>v.stock.review.approved=false,
+    v=>v.stock.shopifyVariantId='1002',
+    v=>v.cost.taxTreatmentApproved=false,
+    v=>v.commerceLabel.requiredSellingInformationComplete=false,
+    v=>v.operator.commerce='hold',
+    v=>v.product.status='draft',
+  ]) {
+    const value=fixture(); value.stock.availableToSell=0; mutate(value)
+    const result=evaluateCatalogueEligibility(value)
+    assert.equal(result.display.availability,'unavailable')
+    assert.equal(result.display.catalogueState,'unavailable')
+    assert.equal(result.purchaseTarget,null)
+    value.stock.availableToSell=3
+    assert.equal(evaluateCatalogueEligibility(value).purchaseTarget,null)
+  }
+})
 
 test('exact verified commerce and contextual evidence produce independent shared decisions', () => {
   const result=evaluateCatalogueEligibility(fixture())

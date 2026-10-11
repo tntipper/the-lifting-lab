@@ -152,6 +152,7 @@ export type EligibilityReasonCode = 'MISSING_INPUT' | 'INVALID_INPUT' | 'UNAPPRO
 export type EligibilityReason = { code: EligibilityReasonCode; field: string }
 export type EligibilityDecision = { status: 'eligible' | 'hold'; reasons: EligibilityReason[] }
 export type CatalogueEligibilityResult = {
+  productId: string | null
   evaluatedAtMs: number | null
   liveEnabled: false
   commerce: EligibilityDecision
@@ -160,7 +161,7 @@ export type CatalogueEligibilityResult = {
   researchComparisonEligible: boolean
   evidenceRankingEligible: boolean
   valueRankingEligible: boolean
-  display: { catalogueState: 'research_listed' | 'unassessed' | 'shop_only' | 'unavailable'; availability: 'available' | 'unavailable'; assessmentLabel: 'Research reviewed' | 'Not endorsed' | 'Not assessed' }
+  display: { catalogueState: 'research_listed' | 'unassessed' | 'shop_only' | 'unavailable'; availability: 'available' | 'out_of_stock' | 'unavailable'; assessmentLabel: 'Research reviewed' | 'Not endorsed' | 'Not assessed' }
   linkState: 'exact_own_shop' | 'search_only' | 'unavailable'
   purchaseTarget: { url: string; shopifyProductId: string; shopifyVariantId: string; supplierSku: string; relationship: 'own_shop' } | null
   versions: { policy: string | null; mapping: string | null; cost: string | null; payment: string | null; price: string | null; stock: string | null; research: string | null }
@@ -337,14 +338,18 @@ export function evaluateCatalogueEligibility(input: CatalogueEligibilityInput): 
   matches(basis?.packVersion, product?.identity?.pack?.version, 'servingBasis.packVersion', serving)
   const commerceDecision = gate(commerce), researchDecision = gate(research), servingDecision = gate(serving)
   const sellable = commerceDecision.status === 'eligible', endorsed = researchDecision.status === 'eligible'
+  // A reviewed product survives a temporary stock outage. Unknown/stale stock,
+  // unresolved identity, pricing or other holds cannot imply restock readiness.
+  const awaitingRestock = commerceDecision.reasons.length > 0 && commerceDecision.reasons.every(item => item.code === 'OUT_OF_STOCK')
   const assessmentState = product?.publication === 'shop_only' ? 'not_listed' : endorsed ? 'endorsed' : scienceVerified && assessment?.outcome === 'not_endorsed' ? 'assessed_not_endorsed' : 'unassessed'
   return {
+    productId: present(product?.id) ? product.id : null,
     evaluatedAtMs: integer(now, 0, Number.MAX_SAFE_INTEGER) ? now : null, liveEnabled: false,
     commerce: commerceDecision, research: { ...researchDecision, assessmentState }, servingValue: servingDecision,
     researchComparisonEligible: scienceVerified && (assessment?.outcome === 'endorsed' || assessment?.outcome === 'not_endorsed'),
     evidenceRankingEligible: endorsed, valueRankingEligible: endorsed && servingDecision.status === 'eligible',
-    display: { catalogueState: !sellable ? 'unavailable' : product?.publication === 'shop_only' ? 'shop_only' : (endorsed || assessmentState === 'assessed_not_endorsed') ? 'research_listed' : 'unassessed',
-      availability: sellable ? 'available' : 'unavailable', assessmentLabel: endorsed ? 'Research reviewed' : assessmentState === 'assessed_not_endorsed' ? 'Not endorsed' : 'Not assessed' },
+    display: { catalogueState: !sellable && !awaitingRestock ? 'unavailable' : product?.publication === 'shop_only' ? 'shop_only' : (endorsed || assessmentState === 'assessed_not_endorsed') ? 'research_listed' : 'unassessed',
+      availability: sellable ? 'available' : awaitingRestock ? 'out_of_stock' : 'unavailable', assessmentLabel: endorsed ? 'Research reviewed' : assessmentState === 'assessed_not_endorsed' ? 'Not endorsed' : 'Not assessed' },
     linkState: sellable && url ? 'exact_own_shop' : value.destination?.kind === 'search_only' ? 'search_only' : 'unavailable',
     purchaseTarget: sellable && url && mapping ? { url, shopifyProductId: 'gid://shopify/Product/' + shopProduct(mapping.shopifyProductId), shopifyVariantId: 'gid://shopify/ProductVariant/' + variantId, supplierSku: mapping.supplierSku, relationship: 'own_shop' } : null,
     versions: { policy: policy?.review?.version ?? null, mapping: mapping?.review?.version ?? null, cost: cost?.review?.version ?? null, payment: cost?.paymentTariffVersion ?? null,

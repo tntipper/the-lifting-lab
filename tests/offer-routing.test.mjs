@@ -19,8 +19,15 @@ const affiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsol
 const resolve = affiliate.resolveProductListing
 const cartContext = loadSource('../components/StagingCartContext.tsx')
 const cartActions = loadSource('../components/StagingCartActions.tsx', { './StagingCartContext': cartContext })
-const ProductOfferLink = loadSource('../components/ProductOfferLink.tsx', { './StagingCartContext': cartContext, './StagingCartActions': cartActions, '@/lib/affiliate': affiliate, '@/lib/gtag': { track() { throw new Error('SSR must not track') } } }).default
+const presentation = loadSource('../lib/commerce/catalogue-presentation.ts')
+const ProductOfferLink = loadSource('../components/ProductOfferLink.tsx', { './StagingCartContext': cartContext, './StagingCartActions': cartActions, '@/lib/commerce/catalogue-presentation': presentation, '@/lib/affiliate': affiliate, '@/lib/gtag': { track() { throw new Error('SSR must not track') } } }).default
 const render = url => renderToStaticMarkup(React.createElement(ProductOfferLink, { product: { brand: 'Fixture', name: 'Exact identity unverified', buy_url: url }, className: 'fixture' }))
+
+for(const [availability,label] of [['out_of_stock','Out of stock'],['available','In stock'],['unavailable','Availability under review']]) test(`reviewed ${availability} stock view never enables buying or retailer navigation`,()=>{
+  const html=renderToStaticMarkup(React.createElement(ProductOfferLink,{product:{id:'fixture',brand:'Fixture',name:'One exact variant',buy_url:'https://www.amazon.co.uk/dp/B000000001',cataloguePresentation:{productId:'fixture',availability,purchaseEnabled:false}}}))
+  assert.ok(html.includes(label))
+  assert.doesNotMatch(html,/<a\b|href=|<button\b/)
+})
 
 for (const input of [null, undefined, '', '   ']) test(`missing reference stays unavailable: ${String(input)}`, () => {
   const result = resolve(input)

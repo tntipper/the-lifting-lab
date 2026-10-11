@@ -22,6 +22,10 @@ const offerCases = [
   { state: 'search', buy_url: 'https://www.bulk.com/uk/search?q=synthetic-fixture' },
   { state: 'missing', buy_url: null },
   { state: 'own-shop', buy_url: 'https://shop.theliftinglab.co.uk/products/synthetic-fixture?variant=12345' },
+  ...(['out_of_stock', 'available', 'unavailable'] as const).map(state => ({
+    state, buy_url: 'https://shop.theliftinglab.co.uk/products/synthetic-fixture?variant=12345',
+    cataloguePresentation: {productId: product.id, availability: state, purchaseEnabled: false as const},
+  })),
 ]
 
 
@@ -73,7 +77,8 @@ function OfferControls() {
             <div className="grid grid-cols-3 gap-2" data-offer-grid>
               <button type="button" className="min-h-11 min-w-0 rounded-lg border border-lab-border text-[10px]">Stack fixture</button>
               <button type="button" className="min-h-11 min-w-0 rounded-lg border border-lab-border text-[10px]">Compare fixture</button>
-              <ProductOfferLink product={{ brand: product.brand, name: product.name, buy_url: item.buy_url }}
+              <ProductOfferLink product={{ id: product.id, brand: product.brand, name: product.name, buy_url: item.buy_url,
+                cataloguePresentation: 'cataloguePresentation' in item ? item.cataloguePresentation : undefined }}
                 className="rounded-lg bg-lab-lime py-2.5 text-[10px] font-black uppercase tracking-widest text-black" />
             </div>
           </div>

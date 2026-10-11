@@ -28,6 +28,14 @@ export async function verifyOfferLinks(page, origin, width, resultDir) {
     })
 
     for (const layout of ['card', 'sticky']) {
+      for (const [state, label] of [['out_of_stock','Out of stock'],['available','In stock'],['unavailable','Availability under review']]) {
+        const row=page.locator(`[data-offer-layout="${layout}"][data-offer-case="${state}"]`)
+        const offer=row.locator('[data-offer-state]')
+        assert.equal(await offer.getAttribute('data-offer-state'),state)
+        assert.equal(await offer.getByText(label,{exact:true}).count(),1)
+        assert.equal(await offer.locator('a,button,input,[tabindex]').count(),0,'Stock presentation must not enable purchasing')
+        assert.equal(await offer.evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,'Availability text overflow')
+      }
       for (const state of ['listing', 'search', 'missing', 'own-shop']) {
         const row = page.locator(`[data-offer-layout="${layout}"][data-offer-case="${state}"]`)
         await row.scrollIntoViewIfNeeded()
