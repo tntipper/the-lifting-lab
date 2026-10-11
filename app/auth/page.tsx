@@ -2,36 +2,36 @@
 
 import { isSyntheticPreview } from '@/lib/preview-mode'
 import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
+import StagingCustomerSignInEntry from '@/components/StagingCustomerSignInEntry'
+import { stagingCustomerUiEnabled } from '@/lib/identity/staging-customer-ui'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useBrowserSnapshot } from '@/lib/browser-snapshot'
 import { createClient } from '@/lib/supabase'
 import { authErrorMessage, safeAuthReturnPath } from '@/lib/auth-flow'
 
 export default function AuthPage() {
-  return isSyntheticPreview() ? <PreviewUnavailableContent /> : <AuthPageForm />
+  if (isSyntheticPreview()) return <PreviewUnavailableContent />
+  // Preview staging customer: never offer Google / magic-link as the primary path
+  // (covers TopNav via /auth/customer and Shopify logout return to /auth).
+  if (stagingCustomerUiEnabled()) return <StagingCustomerSignInEntry autoStart={false} />
+  return <AuthPageForm />
 }
 
 function AuthPageForm() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
-  const [error, setError] = useState('')
-  const [refCode, setRefCode] = useState('')
+  const returnedError = useBrowserSnapshot(() => authErrorMessage(new URLSearchParams(window.location.search).get('error')), '')
+  const [submittedError, setError] = useState<string | null>(null)
+  const error = submittedError ?? returnedError
   const [googleLoading, setGoogleLoading] = useState(false)
-
-  // Capture a referral code from ?ref= (read client-side to avoid the
-  // useSearchParams Suspense requirement on this otherwise-static page).
-  useEffect(() => {
-    const parameters = new URLSearchParams(window.location.search)
-    const code = parameters.get('ref')
-    if (code) setRefCode(code)
-    setError(authErrorMessage(parameters.get('error')))
-  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
+    const refCode = new URLSearchParams(window.location.search).get('ref') || ''
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -53,9 +53,10 @@ function AuthPageForm() {
   async function handleGoogle() {
     setGoogleLoading(true)
     setError('')
+    const refCode = new URLSearchParams(window.location.search).get('ref') || ''
     const supabase = createClient()
     // Carry any referral code through the OAuth round-trip via the callback URL.
-    const next = safeAuthReturnPath(refCode ? `/dashboard?ref=${encodeURIComponent(refCode)}` : '/dashboard')
+    const next = safeAuthReturnPath(refCode ? `/account?ref=${encodeURIComponent(refCode)}` : '/account')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

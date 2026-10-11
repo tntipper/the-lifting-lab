@@ -203,18 +203,18 @@ export default function CitrullinePage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Get a properly dosed product</h2>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Research citrulline labels</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Most pre-workouts underdose citrulline or bury it in a proprietary blend, so you never really
-            know what you are getting. A standalone tub, or a genuinely well-dosed pre-workout, is how you
-            actually hit 6 to 8g. Every product we track is scored 0–100 on exactly that kind of honest dosing.
+            Check the recorded citrulline amount and whether a label clearly states the ingredients.
+            Product-level dose and effectiveness assessments are still under review; this catalogue
+            does not identify a best pre-workout.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/pre-workout"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best pre-workout 2026 →
+              Pre-workout research →
             </Link>
             <Link
               href="/calculators"
@@ -226,7 +226,7 @@ export default function CitrullinePage() {
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Doses are general, evidence-based starting points for
             healthy adults; if you have a health condition, are pregnant or take medication, speak to a
-            clinician first. Buy links are affiliate links; we may earn a commission at no extra cost to you.
+            clinician first. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

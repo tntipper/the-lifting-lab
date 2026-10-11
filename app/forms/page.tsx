@@ -76,8 +76,7 @@ export default function FormsPage() {
         <p className="text-lg text-white/90 leading-relaxed mb-4">
           Same supplement, five spellings on the shelf. Monohydrate or HCL? Glycinate or oxide?
           Isolate or concentrate? D2 or D3? The form you pick decides how much you actually absorb —
-          and how much you overpay. Here is the one worth buying for each, scored in the same green,
-          amber and red we use on products.
+          and how much you overpay. Here is the one worth buying for each. Historical product scores are unverified and do not grant effectiveness recommendations.
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
           {FORMS.length} of the biggest supplements below, {optionCount()} forms weighed up. Tap any
@@ -170,12 +169,8 @@ export default function FormsPage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Right form, right product</h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Picking the better form is half the job; the other half is not overpaying for it. Every product
-            we track is scored 0&ndash;100 on how closely it matches the evidence, with the true cost per
-            effective serving — or let the wizard build a clean, sensible stack for you in a minute.
-          </p>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Explore product research records</h2>
+          <p className="text-lab-muted text-sm leading-relaxed mb-5">No approved effectiveness assessment is available. Historical scores cannot choose products or validate a dose. Browse recorded labels and listed prices, or build a manual research stack.</p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/wizard"
@@ -187,7 +182,7 @@ export default function FormsPage() {
               href="/best"
               className="text-xs uppercase tracking-widest font-bold border border-lab-border text-lab-muted hover:text-white px-5 py-2.5 rounded-lg transition-colors"
             >
-              Best of 2026
+              Product research
             </Link>
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">

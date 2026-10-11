@@ -27,16 +27,12 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">What The Lifting Lab provides</h2>
-            <p>
-              The Lifting Lab provides supplement scoring, comparison, and stack-building tools for informational and educational purposes. Product scores are based on our published methodology and represent our independent assessment against evidence-based reference doses.
-            </p>
+            <p>No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
           </section>
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Not medical advice</h2>
-            <p>
-              Nothing on this site constitutes medical, nutritional, or health advice. Supplement scores and recommendations are for general informational purposes only. Always consult a qualified healthcare professional before starting any supplement regimen, especially if you have a medical condition, are pregnant, or are taking medication. EFSA upper limits displayed in the stack builder are reference values — they are not a substitute for individual medical assessment.
-            </p>
+            <p>No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
           </section>
 
           <section>

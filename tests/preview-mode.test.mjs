@@ -16,6 +16,23 @@ function loadSource(path, customRequire = require, extra = {}) {
   return loaded.exports
 }
 const resolve = name => ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
+function loadAnalytics() {
+  const storage = new Map(), calls = []
+  const browser = {
+    window: { location: new URL('https://fixture.invalid/products?ref=private#private'), gtag(...args) { calls.push(args) } },
+    document: { cookie: '', referrer: 'https://fixture.invalid/auth?token=private' },
+    localStorage: { getItem(key) { return storage.get(key) ?? null }, setItem(key, value) { storage.set(key, value) } },
+  }
+  const modules = new Map()
+  const analyticsResolve = name => {
+    if (['./analytics-data', './analytics-consent'].includes(name)) {
+      if (!modules.has(name)) modules.set(name, loadSource(`../lib/${name.slice(2)}.ts`, analyticsResolve, browser))
+      return modules.get(name)
+    }
+    return resolve(name)
+  }
+  return { gtag: loadSource('../lib/gtag.ts', analyticsResolve, browser), consent: analyticsResolve('./analytics-consent'), calls }
+}
 
 async function withMode(mode, callback) {
   const saved = process.env.NEXT_PUBLIC_TLL_ENVIRONMENT
@@ -61,14 +78,21 @@ test('middleware rejects preview APIs and every unsafe method before handlers', 
     }
   }
   assert.equal(middleware({ url: 'https://preview.invalid/api/products', nextUrl: new URL('https://preview.invalid/api/products'), method: 'GET' }).status, 503)
+  for (const path of ['/api/products/batch', '/api/products/search', '/api/stack/assessments']) {
+    const response = middleware({ url: `https://preview.invalid${path}`, nextUrl: new URL(`https://preview.invalid${path}`), method: 'GET' })
+    assert.equal(response.headers.get('x-middleware-next'), '1')
+    assert.equal(middleware({ url: `https://preview.invalid${path}`, nextUrl: new URL(`https://preview.invalid${path}`), method: 'POST' }).status, 503)
+  }
 }))
 
 test('preview account/form routes rewrite to an explicit inert page and browsing remains available', () => withMode('synthetic-preview', async () => {
   const { middleware } = loadSource('../middleware.ts', resolve)
-  for (const path of ['/auth', '/auth/callback', '/account/settings', '/dashboard', '/favourites', '/stack', '/rewards', '/contact', '/submit']) {
+  for (const path of ['/auth', '/auth/callback', '/account/settings', '/dashboard', '/favourites', '/rewards', '/contact', '/submit']) {
     const response = middleware({ url: `https://preview.invalid${path}`, nextUrl: new URL(`https://preview.invalid${path}`), method: 'GET' })
     assert.equal(response.headers.get('x-middleware-rewrite'), 'https://preview.invalid/preview')
   }
+  const stack = middleware({ url: 'https://preview.invalid/stack', nextUrl: new URL('https://preview.invalid/stack'), method: 'GET' })
+  assert.equal(stack.headers.get('x-middleware-next'), '1')
   const response = middleware({ url: 'https://preview.invalid/guide/protein', nextUrl: new URL('https://preview.invalid/guide/protein'), method: 'GET' })
   assert.equal(response.headers.get('x-middleware-next'), '1')
   assert.equal(response.headers.get('x-robots-tag'), 'noindex, nofollow')
@@ -90,20 +114,28 @@ test('synthetic retailer links stay local and analytics cannot fire', () => with
   assert.equal(affiliate.amazonSearch('fixture', 'fixture'), '/preview')
   assert.equal(affiliate.bulkSearch('fixture'), '/preview')
   assert.equal(affiliate.bulkDealsLink(), '/preview')
-  assert.equal(affiliate.buyLink('fixture', 'fixture', 'https://shop.fixture.invalid/cart'), '/preview')
-  let calls = 0
-  const gtag = loadSource('../lib/gtag.ts', resolve, { window: { gtag() { calls++ } } })
+  assert.equal(affiliate.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').url, null)
+  const { gtag, consent, calls } = loadAnalytics()
+  assert.equal(consent.saveAnalyticsChoice('accepted'), true)
   gtag.track('fixture', {})
-  assert.equal(calls, 0)
+  assert.equal(calls.length, 0)
 }))
 
-test('production retailer links and analytics retain their existing behavior', () => withMode('production', async () => {
+test('production listing navigation stays available and analytics requires persisted acceptance', () => withMode('production', async () => {
   const affiliate = loadSource('../lib/affiliate.ts', resolve)
-  assert.equal(affiliate.buyLink('fixture', 'fixture', 'https://shop.fixture.invalid/product'), 'https://shop.fixture.invalid/product')
-  let calls = 0
-  const gtag = loadSource('../lib/gtag.ts', resolve, { window: { gtag() { calls++ } } })
+  assert.equal(affiliate.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').state, 'listing')
+  const { gtag, consent, calls } = loadAnalytics()
   gtag.track('fixture', {})
-  assert.equal(calls, 1)
+  assert.equal(calls.length, 0)
+  assert.equal(consent.saveAnalyticsChoice('accepted'), true)
+  gtag.track('fixture', {})
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0][0], 'event'); assert.equal(calls[0][1], 'fixture')
+  assert.equal(calls[0][2].page_location, 'https://fixture.invalid/products')
+  assert.equal(calls[0][2].page_referrer, 'https://fixture.invalid/auth')
+  assert.equal(consent.saveAnalyticsChoice('rejected'), true)
+  gtag.track('fixture', {})
+  assert.equal(calls.length, 1)
 }))
 
 test('hosted staging permits its account routes but blocks indexing and unrelated browser connections', () => withMode('staging', async () => {
@@ -141,13 +173,14 @@ test('malformed or production staging endpoint cannot expand the connection poli
 }))
 
 test('hosted staging never fires analytics or emits affiliate purchase destinations', () => withMode('staging', async () => {
-  let calls = 0
-  loadSource('../lib/gtag.ts', resolve, { window: { gtag() { calls++ } } }).track('fixture')
-  assert.equal(calls, 0)
+  const { gtag, consent, calls } = loadAnalytics()
+  assert.equal(consent.saveAnalyticsChoice('accepted'), true)
+  gtag.track('fixture')
+  assert.equal(calls.length, 0)
   const affiliate = loadSource('../lib/affiliate.ts', resolve)
   assert.equal(affiliate.myproteinLink(), '/preview')
   assert.equal(affiliate.amazonSearch('fixture', 'fixture'), '/preview')
   assert.equal(affiliate.bulkSearch('fixture'), '/preview')
   assert.equal(affiliate.bulkDealsLink(), '/preview')
-  assert.equal(affiliate.buyLink('fixture', 'fixture', 'https://shop.fixture.invalid/product'), '/preview')
+  assert.equal(affiliate.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').url, null)
 }))

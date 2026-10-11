@@ -229,14 +229,14 @@ export default function FfmiPage() {
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
             FFMI rises when you add lean mass, and that takes training, a small surplus and enough
             protein. Only two supplements genuinely help the process — whey to hit your protein
-            target and creatine to support the training — and both are scored 0–100 on the evidence.
+            target and creatine to support the training. Their product assessments are still under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/whey"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best whey 2026 →
+              Whey research →
             </Link>
             <Link
               href="/calculators"
@@ -247,8 +247,7 @@ export default function FfmiPage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. FFMI is an estimate from a field formula and
-            depends on your body fat reading. Buy links are affiliate links; we may earn a commission
-            at no extra cost to you.
+            depends on your body fat reading. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

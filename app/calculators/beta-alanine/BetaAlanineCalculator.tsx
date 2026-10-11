@@ -203,7 +203,7 @@ export default function BetaAlanineCalculator() {
                 onClick={() => track('calculator_cta', { tab: 'beta-alanine', target: 'best-pre-workout' })}
                 className="text-center text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-all"
               >
-                Best pre-workout 2026
+                Pre-workout research
               </Link>
               <Link
                 href="/ingredients/beta-alanine"

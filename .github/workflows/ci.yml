@@ -13,14 +13,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  accessibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+      - run: npm install --global npm@11.19.0 --ignore-scripts
+      - run: node --version && npm --version
+      - run: npm ci --ignore-scripts
+      - run: node node_modules/playwright/cli.js install --with-deps chromium
+      - run: npm run test:accessibility
+      - run: node tests/browser/staging-cart.mjs
+      - run: node tests/browser/comparison-reconciliation.mjs
+
+  stacks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".nvmrc"
+      - run: node --test tests/stacks/harness.test.mjs
+      - run: node tests/stacks/run-local.mjs
+
   submissions:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
       - run: node --test tests/submissions/harness.test.mjs tests/submissions/loopback-relay.test.mjs
       - run: node tests/submissions/run-local.mjs
 
@@ -29,19 +63,53 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
+      - run: npm install --global npm@11.19.0 --ignore-scripts
+      - run: node --version && npm --version
       - run: node tests/local-supabase/run-local.mjs
+
+  inventory-ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".nvmrc"
+      - run: bash tests/inventory-ledger/run-local.sh
+
+  customer-cart-repositories:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+      - run: npm install --global npm@11.19.0 --ignore-scripts
+      - run: node --version && npm --version
+      - run: npm ci --ignore-scripts
+      - run: bash tests/customer-repository/run-ci.sh
 
   database:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
       - run: bash tests/database/run-local.sh
 
   application:
@@ -55,15 +123,37 @@ jobs:
       NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: "24"
+          node-version-file: ".nvmrc"
           cache: npm
-      - run: npm ci
+      - run: npm install --global npm@11.19.0 --ignore-scripts
+      - run: node --version && npm --version
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      - run: node node_modules/playwright/cli.js install --with-deps chromium
+      - run: docker pull postgres:17-alpine
+      - run: bash tests/run-application-ci.sh
+      - run: npm run test:privacy
       - run: npm run test:integration
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
+      - name: Built public consent and URL minimisation
+        env:
+          PRIVACY_APP_URL: http://127.0.0.1:3181
+        run: |
+          mkdir -p evidence/privacy test-results
+          node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3181 >test-results/privacy-app.log 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true; wait "$app_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..60}; do
+            if curl -fsS --max-time 2 "$PRIVACY_APP_URL/privacy" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS --max-time 2 "$PRIVACY_APP_URL/privacy" >/dev/null
+          node tests/privacy/analytics-choice.mjs
+          node tests/privacy/url-minimisation.mjs
       - run: node tests/preview-build-runtime.mjs

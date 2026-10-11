@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type Nutrient, type ComparedProduct } from '@/lib/products'
+import { assessmentDisplayFor } from '@/lib/assessment-display'
 
 type NutrientRow = Nutrient & { product_id: string }
 
@@ -31,12 +32,16 @@ export async function GET(request: Request) {
   if (nErr) return NextResponse.json({ error: nErr.message }, { status: 500 })
 
   const nutrientRows = (nutrients as NutrientRow[] | null) || []
-  const result: ComparedProduct[] = (products as Product[] | null || []).map((p) => ({
-    ...withScore(p),
-    nutrients: nutrientRows
-      .filter((n) => n.product_id === p.id)
-      .map(({ nutrient_name, amount, unit }) => ({ nutrient_name, amount, unit })),
-  }))
+  const result: ComparedProduct[] = (products as Product[] | null || []).map((p) => {
+    const scored = withScore(p)
+    return {
+      ...scored,
+      score: assessmentDisplayFor(scored).score,
+      nutrients: nutrientRows
+        .filter((n) => n.product_id === p.id)
+        .map(({ nutrient_name, amount, unit }) => ({ nutrient_name, amount, unit })),
+    }
+  })
 
   // preserve the requested order
   result.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))

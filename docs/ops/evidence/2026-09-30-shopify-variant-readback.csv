@@ -1,0 +1,99 @@
+shopify_product_id,shopify_handle,shopify_status,online_store_url,online_store_published,shopify_variant_id,variant_title,sku,price_gbp,inventory_quantity,inventory_policy,inventory_tracked,admin_available_for_sale
+gid://shopify/Product/16033553776970,applied-nutrition-100-casein,ACTIVE,,true,gid://shopify/ProductVariant/63506175197514,900g Chocolate,APP385,49.99,0,DENY,false,true
+gid://shopify/Product/16033523892554,applied-nutrition-abe-slot,DRAFT,,false,gid://shopify/ProductVariant/63506035343690,Default Title,TLL-APP-ABE-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16033581695306,applied-nutrition-amino-fuel-eaa,ACTIVE,,true,gid://shopify/ProductVariant/63506337595722,390g Fruit Burst,APP016,23.95,0,DENY,false,true
+gid://shopify/Product/16033576943946,applied-nutrition-creatine-monohydrate,ACTIVE,,true,gid://shopify/ProductVariant/63506302173514,250g Unflavoured,APP449,24.95,0,DENY,false,true
+gid://shopify/Product/16033523958090,applied-nutrition-critical-mass-slot,DRAFT,,false,gid://shopify/ProductVariant/63506035999050,Default Title,TLL-APP-CRITMASS-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16037754437962,applied-nutrition-critical-whey,ACTIVE,,true,gid://shopify/ProductVariant/63535203025226,825g Chocolate,APP613,49.99,0,DENY,false,true
+gid://shopify/Product/16037750407498,applied-nutrition-digestive-enzyme-capsules,ACTIVE,,true,gid://shopify/ProductVariant/63535194079562,60 Caps,APP292,12.95,0,DENY,false,true
+gid://shopify/Product/16033579827530,applied-nutrition-endurance-recovery,ACTIVE,,true,gid://shopify/ProductVariant/63506322948426,1.5kg Vanilla,APP286,29.95,0,DENY,false,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892595018,Strawberry / 850g,APP511,49.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892627786,Choco Peanut / 850g,APP072,49.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892660554,White Choc Pistachio / 850g,APP673,49.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892693322,Cookies N Cream / 850g,APP672,49.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892726090,Choco Honeycomb / 850g,APP071,49.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892758858,Choco Caramel / 850g,APP068,49.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892791626,Cafe Latte / 850g,APP675,49.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892824394,Chocolate / 1.8kg,APP048,99.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892857162,Strawberry / 1.8kg,APP050,99.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892889930,Cafe Latte / 1.8kg,APP047,99.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892922698,Banana / 1.8kg,APP046,99.99,0,CONTINUE,true,true
+gid://shopify/Product/16033410416970,applied-nutrition-iso-xp,ACTIVE,,true,gid://shopify/ProductVariant/63535892955466,Vanilla / 1.8kg,APP051,99.99,0,CONTINUE,true,true
+gid://shopify/Product/16033579499850,applied-nutrition-mass,ACTIVE,,true,gid://shopify/ProductVariant/63506318754122,2.4kg Vanilla,APP028,49.99,0,DENY,false,true
+gid://shopify/Product/16037754143050,barebells-protein-bar,DRAFT,,false,gid://shopify/ProductVariant/63535202533706,12x55g Cookies and Cream,BAR007,2.30,0,DENY,false,true
+gid://shopify/Product/16033587069258,bio-synergy-whey-better,ACTIVE,,true,gid://shopify/ProductVariant/63506376851786,750g Vanilla,SYN031,49.99,0,DENY,false,true
+gid://shopify/Product/16037754569034,bio-synergy-whey-hey,ACTIVE,,true,gid://shopify/ProductVariant/63535203156298,908g Coconut,SYN033,36.99,0,DENY,false,true
+gid://shopify/Product/16033590378826,bulk-complete-multivitamin-complex,ACTIVE,,true,gid://shopify/ProductVariant/63506387370314,90 Tabs,BLK106,17.99,0,DENY,false,true
+gid://shopify/Product/16033553711434,bulk-creatine-monohydrate,ACTIVE,,true,gid://shopify/ProductVariant/63506175099210,200g Unflavoured,BLK012,24.99,0,DENY,false,true
+gid://shopify/Product/16033580581194,bulk-electrolyte-powder,ACTIVE,,true,gid://shopify/ProductVariant/63506330124618,500g Orange & Mango,BLK101,12.99,0,DENY,false,true
+gid://shopify/Product/16033582580042,bulk-magnesium-bisglycinate,ACTIVE,,true,gid://shopify/ProductVariant/63506343362890,Default Title,TLL-bulk-magnesium-bisglycinate,0.00,0,DENY,false,true
+gid://shopify/Product/16033582907722,bulk-omega-3-fish-oil,ACTIVE,,true,gid://shopify/ProductVariant/63506344542538,Default Title,TLL-bulk-omega-3-fish-oil,0.00,0,DENY,false,true
+gid://shopify/Product/16033553809738,bulk-pure-whey-isolate,ACTIVE,,true,gid://shopify/ProductVariant/63506175492426,450g Chocolate,BLK030,34.99,0,DENY,false,true
+gid://shopify/Product/16037754405194,bulk-pure-whey-protein,ACTIVE,,true,gid://shopify/ProductVariant/63535202959690,450g Vanilla,BLK020,29.99,0,DENY,false,true
+gid://shopify/Product/16033582416202,bulk-zma,ACTIVE,,true,gid://shopify/ProductVariant/63506343199050,Default Title,TLL-bulk-zma,0.00,0,DENY,false,true
+gid://shopify/Product/16033582252362,cnp-loaded-eaa,ACTIVE,,true,gid://shopify/ProductVariant/63506339987786,300g Lemon Drop,CNP318,29.99,0,DENY,false,true
+gid://shopify/Product/16033576616266,cnp-pro-creatine,ACTIVE,,true,gid://shopify/ProductVariant/63506300567882,500g,CNP332,14.99,0,DENY,false,true
+gid://shopify/Product/16033588183370,cnp-pro-recover,DRAFT,,false,gid://shopify/ProductVariant/63506382422346,5.04kg Chocolate,CNP290,35.00,0,DENY,false,true
+gid://shopify/Product/16037754536266,cnp-whey,DRAFT,,false,gid://shopify/ProductVariant/63535203123530,2kg Strawberry,CNP300,29.99,0,DENY,false,true
+gid://shopify/Product/16033585856842,darkstims-creatine-monohydrate,ACTIVE,,true,gid://shopify/ProductVariant/63506368069962,500g Unflavoured,DRK002,18.00,0,DENY,false,true
+gid://shopify/Product/16033589100874,darkstims-electrolytes,ACTIVE,,true,gid://shopify/ProductVariant/63506385437002,Default Title,TLL-darkstims-electrolytes,0.00,0,DENY,false,true
+gid://shopify/Product/16033586020682,darkstims-pre-v4,ACTIVE,,true,gid://shopify/ProductVariant/63506371641674,500g Red Apple,DRK021,35.00,0,DENY,false,true
+gid://shopify/Product/16033580319050,ghost-hydration,ACTIVE,,true,gid://shopify/ProductVariant/63506329469258,360g Kiwi Strawberry,GH0027,29.99,0,DENY,false,true
+gid://shopify/Product/16033578975562,ghost-legend-v4,ACTIVE,,true,gid://shopify/ProductVariant/63506315051338,660g Bubblicious Strawberry Splash,GH0080,38.99,0,DENY,false,true
+gid://shopify/Product/16037754470730,ghost-whey,DRAFT,,false,gid://shopify/ProductVariant/63535203057994,2.17kg Cinnabon,GH0055,39.99,0,DENY,false,true
+gid://shopify/Product/16037754044746,grenade-carb-killa,ACTIVE,,true,gid://shopify/ProductVariant/63535202402634,12x60g Chocolate Chip Salted Caramel,GRE091,22.99,0,DENY,false,true
+gid://shopify/Product/16033589297482,high5-zero,DRAFT,,false,gid://shopify/ProductVariant/63506385699146,8x20 Tabs Orange & Cherry,HIG052,7.99,0,DENY,false,true
+gid://shopify/Product/16033578418506,hr-labs-defib-v3,ACTIVE,,true,gid://shopify/ProductVariant/63506311446858,Default Title,TLL-hr-labs-defib-v3,0.00,0,DENY,false,true
+gid://shopify/Product/16033588412746,hr-labs-hydro,DRAFT,,false,gid://shopify/ProductVariant/63506382848330,Default Title,TLL-hr-labs-hydro,0.00,0,DENY,false,true
+gid://shopify/Product/16037752176970,huel-black-edition-ready-to-drink,DRAFT,,false,gid://shopify/ProductVariant/63535196504394,8x500ml Chocolate,HUE020,3.75,0,DENY,false,true
+gid://shopify/Product/16037752340810,huel-lite-ready-to-drink,DRAFT,,false,gid://shopify/ProductVariant/63535196766538,8x500ml Chocolate,HUE036,3.50,0,DENY,false,true
+gid://shopify/Product/16037752504650,huel-ready-to-drink,DRAFT,,false,gid://shopify/ProductVariant/63535196995914,8x500ml Vanilla,HUE006,3.50,0,DENY,false,true
+gid://shopify/Product/16033524187466,intra-lift-own-label-slot,DRAFT,,false,gid://shopify/ProductVariant/63506036654410,Default Title,TLL-INTRA-LIFT-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16033581433162,mutant-geaar,ACTIVE,,true,gid://shopify/ProductVariant/63506336285002,378g Tropical Fruit Punch,MUT124,29.99,0,DENY,false,true
+gid://shopify/Product/16033577042250,myprotein-creapure-creatine,ACTIVE,,true,gid://shopify/ProductVariant/63506302271818,Default Title,TLL-myprotein-creapure-creatine,0.00,0,DENY,false,true
+gid://shopify/Product/16033576714570,myprotein-impact-creatine,ACTIVE,,true,gid://shopify/ProductVariant/63506300666186,Default Title,TLL-myprotein-impact-creatine,0.00,0,DENY,false,true
+gid://shopify/Product/16033577337162,myprotein-impact-whey-isolate,DRAFT,,false,gid://shopify/ProductVariant/63506304696650,2.5kg Chocolate,MYP076,74.99,0,DENY,false,true
+gid://shopify/Product/16033577566538,myprotein-impact-whey-protein,ACTIVE,,true,gid://shopify/ProductVariant/63506307481930,Default Title,TLL-myprotein-impact-whey-protein,0.00,0,DENY,false,true
+gid://shopify/Product/16033578189130,myprotein-origin-pre-workout,ACTIVE,,true,gid://shopify/ProductVariant/63506309251402,Default Title,TLL-myprotein-origin-pre-workout,0.00,0,DENY,false,true
+gid://shopify/Product/16033578680650,naughty-boy-menace,ACTIVE,,true,gid://shopify/ProductVariant/63506313937226,420g Sour Blue Razz,NAU180,34.99,0,DENY,false,true
+gid://shopify/Product/16033580024138,optimum-nutrition-electrolyte-powder,ACTIVE,,true,gid://shopify/ProductVariant/63506327601482,264g Lemon,OPT267,9.99,0,DENY,false,true
+gid://shopify/Product/16033590083914,optimum-nutrition-essential-amino-energy,ACTIVE,,true,gid://shopify/ProductVariant/63506387009866,270g Fruit Fusion,OPT005,21.99,0,DENY,false,true
+gid://shopify/Product/16037742739786,optimum-nutrition-gold-standard-100-casein,ACTIVE,,true,gid://shopify/ProductVariant/63535181660490,896g Chocolate,OPT034,39.99,0,DENY,false,true
+gid://shopify/Product/16037754732874,optimum-nutrition-gold-standard-100-isolate,ACTIVE,,true,gid://shopify/ProductVariant/63535203549514,930g Chocolate,OPT156,39.99,0,DENY,false,true
+gid://shopify/Product/16033577828682,optimum-nutrition-gold-standard-100-whey,ACTIVE,,true,gid://shopify/ProductVariant/63506308464970,775g Double Rich Chocolate,OPT296,54.99,0,DENY,false,true
+gid://shopify/Product/16033523990858,optimum-nutrition-gold-standard-whey-slot,DRAFT,,false,gid://shopify/ProductVariant/63506036031818,Default Title,TLL-ON-GSW-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16033576845642,optimum-nutrition-micronised-creatine-powder,ACTIVE,,true,gid://shopify/ProductVariant/63506302042442,317g,OPT107,20.00,0,DENY,false,true
+gid://shopify/Product/16033587528010,optimum-nutrition-platinum-creatine-plus,ACTIVE,,true,gid://shopify/ProductVariant/63506379637066,350g Pineapple,OPT252,35.00,0,DENY,false,true
+gid://shopify/Product/16033410449738,optimum-nutrition-platinum-pre-workout,ACTIVE,,true,gid://shopify/ProductVariant/63504849961290,420g Fruit Punch,OPT247,29.99,0,DENY,false,true
+gid://shopify/Product/16033579270474,optimum-nutrition-serious-mass,ACTIVE,,true,gid://shopify/ProductVariant/63506317771082,2.73kg Chocolate,OPT137,49.99,0,DENY,false,true
+gid://shopify/Product/16037754503498,per4m-advanced-whey,ACTIVE,,true,gid://shopify/ProductVariant/63535203090762,900g Cherry Bakewell,PER183,34.99,0,DENY,false,true
+gid://shopify/Product/16033523695946,per4m-creatine-slot,DRAFT,,false,gid://shopify/ProductVariant/63506034590026,Default Title,TLL-PER4M-CREATINE-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16033581171018,per4m-eaa,ACTIVE,,true,gid://shopify/ProductVariant/63506333499722,420g Lemon Lime Splash,PER042,27.99,0,DENY,false,true
+gid://shopify/Product/16033587265866,per4m-isolate,ACTIVE,,true,gid://shopify/ProductVariant/63506377802058,900g Chocolate Creme,PER012,34.99,0,DENY,false,true
+gid://shopify/Product/16033523827018,per4m-pre-workout-slot,DRAFT,,false,gid://shopify/ProductVariant/63506035278154,Default Title,TLL-PER4M-PRE-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16033523728714,per4m-whey-slot,DRAFT,,false,gid://shopify/ProductVariant/63506034622794,Default Title,TLL-PER4M-WHEY-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16037754208586,phd-nutrition-smart-bar,DRAFT,,false,gid://shopify/ProductVariant/63535202632010,12x64g Cookies & Cream,PHD174,2.30,0,DENY,false,true
+gid://shopify/Product/16033524220234,post-lift-own-label-slot,DRAFT,,false,gid://shopify/ProductVariant/63506036687178,Default Title,TLL-POST-LIFT-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16033524089162,pre-lift-own-label-slot,DRAFT,,false,gid://shopify/ProductVariant/63506036130122,Default Title,TLL-PRE-LIFT-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16037781143882,quest-nutrition-quest-bar,DRAFT,,false,gid://shopify/ProductVariant/63535487025482,12x60g Chocolate Brownie,QUE019,2.50,0,DENY,false,true
+gid://shopify/Product/16033586872650,reflex-nutrition-100-whey,ACTIVE,,true,gid://shopify/ProductVariant/63506376065354,720g Chocolate,REF152,44.99,0,DENY,false,true
+gid://shopify/Product/16037754667338,reflex-nutrition-isolate-pro,ACTIVE,,true,gid://shopify/ProductVariant/63535203352906,1.8kg Chocolate,REF170,64.99,0,DENY,false,true
+gid://shopify/Product/16033587691850,reflex-nutrition-one-stop-xtreme,DRAFT,,false,gid://shopify/ProductVariant/63506379800906,4.35kg Blueberry,REF130,45.00,0,DENY,false,true
+gid://shopify/Product/16037754306890,sci-mx-ultra-whey,ACTIVE,,true,gid://shopify/ProductVariant/63535202795850,800g Chocolate,SMX001,39.99,0,DENY,false,true
+gid://shopify/Product/16033524056394,session-charge-own-label-slot,DRAFT,,false,gid://shopify/ProductVariant/63506036097354,Default Title,TLL-SESSION-CHARGE-SLOT,0.00,0,DENY,false,true
+gid://shopify/Product/16033580843338,sis-go-hydro,ACTIVE,,true,gid://shopify/ProductVariant/63506330681674,Default Title,TLL-sis-go-hydro,0.00,0,DENY,false,true
+gid://shopify/Product/16033589592394,strom-essentialmax-eaa,ACTIVE,,true,gid://shopify/ProductVariant/63506386223434,450g Strawberry Kiwi,STM008,34.95,0,DENY,false,true
+gid://shopify/Product/16033588838730,strom-hydramax,ACTIVE,,true,gid://shopify/ProductVariant/63506384027978,Default Title,TLL-strom-hydramax,0.00,0,DENY,false,true
+gid://shopify/Product/16037746114890,strom-sports-nutrition-supportmax,ACTIVE,,true,gid://shopify/ProductVariant/63535187755338,160 Caps,STM044,34.95,0,DENY,false,true
+gid://shopify/Product/16037750636874,strom-sports-nutrition-zmax,ACTIVE,,true,gid://shopify/ProductVariant/63535194407242,90 Caps,STM077,24.00,0,DENY,false,true
+gid://shopify/Product/16033586479434,strom-stimumax-pro,ACTIVE,,true,gid://shopify/ProductVariant/63506374820170,360g Unicorn Pi55,STM043,29.95,0,DENY,false,true
+gid://shopify/Product/16033586708810,the-formula-neuphoric,ACTIVE,,true,gid://shopify/ProductVariant/63506375606602,480g Arctic Frost,FOR001,35.95,0,DENY,false,true
+gid://shopify/Product/16033483194698,the-protein-works-whey-80,ACTIVE,,true,gid://shopify/ProductVariant/63505652023626,Default Title,TLL-TPW-WHEY80,0.00,0,DENY,false,true
+gid://shopify/Product/16033589821770,trainedbyjp-jp-eaa,ACTIVE,,true,gid://shopify/ProductVariant/63506386485578,300g Fizzy Blue Bottle,TBJ019,29.99,0,DENY,false,true
+gid://shopify/Product/16033588609354,trainedbyjp-jp-hydration,ACTIVE,,true,gid://shopify/ProductVariant/63506383601994,300g Apple Melon,TBJ133,29.99,0,DENY,false,true
+gid://shopify/Product/16033586282826,trainedbyjp-prepare,ACTIVE,,true,gid://shopify/ProductVariant/63506372297034,Default Title,TLL-trainedbyjp-prepare,0.00,0,DENY,false,true
+gid://shopify/Product/16037754241354,trek-protein-flapjack,DRAFT,,false,gid://shopify/ProductVariant/63535202697546,16x50g Cocoa & Oat,TRE003,1.20,0,DENY,false,true
+gid://shopify/Product/16033587953994,usn-muscle-fuel-anabolic,ACTIVE,,true,gid://shopify/ProductVariant/63506380652874,2kg Chocolate,USN080,42.00,0,DENY,false,true
+gid://shopify/Product/16033410384202,warrior-creatine-monohydrate,ACTIVE,,true,gid://shopify/ProductVariant/63504849895754,300g Unflavoured,WAR090,11.99,0,DENY,false,true
+gid://shopify/Product/16037754110282,warrior-crunch-bar,ACTIVE,,true,gid://shopify/ProductVariant/63535202468170,12x64g White Chocolate,WAR039,23.99,0,DENY,false,true
+gid://shopify/Product/16033581957450,warrior-eaa-powder,ACTIVE,,true,gid://shopify/ProductVariant/63506339266890,360g Sour Apple,WAR014,11.99,0,DENY,false,true

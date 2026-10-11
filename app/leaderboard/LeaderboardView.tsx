@@ -21,7 +21,6 @@ const MEDAL = ['#f5c542', '#c8d0d8', '#cd7f32'] // gold / silver / bronze
 function Countdown({ endsAt }: { endsAt: string }) {
   const [now, setNow] = useState<number | null>(null)
   useEffect(() => {
-    setNow(Date.now())
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
   }, [])

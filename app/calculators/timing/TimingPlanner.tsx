@@ -251,7 +251,7 @@ export default function TimingPlanner() {
             onClick={() => track('calculator_cta', { tab: 'timing', target: 'wizard' })}
             className="text-center text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-all"
           >
-            Build my stack
+            Explore my stack
           </Link>
           <Link
             href="/calculators"

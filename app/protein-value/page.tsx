@@ -2,10 +2,10 @@ import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import {
   fetchProteinValueRows,
   fmtPerGram,
@@ -22,23 +22,22 @@ const URL = `${SITE}/protein-value`
 const YEAR = 2026
 
 export const metadata: Metadata = {
-  title: 'Cheapest Protein Powder Per Gram UK 2026 — Cost Per Gram of Protein',
-  description:
-    'UK protein powders ranked by the metric that actually matters: cost per gram of protein, not price per tub. See the cheapest whey, isolate and casein per gram of real protein, with effectiveness scores.',
-  alternates: { canonical: URL },
-  openGraph: {
-    title: 'Cheapest Protein Powder Per Gram UK 2026 — Cost Per Gram of Protein',
-    description:
-      'Every UK protein powder ranked by true cost per gram of protein. The cheapest whey, isolate and casein that still score well.',
-    url: URL,
-    type: 'website',
-    siteName: 'The Lifting Lab',
+  "title": "Listed protein prices per gram",
+  "description": "Compare recorded pack prices divided by protein amounts derived from known gram-based label data. Price-only research, not an effectiveness or approved-offer recommendation.",
+  "alternates": {
+    "canonical": "https://www.theliftinglab.co.uk/protein-value"
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Cheapest Protein Powder Per Gram UK 2026',
-    description: 'UK protein powders ranked by true cost per gram of protein.',
+  "openGraph": {
+    "title": "Listed protein prices per gram",
+    "description": "Compare recorded pack prices divided by protein amounts derived from known gram-based label data. Price-only research, not an effectiveness or approved-offer recommendation.",
+    "url": "https://www.theliftinglab.co.uk/protein-value",
+    "type": "website"
   },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "Listed protein prices per gram",
+    "description": "Compare recorded pack prices divided by protein amounts derived from known gram-based label data. Price-only research, not an effectiveness or approved-offer recommendation."
+  }
 }
 
 function fmtDose(n: number) {
@@ -98,7 +97,7 @@ export default async function ProteinValuePage() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            'Cost per gram of protein is the best single value metric, but it is not the whole story. We show the Effectiveness Match score alongside every price so you can see whether a cheap powder is also well formulated. A concentrate is usually the cheapest per gram; a whey isolate costs more but is leaner and lower in lactose, which can be worth it for some people.',
+            'This is a listed-price calculation using the recorded serving size and protein yield. It does not establish formula quality, effectiveness or an approved purchase offer. Delivery and checkout charges are excluded; verify the current label and retailer price.',
         },
       },
       {
@@ -137,19 +136,15 @@ export default async function ProteinValuePage() {
       <div
         key={r.id}
         className="bg-lab-panel border rounded-xl p-4"
-        style={
-          showRank && i === 0
-            ? { borderColor: 'rgba(166,226,46,0.45)', boxShadow: '0 0 22px rgba(166,226,46,0.12)' }
-            : { borderColor: '#262626' }
-        }
+        style={{ borderColor: '#262626' }}
       >
         <div className="flex items-center gap-4">
           {showRank && (
             <span className="text-xl shrink-0 w-6 text-center">
-              {['🥇', '🥈', '🥉'][i] ?? `#${i + 1}`}
+              {`#${i + 1}`}
             </span>
           )}
-          <ScoreBadge score={r.score} size="sm" />
+          <ProductAssessment product={r} size="sm" />
           <div className="min-w-0 flex-1">
             <Link href={`/products/${r.id}`} className="hover:text-lab-lime transition-colors">
               <p className="text-white text-sm font-black leading-tight truncate">{r.brand}</p>
@@ -186,19 +181,15 @@ export default async function ProteinValuePage() {
               See all
             </Link>
           )}
-          <a
-            href={buyLink(r.brand, r.name, r.buy_url)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
+          <ProductOfferLink
+            product={r}
             className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
             style={{
               background: 'rgba(166,226,46,0.12)',
               color: '#a6e22e',
               border: '1px solid rgba(166,226,46,0.5)',
             }}
-          >
-            Buy
-          </a>
+          />
         </div>
       </div>
     )
@@ -249,11 +240,7 @@ export default async function ProteinValuePage() {
           than a smaller premium one. We rank every UK protein powder by the metric that actually
           matters: the true cost of one gram of protein.
         </p>
-        <p className="text-lab-muted leading-relaxed mb-10">
-          For each product we work out the grams of protein per serving, multiply by the servings in
-          the tub, and divide the price by the total protein. Every powder also carries its
-          Effectiveness Match score, so you can see whether the cheapest per gram is also well
-          formulated. Rankings recalculate as prices change.
+        <p className="text-lab-muted text-sm leading-relaxed">Listed-price arithmetic uses recorded protein content and known serving data. Historical scores are unverified and cannot establish formula quality. Delivery and checkout charges are excluded; a listed price is not an approved offer.
         </p>
 
         {rows.length === 0 ? (
@@ -303,8 +290,7 @@ export default async function ProteinValuePage() {
                 leaner and lower in lactose.
               </p>
               <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">
-                Informational only — not medical advice. Buy links are affiliate links; we may earn a
-                commission at no extra cost to you. This never affects scoring or rankings.
+                Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring or rankings.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link

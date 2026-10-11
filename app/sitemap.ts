@@ -8,7 +8,7 @@ import { brandSlug } from '@/lib/brands'
 import { PRODUCT_COLUMNS, withScore, type Product } from '@/lib/products'
 import { curatedMatchups, productSlug } from '@/lib/matchups'
 import { buildBrandStats, curatedBrandMatchups } from '@/lib/brand-matchups'
-import { rankedCategorySlugs } from '@/lib/best-categories'
+import { researchCategorySlugs } from '@/lib/best-categories'
 import { curatedAlternativeTargets } from '@/lib/alternatives'
 
 const BASE = 'https://www.theliftinglab.co.uk'
@@ -185,7 +185,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }))
 
-  const bestCategorySlugs = await rankedCategorySlugs()
+  const bestCategorySlugs = await researchCategorySlugs()
   const bestCategoryPages: MetadataRoute.Sitemap = bestCategorySlugs.map((slug) => ({
     url: `${BASE}/best/${slug}`,
     lastModified: now,

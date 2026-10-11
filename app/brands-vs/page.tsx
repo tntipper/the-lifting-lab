@@ -12,22 +12,22 @@ const SITE = 'https://www.theliftinglab.co.uk'
 const YEAR = 2026
 
 export const metadata: Metadata = {
-  title: `Supplement Brand Comparisons — Head-to-Head UK ${YEAR} | The Lifting Lab`,
-  description:
-    'Brand vs brand supplement showdowns scored against evidence-based dosing. Compare Bulk, Myprotein, Optimum Nutrition and more on average Effectiveness Match, range and true cost per serving.',
-  alternates: { canonical: `${SITE}/brands-vs` },
-  openGraph: {
-    title: `Supplement Brand Comparisons — Head-to-Head UK ${YEAR}`,
-    description: 'Brand vs brand supplement showdowns scored against evidence-based dosing.',
-    url: `${SITE}/brands-vs`,
-    type: 'website',
-    siteName: 'The Lifting Lab',
+  "title": "Brand research comparisons",
+  "description": "Compare catalogue records and listed price information. No approved brand-effectiveness ranking is available.",
+  "alternates": {
+    "canonical": "https://www.theliftinglab.co.uk/brands-vs"
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: `Supplement Brand Comparisons — Head-to-Head UK ${YEAR}`,
-    description: 'Brand vs brand supplement showdowns scored against evidence-based dosing.',
+  "openGraph": {
+    "title": "Brand research comparisons",
+    "description": "Compare catalogue records and listed price information. No approved brand-effectiveness ranking is available.",
+    "url": "https://www.theliftinglab.co.uk/brands-vs",
+    "type": "website"
   },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "Brand research comparisons",
+    "description": "Compare catalogue records and listed price information. No approved brand-effectiveness ranking is available."
+  }
 }
 
 // One DB query, derive the curated brand-matchup set.
@@ -80,7 +80,7 @@ export default async function BrandsVsHubPage() {
         </h1>
         <p className="text-lg text-white/90 leading-relaxed mb-4">
           Which supplement brand actually doses better? We pit the biggest UK brands against each
-          other on average Effectiveness Match, catalogue range and true cost per serving — judged on
+          other through catalogue records and listed prices. No effectiveness winner is available; review
           what is in the tub, never marketing or reputation.
         </p>
         <p className="text-lab-muted text-sm mb-10">
@@ -107,7 +107,7 @@ export default async function BrandsVsHubPage() {
                 </p>
                 {m.a.avgScore != null && m.b.avgScore != null && (
                   <p className="text-[11px] text-lab-muted mt-1">
-                    Avg Effectiveness Match {m.a.avgScore} vs {m.b.avgScore} · {m.a.count} vs {m.b.count} products
+                    Research catalogues: {m.a.count} vs {m.b.count} products · No approved effectiveness winner
                   </p>
                 )}
               </Link>

@@ -151,8 +151,8 @@ export default function FaqHub() {
             Ready to pick a product?
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/best" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Best Supplements 2026 →</Link>
-            <Link href="/value" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Best Value →</Link>
+            <Link href="/best" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Product research →</Link>
+            <Link href="/value" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Value review pending →</Link>
             <Link href="/wizard" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Find My Stack →</Link>
             <Link href="/products" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Browse all →</Link>
           </div>

@@ -1,9 +1,11 @@
-const DEFAULT_RETURN_PATH = '/dashboard'
+const DEFAULT_RETURN_PATH = '/account'
 
 // Only account destinations currently supported by the sign-in flow. Add a
 // destination here deliberately when a new authenticated return journey ships.
 const AUTH_RETURN_PATHS = new Set([
   '/dashboard',
+  '/account',
+  '/account/orders',
   '/stack',
   '/favourites',
   '/account/settings',

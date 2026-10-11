@@ -4,6 +4,15 @@ import { assertPreviewIsolation } from "./config/preview-isolation.mjs";
 assertPreviewIsolation(process.env);
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/dashboard",
+        destination: "/account",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     // ARD: let registries/agent crawlers fetch the capability manifest cross-origin.
     return [

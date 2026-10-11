@@ -221,18 +221,17 @@ export default function CreatinePage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Now find the right tub</h2>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Research creatine products</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            The dose is flat and the science is settled, so the only things that separate creatine
-            products are purity and price per gram. Every product we track is scored 0–100 on exactly
-            that — no marketing, just the numbers.
+            Compare recorded pack details and listed prices before choosing a creatine product.
+            Product-level effectiveness assessments are still under review; no best product is selected.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/creatine"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best creatine 2026 →
+              Creatine research →
             </Link>
             <Link
               href="/calculators"
@@ -244,7 +243,7 @@ export default function CreatinePage() {
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Doses are general, evidence-based starting points for
             healthy adults; if you have a health condition, are pregnant or take medication, speak to a
-            clinician first. Buy links are affiliate links; we may earn a commission at no extra cost to you.
+            clinician first. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>
