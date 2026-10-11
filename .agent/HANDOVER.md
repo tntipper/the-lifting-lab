@@ -1,5 +1,17 @@
 # Agent handover — The Lifting Lab integration
 
+**11 October T01 note (codex/t01-reconcile):**
+- T01 draft: [decisions, PR dispositions and open questions](../docs/ops/2026-10-reconcile.md); Toby sign-off pending.
+- Branch `codex/t01-reconcile`; local base `codex/tll-integration` = `42a16dd`; starting HEAD `5c0d8e2`, clean.
+- Changed only reconciliation page, 5 Oct plan and this handover; unstaged/uncommitted, no push.
+- Delivery: £4.99 once/customer order; TLL absorbs each supplier dispatch cost; three clean days before unattended dispatch; Option B.
+- Read-only GitHub: #54/#60–#66 open drafts; #60–#66 already in remote integration `3f603e757050133d4dd65c2b6238767d44864533`; #54 separate.
+- Evidence: 276 focused commerce tests pass; live-boundary, whitespace, document/link/scope checks pass; hosted T01 CI not run.
+- Blockers: git add denied index.lock in sibling audit-code/.git/worktrees/implementation-integration (outside write scope); CLI/DNS failed, connector worked; local-base remote comparison 404.
+- v18 cause unknown; diagnosis only/no replay. Historical [incident](../docs/ops/incidents/2026-09-29-gen23-v18-readonly-diagnosis.md) and [tracker](../docs/ops/completion-tracker.md) retained; v18 does not block store Gates A–E.
+- Next: commit the 3 docs with authorised Git-folder access; Toby reviews T01; T03 reconciles histories after approval. No merge/closure/deploy/env/live API/flag changes; no current live-state proof.
+
+
 **5 October Bodypower addition — BP01 outstanding:** Owner reports approved/created dropshipping account. Add read-only account/feed/terms discovery, exact supplier mapping, total-cost comparison with TropShip, missing-product queue against full TLL and Shopify catalogues, separate supplier adapter and safe stock/order routing. Access, cheaper prices and additional coverage are not yet verified. [Work sequence](../docs/ops/stage-plans/2026-10-05-catalogue-to-launch-completion.md#outstanding-addition-bodypower-dropshipping--bp01). Register now has 75 rows including BP01; existing holds remain. No Bodypower connection, order, import or activation occurred.
 
 **5 October current commercial decision and next work:** Original attached TropShip reply confirms trade ProductPrice excludes VAT; owner confirms not VAT registered and paid customer delivery. Four conflicting SKUs OPT034/PER183/SYN031/OPT296 were set Draft with independent unchanged-price readbacks. Remaining preparation range: 59 products / 70 variants, including ten supplier-zero records; 13 unpriced placeholders and missing REF152 remain held. Fresh production/staging metadata shows no dedicated verified UK brand-price baseline/history; production has 229 products, 222 generic retail_price values. [Evidence](../docs/ops/evidence/2026-10-05-supplier-terms-scope-and-baseline.md) and [completion plan](../docs/ops/stage-plans/2026-10-05-catalogue-to-launch-completion.md) supersede the request to seek more supplier answers. Next: refresh/triage source data and exact UK labels, build exact UK brand baselines, then concrete full-cost prices. Owner needs delivery-tariff and completed price decisions, later bounded test/release approvals. The old supplier draft is historical. No database/rate/price/order/deployment write or new Stage 3 run; v18 remains held.
