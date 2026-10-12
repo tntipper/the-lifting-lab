@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { scoreColor } from '@/components/ScoreBadge'
+import ProductWarnings from '@/components/ProductWarnings'
 import ProductAssessment from '@/components/ProductAssessment'
 import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import ProductImage from '@/components/ProductImage'
@@ -157,6 +158,8 @@ export default function ProductDetailPage({
             ↗ Share & earn 25 pts
           </button>
         </div>
+
+        <ProductWarnings product={product} />
 
         {/* verdict flags */}
         {flags.length > 0 && (

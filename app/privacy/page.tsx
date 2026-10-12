@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import PolicyDraftNotice from '@/components/PolicyDraftNotice'
 import TopNav from '@/components/TopNav'
 
 export const metadata: Metadata = {
@@ -15,8 +16,9 @@ export default function PrivacyPage() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-4">Legal</p>
         <h1 className="text-3xl font-black uppercase tracking-tight mb-2">Privacy Policy</h1>
-        <p className="text-lab-muted text-sm mb-10">Last updated: October 2026</p>
+        <p className="text-lab-muted text-sm mb-10">Draft updated: October 2026</p>
 
+        <PolicyDraftNotice />
         <div className="space-y-8 text-lab-muted text-sm leading-relaxed">
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Who we are</h2>
@@ -31,7 +33,9 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">What data we collect</h2>
             <ul className="list-disc list-inside space-y-2">
-              <li><strong className="text-white">Email address</strong> — collected when you sign in via magic link. Used solely to authenticate your account.</li>
+              <li><strong className="text-white">Email address</strong> — collected when you sign in via magic link. Used to authenticate your site account and communicate about it.</li>
+              <li><strong className="text-white">Contact enquiries</strong> — your name, email and message when you submit the contact form, held for staff review. Please do not include payment card details or health records.</li>
+              <li><strong className="text-white">Shop orders</strong> — Shopify handles checkout, payments, purchase accounts and order communications. Orders include your name, contact details, delivery address and purchased items.</li>
               <li><strong className="text-white">Usage data</strong> — if you accept optional analytics, Google Analytics 4 (GA4) collects page visits and feature interactions, browser/device information and browser/session identifiers. Analytics is off before you accept and after you reject or withdraw.</li>
               <li><strong className="text-white">Stack and favourites data</strong> — products you save or add to your stack, stored in our database linked to your account.</li>
             </ul>
@@ -63,10 +67,17 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Third-party services</h2>
             <ul className="list-disc list-inside space-y-2">
-              <li><strong className="text-white">Supabase</strong> — our authentication and database provider. Your email is stored on Supabase infrastructure. See <a href="https://supabase.com/privacy" className="text-lab-lime hover:underline" target="_blank" rel="noopener noreferrer">Supabase Privacy Policy</a>.</li>
+              <li><strong className="text-white">Supabase</strong> — our authentication and database provider. It stores site account identifiers, saved stacks and favourites, and contact submissions. Where the planned shop integration is activated, private order records needed for fulfilment are also held there. See <a href="https://supabase.com/privacy" className="text-lab-lime hover:underline" target="_blank" rel="noopener noreferrer">Supabase Privacy Policy</a>.</li>
+              <li><strong className="text-white">Shopify</strong> — provides the shop at shop.theliftinglab.co.uk. TLL receives order information needed to fulfil purchases and handle support and refunds; Shopify processes payments through its payment providers. TLL does not require your full payment card details. See <a href="https://www.shopify.com/legal/privacy" className="text-lab-lime hover:underline">Shopify Privacy Policy</a>.</li>
+              <li><strong className="text-white">Suppliers and couriers</strong> — fulfilment requires sharing the delivery name, address, necessary contact details and ordered items with the supplier fulfilling that order and its courier. Suppliers do not need your saved stack or full payment card details. Sharing for the planned automated integration remains subject to activation and review.</li>
               <li><strong className="text-white">Google Analytics 4</strong> — optional usage analytics, enabled only after you accept. See <a href="https://policies.google.com/privacy" className="text-lab-lime hover:underline" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.</li>
               <li><strong className="text-white">Amazon Associates</strong> — we may earn a commission from qualifying purchases via Amazon links. See our <Link href="/affiliate-disclosure" className="text-lab-lime hover:underline">Affiliate Disclosure</Link>.</li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-white font-bold uppercase tracking-wide mb-3">Shop data and review outstanding</h2>
+            <p>Purchase and delivery data is used to perform the sales contract; records required for tax and accounting are retained to meet legal obligations. Account deletion does not automatically erase records we must keep. Contact enquiries are used to respond to your request. TODO for Toby/Lifty: confirm the enquiry lawful basis, order and enquiry retention periods, supplier and courier recipients, Supabase hosting region, service agreements and any international transfer safeguards before publication. This draft does not claim that all data stays in the UK or that a unified site/shop account is active.</p>
           </section>
 
           <section>

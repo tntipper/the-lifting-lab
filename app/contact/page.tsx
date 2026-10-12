@@ -1,5 +1,6 @@
 'use client'
 
+import PolicyDraftNotice from '@/components/PolicyDraftNotice'
 import { isSyntheticPreview } from '@/lib/preview-mode'
 import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
 import { useRef, useState } from 'react'
@@ -58,6 +59,13 @@ function ContactPageForm() {
           <h1 className="text-2xl font-black uppercase">Contact Us</h1>
           <p className="text-lab-muted text-sm mt-2">Send product suggestions, corrections or partnership enquiries for review.</p>
         </div>
+
+        <PolicyDraftNotice />
+        <section className="text-sm text-lab-muted space-y-2" aria-label="Customer support">
+          <p>For order, delivery, refund or privacy questions, email <a href="mailto:hello@theliftinglab.co.uk" className="text-lab-lime hover:underline">hello@theliftinglab.co.uk</a>. Include your order reference for shop enquiries; do not send payment card details or health records.</p>
+          <p>The seller listed in this draft is Tobias Tipper, trading as The Lifting Lab, Scotland, UK. TODO for Toby: confirm the geographical business address, telephone number and monitored support arrangements before publication.</p>
+          <p><Link href="/refunds" className="text-lab-lime">Refunds</Link> · <Link href="/delivery" className="text-lab-lime">Delivery</Link> · <Link href="/privacy" className="text-lab-lime">Privacy</Link></p>
+        </section>
 
         {status === 'done' ? (
           <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-6 text-center space-y-2">
