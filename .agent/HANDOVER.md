@@ -1,3 +1,13 @@
+**12 October T05 — local TropShip mapping seed (codex/t05-seed-mapping; HEAD d7973145; integration base cdf9f296):**
+- Added scripts/seed-mapping.mjs using T04 validation/ID helpers; local XLSX/CSV only, no external services or installed dependencies.
+- Added data/mapping-review.csv (243 proposals: 74 Shopify variants / 169 affiliate), data/README.md, 5 synthetic CSV fixtures and 11 seed tests.
+- Every row active=false, price_auto=false, approval blank; exact historical links or name-only proposals, conflicts withheld; internal placeholder SKUs not treated as supplier SKUs.
+- Evidence: 139 focused Node tests pass, 0 fail/skip; check:live-boundaries PASS/0 violations; whitespace PASS. Hosted CI/PR not run.
+- Full mapping:check FAIL: 31 source-data issues across 14 rows (5 missing comparison IDs, 13 missing supplier SKUs, 13 missing costs); 60 store proposals structurally complete, none approved.
+- Both 2 Oct workbooks exist locally under ignored outputs/; exact source paths, regeneration commands, historical publication/cost limits and outstanding choices in data/README.md.
+- Next: Toby/Lifty resolve 5 comparison choices and 13 placeholder offers/exclusions, review exact labels/current costs, sign 20-row sample; T05 zero-error acceptance remains open.
+- Working-tree changes only; no commit attempt, push/merge/deploy, env/live API/database/flag changes or spend. Prior handover preserved verbatim below.
+
 **11 October T04 — product mapping (codex/t04-mapping-table; base cdf9f296, HEAD 3ac86a9c):**
 - Added 202610110017_product_mapping.sql: private table, unique canonical Shopify variant, RLS/revoked client access, active/price_auto default false, timestamp trigger; not applied anywhere.
 - Added lib/commerce/product-mapping.ts: pure export validation and explicit-evidence ExactMapping conversion; no DB/network access or public cost projection.
