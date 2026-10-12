@@ -4,7 +4,7 @@ import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { validateProductMappings, toExactMapping } from '../lib/commerce/product-mapping.ts'
+import { validateProductMappings, toExactMapping, presentStoreLinkMapping } from '../lib/commerce/product-mapping.ts'
 
 const fixture = () => JSON.parse(readFileSync(new URL('./fixtures/product-mapping/valid.json', import.meta.url)))[0]
 const codes = rows => validateProductMappings(rows).map(issue => issue.code)
@@ -111,3 +111,25 @@ test('static SQL: unique canonical variant, costs, default-off flags and update 
   assert.match(sql, /begin;/); assert.match(sql, /commit;/)
   assert.doesNotMatch(sql, /insert into|security definer/i)
 })
+
+const linkNow = 1000
+const approvedRow = () => ({ ...reviewedRow(), active: true, approval_reference: 'synthetic-sign-off',
+  mapping_status: 'exact', mapping_source: 'verified_labels',
+  review: { approved: true, version: 'v1', expectedVersion: 'v1', verifiedAtMs: 1, expiresAtMs: 2000 } })
+test('approved active mapping produces only public link fields without private supplier data', () => {
+  const row = approvedRow(), view = presentStoreLinkMapping(row, linkNow)
+  assert.ok(view)
+  assert.deepEqual(Object.keys(view).sort(), ['active', 'approved', 'productId', 'review', 'shopifyProductHandle', 'shopifyVariantId'])
+  view.review.version = 'changed'
+  assert.equal(row.review.version, 'v1')
+})
+for (const [name, patch] of [
+  ['inactive', { active: false }], ['unsigned', { approval_reference: null }], ['affiliate', { status: 'affiliate' }],
+  ['unapproved', { review: { ...approvedRow().review, approved: false } }],
+  ['expired', { review: { ...approvedRow().review, expiresAtMs: linkNow } }],
+  ['stale', { review: { ...approvedRow().review, expectedVersion: 'v2' } }],
+  ['not exact', { mapping_status: 'ambiguous' }], ['name match', { mapping_source: 'name_match' }],
+  ['identity mismatch', { supplier_identity: { ...identity, flavourId: 'chocolate' } }],
+  ['pack mismatch', { supplier_identity: { ...identity, pack: { ...pack, amountPerInner: 1000 } } }],
+  ['missing identity', { shop_identity: null }], ['unsafe handle', { handle: '../cart' }],
+]) test(`public link projection rejects ${name}`, () => assert.equal(presentStoreLinkMapping({ ...approvedRow(), ...patch }, linkNow), null))

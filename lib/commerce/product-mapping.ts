@@ -25,6 +25,31 @@ export type ProductMappingRow = {
   published?: boolean
 }
 export type MappingIssue = { row: number; code: string; field: string }
+/** Public link details only. Never pass ProductMappingRow or ExactMapping to the browser. */
+export type StoreLinkMapping = Pick<ExactMapping, 'productId' | 'shopifyProductHandle' | 'shopifyVariantId' | 'review'> & {
+  active: true
+  approved: true
+}
+
+/** TODO(T05): attach this projection from reviewed saved rows in the server product loaders.
+ * No approved runtime mapping loader exists yet; never use historical CSVs as live mappings.
+ */
+export function presentStoreLinkMapping(row: ProductMappingRow, now = Date.now()): StoreLinkMapping | null {
+  if (row?.active !== true || row.status !== 'store' || !text(row.approval_reference)) return null
+  let mapping: ExactMapping
+  try { mapping = toExactMapping(row) } catch { return null }
+  const review = mapping.review
+  if (mapping.status !== 'exact' || mapping.source !== 'verified_labels' || review.approved !== true ||
+      review.version !== review.expectedVersion || !Number.isSafeInteger(now) ||
+      !Number.isSafeInteger(review.verifiedAtMs) || review.verifiedAtMs < 0 || review.verifiedAtMs > now ||
+      !Number.isSafeInteger(review.expiresAtMs) || review.expiresAtMs <= now) return null
+  const shop = mapping.shopIdentity, supplier = mapping.supplierIdentity
+  if (!(['formulaId', 'formulaVersion', 'flavourId', 'labelVersion'] as const).every(key => shop[key] === supplier[key]) ||
+      !(Object.keys(shop.pack) as (keyof PackIdentity)[]).every(key => shop.pack[key] === supplier.pack[key])) return null
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(mapping.shopifyProductHandle)) return null
+  return { productId: mapping.productId, shopifyProductHandle: mapping.shopifyProductHandle,
+    shopifyVariantId: mapping.shopifyVariantId, review: { ...review }, active: true, approved: true }
+}
 const text = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 

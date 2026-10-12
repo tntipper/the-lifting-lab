@@ -7,7 +7,8 @@ import { rniFor, type Sex } from '@/lib/nutrient-rda'
 import ProductAssessment from '@/components/ProductAssessment'
 import { catalogueAssessment, summariseStackAssessments, assessmentText, stackResearchText } from '@/lib/stack-assessment'
 import { scoreFor } from '@/lib/scores'
-import { resolveProductListing } from '@/lib/affiliate'
+import { resolveProductOffer } from '@/lib/affiliate'
+import type { StoreLinkMapping } from '@/lib/commerce/product-mapping'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { StagingCartAdd } from '@/components/StagingCartActions'
 import { analysisServings, validStackServings } from '@/lib/stack-sync'
@@ -31,6 +32,7 @@ type BatchProduct = {
   servings_per_container?: number | null
   retail_price?: number | null
   buy_url: string | null
+  storeLinkMapping?: StoreLinkMapping | null
   product_nutrients: { nutrient_name: string; amount: number; unit: string }[]
 }
 
@@ -46,6 +48,7 @@ function toStackItem(p: BatchProduct): StackItem {
       serving_size: p.serving_size,
       serving_unit: p.serving_unit,
       buy_url: p.buy_url,
+      storeLinkMapping: p.storeLinkMapping,
       product_nutrients: p.product_nutrients || [],
       retail_price: p.retail_price,
       servings_per_container: p.servings_per_container,
@@ -113,9 +116,10 @@ function buildEmailLink(items: StackItem[], listedCount: number): string {
       .map((i) => {
         const p = i.products!
         const assessment = assessmentText(catalogueAssessment(p))
-        const listing = resolveProductListing(p.buy_url)
+        const listing = resolveProductOffer({ ...p, buy_url: p.buy_url ?? null })
         const destination = listing.state === 'listing' && listing.url
-          ? `Retailer listing at ${listing.retailer} (check product, pack and price${listing.relationship === 'affiliate' ? '; affiliate link' : '; external link'}): ${listing.url}`
+          ? listing.reason === 'approved_store_mapping' ? `Buy at TLL Store (check pack, price and stock): ${listing.url}`
+            : `Retailer listing at ${listing.retailer} (check product, pack and price${listing.relationship === 'affiliate' ? '; affiliate link' : '; external link'}): ${listing.url}`
           : 'No verified offer.'
         return `• ${p.brand} ${p.name} — ${assessment}\n  ${destination}`
       }),
@@ -302,7 +306,7 @@ export default function StackBuilder() {
     for (const it of stackItems) {
       const p = it.products
       if (!p) continue
-      const listing = resolveProductListing(p.buy_url)
+      const listing = resolveProductOffer({ ...p, buy_url: p.buy_url ?? null })
       if (listing.state !== 'listing' || !listing.url || !listing.retailer) continue
       const label = listing.retailer
       if (!groups[label]) groups[label] = { label, products: [] }
@@ -563,7 +567,7 @@ export default function StackBuilder() {
             <p className="text-sm font-black">{group.label}</p>
             {group.products.map((product, index) => <div key={`${product.id}-${index}`} className="mt-3 flex items-center justify-between gap-3 border-t border-[#e1e2db] pt-3">
               <span className="text-xs text-[#66685f]">{product.brand} {product.name}</span>
-              <ProductOfferLink product={{ id: product.id, brand: product.brand, name: product.name, buy_url: product.buy_url ?? null }} className="rounded-lg border border-[#a8aaa0] py-2 text-xs font-bold" />
+              <ProductOfferLink product={{ ...product, buy_url: product.buy_url ?? null }} className="rounded-lg border border-[#a8aaa0] py-2 text-xs font-bold" />
             </div>)}
           </div>)}
         </div>

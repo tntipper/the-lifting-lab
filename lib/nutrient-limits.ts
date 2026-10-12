@@ -1,3 +1,5 @@
+import type { StoreLinkMapping } from './commerce/product-mapping'
+
 // EFSA Tolerable Upper Intake Levels
 // Source: nutrient_limits.json (EFSA 2006-2024)
 
@@ -107,6 +109,7 @@ export type StackItem = {
     serving_size: number
     serving_unit: string
     buy_url?: string | null
+    storeLinkMapping?: StoreLinkMapping | null
     product_nutrients: { nutrient_name: string; amount: number; unit: string }[]
   }
 }

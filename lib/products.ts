@@ -2,6 +2,7 @@
 import { scoreFor } from '@/lib/scores'
 import { hasPositiveServingCost, isRankingCandidate } from './assessment-display'
 import type { CataloguePresentation } from './commerce/catalogue-presentation'
+import type { StoreLinkMapping } from './commerce/product-mapping'
 
 export type Product = {
   id: string
@@ -20,6 +21,8 @@ export type Product = {
   protein_yield: number | null
   /** Optional reviewed server projection; not a supplier field or database column. */
   cataloguePresentation?: CataloguePresentation | null
+  /** Approved server projection; never a raw private mapping row. */
+  storeLinkMapping?: StoreLinkMapping | null
 }
 
 export type ScoredProduct = Product & {

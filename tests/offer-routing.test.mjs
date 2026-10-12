@@ -8,11 +8,11 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 const require = createRequire(import.meta.url)
-function loadSource(path, overrides = {}) {
+function loadSource(path, overrides = {}, env = {}) {
   const source = readFileSync(new URL(path, import.meta.url), 'utf8')
   const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
   const loaded = { exports: {} }
-  vm.runInNewContext(js, { require: name => overrides[name] ?? require(name), module: loaded, exports: loaded.exports, process: { env: {} }, URL })
+  vm.runInNewContext(js, { require: name => overrides[name] ?? require(name), module: loaded, exports: loaded.exports, process: { env }, URL })
   return loaded.exports
 }
 const affiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } })
@@ -149,4 +149,67 @@ test('historically misplaced tracking is removed from other retailers', () => {
   assert.equal(amazon.searchParams.get('applyCode'), null)
   const myprotein = new URL(resolve('https://www.myprotein.com/p/sports-nutrition/fixture/12345678/?tag=wrong-21').url)
   assert.equal(myprotein.searchParams.get('tag'), null)
+})
+
+const storeNow = Date.now()
+const approvedMapping = { productId: 'store-fixture', shopifyProductHandle: 'fixture-vanilla-500g',
+  shopifyVariantId: 'gid://shopify/ProductVariant/90071992547409931234', active: true, approved: true,
+  review: { approved: true, version: 'v1', expectedVersion: 'v1', verifiedAtMs: storeNow - 1000, expiresAtMs: storeNow + 60000 } }
+const storeProduct = { id: 'store-fixture', brand: 'Fixture', name: 'Vanilla 500g', buy_url: 'https://www.amazon.co.uk/dp/B000000001', storeLinkMapping: approvedMapping }
+const storeUrl = 'https://shop.theliftinglab.co.uk/products/fixture-vanilla-500g?variant=90071992547409931234'
+const enabledAffiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } }, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' })
+const storeComponent = lib => loadSource('../components/ProductOfferLink.tsx', { './StagingCartContext': cartContext, './StagingCartActions': cartActions, '@/lib/commerce/catalogue-presentation': presentation, '@/lib/affiliate': lib, '@/lib/gtag': { track() { throw new Error('SSR must not track') } } }).default
+const storeRender = (product, lib = enabledAffiliate) => renderToStaticMarkup(React.createElement(storeComponent(lib), { product }))
+
+test('store URL preserves large numeric IDs and accepts numeric or canonical variant strings', () => {
+  for (const shopifyVariantId of ['90071992547409931234', approvedMapping.shopifyVariantId])
+    assert.equal(affiliate.buildStoreProductLink(storeProduct.id, { ...approvedMapping, shopifyVariantId }, storeNow), storeUrl)
+})
+for (const [name, patch] of [
+  ['inactive', { active: false }], ['unapproved', { approved: false }], ['wrong product', { productId: 'other' }],
+  ['blank handle', { shopifyProductHandle: '' }], ['path escape', { shopifyProductHandle: '../cart' }],
+  ['query injection', { shopifyProductHandle: 'fixture?redirect=evil' }], ['encoded slash', { shopifyProductHandle: 'fixture%2fcart' }],
+  ['numeric value', { shopifyVariantId: 123 }], ['zero ID', { shopifyVariantId: '0' }],
+  ['wrong GID kind', { shopifyVariantId: 'gid://shopify/Product/123' }], ['variant injection', { shopifyVariantId: '123&other=456' }],
+  ['review unapproved', { review: { ...approvedMapping.review, approved: false } }],
+  ['expired', { review: { ...approvedMapping.review, expiresAtMs: storeNow } }],
+  ['future review', { review: { ...approvedMapping.review, verifiedAtMs: storeNow + 10000 } }],
+  ['stale version', { review: { ...approvedMapping.review, expectedVersion: 'v2' } }],
+  ['missing review', { review: null }],
+  ['malformed review version', { review: { ...approvedMapping.review, version: 123 } }],
+]) test(`store ${name} falls back to the same affiliate URL and label`, () => {
+  const product = { ...storeProduct, storeLinkMapping: { ...approvedMapping, ...patch } }
+  assert.equal(affiliate.buildStoreProductLink(product.id, product.storeLinkMapping, storeNow), null)
+  assert.equal(JSON.stringify(enabledAffiliate.resolveProductOffer(product)), JSON.stringify(affiliate.resolveProductListing(product.buy_url)))
+  assert.equal(storeRender(product), storeRender(product, affiliate))
+})
+test('default OFF, explicit OFF and unknown flag values preserve affiliate rendering', () => {
+  for (const value of [undefined, 'disabled', 'true', '']) {
+    const lib = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } }, { NEXT_PUBLIC_TLL_STORE_LINKS: value })
+    assert.deepEqual(lib.resolveProductOffer(storeProduct), lib.resolveProductListing(storeProduct.buy_url))
+    assert.match(storeRender(storeProduct, lib), /View retailer/)
+    assert.doesNotMatch(storeRender(storeProduct, lib), /Buy at TLL Store/)
+  }
+})
+test('approved store wins over an affiliate reference or missing reference and renders its own label', () => {
+  for (const buy_url of [storeProduct.buy_url, null]) {
+    const html = storeRender({ ...storeProduct, buy_url })
+    assert.match(html, /Buy at TLL Store/); assert.ok(html.includes(`href="${storeUrl}"`))
+    assert.match(html, /opens in a new tab/); assert.doesNotMatch(html, /affiliate link|sponsored|awin|amazon/)
+  }
+})
+test('enabled but unmapped product and legacy own-shop URL retain the old fallback', () => {
+  for (const buy_url of [storeProduct.buy_url, 'https://shop.theliftinglab.co.uk/products/fixture?variant=1', null]) {
+    const product = { ...storeProduct, buy_url, storeLinkMapping: null }
+    assert.equal(JSON.stringify(enabledAffiliate.resolveProductOffer(product)), JSON.stringify(affiliate.resolveProductListing(buy_url)))
+    assert.equal(storeRender(product), storeRender(product, affiliate))
+  }
+})
+test('isolated preview and existing stock holds take precedence over approved store links', () => {
+  const preview = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => true } }, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' })
+  assert.equal(preview.resolveProductOffer(storeProduct).url, null)
+  for (const availability of ['out_of_stock', 'unavailable', 'available']) {
+    const html = storeRender({ ...storeProduct, cataloguePresentation: { productId: storeProduct.id, availability, purchaseEnabled: false } })
+    assert.doesNotMatch(html, /href=|Buy at TLL Store/)
+  }
 })

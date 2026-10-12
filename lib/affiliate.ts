@@ -1,4 +1,5 @@
 import { isIsolatedEnvironment } from './preview-mode'
+import type { StoreLinkMapping } from './commerce/product-mapping'
 
 // Product listings are not verified offers. Legacy URLs lack exact-pack,
 // availability and cost approval; they must never become purchase promises.
@@ -12,7 +13,29 @@ export type ProductListing = {
   url: string | null
   retailer: string | null
   relationship: 'affiliate' | 'external' | 'own_shop' | 'none'
-  reason: 'preview' | 'missing_url' | 'invalid_url' | 'unreviewed_retailer' | 'own_shop_approval_required' | 'unverified_listing' | 'search_destination' | 'unreviewed_path'
+  reason: 'preview' | 'missing_url' | 'invalid_url' | 'unreviewed_retailer' | 'own_shop_approval_required' | 'unverified_listing' | 'search_destination' | 'unreviewed_path' | 'approved_store_mapping'
+}
+
+/** Exact destination only; string IDs avoid losing precision on large Shopify IDs. */
+export function buildStoreProductLink(productId: string | undefined, mapping?: StoreLinkMapping | null, now = Date.now()): string | null {
+  const review = mapping?.review
+  if (!productId || mapping?.productId !== productId || mapping.active !== true || mapping.approved !== true ||
+      !review || review.approved !== true || typeof review.version !== 'string' || !review.version.trim() || review.version !== review.expectedVersion ||
+      !Number.isSafeInteger(now) || !Number.isSafeInteger(review.verifiedAtMs) || review.verifiedAtMs < 0 ||
+      review.verifiedAtMs > now || !Number.isSafeInteger(review.expiresAtMs) || review.expiresAtMs <= now ||
+      typeof mapping.shopifyProductHandle !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(mapping.shopifyProductHandle) ||
+      typeof mapping.shopifyVariantId !== 'string') return null
+  const variant = /^(?:gid:\/\/shopify\/ProductVariant\/)?([1-9][0-9]*)$/.exec(mapping.shopifyVariantId)?.[1]
+  return variant ? `https://shop.theliftinglab.co.uk/products/${mapping.shopifyProductHandle}?variant=${variant}` : null
+}
+
+/** New behaviour is OFF unless explicitly enabled. Legacy own-shop URLs remain blocked. */
+export function resolveProductOffer(product: { id?: string; buy_url: string | null; storeLinkMapping?: StoreLinkMapping | null }): ProductListing {
+  if (!isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled') {
+    const url = buildStoreProductLink(product.id, product.storeLinkMapping)
+    if (url) return { state: 'listing', url, retailer: 'TLL Store', relationship: 'own_shop', reason: 'approved_store_mapping' }
+  }
+  return resolveProductListing(product.buy_url)
 }
 const hosts = {
   Amazon: ['amazon.co.uk', 'www.amazon.co.uk'],
