@@ -1,3 +1,13 @@
+**12 October S08 — offline store-reviews spike (codex/s08-spike; HEAD f36a7d27; working tree only):**
+- docs/reviews-spike.md recommends Judge.me free provisionally; compares public widget/API and alternatives without network calls.
+- Reuses ExactMapping/product-mapping helpers; approved runtime loader/data and free API/freshness entitlement remain TODO.
+- Plans strict <=1-hour server caching, product-level variant deduplication and no stale/native fallback.
+- Proposed TLL_STORE_REVIEWS_ONLY defaults OFF; covers native summary/UI, metadata and proposed submission retirement; no runtime changes.
+- Toby setup steps include free-plan installation, env names only, five-product read proof and separate activation approval.
+- Evidence: relevant Node tests 183 PASS, 0 fail/skip; live-boundaries PASS/0 violations; hosted CI/live reviews unverified.
+- TODO(Toby/Lifty): spike/provider approval, supported free API rights/freshness, reviewed mappings/provenance and native POST/history policy.
+- No stub, review/data deletion, env edits, live flags/APIs, spend, migrations, commit attempt, push/merge/deploy; previous handover bytes preserved.
+
 **12 October S07 — offline mobile stack journey (codex/s07; HEAD 2fd753c5; working tree only):**
 - BuyMyStack now has a mobile fixed bottom Buy bar with safe-area spacing; StackBuilder reserves scroll clearance; desktop keeps inline Buy.
 - tests/browser/mobile-stack.mjs + mobile-stack-fixture.tsx reuse real StackBuilder/LocalStackProvider/cart builder and existing esbuild/Tailwind fixture setup.
