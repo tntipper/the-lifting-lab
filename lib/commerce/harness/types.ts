@@ -7,7 +7,13 @@ export type SupplierProduct = StockPrice & { name: string; brand: string }
 export type DeliveryAddress = { name: string; address1: string; address2?: string; city: string; postcode: string; countryCode: string }
 export type SupplierOrderRequest = { localKey: string; lines: { sku: string; quantity: number }[]; deliveryAddress?: DeliveryAddress }
 export type SubmitResult = { status: 'submitted' | 'accepted' | 'rejected' | 'uncertain'; supplierRef?: string; reason?: string }
-export type TrackingUpdate = { supplierRef: string; trackingNumber: string; carrier: string }
+/** One immutable parcel, with incremental (not cumulative) shipped quantities.
+ * Supplier normalisation must provide a stable shipment ID and actual shipped lines;
+ * tracking-number-only feeds must never imply that every ordered line shipped. */
+export type TrackingUpdate = {
+  supplierRef: string; shipmentId: string; trackingNumber: string; carrier: string;
+  shippedLines: { sku: string; quantity: number }[]
+}
 export interface SupplierAdapter {
   id: SupplierId
   fetchCatalogue(): Promise<SupplierProduct[]>

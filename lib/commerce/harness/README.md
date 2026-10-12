@@ -29,8 +29,8 @@ The parked Python connector is absent from this repository; no Python code was r
   defaults OFF and requires exact `true`. The default exported route has no connected
   dependencies and returns 503 when enabled. The handler factory can run saved fixtures
   with supplied dependencies; responses contain aggregate counts and safe alert codes.
-- TropShip order transport remains explicitly rejected as unimplemented; T09 adds the offline routing worker below. Tracking throws a
-  clear unimplemented error (T10). Neither stub contacts a supplier.
+- TropShip order transport remains explicitly rejected as unimplemented; T09 adds the offline routing worker below. The tracking transport throws a
+  clear unimplemented error; T10 adds the injected tracking job below. Neither stub contacts a supplier.
 
 ## Required connection work and decisions
 
@@ -136,3 +136,82 @@ T09 verification: `node --experimental-strip-types --test
  tests/harness-order-forwarding.test.mjs tests/harness-stock-price.test.mjs
  tests/supplier-feed.test.mjs tests/product-mapping.test.mjs`, plus
 `npm run typecheck` and `npm run check:live-boundaries`.
+
+
+## T10 tracking write-back (offline, default OFF)
+
+`tracking.ts` is the tracking job. It loads private `supplier_orders` in submitted
+or accepted batches, calls the matching adapter's `fetchTracking` with supplier
+references, then builds a pinned Shopify 2026-07 `fulfillmentCreate` request.
+Each normalised update represents one immutable parcel: `shipmentId`, reference,
+tracking number, carrier, and explicit shipped SKU/quantity pairs. Quantities are
+incremental per parcel, never cumulative totals. A tracking number alone is not
+shipment-line evidence. A repeated SKU on different order lines is held for review;
+no variant/title matching or guessing is used.
+
+The injected fresh Shopify reader must load the complete, paginated order and
+fulfillment-order lines, cancellation/refund state, remaining quantities, location
+IDs and CREATE_FULFILLMENT support. The job matches the stored Shopify order-line
+ID to the actual fulfillment-order-line ID. Every request supplies a nonempty
+`fulfillmentOrderLineItems` list with explicit positive quantities, so partial
+shipments never fulfil unshipped items. Multiple fulfillment orders at one location
+are supported; ambiguous split lines or multiple locations require review.
+`notifyCustomer: true` requests Shopify's own shipping email. This is a mocked
+request check, not proof that a real customer email was delivered.
+
+`TRACKING_WRITE_ENABLED` must be exactly `true`. Missing/false/other values cause
+no reads, supplier calls, persistence or Shopify writes. `/api/harness/tracking`
+is an authenticated GET cron entry point, reusing the existing CRON_SECRET setting
+name. It returns only counts and safe codes; no references, tracking numbers,
+private lines, request bodies or provider errors appear in responses. The exported
+route has no connected dependencies and returns 503 when enabled. No schedule or
+environment settings are changed; the proposed 30-minute schedule is not installed.
+
+`tracking-store.ts` reuses T09's injected private SQL transaction interface. A
+stable key hashes shop/order/supplier/reference/parcel ID; a separate fingerprint
+catches changed tracking or shipped lines under that same ID. Completed/rejected/
+in-progress/uncertain attempts are never automatically replayed. The claim
+transaction locks the order, inserts the unique spent marker and reserves each
+shipped quantity before transport. Different parcels cannot claim the same units.
+Successful receipt saving atomically increments fulfilled quantities and releases
+a T09 stock reservation only when that entire line is fulfilled. Existing T09
+submitted/accepted statuses are retained; `fulfilled_quantity` records shipment
+progress without altering order-submission status or forwarding behaviour.
+
+A timeout, exception, malformed/GraphQL-error result or crashed worker keeps units
+reserved for reconciliation. A failed receipt-save transaction leaves the spent
+marker intact. A definitive Shopify user-error rejection releases tracking units
+but its original parcel key stays spent. No raw Shopify/supplier errors are saved.
+T11 owns operator presentation/alerts; T10 adds no queue or alert transport.
+
+### T10 remaining connections and decisions
+
+- Toby/Lifty: confirm supplier tracking transport, stable parcel identifiers and
+  incremental shipped SKU/quantity evidence. If duplicate SKUs can appear in one
+  supplier order, confirm a reliable supplier-to-order-line identifier before
+  supporting those shipments. The TropShip transport remains an explicit TODO.
+- Bind approved private SQL persistence and apply T09/T10 migrations only with
+  separate approval. T10 SQL is statically inspected and client-mocked, not run
+  against PostgreSQL or any hosted database.
+- Bind the fresh paginated Shopify reader and restricted injected mutation client
+  using API 2026-07; confirm fulfillment permissions/location ownership. The client
+  must return the GraphQL envelope and must never automatically retry writes.
+- Approve cron credentials/scheduling and exact activation separately. No env
+  files, secrets, flags or live services were changed or accessed.
+- Complete supervised staging full/partial fulfilment and actual Shopify shipping
+  email evidence after approval; hosted CI is not run here. Reconcile uncertain
+  attempts in Shopify before any separately approved manual correction.
+
+T10 local verification:
+```sh
+node --experimental-strip-types --test tests/harness-tracking.test.mjs tests/harness-order-forwarding.test.mjs tests/harness-stock-price.test.mjs tests/supplier-feed.test.mjs tests/product-mapping.test.mjs
+npm run typecheck
+npm run check:live-boundaries
+```
+
+API contract reference: [Shopify fulfillmentCreate, 2026-07](https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/fulfillmentCreate).
+
+T10 result (12 October, local): 261 focused Node tests passed, 0 failed/skipped
+(65 new tracking checks); TypeScript and changed-file ESLint passed;
+`check:live-boundaries` passed with 0 violations. Hosted CI/real-service
+acceptance is outstanding; a read-only draft PR lookup could not connect to GitHub.
