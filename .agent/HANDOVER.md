@@ -1,3 +1,12 @@
+**12 October S02 — mixed and out-of-stock stacks (codex/s02; working tree only):**
+- stack-cart.ts shares catalogueAvailabilityFor classification between cart lines and skipped-item explanations; existing mapping/price checks retained.
+- BuyMyStack shows OOS with an alternative note, individual affiliate links in “Not sold in our store”, and unconfirmed offers under review.
+- All-skipped stacks keep explanations with no cart link; Phase 2 setup notice retains skipped-item panels; no notification signup/substitutions added.
+- Evidence: 280 relevant Node tests PASS (8 new S02), 0 fail/skip; typecheck PASS; changed-file lint PASS; live-boundaries PASS/0 violations; diff check PASS.
+- TODO(Toby/Lifty): existing S01 approved runtime mappings/data, guest settings, live cart proof and specific flag approval remain; no new S02 decisions.
+- Hosted CI not run; draft PR lookup could not connect to GitHub. Next: review local changes and run hosted checks through the authorised workflow.
+- No live API calls, spend, env/flag edits, hosted migrations, commit attempt, push/merge/deploy; all earlier handover bytes preserved below.
+
 **12 October S01 — guest stack → Shopify cart (codex/s01; HEAD cc9771ee; working tree only):**
 - Added approved-mapping cart permalink builder in lib/commerce/stack-cart.ts; string variant IDs, explicit pack quantities, duplicate totals and existing stock holds.
 - Stack page BuyMyStack uses separately hydrated products (independent of daily doses), one pack each; no sign-in gate; waits for complete current details.
