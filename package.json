@@ -12,6 +12,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "mapping:check": "node --experimental-strip-types scripts/mapping-check.mjs",
     "check:live-boundaries": "node scripts/staging-live-boundary-check.mjs",
     "test": "npm run check:live-boundaries && node scripts/staging-account-activation-manifest.mjs --check && node scripts/staging-account-hosted-baseline-manifest.mjs --check && node --experimental-strip-types --test --test-concurrency=4 tests/*.test.mjs",
     "typecheck": "tsc --noEmit",

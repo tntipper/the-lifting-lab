@@ -1,0 +1,19 @@
+[
+  {
+    "comparison_product_id": "synthetic-product",
+    "status": "store",
+    "shopify_product_id": "gid://shopify/Product/2001",
+    "shopify_variant_id": "gid://shopify/ProductVariant/1001",
+    "handle": "synthetic-product",
+    "supplier": "synthetic-supplier",
+    "supplier_sku": "SYNTHETIC-001",
+    "ean": null,
+    "pack": null,
+    "flavour": null,
+    "cost_ex_vat": "10.0000",
+    "active": false,
+    "price_auto": false,
+    "approval_reference": null,
+    "published": false
+  }
+]

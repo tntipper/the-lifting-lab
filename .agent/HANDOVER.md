@@ -1,3 +1,13 @@
+**11 October T04 — product mapping (codex/t04-mapping-table; base cdf9f296, HEAD 3ac86a9c):**
+- Added 202610110017_product_mapping.sql: private table, unique canonical Shopify variant, RLS/revoked client access, active/price_auto default false, timestamp trigger; not applied anywhere.
+- Added lib/commerce/product-mapping.ts: pure export validation and explicit-evidence ExactMapping conversion; no DB/network access or public cost projection.
+- Added scripts/mapping-check.mjs, npm mapping:check, synthetic JSON/CSV fixtures and tests/product-mapping.test.mjs.
+- Evidence: 128 Node tests pass (21 new, 107 existing eligibility), 0 fail/skip; typecheck PASS; check:live-boundaries PASS, 0 violations; diff whitespace PASS.
+- Valid JSON CLI: exit 0/0 errors; invalid CSV CLI: exit 2/3 expected errors. SQL checked statically only; hosted CI/PR not run.
+- Extra lint attempts stalled without diagnostics and were interrupted; root cause unconfirmed (tool/config loading under this checkout suspected). Proposed follow-up: diagnose ESLint loading in an authorised nonsynced checkout.
+- T05 needs Toby/Lifty real mapping/identity/cost/approval sign-off. Unique variant currently excludes multiple supplier offers for one variant; publication absence is reported as unchecked.
+- Changes left uncommitted in working tree; no Git commit attempt, push, merge, deploy, env/live API/flag changes or spend. Next: review diff, authorised commit/CI and separately approved migration application.
+
 **11 October T03 note (codex/t03-reconcile → codex/t03b-pr54):**
 - Merged remote codex/tll-integration 3f603e7 into local line (merge 9694a18, no rebase); HANDOVER checkpoints kept from both sides; activation manifest regenerated (86 files, --check PASS).
 - Merged PR #54 head 7a60d39 on codex/t03b-pr54 (clean; 164 focused tests pass). #60–#66 already included via 3f603e7.

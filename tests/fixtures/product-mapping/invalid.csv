@@ -1,0 +1,2 @@
+comparison_product_id,status,shopify_product_id,shopify_variant_id,handle,supplier,supplier_sku,cost_ex_vat,active,price_auto,approval_reference,published
+synthetic-product,store,2001,1001,synthetic-product,synthetic-supplier,,,false,false,,true
