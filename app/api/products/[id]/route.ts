@@ -1,3 +1,4 @@
+import { withStorePrices } from '@/lib/commerce/store-price-server'
 import { NextResponse } from 'next/server'
 import { createPublicClient } from '@/lib/supabase-public'
 import { withScore } from '@/lib/products'
@@ -21,6 +22,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .eq('product_id', id)
     .order('nutrient_name')
 
-  const scored = withScore(product)
+  const [pricedProduct] = await withStorePrices([product])
+  const scored = withScore(pricedProduct)
   return NextResponse.json({ ...scored, score: assessmentDisplayFor(scored).score, nutrients: nutrients ?? [] })
 }

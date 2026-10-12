@@ -1,3 +1,13 @@
+**12 October T07 — Shopify price/stock (codex/t07; HEAD 06f93ae0; uncommitted):**
+- Added read-only batched lib/commerce/storefront-prices.ts; reuses API 2026-07 and bounded cart JSON reader; per-variant in-memory cache expires at 15 minutes.
+- store-price-products.ts/server.ts attach approved mappings only; server product loaders/APIs, cheapest and best-category data use Shopify price before serving-cost calculation; missing price becomes unavailable, not retail fallback.
+- Grid/detail labels and ProductOfferLink show stock; catalogueAvailabilityFor drives out-of-stock/unavailable affiliate fallback; existing catalogue holds and isolated-preview restrictions retained.
+- NEXT_PUBLIC_TLL_STORE_PRICES defaults OFF; requires existing STORE_LINKS enabled too. Config names: TLL_STOREFRONT_SHOP / TLL_STOREFRONT_PRIVATE_TOKEN; no env changes.
+- Next 15 connection() avoids daily page-cache hiding refreshed prices; framework rendering signals are rethrown by existing safe loaders.
+- Evidence: 353 relevant Node tests PASS / 0 fail / 0 skip (35 new price tests, mocked fetch/DB and rendered grid/detail); typecheck PASS; changed-source lint PASS/0 warnings; live-boundaries PASS/0; diff check PASS.
+- TODO(T05/Toby/Lifty): wire reviewed saved mapping projections into loaders; approve exact GBP variants/credentials/channel and flag activation; hosted 15-minute price-change proof pending. No approved runtime mapping loader yet.
+- No live API calls, spend, env/flag changes, hosted DB actions, commit attempt, push, merge or deploy; hosted CI not run. Existing handover preserved below.
+
 **12 October T06 — Shopify store links (codex/t06; HEAD 01bd4722; integration base cdf9f296):**
 - Added buildStoreProductLink/resolveProductOffer in lib/affiliate.ts; NEXT_PUBLIC_TLL_STORE_LINKS defaults OFF (only exact enabled opts in); no env changes.
 - Added presentStoreLinkMapping in lib/commerce/product-mapping.ts: active/signed/current/exact identity required; public link fields only, no supplier data/costs.

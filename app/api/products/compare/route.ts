@@ -1,3 +1,4 @@
+import { withStorePrices } from '@/lib/commerce/store-price-server'
 import { NextResponse } from 'next/server'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type Nutrient, type ComparedProduct } from '@/lib/products'
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
   if (nErr) return NextResponse.json({ error: nErr.message }, { status: 500 })
 
   const nutrientRows = (nutrients as NutrientRow[] | null) || []
-  const result: ComparedProduct[] = (products as Product[] | null || []).map((p) => {
+  const result: ComparedProduct[] = (await withStorePrices(products as Product[] | null || [])).map((p) => {
     const scored = withScore(p)
     return {
       ...scored,

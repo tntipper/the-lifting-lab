@@ -1,3 +1,4 @@
+import { withStorePrices } from '@/lib/commerce/store-price-server'
 import { NextResponse } from 'next/server'
 import { assessmentDisplayFor } from '@/lib/assessment-display'
 import { createPublicClient } from '@/lib/supabase-public'
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const products = (data as Product[] | null) || []
+  const products = await withStorePrices((data as Product[] | null) || [])
   const ids = products.map((p) => p.id)
   const { data: nutrients } = ids.length
     ? await sb

@@ -8,11 +8,12 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 const require = createRequire(import.meta.url)
+const catalogueAvailability = loadSource('../lib/commerce/catalogue-presentation.ts')
 function loadSource(path, overrides = {}, env = {}) {
   const source = readFileSync(new URL(path, import.meta.url), 'utf8')
   const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
   const loaded = { exports: {} }
-  vm.runInNewContext(js, { require: name => overrides[name] ?? require(name), module: loaded, exports: loaded.exports, process: { env }, URL })
+  vm.runInNewContext(js, { require: name => overrides[name] ?? (name === './commerce/catalogue-presentation' ? catalogueAvailability : require(name)), module: loaded, exports: loaded.exports, process: { env }, URL })
   return loaded.exports
 }
 const affiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } })

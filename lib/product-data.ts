@@ -1,3 +1,5 @@
+import { unstable_rethrow } from 'next/navigation'
+import { withStorePrices } from '@/lib/commerce/store-price-server'
 // Server-side product data fetchers shared by the /products, /products/[id]
 // and /compare pages (and reusable by the API routes).
 //
@@ -34,7 +36,7 @@ export async function fetchCatalogue(): Promise<ScoredProduct[]> {
       .select(PRODUCT_COLUMNS)
       .eq('status', 'active')
     if (error || !data) return []
-    const products = data as Product[]
+    const products = await withStorePrices(data as Product[])
     const ids = products.map((p) => p.id)
     const { data: nutrients } = ids.length
       ? await sb
@@ -53,7 +55,8 @@ export async function fetchCatalogue(): Promise<ScoredProduct[]> {
       products.map((p) => ({ ...withScore(p), nutrients: byId.get(p.id) ?? [] })),
       'score',
     )
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error)
     return []
   }
 }
@@ -69,8 +72,9 @@ export async function fetchCategory(category: string): Promise<ScoredProduct[]> 
       .eq('status', 'active')
       .eq('category', category)
     if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore), 'score')
-  } catch {
+    return sortScored((await withStorePrices(data as Product[])).map(withScore), 'score')
+  } catch (error) {
+    unstable_rethrow(error)
     return []
   }
 }
@@ -97,8 +101,10 @@ export async function fetchProductDetail(id: string): Promise<ComparedProduct | 
       .eq('product_id', id)
       .order('nutrient_name')
 
-    return { ...withScore(product as Product), nutrients: (nutrients as Nutrient[] | null) ?? [] }
-  } catch {
+    const [pricedProduct] = await withStorePrices([product as Product])
+    return { ...withScore(pricedProduct), nutrients: (nutrients as Nutrient[] | null) ?? [] }
+  } catch (error) {
+    unstable_rethrow(error)
     return null
   }
 }
@@ -135,7 +141,7 @@ export async function fetchCompareProducts(ids: string[]): Promise<ComparedProdu
       .in('product_id', ids)
     const nutrientRows = (nutrients as NutrientRow[] | null) ?? []
 
-    const result: ComparedProduct[] = (products as Product[]).map((p) => ({
+    const result: ComparedProduct[] = (await withStorePrices(products as Product[])).map((p) => ({
       ...withScore(p),
       nutrients: nutrientRows
         .filter((n) => n.product_id === p.id)
@@ -143,7 +149,8 @@ export async function fetchCompareProducts(ids: string[]): Promise<ComparedProdu
     }))
     result.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
     return result
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error)
     return []
   }
 }

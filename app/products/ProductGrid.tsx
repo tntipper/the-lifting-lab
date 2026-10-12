@@ -310,7 +310,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   <b className="mt-1 block font-mono text-sm text-white">{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b>
                 </div>
                 <div className="min-w-0">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Our price</span>
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">{product.storePrice ? 'TLL Store price' : 'Our price'}</span>
                   <b className="mt-1 block font-mono text-sm text-white">{formatMoney(product.retail_price)}</b>
                 </div>
               </div>
@@ -355,7 +355,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               <div className="rounded-lg border border-lab-border px-3 py-2.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-lab-muted">Price check</p>
                 <div className="mt-1 grid grid-cols-[1fr_auto] gap-3 text-sm">
-                  <span className="font-semibold">Recorded catalogue price</span>
+                  <span className="font-semibold">{product.storePrice ? 'TLL Store price' : 'Recorded catalogue price'}</span>
                   <span className="font-mono font-bold">{formatMoney(product.retail_price)}</span>
                 </div>
               </div>

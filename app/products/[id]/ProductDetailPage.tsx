@@ -132,7 +132,7 @@ export default function ProductDetailPage({
               )}
             </div>
             <p className="text-sm text-gray-400 mt-2">
-              {product.retail_price != null ? <span>£{product.retail_price.toFixed(2)} retail</span> : <span>Retail price —</span>}
+              {product.retail_price != null ? <span>£{product.retail_price.toFixed(2)} {product.storePrice ? 'at TLL Store' : 'retail'}</span> : <span>{product.storePrice ? 'TLL Store price unavailable' : 'Retail price —'}</span>}
               <span className="mx-2">·</span>
               {product.cost_per_serving != null ? (
                 <span className="text-white font-bold">{formatListedServingPrice(product.cost_per_serving)} listed price / serving</span>
