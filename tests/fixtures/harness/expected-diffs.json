@@ -1,0 +1,47 @@
+[
+  {
+    "mappingId": "00000000-0000-4000-8000-000000000001",
+    "variantId": "gid://shopify/ProductVariant/1",
+    "field": "inventory",
+    "old": 9,
+    "new": 5,
+    "applied": false,
+    "reason": "dry_run"
+  },
+  {
+    "mappingId": "00000000-0000-4000-8000-000000000001",
+    "variantId": "gid://shopify/ProductVariant/1",
+    "field": "cost_ex_vat",
+    "old": 10,
+    "new": 12.34,
+    "applied": false,
+    "reason": "price_locked"
+  },
+  {
+    "mappingId": "00000000-0000-4000-8000-000000000002",
+    "variantId": "gid://shopify/ProductVariant/2",
+    "field": "inventory",
+    "old": 9,
+    "new": 0,
+    "applied": false,
+    "reason": "dry_run"
+  },
+  {
+    "mappingId": "00000000-0000-4000-8000-000000000002",
+    "variantId": "gid://shopify/ProductVariant/2",
+    "field": "cost_ex_vat",
+    "old": 10,
+    "new": 11,
+    "applied": false,
+    "reason": "cost_review_required"
+  },
+  {
+    "mappingId": "00000000-0000-4000-8000-000000000002",
+    "variantId": "gid://shopify/ProductVariant/2",
+    "field": "price",
+    "old": 2000,
+    "new": 2500,
+    "applied": false,
+    "reason": "dry_run"
+  }
+]

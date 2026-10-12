@@ -1,0 +1,3 @@
+ProductCode,TranslationName,Tax,StockLevel,Barcode,Brand,Flavour,FilterByCategory,NutritionalInformation,Size,ProductFlag,ProductFlagDate,ProductPrice,ExpiryDate
+SYN-1,"Synthetic, ""quoted"" supplement",VAT,5,4006381333931,Synthetic brand,Vanilla,Protein,<p>Opaque</p>,500g,,,12.34,
+SYN-BAD,"unterminated
