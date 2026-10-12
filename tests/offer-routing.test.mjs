@@ -8,12 +8,13 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 const require = createRequire(import.meta.url)
+const attribution = loadSource('../lib/commerce/store-attribution.ts')
 const catalogueAvailability = loadSource('../lib/commerce/catalogue-presentation.ts')
 function loadSource(path, overrides = {}, env = {}) {
   const source = readFileSync(new URL(path, import.meta.url), 'utf8')
   const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
   const loaded = { exports: {} }
-  vm.runInNewContext(js, { require: name => overrides[name] ?? (name === './commerce/catalogue-presentation' ? catalogueAvailability : require(name)), module: loaded, exports: loaded.exports, process: { env }, URL })
+  vm.runInNewContext(js, { require: name => overrides[name] ?? (name === './commerce/catalogue-presentation' ? catalogueAvailability : name === './commerce/store-attribution' ? attribution : require(name)), module: loaded, exports: loaded.exports, process: { env }, URL })
   return loaded.exports
 }
 const affiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } })
@@ -157,7 +158,7 @@ const approvedMapping = { productId: 'store-fixture', shopifyProductHandle: 'fix
   shopifyVariantId: 'gid://shopify/ProductVariant/90071992547409931234', active: true, approved: true,
   review: { approved: true, version: 'v1', expectedVersion: 'v1', verifiedAtMs: storeNow - 1000, expiresAtMs: storeNow + 60000 } }
 const storeProduct = { id: 'store-fixture', brand: 'Fixture', name: 'Vanilla 500g', buy_url: 'https://www.amazon.co.uk/dp/B000000001', storeLinkMapping: approvedMapping }
-const storeUrl = 'https://shop.theliftinglab.co.uk/products/fixture-vanilla-500g?variant=90071992547409931234'
+const storeUrl = 'https://shop.theliftinglab.co.uk/products/fixture-vanilla-500g?variant=90071992547409931234&utm_source=theliftinglab&utm_medium=referral&utm_campaign=product&ref=theliftinglab'
 const enabledAffiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } }, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' })
 const storeComponent = lib => loadSource('../components/ProductOfferLink.tsx', { './StagingCartContext': cartContext, './StagingCartActions': cartActions, '@/lib/commerce/catalogue-presentation': presentation, '@/lib/affiliate': lib, '@/lib/gtag': { track() { throw new Error('SSR must not track') } } }).default
 const storeRender = (product, lib = enabledAffiliate) => renderToStaticMarkup(React.createElement(storeComponent(lib), { product }))
@@ -196,7 +197,7 @@ test('default OFF, explicit OFF and unknown flag values preserve affiliate rende
 test('approved store wins over an affiliate reference or missing reference and renders its own label', () => {
   for (const buy_url of [storeProduct.buy_url, null]) {
     const html = storeRender({ ...storeProduct, buy_url })
-    assert.match(html, /Buy at TLL Store/); assert.ok(html.includes(`href="${storeUrl}"`))
+    assert.match(html, /Buy at TLL Store/); assert.ok(html.includes(`href="${storeUrl.replaceAll('&', '&amp;')}"`))
     assert.match(html, /opens in a new tab/); assert.doesNotMatch(html, /affiliate link|sponsored|awin|amazon/)
   }
 })
@@ -216,14 +217,14 @@ test('isolated preview and existing stock holds take precedence over approved st
   }
 })
 
-const cartUrl = 'https://shop.theliftinglab.co.uk/cart/90071992547409931234:1'
+const cartUrl = 'https://shop.theliftinglab.co.uk/cart/90071992547409931234:1?utm_source=theliftinglab&utm_medium=referral&utm_campaign=product&ref=theliftinglab'
 const inStockProduct = { ...storeProduct, storePrice: { productId: storeProduct.id, price: 19.99, availableForSale: true, observedAtMs: storeNow } }
 const renderMode = (product, mode, lib = enabledAffiliate) => renderToStaticMarkup(React.createElement(storeComponent(lib), { product, storeBuyLinkMode: mode }))
 
 test('S03 product-page config is the default even with confirmed stock', () => {
   assert.equal(affiliate.DEFAULT_STORE_BUY_LINK_MODE, 'product_page')
   assert.equal(enabledAffiliate.resolveProductOffer(inStockProduct).url, storeUrl)
-  assert.ok(storeRender(inStockProduct).includes(`href="${storeUrl}"`))
+  assert.ok(storeRender(inStockProduct).includes(`href="${storeUrl.replaceAll('&', '&amp;')}"`))
 })
 for (const mode of ['product_page', 'cart']) test(`S03 ${mode} mode builds and renders the exact selected variant`, () => {
   const expected = mode === 'cart' ? cartUrl : storeUrl
@@ -232,7 +233,7 @@ for (const mode of ['product_page', 'cart']) test(`S03 ${mode} mode builds and r
   }
   assert.equal(enabledAffiliate.resolveProductOffer(inStockProduct, mode).url, expected)
   const html = renderMode(inStockProduct, mode)
-  assert.ok(html.includes(`href="${expected}"`))
+  assert.ok(html.includes(`href="${expected.replaceAll('&', '&amp;')}"`))
   assert.match(html, /Buy at TLL Store/)
   assert.doesNotMatch(html, /sponsored|affiliate link/)
 })
@@ -250,7 +251,7 @@ for (const [name, storePrice] of [
 ]) test(`S03 cart mode falls back to product page for ${name} stock when store prices are OFF`, () => {
   const product = { ...storeProduct, storePrice }
   assert.equal(enabledAffiliate.resolveProductOffer(product, 'cart').url, storeUrl)
-  assert.ok(renderMode(product, 'cart').includes(`href="${storeUrl}"`))
+  assert.ok(renderMode(product, 'cart').includes(`href="${storeUrl.replaceAll('&', '&amp;')}"`))
 })
 test('S03 both modes preserve T07 affiliate fallback for out-of-stock or missing stock with prices ON', () => {
   const lib = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } }, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'enabled' })
@@ -274,4 +275,62 @@ test('S03 cart option preserves disabled links, unmapped fallback, preview and c
     assert.notEqual(enabledAffiliate.resolveProductOffer(product, 'cart').url, cartUrl)
     assert.doesNotMatch(renderMode(product, 'cart'), /href=|Buy at TLL Store/)
   }
+})
+
+function assertAttribution(link, campaign) {
+  const url = new URL(link)
+  for (const [key, value] of Object.entries({ utm_source: 'theliftinglab', utm_medium: 'referral', utm_campaign: campaign, ref: 'theliftinglab' })) {
+    assert.deepEqual(url.searchParams.getAll(key), [value], `${key} must appear exactly once`)
+  }
+  return url
+}
+for (const campaign of ['product', 'compare', 'stack']) {
+  for (const mode of ['product_page', 'cart']) test(`S05 ${campaign} ${mode} attribution reaches builder, resolver and rendered link`, () => {
+    const built = affiliate.buildStoreProductLink(storeProduct.id, approvedMapping, storeNow, { mode, inStock: true, campaign })
+    const url = assertAttribution(built, campaign)
+    assert.equal(url.pathname, mode === 'cart' ? '/cart/90071992547409931234:1' : '/products/fixture-vanilla-500g')
+    assert.deepEqual(url.searchParams.getAll('variant'), mode === 'cart' ? [] : ['90071992547409931234'])
+    assert.equal(enabledAffiliate.resolveProductOffer(inStockProduct, mode, campaign).url, built)
+    const html = renderToStaticMarkup(React.createElement(storeComponent(enabledAffiliate), {
+      product: inStockProduct, storeBuyLinkMode: mode, storeCampaign: campaign,
+    }))
+    assert.ok(html.includes(`href="${built.replaceAll('&', '&amp;')}"`))
+    const fallback = affiliate.buildStoreProductLink(storeProduct.id, approvedMapping, storeNow, { mode: 'cart', inStock: false, campaign })
+    assert.equal(assertAttribution(fallback, campaign).searchParams.get('variant'), '90071992547409931234')
+  })
+  test(`S05 ${campaign} repeated attribution removes duplicates and preserves unrelated URL data`, () => {
+    const input = 'https://shop.theliftinglab.co.uk/products/fixture?variant=90071992547409931234&discount=SAVE#details'
+    const first = attribution.withStoreAttribution(input, campaign)
+    assert.equal(attribution.withStoreAttribution(first, campaign), first)
+    const dirty = `${first.replace('#details', '')}&utm_source=other&utm_medium=other&utm_campaign=other&ref=other#details`
+    const cleaned = attribution.withStoreAttribution(dirty, campaign)
+    const url = assertAttribution(cleaned, campaign)
+    assert.equal(cleaned, first)
+    assert.equal(url.searchParams.get('variant'), '90071992547409931234')
+    assert.equal(url.searchParams.get('discount'), 'SAVE')
+    assert.equal(url.hash, '#details')
+  })
+}
+test('S05 attribution never alters affiliate fallback links', () => {
+  for (const campaign of ['stack', 'product', 'compare']) {
+    const listing = enabledAffiliate.resolveProductOffer({ ...inStockProduct, storeLinkMapping: null }, 'cart', campaign)
+    assert.equal(listing.url, resolve(inStockProduct.buy_url).url)
+    assert.equal(new URL(listing.url).searchParams.get('utm_source'), null)
+  }
+})
+test('S05 comparison and stack pages pass their context to every store offer', () => {
+  for (const [file, campaign] of [
+    ['app/compare/CompareView.tsx', 'compare'], ['app/vs/[matchup]/page.tsx', 'compare'],
+    ['app/brands-vs/[matchup]/page.tsx', 'compare'], ['app/stacks/[goal]/page.tsx', 'stack'],
+    ['app/stack/StackBuilder.tsx', 'stack'],
+  ]) {
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+    const buttons = source.match(/<ProductOfferLink\b[^>]*>/g)
+    assert.ok(buttons?.length, file)
+    for (const button of buttons) assert.ok(button.includes(`storeCampaign="${campaign}"`), file)
+  }
+  const stackSource = readFileSync(new URL('../app/stack/StackBuilder.tsx', import.meta.url), 'utf8')
+  const calls = stackSource.match(/resolveProductOffer\([^\n]+/g)
+  assert.equal(calls.length, 2)
+  for (const call of calls) assert.ok(call.includes("DEFAULT_STORE_BUY_LINK_MODE, 'stack'"))
 })

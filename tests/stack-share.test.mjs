@@ -77,7 +77,7 @@ test('fresh browser rebuild and Buy use exact variant quantities, independently 
  const lines=parse('90071992547409931234:3,2:2'), products=[product('b','gid://shopify/ProductVariant/2'),product('a','90071992547409931234')]
  const rebuilt=share.rebuildSharedStack(lines,products,now)
  assert.deepEqual(Array.from(rebuilt,p=>[p.id,p.quantity]),[['a',3],['b',2]])
- assert.equal(load('lib/commerce/stack-cart.ts').buildStackCartUrl(rebuilt,now),'https://shop.theliftinglab.co.uk/cart/90071992547409931234:3,2:2')
+ assert.equal(load('lib/commerce/stack-cart.ts').buildStackCartUrl(rebuilt,now),'https://shop.theliftinglab.co.uk/cart/90071992547409931234:3,2:2?utm_source=theliftinglab&utm_medium=referral&utm_campaign=stack&ref=theliftinglab')
  const Buy=modules({NEXT_PUBLIC_TLL_STACK_CART:'enabled'})('components/BuyMyStack.tsx').default
  assert.match(renderToStaticMarkup(React.createElement(Buy,{items:rebuilt,ready:true})),/90071992547409931234:3,2:2/)
  assert.equal(renderToStaticMarkup(React.createElement(load('components/BuyMyStack.tsx').default,{items:rebuilt,ready:true})), '')
@@ -124,7 +124,7 @@ test('shared screen loads a fresh URL through a mock lookup and displays exact B
  const cleanup=effects[0]();await new Promise(setImmediate)
  index=0;const after=renderToStaticMarkup(Shared({query}));cleanup()
  assert.equal(calls,1);assert.match(after,/Fixture a/);assert.match(after,/3 pack/)
- assert.match(after,/href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:3,2:2"/)
+ assert.match(after,/href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:3,2:2\?utm_source=theliftinglab&amp;utm_medium=referral&amp;utm_campaign=stack&amp;ref=theliftinglab"/)
  assert.match(after,/Share this stack URL/)
 })
 test('invalid shared screen displays validation message and never looks up or buys variants', () => {

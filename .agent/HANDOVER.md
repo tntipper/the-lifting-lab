@@ -1,3 +1,13 @@
+**12 October S05 — store link/cart source attribution (codex/s05; HEAD 2d3fba74; working tree only):**
+- Shared lib/commerce/store-attribution.ts adds utm_source=theliftinglab, utm_medium=referral, campaign product/compare/stack and ref=theliftinglab exactly once.
+- T06/S03 product-page and single-item cart links retain exact variant IDs; S01/shared-stack carts retain combined pack quantities; affiliate links unchanged.
+- ProductOfferLink defaults to product; compare/vs/brands-vs pages use compare; stack/goal pages and stack email links use stack.
+- Mock-only Storefront cartCreate adds source attributes and a referral note using pinned 2026-07; existing flags remain default OFF, no new flags.
+- Evidence: 238 relevant Node tests PASS (13 new), 0 fail/skip; typecheck PASS; changed-file lint PASS; live-boundaries PASS/0 violations; diff check PASS.
+- TODO(Toby/Lifty): separately authorise test order and confirm source in Shopify order attribution; existing mapping/data, Storefront binding/credentials and activation approvals still apply.
+- Hosted CI/live Shopify journey unverified; related draft PR lookup could not connect to GitHub. Next: review local diff, then authorised hosted checks.
+- No live service APIs, spend, env/flag edits, hosted migrations, commit attempt, push/merge/deploy; all earlier handover bytes preserved below.
+
 **12 October S04 — shared stack URLs and guest merge verification (codex/s04; HEAD 4b907e5d; working tree only):**
 - Guest sign-in merge already exists; added refresh/sign-in/retry tests proving browser persistence, accepted-only acknowledgement and preserved account servings; auth unchanged.
 - /stack now admits guests; shared URLs display a separate selection without replacing the saved account stack; quantities mean packs, never daily doses.

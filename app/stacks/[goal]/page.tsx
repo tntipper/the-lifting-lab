@@ -258,7 +258,7 @@ export default async function StackPage({
                           See all
                         </Link>
                       )}
-                      <ProductOfferLink
+                      <ProductOfferLink storeCampaign="stack"
                         product={p}
                         className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
                         style={{

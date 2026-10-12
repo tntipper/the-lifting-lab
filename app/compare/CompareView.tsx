@@ -147,7 +147,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
               <th className="sticky left-0 z-10 border-b border-lab-border bg-lab-panel p-3 text-left text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">Retailer listing</th>
               {products.map((product) => (
                 <td key={product.id} className="border-b border-lab-border p-3 align-top">
-                  <ProductOfferLink product={product} className="w-full rounded-md bg-[#14140f] py-3 text-sm font-semibold uppercase tracking-wide text-[#a6e22e]" />
+                  <ProductOfferLink storeCampaign="compare" product={product} className="w-full rounded-md bg-[#14140f] py-3 text-sm font-semibold uppercase tracking-wide text-[#a6e22e]" />
                 </td>
               ))}
               {Array.from({ length: Math.max(0, 3 - products.length) }).map((_, index) => <td key={`empty-offer-${index}`} className="border-b border-lab-border p-3" />)}

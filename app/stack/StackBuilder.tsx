@@ -7,7 +7,7 @@ import { rniFor, type Sex } from '@/lib/nutrient-rda'
 import ProductAssessment from '@/components/ProductAssessment'
 import { catalogueAssessment, summariseStackAssessments, assessmentText, stackResearchText } from '@/lib/stack-assessment'
 import { scoreFor } from '@/lib/scores'
-import { resolveProductOffer } from '@/lib/affiliate'
+import { DEFAULT_STORE_BUY_LINK_MODE, resolveProductOffer } from '@/lib/affiliate'
 import type { StoreLinkMapping } from '@/lib/commerce/product-mapping'
 import BuyMyStack from '@/components/BuyMyStack'
 import SharedStack from '@/components/SharedStack'
@@ -120,7 +120,7 @@ function buildEmailLink(items: StackItem[], listedCount: number): string {
       .map((i) => {
         const p = i.products!
         const assessment = assessmentText(catalogueAssessment(p))
-        const listing = resolveProductOffer({ ...p, buy_url: p.buy_url ?? null })
+        const listing = resolveProductOffer({ ...p, buy_url: p.buy_url ?? null }, DEFAULT_STORE_BUY_LINK_MODE, 'stack')
         const destination = listing.state === 'listing' && listing.url
           ? listing.reason === 'approved_store_mapping' ? `Buy at TLL Store (check pack, price and stock): ${listing.url}`
             : `Retailer listing at ${listing.retailer} (check product, pack and price${listing.relationship === 'affiliate' ? '; affiliate link' : '; external link'}): ${listing.url}`
@@ -322,7 +322,7 @@ function SavedStackBuilder() {
     for (const it of stackItems) {
       const p = it.products
       if (!p) continue
-      const listing = resolveProductOffer({ ...p, buy_url: p.buy_url ?? null })
+      const listing = resolveProductOffer({ ...p, buy_url: p.buy_url ?? null }, DEFAULT_STORE_BUY_LINK_MODE, 'stack')
       if (listing.state !== 'listing' || !listing.url || !listing.retailer) continue
       const label = listing.retailer
       if (!groups[label]) groups[label] = { label, products: [] }
@@ -588,7 +588,7 @@ function SavedStackBuilder() {
             <p className="text-sm font-black">{group.label}</p>
             {group.products.map((product, index) => <div key={`${product.id}-${index}`} className="mt-3 flex items-center justify-between gap-3 border-t border-[#e1e2db] pt-3">
               <span className="text-xs text-[#66685f]">{product.brand} {product.name}</span>
-              <ProductOfferLink product={{ ...product, buy_url: product.buy_url ?? null }} className="rounded-lg border border-[#a8aaa0] py-2 text-xs font-bold" />
+              <ProductOfferLink storeCampaign="stack" product={{ ...product, buy_url: product.buy_url ?? null }} className="rounded-lg border border-[#a8aaa0] py-2 text-xs font-bold" />
             </div>)}
           </div>)}
         </div>

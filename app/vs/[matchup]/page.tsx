@@ -330,7 +330,7 @@ export default async function MatchupPage({
           <div />
           {products.map((p) => (
             <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
-              <ProductOfferLink
+              <ProductOfferLink storeCampaign="compare"
                 product={p}
                 className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
               />
