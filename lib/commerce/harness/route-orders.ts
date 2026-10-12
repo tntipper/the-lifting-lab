@@ -1,3 +1,4 @@
+import type { FailureReporter } from './manual-queue'
 import { createHash } from 'node:crypto'
 import { presentStoreLinkMapping, validateProductMappings } from '../product-mapping'
 import type { ProductMappingRow } from '../product-mapping'
@@ -31,7 +32,7 @@ export interface OrderRoutingStore {
   hold(event: PaidOrderEvent, code: string): Promise<void>
 }
 export type OrderRoutingDependencies = {
-  enabled?: string;
+  enabled?: string; reportFailure?: FailureReporter;
   shop: string;
   shopify: { readOrder(orderId: string): Promise<FreshOrder> };
   mappings: () => Promise<{ id: string; row: ProductMappingRow }[]>;
@@ -61,9 +62,14 @@ async function boundedSubmit(adapter: Pick<SupplierAdapter, 'placeOrder'>, reque
   finally { if (timer) clearTimeout(timer) }
 }
 /** Private worker entry point; never called inline by the webhook, and never retries a submission. */
-export async function routePaidOrder(event: PaidOrderEvent, deps: OrderRoutingDependencies): Promise<{ status: string; groups?: number }> {
+export async function routePaidOrder(event: PaidOrderEvent, deps: OrderRoutingDependencies): Promise<{ status: string; groups?: number; reporting?: 'queue_failed' | 'alert_failed' }> {
   if (deps.enabled !== 'true') return { status: 'disabled' }
-  const hold = async (code: string) => { await deps.store.hold(event, code); return { status: 'manual' } }
+  const hold = async (code: string) => {
+    await deps.store.hold(event, code)
+    const reported = await deps.reportFailure?.({ job: 'orders', code, reference: `${event.shop}:${event.orderId}`,
+      ...(/^gid:\/\/shopify\/Order\/[1-9][0-9]*$/.test(event.orderId) ? { orderId: event.orderId } : {}) })
+    return { status: 'manual', ...(reported === 'queue_failed' || reported === 'alert_failed' ? { reporting: reported } : {}) }
+  }
   if (event.shop !== deps.shop || !/^gid:\/\/shopify\/Order\/[1-9][0-9]*$/.test(event.orderId)) return hold('ORDER_IDENTITY_INVALID')
   const timeout = deps.timeoutMs ?? 10_000
   if (!Number.isSafeInteger(timeout) || timeout < 1 || timeout > 60_000) return hold('TIMEOUT_CONFIG_INVALID')
@@ -108,6 +114,7 @@ export async function routePaidOrder(event: PaidOrderEvent, deps: OrderRoutingDe
     }
   } catch { return hold('PLAN_OR_RESERVATION_FAILED') }
   let manual = false
+  let reporting: 'queue_failed' | 'alert_failed' | undefined
   for (const group of groups.values()) {
     try { if (!await deps.store.claimSubmission(group.localKey)) { manual = true; continue } }
     catch { return hold('SUBMISSION_CLAIM_FAILED') } // possibly committed; do not send
@@ -122,8 +129,13 @@ export async function routePaidOrder(event: PaidOrderEvent, deps: OrderRoutingDe
     try { await deps.store.recordResult(group.localKey, { status, ...(validRef ? { supplierRef: ref } : {}),
       code: status === 'manual' ? 'SUPPLIER_RESULT_UNCERTAIN' : `SUPPLIER_${status.toUpperCase()}` }) }
     catch { return hold('RESULT_SAVE_FAILED') } // spent marker remains manual; never resend
+    if (status === 'rejected') {
+      const reported = await deps.reportFailure?.({ job: 'orders', code: 'SUPPLIER_REJECTED',
+        reference: group.localKey, orderId: event.orderId, supplier: group.supplier })
+      if (reported === 'queue_failed' || reported === 'alert_failed') reporting = reported
+    }
   }
   if (manual) return hold('SUPPLIER_RECONCILIATION_REQUIRED')
   try { await deps.store.complete(event) } catch { return hold('INBOX_COMPLETION_FAILED') }
-  return { status: 'processed', groups: groups.size }
+  return { status: 'processed', groups: groups.size, ...(reporting ? { reporting } : {}) }
 }

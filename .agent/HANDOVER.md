@@ -1,3 +1,13 @@
+**12 October T11 — offline manual queue and alerts (codex/t11; HEAD 1002483; working tree only):**
+- Added private/RLS manual_queue migration (static only), injected SQL store, immediate alert reporter and pure daily digest builder.
+- Connected stock/order/tracking failures and supplier rejections; safe codes/hashed incident keys, private order context, no automatic resend/reopen.
+- Added /admin/harness HTML handler with list/mark-done, actor/time audit, same-origin forms and non-admin 403; marking done never changes reservations/spent markers.
+- HARNESS_MANUAL_QUEUE_ENABLED and HARNESS_ALERTS_ENABLED exact true, default OFF; no live DB/sender bindings. Sender timeout preserves queue; no automatic retry.
+- No admin permission helper exists: reused Supabase session helper, exported route denies all pending reviewed server-owned admin policy; TODOs in harness/README.md.
+- Evidence: 296 focused Node tests PASS (35 new), 0 fail/skip; typecheck PASS; changed-file lint PASS; live-boundaries PASS/0 violations; whitespace PASS.
+- Toby/Lifty: approve admin membership, private DB/migration binding, alert channel/recipients/credentials, digest totals/schedule/timezone, reconciliation procedure and activation.
+- Hosted CI/SQL and actual five-minute alert delivery unverified; draft PR read could not connect to GitHub. No live APIs/sends/spend/env edits/commit attempt/push/merge/deploy.
+
 **12 October T10 — offline tracking write-back (codex/t10; HEAD 868a6d5; working tree only):**
 - Added injected tracking job/private SQL store/authenticated cron route in lib/commerce/harness; TRACKING_WRITE_ENABLED exact true, default OFF; route unbound.
 - Submitted/accepted supplier lines -> stable parcel + explicit shipped SKUs/quantities -> fresh Shopify 2026-07 fulfillment-order line IDs; partial only, notifyCustomer=true.

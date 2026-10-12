@@ -215,3 +215,78 @@ T10 result (12 October, local): 261 focused Node tests passed, 0 failed/skipped
 (65 new tracking checks); TypeScript and changed-file ESLint passed;
 `check:live-boundaries` passed with 0 violations. Hosted CI/real-service
 acceptance is outstanding; a read-only draft PR lookup could not connect to GitHub.
+
+
+## T11 manual queue and alerts (offline, default OFF)
+
+`manual-queue.ts` provides an injected private SQL store, failure reporter and pure
+`buildDailyDigest` builder. The static `202610120021_manual_queue.sql` migration
+requires the T08 private schema; it has not been applied to any database. Browser
+roles have no access; server operations use a restricted injected client.
+
+Stock/price failures call `reportFailure` only behind the existing write flag;
+order holds and tracking holds call it only when their existing job flag is ON.
+`HARNESS_MANUAL_QUEUE_ENABLED` must be exact `true` to enqueue. Independent
+`HARNESS_ALERTS_ENABLED` must be exact `true` to send. Both default OFF. When
+constructing `createFailureReporter`, explicitly pass those env values and a
+reviewed injected email or Slack sender; no runtime sender is bound here.
+Suggested credential/recipient names only: `HARNESS_ALERT_EMAIL_TO`,
+`HARNESS_ALERT_EMAIL_TOKEN`, `HARNESS_ALERT_SLACK_WEBHOOK_URL`. No values are read,
+logged, written or configured by the reporter. No real alert is sent by tests.
+
+A failure is queued before the alert call. Alerts contain only queue ID, job and
+safe reason code. References are hashed for deduplication, never saved in plain
+text. Stock run timestamps, order identity and tracking parcel identity correlate
+incidents. Validated Shopify order IDs (when available) and supplier IDs are
+private operator context on the page; they are omitted from alert text. A new stock/tracking-fetch run can create a new incident; the same
+order/parcel/reason does not reopen a done item or send another alert. Supply a
+stable `runReference` for replayed tracking fetch runs. No provider errors,
+addresses, costs or supplier credentials appear in queue rows or alert text.
+
+The sender is called immediately, with a default 10-second wait bound (maximum
+60 seconds). Missing, failed or timed-out delivery leaves the item open and
+returns `alert_failed`; queue-save failure returns `queue_failed`. Jobs expose
+safe reporting failure codes/status. There is no automatic alert retry; a late
+transport may still deliver. The injected sender must enforce its own network
+cancellation/timeouts. Live delivery within five minutes still needs approved
+transport and actual delivery evidence. Process crashes between queue persistence
+and sending are not a delivery guarantee; the daily open-item digest is the
+operator fallback once its separately approved schedule/sender is connected.
+
+`/admin/harness` is an HTML route with same-origin mark-done forms and real HTTP
+403 responses before queue access for missing/non-admin identities. It uses
+no-store headers and HTML escaping. `markDone` is conditional on open status and
+records actor/time. It closes review only; it never clears spent markers,
+releases stock reservations or resubmits orders/fulfilments.
+
+No existing admin permission helper/table/policy was found in this checkout.
+The exported route reuses `createServerSupabase`/`auth.getUser` for sign-in but
+**denies every user** until a reviewed server-owned admin check is supplied.
+The disabled route does not call authentication services. The injected handler
+is fully testable with admin/non-admin identities and a queue store. Never use
+user-editable metadata or email matching as the admin permission source.
+
+`buildDailyDigest` accepts open/done items, absorbed supplier-shipping pence and
+order-dispatch evidence progress from approved private sources. It renders open
+reason counts, £ totals and evidence days; it does not invent totals, read data,
+send or schedule anything. The intended 08:00 daily schedule remains unconfigured.
+
+### T11 decisions / remaining connections (Toby or Lifty)
+
+- Confirm server-owned admin membership and operator access; bind its check.
+- Approve static migration application and bind a restricted private SQL client.
+- Choose email, Slack or both, recipients/channel and approved transport/credentials;
+  bind the reporter to jobs without changing their existing activation requirements.
+- Bind trusted absorbed-shipping/evidence totals and approve daily schedule/timezone.
+- Define operator reconciliation/sign-off procedure for held orders/fulfilments;
+  mark-done alone is never permission to repeat an uncertain operation.
+- Separately approve activation and real five-minute delivery verification. Hosted
+  CI, hosted SQL and real-service acceptance are not covered by local mocks.
+
+Local checks: Node runner `tests/harness-manual-queue.test.mjs` with the T08–T10,
+supplier-feed and product-mapping tests; TypeScript, changed-file ESLint and
+`npm run check:live-boundaries`. No env files or live flags changed.
+
+T11 local result (12 October): 296 focused Node tests passed (35 new), zero
+failed/skipped. TypeScript, changed-file ESLint, live boundaries (0 violations)
+and whitespace checks passed. Changes remain uncommitted on `codex/t11`.
