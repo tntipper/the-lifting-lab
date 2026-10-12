@@ -1,3 +1,13 @@
+**12 October T08 — offline harness core / TropShip sync (codex/t08; HEAD e30a56f3; working tree only):**
+- Added lib/commerce/harness adapter/types/sync/auth handler; reuses strict supplier-feed parser and saved ExactMapping validation; no Python connector exists here.
+- Whole-file rejection alerts/skips malformed/stale/>30%-drop feeds; approved identity only; absolute stock diffs, price_auto-only prices, private cost-review diffs.
+- HARNESS_ENABLED and HARNESS_WRITE_ENABLED require exact true and default OFF; dry runs call neither writer nor persistence; uncertain writes stop without retry.
+- Auth-protected app/api/harness/stock-price route defaults disabled; enabled route stays 503 until dependencies wired. Order/tracking are explicit T09/T10 stubs.
+- Added private/RLS harness_runs + sync_diffs migration (static checks only), synthetic CSV/expected-diff fixtures and 33 new tests; setup/TODOs in harness/README.md.
+- Evidence: 140 focused Node tests PASS, 0 fail/skip; typecheck PASS; changed-file lint PASS/0 warnings; live-boundaries PASS/0 violations; whitespace PASS. Hosted CI not run.
+- Next/Toby/Lifty: approved saved mappings + literal Size, trusted observation/unit evidence, approved pricing, Shopify read/write bindings, private persistence, T11 alert delivery and cron credentials/scheduling; live staging acceptance pending.
+- No network/SFTP/live API calls, hosted migrations, env/flag changes, spend, commit attempt, push/merge/deploy. Existing handover preserved byte-for-byte below.
+
 **12 October T07 — Shopify price/stock (codex/t07; HEAD 06f93ae0; uncommitted):**
 - Added read-only batched lib/commerce/storefront-prices.ts; reuses API 2026-07 and bounded cart JSON reader; per-variant in-memory cache expires at 15 minutes.
 - store-price-products.ts/server.ts attach approved mappings only; server product loaders/APIs, cheapest and best-category data use Shopify price before serving-cost calculation; missing price becomes unavailable, not retail fallback.
