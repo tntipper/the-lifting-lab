@@ -110,3 +110,30 @@ test('single active stack invalid servings are unresolved, never replaced with a
  assert.equal(analysisServings(snap([item(P,3)]),P),3)
  assert.equal(analysisServings(null,P),1)
 })
+
+test('S04 guest refresh restores localStorage and sign-in merges without changing existing doses',async()=>{
+ const data=storage()
+ const first=createGuestStore(data,randomUUID);first.add(product());first.add(product(Q))
+ const guest=createGuestStore(data,randomUUID),calls=[]
+ const service=createStackSync({guest,additions:createAdditionOutbox(data),nonce:randomUUID,changed:()=>{},request:async(_url,o)=>{
+  calls.push(o)
+  if(!o.method)return response(snap([item(P,4)],2))
+  assert.deepEqual(JSON.parse(o.body),{productIds:[P,Q]})
+  return applied(snap([item(P,4),item(Q,1)],3),[P,Q])
+ }})
+ await service.setIdentity(null);assert.deepEqual(service.getState().guest.map(r=>r.product.id),[P,Q]);assert.equal(calls.length,0)
+ await service.setIdentity(U);assert.equal(calls.length,2);assert.equal(guest.read().length,0)
+ assert.equal(service.getState().snapshot.items[0].servings_per_day,4)
+ assert.equal(service.getState().snapshot.items[1].servings_per_day,1)
+ assert.equal(createGuestStore(data,randomUUID).read().length,0)
+ await service.setIdentity(U);assert.equal(calls.length,2)
+})
+test('S04 failed sign-in merge retries exact captured request and then acknowledges local records',async()=>{
+ let writes=0
+ const f=fixture(async(_url,o)=>{if(!o.method)return response(snap());if(++writes===1)throw Error('offline');return applied(snap([item()],1),[P])})
+ f.guest.add(product());await f.service.setIdentity(null);await f.service.setIdentity(U)
+ assert.equal(f.guest.read().length,1);await f.service.retry();assert.equal(f.guest.read().length,0)
+ const attempts=f.calls.filter(([,o])=>o.method).map(([,o])=>o)
+ assert.equal(attempts.length,2);assert.equal(attempts[0].body,attempts[1].body)
+ assert.equal(attempts[0].headers['Idempotency-Key'],attempts[1].headers['Idempotency-Key'])
+})

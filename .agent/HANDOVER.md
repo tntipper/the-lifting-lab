@@ -1,3 +1,13 @@
+**12 October S04 — shared stack URLs and guest merge verification (codex/s04; HEAD 4b907e5d; working tree only):**
+- Guest sign-in merge already exists; added refresh/sign-in/retry tests proving browser persistence, accepted-only acknowledgement and preserved account servings; auth unchanged.
+- /stack now admits guests; shared URLs display a separate selection without replacing the saved account stack; quantities mean packs, never daily doses.
+- lib/commerce/stack-share.ts strictly parses/round-trips up to 50 distinct string variant IDs, 1–99 packs; malformed/duplicate/oversized inputs rejected entirely.
+- SharedStack rebuilds exact approved public mappings and reuses BuyMyStack; complete mapped stacks get share URLs/social links; unknown/ambiguous lookups cannot load partial stacks.
+- TODO(Toby/Lifty, T05): approved variant-to-product public loader/data required; /api/stack/shared explicitly returns 503 until bound. No CSV guessing or live binding.
+- Evidence: 121 relevant Node tests PASS, 0 fail/skip; typecheck PASS; changed-file lint PASS; live-boundaries PASS/0 violations; diff check PASS.
+- Real Supabase sign-in/Shopify browser journey and hosted CI unverified; draft PR lookup could not connect to GitHub. Existing cart/price flags remain default OFF.
+- Next: review local code; bind reviewed T05 catalogue loader, then authorised real journey checks/flag approval. No env edits, live APIs, spend, migrations, commit attempt, push/merge/deploy.
+
 **12 October S03 — optional single-item cart links (codex/s03; HEAD 7e1b01d6; working tree only):**
 - affiliate.ts adds product_page/cart modes; DEFAULT_STORE_BUY_LINK_MODE is product_page with “Toby picks the default”; direct-to-cart defaults OFF.
 - Approved exact mappings + confirmed fresh stock produce /cart/{variantId}:1; otherwise builder uses /products/{handle}?variant={id}; large string IDs retained.
