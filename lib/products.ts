@@ -1,6 +1,7 @@
 // Shared product types + score attachment for the browse/compare features.
 import { scoreFor } from '@/lib/scores'
 import { hasPositiveServingCost, isRankingCandidate } from './assessment-display'
+import type { ProductSafety } from './commerce/product-warnings'
 import type { CataloguePresentation } from './commerce/catalogue-presentation'
 import type { StorePricePresentation } from './commerce/store-price-products'
 import type { StoreLinkMapping } from './commerce/product-mapping'
@@ -20,6 +21,8 @@ export type Product = {
   proprietary_blend: boolean | null
   amino_spiked: boolean | null
   protein_yield: number | null
+  /** Optional public label projection; TODO: exact UK label review before populating. */
+  safety?: ProductSafety | null
   /** Optional reviewed server projection; not a supplier field or database column. */
   cataloguePresentation?: CataloguePresentation | null
   /** Approved server projection; never a raw private mapping row. */

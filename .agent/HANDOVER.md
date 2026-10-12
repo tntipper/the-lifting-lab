@@ -1,3 +1,13 @@
+**12 October T12 — local compliance drafts (codex/t12; HEAD 989d4ab; working tree only):**
+- Footer now links refunds/delivery/privacy/terms/contact; added refunds/delivery and revised other pages, all labelled unsigned drafts for Lifty/Toby.
+- Added data-driven ProductWarnings using recorded caffeine, category age guidance and optional public label metadata; no per-product page rules or new flags.
+- docs/compliance-checklist.csv: 74 distinct local store SKUs/variants including holds/placeholders; all checks TODO, signed_by/signed_date blank.
+- Added local claims scanner + checklist generator that preserves manual review; docs/compliance-review.md records audit, exact scope, sources and decisions.
+- Evidence: 195 Node tests PASS (10 new), 0 fail/skip; typecheck PASS; live-boundaries PASS/0; scan 0 hits/11 local files; diff PASS; lint 0 errors/3 existing footer warnings.
+- Toby/Lifty: final launch selection, UK labels/claims/novel-food/WADA/warnings + signatures; registration/seller/address/phone, returns/delivery and privacy details.
+- Shopify policy/footer/settings parity, complete current descriptions and hosted CI unverified; GitHub PR read could not connect. No live service calls or spend.
+- No env/flag changes, hosted migrations, commit attempt, push/merge/deploy. Next: review docs/compliance-review.md; all previous handover bytes preserved below.
+
 **12 October T11 — offline manual queue and alerts (codex/t11; HEAD 1002483; working tree only):**
 - Added private/RLS manual_queue migration (static only), injected SQL store, immediate alert reporter and pure daily digest builder.
 - Connected stock/order/tracking failures and supplier rejections; safe codes/hashed incident keys, private order context, no automatic resend/reopen.
