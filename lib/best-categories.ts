@@ -1,3 +1,5 @@
+import { unstable_rethrow } from 'next/navigation'
+import { withStorePrices } from '@/lib/commerce/store-price-server'
 // Shared helpers for the per-category "Best [Category] UK 2026" ranking pages
 // (/best/[category]). These are the canonical affiliate-listicle surface: a
 // static, schema-rich "Top N ranked" page per category — distinct from the
@@ -26,10 +28,11 @@ export async function categoryResearchProducts(category: string): Promise<Scored
       .eq('status', 'active')
       .eq('category', category)
     if (error || !data) return []
-    return (data as Product[])
+    return (await withStorePrices(data as Product[]))
       .map(withScore)
       .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error)
     return []
   }
 }

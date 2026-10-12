@@ -2,6 +2,7 @@
 import { scoreFor } from '@/lib/scores'
 import { hasPositiveServingCost, isRankingCandidate } from './assessment-display'
 import type { CataloguePresentation } from './commerce/catalogue-presentation'
+import type { StorePricePresentation } from './commerce/store-price-products'
 import type { StoreLinkMapping } from './commerce/product-mapping'
 
 export type Product = {
@@ -23,6 +24,8 @@ export type Product = {
   cataloguePresentation?: CataloguePresentation | null
   /** Approved server projection; never a raw private mapping row. */
   storeLinkMapping?: StoreLinkMapping | null
+  /** Public Shopify price/stock observation; retail_price is replaced server-side when enabled. */
+  storePrice?: StorePricePresentation | null
 }
 
 export type ScoredProduct = Product & {
@@ -88,11 +91,13 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
 // Why True Cost (£/serving) can't be computed for a product. Used to render an
 // honest "—" with a stated reason instead of a fabricated number.
 export function trueCostReason(p: {
+  storePrice?: StorePricePresentation | null
   retail_price: number | null
   servings_per_container: number | null
 }): string | null {
   if (typeof p.retail_price === 'number' && Number.isFinite(p.retail_price) && p.retail_price > 0
     && typeof p.servings_per_container === 'number' && Number.isFinite(p.servings_per_container) && p.servings_per_container > 0) return null
+  if (p.storePrice && p.retail_price == null) return 'TLL Store price unavailable'
   if (p.retail_price == null && (p.servings_per_container == null || p.servings_per_container <= 0)) {
     return 'no retail price or servings on file'
   }

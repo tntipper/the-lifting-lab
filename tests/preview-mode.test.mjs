@@ -15,7 +15,8 @@ function loadSource(path, customRequire = require, extra = {}) {
   vm.runInNewContext(js, { require: customRequire, module: loaded, exports: loaded.exports, process, URL, Response, ...extra })
   return loaded.exports
 }
-const resolve = name => ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
+const catalogueAvailability = loadSource('../lib/commerce/catalogue-presentation.ts')
+const resolve = name => name === './commerce/catalogue-presentation' ? catalogueAvailability : ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
 function loadAnalytics() {
   const storage = new Map(), calls = []
   const browser = {

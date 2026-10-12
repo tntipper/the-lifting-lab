@@ -1,3 +1,5 @@
+import { catalogueAvailabilityFor, type CataloguePresentation } from './commerce/catalogue-presentation'
+import type { StorePricePresentation } from './commerce/store-price-products'
 import { isIsolatedEnvironment } from './preview-mode'
 import type { StoreLinkMapping } from './commerce/product-mapping'
 
@@ -30,10 +32,11 @@ export function buildStoreProductLink(productId: string | undefined, mapping?: S
 }
 
 /** New behaviour is OFF unless explicitly enabled. Legacy own-shop URLs remain blocked. */
-export function resolveProductOffer(product: { id?: string; buy_url: string | null; storeLinkMapping?: StoreLinkMapping | null }): ProductListing {
+export function resolveProductOffer(product: { id?: string; buy_url: string | null; storeLinkMapping?: StoreLinkMapping | null; cataloguePresentation?: CataloguePresentation | null; storePrice?: StorePricePresentation | null }): ProductListing {
   if (!isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled') {
     const url = buildStoreProductLink(product.id, product.storeLinkMapping)
-    if (url) return { state: 'listing', url, retailer: 'TLL Store', relationship: 'own_shop', reason: 'approved_store_mapping' }
+    const stockAllowsStore = process.env.NEXT_PUBLIC_TLL_STORE_PRICES !== 'enabled' || catalogueAvailabilityFor(product) === 'available'
+    if (url && stockAllowsStore) return { state: 'listing', url, retailer: 'TLL Store', relationship: 'own_shop', reason: 'approved_store_mapping' }
   }
   return resolveProductListing(product.buy_url)
 }

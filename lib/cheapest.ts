@@ -1,3 +1,5 @@
+import { unstable_rethrow } from 'next/navigation'
+import { withStorePrices } from '@/lib/commerce/store-price-server'
 import { hasPositiveServingCost } from './assessment-display'
 // Listed price per known serving only. This is not an effectiveness, equivalent-dose
 // or approved-offer comparison. Delivery and checkout costs are excluded.
@@ -32,8 +34,9 @@ export async function fetchCheapest(): Promise<CheapProduct[]> {
       .select(PRODUCT_COLUMNS)
       .eq('status', 'active')
     if (error || !data) return []
-    return rankCheapest(data as Product[])
-  } catch {
+    return rankCheapest(await withStorePrices(data as Product[]))
+  } catch (error) {
+    unstable_rethrow(error)
     return []
   }
 }
