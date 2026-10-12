@@ -1,10 +1,11 @@
+import type { FailureReporter } from './manual-queue'
 import { presentStoreLinkMapping, validateProductMappings } from '../product-mapping'
 import { HarnessFeedError } from './types'
 import type { HarnessRun, StockPrice, SupplierAdapter, SyncDiff, SyncMapping, VariantState } from './types'
 
 export type SyncDependencies = {
   adapter: SupplierAdapter; mappings: readonly SyncMapping[]; variants: readonly VariantState[];
-  now?: () => number; writeEnabled?: string;
+  now?: () => number; writeEnabled?: string; reportFailure?: FailureReporter;
   /** TODO(T05): approved saved mapping loader. Historical CSVs must not be wired here. */
   /** TODO(Toby/Lifty): supply reviewed pricing-policy/commercial-burden calculation, not wholesale as retail. */
   proposePrice?: (mapping: SyncMapping, quote: StockPrice) => number | null;
@@ -23,6 +24,14 @@ export async function syncStockPrice(deps: SyncDependencies): Promise<HarnessRun
     result.finishedAt = new Date(now()).toISOString()
     if (writable && deps.record) {
       try { await deps.record(structuredClone(result)) } catch { result.status = 'failed'; result.alerts.push({ code: 'RUN_RECORD_FAILED' }) }
+    }
+    if (writable && deps.reportFailure) {
+      const codes = [...new Set([...result.alerts.map(alert => alert.code),
+        ...(['failed', 'uncertain'].includes(result.status) ? ['SYNC_WRITE_RECONCILIATION_REQUIRED'] : [])])]
+      for (const code of codes) {
+        const reported = await deps.reportFailure({ job: 'stock-price', code, supplier: result.supplier, reference: `${result.supplier}:${result.startedAt}` })
+        if (reported === 'queue_failed' || reported === 'alert_failed') result.alerts.push({ code: reported === 'queue_failed' ? 'MANUAL_QUEUE_FAILED' : 'ALERT_SEND_FAILED' })
+      }
     }
     return result
   }

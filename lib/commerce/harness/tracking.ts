@@ -1,3 +1,4 @@
+import type { FailureReporter } from './manual-queue'
 import { createHash } from 'node:crypto'
 import { SHOPIFY_ADMIN_API_VERSION } from '../shopify-admin'
 import type { SupplierAdapter, SupplierId, TrackingUpdate } from './types'
@@ -34,6 +35,7 @@ export interface TrackingStore {
   finish(key: string, result: { status: 'completed' | 'rejected' | 'uncertain'; fulfillmentId?: string }): Promise<void>
 }
 export type TrackingDependencies = {
+  reportFailure?: FailureReporter; runReference?: string;
   writeEnabled?: string; shop: string; store: TrackingStore;
   adapters: Partial<Record<SupplierId, Pick<SupplierAdapter, 'id' | 'fetchTracking'>>>;
   shopify: {
@@ -115,48 +117,60 @@ export async function runTracking(deps: TrackingDependencies): Promise<TrackingR
   const result: TrackingRun = { status: 'disabled', created: 0, duplicates: 0, codes: [] }
   if (deps.writeEnabled !== 'true') return result
   result.status = 'completed'
-  const hold = (code: string) => { result.status = 'held'; result.codes.push(code) }
+  let reviewReference = `${deps.shop}:${deps.runReference ?? new Date().toISOString()}`
+  let reviewOrderId: string | undefined, reviewSupplier: SupplierId | undefined
+  const runReference = reviewReference
+  const hold = async (code: string) => {
+    result.status = 'held'; result.codes.push(code)
+    const reported = await deps.reportFailure?.({ job: 'tracking', code, reference: reviewReference, orderId: reviewOrderId, supplier: reviewSupplier })
+    if (reported === 'queue_failed' || reported === 'alert_failed') result.codes.push(reported === 'queue_failed' ? 'MANUAL_QUEUE_FAILED' : 'ALERT_SEND_FAILED')
+  }
   const timeout = deps.timeoutMs ?? 10_000
-  if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(deps.shop) || !positive(timeout) || timeout > 60_000) { hold('TRACKING_CONFIG_INVALID'); return result }
+  if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(deps.shop) || !positive(timeout) || timeout > 60_000) { await hold('TRACKING_CONFIG_INVALID'); return result }
   let rows: TrackingOrderLine[]
-  try { rows = await deps.store.listCandidates(deps.shop) } catch { hold('TRACKING_READ_FAILED'); return result }
-  if (rows.some(l => l.shop !== deps.shop) || new Set(rows.map(l => l.localKey)).size !== rows.length) { hold('TRACKING_ORDER_IDENTITY_INVALID'); return result }
+  try { rows = await deps.store.listCandidates(deps.shop) } catch { await hold('TRACKING_READ_FAILED'); return result }
+  if (rows.some(l => l.shop !== deps.shop) || new Set(rows.map(l => l.localKey)).size !== rows.length) { await hold('TRACKING_ORDER_IDENTITY_INVALID'); return result }
   const eligible = rows.filter(l => ['submitted', 'accepted'].includes(l.status))
-  if (eligible.some(l => !['tropship', 'bodypower', 'supplier3'].includes(l.supplier))) { hold('TRACKING_ADAPTER_REQUIRED'); return result }
+  if (eligible.some(l => !['tropship', 'bodypower', 'supplier3'].includes(l.supplier))) { await hold('TRACKING_ADAPTER_REQUIRED'); return result }
   for (const supplier of ['tropship', 'bodypower', 'supplier3'] as const) {
+    reviewReference = `${runReference}:${supplier}`
+    reviewOrderId = undefined; reviewSupplier = supplier
     const supplierLines = eligible.filter(l => l.supplier === supplier)
     if (!supplierLines.length) continue
     const adapter = deps.adapters[supplier]
-    if (!adapter || adapter.id !== supplier) { hold('TRACKING_ADAPTER_REQUIRED'); continue }
-    if (supplierLines.some(l => !l.supplierRef)) hold('SUPPLIER_REFERENCE_REQUIRED')
+    if (!adapter || adapter.id !== supplier) { await hold('TRACKING_ADAPTER_REQUIRED'); continue }
+    if (supplierLines.some(l => !l.supplierRef)) await hold('SUPPLIER_REFERENCE_REQUIRED')
     const refs = [...new Set(supplierLines.map(l => l.supplierRef).filter((ref): ref is string => !!ref))]
     if (!refs.length) continue
     let shipments: TrackingUpdate[]
     try { shipments = await adapter.fetchTracking(refs); if (!Array.isArray(shipments)) throw new Error() }
-    catch { hold('TRACKING_FETCH_FAILED'); continue }
+    catch { await hold('TRACKING_FETCH_FAILED'); continue }
     for (const shipment of shipments) {
+      reviewOrderId = undefined
+      reviewReference = hash([deps.shop, supplier, shipment?.supplierRef, shipment?.shipmentId])
       let plan: TrackingClaim
       try {
         if (!shipment || !refs.includes(shipment.supplierRef) || !Array.isArray(shipment.shippedLines)) throw new Error()
         const lines = supplierLines.filter(l => l.supplierRef === shipment.supplierRef)
         if (new Set(lines.map(l => l.orderId)).size !== 1) throw new Error()
+        reviewOrderId = lines[0].orderId
         const identity = shipmentIdentity(lines[0], shipment)
         const seen = await deps.store.lookup(identity.key, identity.fingerprint)
         if (seen === 'duplicate' || seen === 'unresolved') {
-          result.duplicates++; if (seen === 'unresolved') hold('TRACKING_RECONCILIATION_REQUIRED'); continue
+          result.duplicates++; if (seen === 'unresolved') await hold('TRACKING_RECONCILIATION_REQUIRED'); continue
         }
-        if (seen !== 'new') { hold('SHIPMENT_CHANGED'); continue }
+        if (seen !== 'new') { await hold('SHIPMENT_CHANGED'); continue }
         plan = buildTrackingClaim(lines, shipment, await deps.shopify.readFulfillmentOrder(lines[0].orderId))
-      } catch { hold('TRACKING_PLAN_INVALID'); continue }
+      } catch { await hold('TRACKING_PLAN_INVALID'); continue }
       try {
         const claimed = await deps.store.claim(plan)
         if (claimed === 'duplicate') { result.duplicates++; continue }
-        if (claimed !== 'claimed') { hold('TRACKING_CLAIM_BLOCKED'); continue }
-      } catch { hold('TRACKING_CLAIM_FAILED'); return result }
+        if (claimed !== 'claimed') { await hold('TRACKING_CLAIM_BLOCKED'); continue }
+      } catch { await hold('TRACKING_CLAIM_FAILED'); return result }
       const outcome = await boundedWrite(deps, structuredClone(plan.request), timeout)
       try { await deps.store.finish(plan.key, outcome) }
-      catch { hold('TRACKING_RECEIPT_SAVE_FAILED'); return result }
-      if (outcome.status !== 'completed') { hold(outcome.status === 'uncertain' ? 'TRACKING_RECONCILIATION_REQUIRED' : 'TRACKING_REJECTED'); return result }
+      catch { await hold('TRACKING_RECEIPT_SAVE_FAILED'); return result }
+      if (outcome.status !== 'completed') { await hold(outcome.status === 'uncertain' ? 'TRACKING_RECONCILIATION_REQUIRED' : 'TRACKING_REJECTED'); return result }
       result.created++
       // Keep the in-run view current for later parcels in the same response.
       for (const shipped of plan.lines) rows.find(l => l.localKey === shipped.localKey)!.fulfilledQuantity += shipped.quantity

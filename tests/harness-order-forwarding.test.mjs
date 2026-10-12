@@ -324,3 +324,25 @@ test('delivery contract strips unrelated customer fields before encryption and t
   await routePaidOrder(event, s.deps)
   assert.deepEqual(s.state.calls[0].request.deliveryAddress, address)
 })
+
+// T11: prove the real submission failure path reaches the injected operator queue.
+for (const outcome of ['error', 'rejected']) test(`T11 supplier ${outcome} creates queue and alert without a repeat submission`, async () => {
+  const s = setup(), queue = [], alerts = []; let submissions = 0
+  const { createFailureReporter } = load('lib/commerce/harness/manual-queue.ts')
+  s.deps.reportFailure = createFailureReporter({ enabled: 'true', alertsEnabled: 'true',
+    store: { enqueue: async failure => { queue.push(plain(failure)); return { inserted: true, item: { id: 'synthetic-queue' } } } },
+    sender: async message => { alerts.push(plain(message)) },
+  })
+  s.deps.adapters.tropship.placeOrder = async () => {
+    submissions++
+    if (outcome === 'error') throw new Error('private address and provider secret')
+    return { status: 'rejected' }
+  }
+  await routePaidOrder(event, s.deps)
+  assert.equal(submissions, 1); assert.equal(queue.length, 1); assert.equal(alerts.length, 1)
+  assert.equal(queue[0].code, outcome === 'error' ? 'SUPPLIER_RECONCILIATION_REQUIRED' : 'SUPPLIER_REJECTED')
+  assert.equal(queue[0].orderId, event.orderId)
+  assert.ok(!JSON.stringify([queue, alerts]).includes('private address'))
+  await routePaidOrder({ ...event, eventId: 'replay' }, s.deps)
+  assert.equal(submissions, 1); assert.equal(queue.length, 1)
+})
