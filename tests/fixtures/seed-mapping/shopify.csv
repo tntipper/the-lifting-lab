@@ -1,0 +1,4 @@
+shopify_product_id,shopify_variant_id,shopify_handle,sku,online_store_published
+101,1001,synthetic-protein,SYN001,true
+101,gid://shopify/ProductVariant/1002,synthetic-protein,SYN002,true
+102,1003,synthetic-slot,SLOT,false
