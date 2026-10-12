@@ -33,7 +33,7 @@ export function createTropShipAdapter(readSavedFeed: () => Promise<SavedFeed>): 
         ean: row.ean, size: row.size, flavour: row.flavour,
       }))
     },
-    // TODO(T09/Toby): confirmed order payload/auth/acknowledgement; never claim submission here.
+    // TODO(Toby): bind confirmed order transport/auth/acknowledgement to the T09 worker; never claim submission here.
     async placeOrder() { return { status: 'rejected', reason: 'ORDER_SUBMISSION_NOT_IMPLEMENTED' } },
     async fetchTracking() { throw new Error('TODO(T10): tracking adapter is not implemented') },
   }
