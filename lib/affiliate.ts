@@ -10,6 +10,10 @@ const AWIN_AFFID = '2919631'
 const BULK_MID = '4822'
 export const MYPROTEIN_REF_CODE = 'TOBIAS-R1I5'
 
+export type StoreBuyLinkMode = 'product_page' | 'cart'
+// Toby picks the default. Direct-to-cart stays OFF until that choice is approved.
+export const DEFAULT_STORE_BUY_LINK_MODE: StoreBuyLinkMode = 'product_page'
+
 export type ProductListing = {
   state: 'listing' | 'search_only' | 'unavailable'
   url: string | null
@@ -19,7 +23,7 @@ export type ProductListing = {
 }
 
 /** Exact destination only; string IDs avoid losing precision on large Shopify IDs. */
-export function buildStoreProductLink(productId: string | undefined, mapping?: StoreLinkMapping | null, now = Date.now()): string | null {
+export function buildStoreProductLink(productId: string | undefined, mapping?: StoreLinkMapping | null, now = Date.now(), options: { mode?: StoreBuyLinkMode; inStock?: boolean } = {}): string | null {
   const review = mapping?.review
   if (!productId || mapping?.productId !== productId || mapping.active !== true || mapping.approved !== true ||
       !review || review.approved !== true || typeof review.version !== 'string' || !review.version.trim() || review.version !== review.expectedVersion ||
@@ -28,14 +32,19 @@ export function buildStoreProductLink(productId: string | undefined, mapping?: S
       typeof mapping.shopifyProductHandle !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(mapping.shopifyProductHandle) ||
       typeof mapping.shopifyVariantId !== 'string') return null
   const variant = /^(?:gid:\/\/shopify\/ProductVariant\/)?([1-9][0-9]*)$/.exec(mapping.shopifyVariantId)?.[1]
-  return variant ? `https://shop.theliftinglab.co.uk/products/${mapping.shopifyProductHandle}?variant=${variant}` : null
+  if (!variant) return null
+  if ((options.mode ?? DEFAULT_STORE_BUY_LINK_MODE) === 'cart' && options.inStock === true)
+    return `https://shop.theliftinglab.co.uk/cart/${variant}:1`
+  return `https://shop.theliftinglab.co.uk/products/${mapping.shopifyProductHandle}?variant=${variant}`
 }
 
 /** New behaviour is OFF unless explicitly enabled. Legacy own-shop URLs remain blocked. */
-export function resolveProductOffer(product: { id?: string; buy_url: string | null; storeLinkMapping?: StoreLinkMapping | null; cataloguePresentation?: CataloguePresentation | null; storePrice?: StorePricePresentation | null }): ProductListing {
+export function resolveProductOffer(product: { id?: string; buy_url: string | null; storeLinkMapping?: StoreLinkMapping | null; cataloguePresentation?: CataloguePresentation | null; storePrice?: StorePricePresentation | null }, mode: StoreBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE): ProductListing {
   if (!isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled') {
-    const url = buildStoreProductLink(product.id, product.storeLinkMapping)
-    const stockAllowsStore = process.env.NEXT_PUBLIC_TLL_STORE_PRICES !== 'enabled' || catalogueAvailabilityFor(product) === 'available'
+    const now = Date.now()
+    const availability = catalogueAvailabilityFor(product, now)
+    const url = buildStoreProductLink(product.id, product.storeLinkMapping, now, { mode, inStock: !product.cataloguePresentation && availability === 'available' })
+    const stockAllowsStore = process.env.NEXT_PUBLIC_TLL_STORE_PRICES !== 'enabled' || availability === 'available'
     if (url && stockAllowsStore) return { state: 'listing', url, retailer: 'TLL Store', relationship: 'own_shop', reason: 'approved_store_mapping' }
   }
   return resolveProductListing(product.buy_url)

@@ -1,7 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import { resolveProductOffer } from '@/lib/affiliate'
+import { DEFAULT_STORE_BUY_LINK_MODE, resolveProductOffer, type StoreBuyLinkMode } from '@/lib/affiliate'
 import type { StorePricePresentation } from '@/lib/commerce/store-price-products'
 import type { StoreLinkMapping } from '@/lib/commerce/product-mapping'
 import { track } from '@/lib/gtag'
@@ -10,10 +10,11 @@ import { useStagingCart } from './StagingCartContext'
 import { catalogueAvailabilityFor, type CataloguePresentation } from '@/lib/commerce/catalogue-presentation'
 
 /** Interim listing navigation, until a verified commerce projection supplies exact offers. */
-export default function ProductOfferLink({ product, className, style }: {
+export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE }: {
   product: { id?: string; brand: string; name: string; buy_url: string | null; cataloguePresentation?: CataloguePresentation | null; storeLinkMapping?: StoreLinkMapping | null; storePrice?: StorePricePresentation | null }
   className?: string
   style?: CSSProperties
+  storeBuyLinkMode?: StoreBuyLinkMode
 }) {
   const cart = useStagingCart()
   const availability = catalogueAvailabilityFor({ id: product.id, cataloguePresentation: product.cataloguePresentation })
@@ -26,7 +27,7 @@ export default function ProductOfferLink({ product, className, style }: {
     <StagingCartAdd productId={product.id} />
     <span className="text-center text-[9px] text-lab-muted">Synthetic test item · no checkout</span>
   </span>
-  const listing = resolveProductOffer(product)
+  const listing = resolveProductOffer(product, storeBuyLinkMode)
   const stock = product.storePrice ? catalogueAvailabilityFor(product) : null
   if (!listing.url) {
     return <span className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-lab-border px-2 py-2 text-center text-[10px] text-lab-muted"
