@@ -136,3 +136,87 @@ test('actual stack page renders the guest cart from hydrated products with one p
   assert.match(rendered, /Buy my stack/)
   assert.doesNotMatch(rendered, /sign.in|login/i)
 })
+
+const availableItem = id => ({ ...item(id), name: `Store ${id}`, cataloguePresentation: { productId: id, availability: 'available', purchaseEnabled: false } })
+const oosItem = { ...availableItem('3'), name: 'Unavailable creatine', cataloguePresentation: { productId: '3', availability: 'out_of_stock', purchaseEnabled: false } }
+const affiliateItem = { id: '4', name: 'Affiliate protein', quantity: 1, buy_url: 'https://www.amazon.co.uk/dp/B012345678' }
+const mixed = [availableItem('1'), availableItem('2'), oosItem, affiliateItem]
+test('S02: two store, one OOS and one affiliate split into two cart lines and two skipped items', () => {
+  const split = cart.splitStackCartItems(mixed, now)
+  assert.equal(JSON.stringify(split.storeItems.map(p => p.id)), '["1","2"]')
+  assert.equal(split.outOfStock[0].id, '3')
+  assert.equal(split.affiliateOnly[0].item.id, '4')
+  assert.equal(split.unavailable.length, 0)
+  assert.equal(cart.buildStackCartLines(mixed, now).length, 2)
+  assert.equal(cart.buildStackCartUrl(mixed, now), 'https://shop.theliftinglab.co.uk/cart/1:1,2:1')
+  assert.match(split.affiliateOnly[0].listing.url, /B012345678\?tag=theliftinglab-21/)
+})
+test('S02 render: skipped products and the individual affiliate link appear beside the two-line cart', () => {
+  const rendered = html(enabled, mixed)
+  assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1"/)
+  assert.match(rendered, /Out of stock/)
+  assert.match(rendered, /Unavailable creatine.*skipped from your cart/)
+  assert.match(rendered, /choose an alternative/)
+  assert.match(rendered, /Not sold in our store/)
+  assert.match(rendered, /Affiliate protein/)
+  assert.match(rendered, /href="https:\/\/www.amazon.co.uk\/dp\/B012345678\?tag=theliftinglab-21"/)
+  assert.match(rendered, /rel="noopener noreferrer nofollow sponsored"/)
+})
+test('S02: all-skipped stacks keep explanations but never build an empty cart link', () => {
+  for (const rows of [[oosItem], [affiliateItem], [oosItem, affiliateItem], [{ id: '5', name: 'Missing offer', quantity: 1 }]]) {
+    assert.equal(cart.buildStackCartUrl(rows, now), null)
+    const rendered = html(enabled, rows)
+    assert.match(rendered, /No store items can be added/)
+    assert.doesNotMatch(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\//)
+    for (const row of rows) assert.ok(rendered.includes(row.name))
+  }
+})
+test('S02: stale or unapproved store items remain under review, even with an affiliate fallback', () => {
+  const stale = { ...item('5'), name: 'Stale price', storePrice: { productId: '5', observedAtMs: now - 900000, price: 20, availableForSale: true } }
+  const denied = { ...item('6'), name: 'Unapproved offer', buy_url: affiliateItem.buy_url }
+  denied.storeLinkMapping.approved = false
+  const split = cart.splitStackCartItems([stale, denied], now)
+  assert.equal(split.unavailable.length, 2)
+  assert.equal(split.affiliateOnly.length, 0)
+  assert.equal(cart.buildStackCartUrl([stale, denied], now), null)
+  assert.match(html(enabled, [stale, denied]), /Store availability under review/)
+})
+test('S02: unsafe affiliate destinations have no link and retailer searches retain their label', () => {
+  for (const buy_url of ['javascript:alert(1)', 'https://unknown.invalid/product', 'https://shop.theliftinglab.co.uk/products/fixture']) {
+    const rendered = html(enabled, [{ ...affiliateItem, buy_url }])
+    assert.doesNotMatch(rendered, /href=/)
+    assert.match(rendered, /could not be confirmed/)
+  }
+  const rendered = html(enabled, [{ ...affiliateItem, buy_url: 'https://www.amazon.co.uk/s?k=protein' }])
+  assert.match(rendered, /Search Amazon/)
+  assert.match(rendered, /search results/)
+})
+test('S02: Phase 2 setup notice and price mode still explain skipped items', () => {
+  const rendered = html({ ...enabled, NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART: 'enabled' }, mixed)
+  assert.match(rendered, /awaiting setup/)
+  assert.match(rendered, /Unavailable creatine/)
+  assert.match(rendered, /Affiliate protein/)
+  assert.doesNotMatch(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\//)
+  const pricing = modules({ NEXT_PUBLIC_TLL_STORE_PRICES: 'enabled' })('lib/commerce/stack-cart.ts')
+  assert.equal(pricing.splitStackCartItems([item('1')], now).unavailable.length, 1)
+  assert.equal(pricing.buildStackCartLines(mixed, now).length, 2)
+})
+test('S02: each affiliate item retains its own destination rather than a shared retailer link', () => {
+  const rendered = html(enabled, [affiliateItem, { ...affiliateItem, id: '5', name: 'Second affiliate', buy_url: 'https://www.amazon.co.uk/dp/B098765432' }])
+  assert.match(rendered, /href="https:\/\/www.amazon.co.uk\/dp\/B012345678\?tag=theliftinglab-21"/)
+  assert.match(rendered, /href="https:\/\/www.amazon.co.uk\/dp\/B098765432\?tag=theliftinglab-21"/)
+  assert.doesNotMatch(rendered, /Buy my stack/)
+})
+test('S02: mock Storefront cart uses only the two store lines of a mixed stack', async () => {
+  const sf = modules({ ...enabled, NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART: 'enabled' })('lib/commerce/stack-cart-storefront.ts')
+  let calls = 0
+  await sf.createMockStackCheckout(mixed, { async execute(req) {
+    calls++
+    assert.equal(JSON.stringify(req.variables.input.lines), JSON.stringify([
+      { merchandiseId: 'gid://shopify/ProductVariant/1', quantity: 1 },
+      { merchandiseId: 'gid://shopify/ProductVariant/2', quantity: 1 },
+    ]))
+    return { data: { cartCreate: { cart: { checkoutUrl: 'https://stack-cart.invalid/cart/c/fixture' }, userErrors: [], warnings: [] } } }
+  } }, now)
+  assert.equal(calls, 1)
+})
