@@ -1,3 +1,13 @@
+**12 October T06 — Shopify store links (codex/t06; HEAD 01bd4722; integration base cdf9f296):**
+- Added buildStoreProductLink/resolveProductOffer in lib/affiliate.ts; NEXT_PUBLIC_TLL_STORE_LINKS defaults OFF (only exact enabled opts in); no env changes.
+- Added presentStoreLinkMapping in lib/commerce/product-mapping.ts: active/signed/current/exact identity required; public link fields only, no supplier data/costs.
+- ProductOfferLink shows Buy at TLL Store for approved mappings; grid/detail/compare/best reuse it; stack preserves mappings and uses matching grouping/share-link routing.
+- Legacy own-shop approval block, affiliate URL/label fallback, stock holds and isolated-preview restrictions preserved; no cart/price/stock integration added.
+- Evidence: 293 relevant Node tests PASS, 0 fail/skip; ten mapped grid URLs plus affiliate fallback and ON/OFF surface renders; typecheck PASS; check:live-boundaries PASS/0; whitespace PASS.
+- TODO(T05) at presentStoreLinkMapping: wire reviewed saved rows into server product loaders; no approved runtime loader/data exists yet. Toby/Lifty sign-off remains required.
+- Real Shopify URL/HTTP checks and hosted CI/PR not run; no live calls, credentials, hosted migrations, commit attempt, push/merge/deploy/flag changes or spend.
+- Changes left in working tree. Next: review diff, complete real mapping approval/loading, then separately approve activation and hosted verification.
+
 **12 October T05 — local TropShip mapping seed (codex/t05-seed-mapping; HEAD d7973145; integration base cdf9f296):**
 - Added scripts/seed-mapping.mjs using T04 validation/ID helpers; local XLSX/CSV only, no external services or installed dependencies.
 - Added data/mapping-review.csv (243 proposals: 74 Shopify variants / 169 affiliate), data/README.md, 5 synthetic CSV fixtures and 11 seed tests.

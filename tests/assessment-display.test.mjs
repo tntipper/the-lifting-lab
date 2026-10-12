@@ -21,7 +21,7 @@ const make = (overrides = {}) => ({ ...base, ...overrides })
 
 // Execute real shared selectors and public TSX with in-memory rows. Only
 // framework/provider boundaries are adapted; no credentials or network calls.
-function fixture(rows = [make()]) {
+function fixture(rows = [make()], env = {}, loadedStack = false) {
   const cache = new Map()
   const sb = { from(table) {
     let data = table === 'reviews' ? [] : rows
@@ -34,7 +34,14 @@ function fixture(rows = [make()]) {
     if (cache.has(filename)) return cache.get(filename)
     const js = ts.transpileModule(readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
     const mod = { exports: {} }
+    let stackHook = 0
     const localRequire = name => {
+      if (name === 'react' && loadedStack && relative === 'app/stack/StackBuilder.tsx') return { ...React,
+        useState(initial) {
+          const index = stackHook++
+          return React.useState(index === 0 ? rows.map(p => ({ id: p.id, servings_per_day: 1, products: { ...p, product_nutrients: p.nutrients } })) : index === 4 ? false : initial)
+        } }
+
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
       if (name === 'next/navigation') return { notFound() { throw new Error('not found') }, useRouter: () => ({ back() {} }), useSearchParams: () => new URLSearchParams() }
       if (name === 'next/og') return { ImageResponse: class { constructor(element) { this.element = element } } }
@@ -44,7 +51,7 @@ function fixture(rows = [make()]) {
       if (name === '@/lib/share-products-server') return { getShareProducts: async () => ({ ok: true, products: [rows[0]] }) }
       if (name === '@/lib/scores') return { scoreFor: (brand, productName) => rows.find(p => p.brand === brand && p.name === productName)?.score ?? null }
       if (name === '@/lib/gtag') return { track() { throw new Error('No tracking in SSR fixture') } }
-      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
+      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {}, stack: rows.map(p => ({ id: p.id })), state: { loading: false }, add() {}, remove() {}, retry() {} }) }
       if (['@/components/TopNav', '@/components/FavouriteButton', '@/components/ReviewSection', '@/components/ShareModal'].includes(name)) return { __esModule: true, default: () => null }
       if (name.startsWith('@/') || name.startsWith('.')) {
         const basePath = name.startsWith('@/') ? path.join(root, name.slice(2)) : path.resolve(path.dirname(filename), name)
@@ -54,7 +61,7 @@ function fixture(rows = [make()]) {
       }
       return require(name)
     }
-    vm.runInNewContext(js, { require: localRequire, module: mod, exports: mod.exports, process: { env: {} }, URL, URLSearchParams,
+    vm.runInNewContext(js, { require: localRequire, module: mod, exports: mod.exports, process: { env }, URL, URLSearchParams,
       fetch() { throw new Error('Outbound requests forbidden') } }, { filename })
     cache.set(filename, mod.exports)
     return mod.exports
@@ -351,4 +358,44 @@ test('crawlable methodology and glossary cannot recreate quality bands or effect
   const glossary = JSON.stringify(f.load('lib/glossary.ts'))
   assert.doesNotMatch(glossary, /Green \(70\+\) means|does it actually work.*gets decided|full, effective servings|Every category on the site has an evidence-based reference range/)
   assert.match(glossary, /Effectiveness rankings are unavailable/)
+})
+
+// T06: real page rendering with synthetic approved projections; no live reads.
+const mapped = () => make({ buy_url: null, storeLinkMapping: {
+  productId: base.id, shopifyProductHandle: 'fixture-vanilla', shopifyVariantId: 'gid://shopify/ProductVariant/1001',
+  active: true, approved: true, review: { approved: true, version: 'v1', expectedVersion: 'v1', verifiedAtMs: 1, expiresAtMs: Date.now() + 60000 },
+} })
+for (const surface of ['grid', 'detail', 'compare', 'best', 'stack']) {
+  for (const enabled of [true, false]) test(`T06 ${surface} respects store-link flag ${enabled ? 'ON' : 'OFF'}`, async () => {
+    const p = mapped(), f = fixture([p], enabled ? { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' } : {}, true)
+    let html
+    if (surface === 'best') html = render(await f.load('app/best/[category]/page.tsx').default({ params: Promise.resolve({ category: 'creatine' }) }))
+    else {
+      const [file, props] = {
+        grid: ['app/products/ProductGrid.tsx', { initialProducts: [p] }],
+        detail: ['app/products/[id]/ProductDetailPage.tsx', { product: p, related: [] }],
+        compare: ['app/compare/CompareView.tsx', { products: [p] }],
+        stack: ['app/stack/StackBuilder.tsx', {}],
+      }[surface]
+      html = f.html(file, props)
+    }
+    if (enabled) {
+      assert.match(html, /Buy at TLL Store/)
+      assert.match(html, /href="https:\/\/shop.theliftinglab.co.uk\/products\/fixture-vanilla\?variant=1001"/)
+    } else assert.doesNotMatch(html, /Buy at TLL Store|variant=1001/)
+  })
+}
+
+test('T06 grid renders ten mapped products with their exact variant destinations plus an affiliate fallback', () => {
+  const products = Array.from({ length: 10 }, (_, index) => {
+    const id = `mapped-${index}`
+    return make({ id, name: `Mapped fixture ${index}`, buy_url: null,
+      storeLinkMapping: { ...mapped().storeLinkMapping, productId: id, shopifyProductHandle: `fixture-${index}`, shopifyVariantId: `${1001 + index}` } })
+  })
+  products.push(make({ id: 'unmapped', name: 'Affiliate fixture', buy_url: 'https://www.amazon.co.uk/dp/B000000001' }))
+  const html = fixture(products, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' }).html('app/products/ProductGrid.tsx', { initialProducts: products })
+  for (let index = 0; index < 10; index++) assert.ok(html.includes(`href="https://shop.theliftinglab.co.uk/products/fixture-${index}?variant=${1001 + index}"`))
+  assert.equal((html.match(/>Buy at TLL Store<\/a>/g) || []).length, 10)
+  assert.match(html, /View retailer/)
+  assert.match(html, /href="https:\/\/www.amazon.co.uk\/dp\/B000000001\?tag=theliftinglab-21"/)
 })
