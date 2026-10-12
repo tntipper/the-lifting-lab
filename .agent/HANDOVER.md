@@ -1,3 +1,12 @@
+**12 October S03 — optional single-item cart links (codex/s03; HEAD 7e1b01d6; working tree only):**
+- affiliate.ts adds product_page/cart modes; DEFAULT_STORE_BUY_LINK_MODE is product_page with “Toby picks the default”; direct-to-cart defaults OFF.
+- Approved exact mappings + confirmed fresh stock produce /cart/{variantId}:1; otherwise builder uses /products/{handle}?variant={id}; large string IDs retained.
+- ProductOfferLink accepts storeBuyLinkMode and uses the shared default; existing T07 affiliate fallback, catalogue holds, disabled links and preview restrictions retained.
+- Evidence: 284 focused Node tests PASS (14 new S03), 0 fail/skip; typecheck PASS; changed-file lint PASS; live-boundaries PASS/0 violations; diff check PASS.
+- TODO(Toby): choose product_page or cart as the eventual default; approved mapping/stock data and specific existing flag approval remain prerequisites for live use.
+- Real Shopify cart/selected-variant browser proof and hosted CI not run; related draft PR lookup could not connect to GitHub.
+- No live Shopify/supplier/Supabase APIs, spend, env/flag edits, hosted migrations, commit attempt, push/merge/deploy; previous handover bytes preserved below.
+
 **12 October S02 — mixed and out-of-stock stacks (codex/s02; working tree only):**
 - stack-cart.ts shares catalogueAvailabilityFor classification between cart lines and skipped-item explanations; existing mapping/price checks retained.
 - BuyMyStack shows OOS with an alternative note, individual affiliate links in “Not sold in our store”, and unconfirmed offers under review.

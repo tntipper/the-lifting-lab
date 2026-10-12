@@ -181,6 +181,7 @@ for (const [name, patch] of [
 ]) test(`store ${name} falls back to the same affiliate URL and label`, () => {
   const product = { ...storeProduct, storeLinkMapping: { ...approvedMapping, ...patch } }
   assert.equal(affiliate.buildStoreProductLink(product.id, product.storeLinkMapping, storeNow), null)
+  assert.equal(affiliate.buildStoreProductLink(product.id, product.storeLinkMapping, storeNow, { mode: 'cart', inStock: true }), null)
   assert.equal(JSON.stringify(enabledAffiliate.resolveProductOffer(product)), JSON.stringify(affiliate.resolveProductListing(product.buy_url)))
   assert.equal(storeRender(product), storeRender(product, affiliate))
 })
@@ -212,5 +213,65 @@ test('isolated preview and existing stock holds take precedence over approved st
   for (const availability of ['out_of_stock', 'unavailable', 'available']) {
     const html = storeRender({ ...storeProduct, cataloguePresentation: { productId: storeProduct.id, availability, purchaseEnabled: false } })
     assert.doesNotMatch(html, /href=|Buy at TLL Store/)
+  }
+})
+
+const cartUrl = 'https://shop.theliftinglab.co.uk/cart/90071992547409931234:1'
+const inStockProduct = { ...storeProduct, storePrice: { productId: storeProduct.id, price: 19.99, availableForSale: true, observedAtMs: storeNow } }
+const renderMode = (product, mode, lib = enabledAffiliate) => renderToStaticMarkup(React.createElement(storeComponent(lib), { product, storeBuyLinkMode: mode }))
+
+test('S03 product-page config is the default even with confirmed stock', () => {
+  assert.equal(affiliate.DEFAULT_STORE_BUY_LINK_MODE, 'product_page')
+  assert.equal(enabledAffiliate.resolveProductOffer(inStockProduct).url, storeUrl)
+  assert.ok(storeRender(inStockProduct).includes(`href="${storeUrl}"`))
+})
+for (const mode of ['product_page', 'cart']) test(`S03 ${mode} mode builds and renders the exact selected variant`, () => {
+  const expected = mode === 'cart' ? cartUrl : storeUrl
+  for (const shopifyVariantId of ['90071992547409931234', approvedMapping.shopifyVariantId]) {
+    assert.equal(affiliate.buildStoreProductLink(storeProduct.id, { ...approvedMapping, shopifyVariantId }, storeNow, { mode, inStock: true }), expected)
+  }
+  assert.equal(enabledAffiliate.resolveProductOffer(inStockProduct, mode).url, expected)
+  const html = renderMode(inStockProduct, mode)
+  assert.ok(html.includes(`href="${expected}"`))
+  assert.match(html, /Buy at TLL Store/)
+  assert.doesNotMatch(html, /sponsored|affiliate link/)
+})
+for (const inStock of [false, undefined]) test(`S03 cart builder falls back to product page with stock ${inStock}`, () => {
+  assert.equal(affiliate.buildStoreProductLink(storeProduct.id, approvedMapping, storeNow, { mode: 'cart', inStock }), storeUrl)
+})
+for (const [name, storePrice] of [
+  ['missing', undefined],
+  ['out of stock', { ...inStockProduct.storePrice, availableForSale: false }],
+  ['unknown', { ...inStockProduct.storePrice, availableForSale: null }],
+  ['stale', { ...inStockProduct.storePrice, observedAtMs: storeNow - 15 * 60 * 1000 }],
+  ['future', { ...inStockProduct.storePrice, observedAtMs: storeNow + 60000 }],
+  ['wrong product', { ...inStockProduct.storePrice, productId: 'other' }],
+  ['invalid price', { ...inStockProduct.storePrice, price: 0 }],
+]) test(`S03 cart mode falls back to product page for ${name} stock when store prices are OFF`, () => {
+  const product = { ...storeProduct, storePrice }
+  assert.equal(enabledAffiliate.resolveProductOffer(product, 'cart').url, storeUrl)
+  assert.ok(renderMode(product, 'cart').includes(`href="${storeUrl}"`))
+})
+test('S03 both modes preserve T07 affiliate fallback for out-of-stock or missing stock with prices ON', () => {
+  const lib = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } }, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'enabled' })
+  for (const mode of ['product_page', 'cart']) {
+    assert.equal(lib.resolveProductOffer(inStockProduct, mode).url, mode === 'cart' ? cartUrl : storeUrl)
+    for (const storePrice of [undefined, { ...inStockProduct.storePrice, availableForSale: false }]) {
+      const product = { ...storeProduct, storePrice }
+      assert.equal(lib.resolveProductOffer(product, mode).url, lib.resolveProductListing(product.buy_url).url)
+      assert.doesNotMatch(renderMode(product, mode, lib), /\/cart\/|Buy at TLL Store/)
+    }
+  }
+})
+test('S03 cart option preserves disabled links, unmapped fallback, preview and catalogue holds', () => {
+  assert.equal(affiliate.resolveProductOffer(inStockProduct, 'cart').relationship, 'affiliate')
+  assert.equal(enabledAffiliate.resolveProductOffer({ ...inStockProduct, storeLinkMapping: null }, 'cart').relationship, 'affiliate')
+  const preview = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => true } }, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' })
+  assert.equal(preview.resolveProductOffer(inStockProduct, 'cart').url, null)
+  assert.doesNotMatch(renderMode(inStockProduct, 'cart', preview), /href=/)
+  for (const availability of ['available', 'out_of_stock', 'unavailable']) {
+    const product = { ...inStockProduct, cataloguePresentation: { productId: storeProduct.id, availability, purchaseEnabled: false } }
+    assert.notEqual(enabledAffiliate.resolveProductOffer(product, 'cart').url, cartUrl)
+    assert.doesNotMatch(renderMode(product, 'cart'), /href=|Buy at TLL Store/)
   }
 })
