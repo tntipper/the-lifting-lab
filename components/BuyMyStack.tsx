@@ -12,7 +12,7 @@ export default function BuyMyStack({ items, ready }: { items: readonly StackCart
   return <div className="mt-4 space-y-4">
     {url ? awaitingSetup ? <p role="status" className="text-sm">Storefront checkout is awaiting setup.</p> : <div>
       <a href={url} className="inline-flex min-h-11 items-center rounded-lg bg-[#14140f] px-5 text-sm font-bold text-white">Buy my stack</a>
-      <p className="mt-2 text-xs text-[#62645c]">Adds one pack of each approved store item. Items listed below are skipped. Check quantities, price and availability in the store cart.</p>
+      <p className="mt-2 text-xs text-[#62645c]">Adds the listed pack quantities of approved store items. Items listed below are skipped. Check quantities, price and availability in the store cart.</p>
     </div> : <p role="status" className="text-sm">No store items can be added to your cart right now.</p>}
     {outOfStock.length > 0 && <section aria-label="Out of stock" className="rounded-lg border border-[#a8aaa0] p-4 text-sm">
       <h2 className="font-bold">Out of stock</h2>

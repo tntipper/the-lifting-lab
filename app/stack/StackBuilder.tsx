@@ -10,6 +10,8 @@ import { scoreFor } from '@/lib/scores'
 import { resolveProductOffer } from '@/lib/affiliate'
 import type { StoreLinkMapping } from '@/lib/commerce/product-mapping'
 import BuyMyStack from '@/components/BuyMyStack'
+import SharedStack from '@/components/SharedStack'
+import { shareStackPath } from '@/lib/commerce/stack-share'
 import type { StackCartItem } from '@/lib/commerce/stack-cart'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { StagingCartAdd } from '@/components/StagingCartActions'
@@ -185,7 +187,13 @@ function timingFor(category: string): 'Any time' | 'Pre-training' | 'Post-traini
   return 'Any time'
 }
 
+function readStackQuery() { return window.location.search }
 export default function StackBuilder() {
+  const query = useBrowserSnapshot(readStackQuery, '')
+  return new URLSearchParams(query).has('items') ? <SharedStack query={query} /> : <SavedStackBuilder />
+}
+
+function SavedStackBuilder() {
   const { stack, state, add, remove, retry } = useLocalStack()
   const [stackItems, setStackItems] = useState<StackItem[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -304,6 +312,8 @@ export default function StackBuilder() {
     ? stackCosts.reduce((sum, value) => sum + value, 0)
     : null
   const shareUrl = buildShareUrl(stackItems)
+  const stackPath = !loading && !detailsError && cartProducts.length === stack.length
+    ? shareStackPath(cartProducts.map(product => ({ ...product, quantity: 1 }))) : null
   const emailUrl = buildEmailLink(stackItems, stack.length)
 
   // Individual listings remain available alongside the optional store cart link.
@@ -322,7 +332,8 @@ export default function StackBuilder() {
   }, [stackItems])
 
   // Social share text for the whole stack.
-  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.theliftinglab.co.uk'
+  const siteOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://www.theliftinglab.co.uk'
+  const siteUrl = siteOrigin + (stackPath || '/stack')
   const shareText = stackResearchText(assessmentProducts, stack.length)
   const xShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(siteUrl)}`
   const fbShare = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(siteUrl)}&quote=${encodeURIComponent(shareText)}`
@@ -536,12 +547,14 @@ export default function StackBuilder() {
 
         {showShare && !loading && stackItems.length > 0 && <section className="rounded-xl border border-[#d7d8cf] bg-white p-5 text-[#14140f]">
           <p className="text-xs font-black uppercase tracking-widest">Share your stack</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          {stackPath ? <a href={stackPath} className="mt-3 block break-all underline">{siteUrl}</a>
+            : <p className="mt-3 text-sm">A variant-based stack URL is unavailable until every product has an approved store mapping and can be included. Affiliate items cannot be represented in this URL.</p>}
+          {stackPath && <div className="mt-3 grid grid-cols-2 gap-2">
             <a href={xShare} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#a8aaa0] px-3 py-3 text-center text-xs font-bold">X / Twitter</a>
             <a href={fbShare} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#a8aaa0] px-3 py-3 text-center text-xs font-bold">Facebook</a>
             <a href={waShare} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#a8aaa0] px-3 py-3 text-center text-xs font-bold">WhatsApp</a>
             <button type="button" onClick={nativeShare} className="rounded-lg border border-[#a8aaa0] px-3 py-3 text-center text-xs font-bold">More…</button>
-          </div>
+          </div>}
           <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="mt-2 block rounded-lg bg-[#14140f] px-3 py-3 text-center text-xs font-black text-lab-lime">Open share card image</a>
         </section>}
 
