@@ -4,7 +4,8 @@ import type { FeedOptions } from '../supplier-feed'
 export type SupplierId = 'tropship' | 'bodypower' | 'supplier3'
 export type StockPrice = { sku: string; stock: number; costExVatPence: number; observedAt: string; ean: string; size: string; flavour: string }
 export type SupplierProduct = StockPrice & { name: string; brand: string }
-export type SupplierOrderRequest = { localKey: string; lines: { sku: string; quantity: number }[] }
+export type DeliveryAddress = { name: string; address1: string; address2?: string; city: string; postcode: string; countryCode: string }
+export type SupplierOrderRequest = { localKey: string; lines: { sku: string; quantity: number }[]; deliveryAddress?: DeliveryAddress }
 export type SubmitResult = { status: 'submitted' | 'accepted' | 'rejected' | 'uncertain'; supplierRef?: string; reason?: string }
 export type TrackingUpdate = { supplierRef: string; trackingNumber: string; carrier: string }
 export interface SupplierAdapter {

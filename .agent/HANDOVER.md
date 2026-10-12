@@ -1,3 +1,13 @@
+**12 October T09 — offline order forwarding (codex/t09; HEAD 9baaff2; working tree only):**
+- Added signed orders/paid inbox route, injected fresh-order worker and private SQL store under lib/commerce/harness; ORDER_FORWARDING_ENABLED defaults OFF.
+- Exact approved mappings split lines into supplier batches; immutable plans/line keys dedupe replays; atomic spent marker precedes submission.
+- Submitted differs from accepted (requires reference); timeout/unknown/crash goes manual with no auto retry; rejected reservations release atomically.
+- Minimal delivery fields encrypted with AES-256-GCM; private/RLS inbox/plans/batches/supplier_orders/reservations/address migration is static only.
+- Evidence: 196 focused Node tests PASS (56 new), 0 fail/skip; typecheck PASS; changed-file lint PASS/0 warnings; live-boundaries PASS/0 violations; whitespace PASS.
+- TODO(Toby/Lifty): real mapping/stock/cost approval, transactional DB + trusted stock locks, fresh Shopify reader, webhook/worker wiring, confirmed supplier transport, encryption key/retention N, T11 operator alerts.
+- Exported route remains unbound; TropShip transport remains rejected/unimplemented. Hosted migrations, CI and supervised staging order/email acceptance not run.
+- No live API calls, env/flag changes, spend, commit attempt, push/merge/deploy. Prior handover preserved byte-for-byte below.
+
 **12 October T08 — offline harness core / TropShip sync (codex/t08; HEAD e30a56f3; working tree only):**
 - Added lib/commerce/harness adapter/types/sync/auth handler; reuses strict supplier-feed parser and saved ExactMapping validation; no Python connector exists here.
 - Whole-file rejection alerts/skips malformed/stale/>30%-drop feeds; approved identity only; absolute stock diffs, price_auto-only prices, private cost-review diffs.
