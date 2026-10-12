@@ -413,7 +413,7 @@ function PickCard({
       {winner && (
         <p className="mt-1 text-[9px] uppercase tracking-widest font-black text-lab-lime">★ Winner</p>
       )}
-      <ProductOfferLink
+      <ProductOfferLink storeCampaign="compare"
         product={product}
         className="mt-2 w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg"
         style={{

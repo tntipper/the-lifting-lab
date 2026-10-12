@@ -49,7 +49,7 @@ const enabled = { NEXT_PUBLIC_TLL_STACK_CART: 'enabled' }
 const cart = modules()('lib/commerce/stack-cart.ts')
 test('three approved guest items produce exact quantities without rounding string IDs', () => {
   assert.equal(cart.buildStackCartUrl([item('1'), item('2', 'gid://shopify/ProductVariant/22', 2), item('3', '90071992547409931234', 3)], now),
-    'https://shop.theliftinglab.co.uk/cart/1:1,22:2,90071992547409931234:3')
+    'https://shop.theliftinglab.co.uk/cart/1:1,22:2,90071992547409931234:3?utm_source=theliftinglab&utm_medium=referral&utm_campaign=stack&ref=theliftinglab')
 })
 test('empty and unmapped stacks have no cart', () => {
   assert.equal(cart.buildStackCartUrl([], now), null)
@@ -70,7 +70,7 @@ test('version mismatch, future review and denied review are excluded', () => {
   }
 })
 test('duplicate variant lines combine pack quantities', () => {
-  assert.equal(cart.buildStackCartUrl([item('1', '55', 2), item('2', '55', 3)], now), 'https://shop.theliftinglab.co.uk/cart/55:5')
+  assert.equal(cart.buildStackCartUrl([item('1', '55', 2), item('2', '55', 3)], now), 'https://shop.theliftinglab.co.uk/cart/55:5?utm_source=theliftinglab&utm_medium=referral&utm_campaign=stack&ref=theliftinglab')
 })
 test('invalid pack quantities and sum overflow cannot produce a broken link', () => {
   for (const qty of [0, -1, 1.5, NaN, Infinity, '2', Number.MAX_SAFE_INTEGER + 1]) assert.throws(() => cart.buildStackCartUrl([item('1', '1', qty)], now))
@@ -84,7 +84,7 @@ test('existing stock holds are respected; price mode requires available evidence
 const html = (env, items = [item('1'), item('2'), item('3')], ready = true) => renderToStaticMarkup(React.createElement(modules(env)('components/BuyMyStack.tsx').default, { items, ready }))
 test('render: guest gets Buy my stack with three lines and no sign-in prompt', () => {
   const rendered = html(enabled)
-  assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1,3:1"/)
+  assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1,3:1\?utm_source=theliftinglab&amp;utm_medium=referral&amp;utm_campaign=stack&amp;ref=theliftinglab"/)
   assert.match(rendered, /Buy my stack/); assert.doesNotMatch(rendered, /sign.in|login|auth/i)
 })
 test('render: default off, empty, loading and isolated environments hide the link', () => {
@@ -108,7 +108,10 @@ test('mock Phase 2 uses existing API version, multi-line cartCreate and GB buyer
   let calls = 0
   const url = await sf.createMockStackCheckout([item('1'), item('2', '2', 2), item('3')], { async execute(req) {
     calls++; assert.equal(req.apiVersion, '2026-07'); assert.match(req.query, /cartCreate/)
-    assert.equal(JSON.stringify(req.variables), JSON.stringify({ input: { lines: [{ merchandiseId: 'gid://shopify/ProductVariant/1', quantity: 1 }, { merchandiseId: 'gid://shopify/ProductVariant/2', quantity: 2 }, { merchandiseId: 'gid://shopify/ProductVariant/3', quantity: 1 }], buyerIdentity: { countryCode: 'GB' } } }))
+    assert.equal(JSON.stringify(req.variables), JSON.stringify({ input: { lines: [{ merchandiseId: 'gid://shopify/ProductVariant/1', quantity: 1 }, { merchandiseId: 'gid://shopify/ProductVariant/2', quantity: 2 }, { merchandiseId: 'gid://shopify/ProductVariant/3', quantity: 1 }], buyerIdentity: { countryCode: 'GB' }, attributes: [
+      { key: 'utm_source', value: 'theliftinglab' }, { key: 'utm_medium', value: 'referral' },
+      { key: 'utm_campaign', value: 'stack' }, { key: 'ref', value: 'theliftinglab' },
+    ], note: 'The Lifting Lab referral (stack)' } }))
     return { data: { cartCreate: { cart: { checkoutUrl: 'https://stack-cart.invalid/cart/c/fixture' }, userErrors: [], warnings: [] } } }
   } }, now)
   assert.equal(calls, 1); assert.equal(url, 'https://stack-cart.invalid/cart/c/fixture')
@@ -132,7 +135,7 @@ test('actual stack page renders the guest cart from hydrated products with one p
     '@/components/CombinedDosePanel': { __esModule: true, default: () => null },
   })
   const rendered = renderToStaticMarkup(React.createElement(local('app/stack/StackBuilder.tsx').default))
-  assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1,3:1"/)
+  assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1,3:1\?utm_source=theliftinglab&amp;utm_medium=referral&amp;utm_campaign=stack&amp;ref=theliftinglab"/)
   assert.match(rendered, /Buy my stack/)
   assert.doesNotMatch(rendered, /sign.in|login/i)
 })
@@ -148,12 +151,12 @@ test('S02: two store, one OOS and one affiliate split into two cart lines and tw
   assert.equal(split.affiliateOnly[0].item.id, '4')
   assert.equal(split.unavailable.length, 0)
   assert.equal(cart.buildStackCartLines(mixed, now).length, 2)
-  assert.equal(cart.buildStackCartUrl(mixed, now), 'https://shop.theliftinglab.co.uk/cart/1:1,2:1')
+  assert.equal(cart.buildStackCartUrl(mixed, now), 'https://shop.theliftinglab.co.uk/cart/1:1,2:1?utm_source=theliftinglab&utm_medium=referral&utm_campaign=stack&ref=theliftinglab')
   assert.match(split.affiliateOnly[0].listing.url, /B012345678\?tag=theliftinglab-21/)
 })
 test('S02 render: skipped products and the individual affiliate link appear beside the two-line cart', () => {
   const rendered = html(enabled, mixed)
-  assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1"/)
+  assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1\?utm_source=theliftinglab&amp;utm_medium=referral&amp;utm_campaign=stack&amp;ref=theliftinglab"/)
   assert.match(rendered, /Out of stock/)
   assert.match(rendered, /Unavailable creatine.*skipped from your cart/)
   assert.match(rendered, /choose an alternative/)
@@ -219,4 +222,27 @@ test('S02: mock Storefront cart uses only the two store lines of a mixed stack',
     return { data: { cartCreate: { cart: { checkoutUrl: 'https://stack-cart.invalid/cart/c/fixture' }, userErrors: [], warnings: [] } } }
   } }, now)
   assert.equal(calls, 1)
+})
+
+test('S05 stack cart retains combined quantities with one copy of each attribution parameter', () => {
+  const link = cart.buildStackCartUrl([item('1', '55', 2), item('2', '55', 3)], now)
+  const url = new URL(link)
+  assert.equal(url.pathname, '/cart/55:5')
+  for (const [key, value] of Object.entries({ utm_source: 'theliftinglab', utm_medium: 'referral', utm_campaign: 'stack', ref: 'theliftinglab' })) {
+    assert.deepEqual(url.searchParams.getAll(key), [value])
+  }
+})
+test('S05 mock Storefront request carries unique source attributes and note without customer data', async () => {
+  const sf = modules({ ...enabled, NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART: 'enabled' })('lib/commerce/stack-cart-storefront.ts')
+  await sf.createMockStackCheckout([{ ...item('1'), name: 'Private fixture name', buy_url: 'https://example.invalid/private' }], { async execute(req) {
+    const input = req.variables.input
+    assert.equal(input.note, 'The Lifting Lab referral (stack)')
+    assert.equal(new Set(input.attributes.map(a => a.key)).size, 4)
+    assert.equal(JSON.stringify(input.attributes), JSON.stringify([
+      { key: 'utm_source', value: 'theliftinglab' }, { key: 'utm_medium', value: 'referral' },
+      { key: 'utm_campaign', value: 'stack' }, { key: 'ref', value: 'theliftinglab' },
+    ]))
+    assert.doesNotMatch(JSON.stringify(input), /Private fixture|example.invalid/)
+    return { data: { cartCreate: { cart: { checkoutUrl: 'https://stack-cart.invalid/cart/c/fixture' }, userErrors: [], warnings: [] } } }
+  } }, now)
 })
