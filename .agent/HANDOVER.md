@@ -1,3 +1,13 @@
+**12 October T10 — offline tracking write-back (codex/t10; HEAD 868a6d5; working tree only):**
+- Added injected tracking job/private SQL store/authenticated cron route in lib/commerce/harness; TRACKING_WRITE_ENABLED exact true, default OFF; route unbound.
+- Submitted/accepted supplier lines -> stable parcel + explicit shipped SKUs/quantities -> fresh Shopify 2026-07 fulfillment-order line IDs; partial only, notifyCustomer=true.
+- Atomic spent marker/quantity reservations before write; repeat/concurrent runs dedupe; uncertain/crashed/save-failed writes retain units for manual reconciliation, never retry.
+- Added private/RLS tracking_attempts and fulfilled/reserved quantities migration (static/client-mocked only); TropShip real tracking transport remains explicit TODO.
+- Evidence: 261 focused Node tests PASS (65 new), 0 fail/skip; typecheck PASS; changed-file lint PASS/0 warnings; live-boundaries PASS/0 violations; whitespace PASS.
+- TODO(Toby/Lifty): confirmed parcel/line evidence (duplicate SKUs need line IDs), restricted DB/Shopify bindings + permissions, approved migrations/cron/activation, T11 operator reconciliation.
+- Real staging full/partial fulfilment + actual Shopify shipping-email evidence and hosted CI remain outstanding; draft PR read failed (GitHub connection unavailable).
+- No live Shopify/supplier/Supabase calls, hosted DB application, env/flag changes, spend, commit attempt, push/merge/deploy; previous handover preserved byte-for-byte below.
+
 **12 October T09 — offline order forwarding (codex/t09; HEAD 9baaff2; working tree only):**
 - Added signed orders/paid inbox route, injected fresh-order worker and private SQL store under lib/commerce/harness; ORDER_FORWARDING_ENABLED defaults OFF.
 - Exact approved mappings split lines into supplier batches; immutable plans/line keys dedupe replays; atomic spent marker precedes submission.

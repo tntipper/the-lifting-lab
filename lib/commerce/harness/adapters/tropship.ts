@@ -35,6 +35,8 @@ export function createTropShipAdapter(readSavedFeed: () => Promise<SavedFeed>): 
     },
     // TODO(Toby): bind confirmed order transport/auth/acknowledgement to the T09 worker; never claim submission here.
     async placeOrder() { return { status: 'rejected', reason: 'ORDER_SUBMISSION_NOT_IMPLEMENTED' } },
-    async fetchTracking() { throw new Error('TODO(T10): tracking adapter is not implemented') },
+    // TODO(Toby/Lifty): confirm tracking transport + stable parcel ID + incremental shipped SKU quantities.
+    // T10 job consumes injected normalised evidence; number-only feeds cannot prove shipment lines.
+    async fetchTracking() { throw new Error('TODO(T10): confirmed supplier tracking transport is not implemented') },
   }
 }
