@@ -1,3 +1,14 @@
+**12 October S07 — offline mobile stack journey (codex/s07; HEAD 2fd753c5; working tree only):**
+- BuyMyStack now has a mobile fixed bottom Buy bar with safe-area spacing; StackBuilder reserves scroll clearance; desktop keeps inline Buy.
+- tests/browser/mobile-stack.mjs + mobile-stack-fixture.tsx reuse real StackBuilder/LocalStackProvider/cart builder and existing esbuild/Tailwind fixture setup.
+- iPhone 13/WebKit + Pixel 7/Chromium specs build three guest items, reload, check exact large-string variant/pack/attribution URL and unobscured Buy at top/bottom.
+- All external/unknown requests intercepted or aborted; Shopify cart response is synthetic. Test-only bundle constants do not change env files or runtime flags.
+- Evidence: 120 relevant Node tests PASS, 0 fail/skip; typecheck, changed-file lint, syntax, live-boundaries (0 violations) and diff checks PASS.
+- Browser attempt: 0 PASS / 2 infrastructure FAIL before browser launch; sandbox denies loopback listen (EPERM). No device journey/hosted CI pass claimed.
+- Outside sandbox: npx playwright install chromium webkit; node --test tests/browser/mobile-stack.mjs. No credentials or Next dev server needed; WebKit not installed here.
+- TODO(Toby/Lifty): existing approved mapping/data/flag decisions and separately authorised real checkout/guest-wallet proof; Sentinel inclusion when built. GitHub PR lookup unavailable.
+- No live service APIs, spend, env/flag edits, hosted migrations, commit attempt, push/merge/deploy; all previous handover bytes preserved below.
+
 **12 October S05 — store link/cart source attribution (codex/s05; HEAD 2d3fba74; working tree only):**
 - Shared lib/commerce/store-attribution.ts adds utm_source=theliftinglab, utm_medium=referral, campaign product/compare/stack and ref=theliftinglab exactly once.
 - T06/S03 product-page and single-item cart links retain exact variant IDs; S01/shared-stack carts retain combined pack quantities; affiliate links unchanged.

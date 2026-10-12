@@ -12,7 +12,7 @@ import type { StoreLinkMapping } from '@/lib/commerce/product-mapping'
 import BuyMyStack from '@/components/BuyMyStack'
 import SharedStack from '@/components/SharedStack'
 import { shareStackPath } from '@/lib/commerce/stack-share'
-import type { StackCartItem } from '@/lib/commerce/stack-cart'
+import { stackCartEnabled, type StackCartItem } from '@/lib/commerce/stack-cart'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { StagingCartAdd } from '@/components/StagingCartActions'
 import { analysisServings, validStackServings } from '@/lib/stack-sync'
@@ -190,7 +190,9 @@ function timingFor(category: string): 'Any time' | 'Pre-training' | 'Post-traini
 function readStackQuery() { return window.location.search }
 export default function StackBuilder() {
   const query = useBrowserSnapshot(readStackQuery, '')
-  return new URLSearchParams(query).has('items') ? <SharedStack query={query} /> : <SavedStackBuilder />
+  return <div className={stackCartEnabled() ? 'pb-24 md:pb-0' : undefined}>
+    {new URLSearchParams(query).has('items') ? <SharedStack query={query} /> : <SavedStackBuilder />}
+  </div>
 }
 
 function SavedStackBuilder() {
