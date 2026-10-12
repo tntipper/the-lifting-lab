@@ -9,6 +9,8 @@ import { catalogueAssessment, summariseStackAssessments, assessmentText, stackRe
 import { scoreFor } from '@/lib/scores'
 import { resolveProductOffer } from '@/lib/affiliate'
 import type { StoreLinkMapping } from '@/lib/commerce/product-mapping'
+import BuyMyStack from '@/components/BuyMyStack'
+import type { StackCartItem } from '@/lib/commerce/stack-cart'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { StagingCartAdd } from '@/components/StagingCartActions'
 import { analysisServings, validStackServings } from '@/lib/stack-sync'
@@ -22,7 +24,7 @@ function readStoredSex(): Sex {
 }
 
 // Batch product shape returned by /api/products/batch
-type BatchProduct = {
+type BatchProduct = Pick<StackCartItem, 'cataloguePresentation' | 'storePrice'> & {
   id: string
   name: string
   brand: string
@@ -206,6 +208,8 @@ export default function StackBuilder() {
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const searchInput = useRef<HTMLInputElement>(null)
 
+  const [cartProducts, setCartProducts] = useState<BatchProduct[]>([])
+
   function changeGoal(next: StackGoal) {
     setGoal(next)
     try { window.localStorage.setItem('tll-stack-goal', next) } catch { /* optional preference */ }
@@ -226,10 +230,11 @@ export default function StackBuilder() {
   useEffect(() => {
     let cancelled = false
     const controller = new AbortController()
-    if (!idsKey) { setStackItems([]); setDetailsError(null); setDetailsLoading(false); return }
+    if (!idsKey) { setCartProducts([]); setStackItems([]); setDetailsError(null); setDetailsLoading(false); return }
     setDetailsLoading(true)
     setDetailsError(null)
     setStackItems([])
+    setCartProducts([])
     // The existing public batch route caps requests at 50 products.
     const ids = idsKey.split(',')
     const batches = Array.from({ length: Math.ceil(ids.length / 50) }, (_, i) => ids.slice(i * 50, i * 50 + 50))
@@ -243,6 +248,7 @@ export default function StackBuilder() {
       .then(results => {
         const data = results.flat()
         if (cancelled) return
+        setCartProducts(data)
         setStackItems(data.flatMap((p: BatchProduct) => {
           const servings = analysisServings(state.snapshot, p.id)
           return servings === null ? [] : [{ ...toStackItem(p), servings_per_day: servings }]
@@ -300,7 +306,7 @@ export default function StackBuilder() {
   const shareUrl = buildShareUrl(stackItems)
   const emailUrl = buildEmailLink(stackItems, stack.length)
 
-  // Explicit listings only. A research stack does not create a cart or order.
+  // Individual listings remain available alongside the optional store cart link.
   const retailerGroups = useMemo(() => {
     const groups: Record<string, { label: string; products: NonNullable<StackItem['products']>[] }> = {}
     for (const it of stackItems) {
@@ -342,6 +348,8 @@ export default function StackBuilder() {
           {STACK_GOALS.map(option => <button key={option} type="button" aria-pressed={goal === option} onClick={() => changeGoal(option)}
             className={`min-h-11 rounded-full border px-5 text-sm font-black transition-colors ${goal === option ? 'tll-on-dark border-[#14140f] bg-[#14140f]' : 'border-[#a8aaa0] bg-white text-[#14140f] hover:border-[#14140f]'}`}>{option}</button>)}
         </div>
+        <BuyMyStack items={cartProducts.filter(product => stackProductIds.has(product.id)).map(product => ({ ...product, quantity: 1 }))}
+          ready={!loading && !detailsError && cartProducts.length === stack.length && cartProducts.every(product => stackProductIds.has(product.id))} />
       </section>
 
       <div role="status" aria-live="polite" className="space-y-2 text-sm text-lab-muted lg:col-span-2">

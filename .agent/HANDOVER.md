@@ -1,3 +1,13 @@
+**12 October S01 — guest stack → Shopify cart (codex/s01; HEAD cc9771ee; working tree only):**
+- Added approved-mapping cart permalink builder in lib/commerce/stack-cart.ts; string variant IDs, explicit pack quantities, duplicate totals and existing stock holds.
+- Stack page BuyMyStack uses separately hydrated products (independent of daily doses), one pack each; no sign-in gate; waits for complete current details.
+- NEXT_PUBLIC_TLL_STACK_CART and NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART require exact enabled, default OFF; isolated preview/staging remain blocked. No env edits.
+- Phase 2 stack-cart-storefront.ts reuses staging 2026-07/cartCreate pattern with injected mock only; synthetic .invalid checkout only, no live binding or UI request.
+- Evidence: 174 relevant Node tests PASS (14 new), 0 fail/skip; typecheck PASS; changed-file lint PASS; live-boundaries PASS/0 violations; diff check PASS.
+- TODO(Toby/Lifty): approved saved mapping loader/data, one-pack purchase policy review, guest Shopify settings and supervised three-line cart proof; flags need specific approval.
+- Phase 2 needs reviewed server transport, exact returned-line/checkout-host validation and credentials; mixed-stack explanations remain S02. Hosted CI not run.
+- No live APIs, spend, hosted migrations, commit attempt, push/merge/deploy or live flag changes; previous handover bytes preserved below.
+
 **12 October T12 — local compliance drafts (codex/t12; HEAD 989d4ab; working tree only):**
 - Footer now links refunds/delivery/privacy/terms/contact; added refunds/delivery and revised other pages, all labelled unsigned drafts for Lifty/Toby.
 - Added data-driven ProductWarnings using recorded caffeine, category age guidance and optional public label metadata; no per-product page rules or new flags.
