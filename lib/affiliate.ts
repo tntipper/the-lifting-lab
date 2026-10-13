@@ -12,8 +12,8 @@ const BULK_MID = '4822'
 export const MYPROTEIN_REF_CODE = 'TOBIAS-R1I5'
 
 export type StoreBuyLinkMode = 'product_page' | 'cart'
-// Toby picks the default. Direct-to-cart stays OFF until that choice is approved.
-export const DEFAULT_STORE_BUY_LINK_MODE: StoreBuyLinkMode = 'product_page'
+// Toby's Buy default: exact in-stock variants go to cart. STORE_LINKS remains OFF by default.
+export const DEFAULT_STORE_BUY_LINK_MODE: StoreBuyLinkMode = 'cart'
 
 export type ProductListing = {
   state: 'listing' | 'search_only' | 'unavailable'
