@@ -1,3 +1,13 @@
+**13 October Job E — FACT: portable script/test paths; grok/a-baseline-green at 080d2ba; working files only:**
+- FACT: removed all legacy user paths outside docs; 18 scripts + 8 tests/helpers use home-relative tools; repo roots remain module-relative.
+- FACT: digest/ownership/symlink checks and OFF switches preserved; scoped GitHub helper path shell-quoted; CLI trust tested with owned bytes.
+- FACT: updated disposable source parsers and used xcrun-resolved fixture Git; focused native-push/source-preparation: 12 pass/0 fail.
+- FACT: final 21-file affected suite: 170 tests, 149 pass, 16 fail, 5 existing native skips; native-push 4/4 pass.
+- BLOCKED: 8 stale activation-manifest checks (config outside OWNED); 7 Docker fixture tests (socket permission denied); 1 Python confstr warning assertion.
+- BLOCKED/GAP: 5 native checks skipped for unavailable pinned Git; hosted CI and integration base ref unverified; evidence in ../e-test.log.
+- FACT: syntax, diff, legacy-path scan and live-boundary checks pass; no repo commit, push, merge, network, live APIs or switch activation.
+- Next: orchestrator refreshes reviewed manifest pins; rerun blocked checks with local Docker/Python access; all prior HANDOVER bytes preserved.
+
 **13 October Job A — FACT: grok/a-baseline-green; HEAD 2037a895; reviewed working files, commits BLOCKED:**
 - FACT: applied manifest then fixes 01–04 in order; prepended patch notes; all original HANDOVER bytes preserved; 17 owned files changed.
 - FACT: refreshed aggregate for committed S08 tree (108 files); both manifest checks pass; production/native pins and off switches unchanged.

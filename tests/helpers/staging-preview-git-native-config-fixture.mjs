@@ -1,14 +1,14 @@
 /** Owned local worktree for the unchanged native publication read/config policy. */
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
-import { tmpdir } from 'node:os'
+import { tmpdir, homedir } from 'node:os'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady } from '../../scripts/staging-preview-git-source-preflight.mjs'
 
 const sourceRoot = resolve(import.meta.dirname, '../..')
-const git = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'
-const execPath = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core'
+const git = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
+const execPath = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
 const modules = ['staging-preview-git-source-preflight.mjs', 'staging-preview-git-publish-native-contract.mjs', 'staging-preview-git-publish-native-read.mjs']
 
 export async function createStagingPreviewGitNativeConfigFixture() {

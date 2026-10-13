@@ -1,11 +1,13 @@
 /** Fixed read-only Git port for the separate local arming worktree. No push vector. */
+import { homedir } from 'node:os'
+import { resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady } from './staging-preview-git-source-preflight.mjs'
 import { captureStagingPreviewGitArguments } from './staging-preview-git-publish-native-contract.mjs'
 import { STAGING_PREVIEW_GIT_PUBLISH_ARM_ROOT } from './staging-preview-git-publish-arm-preflight.mjs'
 
-const gitBinary = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'
-const gitExecPath = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core'
+const gitBinary = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
+const gitExecPath = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
 const unavailable = () => { throw Error('Staging publication arming read unavailable') }
 const fullSha = value => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value)
 const files = ['config/staging-account-activation-manifest.json',

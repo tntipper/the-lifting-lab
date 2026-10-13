@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Disabled entry for a single read-only staging provider reconciliation. */
+import { homedir } from 'node:os'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { lstatSync, readFileSync } from 'node:fs'
@@ -10,7 +11,7 @@ export const PROVIDER_SAFE_HELD_LIVE_ENABLED = false
 export const PROVIDER_SAFE_HELD_JOURNAL = fileURLToPath(new URL('../../implementation-state/staging/tll-provider-safe-held-read-v1.json', import.meta.url))
 const root = resolve(import.meta.dirname, '..')
 const helper = resolve(import.meta.dirname, 'staging-provider-normalization-keychain.py')
-const python = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3'
+const python = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
 const pythonSha256 = 'ac60cfe0268614638d0ffa35f3b0284fc7b3a11482723793455e17eeb278509e'
 const unavailable = () => { throw new Error('Staging provider read-only reconciliation launcher unavailable') }
 
