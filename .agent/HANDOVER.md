@@ -1,3 +1,52 @@
+**13 October Job A — FACT: grok/a-baseline-green; HEAD 2037a895; reviewed working files, commits BLOCKED:**
+- FACT: applied manifest then fixes 01–04 in order; prepended patch notes; all original HANDOVER bytes preserved; 17 owned files changed.
+- FACT: refreshed aggregate for committed S08 tree (108 files); both manifest checks pass; production/native pins and off switches unchanged.
+- FACT: repaired six stale T06 expectations to check exact variant plus S05 campaign/attribution; assessment-display 48 pass/0 fail.
+- FACT: final npm test: 3941 pass/29 fail/8 existing skips; live-boundaries 0 violations; each failure labelled BLOCKED in ../a-final-test.log.
+- BLOCKED tests: loopback EPERM (8), process inspection/start EPERM (6), Docker socket denial (12), Chrome SIGABRT (1), Python startup stderr (1), missing pinned CLI (1).
+- FACT: npm run typecheck PASS/0 errors; npm run lint PASS/0 errors/22 existing warnings; matching local night/j4-runtime deps used; original link restored.
+- BLOCKED commits: git apply --3way cannot create worktrees/wt-a/index.lock (Operation not permitted); plain working-file apply used; no index/ref writes.
+- Next: resume with writable Git metadata, commit ordered fixes/messages and T06 correction; rerun blocked tests in capable offline environment; no product decision.
+- GAP: hosted CI/remote PRs unverified; no network install, push, merge, deploy, live API calls, credentials/env edits or activation; assertions preserved.
+
+**12 October JOB j2 — baseline fixture fix 04 / completion (codex/baseline-test-fixes; wrapper patches):**
+- Eight offline Swift tests place compiler module caches in their disposable directories/copies; native source/gates/signing/drift assertions unchanged.
+- Refreshed only intentional test-file pins; activation sourceTree stays 98. Fixes 01–04 are separate patches/commit messages, based on manifest patch A.
+- Focused evidence: Python 25 pass; actual Git/source admission/SQL 17 pass; native-read mock 3 pass/2 existing skips; Swift 8 pass; all 0 fail.
+- Full baseline: npm test → 3718 pass, 45 fail, 8 skipped; final rerun and per-failure classification in night/j2-report.md.
+- Missing retired design unchanged/blocked; production/native host restrictions and Gen23 fixture prerequisites are not relaxed.
+- No credentials, hosted action, branch/index write, commit, push or deploy; wrapper must apply A then commit 01–04 separately on the baseline branch.
+
+**12 October JOB j2 — baseline fixture fix 03 (codex/baseline-test-fixes; wrapper patch):**
+- Mocked native-read argument test imports an isolated copy with synthetic tool qualification; unchanged contracts and every original rejection/spawn assertion execute.
+- Native executable/hash checks remain exercised in existing native tests; no production source or native gates changed; mocked case also runs on non-macOS.
+- Evidence: node --experimental-strip-types --test tests/staging-preview-git-publish-native-read.test.mjs → 3 pass, 0 fail, 2 existing native skips.
+- Activation refresh is only this intentional test-file pin; aggregate stays 98. Remaining environment failures/classification in night/j2-report.md.
+- No hosted action, credentials, branch/index write, commit, push or deploy; wrapper applies as a separate commit after fix 02.
+
+**12 October JOB j2 — baseline fixture fix 02 (codex/baseline-test-fixes; wrapper patch):**
+- Disposable owner-successor fixture resolves the actual Git via xcrun on macOS before copying/byte-pinning it; Apple /usr/bin/git launcher is not relocatable.
+- Original native Git pins, argument contracts and all source/admission/replay assertions unchanged; no remote reads in the fixture.
+- Focused actual parent/child and complete offline SQL scenarios now pass; final serial counts/evidence in night/j2-report.md.
+- Activation manifest refresh is only the intentional fixture-source pin; aggregate unchanged at 98.
+- No hosted/production action, secret access, branch/index write, commit, push or deploy; wrapper applies as separate commit after fix 01.
+
+**12 October JOB j2 — baseline fixture fix 01 (codex/baseline-test-fixes; wrapper patch):**
+- Three disposable Gen22 fixtures use /usr/bin/python3; production pinned interpreter, gates and every behavioural assertion unchanged.
+- Refreshed only activation pins for those intentional test edits; aggregate stays at 98 committed T09 source files.
+- Evidence: node --experimental-strip-types --test --test-concurrency=1 tests/staging-generation-22-default-process.test.mjs tests/staging-generation-22-keychain-reader.test.mjs tests/staging-generation-22-preflight-armed-copy.test.mjs → 25 pass, 0 fail/skip.
+- Original baseline: npm test → 3718 pass, 45 fail, 8 skip; per-failure classification/evidence in night/j2-report.md.
+- Full-suite rerun follows; no native/hosted action, secret access, branch/index write, commit, push or deploy.
+
+**12 October JOB j2 — manifest pins (codex/fix-manifest-pins; base 868a6d50; wrapper patch):**
+- Activation sourceTree refreshed 86→98 files; old aggregate exactly reproduced at 9694a188; all 13 changed/added files equal committed HEAD bytes.
+- Explaining commits: d7973145 (package command), 06f93ae0 (mapping), e30a56f3 (price/presentation), 9baaff26 (sync), 868a6d50 (orders).
+- Hosted-baseline package.json pin updated only for committed mapping:check addition; other source pins unchanged.
+- Missing retired native_adapter.py remains UNVERIFIED/BLOCKED; historical hash unchanged; no unexplained present-file drift found.
+- Evidence/audits and full baseline results: night/j2-report.md, j2-tree-audit.json, j2-pin-audit.json; manifest --check commands PASS.
+- Full-suite classification/fixes follow in separate codex/baseline-test-fixes patches; hosted CI not run.
+- No branch/index writes, commits, push, deploy, credentials or live operations; wrapper must apply and commit the reviewed patch.
+
 **12 October S08 — offline store-reviews spike (codex/s08-spike; HEAD f36a7d27; working tree only):**
 - docs/reviews-spike.md recommends Judge.me free provisionally; compares public widget/API and alternatives without network calls.
 - Reuses ExactMapping/product-mapping helpers; approved runtime loader/data and free API/freshness entitlement remain TODO.

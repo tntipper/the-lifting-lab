@@ -62,9 +62,21 @@ test('native read port rejects push, substituted remote and unreviewed command b
   assert.throws(() => port.runGit(['status', '--porcelain'], 4_096), /command unavailable/)
 })
 
-test('overridden methods and accessors cannot turn validation into a different spawned command', { skip: process.platform !== 'darwin' }, () => {
+test('overridden methods and accessors cannot turn validation into a different spawned command', async () => {
+  // Exercise the unchanged argument/spawn logic with synthetic qualification.
+  // Real executable hashes and native reads are covered by the tests above;
+  // this mocked-spawn case must not depend on a particular host installation.
+  const source = readFileSync(new URL('../scripts/staging-preview-git-publish-native-read.mjs', import.meta.url), 'utf8')
+  const readinessImport = "import { stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady } from './staging-preview-git-source-preflight.mjs'"
+  assert.equal(source.split(readinessImport).length, 2)
+  const isolated = source.replace(readinessImport,
+    'const stagingPreviewGitExecutableReady = () => true; const stagingPreviewGitHttpsHelperReady = () => true')
+    .replaceAll("from './", `from '${new URL('../scripts/', import.meta.url).href}`)
+  const { createStagingPreviewGitPublishNativeReadPort: qualifiedReadPort } =
+    await import(`data:text/javascript;base64,${Buffer.from(isolated).toString('base64')}`)
+
   let spawns = 0
-  const port = createStagingPreviewGitPublishNativeReadPort({ spawn: () => { spawns++; return {
+  const port = qualifiedReadPort({ spawn: () => { spawns++; return {
     status: 0, stdout: Buffer.from(`${root}\n`), signal: null,
   } } })
   const spoofed = ['push', 'https://unreviewed.invalid/repo.git', 'HEAD:refs/heads/main']
@@ -80,7 +92,7 @@ test('overridden methods and accessors cannot turn validation into a different s
   assert.equal(spawns, 0)
 
   const mutable = ['rev-parse', '--show-toplevel']
-  const result = createStagingPreviewGitPublishNativeReadPort({ spawn: (_binary, received) => {
+  const result = qualifiedReadPort({ spawn: (_binary, received) => {
     spawns++
     assert.equal(received[0], 'rev-parse')
     assert.equal(received[1], '--show-toplevel')

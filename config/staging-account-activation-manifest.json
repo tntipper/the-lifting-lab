@@ -50,8 +50,8 @@
       "app/api/account",
       "supabase/functions"
     ],
-    "fileCount": 86,
-    "sha256": "30fd2f8b9f1b3d1b59554840d7b4b908598301d0749a192aa7bb292713400404"
+    "fileCount": 108,
+    "sha256": "4c12155cc8927cbf0d93e4e3acaaaeb65b4934a96eeedeef1506a963985476ed"
   },
   "stageSafety": {
     "sources": [
@@ -949,7 +949,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-fixture-metadata-diagnostic.test.mjs",
-        "sha256": "af0b1110989e76860b67c78009108878ad2e0a85856ead2e18dfd393e83ad885"
+        "sha256": "1fed06a2e7f3bd55fe02c514cea9dfea3880091edddd76ae5b0396dbfdfff812"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-metadata-journal.test.mjs",
@@ -985,7 +985,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-search-domain-diagnostic.test.mjs",
-        "sha256": "283f9d465d4228841972dd923207f474187109d20019092b6c0a641e311fe70a"
+        "sha256": "8ed5eea02eea12d406017fbf5f74be439fa5c2a3c56b5903f2a1f4c1cff168b8"
       },
       {
         "path": "tests/staging-provider-keychain-search-domain-runner.test.mjs",
@@ -1825,11 +1825,11 @@
       },
       {
         "path": "tests/staging-provider-noninteractive-keychain.test.mjs",
-        "sha256": "b321a64a5d5a73afbef44c8ddf45d017be7a348779f9c1919c3e149f553e87a1"
+        "sha256": "e70700d11d7d79b252b6ce774889f9f64374776866f48ae1a666cdaf12a45155"
       },
       {
         "path": "tests/staging-provider-noninteractive-keychain-build.test.mjs",
-        "sha256": "7a12e639baf34a10c194b9d25ae0b50cf029700b50152a072107d6b951a310d2"
+        "sha256": "c1064e032a1d5b86ab244b3465c7dc24c143482fa27d84b66e4ede4e8027e97d"
       },
       {
         "path": "tests/staging_provider_noninteractive_keychain_test.swift",
@@ -1837,7 +1837,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-fixture-build.test.mjs",
-        "sha256": "26bdef44218206a2aa45a0ddd1543016ec64f0380aa6365cb7e879c0ae9d32ca"
+        "sha256": "7f5e92d1c3bcced20aa927bbf5b4298ac158665d7c328159e1f5903ca4b349f5"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-armed-build.test.mjs",
@@ -1853,11 +1853,11 @@
       },
       {
         "path": "tests/staging-provider-keychain-fixture-native-offline.test.mjs",
-        "sha256": "13d2a33656496a5ac925f462909ca9109bbba26c914e76fe8a856b5e74225cff"
+        "sha256": "4479b7340dc353db6de73f96dc49bf0b685a7fc54c9472be3d350b481f96e25c"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-native-offline.test.mjs",
-        "sha256": "d660b75818e7ba9a6778fa8d9cbe12191cd1b032553b5871cbb1ca93f59d8f2c"
+        "sha256": "a7e6a88d4fd6181debc315e551d11a12b8dd8b21944bb7b5bcd9afbfd940193c"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-build.test.mjs",
@@ -1881,7 +1881,7 @@
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-v2-native-offline.test.mjs",
-        "sha256": "6ad0d009bbf6dd193811f7d7180c03d613d88549dcda5febf179e80071d4862d"
+        "sha256": "bb23ce6c3c706be151876fb2d171a12c516a2ee630ed770522cfda1a02bffef7"
       },
       {
         "path": "tests/staging-provider-keychain-fixture-recovery-v2-build.test.mjs",
@@ -2013,7 +2013,7 @@
       },
       {
         "path": "tests/staging-preview-git-publish-native-read.test.mjs",
-        "sha256": "131f403c1ac52d1fad66f337aa110d1e7ce3abfad4e465bc406b0bb6cca48ac7"
+        "sha256": "6e86bb77d2facaae6b370867d200de6fd813e8ccd4ca676409e4eb53a47c19de"
       },
       {
         "path": "tests/staging-preview-git-publish-native-push.test.mjs",
@@ -2145,7 +2145,7 @@
       },
       {
         "path": "tests/fixtures/owner-successor-default-qualification.mjs",
-        "sha256": "e59d42a0b24b5363c0fc28427782e96807f0a78c00b81cef1e21786271cd4a30"
+        "sha256": "7519ce8fa64074af3e5b4cf8d03fb03492ce714550a9227135751f8f07f7d78a"
       },
       {
         "path": "tests/fixtures/owner-successor-default-database.mjs",
@@ -2493,7 +2493,7 @@
       },
       {
         "path": "tests/staging-generation-22-default-process.test.mjs",
-        "sha256": "73f5209a48b8fd40de33180e3a674734ee69f998b9d04df361c5993ef4db9d35"
+        "sha256": "1a05dab4a948d9056b0409e27f653b0b54a62025703c261a976b174d3c2b8e36"
       },
       {
         "path": "tests/fixtures/staging-generation-22-default-success.mjs",
@@ -2505,7 +2505,7 @@
       },
       {
         "path": "tests/staging-generation-22-keychain-reader.test.mjs",
-        "sha256": "4f9d73bde35d5048713baa5526b28d09bf62a6abb49f765873d987bbda85fce8"
+        "sha256": "027a7ac6349ba9a27a75a95f88ccd1cf7bfd4db1f6d762befff75996bd0c9e7e"
       },
       {
         "path": "tests/staging-generation-22-preflight-assessment.test.mjs",
@@ -2525,7 +2525,7 @@
       },
       {
         "path": "tests/staging-generation-22-preflight-armed-copy.test.mjs",
-        "sha256": "8081584c0717279229c5a8ddd83713d5b87c8fc622f009b54d6a96e442e2a901"
+        "sha256": "fcbc79352c7fe70ccbe276c5a428c41f2b6df2407b4d815c3746dd15f55dba3e"
       },
       {
         "path": "tests/staging-generation-22-retired-query.test.mjs",

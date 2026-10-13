@@ -18,7 +18,7 @@ test('search-domain diagnostic stays disabled and reports only bounded categorie
   const directory = mkdtempSync(join(tmpdir(), 'tll-search-domain-offline-'))
   try {
     const executable = join(directory, 'offline')
-    const compile = spawnSync('/usr/bin/swiftc', ['-parse-as-library', '-D',
+    const compile = spawnSync('/usr/bin/swiftc', ['-module-cache-path', join(directory, 'module-cache'), '-parse-as-library', '-D',
       'TLL_SEARCH_DOMAIN_OFFLINE_TEST', source, '-o', executable], {
       encoding: 'utf8', timeout: 60_000, maxBuffer: 16_384,
     })

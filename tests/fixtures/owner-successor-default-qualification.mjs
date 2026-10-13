@@ -22,7 +22,12 @@ export function createSuccessorDefaultQualificationSource() {
     const preflightPath = join(root, 'scripts/staging-preview-git-source-preflight.mjs')
     let toolchain = readFileSync(preflightPath, 'utf8')
     const originalGit = /const gitBinary = '([^']+)'/.exec(toolchain)[1]
-    const localGit = existsSync(originalGit) ? originalGit : '/usr/bin/git'
+    // Apple's /usr/bin/git is an xcrun launcher and cannot run after copying.
+    // Resolve the actual tool before making the byte-pinned disposable copy.
+    const localGit = existsSync(originalGit) ? originalGit
+      : process.platform === 'darwin'
+        ? execFileSync('/usr/bin/xcrun', ['--find', 'git'], { encoding: 'utf8' }).trim()
+        : '/usr/bin/git'
     const originalExec = /const gitExecPath = '([^']+)'/.exec(toolchain)[1]
     const localExec = localGit === originalGit && existsSync(originalExec) ? originalExec : execFileSync(localGit, ['--exec-path'], { encoding: 'utf8' }).trim()
     const qualifiedBin = join(root, 'qualification-toolchain/git'), qualifiedExec = join(root, 'qualification-toolchain/git-core')

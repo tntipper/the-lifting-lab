@@ -13,7 +13,7 @@ test('V2 native safety predicates run offline with the live switch disabled', { 
     const body = readFileSync(source, 'utf8')
     assert.match(body, /TLL_FIXTURE_RECOVERY_V2_ENABLED = false/)
     const binary = join(directory, 'offline')
-    const build = spawnSync('/usr/bin/swiftc', ['-parse-as-library', '-D',
+    const build = spawnSync('/usr/bin/swiftc', ['-module-cache-path', join(directory, 'module-cache'), '-parse-as-library', '-D',
       'TLL_KEYCHAIN_FIXTURE_RECOVERY_V2', '-D', 'TLL_FIXTURE_RECOVERY_V2_NATIVE_TEST',
       source, '-o', binary], { timeout: 30_000, maxBuffer: 8192 })
     assert.equal(build.status, 0, build.stderr?.toString('utf8'))

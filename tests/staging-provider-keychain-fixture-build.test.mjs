@@ -22,6 +22,14 @@ test('fixture build is disabled, source-bound and never executed by ordinary tes
       mkdirSync(scripts, { recursive: true })
       mkdirSync(staging, { recursive: true, mode: 0o700 })
       for (const name of sources) copyFileSync(join(root, 'scripts', name), join(scripts, name))
+      // Keep the compiler cache within this disposable fixture; native source
+      // bytes, signing checks and source-drift assertions remain unchanged.
+      const buildCopy = join(scripts, 'staging-provider-keychain-fixture-build.mjs')
+      const buildSource = readFileSync(buildCopy, 'utf8')
+      const compile = "spawnSync('/usr/bin/swiftc', ['-parse-as-library'"
+      assert.equal(buildSource.split(compile).length, 2)
+      writeFileSync(buildCopy, buildSource.replace(compile,
+        `spawnSync('/usr/bin/swiftc', ['-module-cache-path', ${JSON.stringify(join(temporary, 'module-cache'))}, '-parse-as-library'`))
       const command = argument => spawnSync(process.execPath,
         [join(scripts, 'staging-provider-keychain-fixture-build.mjs'), argument],
         { cwd: repository, encoding: 'utf8', timeout: 60_000, maxBuffer: 4_096 })

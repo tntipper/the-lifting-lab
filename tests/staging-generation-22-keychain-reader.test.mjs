@@ -15,7 +15,7 @@ import { WORKER_TERMINAL_SCHEMA } from '../scripts/staging-generation-22-process
 import { WINDOW_ID } from '../scripts/staging-generation-22-credentials.mjs'
 import { GENERATION, PROJECT_REF } from '../scripts/staging-generation-22-material.mjs'
 
-const testPython = realpathSync(process.platform === 'darwin' ? GENERATION_22_PYTHON : '/usr/bin/python3')
+const testPython = realpathSync('/usr/bin/python3')
 const scripts = new URL('../scripts/', import.meta.url)
 const root = fileURLToPath(new URL('../', import.meta.url))
 const supabase = `sbp_${'a'.repeat(40)}`

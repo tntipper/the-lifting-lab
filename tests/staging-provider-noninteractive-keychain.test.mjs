@@ -18,7 +18,7 @@ test('disabled native Keychain reader passes injected offline tests without a re
     const directory = mkdtempSync(join(tmpdir(), 'tll-keychain-offline-'))
     try {
       const binary = join(directory, 'offline-tests')
-      const compiled = spawnSync('/usr/bin/swiftc', [
+      const compiled = spawnSync('/usr/bin/swiftc', ['-module-cache-path', join(directory, 'module-cache'),
         '-parse-as-library', '-D', 'TLL_KEYCHAIN_TEST', source, tests, '-o', binary,
       ], { cwd: root, encoding: 'utf8', timeout: 30_000, maxBuffer: 8_192 })
       assert.equal(compiled.status, 0, compiled.stderr || String(compiled.error))

@@ -24,7 +24,7 @@ test('native fixture recovery mechanics pass in the offline-only test main', { s
   const directory = mkdtempSync(join(tmpdir(), 'tll-native-fixture-recovery-offline-'))
   try {
     const binary = join(directory, 'offline-test-main')
-    const compiled = spawnSync('/usr/bin/swiftc', ['-parse-as-library', '-D', 'TLL_KEYCHAIN_FIXTURE_RECOVERY', '-D', 'TLL_FIXTURE_RECOVERY_NATIVE_TEST', source, '-o', binary], { cwd: root, encoding: 'utf8', timeout: 30_000, maxBuffer: 65_536 })
+    const compiled = spawnSync('/usr/bin/swiftc', ['-module-cache-path', join(directory, 'module-cache'), '-parse-as-library', '-D', 'TLL_KEYCHAIN_FIXTURE_RECOVERY', '-D', 'TLL_FIXTURE_RECOVERY_NATIVE_TEST', source, '-o', binary], { cwd: root, encoding: 'utf8', timeout: 30_000, maxBuffer: 65_536 })
     assert.equal(compiled.status, 0, compiled.stderr || String(compiled.error))
     const run = spawnSync(binary, [], { cwd: directory, encoding: 'utf8', timeout: 10_000, maxBuffer: 1024 })
     assert.equal(run.status, 0, run.stderr || String(run.error))
