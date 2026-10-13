@@ -168,7 +168,7 @@ export function evaluateCombo(selected: string[]): ComboResult {
     flags.push({
       level: 'caution',
       title: 'Watch your total caffeine',
-      note: 'You have selected more than one caffeine source. A strong pre-workout can be 200 to 350mg and a coffee another 80 to 120mg. Keep your daily caffeine under about 400mg, and no more than roughly 3mg per kg of bodyweight in a single pre-workout dose. If you train in the evening, remember caffeine\'s half-life averages around 5 hours in healthy adults but varies widely between people, so late doses can wreck your sleep.',
+      note: 'You have selected more than one caffeine source. A strong pre-workout can be 200 to 350mg and a coffee another 80 to 120mg. Keep your daily caffeine under about 400mg, and no more than roughly 3mg per kg of bodyweight in a single pre-workout dose. If you train in the evening, remember caffeine\'s half-life averages around 5 hours in healthy adults but varies widely between people, so late doses can disrupt your sleep.',
     })
   }
 

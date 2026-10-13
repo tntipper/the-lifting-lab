@@ -96,7 +96,7 @@ export const DOSE_ITEMS: DoseItem[] = [
     form: 'Anhydrous (powder/capsule) or a dialled pre-workout. Know your total from coffee too.',
     ceiling: 'Past ~400 mg in one hit the jitters, blood-pressure bump and wrecked sleep outweigh the gains.',
     detail:
-      'Caffeine is the one pre-workout ingredient that reliably improves performance, in the studied range of roughly 3 to 6 mg per kg of bodyweight taken 30 to 60 minutes before training. We treat 400 mg in a single serving as the ceiling, and EFSA puts the safe daily limit for healthy adults at 400 mg from all sources. If you train in the evening, switch to stim-free: caffeine\'s half-life averages around 5 hours in healthy adults but varies widely between people, so late doses cost sleep.',
+      'Caffeine is the one pre-workout ingredient that reliably improves performance, in the studied range of roughly 3 to 6 mg per kg of bodyweight taken 30 to 60 minutes before training. We treat 400 mg in a single serving as the ceiling, and EFSA puts the safe daily limit for healthy adults at 400 mg from all sources. If you train in the evening, consider a stim-free option: caffeine\'s half-life averages around 5 hours in healthy adults but varies widely between people, so late doses can disrupt sleep.',
     link: { label: 'Caffeine calculator', href: '/calculators/caffeine' },
   },
   {

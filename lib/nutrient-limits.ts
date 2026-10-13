@@ -23,7 +23,7 @@ export const NUTRIENT_LIMITS: Record<string, {
   'Selenium': { ul: 255, unit: 'mcg', risk: 'high', note: 'UL lowered to 255mcg (EFSA 2023); narrow therapeutic window; selenosis risk' },
   'Iodine': { ul: 600, unit: 'mcg', risk: 'medium', note: 'Thyroid disruption at excess' },
   'Calcium': { ul: 2500, unit: 'mg', risk: 'low', note: 'Calcification risk at very high doses' },
-  'Caffeine': { ul: 400, unit: 'mg', risk: 'medium', limitLabel: 'EFSA safe level', note: 'EFSA safe level: 400 mg/day from all sources for healthy adults, not a UL' },
+  'Caffeine': { ul: 400, unit: 'mg', risk: 'medium', limitLabel: 'EFSA safe level', note: 'EFSA safe level: 400 mg/day from all sources for healthy adults (200 mg/day if pregnant or breastfeeding), not a UL.' },
 }
 
 export function normaliseNutrientName(name: string): string {
