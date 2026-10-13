@@ -119,12 +119,12 @@ export const DOSE_ITEMS: DoseItem[] = [
     topic: 'Pump',
     group: 'performance',
     tier: 'moderate',
-    dose: '6–8 g pure (or ~10 g malate)',
+    dose: '6–8 g pure; 9–12 g malate 2:1; 12–16 g malate 1:1',
     timing: '45–60 min pre-workout',
-    form: 'Pure L-citrulline, or citrulline malate 2:1 (≈67% citrulline — so 10 g malate ≈ 6.7 g citrulline).',
+    form: 'Pure L-citrulline 6–8 g = citrulline malate 2:1 9–12 g (≈67% citrulline) = citrulline malate 1:1 12–16 g (50% citrulline).',
     ceiling: 'A per-session dose, not cumulative — doubling it just wastes powder rather than doubling the pump.',
     detail:
-      'L-citrulline raises nitric oxide to support blood flow and "pump", with modest evidence for endurance and reduced soreness. The effective dose is 6 to 8 g of pure L-citrulline, or around 9 to 12 g of citrulline malate (which is only about two-thirds citrulline, so it takes more to reach the same citrulline dose), taken 45 to 60 minutes before training. It is acute like caffeine, not saturating like creatine. Watch pre-workout labels: a 2:1 malate blend at "6 g" only gives you around 4 g of actual citrulline.',
+      'L-citrulline raises nitric oxide to support blood flow and "pump", with modest evidence for endurance and reduced soreness. The effective dose is 6 to 8 g of pure L-citrulline, equivalent to 9 to 12 g of citrulline malate 2:1 or 12 to 16 g of citrulline malate 1:1, taken 45 to 60 minutes before training. It is acute like caffeine, not saturating like creatine. Watch pre-workout labels: a 2:1 malate blend at "6 g" only gives you around 4 g of actual citrulline.',
     link: { label: 'Citrulline calculator', href: '/calculators/citrulline' },
   },
   {
@@ -382,7 +382,7 @@ export const DOSE_ITEMS: DoseItem[] = [
     form: 'A named, standardised root extract (e.g. KSM-66) — not plain root powder at an unknown dose.',
     ceiling: 'The trialled range tops out around 600 mg — piling on more has not been shown to add benefit.',
     detail:
-      'Ashwagandha is the best-evidenced herbal here, with human trials showing reduced stress and cortisol, better sleep, and a modest testosterone bump — mostly in people who were stressed or run down to begin with. The studied dose is 300 to 600 mg/day of a standardised root extract like KSM-66. Buy a named extract so you actually get the dose that was tested, and expect a modest, genuine effect rather than a transformation.',
+      'Ashwagandha is the best-evidenced herbal here, with human trials showing reduced stress and cortisol, better sleep, and a modest testosterone bump — mostly in people who were stressed or run down to begin with. The studied dose is 300 to 600 mg/day of a standardised root extract like KSM-66. Buy a named extract so you actually get the dose that was tested, and expect a modest, genuine effect rather than a transformation. Rare reports of liver injury — stop and see a doctor if you notice jaundice, dark urine, or upper-right abdominal pain. Avoid during pregnancy or breastfeeding, with thyroid conditions, autoimmune disease, liver conditions or hormone-sensitive cancers, two weeks before planned surgery, and alongside sedatives, thyroid medication or blood-sugar medication. It can raise thyroid hormone levels and disturb existing thyroid conditions.',
     link: { label: 'Ashwagandha deep-dive', href: '/ingredients/ashwagandha' },
   },
   {

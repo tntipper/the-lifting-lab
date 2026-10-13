@@ -21,7 +21,7 @@ const make = (overrides = {}) => ({ ...base, ...overrides })
 
 // Execute real shared selectors and public TSX with in-memory rows. Only
 // framework/provider boundaries are adapted; no credentials or network calls.
-function fixture(rows = [make()], env = {}, loadedStack = false) {
+function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = false) {
   const cache = new Map()
   const sb = { from(table) {
     let data = table === 'reviews' ? [] : rows
@@ -39,7 +39,7 @@ function fixture(rows = [make()], env = {}, loadedStack = false) {
       if (name === 'react' && loadedStack && relative === 'app/stack/StackBuilder.tsx') return { ...React,
         useState(initial) {
           const index = stackHook++
-          return React.useState(index === 0 ? rows.map(p => ({ id: p.id, servings_per_day: 1, products: { ...p, product_nutrients: p.nutrients } })) : index === 4 ? false : initial)
+          return React.useState(index === 0 ? rows.map(p => ({ id: p.id, servings_per_day: 1, products: { ...p, product_nutrients: p.nutrients } })) : index === 4 ? false : index === 7 ? showTotals : initial)
         } }
 
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
@@ -399,4 +399,20 @@ test('T06 grid renders ten mapped products with their exact variant destinations
   assert.equal((html.match(/>Buy at TLL Store<\/a>/g) || []).length, 10)
   assert.match(html, /View retailer/)
   assert.match(html, /href="https:\/\/www.amazon.co.uk\/dp\/B000000001\?tag=theliftinglab-21"/)
+})
+
+test('stack renders vitamin C guidance and iron safe level in totals and caution flags', () => {
+  const p = make({ nutrients: [
+    { nutrient_name: 'Vitamin C', amount: 1000, unit: 'mg' },
+    { nutrient_name: 'Iron', amount: 40, unit: 'mg' },
+    { nutrient_name: 'Vitamin D3', amount: 100, unit: 'mcg' },
+  ] })
+  const html = fixture([p], {}, true, true).html('app/stack/StackBuilder.tsx', {})
+  for (const label of ['UK EVM guidance', 'EFSA safe level']) {
+    assert.ok(html.includes(`100% ${label}`), `daily totals: ${label}`)
+    assert.ok(html.includes(`100% of ${label}`), `caution flag: ${label}`)
+  }
+  assert.match(html, /100% of EFSA UL/)
+  assert.match(html, /neither an established UL/)
+  assert.doesNotMatch(html, /GI disturbance above UL/)
 })

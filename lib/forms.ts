@@ -160,12 +160,12 @@ export const FORMS: FormFamily[] = [
     pick: 'L-citrulline (or 2:1 malate)',
     options: [
       { name: 'L-citrulline (pure)', verdict: 'best', note: 'Straight citrulline. Aim for 6-8g. Cleaner label maths than the malate blend.' },
-      { name: 'Citrulline malate 2:1', verdict: 'best', note: 'Citrulline bonded to malic acid; the form in most pump studies. Needs ~8g to hit the same citrulline dose.' },
+      { name: 'Citrulline malate 2:1', verdict: 'best', note: 'Citrulline bonded to malic acid; the form in most pump studies. Needs 9-12g to deliver 6-8g of pure L-citrulline.' },
       { name: 'Citrulline malate 1:1', verdict: 'fine', note: 'Half the ratio, so you need even more powder for the same citrulline. Check the label carefully.' },
     ],
-    bottomLine: 'Buy whichever is cheaper per gram of actual citrulline. For pure L-citrulline aim for 6-8g; for 2:1 malate aim for about 8g. Watch out for pre-workouts that under-dose it.',
+    bottomLine: 'Buy whichever is cheaper per gram of actual citrulline. For pure L-citrulline aim for 6-8g; for citrulline malate 2:1 aim for 9-12g. Watch out for pre-workouts that under-dose it.',
     detail:
-      'L-citrulline and citrulline malate both work for blood flow and pumps — the catch is the dose, not the form. Pure L-citrulline is dosed at roughly 6-8g. Citrulline malate is citrulline bonded to malic acid, so a 2:1 product needs around 8g to deliver the same citrulline, and a 1:1 product needs more still. The common mistake is buying by headline grams without checking how much is actually citrulline, which is exactly how many pre-workouts under-deliver.',
+      'L-citrulline and citrulline malate both work for blood flow and pumps — the catch is the dose, not the form. Pure L-citrulline is dosed at roughly 6-8g. Citrulline malate is citrulline bonded to malic acid, so a 2:1 product needs 9-12g to deliver 6-8g of pure L-citrulline, and a 1:1 product needs more still. The common mistake is buying by headline grams without checking how much is actually citrulline, which is exactly how many pre-workouts under-deliver.',
     link: { label: 'Citrulline dosage calculator', href: '/calculators/citrulline' },
   },
   {
