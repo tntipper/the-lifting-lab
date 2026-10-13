@@ -18,7 +18,7 @@ test('native fixture journal mechanics pass in the offline-only test main',
     const directory = mkdtempSync(join(tmpdir(), 'tll-native-fixture-offline-'))
     try {
       const binary = join(directory, 'offline-test-main')
-      const compiled = spawnSync('/usr/bin/swiftc', ['-parse-as-library',
+      const compiled = spawnSync('/usr/bin/swiftc', ['-module-cache-path', join(directory, 'module-cache'), '-parse-as-library',
         '-D', 'TLL_KEYCHAIN_FIXTURE', '-D', 'TLL_FIXTURE_NATIVE_TEST',
         shared, fixture, '-o', binary], { cwd: root, encoding: 'utf8', timeout: 30_000,
         maxBuffer: 65_536 })

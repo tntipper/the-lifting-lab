@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { cpSync, mkdtempSync, readFileSync, writeFileSync, chmodSync, symlinkSync, rmSync, mkdirSync, realpathSync, existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { tmpdir } from 'node:os'
+import { tmpdir, userInfo } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -11,19 +11,26 @@ const repository = fileURLToPath(new URL('../../', import.meta.url))
 const hash = bytes => createHash('sha256').update(bytes).digest('hex')
 export function createSuccessorDefaultQualificationSource() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'tll-successor-default-qualification-')))
-  const git = args => execFileSync('/usr/bin/git', args, { cwd: root, encoding: 'utf8',
+  // Use the actual Git, not Apple's launcher, with the scrubbed fixture environment.
+  let fixtureGit
+  const git = args => execFileSync(fixtureGit, args, { cwd: root, encoding: 'utf8',
     env: { PATH: '/usr/bin:/bin', LANG: 'C', HOME: '/var/empty', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null' },
     stdio: ['ignore', 'pipe', 'pipe'], timeout: 30_000 }).trim()
   try {
+    fixtureGit = process.platform === 'darwin'
+      ? execFileSync('/usr/bin/xcrun', ['--find', 'git'], { encoding: 'utf8' }).trim()
+      : '/usr/bin/git'
     for (const directory of ['scripts', 'config']) cpSync(join(repository, directory), join(root, directory), { recursive: true })
     // External toolchain fixture substitution precedes the synthetic disabled base.
     // Native product source retains its reviewed executable pins. Here actual local Git
     // and its HTTPS helper are copied and byte-pinned so Linux needs no Mac runtime mount.
     const preflightPath = join(root, 'scripts/staging-preview-git-source-preflight.mjs')
     let toolchain = readFileSync(preflightPath, 'utf8')
-    const originalGit = /const gitBinary = '([^']+)'/.exec(toolchain)[1]
-    const localGit = existsSync(originalGit) ? originalGit : '/usr/bin/git'
-    const originalExec = /const gitExecPath = '([^']+)'/.exec(toolchain)[1]
+    const originalGit = join(userInfo().homedir, /^const gitBinary = resolve\(userInfo\(\)\.homedir, '([^']+)'\)$/m.exec(toolchain)[1])
+    // Apple's /usr/bin/git is an xcrun launcher and cannot run after copying.
+    // Resolve the actual tool before making the byte-pinned disposable copy.
+    const localGit = existsSync(originalGit) ? originalGit : fixtureGit
+    const originalExec = join(userInfo().homedir, /^const gitExecPath = resolve\(userInfo\(\)\.homedir, '([^']+)'\)$/m.exec(toolchain)[1])
     const localExec = localGit === originalGit && existsSync(originalExec) ? originalExec : execFileSync(localGit, ['--exec-path'], { encoding: 'utf8' }).trim()
     const qualifiedBin = join(root, 'qualification-toolchain/git'), qualifiedExec = join(root, 'qualification-toolchain/git-core')
     mkdirSync(qualifiedExec, { recursive: true, mode: 0o700 })
@@ -33,17 +40,23 @@ export function createSuccessorDefaultQualificationSource() {
     symlinkSync('git-remote-http', join(qualifiedExec, 'git-remote-https'))
     for (const [name, value] of Object.entries({ gitBinary: qualifiedBin, gitExecPath: qualifiedExec,
       gitBinarySha256: hash(readFileSync(qualifiedBin)), gitHttpsHelperSha256: hash(readFileSync(join(qualifiedExec, 'git-remote-http'))) })) {
-      toolchain = toolchain.replace(new RegExp(`const ${name} = '[^']+'`), `const ${name} = '${value}'`)
+      const declaration = new RegExp(`^const ${name} = .+$`, 'gm')
+      assert.equal([...toolchain.matchAll(declaration)].length, 1)
+      toolchain = toolchain.replace(declaration, `const ${name} = ${JSON.stringify(value)}`)
     }
     writeFileSync(preflightPath, toolchain)
-    const fixedReader = join(root, 'scripts/staging-owner-successor-fixed-source-reader.mjs')
-    writeFileSync(fixedReader, readFileSync(fixedReader, 'utf8')
-      .replace(/const GIT = '[^']+'/, `const GIT = '${qualifiedBin}'`)
-      .replace(/const EXEC = '[^']+'/, `const EXEC = '${qualifiedExec}'`))
-    const preparation = join(root, 'scripts/staging-owner-successor-source-preparation.mjs')
-    writeFileSync(preparation, readFileSync(preparation, 'utf8')
-      .replace(/const GIT = '[^']+'/, `const GIT = '${qualifiedBin}'`)
-      .replace(/const EXEC = '[^']+'/, `const EXEC = '${qualifiedExec}'`))
+    for (const name of ['staging-owner-successor-fixed-source-reader.mjs', 'staging-owner-successor-source-preparation.mjs']) {
+      const path = join(root, 'scripts', name)
+      let source = readFileSync(path, 'utf8')
+      for (const [declaration, value] of [
+        [/^const GIT = resolve\(userInfo\(\)\.homedir, '[^']+'\)$/gm, qualifiedBin],
+        [/^const EXEC = resolve\(userInfo\(\)\.homedir, '[^']+'\)$/gm, qualifiedExec],
+      ]) {
+        assert.equal([...source.matchAll(declaration)].length, 1, `exact tool declaration ${name}:${declaration}`)
+        source = source.replace(declaration, match => `${match.slice(0, match.indexOf(' = '))} = ${JSON.stringify(value)}`)
+      }
+      writeFileSync(path, source)
+    }
     for (const path of ['lib/server/staging-postgres.ts', 'lib/identity/staging-owner-successor-broker-readiness-edge.ts']) {
       mkdirSync(dirname(join(root, path)), { recursive: true }); cpSync(join(repository, path), join(root, path))
     }

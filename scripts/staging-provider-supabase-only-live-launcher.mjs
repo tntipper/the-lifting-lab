@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Disabled one-shot entry for the exact staging provider disable. Never production. */
+import { userInfo } from 'node:os'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { lstatSync, readFileSync } from 'node:fs'
@@ -11,7 +12,7 @@ export const SUPABASE_ONLY_PROVIDER_JOURNAL = fileURLToPath(new URL('../../imple
 export const SUPABASE_ONLY_PROVIDER_PHASE_JOURNAL = fileURLToPath(new URL('../../implementation-state/staging/tll-provider-supabase-only-phase-v1.json', import.meta.url))
 const root = resolve(import.meta.dirname, '..')
 const helper = resolve(import.meta.dirname, 'staging-provider-normalization-keychain.py')
-const python = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3'
+const python = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
 const pythonSha256 = 'ac60cfe0268614638d0ffa35f3b0284fc7b3a11482723793455e17eeb278509e'
 const priorJournals = Object.freeze([
   resolve(dirname(SUPABASE_ONLY_PROVIDER_JOURNAL), 'tll-provider-normalization-phase-v1.json'),

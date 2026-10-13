@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Fixed, read-only Git proof for a future staging Preview source. No deployment. */
+import { userInfo } from 'node:os'
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs'
@@ -10,13 +11,13 @@ const root = resolve(import.meta.dirname, '..')
 const branch = 'codex/tll-integration'
 const origin = 'https://github.com/tntipper/the-lifting-lab.git'
 const manifestPath = 'config/staging-account-activation-manifest.json'
-const gitBinary = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'
+const gitBinary = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
 const gitBinarySha256 = 'f8855dd1721eb9c68d93171dd24f37b3a67a15a33d96256db9dca7789633a69b'
-const gitExecPath = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core'
+const gitExecPath = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
 const gitHttpsHelperSha256 = '27b8a5a26e99e5d58c2bbb636f294e94e42e715bb10c1e340ed5d45876ed77e9'
-const githubCli = '/Users/tobiastipper/.local/bin/gh'
+const githubCli = resolve(userInfo().homedir, '.local/bin/gh')
 const githubCliSha256 = 'a38e8ea1b9794a445a1ce746392e36111ca00a3242a6447b49cd4c162cb191a7'
-const githubCliConfig = '/Users/tobiastipper/.config/gh'
+const githubCliConfig = resolve(userInfo().homedir, '.config/gh')
 const hold = () => Object.freeze({ status: 'SOURCE_PROOF_UNAVAILABLE' })
 const notRemote = () => Object.freeze({ status: 'SOURCE_NOT_AT_REMOTE' })
 const line = bytes => {

@@ -20,6 +20,13 @@ test('disabled native build uses immutable private source and checks binary iden
       mkdirSync(staging, { recursive: true, mode: 0o700 })
       copyFileSync(source, join(scripts, 'staging-provider-noninteractive-keychain.swift'))
       copyFileSync(buildScript, join(scripts, 'staging-provider-noninteractive-keychain-build.mjs'))
+      // Change only compiler cache placement in the disposable build copy.
+      const buildCopy = join(scripts, 'staging-provider-noninteractive-keychain-build.mjs')
+      const buildSource = readFileSync(buildCopy, 'utf8')
+      const compile = "spawnSync('/usr/bin/swiftc', ['-parse-as-library'"
+      assert.equal(buildSource.split(compile).length, 2)
+      writeFileSync(buildCopy, buildSource.replace(compile,
+        `spawnSync('/usr/bin/swiftc', ['-module-cache-path', ${JSON.stringify(join(temporary, 'module-cache'))}, '-parse-as-library'`))
       const command = argument => spawnSync(process.execPath,
         [join(scripts, 'staging-provider-noninteractive-keychain-build.mjs'), argument],
         { cwd: repository, encoding: 'utf8', timeout: 30_000, maxBuffer: 4_096 })

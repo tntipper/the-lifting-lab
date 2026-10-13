@@ -1,3 +1,4 @@
+import { userInfo } from 'node:os'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -104,7 +105,7 @@ test('source identity, remote shape, ancestry and dirty tracked tree fail closed
 test('one fixed lease/refspec has no arbitrary URL, force flag, hook execution or extra ref', () => {
   const args = stagingPreviewGitPushCommand({ selectedCommit, predecessorCommit })
   assert.deepEqual(args, ['-c', 'core.hooksPath=/dev/null', '-c', 'credential.helper=',
-    '-c', 'credential.https://github.com.helper=!/Users/tobiastipper/.local/bin/gh auth git-credential',
+    '-c', `credential.https://github.com.helper=!'${resolve(userInfo().homedir, '.local/bin/gh').replaceAll("'", "'\\''")}' auth git-credential`,
     'push', '--porcelain', '--no-verify',
     `--force-with-lease=${ref}:${predecessorCommit}`, '--', origin, `${selectedCommit}:${ref}`])
   assert.equal(Object.isFrozen(args), true)
@@ -112,8 +113,8 @@ test('one fixed lease/refspec has no arbitrary URL, force flag, hook execution o
   assert.equal(options.env.GIT_CONFIG_GLOBAL, '/dev/null')
   assert.equal(options.env.GIT_TERMINAL_PROMPT, '0')
   assert.equal(options.env.GIT_NO_LAZY_FETCH, '1')
-  assert.equal(options.env.HOME, '/Users/tobiastipper')
-  assert.equal(options.env.GH_CONFIG_DIR, '/Users/tobiastipper/.config/gh')
+  assert.equal(options.env.HOME, resolve(userInfo().homedir))
+  assert.equal(options.env.GH_CONFIG_DIR, resolve(userInfo().homedir, '.config/gh'))
   assert.deepEqual(options.stdio, ['ignore', 'ignore', 'ignore'])
   assert.equal(options.cwd, root)
   for (const changed of [

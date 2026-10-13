@@ -381,7 +381,8 @@ for (const surface of ['grid', 'detail', 'compare', 'best', 'stack']) {
     }
     if (enabled) {
       assert.match(html, /Buy at TLL Store/)
-      assert.match(html, /href="https:\/\/shop.theliftinglab.co.uk\/products\/fixture-vanilla\?variant=1001"/)
+      const campaign = surface === 'compare' ? 'compare' : surface === 'stack' ? 'stack' : 'product'
+      assert.ok(html.includes(`href="https://shop.theliftinglab.co.uk/products/fixture-vanilla?variant=1001&amp;utm_source=theliftinglab&amp;utm_medium=referral&amp;utm_campaign=${campaign}&amp;ref=theliftinglab"`))
     } else assert.doesNotMatch(html, /Buy at TLL Store|variant=1001/)
   })
 }
@@ -394,7 +395,7 @@ test('T06 grid renders ten mapped products with their exact variant destinations
   })
   products.push(make({ id: 'unmapped', name: 'Affiliate fixture', buy_url: 'https://www.amazon.co.uk/dp/B000000001' }))
   const html = fixture(products, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' }).html('app/products/ProductGrid.tsx', { initialProducts: products })
-  for (let index = 0; index < 10; index++) assert.ok(html.includes(`href="https://shop.theliftinglab.co.uk/products/fixture-${index}?variant=${1001 + index}"`))
+  for (let index = 0; index < 10; index++) assert.ok(html.includes(`href="https://shop.theliftinglab.co.uk/products/fixture-${index}?variant=${1001 + index}&amp;utm_source=theliftinglab&amp;utm_medium=referral&amp;utm_campaign=product&amp;ref=theliftinglab"`))
   assert.equal((html.match(/>Buy at TLL Store<\/a>/g) || []).length, 10)
   assert.match(html, /View retailer/)
   assert.match(html, /href="https:\/\/www.amazon.co.uk\/dp\/B000000001\?tag=theliftinglab-21"/)

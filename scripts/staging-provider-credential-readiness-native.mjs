@@ -1,7 +1,8 @@
 /** Injected child-process adapter; the live launcher owns the actual spawn. */
-import { isAbsolute } from 'node:path'
+import { userInfo } from 'node:os'
+import { isAbsolute, resolve } from 'node:path'
 
-export const CREDENTIAL_READINESS_PYTHON = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3'
+export const CREDENTIAL_READINESS_PYTHON = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
 export const CREDENTIAL_READINESS_ENVIRONMENT = Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' })
 export const CREDENTIAL_READINESS_SELECTORS = Object.freeze(['supabase', 'vercel', 'vercel-bypass'])
 const categories = Object.freeze({ 11: 'GUARD', 12: 'TIMEOUT', 13: 'COMMAND', 14: 'FORMAT', 15: 'OUTPUT', 16: 'INTERNAL' })

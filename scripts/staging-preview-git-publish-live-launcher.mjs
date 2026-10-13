@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Disabled entry for one journaled staging Git publication from a separate local arming worktree. */
+import { userInfo } from 'node:os'
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { closeSync, constants, fstatSync, lstatSync, openSync, readFileSync, readSync, realpathSync } from 'node:fs'
@@ -11,9 +12,9 @@ export const STAGING_PREVIEW_GIT_PUBLISH_LIVE_ENABLED = false
 // Resolve from either script location so a parent-folder rename cannot strand publication.
 const sourceRoot = resolve(import.meta.dirname, '../../implementation-integration')
 const armRoot = resolve(sourceRoot, '../implementation-preview-publish-arm-v2')
-const gitBinary = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'
+const gitBinary = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
 const gitBinarySha256 = 'ee73b116cc37f44ecdaa9e3fdfbc25ce827675859f5f966ec671112fd5caf074'
-const gitExecPath = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core'
+const gitExecPath = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
 const approved = Object.freeze({ selectedCommit: '', predecessorCommit: '', manifestSha256: '' })
 const checkerPaths = Object.freeze(['scripts/staging-account-activation-manifest.mjs',
   'scripts/staging-generation-21-credentials.mjs'])

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Disabled parent/child boundary for one supervised Gen22-retired staging read. */
+import { userInfo } from 'node:os'
 import { spawn, spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -20,7 +21,7 @@ const ENTRY = fileURLToPath(import.meta.url)
 const ROOT = resolve(import.meta.dirname, '..')
 const PROOF = 'TLL_GEN23_PREDECESSOR_READ_V1'
 const ENV = Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' })
-const PYTHON = '/Users/tobiastipper/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3'
+const PYTHON = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
 const HELPER = resolve(import.meta.dirname, 'staging-provider-normalization-keychain.py')
 const unavailable = () => { throw new Error('Generation 23 predecessor live read unavailable') }
 

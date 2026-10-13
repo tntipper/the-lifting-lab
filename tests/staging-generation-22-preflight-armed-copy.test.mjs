@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync,
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync,
   writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -68,6 +68,14 @@ test('isolated armed preflight reaches each reader while write gates and Keychai
     for (const name of [file, 'scripts/staging-generation-22-keychain-reader.mjs',
       'scripts/staging-account-hosted-baseline-vercel.mjs',
       'scripts/staging-account-hosted-baseline-supabase.mjs']) armCopy(root, name)
+    // The disabled helper runs only in this disposable copy. Keep the native
+    // reader's production interpreter pin unchanged on every host.
+    const readerPath = join(root, 'scripts/staging-generation-22-keychain-reader.mjs')
+    const reader = readFileSync(readerPath, 'utf8')
+    const pythonPin = /^export const GENERATION_22_PYTHON = resolve\(userInfo\(\)\.homedir, '[^']+'\)$/gm
+    assert.equal([...reader.matchAll(pythonPin)].length, 1)
+    writeFileSync(readerPath, reader.replace(pythonPin,
+      `export const GENERATION_22_PYTHON = ${JSON.stringify(realpathSync('/usr/bin/python3'))}`))
     assert.match(readFileSync(join(root, 'scripts/staging-generation-22-keychain.py'), 'utf8'),
       /^GENERATION_22_KEYCHAIN_ENABLED = False$/m)
     for (const script of ['scripts/staging-account-activation-manifest.mjs',
