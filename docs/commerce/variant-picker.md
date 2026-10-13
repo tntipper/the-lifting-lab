@@ -169,7 +169,7 @@ shared with its synthetic reader. Future/stale observations still fail closed.
 - Tests: `tests/variant-picker.test.mjs`, `tests/store-mapping-loader.test.mjs`, `tests/browser/accessibility-fixture.tsx`, `tests/browser/accessibility.mjs`, `tests/browser/offers.mjs`, `tests/preview-mode.test.mjs`.
 - Evidence: `config/staging-account-activation-manifest.json`, this document and the prepended `.agent/HANDOVER.md` note.
 
-Everything remains uncommitted for Grok. No push, production env/config changes,
+Everything remains committed (be3b6da + review-nit fixes) for Grok. No push, production env/config changes,
 migration execution, service activation or `.xlsx` edit. Toby still needs to
 confirm any parent/child redirects; authorised browser/hosted runners must provide
 the unavailable interaction and CI evidence.

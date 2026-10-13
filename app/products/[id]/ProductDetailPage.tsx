@@ -66,18 +66,21 @@ export default function ProductDetailPage({
   const router = useRouter()
   const variants = originalProduct.storeVariants ?? []
   const [selectedId, setSelectedId] = useState(defaultVariantId)
+  // Until the URL selection is applied, a multi-variant page must not link any variant's cart.
+  const [selectionReady, setSelectionReady] = useState(variants.length <= 1)
   useEffect(() => {
     const query = new URLSearchParams(window.location.search)
     const flavour = query.get('flavour')
     const override = variants.find(v => v.variantId === query.get('variant'))
       ?? (flavour ? variants.find(v => v.flavour && flavourSlug(v.flavour) === flavourSlug(flavour)) : undefined)
     if (override) setSelectedId(override.variantId)
+    setSelectionReady(true)
     // Read the URL once after hydration. Manual changes must never reset from props.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const selected = variants.find(v => v.variantId === selectedId) ?? variants[0]
   const product = selected ? { ...originalProduct, storeVariants: undefined,
-    storeLinkMapping: selected.mapping, storePrice: selected.storePrice, buy_url: null,
+    storeLinkMapping: selectionReady ? selected.mapping : null, storePrice: selected.storePrice, buy_url: null,
     retail_price: selected.storePrice ? selected.storePrice.price : originalProduct.retail_price,
     // Catalogue serving counts do not establish the selected variant's pack servings.
     cost_per_serving: variants.length === 1 ? originalProduct.cost_per_serving : null } : originalProduct
@@ -315,7 +318,7 @@ export default function ProductDetailPage({
             {selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
             <ProductOfferLink
               product={product}
-              pickerOwnsStatus={!!selected}
+              pickerOwnsStatus={!!selected} chooseAnother={variants.length > 1}
               className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
             />
           </div>

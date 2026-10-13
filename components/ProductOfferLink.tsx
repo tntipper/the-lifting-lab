@@ -11,9 +11,11 @@ import { useStagingCart } from './StagingCartContext'
 import { catalogueAvailabilityFor, type CataloguePresentation } from '@/lib/commerce/catalogue-presentation'
 
 /** Interim listing navigation, until a verified commerce projection supplies exact offers. */
-export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, storeCampaign = 'product', pickerOwnsStatus = false }: {
+export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, storeCampaign = 'product', pickerOwnsStatus = false, chooseAnother = false }: {
   product: { id?: string; brand: string; name: string; buy_url: string | null; cataloguePresentation?: CataloguePresentation | null; storeLinkMapping?: StoreLinkMapping | null; storeVariants?: StoreVariantOption[]; storePrice?: StorePricePresentation | null }
   pickerOwnsStatus?: boolean
+  /** True only when a multi-variant picker offers other choices. */
+  chooseAnother?: boolean
   className?: string
   style?: CSSProperties
   storeBuyLinkMode?: StoreBuyLinkMode
@@ -23,7 +25,7 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
   const availability = catalogueAvailabilityFor({ id: product.id, cataloguePresentation: product.cataloguePresentation })
   if (pickerOwnsStatus && (availability || (product.storePrice && catalogueAvailabilityFor(product) !== 'available'))) {
     return <span data-offer-state="unavailable" className="text-xs text-lab-muted">
-      {catalogueAvailabilityFor(product) === 'out_of_stock' ? 'Out of stock: choose another flavour/size' : null}
+      {availability ? 'Purchasing not enabled' : catalogueAvailabilityFor(product) === 'out_of_stock' && chooseAnother ? 'Out of stock: choose another flavour/size' : null}
     </span>
   }
   if (availability) return <span className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-lab-border px-2 py-2 text-center text-[10px] text-lab-muted"
@@ -45,7 +47,7 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
     return <span className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-lab-border px-2 py-2 text-center text-[10px] text-lab-muted"
       data-offer-state="unavailable">
       {!pickerOwnsStatus && stock && <span>{stock === 'out_of_stock' ? 'Out of stock at TLL Store' : stock === 'unavailable' ? 'TLL Store price and stock unavailable' : 'In stock at TLL Store'}</span>}
-      <span>{stock === 'out_of_stock' ? 'Out of stock: choose another flavour/size' : listing.relationship === 'own_shop' ? 'Shop offer under review' : 'No verified offer'}</span>
+      <span>{stock === 'out_of_stock' ? (chooseAnother ? 'Out of stock: choose another flavour/size' : 'Currently unavailable to buy') : listing.relationship === 'own_shop' ? 'Shop offer under review' : 'No verified offer'}</span>
     </span>
   }
   const search = listing.state === 'search_only'

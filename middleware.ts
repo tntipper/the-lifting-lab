@@ -4,7 +4,9 @@ import { isSyntheticPreview, isHostedStaging, isPreviewAccountPath, isPreviewFix
 
 export function middleware(request: NextRequest) {
   const productPath = /^\/products\/([^/]+)$/.exec(request.nextUrl.pathname)
-  const redirect = productPath && productVariantRedirectUrl(decodeURIComponent(productPath[1]), undefined, request.nextUrl.search)
+  let productId: string | null = null
+  try { productId = productPath ? decodeURIComponent(productPath[1]) : null } catch { /* malformed path: let the page 404 */ }
+  const redirect = productId && productVariantRedirectUrl(productId, undefined, request.nextUrl.search)
   if (redirect && ['GET', 'HEAD'].includes(request.method)) {
     return NextResponse.redirect(new URL(redirect, request.url), 308)
   }

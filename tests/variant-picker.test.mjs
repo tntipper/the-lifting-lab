@@ -192,7 +192,8 @@ for (const query of [{ defaultVariantId: '3' }, { defaultVariantId: row.shopify_
     if (query.defaultVariantId === row.shopify_variant_id.split('/').at(-1)) {
       assert.match(html, /Out of stock at TLL Store/); assert.doesNotMatch(html, /Buy at TLL Store|shop.theliftinglab.co.uk\/cart/)
     } else {
-      assert.match(html, /cart\/3:1/); assert.match(html, /value="3" selected=""/)
+      // Server HTML preselects the default but links no cart until the client applies any ?variant= (review finding: shared links).
+      assert.match(html, /value="3" selected=""/); assert.doesNotMatch(html, /shop.theliftinglab.co.uk\/cart/)
     }
   })
 }
@@ -301,4 +302,11 @@ test('unavailable detail selection relies on picker status alone and never shows
   const html = renderToStaticMarkup(React.createElement(React.Fragment, null, view.picker, view.offer))
   assert.equal((html.match(/role="status"/g) ?? []).length, 1)
   assert.match(html, /price and stock unavailable/); assert.doesNotMatch(html, /href=|Shop offer under review/)
+})
+const source = file => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+test('single-variant out-of-stock copy never asks to choose another flavour; middleware tolerates malformed product paths', () => {
+  const offer = source('components/ProductOfferLink.tsx')
+  assert.match(offer, /chooseAnother \? 'Out of stock: choose another flavour\/size' : 'Currently unavailable to buy'/)
+  assert.match(source('app/products/[id]/ProductDetailPage.tsx'), /chooseAnother=\{variants\.length > 1\}/)
+  assert.match(source('middleware.ts'), /try \{ productId = productPath \? decodeURIComponent/)
 })
