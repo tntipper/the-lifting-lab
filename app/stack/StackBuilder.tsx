@@ -26,7 +26,7 @@ function readStoredSex(): Sex {
 }
 
 // Batch product shape returned by /api/products/batch
-type BatchProduct = Pick<StackCartItem, 'cataloguePresentation' | 'storePrice'> & {
+type BatchProduct = Pick<StackCartItem, 'cataloguePresentation' | 'storePrice' | 'storeVariants'> & {
   id: string
   name: string
   brand: string
@@ -53,6 +53,7 @@ function toStackItem(p: BatchProduct): StackItem {
       serving_unit: p.serving_unit,
       buy_url: p.buy_url,
       storeLinkMapping: p.storeLinkMapping,
+      storeVariants: p.storeVariants,
       product_nutrients: p.product_nutrients || [],
       retail_price: p.retail_price,
       servings_per_container: p.servings_per_container,

@@ -67,7 +67,7 @@ async function run(rows, env = enabled, input = product) {
 for (const [name, rows] of [
   ['missing', []], ['inactive', [{ ...row, active: false }]],
   ['expired review', [{ ...row, review: { ...row.review, expiresAtMs: now } }]],
-  ['reader error', new Error('private error')], ['duplicates', [row, { ...row, shopify_variant_id: 'gid://shopify/ProductVariant/3' }]],
+  ['reader error', new Error('private error')], ['duplicate variant id', [row, { ...row }]],
   ['one unapproved duplicate', [row, { ...row, approval_reference: null }]],
 ]) test(`${name} mapping fails closed through loader and offer resolver`, async () => {
   const { result, offer, prices } = await run(rows)

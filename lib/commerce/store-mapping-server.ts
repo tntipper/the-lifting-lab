@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { presentStoreLinkMapping, type StoreMappingRow } from './product-mapping'
+import { presentStoreVariant, canonicalShopifyId, type StoreMappingRow } from './product-mapping'
 import type { Product } from '../products'
 
 export type StoreMappingReader = (productIds: string[]) => Promise<StoreMappingRow[]>
@@ -31,8 +31,21 @@ export async function attachStoreMappings<T extends Product>(products: T[], opti
   let rows: StoreMappingRow[] = []
   try { rows = await options.read([...new Set(products.map(product => product.id))]) } catch { /* fail closed */ }
   const now = options.now ?? Date.now()
+  // A duplicate variant is ambiguous even across comparison products. Exclude only it.
+  const counts = new Map<string, number>()
+  for (const row of rows) {
+    if (row?.active !== true || row.status !== 'store') continue
+    const id = canonicalShopifyId(row.shopify_variant_id, 'ProductVariant')
+    if (id) counts.set(id, (counts.get(id) ?? 0) + 1)
+  }
   return products.map(product => {
-    const matches = rows.filter(row => row?.comparison_product_id === product.id && row.active === true && row.status === 'store')
-    return { ...product, storeLinkMapping: matches.length === 1 ? presentStoreLinkMapping(matches[0], now) : null }
+    const storeVariants = rows.flatMap(row => {
+      if (row?.comparison_product_id !== product.id ||
+        counts.get(canonicalShopifyId(row.shopify_variant_id, 'ProductVariant') ?? '') !== 1) return []
+      const variant = presentStoreVariant(row, now)
+      return variant ? [variant] : []
+    })
+    return { ...product, storeVariants, storeLinkMapping: storeVariants.length === 1 ? storeVariants[0].mapping : null,
+      storePrice: undefined }
   })
 }

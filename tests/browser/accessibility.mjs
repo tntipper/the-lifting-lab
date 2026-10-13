@@ -25,9 +25,9 @@ const bundle = await build({
     // Exercise ordinary component interactions with only the local adapters.
     'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"local-browser-fixture"',
     'process.env.NEXT_PUBLIC_AMAZON_TAG': '"theliftinglab-21"',
-    // lib/affiliate.ts and lib/commerce read the store/cart flags outside isolated environments; pin them OFF so the bundle has no bare process reference.
-    'process.env.NEXT_PUBLIC_TLL_STORE_LINKS': '""',
-    'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '""',
+    // Synthetic mapped offers exercise selection; external navigation is blocked by the fixture runner.
+    'process.env.NEXT_PUBLIC_TLL_STORE_LINKS': '"enabled"',
+    'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '"enabled"',
     'process.env.NEXT_PUBLIC_TLL_STACK_CART': '""',
   },
   plugins: [{ name: 'isolated-provider-adapters', setup(builder) {

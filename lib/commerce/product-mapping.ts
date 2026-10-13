@@ -32,6 +32,30 @@ export type StoreLinkMapping = Pick<ExactMapping, 'productId' | 'shopifyProductH
   approved: true
 }
 
+/** Public choice on one comparison product page; never contains supplier data. */
+export type StoreVariantOption = {
+  variantId: string
+  handle: string
+  label: string
+  flavour: string | null
+  packLabel: string
+  mapping: StoreLinkMapping
+  storePrice?: import('./store-price-products').StorePricePresentation
+}
+
+export function presentStoreVariant(row: StoreMappingRow, now = Date.now()): StoreVariantOption | null {
+  const mapping = presentStoreLinkMapping(row, now)
+  if (!mapping) return null
+  const pack = row.pack ?? row.shop_identity!.pack
+  const amount = pack.unit === 'g' && pack.amountPerInner >= 1000
+    ? `${pack.amountPerInner / 1000} kg` : `${pack.amountPerInner} ${pack.unit}`
+  const packLabel = pack.innerCount > 1 ? `${pack.innerCount} × ${amount}` : amount
+  const flavour = row.flavour?.trim() || null
+  return { variantId: mapping.shopifyVariantId.replace('gid://shopify/ProductVariant/', ''),
+    handle: mapping.shopifyProductHandle, label: [flavour, packLabel].filter(Boolean).join(' · '),
+    flavour, packLabel, mapping }
+}
+
 /** Public projection used by server loaders; saved review evidence is the only link authority. */
 export function presentStoreLinkMapping(row: StoreMappingRow, now = Date.now()): StoreLinkMapping | null {
   if (row?.active !== true || row.status !== 'store' || !text(row.approval_reference)) return null

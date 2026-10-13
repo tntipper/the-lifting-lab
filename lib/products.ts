@@ -4,7 +4,7 @@ import { hasPositiveServingCost, isRankingCandidate } from './assessment-display
 import type { ProductSafety } from './commerce/product-warnings'
 import type { CataloguePresentation } from './commerce/catalogue-presentation'
 import type { StorePricePresentation } from './commerce/store-price-products'
-import type { StoreLinkMapping } from './commerce/product-mapping'
+import type { StoreLinkMapping, StoreVariantOption } from './commerce/product-mapping'
 
 export type Product = {
   id: string
@@ -27,6 +27,7 @@ export type Product = {
   cataloguePresentation?: CataloguePresentation | null
   /** Approved server projection; never a raw private mapping row. */
   storeLinkMapping?: StoreLinkMapping | null
+  storeVariants?: StoreVariantOption[]
   /** Public Shopify price/stock observation; retail_price is replaced server-side when enabled. */
   storePrice?: StorePricePresentation | null
 }
