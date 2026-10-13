@@ -2,12 +2,13 @@
 BEGIN;
 -- Serialize catalogue/FK edits, including inserts that could race the archive.
 LOCK TABLE public.products, public.product_nutrients, public.reviews,
-  public.stack_products, public.user_favourites IN ACCESS EXCLUSIVE MODE;
+  public.stack_products, public.user_favourites, public.user_stacks IN ACCESS EXCLUSIVE MODE;
 DO $merge$
 DECLARE
   m record; parent public.products%ROWTYPE; child public.products%ROWTYPE;
   item public.stack_products%ROWTYPE; existing public.stack_products%ROWTYPE;
   collisions jsonb; dropped jsonb; reviews_ids uuid[]; stack_ids uuid[]; favourite_ids uuid[];
+  batch_stacks_before jsonb; new_archives uuid[] := '{}'::uuid[];
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.products WHERE id IN (
     '1fab2546-6a25-4fd9-8e49-abf6bb6b362c', '8ddfc493-0872-4235-ba25-5091ef172b49',
@@ -17,6 +18,12 @@ BEGIN
     RAISE NOTICE 'No duplicate catalogue rows or archives; nothing to merge';
     RETURN;
   END IF;
+  -- Capture once before ANY group moves: a stack can contain all three groups.
+  SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY s.id), '[]'::jsonb) INTO batch_stacks_before
+    FROM public.user_stacks s WHERE EXISTS (SELECT 1 FROM public.stack_products sp
+      WHERE sp.stack_id = s.id AND sp.product_id IN (
+        '8ddfc493-0872-4235-ba25-5091ef172b49', 'b9058eef-f71a-49f7-9672-a264d1a09614',
+        '60cbe489-96a8-416e-a11b-243e3277caf3'));
   FOR m IN SELECT * FROM (VALUES
     ('1fab2546-6a25-4fd9-8e49-abf6bb6b362c'::uuid, '8ddfc493-0872-4235-ba25-5091ef172b49'::uuid,
      'Crunch Bar (White Chocolate Crisp)', 'Crunch Bar (White Chocolate Crisp)', 'Warrior', 12, 1, 23.99::numeric, 2.00::numeric, 64, 64, 'protein-bar', 'protein-bar', '12-pack', 'single-bar', '12 × 64g', 'Single 64g bar', 'gid://shopify/ProductVariant/63535202468170'),
@@ -84,6 +91,7 @@ BEGIN
       moved_reviews, moved_stack_products, moved_favourites, dropped_favourites, merged_stacks, parent_before)
     VALUES (child.id, parent.id, to_jsonb(child), coalesce((SELECT jsonb_agg(to_jsonb(n)) FROM public.product_nutrients n WHERE n.product_id = child.id), '[]'),
       reviews_ids, stack_ids, favourite_ids, dropped, collisions, to_jsonb(parent));
+    new_archives := array_append(new_archives, child.id);
     UPDATE public.reviews SET product_id = parent.id WHERE id = ANY(reviews_ids);
     DELETE FROM public.user_favourites WHERE id IN (SELECT (x->>'id')::uuid FROM jsonb_array_elements(dropped) x);
     UPDATE public.user_favourites SET product_id = parent.id WHERE id = ANY(favourite_ids);
@@ -100,9 +108,14 @@ BEGIN
       END IF;
     END LOOP;
     IF m.parent_slug IS NULL THEN
-      UPDATE public.products SET serving_size = 15, name = 'EssentialMAX', updated_at = now() WHERE id = parent.id;
+      UPDATE public.products SET serving_size = 15, name = 'EssentialMAX', serving_unit = 'g', updated_at = now() WHERE id = parent.id;
     END IF;
     DELETE FROM public.products WHERE id = child.id;
   END LOOP;
+  -- Only new archives: a repeat merge must not rewrite snapshots or timestamps.
+  UPDATE tll_merge_private.merged_product_archive SET stacks_before = batch_stacks_before,
+    stacks_after = coalesce((SELECT jsonb_agg(to_jsonb(s) ORDER BY s.id) FROM public.user_stacks s
+      WHERE s.id IN (SELECT (v->>'id')::uuid FROM jsonb_array_elements(batch_stacks_before) v)), '[]'::jsonb)
+    WHERE legacy_product_id = ANY(new_archives);
 END $merge$;
 COMMIT;

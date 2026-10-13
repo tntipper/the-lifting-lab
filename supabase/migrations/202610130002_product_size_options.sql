@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS tll_merge_private.merged_product_archive (
   product jsonb, nutrients jsonb, moved_reviews uuid[], moved_stack_products uuid[],
   moved_favourites uuid[], dropped_favourites jsonb, merged_at timestamptz DEFAULT now(),
   -- Colliding stack rows need full snapshots and original parent totals for lossless undo.
-  merged_stacks jsonb NOT NULL DEFAULT '[]', parent_before jsonb
+  merged_stacks jsonb NOT NULL DEFAULT '[]', parent_before jsonb,
+  -- Stack item triggers also mutate revision/updated_at: retain guarded batch snapshots.
+  stacks_before jsonb NOT NULL DEFAULT '[]', stacks_after jsonb NOT NULL DEFAULT '[]'
 );
 ALTER TABLE tll_merge_private.merged_product_archive ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON ALL TABLES IN SCHEMA tll_merge_private FROM PUBLIC, anon, authenticated;
