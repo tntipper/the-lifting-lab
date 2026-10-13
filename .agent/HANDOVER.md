@@ -1,3 +1,13 @@
+**13 October Job H — grok/h-mapping-loader, base fd37dc8; uncommitted mapping loader:**
+- Shared server loaders attach reviewed saved mappings with LINKS enabled independently of PRICES; isolated environments remain inert.
+- Added service-role-only read RPC migration for private mapping identity/review columns; no costs read, raw rows or extra review fields exposed.
+- Missing env/errors/invalid reviews/duplicate active store rows fail closed; cached mappings replaced; existing cart/product fallback reused.
+- Requested suite: 209 pass/0 fail (15 new); assessment-display: 49 pass/0 fail after saved-row fixture adaptation.
+- Typecheck passes; lint 0 errors/22 existing warnings; activation regenerated 108→109; both manifests check successfully.
+- Final npm test: 4030 tests, 3994 pass/28 fail/8 skip; blockers: loopback 8, process 6, Docker 11, Gen23 child 1, Python 1, Chrome 1.
+- Evidence/design: docs/commerce/mapping-loader.md; full log /tmp/h-full-final.log; hosted CI/migration execution unverified.
+- Next: Grok reviews/commits; authorised runner applies migration/checks hosted behaviour. No commit/push/live API/env/config activation/xlsx edits.
+
 **13 October Job E2 — FACT: grok/a-baseline-green, HEAD 03ebaf0; working files only:**
 - FACT: all 26 Job E modules use userInfo().homedir; HOME override cannot select their binaries; five unpinned Python paths included.
 - FACT: fixture GIT/EXEC rewrites assert exactly one match for each declaration in both source copies.

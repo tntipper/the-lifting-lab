@@ -42,6 +42,21 @@ function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = fa
           return React.useState(index === 0 ? rows.map(p => ({ id: p.id, servings_per_day: 1, products: { ...p, product_nutrients: p.nutrients } })) : index === 4 ? false : index === 7 ? showTotals : initial)
         } }
 
+      if (name === 'next/server') return { ...require('next/server'), connection: async () => {} }
+      if (name === './store-mapping-server') return {
+        ...load('lib/commerce/store-mapping-server.ts'),
+        createStoreMappingReader: () => async () => rows.flatMap(p => {
+          const m = p.storeLinkMapping
+          if (!m) return []
+          const identity = { formulaId: 'synthetic', formulaVersion: 'v1', flavourId: 'vanilla', labelVersion: 'v1',
+            pack: { version: 'v1', sellingUnit: 'single', innerCount: 1, amountPerInner: 500, unit: 'g' } }
+          return [{ comparison_product_id: p.id, status: 'store', active: m.active,
+            shopify_product_id: 'gid://shopify/Product/2', shopify_variant_id: m.shopifyVariantId,
+            handle: m.shopifyProductHandle, supplier: 'synthetic', supplier_sku: 'synthetic',
+            pack: null, flavour: null, approval_reference: 'synthetic-review', review: m.review,
+            mapping_status: 'exact', mapping_source: 'verified_labels', shop_identity: identity, supplier_identity: identity }]
+        }),
+      }
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
       if (name === 'next/navigation') return { notFound() { throw new Error('not found') }, useRouter: () => ({ back() {} }), useSearchParams: () => new URLSearchParams() }
       if (name === 'next/og') return { ImageResponse: class { constructor(element) { this.element = element } } }
@@ -61,7 +76,7 @@ function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = fa
       }
       return require(name)
     }
-    vm.runInNewContext(js, { require: localRequire, module: mod, exports: mod.exports, process: { env }, URL, URLSearchParams,
+    vm.runInNewContext(js, { require: localRequire, module: mod, exports: mod.exports, process: { env }, URL, URLSearchParams, structuredClone,
       fetch() { throw new Error('Outbound requests forbidden') } }, { filename })
     cache.set(filename, mod.exports)
     return mod.exports
