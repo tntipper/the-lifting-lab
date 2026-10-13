@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { isSyntheticPreview } from '@/lib/preview-mode'
+import { isIsolatedEnvironment, isSyntheticPreview } from '@/lib/preview-mode'
 import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
 import { useLocalStack } from './LocalStackContext'
 import { useStagingCart } from './StagingCartContext'
@@ -38,7 +38,10 @@ function BasketControl() {
       <span className="max-[359px]:hidden">Basket</span><span className="font-mono">{quantity}</span>
     </button>
   }
-  return <Link href="/cart" className={classes} aria-label="Basket, 0 items"><span className="max-[359px]:hidden">Basket</span><span className="font-mono">0</span></Link>
+  // /cart only exists for the staging test cart. With live store links the basket is Shopify's cart; otherwise hide it.
+  if (!isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled')
+    return <a href="https://shop.theliftinglab.co.uk/cart" className={classes} aria-label="Basket at TLL Store"><span className="max-[359px]:hidden">Basket</span></a>
+  return null
 }
 
 export default function TopNav({ signedInInitial }: { signedInInitial?: boolean } = {}) {

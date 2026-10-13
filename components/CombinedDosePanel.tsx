@@ -34,7 +34,14 @@ export default function CombinedDosePanel({ totals }: { totals: DoseTotal[] }) {
         const rangeStart = reference ? Math.min(100, reference.minimum / scaleMax * 100) : 0
         const rangeWidth = reference ? Math.max(2, (reference.maximum - reference.minimum) / scaleMax * 100) : 0
         const marker = reference && amountInReferenceUnit != null ? Math.min(99, amountInReferenceUnit / scaleMax * 100) : 0
-        const status = !reference || amountInReferenceUnit == null ? 'Reference range unavailable'
+        const limitLabel = upperLimit ? upperLimit.limitLabel ?? 'EFSA UL' : null
+        const amountInLimitUnit = upperLimit ? convertAmount(total.amount, total.unit, upperLimit.unit) : null
+        // Safety-limit-only nutrients (e.g. caffeine) are compared with the same limit and label as the stack warning.
+        const limitStatus = upperLimit && upperLimit.ul != null && amountInLimitUnit != null
+          ? `${amountInLimitUnit > upperLimit.ul ? 'Above' : amountInLimitUnit === upperLimit.ul ? 'At' : 'Below'} the ${limitLabel} (${formatAmount(upperLimit.ul)} ${upperLimit.unit} a day)`
+          : null
+        const status = !reference || amountInReferenceUnit == null ? limitStatus ?? 'Reference range unavailable'
+          : reference.perSession ? 'Per-session range: compare one serving, not this daily total'
           : amountInReferenceUnit < reference.minimum ? 'Below reference range'
           : amountInReferenceUnit > reference.maximum ? 'Above reference range'
           : 'Within reference range'
@@ -56,7 +63,8 @@ export default function CombinedDosePanel({ totals }: { totals: DoseTotal[] }) {
               <span>{formatAmount(reference.minimum)}{reference.minimum === reference.maximum ? '' : `–${formatAmount(reference.maximum)}`} {reference.unit} {reference.timing}</span>
               {reference.context && <span>{reference.context}</span>}
             </div>
-          </> : <p className="mt-2 text-xs text-[#77796f]">Reference range unavailable — the recorded amount is still included in your total.</p>}
+          </> : limitStatus ? <p className="mt-2 text-xs text-[#77796f]">{limitStatus}. No reference range applies; this is a safety level, not a target.</p>
+            : <p className="mt-2 text-xs text-[#77796f]">Reference range unavailable — the recorded amount is still included in your total.</p>}
         </article>
       })}
     </div>}

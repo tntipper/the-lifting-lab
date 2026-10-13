@@ -4,14 +4,16 @@ export type StackReferenceRange = {
   unit: 'mg' | 'g'
   timing: string
   context?: string
+  /** The range describes one dose (e.g. one pre-workout serving), not a daily total. */
+  perSession?: boolean
 }
 
 const REFERENCES: Record<string, StackReferenceRange> = {
   'creatine': { minimum: 3, maximum: 5, unit: 'g', timing: 'a day' },
   'creatine monohydrate': { minimum: 3, maximum: 5, unit: 'g', timing: 'a day' },
   'beta-alanine': { minimum: 3.2, maximum: 6.4, unit: 'g', timing: 'a day' },
-  'l-citrulline': { minimum: 6, maximum: 8, unit: 'g', timing: 'before training' },
-  'citrulline': { minimum: 6, maximum: 8, unit: 'g', timing: 'before training' },
+  'l-citrulline': { minimum: 6, maximum: 8, unit: 'g', timing: 'per session, 45–60 min pre-workout', context: 'A per-session dose, not a daily target.', perSession: true },
+  'citrulline': { minimum: 6, maximum: 8, unit: 'g', timing: 'per session, 45–60 min pre-workout', context: 'A per-session dose, not a daily target.', perSession: true },
   'betaine': { minimum: 2.5, maximum: 2.5, unit: 'g', timing: 'a day' },
   'betaine anhydrous': { minimum: 2.5, maximum: 2.5, unit: 'g', timing: 'a day' },
   'taurine': { minimum: 1, maximum: 2, unit: 'g', timing: 'around training' },

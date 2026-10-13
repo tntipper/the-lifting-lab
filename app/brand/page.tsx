@@ -5,6 +5,8 @@ import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
 import { brandSlug, type BrandSummary } from '@/lib/brands'
 
 // SSG with a daily refresh so newly added brands/products flow in without a
@@ -36,8 +38,8 @@ export const metadata: Metadata = {
 
 async function brandSummaries(): Promise<BrandSummary[]> {
   try {
-    const sb = createPublicClient()
-    const { data, error } = await sb
+    // Synthetic preview has no database; use the same preview catalogue as the product pages.
+    const { data, error } = isSyntheticPreview() ? { data: PREVIEW_PRODUCTS as unknown as Product[], error: null } : await createPublicClient()
       .from('products')
       .select(PRODUCT_COLUMNS)
       .eq('status', 'active')

@@ -10,6 +10,8 @@ import { GUIDE_SLUGS } from '@/lib/guides'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type ScoredProduct } from '@/lib/products'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
 import { brandSlug } from '@/lib/brands'
 
 // SSG for known brands at build time, with on-demand rendering for any brand
@@ -32,8 +34,8 @@ type BrandData = {
 // over the live product set — no reverse-lookup table that could drift.
 async function getBrand(slug: string): Promise<BrandData | null> {
   try {
-    const sb = createPublicClient()
-    const { data, error } = await sb
+    // Synthetic preview has no database; use the same preview catalogue as the product pages.
+    const { data, error } = isSyntheticPreview() ? { data: PREVIEW_PRODUCTS as unknown as Product[], error: null } : await createPublicClient()
       .from('products')
       .select(PRODUCT_COLUMNS)
       .eq('status', 'active')
@@ -59,8 +61,8 @@ async function getBrand(slug: string): Promise<BrandData | null> {
 
 export async function generateStaticParams() {
   try {
-    const sb = createPublicClient()
-    const { data, error } = await sb.from('products').select('brand').eq('status', 'active')
+    const { data, error } = isSyntheticPreview() ? { data: PREVIEW_PRODUCTS.map(p => ({ brand: p.brand })), error: null }
+      : await createPublicClient().from('products').select('brand').eq('status', 'active')
     if (error || !data) return []
     const slugs = new Set<string>()
     for (const row of data as { brand: string | null }[]) {
