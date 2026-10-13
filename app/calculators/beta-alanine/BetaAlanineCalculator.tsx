@@ -22,7 +22,8 @@ function num(v: string): number {
   return Number.isFinite(n) && n > 0 ? n : 0
 }
 
-// Round to the nearest 0.5g — the granularity a kitchen scoop can realistically hit.
+// Round to the nearest 0.5g before clamping the daily total to 3.2–6.4g.
+// The clamped endpoints are exceptions to the 0.5g steps.
 function half(n: number): number {
   return Math.round(n * 2) / 2
 }

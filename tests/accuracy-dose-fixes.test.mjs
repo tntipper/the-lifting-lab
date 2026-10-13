@@ -61,11 +61,23 @@ test('citrulline conversion delivers both pure targets from both malate ratios',
   const combos = JSON.stringify(load('lib/combos.ts').evaluateCombo(['citrulline', 'pre-workout']))
   assert.match(combos, /6–8g pure L-citrulline = 9–12g citrulline malate 2:1 = 12–16g citrulline malate 1:1/)
 })
+test('citrulline forms and ingredient copy specify the 2:1 dose equivalent', () => {
+  const forms = load('lib/forms.ts').FORMS.find(item => item.id === 'citrulline')
+  const malate = forms.options.find(option => option.name === 'Citrulline malate 2:1')
+  assert.match(malate.note, /9-12g to deliver 6-8g of pure L-citrulline/)
+  assert.match(forms.bottomLine, /pure L-citrulline aim for 6-8g; for citrulline malate 2:1 aim for 9-12g/)
+  assert.match(forms.detail, /2:1 product needs 9-12g to deliver 6-8g of pure L-citrulline/)
+  assert.doesNotMatch(JSON.stringify(forms), /~8g|about 8g|around 8g/)
+  const ingredient = load('lib/ingredients.ts').getIngredient('l-citrulline')
+  assert.match(ingredient.dose, /6 to 8g of pure L-citrulline, or around 9 to 12g of citrulline malate 2:1/)
+  const faq = ingredient.faqs.find(item => item.q === 'How much citrulline should a pre-workout have?')
+  assert.match(faq.a, /6 to 8g of pure L-citrulline, or 9 to 12g of citrulline malate 2:1/)
+})
 test('ashwagandha dosage includes contraindications and liver stop advice', () => {
   const { detail } = load('lib/dosage.ts').DOSE_ITEMS.find(item => item.id === 'ashwagandha')
   for (const warning of ['liver injury', 'stop and see a doctor', 'jaundice', 'dark urine', 'upper-right abdominal pain',
     'pregnancy', 'breastfeeding', 'thyroid conditions', 'autoimmune disease', 'liver conditions', 'hormone-sensitive cancers',
-    'planned surgery', 'sedatives', 'thyroid medication']) assert.ok(detail.includes(warning), warning)
+    'planned surgery', 'sedatives', 'thyroid medication', 'blood-sugar medication']) assert.ok(detail.includes(warning), warning)
 })
 test('nutrient flags distinguish vitamin C guidance and iron safe level from ULs', () => {
   const { NUTRIENT_LIMITS, analyseStack } = load('lib/nutrient-limits.ts')

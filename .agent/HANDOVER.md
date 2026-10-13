@@ -1,3 +1,12 @@
+**13 October Job F2 — reviewer follow-up (grok/f-dose-fixes; HEAD 2563678; uncommitted):**
+- Corrected all three forms-page 2:1 malate claims to 9–12g for 6–8g pure citrulline; ingredient dose/FAQ now name 2:1.
+- Ashwagandha dosage adds blood-sugar medication caution; beta-alanine comment explains clamped endpoints, calculation unchanged.
+- Added citrulline copy regression; retained existing ashwagandha assertions and added blood-sugar medication.
+- Evidence: requested accuracy-dose-fixes, claims-containment and stack-assessment suites: 21 PASS, 0 FAIL, 0 SKIP.
+- Proof: ../f-copy-diff.md appended F2 section, six public sentence BEFORE/AFTER entries; git diff --check PASS.
+- Scope follows explicit F2 brief; default integration ref absent locally; assigned HEAD parent is 2037a89. No network/hosted CI/PR lookup.
+- Next: review uncommitted diff; no F2 blockers. No commit/push/merge/deploy or live calls.
+
 **13 October Job F — offline accuracy gaps (grok/f-dose-fixes; HEAD 2037a895; uncommitted):**
 - FACT: Beta-alanine clamps after rounding to 3.2–6.4g; tests cover endpoints, both units/forms and a weight sweep.
 - FACT: Ashwagandha dosage adds liver/contraindication advice; citrulline dosage/combo copy names both malate ratios.
