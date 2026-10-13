@@ -83,7 +83,7 @@ const RULES: Record<string, Rule> = {
   },
   [pairKey('citrulline', 'pre-workout')]: {
     level: 'watch',
-    note: 'Most pre-workouts already contain citrulline, often below the target: 6–8g pure L-citrulline = 9–12g citrulline malate 2:1 = 12–16g citrulline malate 1:1. Check the label before adding a standalone scoop so you know your real total.',
+    note: 'Most pre-workouts already contain citrulline, often below the target: 6–8 g L-citrulline, which is about 9–12 g citrulline malate (2:1) or 12–16 g (1:1). Check the label before adding a standalone scoop so you know your real total.',
   },
   [pairKey('beta-alanine', 'pre-workout')]: {
     level: 'watch',

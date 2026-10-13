@@ -36,11 +36,11 @@ const FAQS = [
   },
   {
     q: 'What is the half-life of caffeine?',
-    a: 'In healthy adults caffeine has a half-life of 5-6 hours, meaning half the dose is still in your system after 5-6 hours, a quarter after 10-12 hours. It is longer if you are pregnant, on certain medications, or a slow metaboliser, and shorter in heavy smokers. That slow clearance is why an afternoon pre-workout can still be keeping you up at midnight.',
+    a: 'Caffeine\'s half-life averages around 5 hours in healthy adults but varies widely between people. After about 10 hours roughly a quarter remains. It is longer if you are pregnant, on certain medications, or a slow metaboliser, and shorter in heavy smokers. That slow clearance is why an afternoon pre-workout can still be keeping you up at midnight.',
   },
   {
     q: 'When should I stop drinking caffeine before bed?',
-    a: 'A useful rule is to stop early enough that less than about 100mg is still circulating when you go to sleep. With a half-life of 5-6 hours, a 200mg dose takes roughly 5-6 hours to fall to 100mg, and a 400mg dose takes about 10-12 hours. Enter your dose and bedtime above and the tool estimates a latest intake time using a 5-hour half-life.',
+    a: 'A useful rule is to stop early enough that less than about 100mg is still circulating when you go to sleep. Caffeine\'s half-life averages around 5 hours in healthy adults but varies widely between people, so a 200mg dose takes about 5 hours to fall to 100mg, and a 400mg dose about 10 hours, by when roughly a quarter remains. Enter your dose and bedtime above and the tool estimates a latest intake time using a 5-hour half-life.',
   },
   {
     q: 'How much caffeine is safe per day?',
@@ -104,7 +104,7 @@ export default function CaffeinePage() {
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
           Caffeine is the one pre-workout ingredient that reliably works, at 3 to 6mg per kg of bodyweight.
-          But its half-life is 5-6 hours, so timing matters as much as the dose. This tool handles both.
+          Its half-life averages around 5 hours in healthy adults but varies widely between people, and after about 10 hours roughly a quarter remains, so timing matters as much as the dose. This tool handles both.
         </p>
 
         <CaffeineCalculator />
@@ -181,7 +181,7 @@ export default function CaffeinePage() {
           <div>
             <h2 className="text-lg font-black uppercase tracking-wide mb-2">Why the half-life matters</h2>
             <p className="text-lab-muted text-sm leading-relaxed">
-              Caffeine clears slowly — its half-life is 5-6 hours in a typical adult. Using the calculator&apos;s
+              Caffeine clears slowly. Its half-life averages around 5 hours in healthy adults but varies widely between people, and after about 10 hours roughly a quarter remains. Using the calculator&apos;s
               5-hour estimate, take 300mg for a 5pm session and you still have around 150mg on board at
               10pm and 75mg at 3am. That lingering
               stimulant is the single biggest reason lifters who train late sleep badly, and poor sleep
