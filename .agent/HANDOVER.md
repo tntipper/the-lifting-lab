@@ -1,3 +1,13 @@
+**13 October Job G — explicit fee/reserve config + shared margin (grok/c-signoff-importer; HEAD 6f9723e; base 2037a89):**
+- FACT: CLI requires payment fixed pence, variable bps and returns reserve bps; no defaults/workbook fallback; explicit zero valid.
+- FACT: Missing inputs report MISSING_CONFIG; --write refuses even with zero Approved rows; generated JSON records config.
+- FACT: signoff-margin re-exports pricing-policy calculation; proposal/floor/basket share contribution logic; output VAT zero, reserve on price only.
+- DECISION: Preserve canonical exact arithmetic (fractional-pence margin fields), removing former sign-off-only intermediate rounding.
+- FACT: Acceptance command: node --experimental-strip-types --test tests/signoff-*.test.mjs tests/product-mapping.test.mjs tests/pricing-policy.test.mjs — 139 PASS, 0 fail/skip; syntax/diff PASS; ../g-test.log.
+- FACT: ../c-dryrun.md regenerated: 243 undecided, 0 Approved/exported; all three config gaps; workbook SHA256 c602116ef403d4ac1970223ebf9f0781bc64042632c0c253dad56dbc20863d8b unchanged.
+- GAP: Actual fee/reserve inputs and hosted CI/PR lookup unavailable (network prohibited); full typecheck/lint not run by G. BLOCKED: none for acceptance tests.
+- Next: orchestrator reviews/commits scoped changes; Toby supplies actual config/decisions. No commit/push/merge/deploy/network/live calls; switches OFF.
+
 **13 October Job C2 — float-noise fix (grok/c-signoff-importer; base 2037a89; HEAD 30ca7b3):**
 - CORRECTION: Job C is committed at 30ca7b3; this C2 fix is in the working tree for the orchestrator to commit. The earlier uncommitted/index.lock status is historical and superseded.
 - FACT: GBP amounts and supplier VAT round to whole pence/basis points only within 1e-6 of a whole unit; saved costs use the rounded pence to avoid downstream rejection.

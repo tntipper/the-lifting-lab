@@ -4,8 +4,11 @@ import { spawnSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { importSignoff, gbpPence } from '../lib/signoff-import.ts'
+import { importSignoff as importWithConfig, gbpPence } from '../lib/signoff-import.ts'
 import { readSignoff } from '../scripts/import-signoff.mjs'
+const config = { fixedPence: 25, variableBps: 200, returnsReserveBps: 0 }
+const importSignoff = (rows, candidates, inputs = config) => importWithConfig(rows, candidates, inputs)
+const cliConfig = ['--payment-fixed-pence', '25', '--payment-variable-bps', '200', '--returns-reserve-bps', '0']
 const candidate = { comparison_product_id: 'comparison-1', status: 'store', shopify_product_id: '123',
   shopify_variant_id: '9007199254740993', handle: 'test-product', supplier: 'tropship', supplier_sku: 'TEST1',
   cost_ex_vat: '10', variant_title: '250g Plain' }
@@ -21,13 +24,13 @@ test('only valid Approved rows exported; saved field formats and corrected margi
   assert.equal(result.mappings[0].active, false)
   assert.equal(result.mappings[0].price_auto, false)
   assert.deepEqual(result.prices[0], { shopifyVariantId: result.mappings[0].shopify_variant_id, amountPence: 3000, currency: 'GBP' })
-  assert.equal(result.margins[0].marginPence, 1604)
+  assert.equal(result.margins[0].marginPence, 1604.02)
   assert.deepEqual(result.counts, { rows: 4, approved: 1, rejected: 1, query: 1, undecided: 1, exported: 1, invalidRows: 0 })
   assert.deepEqual(result.diagnostics[1].reasons, ['Review reason'])
 })
-test('missing price/variant/fees and invalid decision produce errors, including rejected rows', () => {
+test('missing price/variant and invalid decision produce errors, including rejected rows', () => {
   for (const [cells, code] of [[{ store_price_gbp: '' }, 'MISSING_OR_INVALID_PRICE'], [{ variant_title: '' }, 'MISSING_VARIANT'],
-    [{ payment_fixed_pence: '' }, 'MISSING_OR_INVALID_PAYMENT_FEES'], [{ vat_rate: '' }, 'MISSING_OR_INVALID_SUPPLIER_VAT']]) {
+    [{ vat_rate: '' }, 'MISSING_OR_INVALID_SUPPLIER_VAT']]) {
     const result = importSignoff([row('Approved', cells), row('Rejected', cells, 3)], [candidate])
     assert.equal(result.mappings.length, 0)
     assert.ok(result.diagnostics.every(d => d.errors.includes(code)))
@@ -62,11 +65,19 @@ test('Excel float noise rounds to whole pence and VAT basis points, including sa
     assert.ok(result.diagnostics[0].errors.includes('MISSING_OR_INVALID_SUPPLIER_VAT'))
   }
 })
-test('a single payment-fee column filled holds approval in either direction', () => {
-  for (const cells of [{ payment_fixed_pence: '' }, { payment_variable_bps: '' }]) {
-    const result = importSignoff([row('Approved', cells)], [candidate])
+test('each missing config input holds approval even when workbook fee columns are filled', () => {
+  for (const key of Object.keys(config)) {
+    const partial = { ...config }; delete partial[key]
+    const result = importSignoff([row()], [candidate], partial)
     assert.equal(result.mappings.length, 0)
-    assert.deepEqual(result.diagnostics[0].errors, ['MISSING_OR_INVALID_PAYMENT_FEES'])
+    assert.deepEqual(result.diagnostics[0].errors, ['MISSING_CONFIG'])
+    assert.deepEqual(result.configErrors, ['MISSING_CONFIG:' + key])
+  }
+  assert.equal(importWithConfig([row()], [candidate]).mappings.length, 0)
+  for (const key of Object.keys(config)) for (const value of [-1, NaN, Infinity, 0.5, 1_000_000_001]) {
+    const result = importSignoff([row()], [candidate], { ...config, [key]: value })
+    assert.equal(result.mappings.length, 0)
+    assert.deepEqual(result.configErrors, ['INVALID_CONFIG:' + key])
   }
 })
 test('formula inputs not accepted; cached margin columns ignored; strict GBP amounts', () => {
@@ -105,7 +116,7 @@ test('synthetic XLSX CLI: dry-run, write gate, no overwrite, unchanged input and
     writeFileSync(mapping, keys.join(',') + '\n' + keys.map(k => candidate[k]).join(',') + '\n')
     const before = readFileSync(xlsx), mappingBefore = readFileSync(mapping)
     assert.equal((await readSignoff(xlsx)).length, 3)
-    const run = args => spawnSync(process.execPath, ['--experimental-strip-types', 'scripts/import-signoff.mjs', xlsx, '--mapping', mapping, ...args], { encoding: 'utf8' })
+    const run = args => spawnSync(process.execPath, ['--experimental-strip-types', 'scripts/import-signoff.mjs', xlsx, '--mapping', mapping, ...cliConfig, ...args], { encoding: 'utf8' })
     const dry = run([])
     assert.equal(dry.status, 0, dry.stderr)
     assert.match(dry.stdout, /approved: 1/)
@@ -119,6 +130,7 @@ test('synthetic XLSX CLI: dry-run, write gate, no overwrite, unchanged input and
     assert.equal(exported.mappings.length, 1)
     assert.equal(exported.prices[0].amountPence, 3000)
     assert.equal(exported.liveEnabled, false)
+    assert.deepEqual(exported.config, config)
     const outputBefore = readFileSync(output)
     assert.equal(run(['--write', '--output', output]).status, 1)
     assert.deepEqual(readFileSync(output), outputBefore)
@@ -139,7 +151,7 @@ test('CLI --sheet override reads the requested worksheet', () => {
     writeFileSync(mapping, keys.join(',') + '\n' + keys.map(k => candidate[k]).join(',') + '\n')
     const before = readFileSync(xlsx)
     const run = args => spawnSync(process.execPath, ['--experimental-strip-types', 'scripts/import-signoff.mjs',
-      xlsx, '--mapping', mapping, ...args], { encoding: 'utf8' })
+      xlsx, '--mapping', mapping, ...cliConfig, ...args], { encoding: 'utf8' })
     assert.equal(run([]).status, 1)
     const overridden = run(['--sheet', 'Reviewed'])
     assert.equal(overridden.status, 0, overridden.stderr)
@@ -153,10 +165,10 @@ test('duplicate Approved row with missing price also holds the otherwise-valid a
   assert.equal(result.mappings.length, 0)
   assert.ok(result.diagnostics.every(d => d.errors.includes('DUPLICATE_VARIANT')))
 })
-test('CLI fee override enables rows with missing fees but never permits missing identity', () => {
+test('explicit config enables rows with missing workbook fees but never permits missing identity', () => {
   const cells = { payment_fixed_pence: '', payment_variable_bps: '' }
-  assert.equal(importSignoff([row('Approved', cells)], [candidate], { fixedPence: 0, variableBps: 0 }).mappings.length, 1)
-  assert.equal(importSignoff([row('Approved', cells)], [{ ...candidate, shopify_variant_id: null }], { fixedPence: 0, variableBps: 0 }).mappings.length, 0)
+  assert.equal(importSignoff([row('Approved', cells)], [candidate], { fixedPence: 0, variableBps: 0, returnsReserveBps: 0 }).mappings.length, 1)
+  assert.equal(importSignoff([row('Approved', cells)], [{ ...candidate, shopify_variant_id: null }], { fixedPence: 0, variableBps: 0, returnsReserveBps: 0 }).mappings.length, 0)
 })
 test('XLSX shared strings, sparse cells and cached formulas are read without trusting cache', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'signoff-xml-'))
@@ -187,4 +199,54 @@ with zipfile.ZipFile(sys.argv[1],'w') as z:
     assert.deepEqual(rows[0].formulaFields, ['store_price_gbp'])
     assert.equal(importSignoff(rows, [candidate]).mappings.length, 0)
   } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+
+test('CLI missing config reports dry-run gaps and refuses write for every partial set and no Approved rows', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'signoff-config-'))
+  try {
+    const xlsx = join(dir, 'input.xlsx'), mapping = join(dir, 'mapping.csv')
+    const keys = Object.keys(candidate)
+    writeFileSync(mapping, keys.join(',') + '\n' + keys.map(k => candidate[k]).join(',') + '\n')
+    const run = args => spawnSync(process.execPath, ['--experimental-strip-types', 'scripts/import-signoff.mjs',
+      xlsx, '--mapping', mapping, ...args], { encoding: 'utf8' })
+    for (const decision of ['Approved', 'Rejected', '']) {
+      fixture(xlsx, [row(decision).cells])
+      for (let mask = 0; mask < 7; mask++) {
+        const flags = cliConfig.filter((_, index) => mask & (1 << Math.floor(index / 2)))
+        const dry = run(flags)
+        assert.equal(dry.status, 0, dry.stderr)
+        assert.match(dry.stdout, /MISSING_CONFIG/)
+        assert.match(dry.stdout, /exported: 0/)
+        const output = join(dir, mask + '.generated.json')
+        const write = run([...flags, '--write', '--output', output])
+        assert.equal(write.status, 1)
+        assert.match(write.stdout, /MISSING_CONFIG/)
+        assert.equal(existsSync(output), false)
+      }
+    }
+    fixture(xlsx, [row().cells])
+    for (const [flag, value] of [['--payment-fixed-pence', '-1'], ['--payment-fixed-pence', '1000000001'],
+      ['--payment-variable-bps', '10001'], ['--returns-reserve-bps', '10001'], ['--returns-reserve-bps', '1.5']]) {
+      assert.equal(run([flag, value]).status, 1)
+    }
+    const zero = run(['--payment-fixed-pence', '0', '--payment-variable-bps', '0', '--returns-reserve-bps', '0'])
+    assert.equal(zero.status, 0, zero.stderr)
+    assert.match(zero.stdout, /exported: 1/)
+    assert.doesNotMatch(zero.stdout, /MISSING_CONFIG/)
+    const output = join(dir, 'reserve.generated.json')
+    const reserved = run(['--payment-fixed-pence', '25', '--payment-variable-bps', '200',
+      '--returns-reserve-bps', '333', '--write', '--output', output])
+    assert.equal(reserved.status, 0, reserved.stderr)
+    const exported = JSON.parse(readFileSync(output))
+    assert.deepEqual(exported.config, { fixedPence: 25, variableBps: 200, returnsReserveBps: 333 })
+    assert.equal(exported.margins[0].returnsReservePence, 99.9)
+    assert.equal(exported.margins[0].marginPence, 1504.12)
+    assert.equal(exported.prices[0].amountPence, 3000)
+
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+test('missing config remains visible for an empty workbook', () => {
+  const result = importWithConfig([], [])
+  assert.deepEqual(result.configErrors, ['MISSING_CONFIG:fixedPence', 'MISSING_CONFIG:variableBps', 'MISSING_CONFIG:returnsReserveBps'])
+  assert.equal(result.mappings.length, 0)
 })

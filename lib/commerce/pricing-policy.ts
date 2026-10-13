@@ -193,6 +193,35 @@ function neg(a: Rational): Rational { return rat(-a.n, a.d) }
 function sub(a: Rational, b: Rational): Rational { return add(a, neg(b)) }
 function mul(a: Rational, b: Rational): Rational { return rat(a.n * b.n, a.d * b.d) }
 function div(a: Rational, b: Rational): Rational { if (b.n <= ZERO) throw new Error('Internal divisor must be positive'); return rat(a.n * b.d, a.d * b.n) }
+/** Shared contribution formula; retain exact fractions until presentation. */
+function marginContribution(net: Rational, cost: Rational, gross: Rational, fixed: Rational, variableBps: number): Rational {
+  return sub(sub(sub(net, cost), fixed), mul(gross, rate(variableBps)))
+}
+export type ProposalMarginInput = {
+  pricePence: number; tradeCostExVatPence: number; supplierVatBps: number
+  paymentFixedPence: number; paymentVariableBps: number; returnsReserveBps: number
+  deliveryCostPence: number; customerShippingPence: number
+}
+/** Offline one-item proposal: no fabricated approval records or live eligibility. */
+export function calculateProposalMargin(input: ProposalMarginInput) {
+  for (const key of ['pricePence', 'tradeCostExVatPence', 'supplierVatBps', 'paymentFixedPence',
+    'paymentVariableBps', 'returnsReserveBps', 'deliveryCostPence', 'customerShippingPence'] as const) {
+    integer(input[key], key, key === 'pricePence' ? 1 : 0, key.endsWith('Bps') ? 10000 : MAX_PENCE)
+  }
+  const trade = economic({ amountPence: input.tradeCostExVatPence,
+    tax: { approved: true, basis: 'exclusive', vatBps: input.supplierVatBps, inputVatRecoverable: false } }, 'trade')
+  const receipts = money(input.pricePence + input.customerShippingPence)
+  const reserve = mul(money(input.pricePence), rate(input.returnsReserveBps))
+  const fixed = money(input.paymentFixedPence)
+  const payment = add(fixed, mul(receipts, rate(input.paymentVariableBps)))
+  const fees = add(payment, money(input.deliveryCostPence))
+  const contribution = marginContribution(receipts, add(add(trade, reserve), money(input.deliveryCostPence)),
+    receipts, fixed, input.paymentVariableBps)
+  const numeric = (value: Rational) => Number(value.n) / Number(value.d)
+  return { outputVatPence: 0, receiptsPence: numeric(receipts), tradeCostPence: numeric(trade),
+    paymentFeePence: numeric(payment), returnsReservePence: numeric(reserve), feesPence: numeric(fees),
+    marginPence: numeric(contribution), marginRatio: numeric(div(contribution, receipts)) }
+}
 function compare(a: Rational, b: Rational): number { const d = a.n * b.d - b.n * a.d; return d < ZERO ? -1 : d > ZERO ? 1 : 0 }
 function ceil(a: Rational): bigint { return (a.n + a.d - ONE) / a.d }
 function halfUp(a: Rational): bigint { return (TWO * a.n + a.d) / (TWO * a.d) }
@@ -292,7 +321,7 @@ function calculateFloor(input: FloorInput): FloorCalculation {
   const target = floorValue(C, cost.taxFactor, input.policy.targetMarginBps, input)
   const gross = money(minimum.pence - bounded(halfUp(mul(money(minimum.pence), rate(input.policy.maxDiscountBps))), 'discountAtMinimum'))
   const net = div(gross, cost.taxFactor)
-  const contribution = sub(sub(net, C), mul(gross, rate(input.payment.variableBps)))
+  const contribution = marginContribution(net, C, gross, money(0), input.payment.variableBps)
   return {
     minimumListPricePence: minimum.pence, targetListPricePence: target.pence,
     limitingMinimumRule: minimum.limiting,
@@ -360,7 +389,7 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
       // standalone delivery and full fixed payment fee. This is not a basket charge.
       const standaloneDelivery = deliveryFor(input.supplierDeliveryTariff)
       const conservativeCost = add(lineCost, mul(add(standaloneDelivery.economic, money(input.payment.fixedPence)), money(line.quantity)))
-      const conservativeContribution = sub(sub(net, conservativeCost), mul(money(gross), rate(input.payment.variableBps)))
+      const conservativeContribution = marginContribution(net, conservativeCost, money(gross), money(0), input.payment.variableBps)
       const minimumLineCash = bounded(BigInt(input.policy.minimumCashPerItemPence) * BigInt(line.quantity), line.id + '.minimumLineCash')
       if (compare(conservativeContribution, mul(net, rate(input.policy.minimumMarginBps))) < 0) holds.push({ code: 'BELOW_LINE_MARGIN', field: line.id })
       if (compare(conservativeContribution, money(minimumLineCash)) < 0) holds.push({ code: 'BELOW_LINE_CASH', field: line.id })
@@ -392,7 +421,7 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
     const grossPence = bounded(totalGross, 'basketGross')
     bounded(ceil(totalCost), 'basketCost')
     const variableFee = mul(money(grossPence), rate(input.payment.variableBps))
-    const contribution = sub(sub(sub(totalNet, totalCost), variableFee), money(input.payment.fixedPence))
+    const contribution = marginContribution(totalNet, totalCost, money(grossPence), money(input.payment.fixedPence), input.payment.variableBps)
     let minimumCash = bounded(BigInt(input.policy.minimumCashPerItemPence) * BigInt(totalQuantity), 'basketMinimumCash')
     let cashBasis: BasketCalculation['minimumCashBasis'] = 'derived_per_billable_item'
     if (input.orderCashPolicy !== undefined) {
@@ -408,7 +437,7 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
       return { id: line.id, supplierOrderId: line.supplierOrderId, quantity: line.quantity, grossBeforeDiscountPence: before, discountPence: discount,
         grossReceiptsPence: gross, netRevenuePence: exact(net), supplierDeliveryAllocatedQuotedExVatPence: exact(delivery.net), supplierDeliveryGrossCashPence: delivery.gross,
         supplierDeliveryEconomicPence: exact(money(delivery.gross)), allocatedFixedPaymentFeePence: exact(allocation),
-        contributionPence: exact(sub(sub(sub(sub(net, lineCost), money(delivery.gross)), mul(money(gross), rate(input.payment.variableBps))), allocation)),
+        contributionPence: exact(marginContribution(net, add(lineCost, money(delivery.gross)), money(gross), allocation, input.payment.variableBps)),
         conservativeItemListFloorPence: itemFloor, conservativeLineContributionPence: exact(conservativeContribution), minimumLineCashPence: minimumLineCash }
     })
     const shippingFixedFee = mul(money(input.payment.fixedPence), div(money(input.customerShipping.grossPence), money(grossPence)))
@@ -418,7 +447,7 @@ export function evaluateBasket(input: BasketInput): Assessment<BasketCalculation
       supplierDeliveryEconomicPence: exact(money(deliveryGross)), grossReceiptsPence: grossPence,
       customerShippingGrossPence: input.customerShipping.grossPence, customerShippingNetPence: exact(shippingNet),
       customerShippingAllocatedFixedFeePence: exact(shippingFixedFee), customerShippingVariableFeePence: exact(shippingVariableFee),
-      customerShippingContributionPence: exact(sub(sub(shippingNet, shippingFixedFee), shippingVariableFee)),
+      customerShippingContributionPence: exact(marginContribution(shippingNet, money(0), money(input.customerShipping.grossPence), shippingFixedFee, input.payment.variableBps)),
       netRevenuePence: exact(totalNet), variablePaymentFeePence: exact(variableFee), fixedPaymentFeePence: input.payment.fixedPence,
       contributionPence: exact(contribution), contributionMargin: exact(div(contribution, totalNet)),
       minimumCashPence: minimumCash, minimumCashBasis: cashBasis, targetMarginMet: compare(contribution, mul(totalNet, rate(input.policy.targetMarginBps))) >= 0,

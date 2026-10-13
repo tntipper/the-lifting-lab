@@ -9,7 +9,7 @@ export type SignoffRow = { row: number; cells: Record<string, string>; formulaFi
 export type MappingCandidate = ProductMappingRow & { variant_title?: string }
 /** Proposal fields reuse ApprovedPrice, without inventing live observation or review evidence. */
 export type SignoffPrice = Pick<ApprovedPrice, 'shopifyVariantId' | 'currency' | 'amountPence'>
-export type PaymentFees = { fixedPence: number; variableBps: number }
+export type SignoffConfig = { fixedPence: number; variableBps: number; returnsReserveBps: number }
 function wholeUnits(value: string, scale: number, max: number): number | null {
   if (!/^\d{1,7}(?:\.\d+)?$/.test(value)) return null
   const units = Number(value) * scale, rounded = Math.round(units)
@@ -20,7 +20,15 @@ export function gbpPence(value: string): number | null {
 }
 const text = (row: Record<string, string>, key: string) => (row[key] ?? '').trim()
 
-export function importSignoff(rows: SignoffRow[], candidates: MappingCandidate[], fees?: PaymentFees) {
+export function importSignoff(rows: SignoffRow[], candidates: MappingCandidate[], config: Partial<SignoffConfig> = {}) {
+  const configErrors: string[] = []
+  for (const key of ['fixedPence', 'variableBps', 'returnsReserveBps'] as const) {
+    const value = config[key]
+    if (value === undefined || value === null) configErrors.push('MISSING_CONFIG:' + key)
+    else if (!Number.isSafeInteger(value) || value < 0 || value > (key === 'fixedPence' ? 1_000_000_000 : 10000)) {
+      configErrors.push('INVALID_CONFIG:' + key)
+    }
+  }
   const diagnostics: { row: number; decision: string; reasons: string[]; errors: string[]; exported: boolean }[] = []
   const approvedVariants = new Map<string, number[]>()
   const proposed: { row: number; mapping: ProductMappingRow; price: SignoffPrice; margin: ReturnType<typeof signoffMargin> }[] = []
@@ -37,16 +45,14 @@ export function importSignoff(rows: SignoffRow[], candidates: MappingCandidate[]
     const price = gbpPence(text(c, 'store_price_gbp')), cost = gbpPence(text(c, 'trade_cost_ex_vat'))
     const delivery = gbpPence(text(c, 'delivery_cost_per_order')), shipping = gbpPence(text(c, 'customer_shipping'))
     const vat = wholeUnits(text(c, 'vat_rate'), 10000, 10000)
-    const integer = (key: string) => /^\d{1,10}$/.test(text(c, key)) ? Number(text(c, key)) : NaN
-    const payment = fees ?? { fixedPence: integer('payment_fixed_pence'), variableBps: integer('payment_variable_bps') }
+    const payment = config
+    if (configErrors.length) errors.push(...new Set(configErrors.map(error => error.split(':')[0])))
     if (price === null || price <= 0) errors.push('MISSING_OR_INVALID_PRICE')
     if (cost === null || cost <= 0) errors.push('MISSING_OR_INVALID_COST')
     if (delivery === null || shipping === null) errors.push('MISSING_OR_INVALID_SHIPPING')
     if (vat === null || vat > 10000) errors.push('MISSING_OR_INVALID_SUPPLIER_VAT')
-    if (!Number.isSafeInteger(payment.fixedPence) || payment.fixedPence < 0 || payment.fixedPence > 1_000_000_000 ||
-        !Number.isSafeInteger(payment.variableBps) || payment.variableBps < 0 || payment.variableBps > 10000) errors.push('MISSING_OR_INVALID_PAYMENT_FEES')
     const inputs = ['toby_signoff', 'handle', 'variant_title', 'store_price_gbp', 'trade_cost_ex_vat', 'vat_rate',
-      'delivery_cost_per_order', 'customer_shipping', ...(fees ? [] : ['payment_fixed_pence', 'payment_variable_bps'])]
+      'delivery_cost_per_order', 'customer_shipping']
     if (source.formulaFields.some(field => inputs.includes(field))) errors.push('FORMULA_INPUT_NOT_SUPPORTED')
     if (mapping) {
       // Retain only the saved table fields; workbook approval never activates runtime behaviour.
@@ -65,8 +71,8 @@ export function importSignoff(rows: SignoffRow[], candidates: MappingCandidate[]
       if (!errors.length && decision === 'Approved') proposed.push({ row: source.row, mapping: saved,
         price: { shopifyVariantId: saved.shopify_variant_id!, currency: 'GBP', amountPence: price! },
         margin: signoffMargin({ pricePence: price!, tradeCostExVatPence: cost!, supplierVatBps: vat!,
-          deliveryCostPence: delivery!, customerShippingPence: shipping!, paymentFixedPence: payment.fixedPence,
-          paymentVariableBps: payment.variableBps }) })
+          deliveryCostPence: delivery!, customerShippingPence: shipping!, paymentFixedPence: payment.fixedPence!,
+          paymentVariableBps: payment.variableBps!, returnsReserveBps: payment.returnsReserveBps! }) })
     }
     diagnostics.push({ row: source.row, decision, reasons, errors: [...new Set(errors)], exported: false })
   }
@@ -75,7 +81,7 @@ export function importSignoff(rows: SignoffRow[], candidates: MappingCandidate[]
   for (const d of diagnostics) if (duplicates.has(d.row)) d.errors.push('DUPLICATE_VARIANT')
   const accepted = proposed.filter(p => !duplicates.has(p.row))
   for (const d of diagnostics) d.exported = accepted.some(p => p.row === d.row)
-  return { mappings: accepted.map(p => p.mapping), prices: accepted.map(p => p.price),
+  return { configErrors, mappings: accepted.map(p => p.mapping), prices: accepted.map(p => p.price),
     margins: accepted.map(p => ({ row: p.row, ...p.margin })), diagnostics,
     counts: { rows: rows.length, approved: diagnostics.filter(d => d.decision === 'Approved').length,
       rejected: diagnostics.filter(d => d.decision === 'Rejected').length, query: diagnostics.filter(d => d.decision === 'Query').length,
@@ -88,6 +94,7 @@ export function signoffReport(result: ReturnType<typeof importSignoff>) {
   return ['# Sign-off import dry-run', '', 'FACT: Local proposals only; no live mapping, price or workbook changes.',
     'FACT: Output VAT is zero. Unrecoverable supplier VAT is included in trade cost. Cached workbook margins are ignored.',
     'GAP: Workbook approval supplies no fresh stock, price observation or ExactMapping evidence; runtime switches remain OFF.',
+    ...result.configErrors.map(error => 'GAP: ' + error),
     '', ...Object.entries(result.counts).map(([key, value]) => `- ${key}: ${value}`), '',
     '| Worksheet row | Sign-off | Exportable | Validation errors | Reasons |', '| --- | --- | --- | --- | --- |',
     ...result.diagnostics.map(d => `| ${d.row} | ${escape(d.decision)} | ${d.exported ? 'yes' : 'no'} | ${d.errors.join(', ')} | ${escape(d.reasons.join('; '))} |`), ''].join('\n')

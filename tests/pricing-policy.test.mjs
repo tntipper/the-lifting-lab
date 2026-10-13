@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { calculatePriceFloor, evaluateBasket, SUPPLIER_DELIVERY_TARIFF_VERSION, SUPPLIER_DELIVERY_TARIFF_VALUES, PRICE_WRITES_ENABLED, TLL_POLICY_VALUES, MAX_PENCE } from '../lib/commerce/pricing-policy.ts'
+import { calculateProposalMargin, calculatePriceFloor, evaluateBasket, SUPPLIER_DELIVERY_TARIFF_VERSION, SUPPLIER_DELIVERY_TARIFF_VALUES, PRICE_WRITES_ENABLED, TLL_POLICY_VALUES, MAX_PENCE } from '../lib/commerce/pricing-policy.ts'
 
 const NOW = 1800000000000
 function approved(version = 'fixture-v1') { return { version, expectedVersion: version, approved: true, validFromMs: NOW - 1000, expiresAtMs: NOW + 1000 } }
@@ -486,4 +486,22 @@ test('exclusive wholesale VAT retains fractional economic pence without rounding
   equalFraction(result.calculation.wholesaleExVatPence,9999)
   equalFraction(result.calculation.nonVariableEconomicCostPence,63369,5)
   assert.equal(result.calculation.supplierDeliveryStatus,'charged')
+})
+
+test('proposal margin agrees with canonical one-item basket including reserve and shipping fees', () => {
+  for (const price of [100, 3000, 3001]) for (const reserveBps of [0, 10000]) {
+    const value = basket([line('variant-a', 1, price)])
+    value.lines[0].cost.wholesale.tax = { ...tax(), basis: 'exclusive', vatBps: 2000 }
+    value.lines[0].cost.returnsReservePence = price * reserveBps / 10000
+    value.customerShipping.grossPence = 499
+    const calculation = evaluateBasket(value).calculation
+    assert.ok(calculation)
+    const result = calculateProposalMargin({ pricePence: price, tradeCostExVatPence: 1000, supplierVatBps: 2000,
+      paymentFixedPence: 25, paymentVariableBps: 200, returnsReserveBps: reserveBps,
+      deliveryCostPence: 600, customerShippingPence: 499 })
+    const numeric = v => Number(v.numerator) / Number(v.denominator)
+    assert.equal(result.marginPence, numeric(calculation.contributionPence))
+    assert.equal(result.marginRatio, numeric(calculation.contributionMargin))
+    assert.equal(result.receiptsPence, calculation.grossReceiptsPence)
+  }
 })
