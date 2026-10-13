@@ -161,21 +161,6 @@ test('multi-variant grid/stack requires product-page selection even if a cached 
   const stackHtml = renderToStaticMarkup(React.createElement(stack('components/BuyMyStack.tsx').default, { items: [item], ready: true }))
   assert.match(stackHtml, /Choose flavour on product page/); assert.doesNotMatch(stackHtml, /cart\/3/)
 })
-test('empty redirect authority does nothing; confirmed test entry permanently redirects before any product read', async () => {
-  const load = modules(enabled), redirects = load('lib/product-variant-redirects.ts')
-  assert.equal(Object.keys(redirects.PRODUCT_VARIANT_REDIRECTS).length, 0)
-  assert.equal(redirects.productVariantRedirectUrl('child'), null)
-  assert.equal(redirects.productVariantRedirectUrl('child', { child: { parentProductId: 'parent', variantId: '3' } }), '/products/parent?variant=3')
-  let destination
-  const pageLoad = modules({}, {
-    '@/lib/product-variant-redirects': { productVariantRedirectUrl: id => redirects.productVariantRedirectUrl(id, { child: { parentProductId: 'parent', variantId: '3' } }) },
-    'next/navigation': { permanentRedirect(url) { destination = url; throw Error('redirect') }, notFound() { throw Error('not found') } },
-    '@/lib/product-data': { fetchProductDetail() { throw Error('must not read') } },
-    './ProductDetailPage': { default() {} },
-  })
-  await assert.rejects(pageLoad('app/products/[id]/page.tsx').default({ params: Promise.resolve({ id: 'child' }) }), /redirect/)
-  assert.equal(destination, '/products/parent?variant=3')
-})
 for (const query of [{ defaultVariantId: '3' }, { defaultVariantId: row.shopify_variant_id.split('/').at(-1) }]) {
   test(`real product detail preselects and routes its offer: ${JSON.stringify(query)}`, async () => {
     const product = await priced()
@@ -270,14 +255,6 @@ test('single-variant grid retains direct Buy behaviour', async () => {
     { product: { ...selectedProduct(product, selected), storeVariants: [selected] } }))
   assert.match(html, /cart\/3:1/); assert.doesNotMatch(html, /Choose flavour/)
 })
-test('redirect queries preserve attribution and merge the confirmed variant; authority has no chains or self redirects', () => {
-  const { productVariantRedirectUrl, PRODUCT_VARIANT_REDIRECTS } = modules()('lib/product-variant-redirects.ts')
-  assert.equal(productVariantRedirectUrl('child', { child: { parentProductId: 'parent', variantId: '3' } }, '?utm_source=abc&ref=x&variant=old&extra=1&extra=2'),
-    '/products/parent?utm_source=abc&ref=x&variant=3&extra=1&extra=2')
-  for (const [child, entry] of Object.entries(PRODUCT_VARIANT_REDIRECTS)) {
-    assert.notEqual(child, entry.parentProductId); assert.equal(Object.hasOwn(PRODUCT_VARIANT_REDIRECTS, entry.parentProductId), false)
-  }
-})
 
 for (const query of ['?variant=3', '?variant=unknown', '?variant=90071992547409931234&flavour=chocolate']) {
   test(`mount query selection honours exact ID precedence and preserves server default: ${query}`, async () => {
@@ -304,9 +281,13 @@ test('unavailable detail selection relies on picker status alone and never shows
   assert.match(html, /price and stock unavailable/); assert.doesNotMatch(html, /href=|Shop offer under review/)
 })
 const source = file => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
-test('single-variant out-of-stock copy never asks to choose another flavour; middleware tolerates malformed product paths', () => {
+test('single-variant out-of-stock copy never asks to choose another flavour', () => {
   const offer = source('components/ProductOfferLink.tsx')
   assert.match(offer, /chooseAnother \? 'Out of stock: choose another flavour\/size' : 'Currently unavailable to buy'/)
   assert.match(source('app/products/[id]/ProductDetailPage.tsx'), /chooseAnother=\{variants\.length > 1\}/)
-  assert.match(source('middleware.ts'), /try \{ productId = productPath \? decodeURIComponent/)
+})
+test('Toby decision: per-flavour pages are deleted, not redirected; one product page selects variants by query', () => {
+  assert.equal(existsSync(new URL('../lib/product-variant-redirects.ts', import.meta.url)), false)
+  assert.doesNotMatch(source('middleware.ts'), /product-variant-redirects|\/products\//)
+  assert.doesNotMatch(source('app/products/[id]/page.tsx'), /permanentRedirect|redirect\(/)
 })

@@ -12,13 +12,12 @@ function loadSource(path, customRequire = require, extra = {}) {
   const source = readFileSync(new URL(path, import.meta.url), 'utf8')
   const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   const loaded = { exports: {} }
-  vm.runInNewContext(js, { require: customRequire, module: loaded, exports: loaded.exports, process, URL, URLSearchParams, Response, ...extra })
+  vm.runInNewContext(js, { require: customRequire, module: loaded, exports: loaded.exports, process, URL, Response, ...extra })
   return loaded.exports
 }
 const catalogueAvailability = loadSource('../lib/commerce/catalogue-presentation.ts')
 const attribution = loadSource('../lib/commerce/store-attribution.ts', require)
-const redirects = loadSource('../lib/product-variant-redirects.ts')
-const resolve = name => name === './lib/product-variant-redirects' ? redirects : name === './commerce/store-attribution' ? attribution : name === './commerce/catalogue-presentation' ? catalogueAvailability : ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
+const resolve = name => name === './commerce/store-attribution' ? attribution : name === './commerce/catalogue-presentation' ? catalogueAvailability : ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
 function loadAnalytics() {
   const storage = new Map(), calls = []
   const browser = {
@@ -186,14 +185,4 @@ test('hosted staging never fires analytics or emits affiliate purchase destinati
   assert.equal(affiliate.bulkSearch('fixture'), '/preview')
   assert.equal(affiliate.bulkDealsLink(), '/preview')
   assert.equal(affiliate.resolveProductListing('https://www.amazon.co.uk/dp/B000000001').url, null)
-}))
-
-test('confirmed product middleware redirect preserves all incoming query values and merges the exact variant', () => withMode('production', () => {
-  const authority = { child: { parentProductId: 'parent', variantId: '3' } }
-  const { middleware } = loadSource('../middleware.ts', name => name === './lib/product-variant-redirects'
-    ? { productVariantRedirectUrl: (id, _unused, query) => redirects.productVariantRedirectUrl(id, authority, query) } : resolve(name))
-  const url = 'https://fixture.invalid/products/child?utm_source=campaign&ref=abc&variant=old&extra=1&extra=2'
-  const response = middleware({ url, nextUrl: new URL(url), method: 'GET' })
-  assert.equal(response.status, 308)
-  assert.equal(response.headers.get('location'), 'https://fixture.invalid/products/parent?utm_source=campaign&ref=abc&variant=3&extra=1&extra=2')
 }))
