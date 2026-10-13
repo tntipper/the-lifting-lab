@@ -26,7 +26,7 @@ GAP: `npm run typecheck` and `npm run lint` started but have not returned comple
 
 BLOCKED: `node --test tests/browser/mobile-stack.mjs` reports zero passes and two infrastructure failures before browser launch: sandbox loopback listen is denied (`EPERM`, `127.0.0.1`). No assertions were removed or weakened. The fixture intercepts Shopify navigation; this is not live cart proof.
 
-BLOCKED: committing fails before staging because Git cannot create `/Users/ttmacminim5pro/tll-migration/night/repo/.git/worktrees/wt-b/index.lock` (`Operation not permitted`). Resume commits on `grok/b-buy-to-cart` in a session with access to its Git metadata. No push, merge or deployment was attempted.
+FACT: committed by the orchestrator on `grok/b-buy-to-cart` (bf438dc); the sandbox could not write Git metadata.
 
 GAP: hosted CI, approved runtime mappings/stock attachment and real Shopify cart contents remain unverified. Related draft PR status was not refreshed because this job is offline. No flag activation, live Shopify call/change or customer order was performed.
 
