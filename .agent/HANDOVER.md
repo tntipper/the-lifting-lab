@@ -1,3 +1,13 @@
+**13 October Job F — offline accuracy gaps (grok/f-dose-fixes; HEAD 2037a895; uncommitted):**
+- FACT: Beta-alanine clamps after rounding to 3.2–6.4g; tests cover endpoints, both units/forms and a weight sweep.
+- FACT: Ashwagandha dosage adds liver/contraindication advice; citrulline dosage/combo copy names both malate ratios.
+- FACT: PT-141 explicitly not UK-licensed; vitamin C/iron stack labels use UK EVM guidance/EFSA safe level; numeric thresholds retained.
+- FACT: Caffeine copy says 5-6 hours with explicit 5-hour calculation estimate; verified Ho CY citation unchanged.
+- FACT: Relevant suite 63 PASS / 6 FAIL / 0 SKIP (69 tests); all 9 new regressions PASS; typecheck/boundaries/diff checks PASS.
+- BLOCKED: Existing six attribution URL assertions remain red (also in d-report); no assertions weakened. ESLint hung twice, stopped; ps denied.
+- Proof: ../f-test.log and ../f-copy-diff.md (18 entries); hosted CI/PR lookup not run under no-network rule.
+- Next: orchestrator reviews/commits and reconciles baseline attribution tests, diagnoses lint; no network/live calls/flag changes/push/merge/deploy.
+
 **12 October S08 — offline store-reviews spike (codex/s08-spike; HEAD f36a7d27; working tree only):**
 - docs/reviews-spike.md recommends Judge.me free provisionally; compares public widget/API and alternatives without network calls.
 - Reuses ExactMapping/product-mapping helpers; approved runtime loader/data and free API/freshness entitlement remain TODO.

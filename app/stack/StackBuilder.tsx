@@ -65,6 +65,7 @@ type DailyTotal = {
   amount: number
   unit: string
   ulPercent: number | null
+  limitLabel: string
   rdaPercent: number | null
   sources: string[]
 }
@@ -95,6 +96,7 @@ function getDailyTotals(stackItems: StackItem[], sex: Sex): DailyTotal[] {
         ulPercent: NUTRIENT_LIMITS[name]?.ul
           ? Math.round((d.amount / NUTRIENT_LIMITS[name].ul!) * 100)
           : null,
+        limitLabel: NUTRIENT_LIMITS[name]?.limitLabel ?? 'UL',
         rdaPercent: rni ? Math.round((d.amount / rni.value) * 100) : null,
         sources: d.sources,
       }
@@ -394,7 +396,7 @@ function SavedStackBuilder() {
                     {flag.percentage >= 100 ? '🚨 Critical' : '⚠️ Caution'} — {flag.nutrientName}
                   </span>{' '}
                   — {flag.totalAmount}
-                  {flag.unit} total ({flag.percentage}% of EFSA UL)
+                  {flag.unit} total ({flag.percentage}% of {flag.limitLabel})
                   <p className="text-xs mt-0.5 opacity-70">{flag.note}</p>
                 </div>
                 <span className="text-xs shrink-0 mt-0.5">{flag.products.length} products</span>
@@ -574,10 +576,10 @@ function SavedStackBuilder() {
               <span className="min-w-0 flex-1 truncate font-bold">{row.name}</span>
               <span className="font-mono font-black">{row.amount}{row.unit}</span>
               <span className="w-14 text-right text-[10px] font-bold text-[#66685f]">{row.rdaPercent == null ? '—' : `${row.rdaPercent}% RDA`}</span>
-              <span className="w-12 text-right text-[10px] font-bold" style={{ color: row.ulPercent != null && row.ulPercent >= 100 ? '#ff5c5c' : row.ulPercent != null && row.ulPercent >= 80 ? '#f5b342' : '#77796f' }}>{row.ulPercent == null ? 'No UL' : `${row.ulPercent}% UL`}</span>
+              <span className="w-28 text-right text-[10px] font-bold" style={{ color: row.ulPercent != null && row.ulPercent >= 100 ? '#ff5c5c' : row.ulPercent != null && row.ulPercent >= 80 ? '#f5b342' : '#77796f' }}>{row.ulPercent == null ? 'No UL' : `${row.ulPercent}% ${row.limitLabel}`}</span>
             </div>)}
           </div>
-          <p className="border-t border-[#d7d8cf] px-4 py-3 text-[10px] leading-relaxed text-[#66685f]">RDA compares recorded totals with the UK adult reference intake ({sex}). UL is the EFSA upper limit. These totals do not establish an effective or recommended dose.</p>
+          <p className="border-t border-[#d7d8cf] px-4 py-3 text-[10px] leading-relaxed text-[#66685f]">RDA compares recorded totals with the UK adult reference intake ({sex}). UL is the EFSA upper limit; vitamin C uses UK EVM supplemental guidance and iron uses the EFSA total-intake safe level, neither an established UL. These totals do not establish an effective or recommended dose.</p>
         </section>}
       </aside>
       </div>
