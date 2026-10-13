@@ -54,9 +54,9 @@ export async function verifyStackAssessment(page, origin, width, resultDir) {
   assert.match(email.searchParams.get('body'), /Not assessed/)
   assert.doesNotMatch(email.searchParams.get('body'), /scored 99|Excellent|Stack Score/)
   await page.getByRole('button', { name: /Share stack/i }).click()
-  const x = new URL(await page.locator('a[href^="https://twitter.com/intent/"]').getAttribute('href'))
-  assert.match(x.searchParams.get('text'), /0 of 5 products/)
-  assert.match(x.searchParams.get('text'), /no benefit recommendation/)
+  // S07: fixture rows have no approved store mapping, so no variant stack URL or social links are offered.
+  await page.getByText(/A variant-based stack URL is unavailable until every product has an approved store mapping/).waitFor()
+  assert.equal(await page.locator('a[href^="https://twitter.com/intent/"]').count(), 0)
   const cardUrl = new URL(await page.getByRole('link', { name: /Open share card image/ }).getAttribute('href'), origin)
   assert.deepEqual([...cardUrl.searchParams.keys()], ['ids'])
   // Opening the floating panel reads canonical IDs; it never uses the saved

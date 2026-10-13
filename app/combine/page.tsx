@@ -158,7 +158,8 @@ export default function CombinePage() {
               with omega-3. The combination people should actually be careful with is stacking caffeine: a strong
               pre-workout can carry 200 to 350mg, and adding coffee or an energy drink on top climbs quickly. Keep
               your total under about 400mg a day, cap a single pre-workout dose near 3mg per kilo of bodyweight, and
-              respect the 5 to 6 hour half-life if you train in the evening.
+              remember that caffeine&apos;s half-life averages around 5 hours in healthy adults but varies widely
+              between people if you train in the evening.
             </p>
           </div>
           <div>

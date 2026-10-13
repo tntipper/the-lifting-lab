@@ -96,10 +96,10 @@ export const SLEEP_ITEMS: SleepItem[] = [
     topic: 'Habit',
     group: 'foundations',
     tier: 'works',
-    headline: 'Caffeine has a long half-life — an afternoon coffee is still in you at bedtime.',
+    headline: 'Caffeine has a long half-life: an afternoon coffee is still in you at bedtime.',
     claim: 'The problem the "PM formula" pretends to solve for you.',
     detail:
-      'Caffeine has a half-life of roughly five to six hours, so a quarter of a mid-afternoon dose can still be circulating when you try to sleep. Even when it does not stop you falling asleep, late caffeine measurably reduces deep sleep, so you wake less rested. Cutting your last caffeine to around eight to ten hours before bed is one of the highest-value changes a heavy pre-workout or coffee drinker can make.',
+      'Caffeine\'s half-life averages around 5 hours in healthy adults but varies widely between people, so after about 10 hours roughly a quarter of a mid-afternoon dose can still be circulating when you try to sleep. Even when it does not stop you falling asleep, late caffeine measurably reduces deep sleep, so you wake less rested. Cutting your last caffeine to around eight to ten hours before bed is one of the highest-value changes a heavy pre-workout or coffee drinker can make.',
     bottomLine: 'Set a caffeine cut-off (early afternoon for most people). It does more for sleep than any night-time capsule.',
     link: { label: 'Caffeine half-life calculator', href: '/calculators/caffeine' },
     q: 'Does caffeine timing affect sleep?',
