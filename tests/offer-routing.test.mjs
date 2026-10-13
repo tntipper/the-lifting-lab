@@ -221,10 +221,27 @@ const cartUrl = 'https://shop.theliftinglab.co.uk/cart/90071992547409931234:1?ut
 const inStockProduct = { ...storeProduct, storePrice: { productId: storeProduct.id, price: 19.99, availableForSale: true, observedAtMs: storeNow } }
 const renderMode = (product, mode, lib = enabledAffiliate) => renderToStaticMarkup(React.createElement(storeComponent(lib), { product, storeBuyLinkMode: mode }))
 
-test('S03 product-page config is the default even with confirmed stock', () => {
-  assert.equal(affiliate.DEFAULT_STORE_BUY_LINK_MODE, 'product_page')
-  assert.equal(enabledAffiliate.resolveProductOffer(inStockProduct).url, storeUrl)
-  assert.ok(storeRender(inStockProduct).includes(`href="${storeUrl.replaceAll('&', '&amp;')}"`))
+test('Job B: enabled single Buy defaults to the exact in-stock variant cart permalink', () => {
+  assert.equal(affiliate.DEFAULT_STORE_BUY_LINK_MODE, 'cart')
+  assert.equal(enabledAffiliate.resolveProductOffer(inStockProduct).url, cartUrl)
+  assert.ok(storeRender(inStockProduct).includes(`href="${cartUrl.replaceAll('&', '&amp;')}"`))
+  assert.doesNotMatch(storeRender(inStockProduct), /\/products\//)
+})
+test('Job B: single Buy switch OFF preserves rendering even with approved mapping and fresh stock', () => {
+  for (const value of [undefined, 'disabled', 'true', '']) {
+    const lib = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } }, { NEXT_PUBLIC_TLL_STORE_LINKS: value })
+    for (const buy_url of [storeProduct.buy_url, null, storeUrl]) {
+      const product = { ...inStockProduct, buy_url }
+      assert.deepEqual(lib.resolveProductOffer(product), lib.resolveProductListing(buy_url))
+      assert.equal(storeRender(product, lib), storeRender(product, affiliate))
+      assert.doesNotMatch(storeRender(product, lib), /\/cart\/|Buy at TLL Store/)
+    }
+  }
+})
+test('Job B: default cart mode retains missing-stock fallback and explicit product-page override', () => {
+  assert.equal(enabledAffiliate.resolveProductOffer(storeProduct).url, storeUrl)
+  assert.equal(enabledAffiliate.resolveProductOffer(inStockProduct, 'product_page').url, storeUrl)
+  assert.ok(renderMode(inStockProduct, 'product_page').includes(`href="${storeUrl.replaceAll('&', '&amp;')}"`))
 })
 for (const mode of ['product_page', 'cart']) test(`S03 ${mode} mode builds and renders the exact selected variant`, () => {
   const expected = mode === 'cart' ? cartUrl : storeUrl

@@ -96,6 +96,18 @@ test('render: second flag leaves Phase 2 awaiting setup with no live link', () =
   const rendered = html({ ...enabled, NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART: 'enabled' })
   assert.match(rendered, /awaiting setup/); assert.doesNotMatch(rendered, /href=/)
 })
+test('Job B: stack Buy uses one exact cart permalink with combined pack quantities', () => {
+  const rendered = html(enabled, [item('1', '90071992547409931234', 2), item('2', '22', 3), item('3', '22', 1)])
+  assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/90071992547409931234:2,22:4\?utm_source=theliftinglab&amp;utm_medium=referral&amp;utm_campaign=stack&amp;ref=theliftinglab"/)
+  assert.equal((rendered.match(/Buy my stack/g) ?? []).length, 1)
+  assert.doesNotMatch(rendered, /\/products\/|sign.in|login/i)
+})
+test('Job B: single and stack switches remain independent and default OFF', () => {
+  assert.equal(html({ NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' }), '')
+  assert.equal(html({ NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART: 'enabled' }), '')
+  assert.equal(html({ ...enabled, NEXT_PUBLIC_TLL_STACK_CART: 'disabled', NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' }), '')
+  assert.match(html({ ...enabled, NEXT_PUBLIC_TLL_STORE_LINKS: 'disabled' }), /\/cart\/1:1,2:1,3:1/)
+})
 test('mock Phase 2 is disabled unless both flags enabled and skips empty stacks', async () => {
   const mock = { execute() { throw Error('must not call') } }
   for (const env of [{}, enabled, { NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART: 'enabled' }]) {
