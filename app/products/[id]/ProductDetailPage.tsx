@@ -86,13 +86,17 @@ export default function ProductDetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const selected = variants.find(v => v.variantId === selectedId) ?? variants[0]
-  const variantProduct = selected ? { ...originalProduct, storeVariants: undefined,
-    storeLinkMapping: selectionReady ? selected.mapping : null, storePrice: selected.storePrice, buy_url: null,
-    retail_price: selected.storePrice ? selected.storePrice.price : originalProduct.retail_price,
-    // Catalogue serving counts do not establish the selected variant's pack servings.
-    cost_per_serving: variants.length === 1 ? originalProduct.cost_per_serving : null } : originalProduct
   const size = sizes.find(option => option.slug === sizeSlug) ?? sizes[0]
-  const product = size ? productForSize(originalProduct, size, sizeReady) : variantProduct
+  // Multiple sizes have exact variant identities, not a size × flavour cross-product.
+  // A sole size may still have several flavours, so keep their picker/projection.
+  const sizeOwnsOffer = !!size && (sizes.length > 1 || variants.length <= 1)
+  const baseProduct = size ? productForSize(originalProduct, size, sizeReady) : originalProduct
+  const variantProduct = selected ? { ...baseProduct, storeVariants: undefined,
+    storeLinkMapping: selectionReady ? selected.mapping : null, storePrice: selected.storePrice, buy_url: null,
+    retail_price: selected.storePrice ? selected.storePrice.price : baseProduct.retail_price,
+    // Catalogue serving counts do not establish the selected variant's pack servings.
+    cost_per_serving: variants.length === 1 ? baseProduct.cost_per_serving : null } : baseProduct
+  const product = sizeOwnsOffer ? baseProduct : variantProduct
   function changeSize(slug: string) {
     if (!sizes.some(option => option.slug === slug)) return
     setSizeSlug(slug)
@@ -329,11 +333,11 @@ export default function ProductDetailPage({
             Compare
           </Link>
           <div className="min-w-0 space-y-2">
-            {size && <ProductSizePicker options={sizes} selected={size} onChange={changeSize} />}
-            {!size && selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
+            {size && <ProductSizePicker options={sizes} selected={size} onChange={changeSize} price={product.retail_price} />}
+            {!sizeOwnsOffer && selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
             <ProductOfferLink
               product={product}
-              pickerOwnsStatus={!size && !!selected} chooseAnother={variants.length > 1}
+              pickerOwnsStatus={!sizeOwnsOffer && !!selected} chooseAnother={sizeOwnsOffer ? sizes.length > 1 : variants.length > 1}
               className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
             />
           </div>

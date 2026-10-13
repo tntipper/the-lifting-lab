@@ -105,7 +105,7 @@ export async function fetchProductDetail(id: string): Promise<ComparedProduct | 
     let sizeOptions: ProductSizeOption[] = []
     try {
       const { data, error: sizesError } = await sb.from('product_size_options')
-        .select('slug, label, serving_size, serving_unit, servings_per_container, retail_price, buy_url, shopify_variant_id, sort')
+        .select('slug, label, serving_size, serving_unit, servings_per_container, retail_price, buy_url, shopify_variant_id, sort, nutrients')
         .eq('product_id', id).order('sort').order('slug')
       if (!sizesError && data) sizeOptions = data as ProductSizeOption[]
     } catch (error) { unstable_rethrow(error) /* Missing table/read failure keeps existing detail usable. */ }

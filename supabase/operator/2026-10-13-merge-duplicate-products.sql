@@ -3,37 +3,20 @@ BEGIN;
 -- Serialize catalogue/FK edits, including inserts that could race the archive.
 LOCK TABLE public.products, public.product_nutrients, public.reviews,
   public.stack_products, public.user_favourites IN ACCESS EXCLUSIVE MODE;
-CREATE TABLE IF NOT EXISTS public.product_size_options (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
-  slug text NOT NULL CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
-  label text NOT NULL, serving_size numeric, serving_unit text,
-  servings_per_container int, retail_price numeric, buy_url text,
-  shopify_variant_id text, legacy_product_id uuid UNIQUE,
-  sort int NOT NULL DEFAULT 0, UNIQUE(product_id, slug)
-);
-ALTER TABLE public.product_size_options ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.product_size_options FROM PUBLIC, anon, authenticated;
-GRANT SELECT ON public.product_size_options TO anon, authenticated;
-DROP POLICY IF EXISTS active_product_sizes ON public.product_size_options;
-CREATE POLICY active_product_sizes ON public.product_size_options FOR SELECT TO anon, authenticated
-  USING (EXISTS (SELECT 1 FROM public.products p WHERE p.id = product_id AND p.status = 'active'));
-CREATE SCHEMA IF NOT EXISTS tll_merge_private;
-REVOKE ALL ON SCHEMA tll_merge_private FROM PUBLIC, anon, authenticated;
-CREATE TABLE IF NOT EXISTS tll_merge_private.merged_product_archive (
-  legacy_product_id uuid PRIMARY KEY, parent_product_id uuid,
-  product jsonb, nutrients jsonb, moved_reviews uuid[], moved_stack_products uuid[],
-  moved_favourites uuid[], dropped_favourites jsonb, merged_at timestamptz DEFAULT now(),
-  -- Colliding stack rows need full snapshots and original parent totals for lossless undo.
-  merged_stacks jsonb NOT NULL DEFAULT '[]', parent_before jsonb
-);
-REVOKE ALL ON ALL TABLES IN SCHEMA tll_merge_private FROM PUBLIC, anon, authenticated;
 DO $merge$
 DECLARE
   m record; parent public.products%ROWTYPE; child public.products%ROWTYPE;
   item public.stack_products%ROWTYPE; existing public.stack_products%ROWTYPE;
   collisions jsonb; dropped jsonb; reviews_ids uuid[]; stack_ids uuid[]; favourite_ids uuid[];
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.products WHERE id IN (
+    '1fab2546-6a25-4fd9-8e49-abf6bb6b362c', '8ddfc493-0872-4235-ba25-5091ef172b49',
+    'e94b13c4-f7fa-42d2-94b2-8dfcda316311', 'b9058eef-f71a-49f7-9672-a264d1a09614',
+    '2567a955-be92-4f70-b147-f908fa80650c', '60cbe489-96a8-416e-a11b-243e3277caf3'))
+    AND NOT EXISTS (SELECT 1 FROM tll_merge_private.merged_product_archive) THEN
+    RAISE NOTICE 'No duplicate catalogue rows or archives; nothing to merge';
+    RETURN;
+  END IF;
   FOR m IN SELECT * FROM (VALUES
     ('1fab2546-6a25-4fd9-8e49-abf6bb6b362c'::uuid, '8ddfc493-0872-4235-ba25-5091ef172b49'::uuid,
      'Crunch Bar (White Chocolate Crisp)', 'Crunch Bar (White Chocolate Crisp)', 'Warrior', 12, 1, 23.99::numeric, 2.00::numeric, 64, 64, 'protein-bar', 'protein-bar', '12-pack', 'single-bar', '12 × 64g', 'Single 64g bar', 'gid://shopify/ProductVariant/63535202468170'),
@@ -50,6 +33,13 @@ BEGIN
          OR EXISTS (SELECT 1 FROM public.products WHERE id = m.child_id)
          OR NOT EXISTS (SELECT 1 FROM public.products WHERE id = m.parent_id) THEN
         RAISE EXCEPTION 'Inconsistent archived merge %', m.child_id;
+      END IF;
+      IF m.parent_slug IS NOT NULL AND (
+        NOT EXISTS (SELECT 1 FROM public.product_size_options WHERE product_id = m.parent_id
+          AND slug = m.parent_slug AND legacy_product_id = m.parent_id)
+        OR NOT EXISTS (SELECT 1 FROM public.product_size_options WHERE product_id = m.parent_id
+          AND slug = m.child_slug AND legacy_product_id = m.child_id)) THEN
+        RAISE EXCEPTION 'Archived merge size options missing for %', m.child_id;
       END IF;
       CONTINUE;
     END IF;
@@ -71,11 +61,14 @@ BEGIN
     END IF;
     IF m.parent_slug IS NOT NULL THEN
       INSERT INTO public.product_size_options(product_id, slug, label, serving_size, serving_unit,
-        servings_per_container, retail_price, buy_url, shopify_variant_id, legacy_product_id, sort)
-      VALUES (parent.id, m.parent_slug, m.parent_label, parent.serving_size, parent.serving_unit,
-        parent.servings_per_container, parent.retail_price, parent.buy_url, m.variant_id, parent.id, 0),
-        (parent.id, m.child_slug, m.child_label, child.serving_size, child.serving_unit,
-        child.servings_per_container, child.retail_price, child.buy_url, NULL, child.id, 1);
+        servings_per_container, retail_price, buy_url, shopify_variant_id, legacy_product_id, sort, nutrients)
+      VALUES (parent.id, m.parent_slug, m.parent_label, parent.serving_size, 'g',
+        parent.servings_per_container, parent.retail_price, parent.buy_url, m.variant_id, parent.id, 0, NULL),
+        (parent.id, m.child_slug, m.child_label, child.serving_size, 'g',
+        child.servings_per_container, child.retail_price, child.buy_url, NULL, child.id, 1,
+          coalesce((SELECT jsonb_agg(jsonb_build_object('nutrient_name', n.nutrient_name,
+            'amount', n.amount, 'unit', n.unit) ORDER BY n.nutrient_name)
+            FROM public.product_nutrients n WHERE n.product_id = child.id), '[]'::jsonb));
     END IF;
     SELECT coalesce(array_agg(id), '{}'::uuid[]) INTO reviews_ids FROM public.reviews WHERE product_id = child.id;
     SELECT coalesce(array_agg(id), '{}'::uuid[]) INTO stack_ids FROM public.stack_products WHERE product_id = child.id
@@ -97,6 +90,9 @@ BEGIN
     FOR item IN SELECT * FROM public.stack_products WHERE product_id = child.id LOOP
       SELECT * INTO existing FROM public.stack_products WHERE stack_id = item.stack_id AND product_id = parent.id;
       IF FOUND THEN
+        IF existing.servings_per_day + item.servings_per_day > 10 THEN
+          RAISE EXCEPTION 'Merged stack servings exceed 10 for stack %', item.stack_id;
+        END IF;
         UPDATE public.stack_products SET servings_per_day = existing.servings_per_day + item.servings_per_day WHERE id = existing.id;
         DELETE FROM public.stack_products WHERE id = item.id;
       ELSE

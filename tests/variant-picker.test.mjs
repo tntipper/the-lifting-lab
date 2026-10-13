@@ -284,7 +284,7 @@ const source = file => readFileSync(new URL(`../${file}`, import.meta.url), 'utf
 test('single-variant out-of-stock copy never asks to choose another flavour', () => {
   const offer = source('components/ProductOfferLink.tsx')
   assert.match(offer, /chooseAnother \? 'Out of stock: choose another flavour\/size' : 'Currently unavailable to buy'/)
-  assert.match(source('app/products/[id]/ProductDetailPage.tsx'), /chooseAnother=\{variants\.length > 1\}/)
+  assert.match(source('app/products/[id]/ProductDetailPage.tsx'), /chooseAnother=\{sizeOwnsOffer \? sizes\.length > 1 : variants\.length > 1\}/)
 })
 test('Toby decision: per-flavour pages are deleted, not redirected; one product page selects variants by query', () => {
   assert.equal(existsSync(new URL('../lib/product-variant-redirects.ts', import.meta.url)), false)

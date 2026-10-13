@@ -74,7 +74,11 @@ test('native Size select has associated label, selected slug and keyboard-compat
   assert.ok(html.includes(`for="${id}"`)); assert.match(html, />Size<\/label>/)
   assert.match(html, /value="single-bar" selected=""/)
   assert.doesNotMatch(source('components/ProductSizePicker.tsx'), /onKeyDown|tabIndex|role="combobox"/)
-  assert.equal(renderToStaticMarkup(React.createElement(Picker, { options: [options[0]], selected: options[0], onChange() {} })), '')
+  assert.match(html, new RegExp(`aria-describedby="${id}-status"`))
+  assert.match(html, /role="status" aria-live="polite"/)
+  assert.match(html, /£2.00/)
+  const single = renderToStaticMarkup(React.createElement(Picker, { options: [options[0]], selected: options[0], price: 25, onChange() {} }))
+  assert.doesNotMatch(single, /<select/); assert.match(single, /Size: 12 × 64g/); assert.match(single, /£25.00/)
 })
 test('?size selection defaults safely and URL changes preserve attribution and hash', () => {
   assert.equal(sizes.selectProductSize(options, '?size=single-bar').slug, 'single-bar')
@@ -123,6 +127,7 @@ function detailHarness(product) {
   })
   const Detail = load('app/products/[id]/ProductDetailPage.tsx').default
   const Picker = load('components/ProductSizePicker.tsx').default
+  const VariantPicker = load('components/ProductVariantPicker.tsx').default
   const Offer = load('components/ProductOfferLink.tsx').default
   function find(node, type) {
     if (!node || typeof node !== 'object') return
@@ -131,7 +136,7 @@ function detailHarness(product) {
   }
   return { browser, render() { cursor = 0; const tree = Detail({ product: { ...product, category: 'whey', nutrients: [], score: null }, related: [], defaultVariantId: undefined });
     const picker = find(tree, Picker)
-    return { picker, select: find(Picker(picker.props), 'select'), offer: find(tree, Offer) } }, mount() { effects.forEach(fn => fn()); effects = []; mounted = true } }
+    return { tree, picker, select: picker ? find(Picker(picker.props), 'select') : undefined, variantPicker: find(tree, VariantPicker), offer: find(tree, Offer) } }, mount() { effects.forEach(fn => fn()); effects = []; mounted = true } }
 }
 
 test('actual detail mount preselects ?size and native change updates price, servings, Buy and URL', () => {
@@ -168,23 +173,99 @@ test('loader fails soft on missing size table and uses synthetic fixture without
   const result = await l('lib/product-data.ts').fetchProductDetail('1fab2546-6a25-4fd9-8e49-abf6bb6b362c')
   assert.equal(result.sizeOptions.length, 2)
 })
-test('migration transaction, exact guards, private archive before deletion and reversible collisions', () => {
-  const sql = source('supabase/migrations/202610130002_merge_duplicate_products.sql')
-  assert.match(sql, /BEGIN;/); assert.match(sql, /COMMIT;/)
+test('schema-only migration is safe on empty catalogues and grants only public SELECT', () => {
+  const ddl = source('supabase/migrations/202610130002_product_size_options.sql')
+  assert.match(ddl, /BEGIN;/); assert.match(ddl, /COMMIT;/)
+  assert.doesNotMatch(ddl, /DO \$merge\$|Missing parent|UPDATE public.products|DELETE FROM public.products|LOCK TABLE/)
+  assert.match(ddl, /nutrients jsonb/)
+  assert.match(ddl, /ALTER TABLE public.product_size_options ENABLE ROW LEVEL SECURITY/)
+  assert.match(ddl, /ALTER TABLE tll_merge_private.merged_product_archive ENABLE ROW LEVEL SECURITY/)
+  assert.match(ddl, /p.status = 'active'/)
+  assert.match(ddl, /REVOKE ALL ON public.product_size_options FROM PUBLIC, anon, authenticated/)
+  assert.match(ddl, /GRANT SELECT ON public.product_size_options TO anon, authenticated/)
+  assert.match(ddl, /REVOKE ALL ON SCHEMA tll_merge_private FROM PUBLIC, anon, authenticated/)
+  assert.match(ddl, /REVOKE ALL ON ALL TABLES IN SCHEMA tll_merge_private FROM PUBLIC, anon, authenticated/)
+  assert.equal(existsSync(resolve(root, 'supabase/migrations/202610130002_merge_duplicate_products.sql')), false)
+})
+test('operator transaction, empty no-op, exact guards, archive before delete and bounded stacks', () => {
+  const sql = source('supabase/operator/2026-10-13-merge-duplicate-products.sql')
+  assert.equal(sql.match(/BEGIN;/g).length, 1); assert.equal(sql.match(/COMMIT;/g).length, 1)
   for (const field of ['name', 'brand', 'servings_per_container', 'retail_price', 'serving_size', 'category']) assert.ok(sql.includes(`parent.${field} IS DISTINCT FROM`))
   assert.match(sql, /RAISE EXCEPTION 'Missing child/); assert.match(sql, /RAISE EXCEPTION 'Missing parent/)
-  assert.match(sql, /CONTINUE;/); assert.match(sql, /ENABLE ROW LEVEL SECURITY/)
-  assert.match(sql, /p.status = 'active'/); assert.match(sql, /REVOKE ALL ON SCHEMA tll_merge_private FROM PUBLIC, anon, authenticated/)
+  assert.match(sql, /AND NOT EXISTS \(SELECT 1 FROM tll_merge_private.merged_product_archive\) THEN\s+RAISE NOTICE/)
+  assert.match(sql, /CONTINUE;/)
+  assert.match(sql, /Archived merge size options missing/)
+  for (const side of ['parent', 'child']) assert.match(sql, new RegExp(`slug = m.${side}_slug AND legacy_product_id = m.${side}_id`))
   assert.ok(sql.indexOf('INSERT INTO tll_merge_private.merged_product_archive') < sql.indexOf('DELETE FROM public.products'))
   assert.ok(sql.indexOf('INSERT INTO tll_merge_private.merged_product_archive') < sql.indexOf('DELETE FROM public.stack_products'))
-  assert.match(sql, /existing.servings_per_day \+ item.servings_per_day/)
+  assert.match(sql, /IF existing.servings_per_day \+ item.servings_per_day > 10 THEN\s+RAISE EXCEPTION/)
   assert.match(sql, /serving_size = 15, name = 'EssentialMAX'/)
-  const undo = source('supabase/rollback/202610130002_merge_duplicate_products.down.sql')
+  assert.match(sql, /m.variant_id, parent.id, 0, NULL/)
+  assert.match(sql, /jsonb_build_object\('nutrient_name', n.nutrient_name,[\s\S]*'amount', n.amount, 'unit', n.unit\)/)
+  assert.match(sql, /FROM public.product_nutrients n WHERE n.product_id = child.id/)
+  assert.match(sql, /parent.serving_size, 'g'/); assert.match(sql, /child.serving_size, 'g'/)
+})
+test('data rollback checks moved counts and EssentialMAX current values while retaining DDL', () => {
+  const undo = source('supabase/operator/2026-10-13-merge-duplicate-products.rollback.sql')
   assert.match(undo, /to_regclass/); assert.match(undo, /THEN RETURN/)
   assert.match(undo, /jsonb_populate_recordset\(NULL::public.product_nutrients/)
-  assert.match(undo, /a.moved_reviews/); assert.match(undo, /a.moved_stack_products/); assert.match(undo, /a.moved_favourites/)
+  for (const field of ['moved_reviews', 'moved_stack_products', 'moved_favourites']) {
+    assert.match(undo, new RegExp(`GET DIAGNOSTICS restored_count = ROW_COUNT;\\s+IF restored_count IS DISTINCT FROM cardinality\\(a.${field}\\) THEN\\s+RAISE EXCEPTION`))
+  }
   assert.match(undo, /a.dropped_favourites/); assert.match(undo, /a.merged_stacks/)
   assert.match(undo, /serving_size = 13, name = 'EssentialMax'/)
-  assert.match(undo, /DROP TABLE IF EXISTS public.product_size_options/)
-  assert.match(undo, /DROP SCHEMA IF EXISTS tll_merge_private CASCADE/)
+  assert.match(undo, /AND serving_size = 15 AND name = 'EssentialMAX'/)
+  assert.match(undo, /IF restored_count <> 1 THEN RAISE EXCEPTION/)
+  assert.match(undo, /DELETE FROM public.product_size_options/)
+  assert.match(undo, /DELETE FROM tll_merge_private.merged_product_archive/)
+  assert.doesNotMatch(undo, /DROP TABLE|DROP SCHEMA/)
+})
+test('child nutrients replace parent label, parent null inherits it, and option metadata stays out', () => {
+  const parent = { ...product, nutrients: [{ nutrient_name: 'Protein', amount: 17.5, unit: 'g' }] }
+  const nutrients = [
+    { nutrient_name: 'Protein', amount: 22, unit: 'g' },
+    { nutrient_name: 'Calories', amount: 121, unit: 'kcal' },
+    { nutrient_name: 'Carbohydrates', amount: 4, unit: 'g' },
+    { nutrient_name: 'Fat', amount: 2, unit: 'g' },
+    { nutrient_name: 'Leucine', amount: 2100, unit: 'mg' },
+  ]
+  const small = { ...options[1], slug: '16-servings', label: '16 servings', serving_size: 30, servings_per_container: 16, retail_price: 19.99, nutrients }
+  const selected = sizes.productForSize(parent, small)
+  assert.equal(selected.nutrients, nutrients); assert.equal(selected.serving_size, 30)
+  assert.equal(sizes.productForSize(parent, options[0]).nutrients, parent.nutrients)
+  assert.equal(sizes.productForSize(parent, { ...small, nutrients: [] }).nutrients.length, 0)
+  for (const key of ['slug', 'label', 'sort', 'shopify_variant_id']) assert.equal(Object.hasOwn(selected, key), false)
+  const bar = sizes.productForSize(parent, options[1])
+  assert.deepEqual(Array.from(bar.nutrients, n => [n.nutrient_name, n.amount, n.unit]), [['Protein', 20, 'g'], ['Sugar', 2.1, 'g']])
+  assert.equal(bar.serving_unit, 'g')
+})
+test('16-servings clears inherited pack mapping/price and has no Buy', () => {
+  const small = { ...options[1], slug: '16-servings', label: '16 servings', serving_size: 30, servings_per_container: 16,
+    retail_price: 19.99, buy_url: 'https://teamwarrior.com/products/warrior-whey-protein-1kg' }
+  const selected = sizes.productForSize({ ...product, category: 'whey' }, small)
+  assert.equal(selected.storeLinkMapping, null); assert.equal(selected.storePrice, undefined)
+  assert.equal(selected.retail_price, 19.99)
+  const html = renderToStaticMarkup(React.createElement(load('components/ProductOfferLink.tsx').default, { product: selected }))
+  assert.doesNotMatch(html, /Buy at|\/cart\//)
+})
+test('one size keeps multiple flavours visible and selects their offer; multi-size chooseAnother follows Size', () => {
+  const other = { ...mapping, shopifyVariantId: 'gid://shopify/ProductVariant/999' }
+  const harness = detailHarness({ ...product, sizeOptions: [product.sizeOptions[0]], storeVariants: [
+    { variantId: '63535202468170', label: 'Original', mapping }, { variantId: '999', label: 'Other', mapping: other },
+  ] })
+  harness.render(); harness.mount()
+  let view = harness.render()
+  assert.ok(view.picker); assert.equal(view.select, undefined); assert.ok(view.variantPicker)
+  assert.equal(view.offer.props.chooseAnother, true)
+  view.variantPicker.props.onChange('999'); view = harness.render()
+  assert.equal(view.offer.props.product.storeLinkMapping, other)
+  const multi = detailHarness(product).render()
+  assert.equal(multi.variantPicker, undefined); assert.equal(multi.offer.props.chooseAnother, true)
+})
+test('retired duplicate IDs are absent from historical reseed commands and browser test runs in CI script', () => {
+  for (const file of ['scripts/reseed-02-product-fields.sql', 'scripts/reseed-03-nutrients.sql']) {
+    assert.match(source(file), /superseded/)
+    assert.doesNotMatch(source(file), /60cbe489|8ddfc493|b9058eef/)
+  }
+  assert.match(JSON.parse(source('package.json')).scripts['test:accessibility'], /node tests\/browser\/product-size.mjs/)
 })

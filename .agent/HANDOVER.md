@@ -1,12 +1,23 @@
-**13 October Job J — grok/j-merge-dupes, base 67e80bc; dry-run preparation, uncommitted:**
+**13 October Job J review fixes — grok/j-merge-dupes, HEAD 368c698; working changes uncommitted:**
+- Split empty-safe DDL/RLS/grants from guarded operator merge and data rollback; removed old combined migration/down files.
+- Added child nutrient overrides/normalised g units; limited stack sums to 10; rollback checks moved counts and EssentialMAX 15/name.
+- Size status announces price; sole size retains flavours; exact offer fields only; dead reseed children removed; runbook order/locks/DDL undo fixed.
+- Affected Node suite 148/148 pass (focused 45/45); typecheck pass; lint 0 errors/22 existing warnings; diff check pass.
+- Activation manifest refreshed (111 sources); both manifests and live-boundary checks pass.
+- Browser fixture automatic JSX/query/history/live-price checks bundle; now included in npm run test:accessibility/CI.
+- BLOCKED browser: headless shell absent; Chromium install DNS ENOTFOUND; installed Chrome SIGABRT/EPERM; no browser pass claimed.
+- BLOCKED commit: git add denied external index.lock; original preparation IS committed as 368c698; no Supabase/deploy/push/merge.
+- Next: writable Git metadata, capable Chromium/hosted CI runner and offline PostgreSQL rehearsal; evidence docs/commerce/catalogue-duplicates.md.
+
+**13 October Job J — grok/j-merge-dupes, base 67e80bc; dry-run preparation committed as 368c698:**
 - Prepared atomic guarded three-group merge SQL/private archives and repeat-safe rollback, including favourite/stack collisions.
 - Added public active-parent size options, fail-soft loader/preview fixture, native Size selector and exact approved-variant Buy selection.
 - Added exact three 308 redirects/sitemap exclusions; EssentialMAX retained eaas/15g; decision/runbook in docs/commerce/catalogue-duplicates.md.
 - Focused Node tests 39/39 pass; typecheck pass; lint 0 errors/22 existing warnings; both manifests pass (activation 110→111).
 - npm test 4069: 4032 pass/29 fail/8 skip; 28 failures reproduced on untouched HEAD archive; extra process case rerun 11/11 pass.
 - Browser fixture bundles; execution blocked by absent Playwright binary/Chrome SIGABRT+EPERM. SQL execution/hosted CI remain unverified.
-- Commit blocked: index.lock in night/repo/.git/worktrees/wt-j denied; changes preserved and ../j-merge-dupes.patch prepared.
-- Next: commit with writable Git metadata, offline PostgreSQL/collision/rollback rehearsal and capable browser/CI runner; no Supabase/production calls.
+- Original commit-blocked report superseded: preparation was committed as 368c698; no push/merge/deploy.
+- Next: review fixes, offline PostgreSQL/collision/rollback rehearsal and capable browser/CI runner; no Supabase/production calls.
 
 **13 October Job I review fixes — grok/i-flavour-picker, baseline acd617f; committed (be3b6da + review-nit fixes):**
 - Page never reads searchParams; daily ISR remains when LINKS off; server defaultVariantId hydrates before mount-only URL override.
