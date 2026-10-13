@@ -11,6 +11,8 @@ import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-di
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
+import ProductSizePicker from '@/components/ProductSizePicker'
+import { productForSize, selectProductSize, sizeSelectionUrl } from '@/lib/commerce/size-selection'
 import ProductVariantPicker from '@/components/ProductVariantPicker'
 import { flavourSlug, variantSelectionUrl } from '@/lib/commerce/variant-selection'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -64,11 +66,16 @@ export default function ProductDetailPage({
   defaultVariantId?: string
 }) {
   const router = useRouter()
+  const sizes = originalProduct.sizeOptions ?? []
+  const [sizeSlug, setSizeSlug] = useState<string | undefined>(sizes[0]?.slug)
+  const [sizeReady, setSizeReady] = useState(sizes.length <= 1)
   const variants = originalProduct.storeVariants ?? []
   const [selectedId, setSelectedId] = useState(defaultVariantId)
   // Until the URL selection is applied, a multi-variant page must not link any variant's cart.
   const [selectionReady, setSelectionReady] = useState(variants.length <= 1)
   useEffect(() => {
+    setSizeSlug(selectProductSize(sizes, window.location.search)?.slug)
+    setSizeReady(true)
     const query = new URLSearchParams(window.location.search)
     const flavour = query.get('flavour')
     const override = variants.find(v => v.variantId === query.get('variant'))
@@ -79,11 +86,22 @@ export default function ProductDetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const selected = variants.find(v => v.variantId === selectedId) ?? variants[0]
-  const product = selected ? { ...originalProduct, storeVariants: undefined,
+  const size = sizes.find(option => option.slug === sizeSlug) ?? sizes[0]
+  // Multiple sizes have exact variant identities, not a size × flavour cross-product.
+  // A sole size may still have several flavours, so keep their picker/projection.
+  const sizeOwnsOffer = !!size && (sizes.length > 1 || variants.length <= 1)
+  const baseProduct = size ? productForSize(originalProduct, size, sizeReady) : originalProduct
+  const variantProduct = selected ? { ...baseProduct, storeVariants: undefined,
     storeLinkMapping: selectionReady ? selected.mapping : null, storePrice: selected.storePrice, buy_url: null,
-    retail_price: selected.storePrice ? selected.storePrice.price : originalProduct.retail_price,
+    retail_price: selected.storePrice ? selected.storePrice.price : baseProduct.retail_price,
     // Catalogue serving counts do not establish the selected variant's pack servings.
-    cost_per_serving: variants.length === 1 ? originalProduct.cost_per_serving : null } : originalProduct
+    cost_per_serving: variants.length === 1 ? baseProduct.cost_per_serving : null } : baseProduct
+  const product = sizeOwnsOffer ? baseProduct : variantProduct
+  function changeSize(slug: string) {
+    if (!sizes.some(option => option.slug === slug)) return
+    setSizeSlug(slug)
+    window.history.replaceState(null, '', sizeSelectionUrl(window.location.href, slug))
+  }
   function changeVariant(id: string) {
     if (!variants.some(v => v.variantId === id)) return
     setSelectedId(id)
@@ -315,10 +333,11 @@ export default function ProductDetailPage({
             Compare
           </Link>
           <div className="min-w-0 space-y-2">
-            {selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
+            {size && <ProductSizePicker options={sizes} selected={size} onChange={changeSize} price={product.retail_price} />}
+            {!sizeOwnsOffer && selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
             <ProductOfferLink
               product={product}
-              pickerOwnsStatus={!!selected} chooseAnother={variants.length > 1}
+              pickerOwnsStatus={!sizeOwnsOffer && !!selected} chooseAnother={sizeOwnsOffer ? sizes.length > 1 : variants.length > 1}
               className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
             />
           </div>

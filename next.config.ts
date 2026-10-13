@@ -1,3 +1,4 @@
+import { PRODUCT_SIZE_REDIRECTS } from './lib/product-size-redirects';
 import type { NextConfig } from "next";
 import { assertPreviewIsolation } from "./config/preview-isolation.mjs";
 
@@ -6,6 +7,7 @@ assertPreviewIsolation(process.env);
 const nextConfig: NextConfig = {
   async redirects() {
     return [
+      ...PRODUCT_SIZE_REDIRECTS,
       {
         source: "/dashboard",
         destination: "/account",

@@ -1,3 +1,4 @@
+import { isRedirectedProduct } from '@/lib/product-size-redirects'
 import type { MetadataRoute } from 'next'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { INGREDIENT_SLUGS } from '@/lib/ingredients'
@@ -21,7 +22,7 @@ async function productEntries(now: Date): Promise<MetadataRoute.Sitemap> {
     const sb = createPublicClient()
     const { data, error } = await sb.from('products').select('id').eq('status', 'active')
     if (error || !data) return []
-    return (data as { id: string }[]).map((p) => ({
+    return (data as { id: string }[]).filter(p => !isRedirectedProduct(p.id)).map((p) => ({
       url: `${BASE}/products/${p.id}`,
       lastModified: now,
       changeFrequency: 'weekly' as const,

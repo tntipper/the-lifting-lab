@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import { PREVIEW_PRODUCTS } from '../lib/preview-products.ts'
 
 test('read-only preview products use only bundled exact-ID assets or missing-image fallback', () => {
-  assert.equal(PREVIEW_PRODUCTS.length, 10)
+  assert.equal(PREVIEW_PRODUCTS.length, 11)
   for (const product of PREVIEW_PRODUCTS) {
     assert.equal(product.buy_url, null)
     if (product.image_url === null) continue
