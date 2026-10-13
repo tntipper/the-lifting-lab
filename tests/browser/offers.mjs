@@ -15,6 +15,18 @@ export async function verifyOfferLinks(page, origin, width, resultDir) {
   try {
     await page.goto(`${origin}/offers`)
     await page.getByRole('heading', { name: 'Isolated product listing acceptance' }).waitFor()
+    const picker = page.locator('[data-picker-case]')
+    const select = picker.getByLabel('Flavour / size', { exact: true })
+    assert.equal(await select.count(), 1, 'Picker label must be associated with its select')
+    assert.equal(await select.inputValue(), '12345')
+    assert.match(await picker.getByRole('link', { name: /^Buy at/ }).getAttribute('href'), /cart\/12345:1/)
+    await select.focus()
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+    await page.waitForFunction(() => document.querySelector('[data-picker-case] select')?.value === '12346')
+    assert.match(await picker.getByRole('link', { name: /^Buy at/ }).getAttribute('href'), /cart\/12346:1/)
+    assert.equal(new URL(page.url()).searchParams.get('variant'), '12346')
+    await page.evaluate(() => window.history.replaceState(null, '', '/offers'))
     await page.evaluate(() => {
       const activations = []
       Object.defineProperty(window, '__offerFixtureActivations', { value: activations, configurable: true })

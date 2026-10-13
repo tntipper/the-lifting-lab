@@ -1,6 +1,7 @@
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { productVariantRedirectUrl } from '@/lib/product-variant-redirects'
+import { notFound, permanentRedirect } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase-public'
 import { categoryLabel } from '@/lib/categories'
 import { hasApprovedAssessment } from '@/lib/assessment-display'
@@ -8,6 +9,7 @@ import { claimsReviewFor } from '@/lib/claims-review'
 import { getGuide } from '@/lib/guides'
 import { fetchProductDetail, fetchCategory } from '@/lib/product-data'
 import ProductDetailPage from './ProductDetailPage'
+import { selectStoreVariant } from '@/lib/commerce/variant-selection'
 
 const SITE = 'https://www.theliftinglab.co.uk'
 
@@ -46,6 +48,8 @@ async function fetchReviewAggregate(id: string): Promise<{ average: number; coun
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
+  const redirect = productVariantRedirectUrl(id)
+  if (redirect) permanentRedirect(redirect)
   const product = await fetchProductDetail(id)
   if (!product) return { title: 'Product Not Found | The Lifting Lab' }
 
@@ -70,6 +74,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
   const { id } = await params
+  const redirect = productVariantRedirectUrl(id)
+  if (redirect) permanentRedirect(redirect)
   const product = await fetchProductDetail(id)
   // Real 404 (status + not-found page) instead of a 200 "Product not found" shell.
   if (!product) notFound()
@@ -145,6 +151,7 @@ export default async function Page({ params }: Props) {
     jsonLd = [productLd, breadcrumbLd]
   }
 
+  const defaultVariantId = selectStoreVariant(product.id, product.storeVariants ?? [])?.variantId
   return (
     <>
       {jsonLd.map((ld, i) => (
@@ -154,7 +161,8 @@ export default async function Page({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(ld) }}
         />
       ))}
-      <ProductDetailPage product={product} related={related} />
+      <ProductDetailPage product={product} related={related}
+        key={product.id} defaultVariantId={defaultVariantId} />
     </>
   )
 }

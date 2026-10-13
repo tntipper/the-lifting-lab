@@ -1,3 +1,24 @@
+**13 October Job I review fixes — grok/i-flavour-picker, baseline acd617f; committed (be3b6da + review-nit fixes):**
+- Page never reads searchParams; daily ISR remains when LINKS off; server defaultVariantId hydrates before mount-only URL override.
+- Select updates exact Buy/URL via history.replaceState; no router round trip or prop reset; single choice is text.
+- Picker honours catalogue holds; sole Buy-area live status; OOS wording corrected; store-variant pages have no affiliate fallback.
+- Middleware 308 preserves attribution/repeated queries and merges variant; empty authority stays unactivated; no chains/self redirects test.
+- Behaviour test invokes native select handler; browser label/ArrowDown/Buy/URL case included in existing CI suite; compile passes, loopback EPERM blocks local run.
+- Affected tests 266/266 pass (30 picker cases); typecheck passes; lint 0 errors/22 existing warnings; both manifests/diff check pass.
+- npm test: 4062 total, 4026 pass/28 fail/8 skip; known limits: loopback 8, process 6, Docker 11, Gen23 child 1, Python 1, Chrome 1.
+- Docs correct prices-off legacy retail_price, stack batch API variant gap and cache policy; logs /tmp/i-review-*.log; hosted CI unverified.
+- Next: review committed (be3b6da + review-nit fixes) fixes and run browser/CI on capable runner; no commit/push/live calls/env files/xlsx changes.
+
+**13 October Job I — grok/i-flavour-picker, baseline acd617f; committed (be3b6da + review-nit fixes) variant picker:**
+- Projects all valid reviewed variants; expired/invalid rows isolated; duplicate variant IDs excluded; single mapping stays compatible.
+- Prices attach per variant; accessible native picker/URL query selects exact cart or prices-off product fallback; OOS/unavailable cannot Buy.
+- Multi-variant grid/stack offers require product-page selection; empty permanent redirect map plus four candidate groups await Toby.
+- Focused Node suite 245 pass/0 fail (20 new); typecheck passes; lint 0 errors/22 existing warnings; diff check passes.
+- Activation regenerated 109→110; both manifest checks pass; hosted baseline unchanged.
+- npm test: 4051 total, 4015 pass/28 fail/8 skip; limits: loopback 8, process 6, Docker 11, Gen23 1, Python 1, Chrome 1.
+- Browser fixture compiled; accessibility blocked by loopback EPERM. Hosted CI/live behaviour unverified; docs/commerce/variant-picker.md has evidence.
+- Next: Grok reviews/commits; Toby confirms redirects; capable runner checks browser/CI. No commit/push/live commerce/env/config/xlsx changes.
+
 **13 October Job H — grok/h-mapping-loader, base fd37dc8; uncommitted mapping loader:**
 - Shared server loaders attach reviewed saved mappings with LINKS enabled independently of PRICES; isolated environments remain inert.
 - Added service-role-only read RPC migration for private mapping identity/review columns; no costs read, raw rows or extra review fields exposed.

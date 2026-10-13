@@ -1,7 +1,7 @@
 'use client'
 import { formatListedServingPrice } from '@/lib/products'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { scoreColor } from '@/components/ScoreBadge'
@@ -11,6 +11,8 @@ import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-di
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
+import ProductVariantPicker from '@/components/ProductVariantPicker'
+import { flavourSlug, variantSelectionUrl } from '@/lib/commerce/variant-selection'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { amazonSearch, bulkSearch } from '@/lib/affiliate'
 import { isSyntheticPreview } from '@/lib/preview-mode'
@@ -53,13 +55,40 @@ function getRetailerLinks(brand: string, name: string): { label: string; url: st
 // the server — no client fetch, no "Loading…" shell. Interactivity (stack,
 // share, tracking, reviews) hydrates on top.
 export default function ProductDetailPage({
-  product,
+  product: originalProduct,
   related,
+  defaultVariantId,
 }: {
   product: ComparedProduct
   related: ScoredProduct[]
+  defaultVariantId?: string
 }) {
   const router = useRouter()
+  const variants = originalProduct.storeVariants ?? []
+  const [selectedId, setSelectedId] = useState(defaultVariantId)
+  // Until the URL selection is applied, a multi-variant page must not link any variant's cart.
+  const [selectionReady, setSelectionReady] = useState(variants.length <= 1)
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search)
+    const flavour = query.get('flavour')
+    const override = variants.find(v => v.variantId === query.get('variant'))
+      ?? (flavour ? variants.find(v => v.flavour && flavourSlug(v.flavour) === flavourSlug(flavour)) : undefined)
+    if (override) setSelectedId(override.variantId)
+    setSelectionReady(true)
+    // Read the URL once after hydration. Manual changes must never reset from props.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const selected = variants.find(v => v.variantId === selectedId) ?? variants[0]
+  const product = selected ? { ...originalProduct, storeVariants: undefined,
+    storeLinkMapping: selectionReady ? selected.mapping : null, storePrice: selected.storePrice, buy_url: null,
+    retail_price: selected.storePrice ? selected.storePrice.price : originalProduct.retail_price,
+    // Catalogue serving counts do not establish the selected variant's pack servings.
+    cost_per_serving: variants.length === 1 ? originalProduct.cost_per_serving : null } : originalProduct
+  function changeVariant(id: string) {
+    if (!variants.some(v => v.variantId === id)) return
+    setSelectedId(id)
+    window.history.replaceState(null, '', variantSelectionUrl(window.location.href, id))
+  }
   const { inStack, toggle } = useLocalStack()
   const [shareOpen, setShareOpen] = useState(false)
 
@@ -71,7 +100,7 @@ export default function ProductDetailPage({
     .filter(flag => canRecommend || flag.kind === 'safety')
   const color = canRecommend && product.score != null ? scoreColor(product.score) : '#9ca3af'
   const stacked = inStack(product.id)
-  const retailers = getRetailerLinks(product.brand, product.name)
+  const retailers = variants.length ? [] : getRetailerLinks(product.brand, product.name)
 
   return (
     <div className="min-h-screen bg-lab-bg text-white pb-32">
@@ -285,10 +314,14 @@ export default function ProductDetailPage({
           >
             Compare
           </Link>
-          <ProductOfferLink
-            product={product}
-            className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
-          />
+          <div className="min-w-0 space-y-2">
+            {selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
+            <ProductOfferLink
+              product={product}
+              pickerOwnsStatus={!!selected} chooseAnother={variants.length > 1}
+              className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
+            />
+          </div>
         </div>
       </div>
 

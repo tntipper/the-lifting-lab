@@ -8,6 +8,9 @@ import ShareModal from '../../components/ShareModal'
 import WizardPage from '../../app/wizard/page'
 import ProductGrid from '../../app/products/ProductGrid'
 import type { ScoredProduct } from '../../lib/products'
+import { variantSelectionUrl } from '../../lib/commerce/variant-selection'
+import ProductVariantPicker from '../../components/ProductVariantPicker'
+import type { StoreVariantOption } from '../../lib/commerce/product-mapping'
 import ProductOfferLink from '../../components/ProductOfferLink'
 import { LocalStackProvider, useLocalStack } from '../../components/LocalStackContext'
 
@@ -65,8 +68,24 @@ function RankingControls() {
 }
 
 function OfferControls() {
+  const [selectedId, setSelectedId] = useState('12345')
+  const variants: StoreVariantOption[] = ['Vanilla', 'Chocolate'].map((flavour, index) => ({
+    storePrice: { productId: product.id, price: 20 + index, availableForSale: true, observedAtMs: Date.now() },
+    variantId: String(12345 + index), handle: 'synthetic-fixture', label: `${flavour} · 2 kg`, flavour, packLabel: '2 kg',
+    mapping: { productId: product.id, shopifyProductHandle: 'synthetic-fixture', shopifyVariantId: String(12345 + index),
+      active: true, approved: true, review: { approved: true, version: 'fixture', expectedVersion: 'fixture', verifiedAtMs: Date.now() - 1000, expiresAtMs: Date.now() + 3600000 } },
+  }))
+  const selected = variants.find(v => v.variantId === selectedId)!
+  function changeVariant(id: string) {
+    setSelectedId(id)
+    window.history.replaceState(null, '', variantSelectionUrl(window.location.href, id))
+  }
   return <main className="min-h-screen bg-lab-bg p-4 space-y-6 text-white">
     <h1>Isolated product listing acceptance</h1>
+    <section data-picker-case>
+      <ProductVariantPicker productId={product.id} variants={variants} selected={selected} onChange={changeVariant} />
+      <ProductOfferLink pickerOwnsStatus product={{ ...product, buy_url: null, storeLinkMapping: selected.mapping, storePrice: selected.storePrice }} />
+    </section>
     {(['card', 'sticky'] as const).map(layout => (
       <section key={layout} aria-label={`${layout} offer actions`} className="space-y-4">
         <h2>{layout === 'card' ? 'Three-column product card actions' : 'Three-column sticky-bar-style actions'}</h2>

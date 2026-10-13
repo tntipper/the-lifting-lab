@@ -37,7 +37,9 @@ export default function BuyMyStack({ items, ready }: { items: readonly StackCart
     {unavailable.length > 0 && <section aria-label="Store availability under review" className="rounded-lg border border-[#a8aaa0] p-4 text-sm">
       <h2 className="font-bold">Store availability under review</h2>
       <ul className="mt-2 space-y-2">{unavailable.map((item, index) => <li key={`${item.id}-${index}`}>
-        <span className="font-semibold">{itemName(item)}</span> — skipped from your cart. Store approval, price or stock could not be confirmed; check back or choose an alternative from the comparison pages.
+        <span className="font-semibold">{itemName(item)}</span>{' — '}{(item.storeVariants?.length ?? 0) > 1
+          ? <a href={`/products/${encodeURIComponent(item.id)}`} className="inline-flex min-h-11 items-center underline">Choose flavour on product page</a>
+          : 'skipped from your cart. Store approval, price or stock could not be confirmed; check back or choose an alternative from the comparison pages.'}
       </li>)}</ul>
     </section>}
   </div>

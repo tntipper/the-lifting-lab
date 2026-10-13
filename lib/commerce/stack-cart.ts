@@ -1,7 +1,7 @@
 import { buildStoreProductLink, resolveProductListing, type ProductListing } from '../affiliate'
 import { isIsolatedEnvironment } from '../preview-mode'
 import { catalogueAvailabilityFor, type CataloguePresentation } from './catalogue-presentation'
-import type { StoreLinkMapping } from './product-mapping'
+import type { StoreLinkMapping, StoreVariantOption } from './product-mapping'
 import type { StorePricePresentation } from './store-price-products'
 import { withStoreAttribution } from './store-attribution'
 
@@ -12,6 +12,7 @@ export type StackCartItem = {
   brand?: string
   buy_url?: string | null
   storeLinkMapping?: StoreLinkMapping | null
+  storeVariants?: StoreVariantOption[]
   cataloguePresentation?: CataloguePresentation | null
   storePrice?: StorePricePresentation | null
 }
@@ -30,6 +31,7 @@ export function splitStackCartItems(items: readonly StackCartItem[], now = Date.
   const affiliateOnly: { item: StackCartItem; listing: ProductListing }[] = []
   const unavailable: StackCartItem[] = []
   for (const item of items) {
+    if ((item.storeVariants?.length ?? 0) > 1) { unavailable.push(item); continue }
     if (!buildStoreProductLink(item.id, item.storeLinkMapping, now)) {
       const listing = resolveProductListing(item.buy_url)
       if (!item.storeLinkMapping && listing.relationship === 'affiliate' && listing.url) affiliateOnly.push({ item, listing })

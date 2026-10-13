@@ -24,5 +24,8 @@ export async function withStorePrices<T extends Product>(products: T[], options:
   if (!configured || configured.shop !== shop || configured.token !== token) {
     configured = { shop, token, read: createStorefrontPriceReader({ enabled: true, shop, privateToken: token, transport: fetch }) }
   }
-  return attachStorePrices(products, { enabled, read: configured.read })
+  const read = options.now === undefined ? configured.read : createStorefrontPriceReader({
+    enabled: true, shop, privateToken: token, transport: fetch, now: () => options.now!,
+  })
+  return attachStorePrices(products, { enabled, read, now: options.now })
 }
