@@ -1,4 +1,4 @@
-import { homedir, tmpdir } from 'node:os'
+import { userInfo, tmpdir } from 'node:os'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
@@ -17,10 +17,10 @@ test('one fixed Git push uses a scoped GitHub CLI helper and suppresses process 
   const port = createStagingPreviewGitPublishNativePushPort({ preflight: () => true,
     spawn(binary, args, options) {
       calls++
-      assert.equal(binary, resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'))
+      assert.equal(binary, resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git'))
       assert.equal(Object.isFrozen(args), true)
       assert.deepEqual(args, ['-c', 'core.hooksPath=/dev/null', '-c', 'credential.helper=',
-        '-c', `credential.https://github.com.helper=!'${resolve(homedir(), '.local/bin/gh').replaceAll("'", "'\\''")}' auth git-credential`,
+        '-c', `credential.https://github.com.helper=!'${resolve(userInfo().homedir, '.local/bin/gh').replaceAll("'", "'\\''")}' auth git-credential`,
         'push', '--porcelain', '--no-verify', `--force-with-lease=${ref}:${predecessorCommit}`,
         '--', origin, `${selectedCommit}:${ref}`])
       assert.deepEqual(options.stdio, ['ignore', 'ignore', 'ignore'])
@@ -28,8 +28,8 @@ test('one fixed Git push uses a scoped GitHub CLI helper and suppresses process 
       assert.equal(options.env.GIT_CONFIG_GLOBAL, '/dev/null')
       assert.equal(options.env.GIT_CONFIG_SYSTEM, '/dev/null')
       assert.equal(options.env.GIT_TERMINAL_PROMPT, '0')
-      assert.equal(options.env.HOME, resolve(homedir()))
-      assert.equal(options.env.GH_CONFIG_DIR, resolve(homedir(), '.config/gh'))
+      assert.equal(options.env.HOME, resolve(userInfo().homedir))
+      assert.equal(options.env.GH_CONFIG_DIR, resolve(userInfo().homedir, '.config/gh'))
       assert.equal(options.cwd, resolve(import.meta.dirname, '..'))
       return { status: 0, signal: null, stdout: Buffer.from('untrusted'), stderr: Buffer.from('untrusted') }
     },
@@ -92,8 +92,8 @@ test('GitHub CLI trust preflight is read-only and the port has no direct entry p
     writeFileSync(hosts, 'fixture: no credentials\n', { mode: 0o600 })
     const original = readFileSync(new URL('../scripts/staging-preview-git-source-preflight.mjs', import.meta.url), 'utf8')
     const replacements = [
-      ["const githubCli = resolve(homedir(), '.local/bin/gh')", `const githubCli = ${JSON.stringify(cli)}`],
-      ["const githubCliConfig = resolve(homedir(), '.config/gh')", `const githubCliConfig = ${JSON.stringify(config)}`],
+      ["const githubCli = resolve(userInfo().homedir, '.local/bin/gh')", `const githubCli = ${JSON.stringify(cli)}`],
+      ["const githubCliConfig = resolve(userInfo().homedir, '.config/gh')", `const githubCliConfig = ${JSON.stringify(config)}`],
       ["const githubCliSha256 = 'a38e8ea1b9794a445a1ce746392e36111ca00a3242a6447b49cd4c162cb191a7'",
         `const githubCliSha256 = '${createHash('sha256').update(bytes).digest('hex')}'`],
     ]

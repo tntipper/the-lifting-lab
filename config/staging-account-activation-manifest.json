@@ -749,7 +749,7 @@
       },
       {
         "path": "scripts/staging-provider-broker-rest-credential-reader.mjs",
-        "sha256": "b6afad4507b696002bcf6f571be9d953e6f054e6b4c493fc62f10bb4961a4007"
+        "sha256": "e3a005ee0519defaa73293f790e12913fca1c0c564ed63d683905d7878c6a191"
       },
       {
         "path": "scripts/staging-provider-broker-rest-live-launcher.mjs",
@@ -789,7 +789,7 @@
       },
       {
         "path": "scripts/staging-provider-normalization-live-launcher.mjs",
-        "sha256": "8b6d140ea56186eaeef6d4a42e9db4efc13e764b4cee6bc06a93f485884dbd51"
+        "sha256": "4d80bc2e52a09f0969d1bf38b2ab5ef78fc8e6dbf48bb73743065006cb44bcee"
       },
       {
         "path": "scripts/staging-provider-normalization-keychain.py",
@@ -805,7 +805,7 @@
       },
       {
         "path": "scripts/staging-provider-supabase-only-live-launcher.mjs",
-        "sha256": "5cd7c0697a211c29181c6bbad521185d0662365fa0f1745b01f5b61ae4683f65"
+        "sha256": "9d60b64225a2e657cb856e58b97d7a81ee91304ba2fbab8d9198dd4bc36ba086"
       },
       {
         "path": "scripts/staging-provider-safe-held-reconciliation.mjs",
@@ -813,7 +813,7 @@
       },
       {
         "path": "scripts/staging-provider-safe-held-live-launcher.mjs",
-        "sha256": "da48df97ce6d02cb003479cf0b5cb135179b6851e7efb732d5a44ed8bb1d0143"
+        "sha256": "6b098de1060db49cb506aa81f1e649eb1499c43b995fb2358a8629f06e79d9cf"
       },
       {
         "path": "scripts/staging-provider-preview-readiness-session.mjs",
@@ -825,7 +825,7 @@
       },
       {
         "path": "scripts/staging-provider-preview-readiness-live-launcher.mjs",
-        "sha256": "39574cf74ec54257a0ae7be528ffebfc15dd65c4f1bf04adb4810808807d02a8"
+        "sha256": "2ec35c80f74f3ba978d61fa0b58e950901c1fed89ebfee5e7dfdc55b72aabe9a"
       },
       {
         "path": "scripts/staging-provider-credential-readiness-phase-journal.mjs",
@@ -837,7 +837,7 @@
       },
       {
         "path": "scripts/staging-provider-credential-readiness-native.mjs",
-        "sha256": "f2e9657d8b89227553715b6cbb3a32bcb884374d9868f5a96b8f5f432509bd07"
+        "sha256": "568c0d9fd78e623acdef6d0cdce6b1738eb671e340b9de57cd2a4b93f0c74827"
       },
       {
         "path": "scripts/staging-provider-credential-readiness-live-launcher.mjs",
@@ -997,7 +997,7 @@
       },
       {
         "path": "scripts/staging-provider-readonly-live-launcher.mjs",
-        "sha256": "61bb6d96ea48422c11011c4695a253457adbb80739380228616ff98560ad9659"
+        "sha256": "56771284641c00e7b38c28e74da2188064def7cbc712e31301cc935075295f94"
       },
       {
         "path": "scripts/staging-control-activation.mjs",
@@ -1061,7 +1061,7 @@
       },
       {
         "path": "scripts/staging-preview-git-source-preflight.mjs",
-        "sha256": "2c60ba5489f0292cc9d11bf26aa99f54196af74a3351935571cb8956cbdd375a"
+        "sha256": "a7f4a86915c98269425e5ae44a653507e7f7ec25c58f224bec09af3f375ba3ef"
       },
       {
         "path": "scripts/staging-preview-git-acceptance.mjs",
@@ -1085,15 +1085,15 @@
       },
       {
         "path": "scripts/staging-preview-git-publish-native-contract.mjs",
-        "sha256": "ab4f363cac3cfdfcb3d859771639f1bf2db5aaa7fef95e2bec0a77826655178f"
+        "sha256": "1ac703493d1be6a0cfe0cb5c62c4c856856387c8fc6ce00c8084b6a97c7de9b0"
       },
       {
         "path": "scripts/staging-preview-git-publish-native-read.mjs",
-        "sha256": "504df40e7491c5608af45fa05a806cfc321aae27346825a0500439e300fff651"
+        "sha256": "54ba8df65154750b41f8093bc10b8cd8baaca32356540a19f37bc87c5a73b556"
       },
       {
         "path": "scripts/staging-preview-git-publish-native-push.mjs",
-        "sha256": "d533ae09e8095a3fcf6a4db1be913df4426f4ace6336bc6c92c3825800de011e"
+        "sha256": "0ddabc15cfa312cf5385ef02d46f426086805c33ff2fdd7e90c0a382b5e92294"
       },
       {
         "path": "scripts/staging-preview-git-publish-arm-preflight.mjs",
@@ -1101,11 +1101,11 @@
       },
       {
         "path": "scripts/staging-preview-git-publish-arm-native-read.mjs",
-        "sha256": "0d2957d226b27ef58c72e2eff938475d447b680ea898aa36c3ce446c978cdfa9"
+        "sha256": "2d4e47d96212403fcfbc1023311799468f108f08e88abaff0bec75717cc5cb6c"
       },
       {
         "path": "scripts/staging-preview-git-publish-live-launcher.mjs",
-        "sha256": "c4ad4a49bcc3095e28703f800c6a40908795a5abdfea5c553b60dfb39678a200"
+        "sha256": "31ec9fc0718e274da0c6e635655094b8c653b8a172e7e99dc6d7d8f8222d1b4d"
       },
       {
         "path": "scripts/staging-preview-source-journal.mjs",
@@ -1205,7 +1205,7 @@
       },
       {
         "path": "scripts/staging-generation-23-predecessor-live-launcher.mjs",
-        "sha256": "bcff283f75907011ab079357241e9e6ee96f6f3d9607e696fc1581cc15f5551b"
+        "sha256": "0f77cc0b59bc2253a786246ba0d7d856e12bfc589385f39b49ab922768e9f3b1"
       },
       {
         "path": "scripts/staging-generation-23-vercel-replacer.mjs",
@@ -1289,11 +1289,11 @@
       },
       {
         "path": "scripts/staging-owner-successor-fixed-source-reader.mjs",
-        "sha256": "a0998bf6dc33912fd6f2fa036a91d5af83a402a6ed81c07547fb2ff28a0ac1ce"
+        "sha256": "bdce38f3547182865975ff79e26022c9acb5ad7115d9e980a9ebfb961475dfda"
       },
       {
         "path": "scripts/staging-owner-successor-source-preparation.mjs",
-        "sha256": "312a22bf2cfb923f33f7eda74f4b7d3ecc4f546275306fce56233aa4e3ca85e9"
+        "sha256": "443f6e4fe77f5b5c1e6335192c776cd64067bf5c2993339be02b08f901434c7b"
       },
       {
         "path": "scripts/staging-owner-successor-process-binding.mjs",
@@ -1445,7 +1445,7 @@
       },
       {
         "path": "scripts/staging-generation-23-arming-source-proof.mjs",
-        "sha256": "797403e9ec69db064f4cfd2808e5c1556a005a1de97ac311c2063bbeef1d34ba"
+        "sha256": "2e1ac3be4690b675f42d51fcbe42804b0d0d9191ce2ef5952ab7f8b1307c4c1c"
       },
       {
         "path": "scripts/staging-generation-23-live-launcher.mjs",
@@ -1613,7 +1613,7 @@
       },
       {
         "path": "scripts/staging-generation-22-keychain-reader.mjs",
-        "sha256": "5d23e3e0005499eaf8f3feac080618c7534b58299f26227d920c5c9764ef6135"
+        "sha256": "a76274656a0e602860587bffbdae74f25dd31af79706f3f8414b4237ec92fd2d"
       },
       {
         "path": "scripts/staging-generation-22-keychain.py",
@@ -1985,7 +1985,7 @@
       },
       {
         "path": "tests/staging-preview-git-source-preflight.test.mjs",
-        "sha256": "cc983e93f3599ef20b0c0531f6d5c73a061ad3869f246a79284d70be6fabc590"
+        "sha256": "2a34cea886c91fd89499afe7ac5ee4d92165cd15d47d26321c568e028ad841ce"
       },
       {
         "path": "tests/staging-preview-git-acceptance.test.mjs",
@@ -2009,7 +2009,7 @@
       },
       {
         "path": "tests/staging-preview-git-publish-native-contract.test.mjs",
-        "sha256": "bcc11e9dfff7dfa66d359c94165a4e1d36e14fb2f68e02238668774c56a9c29f"
+        "sha256": "4fed2f0d166887251bf8dc77535b9a720e0203d5b50a460867887b75668294fd"
       },
       {
         "path": "tests/staging-preview-git-publish-native-read.test.mjs",
@@ -2017,7 +2017,7 @@
       },
       {
         "path": "tests/staging-preview-git-publish-native-push.test.mjs",
-        "sha256": "ad5438a62c30b7b1216a1266da0ae4fc598f147ee644e18dc45dd12fc3c680e6"
+        "sha256": "ef31650bc3a0fa16657cfbc1a49e2bea40e2a3fd79cda02605bb92618d52a4b7"
       },
       {
         "path": "tests/staging-preview-git-publish-arm-preflight.test.mjs",
@@ -2025,7 +2025,7 @@
       },
       {
         "path": "tests/staging-preview-git-publish-arm-native-read.test.mjs",
-        "sha256": "397da624efcb9c87ecd8bbf368e1b20aea881abebafbcf6d11573c5658ec3397"
+        "sha256": "c7c4a304119f3fec22c6624697cc325b8a2ac9f30442c7cd9c2be8ef909d2fe5"
       },
       {
         "path": "tests/staging-preview-git-publish-live-launcher.test.mjs",
@@ -2145,7 +2145,7 @@
       },
       {
         "path": "tests/fixtures/owner-successor-default-qualification.mjs",
-        "sha256": "7519ce8fa64074af3e5b4cf8d03fb03492ce714550a9227135751f8f07f7d78a"
+        "sha256": "07dcbc29c0b8c814f92e511fd6410354b2055d412fd1cbf3a506954699a3a408"
       },
       {
         "path": "tests/fixtures/owner-successor-default-database.mjs",
@@ -2493,7 +2493,7 @@
       },
       {
         "path": "tests/staging-generation-22-default-process.test.mjs",
-        "sha256": "1a05dab4a948d9056b0409e27f653b0b54a62025703c261a976b174d3c2b8e36"
+        "sha256": "b8d4d960fd08fdb9365d999943f2b5dc272fdea6a1a95763d5eb29ba3a47e967"
       },
       {
         "path": "tests/fixtures/staging-generation-22-default-success.mjs",
@@ -2525,7 +2525,7 @@
       },
       {
         "path": "tests/staging-generation-22-preflight-armed-copy.test.mjs",
-        "sha256": "fcbc79352c7fe70ccbe276c5a428c41f2b6df2407b4d815c3746dd15f55dba3e"
+        "sha256": "95290fd1706f8c9633a752c0ae49a31c4ccfda03da702d969e8c0f9c7fb363b5"
       },
       {
         "path": "tests/staging-generation-22-retired-query.test.mjs",

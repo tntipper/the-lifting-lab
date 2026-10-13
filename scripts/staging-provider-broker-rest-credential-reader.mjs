@@ -1,11 +1,11 @@
 /** Bounded, fixed-selector credential reader for a supervised staging worker. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
 
 export const STAGING_BROKER_REST_CREDENTIAL_READER_ENABLED = false
 export const STAGING_BROKER_REST_KEYCHAIN_HELPER = resolve(import.meta.dirname, 'staging-provider-broker-rotation-keychain.py')
-export const STAGING_BROKER_REST_PYTHON = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
+export const STAGING_BROKER_REST_PYTHON = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
 const ROOT = resolve(import.meta.dirname, '..')
 const LIMIT_MS = 15_000
 const MAX_BYTES = 4_096

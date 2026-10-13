@@ -95,7 +95,7 @@ function isolatedSources(t) {
     assert.notEqual(updated, source, `expected one gate in ${name}`)
     source = updated
     if (name === 'keychain-reader') source = source.replace(
-      /^export const GENERATION_22_PYTHON = resolve\(homedir\(\), '[^']+'\)$/m,
+      /^export const GENERATION_22_PYTHON = resolve\(userInfo\(\)\.homedir, '[^']+'\)$/m,
       `export const GENERATION_22_PYTHON = ${JSON.stringify(realpathSync('/usr/bin/python3'))}`)
     if (name === 'credentials') source = source.replace(
       "export const ACTIVE_WINDOW_EXPIRES_AT = 'UNSET_REQUIRES_REVIEWED_ARMING_DIFF'",

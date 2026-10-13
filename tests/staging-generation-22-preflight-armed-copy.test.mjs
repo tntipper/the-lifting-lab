@@ -72,7 +72,7 @@ test('isolated armed preflight reaches each reader while write gates and Keychai
     // reader's production interpreter pin unchanged on every host.
     const readerPath = join(root, 'scripts/staging-generation-22-keychain-reader.mjs')
     const reader = readFileSync(readerPath, 'utf8')
-    const pythonPin = /^export const GENERATION_22_PYTHON = resolve\(homedir\(\), '[^']+'\)$/gm
+    const pythonPin = /^export const GENERATION_22_PYTHON = resolve\(userInfo\(\)\.homedir, '[^']+'\)$/gm
     assert.equal([...reader.matchAll(pythonPin)].length, 1)
     writeFileSync(readerPath, reader.replace(pythonPin,
       `export const GENERATION_22_PYTHON = ${JSON.stringify(realpathSync('/usr/bin/python3'))}`))

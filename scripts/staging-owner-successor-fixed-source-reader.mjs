@@ -1,5 +1,5 @@
 /** Disabled fixed Git binding. Owner-supplied review hashes are not execution authority. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { setImmediate as yieldToSupervisor } from 'node:timers/promises'
@@ -10,8 +10,8 @@ import { stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady } f
 export const OWNER_SUCCESSOR_NATIVE_FIXED_SOURCE_READER_ENABLED = false
 const ROOT = resolve(import.meta.dirname, '..')
 const POLICY = resolve(ROOT, 'config/staging-owner-successor-source-policy.json')
-const GIT = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
-const EXEC = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
+const GIT = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
+const EXEC = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
 const ORIGIN = 'https://github.com/tntipper/the-lifting-lab.git', BRANCH = 'codex/tll-integration'
 const CONTEXT = 'scripts/staging-owner-successor-sql-context.mjs', MANIFEST = 'config/staging-account-activation-manifest.json'
 const EDGE = 'lib/identity/staging-owner-successor-broker-readiness-edge.ts'

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Disabled entry for one focused, staging-only Supabase provider read. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -28,7 +28,7 @@ function checkManifest() {
 
 function readCredential({ signal }) {
   if (signal.aborted) unavailable()
-  const output = checkedChild(resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3'),
+  const output = checkedChild(resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3'),
     ['-I', '-S', helper, 'supabase'], 4_097)
   try {
     if (signal.aborted || !Buffer.isBuffer(output) || output.length < 8 || output.length > 4_096 || output.includes(0)) unavailable()

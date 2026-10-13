@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import * as fs from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { tmpdir, homedir } from 'node:os'
+import { tmpdir, userInfo } from 'node:os'
 import { resolve } from 'node:path'
 import { createStagingPreviewGitArmNativeReadPort,
   stagingPreviewGitArmReadProcessOptions } from '../scripts/staging-preview-git-publish-arm-native-read.mjs'
@@ -85,10 +85,10 @@ test('missing partial-clone blobs fail locally with no lazy fetch', t => {
   const directory = fs.mkdtempSync(resolve(tmpdir(), 'tll-arm-no-lazy-'))
   const source = resolve(directory, 'source')
   const partial = resolve(directory, 'partial')
-  const binary = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
+  const binary = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
   const localEnv = { PATH: '/usr/bin:/bin', LANG: 'C', HOME: '/var/empty',
     GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null',
-    GIT_EXEC_PATH: resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core') }
+    GIT_EXEC_PATH: resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core') }
   const git = (cwd, args, env = localEnv) => spawnSync(binary, args, { cwd, env,
     stdio: ['ignore', 'pipe', 'pipe'], timeout: 15_000, maxBuffer: 4_096 })
   try {

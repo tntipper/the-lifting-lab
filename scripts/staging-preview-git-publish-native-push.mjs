@@ -1,12 +1,12 @@
 /** Injected-only one-use push policy. A gated journaled launcher must supply the native process. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { resolve } from 'node:path'
 import { stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady,
   stagingPreviewGithubCliReady } from './staging-preview-git-source-preflight.mjs'
 import { captureStagingPreviewGitArguments, stagingPreviewGitPushCommand,
   stagingPreviewGitPublishProcessOptions } from './staging-preview-git-publish-native-contract.mjs'
 
-const gitBinary = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
+const gitBinary = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
 const unavailable = () => { throw Error('Staging Git publication push unavailable') }
 const fullSha = value => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value)
 const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)

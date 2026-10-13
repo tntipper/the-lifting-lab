@@ -1,5 +1,5 @@
 /** Read-only proof for the one local Gen23 arming commit. No credentials or hosted writes. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -10,8 +10,8 @@ const ROOT = resolve(import.meta.dirname, '..')
 // This module is a read-only proof. The explicit OFF marker satisfies the
 // repository-wide Gen23 guard inventory without authorising any action.
 export const STAGING_GENERATION_23_ARMING_SOURCE_PROOF_ENABLED = false
-const GIT = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
-const GIT_EXEC_PATH = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
+const GIT = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
+const GIT_EXEC_PATH = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
 const POLICY_PATH = resolve(ROOT, 'config/staging-generation-23-arming-policy.json')
 const HOLD = Object.freeze({ status: 'GEN23_ARMING_SOURCE_HOLD' })
 const SHA = /^[a-f0-9]{40}$/

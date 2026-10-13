@@ -1,11 +1,11 @@
 /** Fixed read-only Git process port for staging publication source selection. No push adapter. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady } from './staging-preview-git-source-preflight.mjs'
 import { captureStagingPreviewGitArguments, stagingPreviewGitPublishProcessOptions } from './staging-preview-git-publish-native-contract.mjs'
 
-const gitBinary = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
+const gitBinary = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
 const unavailable = () => { throw Error('Staging Git publication read unavailable') }
 
 /** A caller can request only the contract's read commands; push is rejected before spawn. */

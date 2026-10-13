@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { cpSync, mkdtempSync, readFileSync, writeFileSync, chmodSync, symlinkSync, rmSync, mkdirSync, realpathSync, existsSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { tmpdir, homedir } from 'node:os'
+import { tmpdir, userInfo } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -26,11 +26,11 @@ export function createSuccessorDefaultQualificationSource() {
     // and its HTTPS helper are copied and byte-pinned so Linux needs no Mac runtime mount.
     const preflightPath = join(root, 'scripts/staging-preview-git-source-preflight.mjs')
     let toolchain = readFileSync(preflightPath, 'utf8')
-    const originalGit = join(homedir(), /^const gitBinary = resolve\(homedir\(\), '([^']+)'\)$/m.exec(toolchain)[1])
+    const originalGit = join(userInfo().homedir, /^const gitBinary = resolve\(userInfo\(\)\.homedir, '([^']+)'\)$/m.exec(toolchain)[1])
     // Apple's /usr/bin/git is an xcrun launcher and cannot run after copying.
     // Resolve the actual tool before making the byte-pinned disposable copy.
     const localGit = existsSync(originalGit) ? originalGit : fixtureGit
-    const originalExec = join(homedir(), /^const gitExecPath = resolve\(homedir\(\), '([^']+)'\)$/m.exec(toolchain)[1])
+    const originalExec = join(userInfo().homedir, /^const gitExecPath = resolve\(userInfo\(\)\.homedir, '([^']+)'\)$/m.exec(toolchain)[1])
     const localExec = localGit === originalGit && existsSync(originalExec) ? originalExec : execFileSync(localGit, ['--exec-path'], { encoding: 'utf8' }).trim()
     const qualifiedBin = join(root, 'qualification-toolchain/git'), qualifiedExec = join(root, 'qualification-toolchain/git-core')
     mkdirSync(qualifiedExec, { recursive: true, mode: 0o700 })
@@ -45,14 +45,18 @@ export function createSuccessorDefaultQualificationSource() {
       toolchain = toolchain.replace(declaration, `const ${name} = ${JSON.stringify(value)}`)
     }
     writeFileSync(preflightPath, toolchain)
-    const fixedReader = join(root, 'scripts/staging-owner-successor-fixed-source-reader.mjs')
-    writeFileSync(fixedReader, readFileSync(fixedReader, 'utf8')
-      .replace(/^const GIT = resolve\(homedir\(\), '[^']+'\)$/m, `const GIT = '${qualifiedBin}'`)
-      .replace(/^const EXEC = resolve\(homedir\(\), '[^']+'\)$/m, `const EXEC = '${qualifiedExec}'`))
-    const preparation = join(root, 'scripts/staging-owner-successor-source-preparation.mjs')
-    writeFileSync(preparation, readFileSync(preparation, 'utf8')
-      .replace(/^const GIT = resolve\(homedir\(\), '[^']+'\)$/m, `const GIT = '${qualifiedBin}'`)
-      .replace(/^const EXEC = resolve\(homedir\(\), '[^']+'\)$/m, `const EXEC = '${qualifiedExec}'`))
+    for (const name of ['staging-owner-successor-fixed-source-reader.mjs', 'staging-owner-successor-source-preparation.mjs']) {
+      const path = join(root, 'scripts', name)
+      let source = readFileSync(path, 'utf8')
+      for (const [declaration, value] of [
+        [/^const GIT = resolve\(userInfo\(\)\.homedir, '[^']+'\)$/gm, qualifiedBin],
+        [/^const EXEC = resolve\(userInfo\(\)\.homedir, '[^']+'\)$/gm, qualifiedExec],
+      ]) {
+        assert.equal([...source.matchAll(declaration)].length, 1, `exact tool declaration ${name}:${declaration}`)
+        source = source.replace(declaration, match => `${match.slice(0, match.indexOf(' = '))} = ${JSON.stringify(value)}`)
+      }
+      writeFileSync(path, source)
+    }
     for (const path of ['lib/server/staging-postgres.ts', 'lib/identity/staging-owner-successor-broker-readiness-edge.ts']) {
       mkdirSync(dirname(join(root, path)), { recursive: true }); cpSync(join(repository, path), join(root, path))
     }

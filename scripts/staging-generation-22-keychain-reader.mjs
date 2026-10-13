@@ -1,11 +1,11 @@
 /** Disabled, bounded two-token reader owned only by the supervised Gen22 child. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { spawn } from 'node:child_process'
 import { resolve } from 'node:path'
 
 export const STAGING_GENERATION_22_KEYCHAIN_READER_ENABLED = false
 export const GENERATION_22_KEYCHAIN_HELPER = resolve(import.meta.dirname, 'staging-generation-22-keychain.py')
-export const GENERATION_22_PYTHON = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
+export const GENERATION_22_PYTHON = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
 const ROOT = resolve(import.meta.dirname, '..')
 const LIMIT_MS = 15_000
 const MAX_BYTES = 4_096

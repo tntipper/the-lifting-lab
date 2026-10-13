@@ -1,3 +1,13 @@
+**13 October Job E2 — FACT: grok/a-baseline-green, HEAD 03ebaf0; working files only:**
+- FACT: all 26 Job E modules use userInfo().homedir; HOME override cannot select their binaries; five unpinned Python paths included.
+- FACT: fixture GIT/EXEC rewrites assert exactly one match for each declaration in both source copies.
+- FACT: activation manifest regenerated with repo script (25 digest fields only); both manifest checks pass; hosted baseline unchanged.
+- FACT: native-push 4/4 pass; source-preflight 6 pass/1 existing pinned-Git skip; HOME-override contract/push/preflight 15 pass/1 skip.
+- FACT: combined affected suite 170 tests: 157 pass, 8 fail, 5 existing native skips; source-preparation passes.
+- BLOCKED: 7 Docker fixture failures; local docker version confirms socket permission denial. Python stderr test also fails at base 080d2ba.
+- FACT/INFERENCE: git-show base files reproduce identical confstr warning; Python failure predates Job E and indicates host restriction.
+- GAP: hosted CI not run (no network). Evidence ../e2-test.log; syntax/diff/live-boundary checks pass; no commit/push/merge/deploy.
+
 **13 October Job E — FACT: portable script/test paths; grok/a-baseline-green at 080d2ba; working files only:**
 - FACT: removed all legacy user paths outside docs; 18 scripts + 8 tests/helpers use home-relative tools; repo roots remain module-relative.
 - FACT: digest/ownership/symlink checks and OFF switches preserved; scoped GitHub helper path shell-quoted; CLI trust tested with owned bytes.

@@ -1,5 +1,5 @@
 /** Metadata-only preparation. Exact source/window/approval admission remains in the fixed reader. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { lstatSync, readFileSync, realpathSync, openSync, writeFileSync, fchmodSync, fsyncSync, closeSync, renameSync, unlinkSync } from 'node:fs'
@@ -9,8 +9,8 @@ import { stagingPreviewGitExecutableReady, stagingPreviewGitHttpsHelperReady } f
 import { WINDOW_ID } from './staging-owner-successor-sql-context.mjs'
 
 const ROOT = resolve(import.meta.dirname, '..')
-const GIT = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
-const EXEC = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
+const GIT = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/bin/git')
+const EXEC = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core')
 const HANDOFF = resolve(ROOT, '.agent/owner-successor', WINDOW_ID, 'source-review.json')
 const denied = () => { throw Error('Successor source preparation unavailable') }
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex')

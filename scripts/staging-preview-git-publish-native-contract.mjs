@@ -1,5 +1,5 @@
 /** Pure source selection and command policy for a future staging Git push. No process adapter. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { createHash } from 'node:crypto'
 import { resolve } from 'node:path'
 
@@ -8,7 +8,7 @@ const root = resolve(import.meta.dirname, '..')
 const branch = 'codex/tll-integration'
 const ref = `refs/heads/${branch}`
 const origin = 'https://github.com/tntipper/the-lifting-lab.git'
-const credentialHelper = `!'${resolve(homedir(), '.local/bin/gh').replaceAll("'", "'\\''")}' auth git-credential`
+const credentialHelper = `!'${resolve(userInfo().homedir, '.local/bin/gh').replaceAll("'", "'\\''")}' auth git-credential`
 const manifestPath = 'config/staging-account-activation-manifest.json'
 const commonConfig = resolve(root, '../audit-code/.git/config')
 const worktreeConfig = resolve(root, '../audit-code/.git/worktrees/implementation-integration/config.worktree')
@@ -118,12 +118,12 @@ export function stagingPreviewGitPublishProcessOptions(args, maxBuffer) {
   }
   const remote = captured[0] === 'ls-remote'
   return Object.freeze({ cwd: remote ? '/' : root,
-    env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C', HOME: push ? resolve(homedir()) : '/var/empty',
-      XDG_CONFIG_HOME: '/var/empty', ...(push ? { GH_CONFIG_DIR: resolve(homedir(), '.config/gh') } : {}),
+    env: Object.freeze({ PATH: '/usr/bin:/bin', LANG: 'C', HOME: push ? resolve(userInfo().homedir) : '/var/empty',
+      XDG_CONFIG_HOME: '/var/empty', ...(push ? { GH_CONFIG_DIR: resolve(userInfo().homedir, '.config/gh') } : {}),
       GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null',
       GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: '/usr/bin/false', GIT_NO_REPLACE_OBJECTS: '1',
       GIT_NO_LAZY_FETCH: '1',
-      GIT_EXEC_PATH: resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core') }),
+      GIT_EXEC_PATH: resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/native/git/libexec/git-core') }),
     stdio: Object.freeze(['ignore', push ? 'ignore' : 'pipe', 'ignore']),
     timeout: push ? 45_000 : 15_000, maxBuffer })
 }

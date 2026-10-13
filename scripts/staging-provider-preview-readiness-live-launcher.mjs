@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Disabled one-shot read of the exact protected staging Preview readiness route. */
-import { homedir } from 'node:os'
+import { userInfo } from 'node:os'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { lstatSync, readFileSync } from 'node:fs'
@@ -11,7 +11,7 @@ export const PREVIEW_READINESS_LIVE_ENABLED = false
 export const PREVIEW_READINESS_JOURNAL = fileURLToPath(new URL('../../implementation-state/staging/tll-preview-readiness-v1.json', import.meta.url))
 const root = resolve(import.meta.dirname, '..')
 const helper = resolve(import.meta.dirname, 'staging-provider-normalization-keychain.py')
-const python = resolve(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
+const python = resolve(userInfo().homedir, '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3')
 const pythonSha256 = 'ac60cfe0268614638d0ffa35f3b0284fc7b3a11482723793455e17eeb278509e'
 const unavailable = () => { throw new Error('Protected Preview readiness unavailable') }
 
