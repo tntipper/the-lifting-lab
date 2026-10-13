@@ -133,7 +133,7 @@ export const SAFETY: Safety[] = [
     headline: 'Popular for stress and sleep, but with real caveats worth knowing.',
     common: ['Drowsiness', 'Stomach upset or nausea', 'A calm, sometimes flat mood'],
     serious: [
-      'Rare reports of liver injury — stop and see a doctor if you notice jaundice, dark urine, or upper-right abdominal pain',
+      'Rare reports of liver injury: stop and see a doctor if you notice jaundice, dark urine, or upper-right abdominal pain',
       'Can raise thyroid hormone levels and disturb existing thyroid conditions',
     ],
     avoid: [
@@ -144,7 +144,7 @@ export const SAFETY: Safety[] = [
     ],
     safeDose: 'Studies typically use 300 to 600mg a day of a standardised root extract, taken for a defined period rather than indefinitely.',
     detail:
-      'Ashwagandha is generally well tolerated short-term and is studied for stress and sleep, but it is not risk-free. It commonly causes drowsiness and stomach upset, and there are rare reports of liver injury — stop and see a doctor if you develop jaundice, dark urine or right-sided abdominal pain. It can raise thyroid hormone, a problem if you have a thyroid condition, and its immune-modulating effect means autoimmune disease is a reason for caution. It should not be used in pregnancy (it can stimulate the uterus) and is best avoided with hormone-sensitive cancers. Because it also interacts with sedatives, thyroid and blood-sugar medication, treat it as something to clear with a clinician rather than a casual add-on.',
+      'Ashwagandha is generally well tolerated short-term and is studied for stress and sleep, but it is not risk-free. It commonly causes drowsiness and stomach upset, and there are rare reports of liver injury: stop and see a doctor if you develop jaundice, dark urine or right-sided abdominal pain. It can raise thyroid hormone, a problem if you have a thyroid condition, and its immune-modulating effect means autoimmune disease is a reason for caution. It should not be used in pregnancy (it can stimulate the uterus) and is best avoided with hormone-sensitive cancers. Because it also interacts with sedatives, thyroid and blood-sugar medication, treat it as something to clear with a clinician rather than a casual add-on.',
     link: { label: 'See what we flag', href: '/watch-outs' },
   },
   {

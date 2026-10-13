@@ -97,14 +97,14 @@ export const INGREDIENTS: Ingredient[] = [
     howItWorks:
       'By raising nitric oxide, citrulline improves blood flow to working muscles, which can enhance the training pump and may modestly reduce fatigue and muscle soreness. The evidence is reasonable but not overwhelming, and it depends entirely on getting a real dose rather than the token sprinkle many products use.',
     dose:
-      'Aim for 6 to 8g of pure L-citrulline, or around 9 to 12g of citrulline malate 2:1 (which is only about two-thirds citrulline by weight, so you need more to reach the same citrulline dose), taken 30 to 60 minutes pre-workout. A huge number of pre-workouts list citrulline but dose it well below this, which is exactly the kind of under-dosing our scoring penalises.',
+      'Aim for 6–8 g L-citrulline, which is about 9–12 g citrulline malate (2:1) or 12–16 g (1:1), taken 30 to 60 minutes pre-workout. Malate is only part citrulline by weight, so you need more powder to reach the same dose. A huge number of pre-workouts list citrulline but dose it well below this, which is exactly the kind of under-dosing our scoring penalises.',
     safety:
       'Citrulline is well tolerated even at higher doses, with no meaningful safety concerns for healthy people. It is gentler on the stomach than arginine, which is one reason it has largely replaced it in modern formulas.',
     foundIn: 'Pre-workouts, pump/nitric-oxide products and some intra-workout drinks.',
     relatedGuides: ['pre-workout', 'intra-workout'],
     productCategory: 'pre-workout',
     faqs: [
-      { q: 'How much citrulline should a pre-workout have?', a: 'Around 6 to 8g of pure L-citrulline, or 9 to 12g of citrulline malate 2:1. Many products under-dose it well below this.' },
+      { q: 'How much citrulline should a pre-workout have?', a: 'Around 6–8 g L-citrulline, which is about 9–12 g citrulline malate (2:1) or 12–16 g (1:1). Many products under-dose it well below this.' },
       { q: 'Is L-citrulline or citrulline malate better?', a: 'Both work. Citrulline malate is only part citrulline by weight, so you need a higher total to match the same pure L-citrulline dose.' },
       { q: 'Does citrulline actually give a pump?', a: 'It can, by raising nitric oxide and blood flow, but only at a proper dose. Under-dosed citrulline does little.' },
     ],

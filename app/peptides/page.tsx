@@ -157,7 +157,7 @@ export default function PeptidesPage() {
             <h2 className="text-lg font-black uppercase tracking-wide mb-2">Where this page stops</h2>
             <p className="text-lab-muted text-sm leading-relaxed">
               This is general, evidence-based information, not medical advice, a prescription or a how-to. Any
-              decision involving a licensed medicine — GLP-1s or growth-hormone therapy — is a matter for a
+              decision involving a licensed medicine (GLP-1s or growth-hormone therapy) is a matter for a
               doctor or pharmacist who can assess you and monitor treatment. PT-141 is not UK-licensed. We deliberately give no dosing or
               sourcing guidance for unlicensed peptides, because the honest answer is not to self-source them.
             </p>

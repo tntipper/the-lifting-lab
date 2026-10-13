@@ -19,7 +19,7 @@ export const NUTRIENT_LIMITS: Record<string, {
   'Vitamin B12': { ul: null, unit: 'mcg', risk: 'low', note: 'No established UL' },
   'Zinc': { ul: 25, unit: 'mg', risk: 'high', note: 'Common in multi+ZMA stacks; copper depletion' },
   'Magnesium': { ul: 250, unit: 'mg', risk: 'medium', note: 'UL applies to supplemental Mg only; GI effects' },
-  'Iron': { ul: 40, unit: 'mg', risk: 'high', limitLabel: 'EFSA safe level', note: 'EFSA safe level: 40mg/day total iron for adults, not a UL; TRT increases RBC; monitor serum ferritin' },
+  'Iron': { ul: 40, unit: 'mg', risk: 'high', limitLabel: 'EFSA safe level', note: 'EFSA safe level: 40 mg/day total iron for adults, not a UL. If you\'re on TRT, which can raise red blood cell count, speak to your clinician before adding iron and about blood tests.' },
   'Selenium': { ul: 255, unit: 'mcg', risk: 'high', note: 'UL lowered to 255mcg (EFSA 2023); narrow therapeutic window; selenosis risk' },
   'Iodine': { ul: 600, unit: 'mcg', risk: 'medium', note: 'Thyroid disruption at excess' },
   'Calcium': { ul: 2500, unit: 'mg', risk: 'low', note: 'Calcification risk at very high doses' },

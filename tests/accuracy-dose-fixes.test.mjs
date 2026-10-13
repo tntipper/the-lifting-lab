@@ -56,26 +56,26 @@ test('citrulline conversion delivers both pure targets from both malate ratios',
   assert.deepEqual([convert(6, 0.5), convert(8, 0.5)], [12, 16])
   const items = load('lib/dosage.ts').DOSE_ITEMS
   const citrulline = items.find(item => item.id === 'l-citrulline')
-  assert.match(citrulline.dose, /6–8 g pure; 9–12 g malate 2:1; 12–16 g malate 1:1/)
-  assert.match(citrulline.detail, /9 to 12 g of citrulline malate 2:1 or 12 to 16 g of citrulline malate 1:1/)
+  assert.match(citrulline.dose, /6–8 g L-citrulline, which is about 9–12 g citrulline malate \(2:1\) or 12–16 g \(1:1\)/)
+  assert.match(citrulline.detail, /6–8 g L-citrulline, which is about 9–12 g citrulline malate \(2:1\) or 12–16 g \(1:1\)/)
   const combos = JSON.stringify(load('lib/combos.ts').evaluateCombo(['citrulline', 'pre-workout']))
-  assert.match(combos, /6–8g pure L-citrulline = 9–12g citrulline malate 2:1 = 12–16g citrulline malate 1:1/)
+  assert.match(combos, /6–8 g L-citrulline, which is about 9–12 g citrulline malate \(2:1\) or 12–16 g \(1:1\)/)
 })
 test('citrulline forms and ingredient copy specify the 2:1 dose equivalent', () => {
   const forms = load('lib/forms.ts').FORMS.find(item => item.id === 'citrulline')
   const malate = forms.options.find(option => option.name === 'Citrulline malate 2:1')
-  assert.match(malate.note, /9-12g to deliver 6-8g of pure L-citrulline/)
-  assert.match(forms.bottomLine, /pure L-citrulline aim for 6-8g; for citrulline malate 2:1 aim for 9-12g/)
-  assert.match(forms.detail, /2:1 product needs 9-12g to deliver 6-8g of pure L-citrulline/)
+  assert.match(malate.note, /6–8 g L-citrulline, which is about 9–12 g citrulline malate \(2:1\) or 12–16 g \(1:1\)/)
+  assert.match(forms.bottomLine, /6–8 g L-citrulline, which is about 9–12 g citrulline malate \(2:1\) or 12–16 g \(1:1\)/)
+  assert.match(forms.detail, /6–8 g L-citrulline, which is about 9–12 g citrulline malate \(2:1\) or 12–16 g \(1:1\)/)
   assert.doesNotMatch(JSON.stringify(forms), /~8g|about 8g|around 8g/)
   const ingredient = load('lib/ingredients.ts').getIngredient('l-citrulline')
-  assert.match(ingredient.dose, /6 to 8g of pure L-citrulline, or around 9 to 12g of citrulline malate 2:1/)
+  assert.match(ingredient.dose, /6–8 g L-citrulline, which is about 9–12 g citrulline malate \(2:1\) or 12–16 g \(1:1\)/)
   const faq = ingredient.faqs.find(item => item.q === 'How much citrulline should a pre-workout have?')
-  assert.match(faq.a, /6 to 8g of pure L-citrulline, or 9 to 12g of citrulline malate 2:1/)
+  assert.match(faq.a, /6–8 g L-citrulline, which is about 9–12 g citrulline malate \(2:1\) or 12–16 g \(1:1\)/)
 })
 test('ashwagandha dosage includes contraindications and liver stop advice', () => {
   const { detail } = load('lib/dosage.ts').DOSE_ITEMS.find(item => item.id === 'ashwagandha')
-  for (const warning of ['liver injury', 'stop and see a doctor', 'jaundice', 'dark urine', 'upper-right abdominal pain',
+  for (const warning of ['liver injury', 'liver injury: stop and see a doctor', 'jaundice', 'dark urine', 'upper-right abdominal pain',
     'pregnancy', 'breastfeeding', 'thyroid conditions', 'autoimmune disease', 'liver conditions', 'hormone-sensitive cancers',
     'planned surgery', 'sedatives', 'thyroid medication', 'blood-sugar medication']) assert.ok(detail.includes(warning), warning)
 })
@@ -93,19 +93,24 @@ test('nutrient flags distinguish vitamin C guidance and iron safe level from ULs
   }
   assert.match(NUTRIENT_LIMITS['Vitamin C'].note, /supplemental.*not an EFSA UL/)
   assert.match(NUTRIENT_LIMITS.Iron.note, /total iron.*not a UL/)
+  assert.equal(NUTRIENT_LIMITS.Iron.note, "EFSA safe level: 40 mg/day total iron for adults, not a UL. If you're on TRT, which can raise red blood cell count, speak to your clinician before adding iron and about blood tests.")
 })
 test('PT-141 is excluded from the licensed medicine list and explicitly not UK-licensed', () => {
   const text = source('app/peptides/page.tsx')
   assert.match(text, /PT-141 is not UK-licensed/)
   assert.doesNotMatch(text, /licensed medicine —[^—]*PT-141/)
+  assert.match(text, /a licensed medicine \(GLP-1s or growth-hormone therapy\) is a matter for/)
+  assert.doesNotMatch(text, /licensed medicine —/)
 })
-test('caffeine half-life copy uses 5-6 hours and clearly describes the 5-hour estimate', () => {
+test('caffeine half-life copy uses the canonical 5-hour average wording and clearly describes the 5-hour estimate', () => {
   const calculator = source('app/calculators/caffeine/CaffeineCalculator.tsx')
   const page = source('app/calculators/caffeine/page.tsx')
   assert.match(calculator, /const HALF_LIFE_H = 5\b/)
-  assert.match(calculator, /half-life of 5-6 hours/)
+  assert.match(calculator, /Caffeine&apos;s half-life averages around 5 hours in healthy adults but varies widely between people\. After about 10 hours roughly a quarter remains\./)
+  assert.doesNotMatch(calculator, /5-6 hours/)
   assert.match(calculator, /This estimate uses 5 hours/)
   assert.doesNotMatch(page, /roughly 5 hours|~5 hour|about a 5 hour|Because of the 5 hour/)
-  assert.match(page, /half-life of 5-6 hours/)
+  assert.match(page, /Caffeine\\'s half-life averages around 5 hours in healthy adults but varies widely between people\. After about 10 hours roughly a quarter remains\./)
+  assert.doesNotMatch(page, /5-6 hours|10-12 hours/)
   assert.match(page, /estimates a latest intake time using a 5-hour half-life/)
 })
