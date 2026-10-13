@@ -1,3 +1,14 @@
+**13 October Job K offline rehearsal — grok/j-merge-dupes, starting HEAD c6de1c7 (Job J base 67e80bc):**
+- Added scripts/rehearse-catalogue-merge.sh: disposable network-none Docker, fixture-only prerequisites, all 23 migrations in order.
+- Supabase Postgres 17.6.1.054: six exported products/19 nutrients plus child reviews, favourite collisions and shared/child-only stacks.
+- Fixed genuine rollback loss: archive before/after stack metadata, lock user_stacks, guard later edits and restore revision/updated_at once.
+- EssentialMAX now stores eaas/15/g; rollback restores original serving_unit and all original rows exactly.
+- PASS four exact sizes/prices/variant, child deletes/archives, FK moves/collisions, anon read/denial, both rerun no-ops and atomic edit refusal.
+- PASS exact eight-table snapshot diff, 14/14 Node tests, bash syntax, activation manifest, live boundaries and diff check; container removed.
+- Pre-existing hosted-baseline manifest FAIL: only package.json pin stale at unchanged HEAD; hosted CI not run; no unrelated repair.
+- Results ~/tll-migration/grok-runs/k-result.txt include fixture failure diagnoses; no Supabase calls, push or signoff workbook access.
+- Next: review local commit; hosted execution remains separately authorised. Reuse harness with export path and optional results path.
+
 **13 October Job J review fixes — grok/j-merge-dupes, HEAD 368c698; working changes uncommitted:**
 - Split empty-safe DDL/RLS/grants from guarded operator merge and data rollback; removed old combined migration/down files.
 - Added child nutrient overrides/normalised g units; limited stack sums to 10; rollback checks moved counts and EssentialMAX 15/name.
