@@ -1,3 +1,13 @@
+**13 October Job C — offline sign-off importer (grok/c-signoff-importer; HEAD 2037a895 unchanged):**
+- FACT: New XLSX importer defaults dry-run; only valid Approved rows become inactive T04 mappings + GBP amountPence price proposals; --write requires a new .generated.json file.
+- FACT: Exact handle/variant candidate lookup, row reasons/errors, duplicate holds, missing inputs and formula-cache rejection tested; workbook remains immutable.
+- FACT: New margin helper deducts trade cash cost + dispatch/payment fees from receipts; no output VAT; supplier VAT unrecoverable; existing pricing-policy already correct.
+- FACT: 132 focused tests PASS/0 fail/0 skip (11 new); scoped library typecheck PASS; syntax/live-boundaries PASS/0 violations.
+- FACT: ../c-dryrun.md has 243 undecided/0 approved/0 exported rows; ../c-test.log holds exact commands/results; input SHA256 c602116ef403d4ac1970223ebf9f0781bc64042632c0c253dad56dbc20863d8b unchanged.
+- BLOCKED: Full typecheck and full/targeted lint did not finish; stopped exit 130. Dependency realpath is iCloud; full tsc trace showed slow Next declaration reads. See proof log.
+- BLOCKED: git add/commit denied creating external worktree index.lock (Operation not permitted); all Job C changes remain uncommitted. No push/merge/deploy/network/live calls.
+- Next: repair local dependencies/Git metadata access, rerun full checks, commit in small slices; Toby supplies decisions + payment fees before export. Docs: docs/commerce/signoff-import.md.
+
 **12 October S08 — offline store-reviews spike (codex/s08-spike; HEAD f36a7d27; working tree only):**
 - docs/reviews-spike.md recommends Judge.me free provisionally; compares public widget/API and alternatives without network calls.
 - Reuses ExactMapping/product-mapping helpers; approved runtime loader/data and free API/freshness entitlement remain TODO.
