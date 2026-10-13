@@ -27,6 +27,7 @@ export type Product = {
   cataloguePresentation?: CataloguePresentation | null
   /** Approved server projection; never a raw private mapping row. */
   storeLinkMapping?: StoreLinkMapping | null
+  sizeOptions?: import('./commerce/size-selection').ProductSizeOption[]
   storeVariants?: StoreVariantOption[]
   /** Public Shopify price/stock observation; retail_price is replaced server-side when enabled. */
   storePrice?: StorePricePresentation | null

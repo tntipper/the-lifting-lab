@@ -8,6 +8,12 @@ export type PreviewProduct = Product & { nutrients: Nutrient[] }
 // Images use bundled exact-ID files; missing files retain the honest fallback.
 export const PREVIEW_PRODUCTS: PreviewProduct[] = [
   {
+    id: '1fab2546-6a25-4fd9-8e49-abf6bb6b362c', name: 'Crunch Bar (White Chocolate Crisp)', brand: 'Warrior', category: 'protein-bar',
+    serving_size: 64, serving_unit: 'g', servings_per_container: 12, retail_price: 23.99, image_url: null,
+    informed_sport: false, buy_url: null, proprietary_blend: false, amino_spiked: false, protein_yield: null,
+    nutrients: [{ nutrient_name: 'Protein', amount: 20, unit: 'g' }],
+  },
+  {
     id: '99e438ca-067d-40c5-81f7-f1a26827551a', name: 'Pure Creatine Monohydrate Powder', brand: 'Nutrition Geeks', category: 'creatine',
     serving_size: 3.5, serving_unit: 'g', servings_per_container: 90, retail_price: 9.99, image_url: '/catalogue/99e438ca-067d-40c5-81f7-f1a26827551a.png',
     informed_sport: false, buy_url: null, proprietary_blend: false, amino_spiked: false, protein_yield: null,

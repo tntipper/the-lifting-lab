@@ -1,3 +1,13 @@
+**13 October Job J — grok/j-merge-dupes, base 67e80bc; dry-run preparation, uncommitted:**
+- Prepared atomic guarded three-group merge SQL/private archives and repeat-safe rollback, including favourite/stack collisions.
+- Added public active-parent size options, fail-soft loader/preview fixture, native Size selector and exact approved-variant Buy selection.
+- Added exact three 308 redirects/sitemap exclusions; EssentialMAX retained eaas/15g; decision/runbook in docs/commerce/catalogue-duplicates.md.
+- Focused Node tests 39/39 pass; typecheck pass; lint 0 errors/22 existing warnings; both manifests pass (activation 110→111).
+- npm test 4069: 4032 pass/29 fail/8 skip; 28 failures reproduced on untouched HEAD archive; extra process case rerun 11/11 pass.
+- Browser fixture bundles; execution blocked by absent Playwright binary/Chrome SIGABRT+EPERM. SQL execution/hosted CI remain unverified.
+- Commit blocked: index.lock in night/repo/.git/worktrees/wt-j denied; changes preserved and ../j-merge-dupes.patch prepared.
+- Next: commit with writable Git metadata, offline PostgreSQL/collision/rollback rehearsal and capable browser/CI runner; no Supabase/production calls.
+
 **13 October Job I review fixes — grok/i-flavour-picker, baseline acd617f; committed (be3b6da + review-nit fixes):**
 - Page never reads searchParams; daily ISR remains when LINKS off; server defaultVariantId hydrates before mount-only URL override.
 - Select updates exact Buy/URL via history.replaceState; no router round trip or prop reset; single choice is text.

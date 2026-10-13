@@ -1,3 +1,4 @@
+import { PREVIEW_SIZE_OPTIONS, type ProductSizeOption } from '@/lib/commerce/size-selection'
 import { unstable_rethrow } from 'next/navigation'
 import { withStorePrices } from '@/lib/commerce/store-price-server'
 // Server-side product data fetchers shared by the /products, /products/[id]
@@ -83,7 +84,7 @@ export async function fetchCategory(category: string): Promise<ScoredProduct[]> 
 export async function fetchProductDetail(id: string): Promise<ComparedProduct | null> {
   if (isSyntheticPreview()) {
     const product = PREVIEW_PRODUCTS.find((item) => item.id === id)
-    return product ? { ...withScore(product), nutrients: product.nutrients } : null
+    return product ? { ...withScore(product), nutrients: product.nutrients, sizeOptions: PREVIEW_SIZE_OPTIONS[id] ?? [] } : null
   }
   try {
     const sb = createPublicClient()
@@ -101,8 +102,15 @@ export async function fetchProductDetail(id: string): Promise<ComparedProduct | 
       .eq('product_id', id)
       .order('nutrient_name')
 
+    let sizeOptions: ProductSizeOption[] = []
+    try {
+      const { data, error: sizesError } = await sb.from('product_size_options')
+        .select('slug, label, serving_size, serving_unit, servings_per_container, retail_price, buy_url, shopify_variant_id, sort')
+        .eq('product_id', id).order('sort').order('slug')
+      if (!sizesError && data) sizeOptions = data as ProductSizeOption[]
+    } catch (error) { unstable_rethrow(error) /* Missing table/read failure keeps existing detail usable. */ }
     const [pricedProduct] = await withStorePrices([product as Product])
-    return { ...withScore(pricedProduct), nutrients: (nutrients as Nutrient[] | null) ?? [] }
+    return { ...withScore(pricedProduct), sizeOptions, nutrients: (nutrients as Nutrient[] | null) ?? [] }
   } catch (error) {
     unstable_rethrow(error)
     return null

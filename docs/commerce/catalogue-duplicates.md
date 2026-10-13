@@ -1,13 +1,37 @@
-# Catalogue duplicates: awaiting Toby (13 Oct 2026)
+# Catalogue duplicate merges — approved preparation, 13 October 2026
 
-Decision: one page per product with a flavour/size dropdown; per-flavour pages are deleted, not redirected.
+Toby approved these three pack/data merges on `grok/j-merge-dupes`, based on the supplied read-only `../prod-dupes.json.txt` export. This branch prepares SQL and application behaviour only. No Supabase project is contacted and no database, Shopify, deployment or production operation is authorised by this work.
 
-FACT: no per-flavour routes exist in code (`/products/[id]` is the only product route). The live catalogue (`/api/products`, 176 rows) has no per-flavour duplicate rows. Three brand+name duplicate groups exist, all live and listed in the production sitemap; they differ by pack size or by a data error, not flavour. Nothing is deleted or merged until Toby decides whether each keeps a redirect.
-
-| Group | Rows (id: detail) | Likely action |
+| Parent retained | Child archived and deleted | Result |
 | --- | --- | --- |
-| Warrior Crunch Bar (White Chocolate Crisp) | 1fab2546-6a25-4fd9-8e49-abf6bb6b362c: 12 x 64 g, £23.99; 8ddfc493-0872-4235-ba25-5091ef172b49: single bar, £2.00 | Merge as size options under 1fab2546 |
-| Warrior Whey Protein | e94b13c4-f7fa-42d2-94b2-8dfcda316311: 40 servings, £29.99; b9058eef-f71a-49f7-9672-a264d1a09614: 16 servings, £19.99 | Merge as size options under e94b13c4 |
-| Strom EssentialMax | 2567a955-be92-4f70-b147-f908fa80650c: eaas, 13 g; 60cbe489-96a8-416e-a11b-243e3277caf3: intra-workout, 15 g | Same Shopify product; true duplicate with conflicting data. Keep one after label check |
+| `1fab2546-6a25-4fd9-8e49-abf6bb6b362c` Warrior Crunch Bar | `8ddfc493-0872-4235-ba25-5091ef172b49` | `12-pack` (12 × 64g, £23.99) and `single-bar` (64g, £2.00). Only the pack carries Shopify variant `gid://shopify/ProductVariant/63535202468170`. |
+| `e94b13c4-f7fa-42d2-94b2-8dfcda316311` Warrior Whey Protein | `b9058eef-f71a-49f7-9672-a264d1a09614` | `40-servings` (£29.99, 25g serving) and `16-servings` (£19.99, 30g serving). Both retain the exported teamwarrior.com URL; neither has a Shopify variant. |
+| `2567a955-be92-4f70-b147-f908fa80650c` Strom EssentialMAX | `60cbe489-96a8-416e-a11b-243e3277caf3` | Keep category `eaas`; correct name to `EssentialMAX`, serving_size to 15 (label: 1 scoop 15g). No size options. |
 
-Merge procedure (not run): point the child's variant mapping rows (`tll_mapping_private.product_mapping.comparison_product_id`) at the parent; move reviews/nutrients if needed; then set the child `products.status` to inactive/delete it so it leaves the catalogue, sitemap and routes.
+The export contains zero reviews/favourites across these six rows and one stack item on retained EssentialMAX. `tll_mapping_private.product_mapping` is absent from production; this migration does not access it. Existing approved mapping rules remain the sole authority for store Buy links; writing a variant ID to a size option does not approve it.
+
+The native labelled Size select appears for two or more options. A mount-only `?size=<slug>` read preselects the option while keeping daily ISR and server hydration deterministic. Price and serving information follow the option. A matching approved store variant supplies its observed Shopify price when enabled. The single bar clears inherited mapping/price; it cannot Buy the pack. Existing retailer listing/RRP behaviour applies to unmapped options. The parent nutrient label is retained; the migration archives each child's complete nutrient rows rather than asserting they are interchangeable.
+
+The exact three child routes have permanent Next.js redirects (308). Crunch/Whey target the appropriate `?size=` slug; EssentialMAX targets the retained ID. No per-flavour redirect was introduced. The sitemap remains database-driven and also filters the three static redirected IDs during deployment/migration sequencing. Redirecting a URL is not evidence that its database row has already been removed.
+
+## Offline review and rehearsal runbook
+
+1. Review `supabase/migrations/202610130002_merge_duplicate_products.sql` and its companion `supabase/rollback/202610130002_merge_duplicate_products.down.sql`. Neither was executed by this task. Use a disposable **local** PostgreSQL database, never a Supabase project, for the next rehearsal.
+2. Populate the local database with the exported product/nutrient rows and matching FK schemas (`reviews`, `stack_products`, `user_favourites`). Use synthetic users/stacks for collision cases. Include a stack containing parent and child with distinct IDs and serving totals, a favourite of both, a child-only favourite/review/stack, and the retained EssentialMAX stack row.
+3. Apply the up file locally. It is one transaction and locks the affected tables against concurrent writes. All six rows must match exact name, brand, category, serving size/count and price. Missing/mismatched rows abort the entire transaction. A previously archived child is skipped only when its parent/archive relationship remains consistent and the child remains absent. Review collisions abort for a manual decision rather than losing a review.
+4. Verify four public size rows; three children removed; three complete private archives; no loss of reviews/favourites/stack servings; summed stack collisions; label-correct EssentialMAX; original retained EssentialMAX stack unchanged. Verify anon/authenticated can read sizes only for active parents and cannot access the archive. Apply up again: expect no changes.
+5. Before any new writes, apply down locally. Verify original product and nutrient IDs/data, moved FK IDs, dropped favourites, both colliding stack rows and original parent serving totals. EssentialMAX returns to `EssentialMax`, serving_size 13 and its original updated_at. Apply down again: expect a no-op. Deliberate mismatched guards should leave every row unchanged.
+6. Run the Node tests and offline keyboard browser test below. Inspect both Crunch sizes and Whey URLs; confirm no single-bar Buy or wrong-pack Shopify price. CI and PostgreSQL rehearsal are separate evidence gates.
+7. Any future hosted application requires a separate operation-specific flag and Toby's explicit approval. Do not run Supabase CLI/database scripts as part of this preparation. Coordinate app redirects and SQL; for rollback, remove these redirects/sitemap exclusions as well as restoring the database, then invalidate the daily page/sitemap caches. Permanent redirects may remain cached by browsers.
+
+Archive JSON includes customer relationship data and remains private. Full colliding stack rows and their original parent totals are additional archive fields required for lossless rollback. Rollback is atomic and repeat-safe; ID/uniqueness conflicts or an edited colliding stack total abort it, leaving the archive intact. It is intended for a maintenance window before new writes to merged relationships, not an automatic undo after users have edited those rows.
+
+## Verification
+
+Commands: `npm run typecheck`, `npm run lint`, `npm test`, focused `node --experimental-strip-types --test tests/catalogue-duplicates.test.mjs tests/variant-picker.test.mjs tests/preview-product-assets.test.mjs`, and `node tests/browser/product-size.mjs`.
+
+Focused Node checks cover exact redirects/Next 308 semantics, sitemap exclusions, native select markup and change handler, actual detail hydration/preselection, option price/servings and Buy identity, loader failure fallback, synthetic fixture isolation, and SQL transaction/guards/archive/rollback structure. SQL static tests are not proof of PostgreSQL execution. Local results and remaining environment limits are recorded in `.agent/HANDOVER.md`; hosted CI has not been run.
+
+Local results: 39/39 focused tests pass; typecheck passes; lint has 0 errors and 22 existing warnings; both manifest checks pass (activation source count 110 → 111). Full suite: 4069 tests, 4032 pass, 29 fail, 8 skip. An untouched HEAD archive reproduces 28 of those failures; the extra process-binding JSON-output failure passes on targeted rerun (11/11). The archive's additional Git-inventory failure passes after adding a local tracked inventory (12/12 combined baseline checks). Remaining shared failures involve loopback/process permissions, Docker socket denial, Python startup stderr and unavailable browser execution. The new offline keyboard fixture bundles successfully but execution is blocked: Playwright browser absent; installed Chrome exits SIGABRT/EPERM. No PostgreSQL execution or hosted CI evidence is claimed. Full and focused logs: `/tmp/j-full.log`, `/tmp/j-focused-final.log`; baseline: `/tmp/j-baseline.log`; browser: `/tmp/j-browser-chrome.log`.
+
+Commit creation is blocked in this environment: Git cannot create `/Users/ttmacminim5pro/tll-migration/night/repo/.git/worktrees/wt-j/index.lock` (Operation not permitted). The working changes remain on the assigned branch; no commit, push, merge or deploy occurred. A complete transferable patch is saved outside this checkout at `../j-merge-dupes.patch`. Suggested commit message: `Prepare reversible catalogue duplicate merges and size selection`.
