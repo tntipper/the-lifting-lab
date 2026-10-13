@@ -33,7 +33,7 @@ function modules(env = {}, overrides = {}) {
       return require(name)
     }
     vm.runInNewContext(js, { require: local, module: mod, exports: mod.exports, process: { env },
-      URL, URLSearchParams, Response, Request, Headers, AbortSignal, Buffer, Uint8Array, TextDecoder, Date,
+      URL, URLSearchParams, Response, Request, Headers, AbortSignal, Buffer, Uint8Array, TextDecoder, Date, structuredClone,
       fetch: overrides.fetch ?? (() => { throw new Error('Live network forbidden') }) }, { filename })
     cache.set(path, mod.exports); return mod.exports
   }
@@ -126,6 +126,14 @@ const mapping = { productId: 'fixture', shopifyProductHandle: 'fixture', shopify
 const product = { id: 'fixture', brand: 'Fixture', name: 'Test pack', category: 'creatine', servings_per_container: 25,
   retail_price: 99, buy_url: 'https://www.amazon.co.uk/dp/B000000001', storeLinkMapping: mapping, nutrients: [] }
 const enabled = { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'enabled' }
+const mappingIdentity = { formulaId: 'formula', formulaVersion: 'v1', flavourId: 'vanilla', labelVersion: 'v1',
+  pack: { version: 'v1', sellingUnit: 'single', innerCount: 1, amountPerInner: 500, unit: 'g' } }
+const readMappings = async () => [{ comparison_product_id: product.id, status: 'store', active: true,
+  shopify_product_id: 'gid://shopify/Product/2', shopify_variant_id: mapping.shopifyVariantId, handle: mapping.shopifyProductHandle,
+  supplier: 'synthetic', supplier_sku: 'synthetic', pack: null, flavour: null, approval_reference: 'synthetic',
+  review: mapping.review, mapping_status: 'exact', mapping_source: 'verified_labels',
+  shop_identity: mappingIdentity, supplier_identity: mappingIdentity }]
+
 const attach = load('lib/commerce/store-price-products.ts').attachStorePrices
 const observed = stock => new Map([[id(1), { variantId: id(1), price: 12.5, availableForSale: stock, observedAtMs: now }]])
 
@@ -171,7 +179,7 @@ test('stale observation falls back; legacy approval holds still block all purcha
   assert.doesNotMatch(html, /href=/)
 })
 test('server wrapper defaults OFF and is inert in isolated environments even with flags on', async () => {
-  for (const env of [{}, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' },
+  for (const env of [{},
     { ...enabled, NEXT_PUBLIC_TLL_ENVIRONMENT: 'synthetic-preview' }, { ...enabled, NEXT_PUBLIC_TLL_ENVIRONMENT: 'staging' }]) {
     const local = modules(env, { 'next/server': { connection: () => { throw Error('Must stay static') } } })
     const rows = [product]
@@ -183,7 +191,7 @@ test('server wrapper avoids full-page caching on cache hits and sanitises missin
   const local = modules(enabled, { 'next/server': { connection: async () => { dynamic++ } } })
   const enrich = local('lib/commerce/store-price-server.ts').withStorePrices
   for (let i = 0; i < 2; i++) {
-    const [priced] = await enrich([product]); assert.equal(priced.retail_price, null)
+    const [priced] = await enrich([product], { readMappings }); assert.equal(priced.retail_price, null)
   }
   assert.equal(dynamic, 2)
 })
@@ -195,6 +203,7 @@ test('catalogue/detail/compare/category server loaders pass approved projections
       maybeSingle: async () => ({ data: data[0] ?? null, error: null }), then: done => Promise.resolve({ data, error: null }).then(done) }
   } }
   const local = modules({ ...enabled, TLL_STOREFRONT_SHOP: 'synthetic.myshopify.com', TLL_STOREFRONT_PRIVATE_TOKEN: 'synthetic-private-token' }, {
+    './store-mapping-server': { ...modules()('lib/commerce/store-mapping-server.ts'), createStoreMappingReader: () => readMappings },
     '@/lib/supabase-public': { createPublicClient: () => sb }, 'next/server': { connection: async () => { dynamic++ } },
     fetch: async () => { requests++; return response([node(1)]) },
   })

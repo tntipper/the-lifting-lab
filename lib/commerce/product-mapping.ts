@@ -24,6 +24,7 @@ export type ProductMappingRow = {
   /** Export-only observed Shopify publication state, not a live read or approval. */
   published?: boolean
 }
+export type StoreMappingRow = Omit<ProductMappingRow, 'cost_ex_vat' | 'price_auto' | 'ean' | 'published'>
 export type MappingIssue = { row: number; code: string; field: string }
 /** Public link details only. Never pass ProductMappingRow or ExactMapping to the browser. */
 export type StoreLinkMapping = Pick<ExactMapping, 'productId' | 'shopifyProductHandle' | 'shopifyVariantId' | 'review'> & {
@@ -31,13 +32,11 @@ export type StoreLinkMapping = Pick<ExactMapping, 'productId' | 'shopifyProductH
   approved: true
 }
 
-/** TODO(T05): attach this projection from reviewed saved rows in the server product loaders.
- * No approved runtime mapping loader exists yet; never use historical CSVs as live mappings.
- */
-export function presentStoreLinkMapping(row: ProductMappingRow, now = Date.now()): StoreLinkMapping | null {
+/** Public projection used by server loaders; saved review evidence is the only link authority. */
+export function presentStoreLinkMapping(row: StoreMappingRow, now = Date.now()): StoreLinkMapping | null {
   if (row?.active !== true || row.status !== 'store' || !text(row.approval_reference)) return null
   let mapping: ExactMapping
-  try { mapping = toExactMapping(row) } catch { return null }
+  try { mapping = toReviewedExactMapping(row) } catch { return null }
   const review = mapping.review
   if (mapping.status !== 'exact' || mapping.source !== 'verified_labels' || review.approved !== true ||
       review.version !== review.expectedVersion || !Number.isSafeInteger(now) ||
@@ -48,7 +47,8 @@ export function presentStoreLinkMapping(row: ProductMappingRow, now = Date.now()
       !(Object.keys(shop.pack) as (keyof PackIdentity)[]).every(key => shop.pack[key] === supplier.pack[key])) return null
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(mapping.shopifyProductHandle)) return null
   return { productId: mapping.productId, shopifyProductHandle: mapping.shopifyProductHandle,
-    shopifyVariantId: mapping.shopifyVariantId, review: { ...review }, active: true, approved: true }
+    shopifyVariantId: mapping.shopifyVariantId, review: { approved: review.approved, version: review.version, expectedVersion: review.expectedVersion,
+      verifiedAtMs: review.verifiedAtMs, expiresAtMs: review.expiresAtMs }, active: true, approved: true }
 }
 const text = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
@@ -115,7 +115,14 @@ function validReview(value: unknown): value is CatalogueReview {
 
 /** Preserve supplied evidence; the existing eligibility evaluator still decides approval/expiry/exactness. */
 export function toExactMapping(row: ProductMappingRow): ExactMapping {
-  if (validateProductMappings([row]).length || row.status !== 'store' || !validReview(row.review) ||
+  if (validateProductMappings([row]).length) throw new Error('Invalid saved mapping row.')
+  return toReviewedExactMapping(row)
+}
+
+function toReviewedExactMapping(row: StoreMappingRow): ExactMapping {
+  if (!text(row.comparison_product_id) || !text(row.handle) || !text(row.supplier) || !text(row.supplier_sku) ||
+      !canonicalShopifyId(row.shopify_product_id, 'Product') || !canonicalShopifyId(row.shopify_variant_id, 'ProductVariant') ||
+      row.status !== 'store' || !validReview(row.review) ||
       !validIdentity(row.shop_identity) || !validIdentity(row.supplier_identity) ||
       !['exact', 'ambiguous', 'unknown'].includes(String(row.mapping_status)) ||
       !['verified_labels', 'name_match', 'feed_estimate', 'unknown'].includes(String(row.mapping_source))) {
