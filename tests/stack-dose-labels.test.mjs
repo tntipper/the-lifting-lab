@@ -17,7 +17,7 @@ function load(file) {
 test('caffeine 400 mg is labelled an EFSA safe level, not a UL, in the stack warning', () => {
   const { NUTRIENT_LIMITS, analyseStack } = load('lib/nutrient-limits.ts')
   assert.equal(NUTRIENT_LIMITS.Caffeine.limitLabel, 'EFSA safe level')
-  assert.match(NUTRIENT_LIMITS.Caffeine.note, /not a UL/)
+  assert.equal(NUTRIENT_LIMITS.Caffeine.note, 'EFSA safe level: 400 mg/day from all sources for healthy adults (200 mg/day if pregnant or breastfeeding), not a UL.')
   const flags = analyseStack([{ servings_per_day: 1, products: { brand: 'Fixture', name: 'Pre', product_nutrients: [{ nutrient_name: 'Caffeine', amount: 400, unit: 'mg' }] } }])
   const flag = flags.find(f => f.nutrientName === 'Caffeine')
   assert.equal(flag.limitLabel, 'EFSA safe level')
@@ -32,7 +32,7 @@ test('citrulline 6-8 g is a per-session range, not a daily target', () => {
   for (const name of ['L-Citrulline', 'Citrulline']) {
     const ref = referenceRangeFor(name)
     assert.equal(ref.perSession, true)
-    assert.match(ref.timing, /per session/)
+    assert.equal(`${ref.minimum}–${ref.maximum} ${ref.unit} ${ref.timing}. ${ref.context}`, '6–8 g L-citrulline (about 9–12 g citrulline malate 2:1) per session, 45–60 min pre-workout. A per-session dose, not a daily target.')
     assert.match(ref.context, /not a daily target/)
   }
   assert.match(source('components/CombinedDosePanel.tsx'), /reference\.perSession \? 'Per-session range: compare one serving, not this daily total'/)
@@ -44,4 +44,9 @@ test('remaining caffeine half-life copy uses the Oath canonical wording', () => 
     assert.match(text, canon, file)
     assert.doesNotMatch(text, /five to six hours|5 to 6 hour|5-6 hour/, file)
   }
+})
+test('Oath evening-caffeine sentences in dosage and combos', () => {
+  assert.match(source('lib/dosage.ts'), /If you train in the evening, consider a stim-free option: caffeine\\'s half-life averages around 5 hours in healthy adults but varies widely between people, so late doses can disrupt sleep\./)
+  assert.match(source('lib/combos.ts'), /so late doses can disrupt your sleep\./)
+  assert.doesNotMatch(source('lib/combos.ts'), /wreck your sleep/)
 })
