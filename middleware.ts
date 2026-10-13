@@ -1,15 +1,7 @@
-import { productVariantRedirectUrl } from './lib/product-variant-redirects'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isSyntheticPreview, isHostedStaging, isPreviewAccountPath, isPreviewFixtureRead, previewUnavailableResponse, stagingConnectionPolicy } from './lib/preview-mode'
 
 export function middleware(request: NextRequest) {
-  const productPath = /^\/products\/([^/]+)$/.exec(request.nextUrl.pathname)
-  let productId: string | null = null
-  try { productId = productPath ? decodeURIComponent(productPath[1]) : null } catch { /* malformed path: let the page 404 */ }
-  const redirect = productId && productVariantRedirectUrl(productId, undefined, request.nextUrl.search)
-  if (redirect && ['GET', 'HEAD'].includes(request.method)) {
-    return NextResponse.redirect(new URL(redirect, request.url), 308)
-  }
   if (!isSyntheticPreview()) {
     const response = NextResponse.next()
     if (isHostedStaging()) {

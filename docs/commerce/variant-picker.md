@@ -75,19 +75,7 @@ variants yet; this change does not establish variant selection for batch-loaded 
 
 ## Redirect review process
 
-`lib/product-variant-redirects.ts` exports an EMPTY server-side authority mapping
-child product IDs to `{ parentProductId, variantId? }`. Middleware issues the permanent 308 redirect before product lookup, retaining
-the incoming query string (including repeated UTMs/ref) and merging the confirmed
-variant. Route and metadata `permanentRedirect` calls remain defensive fallbacks. A confirmed entry targets `/products/{parent}?variant={numericId}` (or
-just the parent if no variant is confirmed). Candidates below do not activate it.
-
-Before adding an entry, Toby must confirm which row is the canonical parent,
-whether the rows represent the same formula, the actual flavour/pack distinction,
-and the approved Shopify variant for each child. Check serving/count/category
-differences; name equality does not prove identity. Save approved mapping rows
-against the parent first, test the redirect and selected offer, then add a reviewed
-entry. Never infer a Shopify ID from the CSV or select a parent by row order.
-Keep the parent out of the redirect map and avoid redirect chains/cycles.
+Per-flavour pages are DELETED, not redirected (Toby, 13 Oct 2026). There is no redirect map or middleware redirect. Each product has one page; its flavour/size options are the saved per-variant mappings for that product id, selected with `?variant=` or `?flavour=`. To merge a duplicate catalogue row, point its variant mapping rows at the parent product id, then delete the duplicate row (data change, reviewed separately). See docs/commerce/catalogue-duplicates.md for the live duplicates awaiting Toby's decision.
 
 Candidate source: `docs/research/data/supabase-products-2026-09-25.csv`.
 There are four groups when brand/name comparison ignores case (eight rows,
@@ -105,7 +93,7 @@ four additional records); three groups match case exactly. No merges are guessed
 `tests/variant-picker.test.mjs` contains 30 offline cases covering mapping/duplicate
 isolation, public labels, exact per-variant prices, stock-aware server defaults,
 hydration and mount queries, OOS/unavailable Buy areas, catalogue holds, single-
-and multi-variant grids, and redirect map invariants. A behaviour test invokes
+and multi-variant grids, and that no redirect mechanism exists. A behaviour test invokes
 the native select change handler, rerenders the detail component, and checks B's
 Buy href and `?variant=B` while rejecting any router navigation. The source
 contract explicitly rejects any `searchParams` read in `page.tsx`.
@@ -164,7 +152,7 @@ shared with its synthetic reader. Future/stale observations still fail closed.
 
 - Public model/projection: `lib/products.ts`, `lib/commerce/product-mapping.ts`, `lib/commerce/store-mapping-server.ts`.
 - Prices: `lib/commerce/store-price-products.ts`, `lib/commerce/store-price-server.ts` (existing Storefront adapter reused unchanged).
-- Selection/route: `lib/commerce/variant-selection.ts`, `lib/product-variant-redirects.ts`, `components/ProductVariantPicker.tsx`, `app/products/[id]/page.tsx`, `app/products/[id]/ProductDetailPage.tsx`, `middleware.ts`.
+- Selection/route: `lib/commerce/variant-selection.ts`, `components/ProductVariantPicker.tsx`, `app/products/[id]/page.tsx`, `app/products/[id]/ProductDetailPage.tsx`, `middleware.ts`.
 - Grid/stack purchase presentation: `components/ProductOfferLink.tsx`, `lib/commerce/stack-cart.ts`, `components/BuyMyStack.tsx`, `app/stack/StackBuilder.tsx`.
 - Tests: `tests/variant-picker.test.mjs`, `tests/store-mapping-loader.test.mjs`, `tests/browser/accessibility-fixture.tsx`, `tests/browser/accessibility.mjs`, `tests/browser/offers.mjs`, `tests/preview-mode.test.mjs`.
 - Evidence: `config/staging-account-activation-manifest.json`, this document and the prepended `.agent/HANDOVER.md` note.
