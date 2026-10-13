@@ -40,6 +40,35 @@ test('ambiguous mappings and duplicate approvals hold every affected row', () =>
   assert.equal(result.mappings.length, 0)
   assert.ok(result.diagnostics.every(d => d.errors.includes('DUPLICATE_VARIANT')))
 })
+test('Excel float noise rounds to whole pence and VAT basis points, including saved cost', () => {
+  assert.equal(gbpPence('99.98999999999999'), 9999)
+  assert.equal(gbpPence('8.210000000000001'), 821)
+  assert.equal(gbpPence('8.210000009'), 821)
+  assert.equal(gbpPence('8.209999991'), 821)
+  for (const value of ['8.210000011', '8.209999989', '9999999.999', 'Infinity']) assert.equal(gbpPence(value), null)
+  for (const vat_rate of ['0.20000000000000001', '0.19999999999999998', '0.20000000009', '0.19999999991']) {
+    const result = importSignoff([row('Approved', { store_price_gbp: '99.98999999999999',
+      trade_cost_ex_vat: '8.210000000000001', delivery_cost_per_order: '6.000000000000001',
+      customer_shipping: '4.989999999999999', vat_rate })], [candidate])
+    assert.deepEqual(result.diagnostics[0].errors, [])
+    assert.equal(result.prices[0].amountPence, 9999)
+    assert.equal(result.mappings[0].cost_ex_vat, '8.21')
+    assert.deepEqual(result.margins[0], { row: 2, ...importSignoff([row('Approved', {
+      store_price_gbp: '99.99', trade_cost_ex_vat: '8.21' })], [candidate]).margins[0] })
+  }
+  for (const vat_rate of ['0.20000000011', '0.19999999989', '0.20001', '1.0001', '-0.2', 'NaN', '2e-1']) {
+    const result = importSignoff([row('Approved', { vat_rate })], [candidate])
+    assert.equal(result.mappings.length, 0)
+    assert.ok(result.diagnostics[0].errors.includes('MISSING_OR_INVALID_SUPPLIER_VAT'))
+  }
+})
+test('a single payment-fee column filled holds approval in either direction', () => {
+  for (const cells of [{ payment_fixed_pence: '' }, { payment_variable_bps: '' }]) {
+    const result = importSignoff([row('Approved', cells)], [candidate])
+    assert.equal(result.mappings.length, 0)
+    assert.deepEqual(result.diagnostics[0].errors, ['MISSING_OR_INVALID_PAYMENT_FEES'])
+  }
+})
 test('formula inputs not accepted; cached margin columns ignored; strict GBP amounts', () => {
   assert.equal(importSignoff([{ ...row(), formulaFields: ['store_price_gbp'] }], [candidate]).mappings.length, 0)
   assert.equal(importSignoff([{ ...row(), formulaFields: ['margin_store_gbp'] }], [candidate]).mappings.length, 1)
@@ -47,7 +76,7 @@ test('formula inputs not accepted; cached margin columns ignored; strict GBP amo
   assert.equal(gbpPence('19.29'), 1929)
 })
 // Minimal synthetic OOXML fixture, generated using stdlib ZIP/XML, no Excel dependency.
-function fixture(path, rows) {
+function fixture(path, rows, sheet = 'Sign-off') {
   const generate = `import sys,json,zipfile,xml.etree.ElementTree as E
 rows=json.loads(sys.argv[2]); ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main'
 root=E.Element('worksheet',xmlns=ns); data=E.SubElement(root,'sheetData')
@@ -59,12 +88,12 @@ for number,values in enumerate(values,1):
   while n: n,remainder=divmod(n-1,26); column=chr(65+remainder)+column
   c=E.SubElement(row,'c',r=column+str(number),t='inlineStr'); E.SubElement(E.SubElement(c,'is'),'t').text=value
 with zipfile.ZipFile(sys.argv[1],'w') as z:
- z.writestr('xl/workbook.xml','<workbook xmlns="'+ns+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sign-off" sheetId="1" r:id="rId1"/></sheets></workbook>')
+ z.writestr('xl/workbook.xml','<workbook xmlns="'+ns+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="'+sys.argv[3]+'" sheetId="1" r:id="rId1"/></sheets></workbook>')
  z.writestr('xl/_rels/workbook.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>')
  z.writestr('xl/worksheets/sheet1.xml',E.tostring(root))
  z.writestr('[Content_Types].xml','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>')
  z.writestr('_rels/.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')`
-  const result = spawnSync('python3', ['-c', generate, path, JSON.stringify(rows)], { encoding: 'utf8' })
+  const result = spawnSync('python3', ['-c', generate, path, JSON.stringify(rows), sheet], { encoding: 'utf8' })
   assert.equal(result.status, 0, result.stderr)
 }
 test('synthetic XLSX CLI: dry-run, write gate, no overwrite, unchanged input and mapping', async () => {
@@ -99,6 +128,24 @@ test('synthetic XLSX CLI: dry-run, write gate, no overwrite, unchanged input and
     const withheld = join(dir, 'invalid.generated.json')
     assert.equal(run(['--write', '--output', withheld]).status, 1)
     assert.equal(existsSync(withheld), false)
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+test('CLI --sheet override reads the requested worksheet', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'signoff-sheet-'))
+  try {
+    const xlsx = join(dir, 'input.xlsx'), mapping = join(dir, 'mapping.csv')
+    fixture(xlsx, [row().cells], 'Reviewed')
+    const keys = Object.keys(candidate)
+    writeFileSync(mapping, keys.join(',') + '\n' + keys.map(k => candidate[k]).join(',') + '\n')
+    const before = readFileSync(xlsx)
+    const run = args => spawnSync(process.execPath, ['--experimental-strip-types', 'scripts/import-signoff.mjs',
+      xlsx, '--mapping', mapping, ...args], { encoding: 'utf8' })
+    assert.equal(run([]).status, 1)
+    const overridden = run(['--sheet', 'Reviewed'])
+    assert.equal(overridden.status, 0, overridden.stderr)
+    assert.match(overridden.stdout, /exported: 1/)
+    assert.equal(run(['--sheet', 'Missing']).status, 1)
+    assert.deepEqual(readFileSync(xlsx), before)
   } finally { rmSync(dir, { recursive: true, force: true }) }
 })
 test('duplicate Approved row with missing price also holds the otherwise-valid approval', () => {

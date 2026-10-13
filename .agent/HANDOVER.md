@@ -1,3 +1,12 @@
+**13 October Job C2 — float-noise fix (grok/c-signoff-importer; base 2037a89; HEAD 30ca7b3):**
+- CORRECTION: Job C is committed at 30ca7b3; this C2 fix is in the working tree for the orchestrator to commit. The earlier uncommitted/index.lock status is historical and superseded.
+- FACT: GBP amounts and supplier VAT round to whole pence/basis points only within 1e-6 of a whole unit; saved costs use the rounded pence to avoid downstream rejection.
+- FACT: Regression tests cover noisy prices/costs/shipping/VAT, outside-tolerance rejection, either payment-fee column missing, and CLI --sheet override.
+- FACT: node --experimental-strip-types --test tests/signoff-*.test.mjs tests/product-mapping.test.mjs tests/pricing-policy.test.mjs: 135 PASS, 0 fail/skip.
+- FACT: Dry-run rerun to ../c-dryrun.md: 243 rows, 243 undecided, 0 approved/exported; input SHA256 c602116ef403d4ac1970223ebf9f0781bc64042632c0c253dad56dbc20863d8b unchanged.
+- GAP: Hosted CI not run (network prohibited); prior full typecheck/lint limitations remain historical evidence, not rechecked by C2.
+- Next: orchestrator reviews/commits this fix; Toby supplies decisions and actual payment fees before export. No commit attempt, network, live changes, push/merge/deploy.
+
 **13 October Job C — offline sign-off importer (grok/c-signoff-importer; HEAD 2037a895 unchanged):**
 - FACT: New XLSX importer defaults dry-run; only valid Approved rows become inactive T04 mappings + GBP amountPence price proposals; --write requires a new .generated.json file.
 - FACT: Exact handle/variant candidate lookup, row reasons/errors, duplicate holds, missing inputs and formula-cache rejection tested; workbook remains immutable.

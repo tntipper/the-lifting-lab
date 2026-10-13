@@ -10,11 +10,13 @@ export type MappingCandidate = ProductMappingRow & { variant_title?: string }
 /** Proposal fields reuse ApprovedPrice, without inventing live observation or review evidence. */
 export type SignoffPrice = Pick<ApprovedPrice, 'shopifyVariantId' | 'currency' | 'amountPence'>
 export type PaymentFees = { fixedPence: number; variableBps: number }
+function wholeUnits(value: string, scale: number, max: number): number | null {
+  if (!/^\d{1,7}(?:\.\d+)?$/.test(value)) return null
+  const units = Number(value) * scale, rounded = Math.round(units)
+  return Number.isSafeInteger(rounded) && rounded <= max && Math.abs(units - rounded) <= 1e-6 ? rounded : null
+}
 export function gbpPence(value: string): number | null {
-  if (!/^\d{1,7}(?:\.\d{1,2})?$/.test(value)) return null
-  const [whole, part = ''] = value.split('.')
-  const pence = Number(whole) * 100 + Number(part.padEnd(2, '0'))
-  return pence <= 1_000_000_000 ? pence : null
+  return wholeUnits(value, 100, 1_000_000_000)
 }
 const text = (row: Record<string, string>, key: string) => (row[key] ?? '').trim()
 
@@ -34,7 +36,7 @@ export function importSignoff(rows: SignoffRow[], candidates: MappingCandidate[]
     const mapping = matches.length === 1 ? structuredClone(matches[0]) : null
     const price = gbpPence(text(c, 'store_price_gbp')), cost = gbpPence(text(c, 'trade_cost_ex_vat'))
     const delivery = gbpPence(text(c, 'delivery_cost_per_order')), shipping = gbpPence(text(c, 'customer_shipping'))
-    const vatText = text(c, 'vat_rate'), vat = /^\d(?:\.\d{1,4})?$/.test(vatText) ? Math.round(Number(vatText) * 10000) : null
+    const vat = wholeUnits(text(c, 'vat_rate'), 10000, 10000)
     const integer = (key: string) => /^\d{1,10}$/.test(text(c, key)) ? Number(text(c, key)) : NaN
     const payment = fees ?? { fixedPence: integer('payment_fixed_pence'), variableBps: integer('payment_variable_bps') }
     if (price === null || price <= 0) errors.push('MISSING_OR_INVALID_PRICE')
@@ -52,7 +54,8 @@ export function importSignoff(rows: SignoffRow[], candidates: MappingCandidate[]
         shopify_product_id: canonicalShopifyId(mapping.shopify_product_id, 'Product'),
         shopify_variant_id: canonicalShopifyId(mapping.shopify_variant_id, 'ProductVariant'), handle: mapping.handle,
         supplier: mapping.supplier, supplier_sku: mapping.supplier_sku, ean: mapping.ean ?? null,
-        pack: mapping.pack ?? null, flavour: mapping.flavour ?? null, cost_ex_vat: text(c, 'trade_cost_ex_vat'),
+        pack: mapping.pack ?? null, flavour: mapping.flavour ?? null,
+        cost_ex_vat: cost === null ? text(c, 'trade_cost_ex_vat') : String(cost / 100),
         price_auto: false, active: false, approval_reference: decision === 'Approved' ? `toby-signoff:worksheet-row-${source.row}` : null }
       if (decision === 'Approved' && saved.shopify_variant_id) {
         const group = approvedVariants.get(saved.shopify_variant_id) ?? []
