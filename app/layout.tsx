@@ -1,3 +1,5 @@
+import { siteJsonLd, noIndexDeployment } from '@/lib/seo'
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import { isSyntheticPreview, isHostedStaging, isIsolatedEnvironment, PREVIEW_UNAVAILABLE_MESSAGE } from '@/lib/preview-mode'
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Anton } from "next/font/google";
@@ -24,14 +26,14 @@ const anton = Anton({
   weight: "400",
 });
 
-const SITE_URL = "https://www.theliftinglab.co.uk";
+const SITE_URL = "https://theliftinglab.co.uk";
 const SITE_TITLE = "The Lifting Lab — Supplement Research & Listed Prices (UK)";
 const SITE_DESCRIPTION =
   "Browse supplement research records, compare labels and listed prices, and manage your manual stack. Effectiveness recommendations are unavailable pending scientific review.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  ...(isIsolatedEnvironment() ? { robots: { index: false, follow: false } } : {}),
+  ...((isIsolatedEnvironment() || noIndexDeployment()) ? { robots: { index: false, follow: false } } : {}),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   applicationName: "The Lifting Lab",
@@ -62,6 +64,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${anton.variable} h-full antialiased`}
     >
       <body data-theme="lab" className="min-h-full flex flex-col">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(siteJsonLd) }} />
         {isSyntheticPreview() && (
           <aside role="status" data-testid="synthetic-preview-notice" className="border-b border-lab-lime bg-lab-lime px-4 py-3 text-center text-sm font-semibold text-black">
             {PREVIEW_UNAVAILABLE_MESSAGE} Product cards use a read-only catalogue snapshot; My Stack is saved only in this browser.

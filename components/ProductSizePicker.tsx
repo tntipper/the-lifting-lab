@@ -7,7 +7,7 @@ export default function ProductSizePicker({ options, selected, onChange, price =
   options: readonly ProductSizeOption[]; selected: ProductSizeOption; onChange: (slug: string) => void; price?: number | null
 }) {
   const id = useId()
-  return <div className="space-y-2">
+  return <fieldset className="space-y-2"><legend className="sr-only">Size</legend>
     {options.length > 1 ? <><label htmlFor={id} className="block text-sm font-bold">Size</label>
     <select id={id} value={selected.slug} onChange={event => onChange(event.target.value)}
       aria-describedby={`${id}-status`} className="min-h-11 w-full rounded-lg border border-lab-border bg-lab-panel px-3 text-white">
@@ -16,5 +16,5 @@ export default function ProductSizePicker({ options, selected, onChange, price =
     <p id={`${id}-status`} role="status" aria-live="polite" className="text-xs text-lab-muted">
       {selected.label}{price != null ? ` · £${price.toFixed(2)}` : ' · Price unavailable'}
     </p>
-  </div>
+  </fieldset>
 }

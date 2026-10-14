@@ -13,7 +13,7 @@ import type { EvidenceLevel, Ingredient } from '@/lib/ingredients'
 // the matchup list is fixed and any unknown slug should 404.
 export const dynamicParams = false
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 const EVIDENCE_STYLE: Record<EvidenceLevel, string> = {
   Strong: 'text-lab-lime border-lab-lime/50',

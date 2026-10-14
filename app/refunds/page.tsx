@@ -1,9 +1,14 @@
+import { pageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import PolicyDraftNotice from '@/components/PolicyDraftNotice'
 
-export const metadata: Metadata = { title: 'Refunds and returns — The Lifting Lab', description: 'Draft refunds policy for review.', robots: { index: false, follow: true } }
+export const metadata: Metadata = {
+  openGraph: pageMetadata('/refunds', 'Refunds and returns — The Lifting Lab', 'Draft refunds policy for review.').openGraph,
+  twitter: pageMetadata('/refunds', 'Refunds and returns — The Lifting Lab', 'Draft refunds policy for review.').twitter,
+  alternates: { canonical: '/refunds' },
+ title: 'Refunds and returns — The Lifting Lab', description: 'Draft refunds policy for review.', robots: { index: false, follow: true } }
 
 export default function Page() {
   return <div className="min-h-screen bg-lab-bg text-white"><TopNav />

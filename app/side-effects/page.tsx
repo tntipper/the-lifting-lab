@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 import SafetyBoard from './SafetyBoard'
 import { SAFETY, TIER_META, tierCounts, safetyQuestion } from '@/lib/side-effects'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/side-effects`
 
 export const metadata: Metadata = {

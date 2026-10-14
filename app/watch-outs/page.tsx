@@ -1,9 +1,13 @@
+import { pageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { CATEGORIES } from '@/lib/categories'
 export const revalidate = 86400
-export const metadata: Metadata = { title: 'Product assessment watch-outs unavailable | The Lifting Lab', description: 'Unverified historical percentages cannot identify underdosed products or recommend a replacement. Explicit nutrient cautions remain on product records and manual research stacks. Browse the underlying research records and listed prices.', alternates: { canonical: 'https://www.theliftinglab.co.uk/watch-outs' } }
+export const metadata: Metadata = {
+  openGraph: pageMetadata('/watch-outs', 'Product assessment watch-outs unavailable | The Lifting Lab', 'Unverified historical percentages cannot identify underdosed products or recommend a replacement. Explicit nutrient cautions remain on product records and manual research stacks. Browse the underlying research records and listed prices.').openGraph,
+  twitter: pageMetadata('/watch-outs', 'Product assessment watch-outs unavailable | The Lifting Lab', 'Unverified historical percentages cannot identify underdosed products or recommend a replacement. Explicit nutrient cautions remain on product records and manual research stacks. Browse the underlying research records and listed prices.').twitter,
+ title: 'Product assessment watch-outs unavailable | The Lifting Lab', description: 'Unverified historical percentages cannot identify underdosed products or recommend a replacement. Explicit nutrient cautions remain on product records and manual research stacks. Browse the underlying research records and listed prices.', alternates: { canonical: 'https://theliftinglab.co.uk/watch-outs' } }
 export default function ResearchPage() {
   return <div className="min-h-screen bg-lab-bg text-white"><TopNav /><main className="max-w-5xl mx-auto px-4 py-10 space-y-6">
     <h1 className="text-3xl font-black">Product assessment watch-outs unavailable</h1>

@@ -1,3 +1,14 @@
+**14 October Job K2 SEO/agent discovery — k-seo-agentic; start a0eb93f, local only:**
+- Added approved Product/ProductGroup offers, site entities/breadcrumbs, canonical/social metadata and product-card images.
+- Extended existing robots/sitemap; preview/staging/nonproduction noindex; cached llms/full and public product feed.
+- Reused active catalogue/size/nutrition loaders; public Storefront SKU/barcode only, fresh exact prices; no supplier costs.
+- Added fieldsets/legends to native selectors; existing JSX text unchanged in 65 files; brand/claims/nutrition sources untouched.
+- Prepared 38 exact-handle redirects, gated TLL_DRAFT_REDIRECTS=1, Shopify CSV and review notes under config/; flag remains unset.
+- PASS focused 154/154, typecheck, lint (22 existing warnings), diff check, both manifests and live boundaries.
+- Full npm test 4079 pass/1 fail/8 skip: same baseline Gen23 databaseEnable HOLD_RECONCILE, expected CONTROL_ACTIVATION_VERIFIED.
+- Browser blocked: absent bundled Chromium; installed Chrome size keyboard timeout reproduced with baseline; offer keyboard also times out.
+- Results ~/tll-migration/grok-runs/k2-result.txt; next review categories/Shopify CSV, fix separate Gen23/browser fixtures; no CI/push/merge/deploy/live writes.
+
 **13 October Job K offline rehearsal — grok/j-merge-dupes, starting HEAD c6de1c7 (Job J base 67e80bc):**
 - Added scripts/rehearse-catalogue-merge.sh: disposable network-none Docker, fixture-only prerequisites, all 23 migrations in order.
 - Supabase Postgres 17.6.1.054: six exported products/19 nutrients plus child reviews, favourite collisions and shared/child-only stacks.

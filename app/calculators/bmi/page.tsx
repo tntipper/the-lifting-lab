@@ -4,7 +4,7 @@ import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import BmiCalculator from './BmiCalculator'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/calculators/bmi`
 
 export const metadata: Metadata = {

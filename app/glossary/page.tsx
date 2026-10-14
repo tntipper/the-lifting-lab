@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 import GlossaryTracker from './GlossaryTracker'
 import { GLOSSARY, glossaryTermCount } from '@/lib/glossary'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/glossary`
 
 const TERM_COUNT = glossaryTermCount()

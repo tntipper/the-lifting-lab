@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 import FormsBoard from './FormsBoard'
 import { FORMS, VERDICT_META, formsQuestion, optionCount } from '@/lib/forms'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/forms`
 
 export const metadata: Metadata = {

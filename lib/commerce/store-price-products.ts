@@ -3,7 +3,7 @@ import type { StoreLinkMapping, StoreVariantOption } from './product-mapping'
 import type { CataloguePresentation } from './catalogue-presentation'
 import { storefrontVariantId, type StorefrontPrice } from './storefront-prices'
 
-export type StorePricePresentation = { productId: string; price: number | null; availableForSale: boolean | null; observedAtMs: number | null }
+export type StorePricePresentation = { productId: string; price: number | null; availableForSale: boolean | null; observedAtMs: number | null; sku?: string; barcode?: string }
 
 /** Apply only approved exact mappings. Keep the field used by all existing price and
  * serving-cost displays consistent; an unavailable store price must not reuse retail_price.
@@ -36,7 +36,8 @@ export async function attachStorePrices<T extends {
       row.observedAtMs <= observedNow && observedNow - row.observedAtMs < 15 * 60 * 1000 &&
       Number.isFinite(row.price) && row.price > 0 && typeof row.availableForSale === 'boolean'
     return { productId, price: fresh ? row.price : null,
-      availableForSale: fresh ? row.availableForSale : null, observedAtMs: fresh ? row.observedAtMs : null }
+      availableForSale: fresh ? row.availableForSale : null, observedAtMs: fresh ? row.observedAtMs : null,
+      ...(fresh && row.sku ? { sku: row.sku } : {}), ...(fresh && row.barcode ? { barcode: row.barcode } : {}) }
   }
   return products.map(product => {
     const matches = mapped.filter(row => row.productId === product.id)

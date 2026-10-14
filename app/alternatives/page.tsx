@@ -10,19 +10,19 @@ import { curatedAlternativeTargets, type AltProduct } from '@/lib/alternatives'
 
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const YEAR = 2026
 
 export const metadata: Metadata = {
   "title": "Same-category supplement research",
   "description": "Browse related research records and compare labels and listed prices. No approved replacement or effectiveness recommendation is available.",
   "alternates": {
-    "canonical": "https://www.theliftinglab.co.uk/alternatives"
+    "canonical": "https://theliftinglab.co.uk/alternatives"
   },
   "openGraph": {
     "title": "Same-category supplement research",
     "description": "Browse related research records and compare labels and listed prices. No approved replacement or effectiveness recommendation is available.",
-    "url": "https://www.theliftinglab.co.uk/alternatives",
+    "url": "https://theliftinglab.co.uk/alternatives",
     "type": "website"
   },
   "twitter": {

@@ -1,3 +1,4 @@
+import { productJsonLd } from '@/lib/seo'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -10,7 +11,7 @@ import { fetchProductDetail, fetchCategory } from '@/lib/product-data'
 import ProductDetailPage from './ProductDetailPage'
 import { selectStoreVariant } from '@/lib/commerce/variant-selection'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 // Product pages are rendered on the server (name, brand, score, true cost,
 // serving info, full nutrient label, buy CTA, image all in the initial HTML)
@@ -64,8 +65,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: `${SITE}/products/${id}` },
-    openGraph: { title, description, type: 'article', url: `${SITE}/products/${id}` },
-    twitter: { card: 'summary_large_image', title, description },
+    openGraph: { title, description, type: 'article', url: `${SITE}/products/${id}`, ...(product.image_url ? { images: [product.image_url] } : {}) },
+    twitter: { card: 'summary_large_image', title, description, ...(product.image_url ? { images: [product.image_url] } : {}) },
   }
 }
 
@@ -89,8 +90,8 @@ export default async function Page({ params }: Props) {
     const guide = getGuide(product.category)
 
     const productLd: Record<string, unknown> = {
+      ...productJsonLd(product),
       '@context': 'https://schema.org',
-      '@type': 'Product',
       name: fullName,
       brand: { '@type': 'Brand', name: product.brand },
       category: categoryLabel(product.category),
@@ -122,8 +123,7 @@ export default async function Page({ params }: Props) {
           worstRating: 1,
         },
       }),
-      // Legacy prices/URLs do not establish a current purchasable offer or stock.
-      // Offer markup awaits an approved exact-product commerce projection.
+      // Offers above come only from the approved current public store projection.
     }
 
     const crumbs: { name: string; item: string }[] = [
