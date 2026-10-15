@@ -285,7 +285,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           const nutrients = product.nutrients ?? []
           const reviews = reviewSummary[product.id]
           return (
-            <article key={product.id} data-product-id={product.id} className={`${styles.card} grid gap-3 p-6 ${isSelected ? 'border-[var(--line-strong)]' : ''}`}>
+            <article key={product.id} data-product-id={product.id} className={`${styles.card} gap-3 p-6 ${isSelected ? 'border-[var(--line-strong)]' : ''}`}>
               <Link href={`/products/${product.id}`} className={styles.packshot}>
                 <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} fill className="max-h-full max-w-full" />
               </Link>
