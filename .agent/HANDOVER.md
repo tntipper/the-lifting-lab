@@ -1,3 +1,12 @@
+**15 October overnight neutral labels + footer — k-claude-design; start 4b1baa6; local only:**
+- Neutralised caffeine heading, comparison Yes cells, combination badges/count and side-effects filter/badges.
+- Kept technical classification keys, medical guidance, catalogue copy, SEO metadata and structured data unchanged.
+- Footer keeps confirmed Instagram theliftinglabuk + X TheLiftingLabUK, in design order with exact DS SVGs.
+- YouTube omitted (owner confirms absent); TikTok/Facebook omitted (no confirmed TLL account found in web searches).
+- PASS typecheck; lint (0 errors/21 existing warnings); 25 focused Node tests; rendered markup/DS paths/URL/order checks; diff check.
+- Hosted CI unrun; related PR lookup unavailable (gh unsigned); no push/merge/deploy/live writes.
+- Next: review local commit; no local blockers.
+
 **15 October CI preview-mode stub fix — k-claude-design; start 747a131; design base cb600ee; local only:**
 - Added missing isIsolatedEnvironment: () => false to T12 compliance preview-mode stub, matching existing fixtures.
 - Footer assertion unchanged; all 10 compliance tests pass; catalogue copy and equal card sizing untouched.

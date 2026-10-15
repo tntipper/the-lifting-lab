@@ -11,7 +11,7 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'well-tolerated', label: 'Well Tolerated' },
   { key: 'use-sensibly', label: 'Use Sensibly' },
-  { key: 'caution', label: 'Real Caution' },
+  { key: 'caution', label: TIER_META.caution.label },
 ]
 
 // Interactive safety board. All content is also rendered server-side in the page

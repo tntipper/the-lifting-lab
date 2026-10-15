@@ -12,7 +12,7 @@ import {
 const LEVEL_STYLE: Record<ComboLevel, { color: string; ring: string; label: string }> = {
   good: { color: '#a6e22e', ring: 'rgba(166,226,46,0.5)', label: 'Fine together' },
   watch: { color: '#e0a340', ring: 'rgba(224,163,64,0.5)', label: 'Watch' },
-  caution: { color: '#e5533c', ring: 'rgba(229,83,60,0.5)', label: 'Caution' },
+  caution: { color: '#e5533c', ring: 'rgba(229,83,60,0.5)', label: 'Intake considerations' },
 }
 
 // Sensible default so the tool shows a real result on load rather than an
@@ -110,7 +110,7 @@ export default function CombineChecker() {
               <span style={{ color: LEVEL_STYLE.watch.color }}>{result.summary.watch} watch</span>
             )}
             {result.summary.caution > 0 && (
-              <span style={{ color: LEVEL_STYLE.caution.color }}>{result.summary.caution} caution</span>
+              <span style={{ color: LEVEL_STYLE.caution.color }}>{result.summary.caution} with intake considerations</span>
             )}
           </div>
 
