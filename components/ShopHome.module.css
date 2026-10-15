@@ -21,8 +21,9 @@
 .bestName, .bestUnit { font: 400 13px/18px var(--font-sans); color: #a9ac9f; }
 .bestUnit { text-align: right; }
 .bestPanel .note { font-size: 12px; line-height: 18px; }
-.categories { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,170px),1fr)); gap: 16px; }
-.category { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 8px; color: var(--ink); text-decoration: none; }
+.categories { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,170px),1fr)); gap: 16px; align-items: stretch; grid-auto-rows: 1fr; }
+.category { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 8px; color: var(--ink); text-decoration: none; height: 100%; align-content: start; }
+.categoryTitle { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
 .category:hover { border-color: var(--line-strong); }
 .categoryName { font: 400 26px/28px var(--font-display); letter-spacing: .01em; }
 .categoryMeta { font: 400 14px/20px var(--font-sans); color: var(--ink-muted); }
@@ -45,8 +46,8 @@
 .mid { color: var(--score-mid); background: var(--score-mid-bg); }
 .low { color: var(--score-low); background: var(--score-low-bg); }
 .note { margin: 0; max-width: 60ch; font: 400 13px/20px var(--font-sans); color: var(--ink-muted); }
-.methods { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 24px; }
-.method { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px; display: grid; gap: 8px; align-content: start; }
+.methods { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 24px; align-items: stretch; grid-auto-rows: 1fr; }
+.method { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px; display: grid; gap: 8px; align-content: start; height: 100%; }
 .methodNumber { font: 600 20px/24px var(--font-mono); color: var(--score-high); }
 .method h3 { margin: 0; font: 600 17px/24px var(--font-sans); }
 .method p { margin: 0; font: 400 14px/20px var(--font-sans); color: var(--ink-muted); }

@@ -90,7 +90,14 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
         </Link>
 
         {compactResearchHeader ? <nav aria-label="Main" className="hide-scroll flex min-w-0 items-center gap-1 overflow-x-auto max-[640px]:w-full">
-          <button type="button" onClick={openStack} aria-haspopup="dialog" aria-label={`My stack, ${stack.length} products`} className="tll-stack-button inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold">
+          <Link href="/stack" aria-current={pathname === '/stack' ? 'page' : undefined} className={`tll-nav-item ${pathname === '/stack' ? 'is-active' : ''}`}>Stack builder</Link>
+          <Link href="/sources" aria-current={pathname === '/sources' ? 'page' : undefined} className={`tll-nav-item ${pathname === '/sources' ? 'is-active' : ''}`}>Research sources</Link>
+          <Link href="/products" className="tll-nav-item">Shop</Link>
+          <a href="https://www.trylift.app" target="_blank" rel="noopener" className="tll-nav-item tll-lift-link">LIFT App ↗</a>
+        </nav> : <>
+          <div className="order-2 flex w-full items-center gap-2 sm:order-none sm:ml-auto sm:w-auto">
+            <BasketControl />
+            <button type="button" onClick={openStack} aria-haspopup="dialog" aria-label={`My stack, ${stack.length} products`} className="tll-stack-button inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold">
               My stack <span className="font-mono">{stack.length}</span>
             </button>
           </div>

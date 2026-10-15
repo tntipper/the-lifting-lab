@@ -115,7 +115,7 @@ export default function CategoryGrid({ products: suppliedProducts, variant = 'fu
 
   if (variant === 'compact') {
     return (
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid auto-rows-[1fr] grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6 items-stretch">
         {COMPACT_CATEGORIES.map((category) => {
           const stats = statsFor(products, category.categories)
           const countLabel = `${stats.count} ${stats.count === 1 ? 'product' : 'products'}`
@@ -133,7 +133,7 @@ export default function CategoryGrid({ products: suppliedProducts, variant = 'fu
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid auto-rows-[1fr] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
       {CATEGORY_GROUPS.map((group) => <TileCard key={group.slug} group={group} stats={fullStats[group.slug]} />)}
       <GuideTile />
       <LiftAppTile />

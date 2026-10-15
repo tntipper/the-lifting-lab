@@ -83,7 +83,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
   const [sort, setSort] = useState<SortKey>('budget')
   const [query, setQuery] = useState('')
   const [groupParam, setGroupParam] = useState<string | null>(null)
-  const { compared, toggleCompare } = useShopPanels()
+  const { compared, toggleCompare, clearCompare } = useShopPanels()
   const selected = compared.map(product => product.id)
   const [favourites, setFavourites] = useState<Set<string>>(new Set())
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
@@ -395,7 +395,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
             </div>
             <div className="flex items-center justify-between gap-3 lg:justify-end">
               <span className="text-xs text-[#a9ac9f]">Choose up to three</span>
-              <button type="button" onClick={() => setSelected([])} className="min-h-11 px-2 text-sm font-semibold text-[#a9ac9f]">Clear</button>
+              <button type="button" onClick={() => clearCompare()} className="min-h-11 px-2 text-sm font-semibold text-[#a9ac9f]">Clear</button>
               <Link href={`/compare?ids=${selected.join(',')}`} onClick={() => track('compare_start', { count: selected.length })}
                 className="inline-flex min-h-11 items-center rounded-md bg-[var(--lime)] px-5 text-sm font-semibold text-[var(--ink)]">
                 Compare side by side
