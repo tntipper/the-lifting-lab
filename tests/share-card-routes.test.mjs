@@ -102,7 +102,7 @@ test('stack image renders stored identity without unapproved scores', async () =
   assert.match(text, /Research records/)
   assert.match(text, /not been assessed as a combined stack/)
   assert.deepEqual(f.lookups[0], {
-    table: 'products', columns: 'id, name, brand, category, status',
+    table: 'products', columns: 'id, name, brand, category, status, image_url',
     filter: ['status', 'active'], ids: ['id', [A]],
   })
 })

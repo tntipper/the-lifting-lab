@@ -1,3 +1,4 @@
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import { formatListedServingPrice } from '@/lib/products'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
@@ -11,7 +12,7 @@ import { categoryResearchProducts } from '@/lib/best-categories'
 
 export const revalidate = 86400
 export const dynamicParams = true
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const known = (slug: string) => CATEGORIES.some(category => category.slug === slug)
 export async function generateStaticParams() { return CATEGORIES.map(({ slug }) => ({ category: slug })) }
 export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
@@ -28,7 +29,7 @@ export default async function BestCategoryPage({ params }: { params: Promise<{ c
   const products = await categoryResearchProducts(category), label = categoryLabel(category)
   const list = { '@context': 'https://schema.org', '@type': 'ItemList', name: `${label} research records`, itemListOrder: 'https://schema.org/ItemListUnordered', numberOfItems: products.length,
     itemListElement: products.map(p => ({ '@type': 'Product', name: `${p.brand} ${p.name}`, url: `${SITE}/products/${p.id}` })) }
-  return <div className="min-h-screen bg-lab-bg text-white"><TopNav />
+  return <div className="min-h-screen bg-lab-bg text-white"><TopNav /><BreadcrumbJsonLd path={`/best/${category}`} name={label} />
     {products.length > 0 && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(list) }} />}
     <main className="max-w-5xl mx-auto px-4 py-10 space-y-6">
       <h1 className="text-3xl font-black">{label} research</h1>

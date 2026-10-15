@@ -6,7 +6,7 @@ import { METHODOLOGY, METHODOLOGY_INDEX } from '@/lib/methodology'
 import { claimsReviewFor } from '@/lib/claims-review'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 
-const url = 'https://www.theliftinglab.co.uk/methodology'
+const url = 'https://theliftinglab.co.uk/methodology'
 const description = 'Historical formula inputs remain available for review. No approved effectiveness assessment exists; historical percentages do not establish dosing, quality or product recommendations.'
 export const metadata: Metadata = {
   title: 'Historical Scoring Methodology — Review Incomplete', description,

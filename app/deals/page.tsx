@@ -9,7 +9,7 @@ import DealsBoard from './DealsBoard'
 // highest commercial-intent query class we had no home for ("MyProtein discount
 // code", "supplement deals UK") and funnels code-hunters into our value pages.
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/deals`
 const YEAR = 2026
 

@@ -1,11 +1,15 @@
+import { pageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 
 export const metadata: Metadata = {
+  openGraph: pageMetadata('/affiliate-disclosure', 'Affiliate Disclosure — The Lifting Lab', 'Our affiliate relationship disclosure for Amazon Associates and other programmes.').openGraph,
+  twitter: pageMetadata('/affiliate-disclosure', 'Affiliate Disclosure — The Lifting Lab', 'Our affiliate relationship disclosure for Amazon Associates and other programmes.').twitter,
+
   title: 'Affiliate Disclosure — The Lifting Lab',
   description: 'Our affiliate relationship disclosure for Amazon Associates and other programmes.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk/affiliate-disclosure' },
+  alternates: { canonical: 'https://theliftinglab.co.uk/affiliate-disclosure' },
 }
 
 export default function AffiliateDisclosurePage() {

@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 import PeptidesBoard from './PeptidesBoard'
 import { PEP_ITEMS, itemCount, tierCount } from '@/lib/peptides'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/peptides`
 
 export const metadata: Metadata = {

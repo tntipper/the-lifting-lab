@@ -4,7 +4,7 @@ import TopNav from '@/components/TopNav'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import { CLAIM_SOURCES, TESTOSTERONE_REVIEW } from '@/lib/claims-review'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/testosterone`
 const { title, description, faqs } = TESTOSTERONE_REVIEW
 

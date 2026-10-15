@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
@@ -5,6 +6,10 @@ import { STACK_GUIDES } from '@/lib/stacks'
 import Wizard from './Wizard'
 
 export const metadata: Metadata = {
+  openGraph: pageMetadata('/wizard', 'Find My Stack — The Lifting Lab', 'Automatic supplement recommendations are unavailable until product assessments are approved. Manual research stacks remain available.').openGraph,
+  twitter: pageMetadata('/wizard', 'Find My Stack — The Lifting Lab', 'Automatic supplement recommendations are unavailable until product assessments are approved. Manual research stacks remain available.').twitter,
+  alternates: { canonical: '/wizard' },
+
   title: 'Find My Stack — The Lifting Lab',
   description:
     'Automatic supplement recommendations are unavailable until product assessments are approved. Manual research stacks remain available.',

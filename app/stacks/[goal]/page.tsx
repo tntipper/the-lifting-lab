@@ -15,7 +15,7 @@ import { getStackGuide, selectStack, STACK_GUIDES, STACK_SLUGS } from '@/lib/sta
 // recommended picks without a redeploy. Mirrors /best and /guide.
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 export function generateStaticParams() {
   return STACK_SLUGS.map((goal) => ({ goal }))

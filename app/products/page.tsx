@@ -8,18 +8,18 @@ import { fetchCatalogue } from '@/lib/product-data'
 // Refresh daily so newly added/rescored products flow into the page + schema.
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 export const metadata: Metadata = {
   "title": "Supplement research catalogue",
   "description": "All tracked product records, including historical, unassessed and under-review entries. No approved effectiveness recommendations; compare labels and listed prices.",
   "alternates": {
-    "canonical": "https://www.theliftinglab.co.uk/products"
+    "canonical": "https://theliftinglab.co.uk/products"
   },
   "openGraph": {
     "title": "Supplement research catalogue",
     "description": "All tracked product records, including historical, unassessed and under-review entries. No approved effectiveness recommendations; compare labels and listed prices.",
-    "url": "https://www.theliftinglab.co.uk/products",
+    "url": "https://theliftinglab.co.uk/products",
     "type": "website"
   },
   "twitter": {

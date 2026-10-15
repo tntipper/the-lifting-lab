@@ -10,6 +10,7 @@ export type ShareProduct = {
   name: string
   category: string
   score: number | null
+  image_url?: string
 }
 
 type ShareFailure = { ok: false; status: 400 | 404 | 503; error: string }
@@ -57,6 +58,7 @@ export async function resolveShareProducts(
         brand: row.brand,
         name: row.name,
         category: row.category,
+        ...(typeof row.image_url === 'string' && row.image_url ? { image_url: row.image_url } : {}),
         score: typeof score === 'number' && Number.isFinite(score) && score >= 0 && score <= 100 ? score : null,
       })
     }

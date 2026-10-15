@@ -14,19 +14,19 @@ import { brandSlug, type BrandSummary } from '@/lib/brands'
 // result renders the graceful empty state, never a 500).
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/brand`
 
 export const metadata: Metadata = {
   "title": "Supplement brand research directory",
   "description": "Explore brand catalogues and research records. Historical scores do not determine effectiveness or product recommendations.",
   "alternates": {
-    "canonical": "https://www.theliftinglab.co.uk/brand"
+    "canonical": "https://theliftinglab.co.uk/brand"
   },
   "openGraph": {
     "title": "Supplement brand research directory",
     "description": "Explore brand catalogues and research records. Historical scores do not determine effectiveness or product recommendations.",
-    "url": "https://www.theliftinglab.co.uk/brand",
+    "url": "https://theliftinglab.co.uk/brand",
     "type": "website"
   },
   "twitter": {

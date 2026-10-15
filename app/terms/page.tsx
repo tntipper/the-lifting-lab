@@ -1,12 +1,16 @@
+import { pageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import PolicyDraftNotice from '@/components/PolicyDraftNotice'
 import TopNav from '@/components/TopNav'
 
 export const metadata: Metadata = {
+  openGraph: pageMetadata('/terms', 'Terms of Use — The Lifting Lab', 'Terms governing your use of theliftinglab.co.uk.').openGraph,
+  twitter: pageMetadata('/terms', 'Terms of Use — The Lifting Lab', 'Terms governing your use of theliftinglab.co.uk.').twitter,
+
   title: 'Terms of Use — The Lifting Lab',
   description: 'Terms governing your use of theliftinglab.co.uk.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk/terms' },
+  alternates: { canonical: 'https://theliftinglab.co.uk/terms' },
 }
 
 export default function TermsPage() {

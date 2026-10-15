@@ -17,7 +17,7 @@ import {
 // rankings without a redeploy.
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/protein-value`
 const YEAR = 2026
 
@@ -25,12 +25,12 @@ export const metadata: Metadata = {
   "title": "Listed protein prices per gram",
   "description": "Compare recorded pack prices divided by protein amounts derived from known gram-based label data. Price-only research, not an effectiveness or approved-offer recommendation.",
   "alternates": {
-    "canonical": "https://www.theliftinglab.co.uk/protein-value"
+    "canonical": "https://theliftinglab.co.uk/protein-value"
   },
   "openGraph": {
     "title": "Listed protein prices per gram",
     "description": "Compare recorded pack prices divided by protein amounts derived from known gram-based label data. Price-only research, not an effectiveness or approved-offer recommendation.",
-    "url": "https://www.theliftinglab.co.uk/protein-value",
+    "url": "https://theliftinglab.co.uk/protein-value",
     "type": "website"
   },
   "twitter": {

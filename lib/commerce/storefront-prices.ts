@@ -3,9 +3,9 @@ import { cartJson } from './staging-cart-json'
 
 export const STOREFRONT_PRICE_CACHE_MS = 15 * 60 * 1000
 export const STOREFRONT_PRICE_BATCH_SIZE = 100
-export type StorefrontPrice = { variantId: string; price: number; availableForSale: boolean; observedAtMs: number }
+export type StorefrontPrice = { variantId: string; price: number; availableForSale: boolean; observedAtMs: number; sku?: string; barcode?: string }
 const QUERY = `query TllVariantPrices($ids: [ID!]!) {
-  nodes(ids: $ids) { ... on ProductVariant { id price { amount currencyCode } availableForSale } }
+  nodes(ids: $ids) { ... on ProductVariant { id sku barcode price { amount currencyCode } availableForSale } }
 }`
 export function storefrontVariantId(value: string): string | null {
   const id = /^(?:gid:\/\/shopify\/ProductVariant\/)?([1-9][0-9]*)$/.exec(value)?.[1]
@@ -46,12 +46,15 @@ export function createStorefrontPriceReader(options: {
         const accepted = new Map<string, StorefrontPrice>()
         for (const node of body.data.nodes) {
           if (!node || typeof node !== 'object') continue
-          const row = node as { id?: string; availableForSale?: boolean; price?: { amount?: string; currencyCode?: string } }
+          const row = node as { sku?: string; barcode?: string; id?: string; availableForSale?: boolean; price?: { amount?: string; currencyCode?: string } }
           if (!row.id || !batch.includes(row.id) || accepted.has(row.id)) throw new Error('Unexpected variant')
           if (typeof row.availableForSale !== 'boolean' || row.price?.currencyCode !== 'GBP'
             || typeof row.price.amount !== 'string' || !/^(?:0|[1-9][0-9]{0,5})(?:\.[0-9]{1,2})?$/.test(row.price.amount)
             || Number(row.price.amount) <= 0) continue
-          accepted.set(row.id, { variantId: row.id, price: Number(row.price.amount), availableForSale: row.availableForSale, observedAtMs })
+          accepted.set(row.id, { variantId: row.id, price: Number(row.price.amount), availableForSale: row.availableForSale, observedAtMs,
+            ...(typeof row.sku === 'string' && row.sku.trim() ? { sku: row.sku } : {}),
+            ...(typeof row.barcode === 'string' && row.barcode.trim() ? { barcode: row.barcode } : {}),
+          })
         }
         for (const [id, row] of accepted) cache.set(id, row)
       } catch { /* No logs containing provider bodies or credentials; fall back to affiliate. */ }

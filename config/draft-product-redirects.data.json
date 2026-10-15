@@ -1,0 +1,230 @@
+[
+  {
+    "handle": "applied-nutrition-100-casein",
+    "title": "Applied Nutrition 100% Casein Protein",
+    "vendor": "Applied Nutrition",
+    "category": "casein"
+  },
+  {
+    "handle": "applied-nutrition-mass",
+    "title": "Applied Nutrition Mass",
+    "vendor": "Applied Nutrition",
+    "category": "meal-replacement"
+  },
+  {
+    "handle": "applied-nutrition-endurance-recovery",
+    "title": "Applied Nutrition Endurance Recovery",
+    "vendor": "Applied Nutrition",
+    "category": "post-workout"
+  },
+  {
+    "handle": "applied-nutrition-digestive-enzyme-capsules",
+    "title": "Applied Nutrition Digestive Enzyme Capsules",
+    "vendor": "Applied Nutrition",
+    "category": "gut-digestion"
+  },
+  {
+    "handle": "applied-nutrition-critical-whey",
+    "title": "Applied Nutrition Critical Whey",
+    "vendor": "Applied Nutrition",
+    "category": "whey"
+  },
+  {
+    "handle": "bio-synergy-whey-hey",
+    "title": "Bio-Synergy Whey Hey\u00ae",
+    "vendor": "Bio-Synergy",
+    "category": "whey"
+  },
+  {
+    "handle": "bulk-creatine-monohydrate",
+    "title": "Bulk Creatine Monohydrate",
+    "vendor": "Bulk",
+    "category": "creatine"
+  },
+  {
+    "handle": "bulk-pure-whey-isolate",
+    "title": "Bulk Pure Whey Isolate",
+    "vendor": "Bulk",
+    "category": "whey-isolate"
+  },
+  {
+    "handle": "bulk-electrolyte-powder",
+    "title": "Bulk Electrolyte Powder",
+    "vendor": "Bulk",
+    "category": "hydration"
+  },
+  {
+    "handle": "bulk-complete-multivitamin-complex",
+    "title": "Bulk Complete Multivitamin Complex",
+    "vendor": "Bulk",
+    "category": "multivitamin"
+  },
+  {
+    "handle": "bulk-pure-whey-protein",
+    "title": "Bulk Pure Whey Protein",
+    "vendor": "Bulk",
+    "category": "whey"
+  },
+  {
+    "handle": "cnp-pro-creatine",
+    "title": "CNP Pro Creatine",
+    "vendor": "CNP",
+    "category": "creatine"
+  },
+  {
+    "handle": "cnp-loaded-eaa",
+    "title": "CNP Professional CNP EAA",
+    "vendor": "CNP Professional",
+    "category": "eaas"
+  },
+  {
+    "handle": "darkstims-creatine-monohydrate",
+    "title": "Darkstims Creatine Monohydrate",
+    "vendor": "Darkstims",
+    "category": "creatine"
+  },
+  {
+    "handle": "darkstims-pre-v4",
+    "title": "Darkstims PRE V4",
+    "vendor": "Darkstims",
+    "category": "pre-workout"
+  },
+  {
+    "handle": "ghost-legend-v4",
+    "title": "Ghost Lifestyle Ghost Legend",
+    "vendor": "Ghost Lifestyle",
+    "category": "pre-workout"
+  },
+  {
+    "handle": "ghost-hydration",
+    "title": "Ghost Lifestyle Ghost Hydration",
+    "vendor": "Ghost Lifestyle",
+    "category": "hydration"
+  },
+  {
+    "handle": "grenade-carb-killa",
+    "title": "Grenade Carb Killa (Chocolate Chip Salted Caramel)",
+    "vendor": "Grenade",
+    "category": "protein-bar"
+  },
+  {
+    "handle": "mutant-geaar",
+    "title": "Mutant GEAAR",
+    "vendor": "Mutant",
+    "category": "eaas"
+  },
+  {
+    "handle": "naughty-boy-menace",
+    "title": "Naughty Boy Menace",
+    "vendor": "Naughty Boy",
+    "category": "pre-workout"
+  },
+  {
+    "handle": "optimum-nutrition-micronised-creatine-powder",
+    "title": "Optimum Nutrition Micronised Creatine Powder",
+    "vendor": "Optimum Nutrition",
+    "category": "creatine"
+  },
+  {
+    "handle": "optimum-nutrition-serious-mass",
+    "title": "Optimum Nutrition Serious Mass",
+    "vendor": "Optimum Nutrition",
+    "category": "meal-replacement"
+  },
+  {
+    "handle": "optimum-nutrition-electrolyte-powder",
+    "title": "Optimum Nutrition Electrolyte Powder",
+    "vendor": "Optimum Nutrition",
+    "category": "hydration"
+  },
+  {
+    "handle": "optimum-nutrition-essential-amino-energy",
+    "title": "Optimum Nutrition Essential Amino Energy",
+    "vendor": "Optimum Nutrition",
+    "category": "eaas"
+  },
+  {
+    "handle": "optimum-nutrition-gold-standard-100-isolate",
+    "title": "Optimum Nutrition Gold Standard 100% Isolate",
+    "vendor": "Optimum Nutrition",
+    "category": "whey-isolate"
+  },
+  {
+    "handle": "reflex-nutrition-100-whey",
+    "title": "Reflex Nutrition 100% Whey",
+    "vendor": "Reflex Nutrition",
+    "category": "whey"
+  },
+  {
+    "handle": "reflex-nutrition-isolate-pro",
+    "title": "Reflex Nutrition Isolate Pro",
+    "vendor": "Reflex Nutrition",
+    "category": "whey-isolate"
+  },
+  {
+    "handle": "sci-mx-ultra-whey",
+    "title": "Sci-MX Ultra Whey",
+    "vendor": "Sci-MX",
+    "category": "whey"
+  },
+  {
+    "handle": "strom-stimumax-pro",
+    "title": "Strom Sports Nutrition StimuMAX PRO",
+    "vendor": "Strom Sports Nutrition",
+    "category": "pre-workout"
+  },
+  {
+    "handle": "strom-essentialmax-eaa",
+    "title": "Strom Sports Nutrition EssentialMax",
+    "vendor": "Strom Sports Nutrition",
+    "category": "eaas"
+  },
+  {
+    "handle": "strom-sports-nutrition-supportmax",
+    "title": "Strom Sports Nutrition SupportMAX",
+    "vendor": "Strom Sports Nutrition",
+    "category": "cycle-support"
+  },
+  {
+    "handle": "strom-sports-nutrition-zmax",
+    "title": "Strom Sports Nutrition ZMAX",
+    "vendor": "Strom Sports Nutrition",
+    "category": "zma"
+  },
+  {
+    "handle": "the-formula-neuphoric",
+    "title": "The Formula NEUPHORIC",
+    "vendor": "The Formula",
+    "category": "pre-workout"
+  },
+  {
+    "handle": "trainedbyjp-jp-hydration",
+    "title": "TrainedByJP JP Hydration",
+    "vendor": "TrainedByJP",
+    "category": "hydration"
+  },
+  {
+    "handle": "usn-muscle-fuel-anabolic",
+    "title": "USN Muscle Fuel Anabolic",
+    "vendor": "USN",
+    "category": "meal-replacement"
+  },
+  {
+    "handle": "warrior-creatine-monohydrate",
+    "title": "Warrior Creatine Monohydrate \u2014 Pure Muscle & Strength Support",
+    "vendor": "Warrior",
+    "category": "creatine"
+  },
+  {
+    "handle": "warrior-eaa-powder",
+    "title": "Warrior EAA Powder",
+    "vendor": "Warrior",
+    "category": "eaas"
+  },
+  {
+    "handle": "warrior-crunch-bar",
+    "title": "Warrior Crunch Bar (White Chocolate Crisp)",
+    "vendor": "Warrior",
+    "category": "protein-bar"
+  }
+]

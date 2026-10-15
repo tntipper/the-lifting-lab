@@ -25,7 +25,7 @@ import {
 export const revalidate = 86400
 export const dynamicParams = true
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const YEAR = 2026
 const CATEGORY_ORDER = CATEGORIES.map((c) => c.slug)
 

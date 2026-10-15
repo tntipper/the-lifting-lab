@@ -9,19 +9,19 @@ import { curatedMatchups, type Matchup, type MatchupProduct } from '@/lib/matchu
 
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const YEAR = 2026
 
 export const metadata: Metadata = {
   "title": "Supplement research comparisons",
   "description": "Compare product labels and recorded prices side by side. Historical values are unverified; no effectiveness winner is selected.",
   "alternates": {
-    "canonical": "https://www.theliftinglab.co.uk/vs"
+    "canonical": "https://theliftinglab.co.uk/vs"
   },
   "openGraph": {
     "title": "Supplement research comparisons",
     "description": "Compare product labels and recorded prices side by side. Historical values are unverified; no effectiveness winner is selected.",
-    "url": "https://www.theliftinglab.co.uk/vs",
+    "url": "https://theliftinglab.co.uk/vs",
     "type": "website"
   },
   "twitter": {

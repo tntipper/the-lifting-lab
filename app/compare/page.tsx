@@ -1,3 +1,5 @@
+import { pageMetadata } from '@/lib/seo'
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import type { Metadata } from 'next'
 import TopNav from '@/components/TopNav'
 import CompareView from './CompareView'
@@ -11,23 +13,14 @@ import { fetchCompareProducts, parseCompareIds } from '@/lib/product-data'
 // serving info, nutrients, offer status and images are in the HTML.
 type Props = { searchParams: Promise<{ ids?: string | string[] }> }
 
-const SITE = 'https://www.theliftinglab.co.uk'
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const ids = parseCompareIds((await searchParams).ids)
   const products = await fetchCompareProducts(ids)
-  const base = {
-    description:
-      'Compare recorded supplement labels and listed prices side by side. No approved effectiveness winner is available.',
-    alternates: { canonical: `${SITE}/compare` },
-  }
-  if (!products.length) return { title: 'Compare Supplements — The Lifting Lab', ...base }
   const names = products.map((p) => `${p.brand} ${p.name}`).join(' vs ')
-  return {
-    title: `${names} — Compare | The Lifting Lab`,
-    ...base,
-    description: `${names}: compare recorded label amounts and listed cost per serving. Effectiveness assessments are unavailable.`,
-  }
+  return pageMetadata('/compare', products.length ? `${names} — Compare | The Lifting Lab` : 'Compare Supplements — The Lifting Lab',
+    products.length ? `${names}: compare recorded label amounts and listed cost per serving. Effectiveness assessments are unavailable.` :
+      'Compare recorded supplement labels and listed prices side by side. No approved effectiveness winner is available.')
 }
 
 export default async function ComparePage({ searchParams }: Props) {
@@ -37,7 +30,7 @@ export default async function ComparePage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-lab-bg text-white">
-      <TopNav />
+      <TopNav /><BreadcrumbJsonLd path="/compare" name="Compare" />
       <section className="tll-on-dark tll-dark-section border-b border-[#2a2c26]">
         <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10">
           <p className="text-xs font-semibold uppercase tracking-[.08em] text-[#a9ac9f]">Compare up to three products</p>

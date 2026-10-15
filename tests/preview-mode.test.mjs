@@ -17,7 +17,8 @@ function loadSource(path, customRequire = require, extra = {}) {
 }
 const catalogueAvailability = loadSource('../lib/commerce/catalogue-presentation.ts')
 const attribution = loadSource('../lib/commerce/store-attribution.ts', require)
-const resolve = name => name === './commerce/store-attribution' ? attribution : name === './commerce/catalogue-presentation' ? catalogueAvailability : ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
+const crawlers = loadSource('../lib/seo-crawlers.ts')
+const resolve = name => name === '@/lib/seo-crawlers' ? crawlers : name === './commerce/store-attribution' ? attribution : name === './commerce/catalogue-presentation' ? catalogueAvailability : ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
 function loadAnalytics() {
   const storage = new Map(), calls = []
   const browser = {

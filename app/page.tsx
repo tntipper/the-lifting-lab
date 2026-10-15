@@ -11,11 +11,11 @@ import { fetchCatalogue } from '@/lib/product-data'
 export const metadata: Metadata = {
   title: 'The Lifting Lab — Supplement research',
   description: 'Browse supplement labels, unverified historical records and listed prices. Approved effectiveness recommendations are unavailable; manual research stacks remain usable.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk' },
+  alternates: { canonical: 'https://theliftinglab.co.uk' },
   openGraph: {
     title: 'The Lifting Lab — Supplement research',
     description: 'Browse supplement labels, unverified historical records and listed prices. Approved effectiveness recommendations are unavailable; manual research stacks remain usable.',
-    url: 'https://www.theliftinglab.co.uk',
+    url: 'https://theliftinglab.co.uk',
     type: 'website',
   },
   twitter: {
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
 }
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 const orgLd = {
   '@context': 'https://schema.org',
