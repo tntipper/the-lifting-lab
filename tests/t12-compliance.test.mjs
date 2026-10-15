@@ -27,7 +27,7 @@ function modules() {
       if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
       if (name === 'next/navigation') return { useRouter: () => ({ back() {} }) }
-      if (name === '@/lib/preview-mode') return { isSyntheticPreview: () => false }
+      if (name === '@/lib/preview-mode') return { isSyntheticPreview: () => false, isIsolatedEnvironment: () => false }
       if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
       if (name.startsWith('@/components/') && !['@/components/ProductWarnings', '@/components/PolicyDraftNotice', '@/components/SiteFooter'].includes(name)) return { __esModule: true, default: () => null }
       if (name === './RelatedProducts') return { __esModule: true, default: () => null }

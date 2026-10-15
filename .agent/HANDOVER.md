@@ -1,3 +1,13 @@
+**15 October CI preview-mode stub fix — k-claude-design; start 747a131; design base cb600ee; local only:**
+- Added missing isIsolatedEnvironment: () => false to T12 compliance preview-mode stub, matching existing fixtures.
+- Footer assertion unchanged; all 10 compliance tests pass; catalogue copy and equal card sizing untouched.
+- Full npm test PASS: 4091 pass / 6 skip / 0 fail with application workflow env and disposable account/cart prerequisites.
+- First full run: only Gen23 failed (KILLED); missing default PG prerequisites. Unchanged Gen23 passed (~16s) with owned network-none fixtures.
+- PASS npm run typecheck; npm run lint (0 errors / 21 existing warnings); node tests/preview-build-runtime.mjs (zero external connections).
+- Evidence: test-results/design-ci/e8-* (ignored); uniquely owned disposable PG removed; git diff --check PASS.
+- Hosted CI unrun; related PR lookup unavailable (gh unsigned). No push/main/deploy/live writes.
+- Next: review local fix(ci) commit and rerun hosted application CI; no local blockers.
+
 **15 October stack share overlap fix — k-claude-design; start b982858; design base cb600ee; local only:**
 - Cause: fixed fallback My Stack trigger at 45vh + 16px covered share Close; Buy bar could also cover bottom content.
 - Keep fallback trigger in document flow whenever StackBuilder is present; reserve Buy bar's 45vh maximum plus 16px below content.
