@@ -1,3 +1,14 @@
+**15 October stack accessibility regression — k-claude-design; start 05de4e4, passing base cb600ee; local only:**
+- Cause: 48d3bc6 removed the loaded/nonempty-products gate around the unchanged assessment summary, exposing transient 0/5 coverage.
+- Restored the gate, warning severity/provenance, daily-total labels/red UL/caveat and share labels; retained the new visual design.
+- Restored inline sharing so My Stack stays usable; fallback stack trigger clears the fixed Buy bar when no header exists.
+- PASS all remaining accessibility assertions at 320/390/768/1024/1280/1440, incl. assessment/email/share/drawers/outbox; committed tests unchanged.
+- LIMIT exact Chrome runner stops at existing offers.mjs:26 native-select timeout; ignored temporary runner uses selectOption for that step only.
+- PASS final typecheck, lint (0 errors/21 existing warnings), 121 focused stack tests, npm test (4091 pass/6 skip/0 fail), diff check.
+- Initial Gen23 prerequisite failure resolved with uniquely owned network-none PG/account/cart fixtures; unchanged Gen23 check PASS; own fixture removed.
+- Catalogue copy/card sizing rules untouched; logs test-results/design-ci/ (ignored); hosted CI unrun, gh unsigned; no push/main/deploy/live writes.
+- Next: review local fix(design) commit and rerun hosted CI; native-picker keyboard proof remains a local environment gap.
+
 **15 October design/CI regression fixes — k-claude-design; start 0b96b29, design base cb600ee; local only:**
 - Restored neutral `value` sort option; brand catalogue copy and equal card-per-row sizing untouched.
 - Gen23 cause: TopNav added useSearchParams but staging-cart's esbuild navigation stub omitted it; child build failure surfaced as KILLED, not a hang.

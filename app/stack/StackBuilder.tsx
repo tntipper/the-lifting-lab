@@ -186,7 +186,6 @@ function SavedStackBuilder() {
   const [pendingSwap, setPendingSwap] = useState<{ previous: string; next: string } | null>(null)
   const restored = useRef(false)
   const bookmarkChecked = useRef(false)
-  const dialog = useRef<HTMLDialogElement>(null)
   const searchRequest = useRef(0)
   const signature = JSON.stringify({ goal, stack: stack.map(product => product.id), servings: state.snapshot?.items.map(item => [item.product_id, item.servings_per_day]) })
   const saved = savedSignature === signature
@@ -232,13 +231,6 @@ function SavedStackBuilder() {
       setSaveError('')
     } catch { setSaveError('Browser storage is unavailable. Your stack bookmark could not be saved.') }
   }
-
-  useEffect(() => {
-    const modal = dialog.current
-    if (!modal) return
-    if (showShare && !modal.open) modal.showModal()
-    else if (!showShare && modal.open) modal.close()
-  }, [showShare])
 
   // Reuse the public active catalogue with its existing price/assessment rules.
   useEffect(() => {
@@ -359,7 +351,7 @@ function SavedStackBuilder() {
     const rni = rniFor(row.name, sex)
     const rniAmount = rni ? convertAmount(row.amount, row.unit, rni.unit) : null
     return { ...row, ulPercent: limit?.ul && amount != null ? Math.round(amount / limit.ul * 100) : null,
-      limitLabel: limit?.limitLabel ?? 'EFSA UL', rdaPercent: rni && rniAmount != null ? Math.round(rniAmount / rni.value * 100) : null }
+      limitLabel: limit?.limitLabel ?? 'UL', rdaPercent: rni && rniAmount != null ? Math.round(rniAmount / rni.value * 100) : null }
   })
   const flags = dailyTotals.filter(row => row.ulPercent != null && row.ulPercent >= 80)
   const stackCosts = stackItems.map(item => dailyCost(cartProducts.find(product => product.id === item.products?.id) || {}, item.servings_per_day))
@@ -465,7 +457,7 @@ function SavedStackBuilder() {
 
           {!loading && stack.filter(product => !stackItems.some(item => item.products?.id === product.id) && !unresolved.some(item => item.product_id === product.id)).map(product => <div className="stack-card" key={`missing-${product.id}`}><h3>{product.name}</h3><p>Product details unavailable; excluded from totals.</p><button type="button" className="stack-button" disabled={state.busy} onClick={() => remove(product.id)}>Remove</button></div>)}
           {!loading && dailyTotals.filter(row => row.contributions.length > 1).map(row => <div className="stack-nudge" key={`${row.name}-${row.unit}`}><b>{row.contributions.length} products contain {row.name.toLowerCase()}</b><p>Combined: <span className="stack-mono">{Number(row.amount.toFixed(2))} {row.unit}</span> a day. See the dose panel for context.</p></div>)}
-          {!loading && flags.map(row => <div className="stack-nudge" key={`flag-${row.name}`}><b>{row.name} · {row.ulPercent! > 100 ? 'Above' : row.ulPercent === 100 ? 'At' : 'Approaching'} {row.limitLabel}</b><p className="stack-mono">{Number(row.amount.toFixed(2))} {row.unit} total ({row.ulPercent}% of {row.limitLabel})</p></div>)}
+          {!loading && flags.map(row => <div className="stack-nudge" key={`flag-${row.name}`}><b>{row.ulPercent! >= 100 ? 'Critical' : 'Caution'} — {row.name}</b><p className="stack-mono">{Number(row.amount.toFixed(2))}{row.unit} total ({row.ulPercent}% of {row.limitLabel === 'UL' ? 'EFSA UL' : row.limitLabel})</p></div>)}
 
           <button type="button" className="stack-add" aria-expanded={addOpen} aria-controls="stack-add-list" onClick={() => { setAddOpen(!addOpen); setSwap(null) }}>+ Add an ingredient</button>
           {addOpen && <div id="stack-add-list" className="stack-card">
@@ -492,8 +484,9 @@ function SavedStackBuilder() {
             <h2 id="stack-cost-heading" className="stack-eyebrow">Your stack, costed</h2>
             <div className="stack-cost-figures" aria-live="polite" aria-atomic="true"><div><span>Per day</span><b>{loading ? '—' : money(stackDailyCost)}</b></div><div><span>Per month</span><b>{loading ? '—' : money(stackDailyCost === null ? null : stackDailyCost * 30)}</b></div></div>
             <p className="stack-meta">30 days at your recorded daily servings. Costs use recorded catalogue prices; missing prices remain unavailable. Pack quantities and delivery are separate.</p>
-            <p className="stack-meta">{assessmentSummary.text}</p>
-            <div className="stack-actions"><button type="button" onClick={() => { setShowShare(true); setCopied(false); setCopyError('') }} disabled={loading || !stackItems.length}>Share my stack</button><button type="button" onClick={saveStack} disabled={loading || state.busy}>{saved ? 'Saved' : 'Save stack'}</button></div>
+            {/* Match the loaded-product summary gate; membership arrives before details. */}
+            {!loading && stackItems.length > 0 && <p className="stack-meta">{assessmentSummary.text}</p>}
+            <div className="stack-actions"><button type="button" onClick={() => { setShowShare(true); setCopied(false); setCopyError('') }} disabled={loading || !stackItems.length}>Share Stack</button><button type="button" onClick={saveStack} disabled={loading || state.busy}>{saved ? 'Saved' : 'Save stack'}</button></div>
             {(saveError || saved) && <p className="stack-meta" role="status">{saveError || 'Saved in this browser.'}</p>}
             <label className="stack-check"><input type="checkbox" checked={cheaper} onChange={event => setCheaper(event.target.checked)} />Tell me when it gets cheaper</label>
             {cheaper && <p className="stack-meta">Price alerts are not available yet. No alert has been scheduled.</p>}
@@ -501,10 +494,10 @@ function SavedStackBuilder() {
           </section>
           <CombinedDosePanel totals={dailyTotals} />
           {showTotals && dailyTotals.length > 0 && <section className="stack-card">
-            <h2>Daily intake totals</h2>
-            <fieldset className="stack-chips"><legend>UK adult reference intake</legend>{(['male', 'female'] as Sex[]).map(option => <button key={option} type="button" aria-pressed={sex === option} onClick={() => changeSex(option)}>{option}</button>)}</fieldset>
-            {dailyTotals.map(row => <div className="stack-total" key={`${row.name}-${row.unit}`}><b>{row.name}</b><span className="stack-mono">{Number(row.amount.toFixed(2))} {row.unit}</span><span>{row.rdaPercent == null ? 'No RNI' : `${row.rdaPercent}% RNI`}</span><span>{row.ulPercent == null ? 'No upper level' : `${row.ulPercent}% ${row.limitLabel}`}</span></div>)}
-            <p className="stack-meta">UL is the EFSA upper limit; vitamin C uses UK EVM supplemental guidance and iron uses the EFSA total-intake guidance level, neither an established UL. Recorded supplements exclude food and drink.</p>
+            <div className="stack-row"><div><h2>Daily Intake Totals</h2><p className="stack-meta">Recorded label amounts across all products and servings per day.</p></div>
+            <fieldset className="stack-chips"><legend>UK adult reference intake</legend>{(['male', 'female'] as Sex[]).map(option => <button key={option} type="button" aria-pressed={sex === option} onClick={() => changeSex(option)}>{option}</button>)}</fieldset></div>
+            {dailyTotals.map(row => <div className="stack-total" key={`${row.name}-${row.unit}`}><b>{row.name}</b><span className="stack-mono">{Number(row.amount.toFixed(2))}{row.unit}</span><span>{row.rdaPercent == null ? '—' : `${row.rdaPercent}% RDA`}</span><span style={{ color: row.ulPercent != null && row.ulPercent >= 100 ? '#ff5c5c' : row.ulPercent != null && row.ulPercent >= 80 ? '#f5b342' : undefined }}>{row.ulPercent == null ? 'No upper level' : `${row.ulPercent}% ${row.limitLabel}`}</span></div>)}
+            <p className="stack-meta">UL is the EFSA upper limit; vitamin C uses UK EVM supplemental guidance and iron uses the EFSA total-intake guidance level, neither an established UL. RDA compares recorded totals with the UK adult reference intake ({sex}). Recorded supplements exclude food and drink. These totals do not establish an effective or recommended dose.</p>
           </section>}
         </aside>
       </div>
@@ -522,7 +515,7 @@ function SavedStackBuilder() {
         {stackCartEnabled() && (loading || !stack.length) && <p>{loading ? 'Loading store availability…' : 'Add products to check store availability.'}</p>}
       </div>
 
-      <dialog ref={dialog} role="dialog" aria-modal="true" className="stack-share" aria-labelledby="stack-share-title" onCancel={() => setShowShare(false)} onClose={() => setShowShare(false)} onClick={event => { if (event.target === dialog.current) setShowShare(false) }}>
+      {showShare && <section className="stack-share" aria-labelledby="stack-share-title">
         <div className="stack-share-card tll-on-dark">
           <p className="stack-eyebrow">The Lifting Lab</p><h2 id="stack-share-title">My {goal.toLowerCase()} stack</h2>
           {stackItems.map(item => <div key={item.id}><b>{item.products.brand} {item.products.name}</b><p className="stack-mono">{item.products.serving_size} {item.products.serving_unit} × {item.servings_per_day}/day</p></div>)}
@@ -530,10 +523,10 @@ function SavedStackBuilder() {
           <p className="stack-meta">{shareText}</p>
         </div>
         <div className="stack-actions"><button type="button" disabled={!stackPath} onClick={copyLink}>{copied ? 'Link copied' : 'Copy share link'}</button><button type="button" onClick={() => setShowShare(false)}>Close</button></div>
-        {stackPath ? <a href={stackPath} className="stack-share-url">{siteUrl}</a> : <p className="stack-meta">A variant-based share link requires every product to have an approved store mapping. You can still open the research card below.</p>}
+        {stackPath ? <a href={stackPath} className="stack-share-url">{siteUrl}</a> : <p className="stack-meta">A variant-based stack URL is unavailable until every product has an approved store mapping and can be included. Affiliate items cannot be represented in this URL.</p>}
         {copyError && <p role="status">{copyError}</p>}
         <a href={shareUrl} target="_blank" rel="noopener noreferrer">Open share card image</a>
-      </dialog>
+      </section>}
     </div>
   )
 }

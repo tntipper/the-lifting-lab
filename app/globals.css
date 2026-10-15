@@ -502,6 +502,8 @@ body:has(.tll-stack-button) .shop-stack-trigger { display: none; }
 .stack-cost :where(button,a,input):focus-visible,.stack-share :where(button,a):focus-visible,.stack-buybar :where(button,a):focus-visible { outline-color:var(--focus-on-dark); }
 .stack-total { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; padding:12px 0; border-bottom:1px solid var(--line); font-size:12px; }
 .stack-buybar { position:fixed; inset:auto 0 0; z-index:50; padding:16px max(16px,calc((100vw - 1168px)/2)) max(16px,env(safe-area-inset-bottom)); background:var(--lab-black); color:var(--on-lab-black); border-top:1px solid #2a2c26; max-height:45vh; overflow:auto; }
+/* The fallback stack trigger must clear the buy bar when no header is mounted. */
+body:has(.stack-buybar) .shop-stack-trigger { bottom:calc(45vh + 16px); }
 .stack-buybar p { font-size:12px; color:#a9ac9f; }
 .stack-buybar .stack-row { align-items:start; }
 .stack-buybar > .stack-row > div { min-width:0; }
@@ -510,9 +512,7 @@ body:has(.tll-stack-button) .shop-stack-trigger { display: none; }
 .stack-buybar .stack-cart-action { position:static; padding:0; background:transparent; border:0; }
 .stack-buybar .stack-cart-root { margin:0; max-width:580px; }
 .stack-buybar .stack-cart-root > section { color:var(--on-lab-black); }
-.stack-share { margin:auto; width:min(440px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow:auto; padding:16px; border:1px solid #6c6f63; border-radius:12px; background:var(--lab-black); color:var(--on-lab-black); }
-.stack-share::backdrop { background:rgb(0 0 0 / .7); }
-.stack-share[open] { display:grid; gap:16px; }
+.stack-share { display:grid; gap:16px; margin:24px auto; width:min(440px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow:auto; padding:16px; border:1px solid #6c6f63; border-radius:12px; background:var(--lab-black); color:var(--on-lab-black); }
 .stack-share-card { min-height:420px; display:grid; align-content:start; gap:16px; padding:16px; }
 .stack-share-card .stack-eyebrow,.stack-share-money { color:var(--lime); }
 .stack-share-card .stack-meta { color:#a9ac9f; }
