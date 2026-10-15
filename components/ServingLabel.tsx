@@ -10,7 +10,7 @@ export default function ServingLabel({ nutrients }: { nutrients: Nutrient[] }) {
     { title: 'Nutrition per serving', rows: nutrients.filter(n => nutrition.test(n.nutrient_name)) },
   ]
   return <>{groups.filter(group => group.rows.length).map(group => <section key={group.title} className={styles.label}>
-    <h2 className={styles.eyebrow}>{group.title}</h2>
+    <h3 className={styles.eyebrow}>{group.title}</h3>
     <dl>{group.rows.map((n, index) => <div key={`${n.nutrient_name}-${index}`}>
       <dt>{n.nutrient_name}</dt><dd>{n.amount}{n.unit}</dd>
     </div>)}</dl>

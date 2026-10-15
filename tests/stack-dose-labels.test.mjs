@@ -14,13 +14,13 @@ function load(file) {
   return mod.exports
 }
 
-test('caffeine 400 mg is labelled an EFSA safe level, not a UL, in the stack warning', () => {
+test('caffeine 400 mg is labelled EFSA intake guidance, not a UL, in the stack nudge', () => {
   const { NUTRIENT_LIMITS, analyseStack } = load('lib/nutrient-limits.ts')
-  assert.equal(NUTRIENT_LIMITS.Caffeine.limitLabel, 'EFSA safe level')
-  assert.equal(NUTRIENT_LIMITS.Caffeine.note, 'EFSA safe level: 400 mg/day from all sources for healthy adults (200 mg/day if pregnant or breastfeeding), not a UL.')
+  assert.equal(NUTRIENT_LIMITS.Caffeine.limitLabel, 'EFSA intake guidance')
+  assert.equal(NUTRIENT_LIMITS.Caffeine.note, 'EFSA intake guidance: 400 mg/day from all sources for healthy adults (200 mg/day if pregnant or breastfeeding), not a UL.')
   const flags = analyseStack([{ servings_per_day: 1, products: { brand: 'Fixture', name: 'Pre', product_nutrients: [{ nutrient_name: 'Caffeine', amount: 400, unit: 'mg' }] } }])
   const flag = flags.find(f => f.nutrientName === 'Caffeine')
-  assert.equal(flag.limitLabel, 'EFSA safe level')
+  assert.equal(flag.limitLabel, 'EFSA intake guidance')
 })
 test('daily totals compare safety-limit-only nutrients with the same limit label as the warning', () => {
   const panel = source('components/CombinedDosePanel.tsx')

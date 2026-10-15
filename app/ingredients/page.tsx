@@ -6,16 +6,16 @@ import TopNav from '@/components/TopNav'
 import { INGREDIENTS, type EvidenceLevel } from '@/lib/ingredients'
 
 export const metadata: Metadata = {
-  twitter: pageMetadata('/ingredients', 'Supplement Ingredients A-Z — What Works and the Dose | The Lifting Lab', 'Plain-English, evidence-based guides to the ingredients inside your supplements: caffeine, creatine, citrulline, beta-alanine and more. What each does, the effective dose, and the safe limit.').twitter,
+  twitter: pageMetadata('/ingredients', 'Supplement Ingredients A-Z — What Works and the Dose | The Lifting Lab', 'Plain-English, evidence-based guides to the ingredients inside your supplements: caffeine, creatine, citrulline, beta-alanine and more. What each does, the effective dose, and the intake guidance.').twitter,
 
   title: 'Supplement Ingredients A-Z — What Works and the Dose | The Lifting Lab',
   description:
-    'Plain-English, evidence-based guides to the ingredients inside your supplements: caffeine, creatine, citrulline, beta-alanine and more. What each does, the effective dose, and the safe limit.',
+    'Plain-English, evidence-based guides to the ingredients inside your supplements: caffeine, creatine, citrulline, beta-alanine and more. What each does, the effective dose, and the intake guidance.',
   alternates: { canonical: 'https://theliftinglab.co.uk/ingredients' },
   openGraph: {
     title: 'Supplement Ingredients A-Z | The Lifting Lab',
     description:
-      'What each supplement ingredient actually does, the effective dose, and the safe limit. Evidence-based and UK-focused.',
+      'What each supplement ingredient actually does, the effective dose, and the intake guidance. Evidence-based and UK-focused.',
     url: 'https://theliftinglab.co.uk/ingredients',
     type: 'website',
     siteName: 'The Lifting Lab',
@@ -85,7 +85,7 @@ export default function IngredientIndex() {
         </h1>
         <p className="text-lab-muted max-w-2xl mb-6">
           The ingredients that fill supplement labels, decoded. What each one does, the dose
-          that actually works, the safe limit, and an honest read on the evidence behind it.
+          that actually works, the intake guidance, and an honest read on the evidence behind it.
         </p>
         <p className="text-sm text-lab-muted mb-10">
           Torn between two?{' '}

@@ -42,7 +42,7 @@ test('dose bars are accessible, alphabetical, extend past the track and preserve
   ] }))
   assert.ok(html.indexOf('Caffeine') < html.indexOf('Creatine'))
   assert.match(html, /role="img"/)
-  assert.match(html, /Above EFSA safe level/)
+  assert.match(html, /Above EFSA intake guidance/)
   assert.match(html, /Evidence dose/)
   assert.match(html, /A 3 g \+ B 2 g/)
   assert.match(html, /dose-hatch/)

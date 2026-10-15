@@ -504,7 +504,7 @@ function SavedStackBuilder() {
             <h2>Daily intake totals</h2>
             <fieldset className="stack-chips"><legend>UK adult reference intake</legend>{(['male', 'female'] as Sex[]).map(option => <button key={option} type="button" aria-pressed={sex === option} onClick={() => changeSex(option)}>{option}</button>)}</fieldset>
             {dailyTotals.map(row => <div className="stack-total" key={`${row.name}-${row.unit}`}><b>{row.name}</b><span className="stack-mono">{Number(row.amount.toFixed(2))} {row.unit}</span><span>{row.rdaPercent == null ? 'No RNI' : `${row.rdaPercent}% RNI`}</span><span>{row.ulPercent == null ? 'No upper level' : `${row.ulPercent}% ${row.limitLabel}`}</span></div>)}
-            <p className="stack-meta">UL is the EFSA upper limit; vitamin C uses UK EVM supplemental guidance and iron uses the EFSA total-intake safe level, neither an established UL. Recorded supplements exclude food and drink.</p>
+            <p className="stack-meta">UL is the EFSA upper limit; vitamin C uses UK EVM supplemental guidance and iron uses the EFSA total-intake guidance level, neither an established UL. Recorded supplements exclude food and drink.</p>
           </section>}
         </aside>
       </div>

@@ -7,6 +7,15 @@
 - PASS Chrome shop smoke and 360/768/1200 geometry, header/footer/trigger checks; mobile PDP clear with/without comparison.
 - Catalogue copy and other worker wording files untouched; no push/main/merge/deploy; hosted CI unrun, PR read unavailable (gh unsigned).
 - Next: review local fix(design) commit; no blockers to local delivery.
+**15 October neutral UI labels — k-d-e2, base k-claude-design f8032e0; local only:**
+- Replaced EFSA safe-level labels/context with intake guidance; shared labels cover dose panel, nudges and totals.
+- Product warnings section/accessible name now Label notes; GuidanceNote uses EFSA single-dose heading and sunk/ink tokens.
+- StackSummary says Add to stack; ServingLabel uses h3 with the existing eyebrow class; ingredient chrome uses intake guidance.
+- Scanned components/app: remaining matches are editorial/medical/legal content, code identifiers/comments or CSS safe-area values.
+- Catalogue names/descriptions/sizes/nutrition/claims and other worker's layout files unchanged; CSS edits only .guidance rules 32–33.
+- PASS typecheck, lint (0 errors/21 warnings in untouched files), 109 focused Node tests and 1 browser test at 360px/desktop.
+- Updated string assertions and browser selector; no hosted CI run; PR lookup unavailable because gh is unsigned.
+- Next: review local commit alongside layout worker; no push, main changes, merge, publishing or live writes.
 
 **15 October header/footer chrome — k-d-chrome, base cb600ee; local only:**
 - Rebuilt responsive sticky header/nav; exact query-aware lime underline, final LIFT link, outlined basket/lime stack with existing counts.

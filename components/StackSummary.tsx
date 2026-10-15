@@ -63,7 +63,7 @@ export default function StackSummary({ onClose }: { onClose(): void }) {
       {state.error && <p>{state.error}</p>}
       {(state.retryable || state.identity && state.guest.length > 0) && <button type="button" disabled={busy} onClick={retry}>Retry stack sync</button>}
     </div>
-    {stack.length === 0 ? <p>No supplements in your stack yet. Add products with + Stack to see your combined dose and recorded cost per day.</p> : <section className="shop-summary" aria-label="Stack summary">
+    {stack.length === 0 ? <p>No supplements in your stack yet. Add products with Add to stack to see your combined dose and recorded cost per day.</p> : <section className="shop-summary" aria-label="Stack summary">
       <h3>Your stack, one dose</h3>
       <ul className="shop-stack-items">{stack.map((item, index) => {
         const trusted = catalogue.products.find(p => p.id === item.id), product = trusted ?? item

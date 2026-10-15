@@ -95,7 +95,7 @@ test('stack builder: 360px and desktop, add/swap/remove, goal, save/restore, sha
     await page.getByText('2 products contain creatine', { exact: true }).waitFor()
     await page.getByRole('img', { name: /Creatine: 5000 mg a day/ }).waitFor()
     assert.match(await page.locator('.stack-cost-figures').innerText(), /£1\.10/)
-    await page.getByRole('img', { name: /Caffeine.*Above EFSA safe level/ }).waitFor()
+    await page.getByRole('img', { name: /Caffeine.*Above EFSA intake guidance/ }).waitFor()
     await page.getByRole('button', { name: 'Share my stack', exact: true }).click()
     const modal = page.getByRole('dialog')
     await modal.waitFor()

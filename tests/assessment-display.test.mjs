@@ -424,7 +424,7 @@ test('stack renders vitamin C guidance and iron safe level in totals and caution
     { nutrient_name: 'Vitamin D3', amount: 100, unit: 'mcg' },
   ] })
   const html = fixture([p], {}, true, true).html('app/stack/StackBuilder.tsx', {})
-  for (const label of ['UK EVM guidance', 'EFSA safe level']) {
+  for (const label of ['UK EVM guidance', 'EFSA intake guidance']) {
     assert.ok(html.includes(`100% ${label}`), `daily totals: ${label}`)
     assert.ok(html.includes(`100% of ${label}`), `caution flag: ${label}`)
   }
