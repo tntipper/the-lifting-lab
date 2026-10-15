@@ -2,7 +2,6 @@
 
 import { createContext, useContext } from 'react'
 import type { ScoredProduct } from '@/lib/products'
-import { useStagingCart } from './StagingCartContext'
 
 export type BasketLine = { product: ScoredProduct; quantity: number }
 export type PanelsContext = {
@@ -18,9 +17,3 @@ export function useShopPanels() {
 }
 export const panelMoney = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) && value > 0 ? `£${value.toFixed(2)}` : 'Not listed'
 
-export function BasketAddButton({ product }: { product: ScoredProduct }) {
-  const { addToBasket } = useShopPanels()
-  const cart = useStagingCart()
-  if (cart?.enabled) return null // Existing StagingCartAdd owns the synthetic API action.
-  return <button type="button" className="shop-secondary" onClick={() => addToBasket(product)}>Add to basket</button>
-}

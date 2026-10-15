@@ -14,7 +14,7 @@ import ProductOfferLink from './ProductOfferLink'
 import type { ScoredProduct } from '@/lib/products'
 import { track } from '@/lib/gtag'
 
-export { useShopPanels, BasketAddButton } from './ShopPanelsContext'
+export { useShopPanels } from './ShopPanelsContext'
 
 export function ShopPanelsProvider({ children }: { children: ReactNode }) {
   const cart = useStagingCart()

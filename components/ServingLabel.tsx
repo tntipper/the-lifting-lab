@@ -1,5 +1,5 @@
 import type { Nutrient } from '@/lib/products'
-import styles from '@/app/products/shop.module.css'
+import styles from '@/components/shop.module.css'
 
 const nutrition = /^(calories|energy|protein|carbohydrates?|carbs|(?:of which )?sugars?|fat|(?:of which )?saturates|saturated fat|fibre|fiber|salt)$/i
 

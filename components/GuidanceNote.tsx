@@ -1,6 +1,6 @@
 import type { Nutrient } from '@/lib/products'
 import { aboveGuidance } from '@/lib/shop-guidance'
-import styles from '@/app/products/shop.module.css'
+import styles from '@/components/shop.module.css'
 
 export default function GuidanceNote({ nutrients }: { nutrients: Nutrient[] }) {
   const notes = aboveGuidance(nutrients)

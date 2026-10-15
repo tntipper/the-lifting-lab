@@ -1,5 +1,5 @@
 import { assessmentDisplayFor } from '@/lib/assessment-display'
-import styles from '@/app/products/shop.module.css'
+import styles from '@/components/shop.module.css'
 
 // The design's 70/50 score bands. Only the reviewed display projection may
 // supply a number; a frozen legacy score does not grant evidence approval.
