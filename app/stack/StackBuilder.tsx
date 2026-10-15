@@ -163,6 +163,13 @@ function SavedStackBuilder() {
   const unresolved = (state.snapshot?.items || []).filter(item => !validStackServings(item.servings_per_day))
   const [showTotals, setShowTotals] = useState(false)
   const [showShare, setShowShare] = useState(false)
+  const shareButton = useRef<HTMLButtonElement>(null)
+  const shareHeading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    if (!showShare) return
+    shareHeading.current?.focus({ preventScroll: true })
+    shareHeading.current?.scrollIntoView({ block: 'center' })
+  }, [showShare])
   const storedSex = useBrowserSnapshot(readStoredSex, 'male' as Sex)
   const [chosenSex, setSex] = useState<Sex | null>(null)
   const sex = chosenSex ?? storedSex
@@ -457,7 +464,7 @@ function SavedStackBuilder() {
 
           {!loading && stack.filter(product => !stackItems.some(item => item.products?.id === product.id) && !unresolved.some(item => item.product_id === product.id)).map(product => <div className="stack-card" key={`missing-${product.id}`}><h3>{product.name}</h3><p>Product details unavailable; excluded from totals.</p><button type="button" className="stack-button" disabled={state.busy} onClick={() => remove(product.id)}>Remove</button></div>)}
           {!loading && dailyTotals.filter(row => row.contributions.length > 1).map(row => <div className="stack-nudge" key={`${row.name}-${row.unit}`}><b>{row.contributions.length} products contain {row.name.toLowerCase()}</b><p>Combined: <span className="stack-mono">{Number(row.amount.toFixed(2))} {row.unit}</span> a day. See the dose panel for context.</p></div>)}
-          {!loading && flags.map(row => <div className="stack-nudge" key={`flag-${row.name}`}><b>{row.ulPercent! >= 100 ? 'Critical' : 'Caution'} — {row.name}</b><p className="stack-mono">{Number(row.amount.toFixed(2))}{row.unit} total ({row.ulPercent}% of {row.limitLabel === 'UL' ? 'EFSA UL' : row.limitLabel})</p></div>)}
+          {!loading && flags.map(row => <div className="stack-nudge" key={`flag-${row.name}`}><b>{row.name} · {row.ulPercent! > 100 ? 'Above' : row.ulPercent === 100 ? 'At' : 'Approaching'} {row.limitLabel}</b><p className="stack-mono">{Number(row.amount.toFixed(2))}{row.unit} total ({row.ulPercent}% of {row.limitLabel === 'UL' ? 'EFSA UL' : row.limitLabel})</p></div>)}
 
           <button type="button" className="stack-add" aria-expanded={addOpen} aria-controls="stack-add-list" onClick={() => { setAddOpen(!addOpen); setSwap(null) }}>+ Add an ingredient</button>
           {addOpen && <div id="stack-add-list" className="stack-card">
@@ -486,7 +493,7 @@ function SavedStackBuilder() {
             <p className="stack-meta">30 days at your recorded daily servings. Costs use recorded catalogue prices; missing prices remain unavailable. Pack quantities and delivery are separate.</p>
             {/* Match the loaded-product summary gate; membership arrives before details. */}
             {!loading && stackItems.length > 0 && <p className="stack-meta">{assessmentSummary.text}</p>}
-            <div className="stack-actions"><button type="button" onClick={() => { setShowShare(true); setCopied(false); setCopyError('') }} disabled={loading || !stackItems.length}>Share Stack</button><button type="button" onClick={saveStack} disabled={loading || state.busy}>{saved ? 'Saved' : 'Save stack'}</button></div>
+            <div className="stack-actions"><button ref={shareButton} type="button" aria-expanded={showShare} aria-controls="stack-share" onClick={() => { setShowShare(true); setCopied(false); setCopyError('') }} disabled={loading || !stackItems.length}>Share Stack</button><button type="button" onClick={saveStack} disabled={loading || state.busy}>{saved ? 'Saved' : 'Save stack'}</button></div>
             {(saveError || saved) && <p className="stack-meta" role="status">{saveError || 'Saved in this browser.'}</p>}
             <label className="stack-check"><input type="checkbox" checked={cheaper} onChange={event => setCheaper(event.target.checked)} />Tell me when it gets cheaper</label>
             {cheaper && <p className="stack-meta">Price alerts are not available yet. No alert has been scheduled.</p>}
@@ -496,8 +503,8 @@ function SavedStackBuilder() {
           {showTotals && dailyTotals.length > 0 && <section className="stack-card">
             <div className="stack-row"><div><h2>Daily Intake Totals</h2><p className="stack-meta">Recorded label amounts across all products and servings per day.</p></div>
             <fieldset className="stack-chips"><legend>UK adult reference intake</legend>{(['male', 'female'] as Sex[]).map(option => <button key={option} type="button" aria-pressed={sex === option} onClick={() => changeSex(option)}>{option}</button>)}</fieldset></div>
-            {dailyTotals.map(row => <div className="stack-total" key={`${row.name}-${row.unit}`}><b>{row.name}</b><span className="stack-mono">{Number(row.amount.toFixed(2))}{row.unit}</span><span>{row.rdaPercent == null ? '—' : `${row.rdaPercent}% RDA`}</span><span style={{ color: row.ulPercent != null && row.ulPercent >= 100 ? '#ff5c5c' : row.ulPercent != null && row.ulPercent >= 80 ? '#f5b342' : undefined }}>{row.ulPercent == null ? 'No upper level' : `${row.ulPercent}% ${row.limitLabel}`}</span></div>)}
-            <p className="stack-meta">UL is the EFSA upper limit; vitamin C uses UK EVM supplemental guidance and iron uses the EFSA total-intake guidance level, neither an established UL. RDA compares recorded totals with the UK adult reference intake ({sex}). Recorded supplements exclude food and drink. These totals do not establish an effective or recommended dose.</p>
+            {dailyTotals.map(row => <div className="stack-total" key={`${row.name}-${row.unit}`}><b>{row.name}</b><span className="stack-mono">{Number(row.amount.toFixed(2))}{row.unit}</span><span>{row.rdaPercent == null ? '—' : `${row.rdaPercent}% UK adult reference intake`}</span><span>{row.ulPercent == null ? 'No upper level' : `${row.ulPercent}% ${row.limitLabel}`}</span></div>)}
+            <p className="stack-meta">UL is the EFSA upper limit; vitamin C uses UK EVM supplemental guidance and iron uses the EFSA total-intake guidance level, neither an established UL. UK adult reference intake percentages use the {sex} reference values. Recorded supplements exclude food and drink. These totals do not establish an effective or recommended dose.</p>
           </section>}
         </aside>
       </div>
@@ -515,14 +522,14 @@ function SavedStackBuilder() {
         {stackCartEnabled() && (loading || !stack.length) && <p>{loading ? 'Loading store availability…' : 'Add products to check store availability.'}</p>}
       </div>
 
-      {showShare && <section className="stack-share" aria-labelledby="stack-share-title">
+      {showShare && <section id="stack-share" className="stack-share" aria-labelledby="stack-share-title">
         <div className="stack-share-card tll-on-dark">
-          <p className="stack-eyebrow">The Lifting Lab</p><h2 id="stack-share-title">My {goal.toLowerCase()} stack</h2>
+          <p className="stack-eyebrow">The Lifting Lab</p><h2 id="stack-share-title" ref={shareHeading} tabIndex={-1}>My {goal.toLowerCase()} stack</h2>
           {stackItems.map(item => <div key={item.id}><b>{item.products.brand} {item.products.name}</b><p className="stack-mono">{item.products.serving_size} {item.products.serving_unit} × {item.servings_per_day}/day</p></div>)}
           <p className="stack-share-money">{money(stackDailyCost)}</p><p>a day · theliftinglab.co.uk</p>
           <p className="stack-meta">{shareText}</p>
         </div>
-        <div className="stack-actions"><button type="button" disabled={!stackPath} onClick={copyLink}>{copied ? 'Link copied' : 'Copy share link'}</button><button type="button" onClick={() => setShowShare(false)}>Close</button></div>
+        <div className="stack-actions"><button type="button" disabled={!stackPath} onClick={copyLink}>{copied ? 'Link copied' : 'Copy share link'}</button><button type="button" onClick={() => { setShowShare(false); shareButton.current?.focus() }}>Close</button></div>
         {stackPath ? <a href={stackPath} className="stack-share-url">{siteUrl}</a> : <p className="stack-meta">A variant-based stack URL is unavailable until every product has an approved store mapping and can be included. Affiliate items cannot be represented in this URL.</p>}
         {copyError && <p role="status">{copyError}</p>}
         <a href={shareUrl} target="_blank" rel="noopener noreferrer">Open share card image</a>

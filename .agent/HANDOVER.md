@@ -1,3 +1,13 @@
+**15 October neutral My Stack regression fix — k-claude-design; base 07b079f; local only:**
+- Restored name · Above/At/Approaching guidance nudges; daily upper-level percentages inherit ink; UK adult reference intake labels are consistent.
+- Share Stack focuses and scrolls to its heading on open; Close returns focus to its trigger; browser assertions cover both.
+- Updated stack-assessment browser expectations; retained stack-builder.test.mjs no Critical/Caution rule unchanged.
+- PASS typecheck, lint (0 errors/21 existing warnings), npm test (4091 pass/6 skip/0 fail), diff check.
+- PASS actual stack-assessment fixture in Chrome at 320/390/768/1024/1280/1440, including wording/colour/focus/scroll/no writes.
+- Initial full-suite Gen23 failure: missing local account/cart fixture; unchanged test passed with uniquely owned network-none PG prerequisites, then full suite passed.
+- Catalogue copy/equal card sizing untouched; evidence test-results/design-ci/neutral-* (ignored); hosted CI unrun, gh unsigned.
+- Next: review local fix(design) commit and run hosted CI; no push/main/deploy/live writes; own disposable fixture removed.
+
 **15 October stack accessibility regression — k-claude-design; start 05de4e4, passing base cb600ee; local only:**
 - Cause: 48d3bc6 removed the loaded/nonempty-products gate around the unchanged assessment summary, exposing transient 0/5 coverage.
 - Restored the gate, warning severity/provenance, daily-total labels/red UL/caveat and share labels; retained the new visual design.
