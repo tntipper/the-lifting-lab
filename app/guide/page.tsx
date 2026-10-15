@@ -1,19 +1,24 @@
+import { pageMetadata } from '@/lib/seo'
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { GUIDES } from '@/lib/guides'
 
 export const metadata: Metadata = {
+  openGraph: pageMetadata('/guide', 'Supplement Guides — Evidence-Based UK Buyer’s Guides | The Lifting Lab', 'Supplement research guides and recorded label context. Product effectiveness recommendations remain unavailable pending assessment approval.').openGraph,
+  twitter: pageMetadata('/guide', 'Supplement Guides — Evidence-Based UK Buyer’s Guides | The Lifting Lab', 'Supplement research guides and recorded label context. Product effectiveness recommendations remain unavailable pending assessment approval.').twitter,
+
   title: 'Supplement Guides — Evidence-Based UK Buyer’s Guides | The Lifting Lab',
   description:
     'Supplement research guides and recorded label context. Product effectiveness recommendations remain unavailable pending assessment approval.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk/guide' },
+  alternates: { canonical: 'https://theliftinglab.co.uk/guide' },
 }
 
 export default function GuideIndex() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
-      <TopNav />
+      <TopNav /><BreadcrumbJsonLd path="/guide" name="Guide" />
       <div className="max-w-4xl mx-auto px-6 py-12">
         <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-4">
           Supplement Guides

@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -5,9 +6,11 @@ import TopNav from '@/components/TopNav'
 import { INGREDIENT_MATCHUPS, resolveIngredientMatchup } from '@/lib/ingredient-matchups'
 import type { EvidenceLevel } from '@/lib/ingredients'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 export const metadata: Metadata = {
+  twitter: pageMetadata('/ingredients-vs', 'Ingredient Comparisons: Creatine vs Beta-Alanine and More | The Lifting Lab', 'Head-to-head comparisons of the ingredients people confuse: creatine vs beta-alanine, caffeine vs theanine, magnesium vs zinc. What each does, when to pick which, and whether to take both.').twitter,
+
   title: 'Ingredient Comparisons: Creatine vs Beta-Alanine and More | The Lifting Lab',
   description:
     'Head-to-head comparisons of the ingredients people confuse: creatine vs beta-alanine, caffeine vs theanine, magnesium vs zinc. What each does, when to pick which, and whether to take both.',

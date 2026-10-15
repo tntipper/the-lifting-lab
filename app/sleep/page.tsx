@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 import SleepBoard from './SleepBoard'
 import { SLEEP_ITEMS, itemCount, tierCount } from '@/lib/sleep'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/sleep`
 
 export const metadata: Metadata = {

@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 import MythBuster from './MythBuster'
 import { MYTHS, VERDICT_META, verdictCounts, claimAsQuestion } from '@/lib/myths'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/myths`
 
 export const metadata: Metadata = {

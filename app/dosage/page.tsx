@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 import DosageBoard from './DosageBoard'
 import { DOSE_ITEMS, itemCount, tierCount, doseQuestion } from '@/lib/dosage'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/dosage`
 
 export const metadata: Metadata = {

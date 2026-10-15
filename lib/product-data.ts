@@ -29,7 +29,7 @@ type NutrientRow = Nutrient & { product_id: string }
 
 /** Full active catalogue, score-desc. Backs the /products grid + ItemList schema. */
 export async function fetchCatalogue(): Promise<ScoredProduct[]> {
-  if (isSyntheticPreview()) return sortScored(PREVIEW_PRODUCTS.map((product) => ({ ...withScore(product), nutrients: product.nutrients })), 'score')
+  if (isSyntheticPreview()) return sortScored(PREVIEW_PRODUCTS.map((product) => ({ ...withScore(product), nutrients: product.nutrients, sizeOptions: PREVIEW_SIZE_OPTIONS[product.id] ?? [] })), 'score')
   try {
     const sb = createPublicClient()
     const { data, error } = await sb
@@ -45,6 +45,18 @@ export async function fetchCatalogue(): Promise<ScoredProduct[]> {
           .select('product_id, nutrient_name, amount, unit')
           .in('product_id', ids)
       : { data: [] as NutrientRow[] }
+    const sizesById = new Map<string, ProductSizeOption[]>()
+    try {
+      if (ids.length) {
+        const { data: sizes, error: sizesError } = await sb.from('product_size_options')
+          .select('product_id, slug, label, serving_size, serving_unit, servings_per_container, retail_price, buy_url, shopify_variant_id, sort, nutrients')
+          .in('product_id', ids).order('sort').order('slug')
+        if (!sizesError) for (const row of (sizes ?? []) as (ProductSizeOption & { product_id: string })[]) {
+          const { product_id, ...size } = row
+          sizesById.set(product_id, [...(sizesById.get(product_id) ?? []), size])
+        }
+      }
+    } catch (error) { unstable_rethrow(error) /* Optional sizes may be unavailable. */ }
     const rows = (nutrients as NutrientRow[] | null) ?? []
     const byId = new Map<string, Nutrient[]>()
     for (const n of rows) {
@@ -53,7 +65,7 @@ export async function fetchCatalogue(): Promise<ScoredProduct[]> {
       byId.set(n.product_id, list)
     }
     return sortScored(
-      products.map((p) => ({ ...withScore(p), nutrients: byId.get(p.id) ?? [] })),
+      products.map((p) => ({ ...withScore(p), nutrients: byId.get(p.id) ?? [], sizeOptions: sizesById.get(p.id) ?? [] })),
       'score',
     )
   } catch (error) {

@@ -18,7 +18,7 @@ import {
 // into the caffeine ranking without a redeploy.
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/strongest-pre-workout`
 const YEAR = 2026
 
@@ -26,12 +26,12 @@ export const metadata: Metadata = {
   "title": "Pre-workout caffeine label comparison",
   "description": "Compare recorded caffeine amounts and other label data. Higher amounts are not an endorsement; no approved effectiveness score is available.",
   "alternates": {
-    "canonical": "https://www.theliftinglab.co.uk/strongest-pre-workout"
+    "canonical": "https://theliftinglab.co.uk/strongest-pre-workout"
   },
   "openGraph": {
     "title": "Pre-workout caffeine label comparison",
     "description": "Compare recorded caffeine amounts and other label data. Higher amounts are not an endorsement; no approved effectiveness score is available.",
-    "url": "https://www.theliftinglab.co.uk/strongest-pre-workout",
+    "url": "https://theliftinglab.co.uk/strongest-pre-workout",
     "type": "website"
   },
   "twitter": {

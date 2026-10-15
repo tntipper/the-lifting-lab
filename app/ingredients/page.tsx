@@ -1,3 +1,4 @@
+import { pageMetadata } from '@/lib/seo'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -5,15 +6,17 @@ import TopNav from '@/components/TopNav'
 import { INGREDIENTS, type EvidenceLevel } from '@/lib/ingredients'
 
 export const metadata: Metadata = {
+  twitter: pageMetadata('/ingredients', 'Supplement Ingredients A-Z — What Works and the Dose | The Lifting Lab', 'Plain-English, evidence-based guides to the ingredients inside your supplements: caffeine, creatine, citrulline, beta-alanine and more. What each does, the effective dose, and the safe limit.').twitter,
+
   title: 'Supplement Ingredients A-Z — What Works and the Dose | The Lifting Lab',
   description:
     'Plain-English, evidence-based guides to the ingredients inside your supplements: caffeine, creatine, citrulline, beta-alanine and more. What each does, the effective dose, and the safe limit.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk/ingredients' },
+  alternates: { canonical: 'https://theliftinglab.co.uk/ingredients' },
   openGraph: {
     title: 'Supplement Ingredients A-Z | The Lifting Lab',
     description:
       'What each supplement ingredient actually does, the effective dose, and the safe limit. Evidence-based and UK-focused.',
-    url: 'https://www.theliftinglab.co.uk/ingredients',
+    url: 'https://theliftinglab.co.uk/ingredients',
     type: 'website',
     siteName: 'The Lifting Lab',
   },
@@ -40,7 +43,7 @@ export default function IngredientIndex() {
       '@type': 'ListItem',
       position: i + 1,
       name: ing.name,
-      url: `https://www.theliftinglab.co.uk/ingredients/${ing.slug}`,
+      url: `https://theliftinglab.co.uk/ingredients/${ing.slug}`,
     })),
   }
 
@@ -48,8 +51,8 @@ export default function IngredientIndex() {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { name: 'Home', item: 'https://www.theliftinglab.co.uk' },
-      { name: 'Ingredients', item: 'https://www.theliftinglab.co.uk/ingredients' },
+      { name: 'Home', item: 'https://theliftinglab.co.uk' },
+      { name: 'Ingredients', item: 'https://theliftinglab.co.uk/ingredients' },
     ].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
   }
 

@@ -1,12 +1,15 @@
+import { pageMetadata } from '@/lib/seo'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { buildFaqTopics, faqTotalCount } from '@/lib/faq'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 export const metadata: Metadata = {
+  twitter: pageMetadata('/faq', 'Supplement Questions Answered — Doses, Timing & Safety | The Lifting Lab', 'Straight, evidence-based answers to the most common UK supplement questions: how much creatine to take, when to have whey, whether pre-workout is safe, and more.').twitter,
+
   title: 'Supplement Questions Answered — Doses, Timing & Safety | The Lifting Lab',
   description:
     'Straight, evidence-based answers to the most common UK supplement questions: how much creatine to take, when to have whey, whether pre-workout is safe, and more.',

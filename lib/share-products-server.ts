@@ -7,7 +7,7 @@ export function getShareProducts(ids: readonly string[]) {
     const supabase = createPublicClient()
     const { data, error } = await supabase
       .from('products')
-      .select('id, name, brand, category, status')
+      .select('id, name, brand, category, status, image_url')
       .eq('status', 'active')
       .in('id', requested)
     if (error) throw new Error('Catalogue lookup failed')

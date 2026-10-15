@@ -5,7 +5,7 @@ import TopNav from '@/components/TopNav'
 import { categoryLabel } from '@/lib/categories'
 import { STACK_GUIDES } from '@/lib/stacks'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/stacks`
 
 export const metadata: Metadata = {

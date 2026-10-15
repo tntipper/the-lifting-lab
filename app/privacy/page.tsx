@@ -1,12 +1,16 @@
+import { pageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import PolicyDraftNotice from '@/components/PolicyDraftNotice'
 import TopNav from '@/components/TopNav'
 
 export const metadata: Metadata = {
+  openGraph: pageMetadata('/privacy', 'Privacy Policy — The Lifting Lab', 'How The Lifting Lab collects, uses, and protects your personal data.').openGraph,
+  twitter: pageMetadata('/privacy', 'Privacy Policy — The Lifting Lab', 'How The Lifting Lab collects, uses, and protects your personal data.').twitter,
+
   title: 'Privacy Policy — The Lifting Lab',
   description: 'How The Lifting Lab collects, uses, and protects your personal data.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk/privacy' },
+  alternates: { canonical: 'https://theliftinglab.co.uk/privacy' },
 }
 
 export default function PrivacyPage() {

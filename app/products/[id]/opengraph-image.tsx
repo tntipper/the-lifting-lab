@@ -14,7 +14,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   if (!result.ok) {
     return new Response(result.error, { status: result.status, headers: { 'Cache-Control': 'no-store' } })
   }
-  const { brand, name, category: categorySlug } = result.products[0]
+  const { brand, name, image_url, category: categorySlug } = result.products[0]
   const category = categorySlug.replace(/-/g, ' ').toUpperCase()
   const review = claimsReviewFor(categorySlug)
   const col = '#9ca3af'
@@ -68,6 +68,10 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             </span>
           </div>
 
+          {image_url && (
+            // ImageResponse needs a native img for its server-rendered social card.
+            <img src={image_url} alt={name} width={140} height={200} style={{ objectFit: 'contain', flexShrink: 0 }} />
+          )}
           {/* product info */}
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
             <span style={{ color: '#6b7280', fontSize: 18, textTransform: 'uppercase', letterSpacing: 4 }}>

@@ -19,7 +19,7 @@ import { brandSlug } from '@/lib/brands'
 export const revalidate = 86400
 export const dynamicParams = true
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const YEAR = 2026
 
 type BrandData = {
@@ -83,8 +83,8 @@ export async function generateMetadata({
   const data = await getBrand(slug)
   if (!data) return { title: 'Brand not found — The Lifting Lab' }
   const url = `${SITE}/brand/${slug}`
-  const title = `${data.brand} Supplements — Reviews & Scores UK ${YEAR} | The Lifting Lab`
-  const description = 'No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research. Listed prices are not confirmed offers; formulations and serving sizes differ.'
+  const title = `${data.brand} supplement catalogue | The Lifting Lab`
+  const description = `Browse ${data.brand} supplement records, labels and listed prices by category. Formulations and serving sizes differ; effectiveness assessments are unavailable.`
   return {
     title,
     description,

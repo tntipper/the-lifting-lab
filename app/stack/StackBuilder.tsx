@@ -337,7 +337,7 @@ function SavedStackBuilder() {
   }, [stackItems])
 
   // Social share text for the whole stack.
-  const siteOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://www.theliftinglab.co.uk'
+  const siteOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://theliftinglab.co.uk'
   const siteUrl = siteOrigin + (stackPath || '/stack')
   const shareText = stackResearchText(assessmentProducts, stack.length)
   const xShare = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(siteUrl)}`

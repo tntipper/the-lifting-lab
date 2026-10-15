@@ -8,19 +8,19 @@ import { buildBrandStats, curatedBrandMatchups, type BrandMatchup } from '@/lib/
 
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const YEAR = 2026
 
 export const metadata: Metadata = {
   "title": "Brand research comparisons",
   "description": "Compare catalogue records and listed price information. No approved brand-effectiveness ranking is available.",
   "alternates": {
-    "canonical": "https://www.theliftinglab.co.uk/brands-vs"
+    "canonical": "https://theliftinglab.co.uk/brands-vs"
   },
   "openGraph": {
     "title": "Brand research comparisons",
     "description": "Compare catalogue records and listed price information. No approved brand-effectiveness ranking is available.",
-    "url": "https://www.theliftinglab.co.uk/brands-vs",
+    "url": "https://theliftinglab.co.uk/brands-vs",
     "type": "website"
   },
   "twitter": {
