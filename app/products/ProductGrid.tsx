@@ -293,7 +293,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">{product.brand}</p>
-                  <Link href={`/products/${product.id}`} className="mt-0.5 flex min-h-11 items-center text-[17px] font-semibold leading-6 text-white hover:underline">
+                  <Link href={`/products/${product.id}`} className={`${styles.cardTitle} mt-0.5 flex min-h-11 items-center text-[17px] font-semibold leading-6 text-[var(--ink)] hover:underline`}>
                     {product.name}
                   </Link>
                   <p className="mt-1 text-xs text-lab-muted">{categoryLabel(product.category)}</p>
@@ -349,7 +349,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               )}
 
               <ProductOfferLink product={product} storeActionLabel="Add to basket"
-                className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
+                className="mt-auto w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
 
               <div className="grid grid-cols-2 gap-2">
                 <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-white'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>
