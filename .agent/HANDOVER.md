@@ -1,3 +1,12 @@
+**15 October synthetic Preview footer fix — k-claude-design; start c96dc9f; design base cb600ee; local only:**
+- Cause: redesign EmailCapture unconditionally rendered a footer form on every page.
+- Reproduced unchanged preview-build-runtime.mjs:75 failure for `/` using application workflow env.
+- Gate with isIsolatedEnvironment: disabled controls in a div; shared layout CSS preserves design; production email form retained.
+- PASS unchanged node tests/preview-build-runtime.mjs with workflow env: all routes inert, notice/no gtag/no forms, zero external connections.
+- PASS npm run typecheck; npm run lint (0 errors/21 existing warnings); SSR checks synthetic-preview/staging/production; git diff check.
+- Catalogue copy/equal card sizing/tests untouched; no push/main/deploy/live writes. Hosted CI unrun; gh unsigned.
+- Next: review local fix(design) commit and rerun hosted CI; no local blockers.
+
 **15 October neutral My Stack regression fix — k-claude-design; base 07b079f; local only:**
 - Restored name · Above/At/Approaching guidance nudges; daily upper-level percentages inherit ink; UK adult reference intake labels are consistent.
 - Share Stack focuses and scrolls to its heading on open; Close returns focus to its trigger; browser assertions cover both.

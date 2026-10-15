@@ -298,7 +298,7 @@ input, select, textarea { color: var(--ink); }
 .tll-capture{background:var(--lab-black);color:var(--on-lab-black);border-radius:var(--radius-lg);padding:var(--space-5);display:grid;gap:var(--space-3);font-family:var(--font-sans);max-width:520px}
 .tll-capture h3{margin:0;font:400 28px/30px var(--font-display);letter-spacing:.01em}
 .tll-capture p{margin:0;font:400 14px/20px var(--font-sans);color:#a9ac9f}
-.tll-capture form{display:flex;gap:var(--space-2);flex-wrap:wrap}
+.tll-capture-fields{display:flex;gap:var(--space-2);flex-wrap:wrap}
 .tll-capture input{flex:1 1 200px;min-height:var(--tap-min);border-radius:var(--radius-sm);border:1px solid #6c6f63;background:#151613;color:var(--on-lab-black);padding:0 var(--space-3);font:400 16px/20px var(--font-sans)}
 .tll-capture input:focus-visible{outline:2px solid var(--focus-on-dark);outline-offset:1px}
 .tll-capture .tll-ok{color:var(--lime-tint);font-weight:600}
