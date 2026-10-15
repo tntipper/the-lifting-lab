@@ -1,4 +1,4 @@
-import products from './draft-product-redirects.json'
+import products from './draft-product-redirects.data.json'
 
 /** Local draft only: Shopify-domain redirects require a separately approved CSV import. */
 export function draftProductRedirects(env: NodeJS.ProcessEnv = process.env) {
