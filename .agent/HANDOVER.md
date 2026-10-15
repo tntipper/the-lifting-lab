@@ -35,6 +35,15 @@
 - Fixed test-discovered circular provider import with lightweight context module; fixture process.env/animation timing corrected.
 - Screenshots test-results/shop-panels/; result ~/tll-migration/grok-runs/d-panels-result.txt; hosted CI/PR readback unverified (gh unsigned).
 - Next: review local commit and adopt exported hooks for other cards; no push/merge/deploy/live settings/catalogue/SEO/Sentry changes.
+**15 October stack builder design rebuild — k-d-stack; base cb600ee, local only:**
+- Matched lab-token hero/chips, slot/add/swap drawers, neutral duplicate nudges, planning timeline, black cost/share/save and sticky Buy.
+- Extended dose panel with evidence tint, SVG guidance hatch/markers, A–Z totals and contribution breakdowns; convert g/mg/mcg before summing.
+- tll-stack-v1 bookmark restores empty guests only; existing provider owns account state; swaps wait for confirmed addition before removal.
+- No approved goal starters/medals/competitor data: manual goals retained; no invented picks, savings, alerts or subscription discounts.
+- PASS typecheck, lint (0 errors/22 existing warnings), focused 223/223 incl. 360/1280 Chromium, Pixel 7 exact-cart request, manifests/boundaries/diff.
+- Full npm test: 4086 pass/1 fail/8 skip; Gen23 process expected EXITED, got KILLED (unrelated offline fixture; no hosted CI claim).
+- Catalogue copy, SEO/discovery/redirect gates, Sentry and commerce flags preserved; no push/merge/deploy/live commerce.
+- Results ~/tll-migration/grok-runs/d-stack-result.txt; screenshots /tmp/d-stack-{360,1280}.png; next review local commit, investigate Gen23 separately.
 
 **14 October Job K2 SEO/agent discovery — k-seo-agentic; start a0eb93f, local only:**
 - Added approved Product/ProductGroup offers, site entities/breadcrumbs, canonical/social metadata and product-card images.

@@ -3,77 +3,53 @@
 import { NUTRIENT_LIMITS } from '@/lib/nutrient-limits'
 import { convertAmount, referenceRangeFor } from '@/lib/stack-reference-ranges'
 
-type DoseTotal = {
-  name: string
-  amount: number
-  unit: string
-  ulPercent: number | null
-  rdaPercent: number | null
+export type DoseTotal = {
+  name: string; amount: number; unit: string
+  ulPercent?: number | null; rdaPercent?: number | null
+  contributions?: { product: string; amount: number }[]
 }
-
-function formatAmount(value: number): string {
-  return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100)
-}
+const formatAmount = (value: number) => String(Math.round(value * 100) / 100)
+const position = (value: number, max: number) => Math.max(0, Math.min(100, value / max * 100))
 
 export default function CombinedDosePanel({ totals }: { totals: DoseTotal[] }) {
-  return <section className="rounded-xl border border-[#d7d8cf] bg-white p-5 text-[#14140f] sm:p-6">
-    <h2 className="tll-display text-3xl uppercase">Combined daily dose</h2>
-    <p className="mt-1 text-sm text-[#66685f]">Everything in your stack, added together against published reference ranges and safety limits where available.</p>
-
-    {totals.length === 0 ? <p className="mt-6 rounded-lg bg-[#f1f1ec] p-4 text-sm text-[#66685f]">Add products with recorded ingredient amounts to see this comparison.</p> : <div className="mt-5 divide-y divide-[#dedfd7]">
-      {totals.map(total => {
+  return <section className="dose-panel" aria-labelledby="combined-dose-heading">
+    <h2 id="combined-dose-heading">Combined daily dose</h2>
+    <p className="dose-intro">Everything in your stack, added up, against published evidence ranges and established guidance.</p>
+    {totals.length === 0 ? <p className="dose-empty">Add products with recorded ingredient amounts to see this comparison.</p> : <div>
+      {[...totals].sort((a, b) => a.name.localeCompare(b.name)).map(total => {
         const reference = referenceRangeFor(total.name)
-        const amountInReferenceUnit = reference ? convertAmount(total.amount, total.unit, reference.unit) : null
         const upperLimit = NUTRIENT_LIMITS[total.name]
-        const ulInReferenceUnit = reference && upperLimit?.ul != null
-          ? convertAmount(upperLimit.ul, upperLimit.unit, reference.unit)
-          : null
-        const scaleMax = reference && amountInReferenceUnit != null
-          ? Math.max(reference.maximum * 1.5, amountInReferenceUnit * 1.15, ulInReferenceUnit ?? 0)
-          : 0
-        const rangeStart = reference ? Math.min(100, reference.minimum / scaleMax * 100) : 0
-        const rangeWidth = reference ? Math.max(2, (reference.maximum - reference.minimum) / scaleMax * 100) : 0
-        const marker = reference && amountInReferenceUnit != null ? Math.min(99, amountInReferenceUnit / scaleMax * 100) : 0
+        const unit = reference?.unit ?? upperLimit?.unit ?? total.unit
+        const amount = convertAmount(total.amount, total.unit, unit)
+        const limit = upperLimit?.ul != null ? convertAmount(upperLimit.ul, upperLimit.unit, unit) : null
         const limitLabel = upperLimit ? upperLimit.limitLabel ?? 'EFSA UL' : null
-        const amountInLimitUnit = upperLimit ? convertAmount(total.amount, total.unit, upperLimit.unit) : null
-        // Safety-limit-only nutrients (e.g. caffeine) are compared with the same limit and label as the stack warning.
-        const limitStatus = upperLimit && upperLimit.ul != null && amountInLimitUnit != null
-          ? `${amountInLimitUnit > upperLimit.ul ? 'Above' : amountInLimitUnit === upperLimit.ul ? 'At' : 'Below'} the ${limitLabel} (${formatAmount(upperLimit.ul)} ${upperLimit.unit} a day)`
-          : null
-        const status = !reference || amountInReferenceUnit == null ? limitStatus ?? 'Reference range unavailable'
+        const limitStatus = limit !== null && amount !== null ? `${amount > limit ? 'Above' : amount === limit ? 'At' : 'Within'} ${limitLabel}` : null
+        const above = limit !== null && amount !== null && amount > limit
+        const status = above ? limitStatus! : !reference || amount === null ? limitStatus ?? 'Reference range unavailable'
           : reference.perSession ? 'Per-session range: compare one serving, not this daily total'
-          : amountInReferenceUnit < reference.minimum ? 'Below reference range'
-          : amountInReferenceUnit > reference.maximum ? 'Above reference range'
-          : 'Within reference range'
-
-        return <article key={`${total.name}-${total.unit}`} className="py-4 first:pt-0 last:pb-0">
-          <div className="flex items-baseline justify-between gap-4">
-            <div className="min-w-0"><h3 className="truncate text-sm font-black">{total.name}</h3></div>
-            <p className="shrink-0 font-mono text-sm font-black">{formatAmount(total.amount)} {total.unit} a day</p>
+          : reference.context || reference.timing !== 'a day' ? 'Context-specific evidence range'
+          : amount < reference.minimum ? 'Below evidence dose'
+          : amount > reference.maximum ? 'Above evidence range' : 'Evidence dose'
+        const max = Math.max((limit ?? 0) * 1.2, (reference?.maximum ?? 0) * 1.6, (amount ?? 0) * 1.1, 1)
+        const hasBar = amount !== null && (reference !== null || limit !== null)
+        const guidance = limit !== null && upperLimit ? `${formatAmount(upperLimit.ul!)} ${upperLimit.unit} a day · ${limitLabel}` : null
+        return <article key={`${total.name}-${total.unit}`} className="dose-row">
+          <div className="dose-heading"><h3>{total.name}</h3><span>{formatAmount(total.amount)} {total.unit}</span></div>
+          {hasBar && <div className="dose-track" role="img" aria-label={`${total.name}: ${formatAmount(total.amount)} ${total.unit} a day; ${status}${guidance ? `; ${guidance}` : ''}`}>
+            {reference && <span className="dose-range" style={{ left: `${position(reference.minimum, max)}%`, width: `${Math.max(0.8, position(reference.maximum, max) - position(reference.minimum, max))}%` }} />}
+            {limit !== null && <><svg aria-hidden="true" className="dose-hatch" style={{ left: `${position(limit, max)}%`, width: `${100 - position(limit, max)}%` }}><defs><pattern id={`hatch-${total.name.replace(/[^a-z0-9]/gi, '')}-${total.unit}`} width="6" height="6" patternUnits="userSpaceOnUse"><path d="M-1 1L1-1M0 6L6 0M5 7L7 5" stroke="currentColor" strokeWidth="1.5" /></pattern></defs><rect width="100%" height="100%" fill={`url(#hatch-${total.name.replace(/[^a-z0-9]/gi, '')}-${total.unit})`} /></svg><span className="dose-limit" style={{ left: `${position(limit, max)}%` }} /></>}
+            <span className="dose-marker" style={{ left: `${position(amount!, max)}%` }} />
+          </div>}
+          <div className="dose-detail"><span className="dose-status" data-evidence={status === 'Evidence dose'}>{status}</span>
+            {reference && <span>{formatAmount(reference.minimum)}{reference.minimum !== reference.maximum ? `–${formatAmount(reference.maximum)}` : ''} {reference.unit} {reference.timing}{reference.context ? `. ${reference.context}` : ''}</span>}
+            {guidance && <span>{guidance}</span>}
           </div>
-
-          {reference && amountInReferenceUnit != null ? <>
-            <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-[#e7e8e1]" role="meter" aria-label={`${total.name}: ${formatAmount(total.amount)} ${total.unit}; ${status.toLowerCase()}`} aria-valuemin={0} aria-valuemax={scaleMax} aria-valuenow={amountInReferenceUnit}>
-              <span className="absolute inset-y-0 rounded-full bg-[#b7e95a]" style={{ left: `${rangeStart}%`, width: `${rangeWidth}%` }} />
-              {ulInReferenceUnit != null && ulInReferenceUnit < scaleMax && <span aria-hidden="true" className="absolute inset-y-0 right-0" style={{ left: `${ulInReferenceUnit / scaleMax * 100}%`, background: 'repeating-linear-gradient(135deg, transparent 0 4px, #a7a99f 4px 6px)' }} />}
-              <span aria-hidden="true" className="absolute -top-1 h-5 w-1 rounded bg-[#14140f]" style={{ left: `calc(${marker}% - 2px)` }} />
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#66685f]">
-              <span className={`rounded-full border px-2 py-0.5 font-bold ${status === 'Within reference range' ? 'border-[#77a72a] bg-[#edf7da] text-[#486713]' : 'border-[#b0b2a8] bg-[#f1f1ec]'}`}>{status}</span>
-              <span>{formatAmount(reference.minimum)}{reference.minimum === reference.maximum ? '' : `–${formatAmount(reference.maximum)}`} {reference.unit} {reference.timing}</span>
-              {reference.context && <span>{reference.context}</span>}
-            </div>
-          </> : limitStatus ? <p className="mt-2 text-xs text-[#77796f]">{limitStatus}. No reference range applies; this is a safety level, not a target.</p>
-            : <p className="mt-2 text-xs text-[#77796f]">Reference range unavailable — the recorded amount is still included in your total.</p>}
+          {upperLimit && <p className="dose-context">{upperLimit.note}</p>}
+          {(total.contributions?.length ?? 0) > 1 && <p className="dose-breakdown">{total.contributions!.map(part => `${part.product} ${formatAmount(part.amount)} ${total.unit}`).join(' + ')}</p>}
         </article>
       })}
     </div>}
-
-    <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#d7d8cf] pt-4 text-[10px] text-[#66685f]">
-      <span className="inline-flex items-center gap-1.5"><i className="h-2 w-5 rounded bg-[#b7e95a]" /> Published reference range</span>
-      <span className="inline-flex items-center gap-1.5"><i className="h-4 w-1 rounded bg-[#14140f]" /> Your recorded total</span>
-      <span className="inline-flex items-center gap-1.5"><i className="h-3 w-5" style={{ background: 'repeating-linear-gradient(135deg, transparent 0 4px, #a7a99f 4px 6px)' }} /> Above established safety limit</span>
-    </div>
-    <p className="mt-3 text-[10px] leading-relaxed text-[#77796f]">Ranges are general published guidance, not a personal prescription or a product effectiveness score. Some needs vary by body weight, diet, health and training. Tap an ingredient in the research library for context.</p>
+    <div className="dose-legend"><span><i className="dose-key-range" />Evidence range</span><span><i className="dose-key-limit" />Guidance / upper level</span><span><svg aria-hidden="true" width="20" height="12"><path d="M0 6L6 0M0 12L12 0M6 12L18 0M12 12L20 4M18 12L20 10" stroke="currentColor" /></svg>Above guidance / upper level</span><span><i className="dose-key-total" />Your daily total</span></div>
+    <p className="dose-context">Published ranges are general context, not a personal prescription or an effectiveness score. UK EVM and EFSA guidance are labelled separately. Recorded supplements exclude food and drink. For information only.</p>
   </section>
 }

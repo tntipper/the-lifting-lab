@@ -9,9 +9,9 @@ export default function BuyMyStack({ items, ready }: { items: readonly StackCart
   const url = buildStackCartUrl(storeItems, now)
   // TODO(Toby/Lifty): approve a server-only Storefront binding before enabling Phase 2.
   const awaitingSetup = stackStorefrontCartEnabled()
-  return <div className="mt-4 space-y-4">
+  return <div className="stack-cart-root mt-4 space-y-4">
     {url ? awaitingSetup ? <p role="status" className="text-sm">Storefront checkout is awaiting setup.</p> : <div>
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#a8aaa0] bg-white px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:static md:border-0 md:bg-transparent md:p-0">
+      <div className="stack-cart-action fixed inset-x-0 bottom-0 z-50 border-t border-[#a8aaa0] bg-white px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:static md:border-0 md:bg-transparent md:p-0">
         <a href={url} className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#14140f] px-5 text-sm font-bold text-white md:w-auto">Buy my stack</a>
       </div>
       <p className="mt-2 text-xs text-[#62645c]">Adds the listed pack quantities of approved store items. Items listed below are skipped. Check quantities, price and availability in the store cart.</p>
