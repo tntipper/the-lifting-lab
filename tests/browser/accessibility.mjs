@@ -30,7 +30,16 @@ const bundle = await build({
     'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '"enabled"',
     'process.env.NEXT_PUBLIC_TLL_STACK_CART': '""',
   },
-  plugins: [{ name: 'isolated-provider-adapters', setup(builder) {
+  plugins: [
+    { name: 'css-modules-stub', setup(builder) {
+      // Browser fixtures serve globals.css separately; CSS modules are class-name stubs only.
+      builder.onLoad({ filter: /\.module\.css$/ }, () => ({
+        loader: 'js',
+        contents: 'export default new Proxy({}, { get: (_, key) => String(key) });',
+      }))
+      builder.onLoad({ filter: /\.css$/ }, () => ({ loader: 'js', contents: 'export default {};' }))
+    } },
+    { name: 'isolated-provider-adapters', setup(builder) {
     builder.onResolve({ filter: /^next\/(link|navigation)$|^@\/lib\/(supabase|scores)$/ }, args => ({ path: args.path, namespace: 'fixture' }))
     builder.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({
       loader: 'jsx', resolveDir: root,
