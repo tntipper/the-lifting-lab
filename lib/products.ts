@@ -81,7 +81,11 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
       const vb = b.score! / b.cost_per_serving!
       return vb - va
     }
-    if (sort === 'budget' || sort === 'price') {
+    if (sort === 'price') {
+      const price = (p: ScoredProduct) => typeof p.retail_price === 'number' && Number.isFinite(p.retail_price) && p.retail_price > 0 ? p.retail_price : Infinity
+      return price(a) - price(b) || a.name.localeCompare(b.name)
+    }
+    if (sort === 'budget') {
       // Listed price per known serving only; no scientific or offer approval.
       const ca = hasPositiveServingCost(a) ? a.cost_per_serving : Infinity
       const cb = hasPositiveServingCost(b) ? b.cost_per_serving : Infinity

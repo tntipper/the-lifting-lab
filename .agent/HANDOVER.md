@@ -1,3 +1,14 @@
+**15 October D shop chrome — k-d-shop, base cb600ee; local only:**
+- Rebuilt category heading/cards and detail layout from Shop.dc.html; reused exact lab tokens and existing Anton/Geist fonts.
+- Default listed true-cost sorting; fixed pack-price sort; compare max 3, stack actions and exact Buy mapping retained.
+- Added DS-style score badge respecting withheld legacy scores, per-serving/nutrition dl and sourced conditional caffeine note.
+- No verified competitor/evidence/pairing dataset: optional comparisons/pills/pair hints remain hidden; no invented catalogue data.
+- Brand catalogue sources/loaders, SEO/schema/discovery/redirect gates, global shell and Sentry config untouched; pickers preserved.
+- PASS typecheck, lint (0 errors/22 existing warnings), 163 affected Node tests, standalone SEO 14/14, token/diff checks.
+- PASS Chrome 360/1200 layout, filter/sort, compare cap, stack and size URL update; smoke script tests/browser/shop-chrome.mjs.
+- LIMIT existing keyboard-only product-size fixture times out at line 46 in installed Chrome; browser layout used offline font fixture.
+- Next: review local commit/results at ~/tll-migration/grok-runs/d-shop-result.txt; hosted CI unrun; no push/merge/deploy/live writes.
+
 **14 October Job K2 SEO/agent discovery — k-seo-agentic; start a0eb93f, local only:**
 - Added approved Product/ProductGroup offers, site entities/breadcrumbs, canonical/social metadata and product-card images.
 - Extended existing robots/sitemap; preview/staging/nonproduction noindex; cached llms/full and public product feed.
