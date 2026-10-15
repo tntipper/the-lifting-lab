@@ -335,9 +335,9 @@ input, select, textarea { color: var(--ink); }
 }
 .tll-nav-item.is-active { border-bottom-color: var(--lime); }
 .tll-lift-link { color: var(--lime); font-weight: 600; }
-.tll-basket { background: transparent; color: var(--on-lab-black); }
+.tll-basket { background: var(--lime); color: var(--on-lime); }
 .tll-basket:disabled { cursor: not-allowed; }
-.tll-stack-button { background: var(--lime); color: var(--on-lime); }
+.tll-stack-button { background: transparent; color: var(--on-lab-black); border: 1px solid var(--line-strong); }
 .tll-footer-inner {
   max-width: 1200px;
   margin: 0 auto;
@@ -412,6 +412,14 @@ input, select, textarea { color: var(--ink); }
 .shop-stack-trigger { position: fixed; right: 16px; bottom: 16px; z-index: 40; display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 12px 16px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--lime); color: var(--on-lime); font: 600 14px/20px var(--font-sans); }
 /* The header and shared hook remain available while the compare bar occupies the bottom edge. */
 .shop-stack-trigger-raised { bottom: 240px; }
+@media (min-width: 768px) {
+  body:has(.tll-stack-button) .shop-stack-trigger { display: none; }
+}
+@media (max-width: 767px) {
+  body { --shop-bottom-clearance: 80px; }
+  body:has(.shop-compare-bar) { --shop-bottom-clearance: 304px; }
+  .tll-footer { padding-bottom: var(--shop-bottom-clearance); }
+}
 .tll-dialog.shop-compare-dialog { position: fixed; inset: 16px; width: calc(100% - 32px); max-width: 1200px; max-height: calc(100dvh - 32px); margin: auto; padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink); overflow-y: auto; }
 .shop-compare-dialog .shop-panel-heading { margin-bottom: 16px; }
 .shop-table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }

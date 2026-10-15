@@ -83,7 +83,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
   const [sort, setSort] = useState<SortKey>('budget')
   const [query, setQuery] = useState('')
   const [groupParam, setGroupParam] = useState<string | null>(null)
-  const { compared, toggleCompare, clearCompare } = useShopPanels()
+  const { compared, toggleCompare } = useShopPanels()
   const selected = compared.map(product => product.id)
   const [favourites, setFavourites] = useState<Set<string>>(new Set())
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
@@ -164,10 +164,6 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
     if (search) products = products.filter((product) => `${product.brand} ${product.name}`.toLowerCase().includes(search))
     return sortScored(products, sort)
   }, [all, brandFilter, category, groupCategories, isOnly, query, sort])
-
-  const selectedProducts = selected
-    .map((id) => all.find((product) => product.id === id))
-    .filter((product): product is ScoredProduct => Boolean(product))
 
   const heading = category !== 'all'
     ? categoryLabel(category)
@@ -348,62 +344,34 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 </div>
               )}
 
-              <ProductOfferLink product={product} storeActionLabel="Add to basket"
-                className="mt-auto w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
+              <div className={`${styles.cardActions} flex flex-col gap-3`}>
+                <ProductOfferLink product={product} storeActionLabel="Add to basket"
+                  className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
 
-              <div className="grid grid-cols-2 gap-2">
-                <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-[var(--ink)]'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>
-                  <input type="checkbox" checked={isSelected} disabled={!isSelected && selected.length >= 3}
-                    onChange={() => toggleSelect(product.id)} className="h-[18px] w-[18px] accent-[var(--ink)]" />
-                  {isSelected ? 'Compared' : 'Compare'}
-                </label>
-                <button type="button" aria-pressed={stacked} onClick={() => {
-                  toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
-                  track(stacked ? 'remove_from_stack' : 'add_to_stack', { item_brand: product.brand, item_name: product.name })
-                }} className={`min-h-11 rounded-md border px-3 text-sm font-semibold ${stacked ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-[var(--ink)]'}`}>
-                  {stacked ? 'In stack' : 'Add to stack'}
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-[var(--ink)]'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>
+                    <input type="checkbox" checked={isSelected} disabled={!isSelected && selected.length >= 3}
+                      onChange={() => toggleSelect(product.id)} className="h-[18px] w-[18px] accent-[var(--ink)]" />
+                    {isSelected ? 'Compared' : 'Compare'}
+                  </label>
+                  <button type="button" aria-pressed={stacked} onClick={() => {
+                    toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
+                    track(stacked ? 'remove_from_stack' : 'add_to_stack', { item_brand: product.brand, item_name: product.name })
+                  }} className={`min-h-11 rounded-md border px-3 text-sm font-semibold ${stacked ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-[var(--ink)]'}`}>
+                    {stacked ? 'In stack' : 'Add to stack'}
+                  </button>
+                </div>
+
+                <p className="text-xs leading-4 text-lab-muted">
+                  Research record only. Check the retailer page for the current pack, price and stock. Informational only, not medical advice.
+                </p>
               </div>
-
-              <p className="text-xs leading-4 text-lab-muted">
-                Research record only. Check the retailer page for the current pack, price and stock. Informational only, not medical advice.
-              </p>
             </article>
           )
         })}
       </div>
 
       </div>
-      {selected.length > 0 && (
-        <div className="tll-on-dark fixed inset-x-3 bottom-3 z-30 mx-auto max-w-6xl rounded-xl border border-[var(--line-strong)] bg-[var(--lab-black)] p-3 text-[var(--on-lab-black)]  sm:inset-x-6 sm:p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="grid flex-1 grid-cols-3 gap-2">
-              {[0, 1, 2].map((index) => {
-                const product = selectedProducts[index]
-                return product ? (
-                  <div key={product.id} className="flex min-h-11 min-w-0 items-center gap-2 rounded-md border border-[var(--line-strong)] px-2 sm:px-3">
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium sm:text-sm">{product.name}</span>
-                    <button type="button" onClick={() => toggleSelect(product.id)} aria-label={`Remove ${product.name} from comparison`}
-                      className="min-h-11 min-w-11 shrink-0 rounded text-lg">×</button>
-                  </div>
-                ) : (
-                  <div key={index} className="grid min-h-11 place-items-center rounded-md border border-dashed border-[var(--line-strong)] px-2 text-xs text-[#a9ac9f]">
-                    Empty slot
-                  </div>
-                )
-              })}
-            </div>
-            <div className="flex items-center justify-between gap-3 lg:justify-end">
-              <span className="text-xs text-[#a9ac9f]">Choose up to three</span>
-              <button type="button" onClick={() => clearCompare()} className="min-h-11 px-2 text-sm font-semibold text-[#a9ac9f]">Clear</button>
-              <Link href={`/compare?ids=${selected.join(',')}`} onClick={() => track('compare_start', { count: selected.length })}
-                className="inline-flex min-h-11 items-center rounded-md bg-[var(--lime)] px-5 text-sm font-semibold text-[var(--ink)]">
-                Compare side by side
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -10,6 +10,8 @@ const SHOP = [
 const RESEARCH = [
   ['/sources', 'Research sources'], ['/methodology', 'How we assess'], ['/ingredients', 'Ingredients'],
   ['/compare', 'Compare'], ['/stack', 'Stack builder'], ['/calculators', 'Calculators'],
+  ['/cheapest', 'Cheapest supplements'], ['/protein-value', 'Protein value'],
+  ['/strongest-pre-workout', 'Strongest pre-workout'], ['/stacks', 'Stacks'],
 ] as const
 
 export default function SiteFooter() {

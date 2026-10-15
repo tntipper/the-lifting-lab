@@ -1,3 +1,13 @@
+**15 October layout review fixes — k-d-e1; base f8032e0; local only:**
+- Pinned product offer/compare/stack/research actions together; equal card heights per row with auto-sized rows and 4:3 images.
+- Removed duplicate fixed compare bar and unused StackFAB; retained shared ShopPanels CompareBar.
+- Corrected header stack/basket order and colours; restored four footer research links.
+- Hid floating stack at md+ where header stack exists; mobile buy bar/footer reserve floating-control space, including compare state.
+- PASS typecheck; lint (0 errors/21 existing warnings); 176 affected Node tests; git diff check.
+- PASS Chrome shop smoke and 360/768/1200 geometry, header/footer/trigger checks; mobile PDP clear with/without comparison.
+- Catalogue copy and other worker wording files untouched; no push/main/merge/deploy; hosted CI unrun, PR read unavailable (gh unsigned).
+- Next: review local fix(design) commit; no blockers to local delivery.
+
 **15 October header/footer chrome — k-d-chrome, base cb600ee; local only:**
 - Rebuilt responsive sticky header/nav; exact query-aware lime underline, final LIFT link, outlined basket/lime stack with existing counts.
 - Ported EmailCapture/FollowUs from design DS; lockup-first footer, link columns, retailer/source disclaimer and 44px controls.

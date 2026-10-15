@@ -96,10 +96,10 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
           <a href="https://www.trylift.app" target="_blank" rel="noopener" className="tll-nav-item tll-lift-link">LIFT App ↗</a>
         </nav> : <>
           <div className="order-2 flex w-full items-center gap-2 sm:order-none sm:ml-auto sm:w-auto">
-            <BasketControl />
             <button type="button" onClick={openStack} aria-haspopup="dialog" aria-label={`My stack, ${stack.length} products`} className="tll-stack-button inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold">
               My stack <span className="font-mono">{stack.length}</span>
             </button>
+            <BasketControl />
           </div>
           <div className="ml-auto flex items-center gap-2 sm:ml-0">
             <Link href={accountHref} aria-label={accountLabel} title={accountLabel} className="grid h-11 w-11 place-items-center rounded-lg border border-[#6c6f63] xl:hidden">
