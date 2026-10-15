@@ -52,5 +52,5 @@
 @media(min-width:760px) { .catalogueContent { padding-inline:24px; } .detailMain { padding:32px 24px; } .buyBarInner { grid-template-columns:1fr 1fr 2fr; } .buyBarInner > :last-child { grid-column:auto; } }
 @media print { .buyBar { position:static; } .card,.detailPanel { break-inside:avoid; } }
 
-/* Reserve the mobile floating stack control below the purchase controls. */
-@media(max-width:767px) { .buyBar { padding-bottom:var(--shop-bottom-clearance,80px); } }
+/* Reserve only the compare bar below the mobile purchase controls. */
+@media(max-width:767px) { .buyBar { padding-bottom:var(--shop-bottom-clearance,0px); } }

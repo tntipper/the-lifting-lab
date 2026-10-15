@@ -100,10 +100,12 @@ try {
       assert.equal(await trigger.getAttribute('aria-expanded'), 'false')
       assert.equal(await trigger.evaluate(element => element === document.activeElement), true)
     }
-    // The original bug exposed the hidden drawer's Close button after the footer.
+    const stackTrigger = page.locator('header .tll-stack-button')
+    // The header owns stack access; neither the hidden floating trigger nor drawer is tabbable.
     await page.getByRole('link', { name: 'Footer end' }).focus()
     await page.keyboard.press('Tab')
-    assert.equal(await page.getByRole('button', { name: 'My Stack', exact: true }).evaluate(element => element === document.activeElement), true)
+    assert.equal(await page.locator('.shop-stack-trigger').isVisible(), false)
+    assert.equal(await page.evaluate(() => Boolean(document.activeElement?.closest('dialog, .shop-stack-trigger'))), false)
     assert.equal(await page.getByRole('dialog').count(), 0)
 
     await page.getByRole('button', { name: 'Add synthetic product' }).click()
@@ -112,7 +114,7 @@ try {
       ['ⓘ How we score', 'How We Score', 'Close scoring explanation'],
       ['Open share fixture', 'Share & earn 25 pts', 'Close share dialog'],
     ]) {
-      const trigger = page.getByRole('button', { name: triggerName, exact: true })
+      const trigger = triggerName === 'My Stack' ? stackTrigger : page.getByRole('button', { name: triggerName, exact: true })
       await trigger.focus(); await page.keyboard.press('Enter')
       const dialog = page.getByRole('dialog', { name: dialogName, exact: true })
       await dialog.waitFor()
@@ -135,7 +137,7 @@ try {
       await closer.click(); await dialog.waitFor({ state: 'hidden' })
       assert.equal(await trigger.evaluate(element => element === document.activeElement), true)
     }
-    await page.getByRole('button', { name: 'My Stack', exact: true }).click()
+    await stackTrigger.click()
     await page.getByRole('button', { name: /Remove Synthetic product/ }).click()
     assert.equal(await page.getByRole('button', { name: 'Close My Stack' }).evaluate(element => element === document.activeElement), true)
     assert.equal(await page.getByRole('dialog').getByText(/No supplements in your stack yet/).count(), 1)

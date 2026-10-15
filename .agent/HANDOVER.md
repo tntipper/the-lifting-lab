@@ -1,3 +1,13 @@
+**15 October design/CI regression fixes — k-claude-design; start 0b96b29, design base cb600ee; local only:**
+- Restored neutral `value` sort option; brand catalogue copy and equal card-per-row sizing untouched.
+- Gen23 cause: TopNav added useSearchParams but staging-cart's esbuild navigation stub omitted it; child build failure surfaced as KILLED, not a hang.
+- Same disposable PG prerequisites: original fixture FAIL (~21s), repaired fixture PASS (~21s); full npm test Gen23 PASS (~17s), unchanged deadline/test.
+- Hide duplicate floating stack whenever header stack exists at every width; mobile clearance is 0/240px (compare only), footer reserves it once; desktop retains body reserve.
+- Updated accessibility focus checks to use header stack; Chrome header/dialog/rankings checks PASS 320/390/768/1024/1280/1440; staging-cart PASS same six widths.
+- Synthetic-preview Chrome PASS equal row card geometry at 360/768/1200; mobile PDP 1–3 comparisons, no overflow/double body padding, clear controls.
+- PASS typecheck, lint (0 errors/21 existing warnings), npm test (4091 pass/6 skip/0 fail), both manifests/live boundaries/diff check; logs test-results/design-ci/ (ignored).
+- Broad accessibility remains locally blocked by existing native-picker keyboard timeouts (product-size:46; offers:26); targeted affected checks pass. Hosted CI unrun; PR lookup unavailable (gh unsigned).
+- Next: review local commits/re-run hosted CI; no push, main changes, deployment, live writes or test limit changes.
 **15 October layout review fixes — k-d-e1; base f8032e0; local only:**
 - Pinned product offer/compare/stack/research actions together; equal card heights per row with auto-sized rows and 4:3 images.
 - Removed duplicate fixed compare bar and unused StackFAB; retained shared ShopPanels CompareBar.

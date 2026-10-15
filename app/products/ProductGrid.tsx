@@ -26,6 +26,7 @@ import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'budget', label: 'Lowest true cost (listed £/serving)' },
   { key: 'score', label: 'Score (pending review · A–Z)' },
+  { key: 'value', label: 'Effectiveness value unavailable (A–Z)' },
   { key: 'price', label: 'Lowest pack price' },
   { key: 'name', label: 'Product name (A–Z)' },
   { key: 'brand', label: 'Brand (A–Z)' },
