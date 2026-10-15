@@ -52,6 +52,7 @@ function fixture({ category = 'cycle-support', modalOpen = false, nutrients = []
       if (name === '@/lib/product-data') return { fetchProductDetail: async () => item, fetchCategory: async () => [] }
       if (name === '@/lib/products') return { PRODUCT_COLUMNS: '*', withScore: p => p, sortScored: a => a, trueCostReason: () => null }
       if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
+      if (name === '@/components/ShopPanelsContext') return { useShopPanels: () => ({ panel: null, basket: [], compared: [], openBasket() {}, openStack() {}, closePanel() {}, addToBasket() {}, setBasketQuantity() {}, toggleCompare() {}, removeCompare() {}, clearCompare() {} }) }
       if (name === '@/components/ScoreBadge') return { __esModule: true, default: ({ score }) => React.createElement('span', {}, `Score ${score}`), scoreColor: () => '#fff' }
       if ((name.startsWith('@/components/') && !['@/components/ClaimsReviewNotice', '@/components/MethodologyModal', '@/components/AccessibleDialog', '@/components/ProductAssessment', '@/components/ShopScoreBadge'].includes(name)) || name === './RelatedProducts') return { __esModule: true, default: blank }
       if (name.startsWith('@/') || name.startsWith('.')) {
