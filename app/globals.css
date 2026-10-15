@@ -18,8 +18,8 @@
 
 :root,
 [data-theme="lab"] {
-  --background: #f4f4ef;
-  --foreground: #14140f;
+  --background: var(--paper);
+  --foreground: var(--ink);
 
   --paper: #f4f4ef;
   --surface: #ffffff;
@@ -62,6 +62,8 @@
   --radius-lg: 12px;
   --radius-pill: 999px;
   --tap-min: 44px;
+  --measure: 68ch;
+  --page-max: 1200px;
 
   /* accent rgb triplet for glow/translucent fills */
   --ar: 166, 226, 46;
@@ -70,6 +72,14 @@
 }
 
 [data-theme="dark"] {
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --lab-black: #0d0d0d;
+  --on-lab-black: #f2f2ee;
+  --lime: #a6e22e;
+  --lime-tint: #c8e86a;
+  --on-lime: #14140f;
+  --focus-on-dark: #8cc4ff;
   --paper: #0b0c0a;
   --surface: #151613;
   --surface-sunk: #1b1d18;
@@ -271,10 +281,83 @@ input, select, textarea { color: var(--ink); }
 .tll-centered-dialog { width: calc(100% - 24px); max-width: 28rem; max-height: 90dvh; margin: auto; overflow-y: auto; }
 .tll-stack-dialog { position: fixed; inset: auto 0 0; width: 100%; max-width: none; max-height: 90dvh; margin: 0; padding: 0; border: 0; background: transparent; overflow-y: auto; }
 :where(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.tll-on-dark :where(a, button, input, select, textarea):focus-visible { outline-color: #8cc4ff; }
+.tll-on-dark :where(a, button, input, select, textarea):focus-visible { outline-color: var(--focus-on-dark); }
 
 @media print {
   * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   :where(header, [class*="sticky"], [class*="fixed"]) { position: static !important; }
   .lab-card, article, section { break-inside: avoid; }
 }
+
+/* Header and footer chrome; shared components ported from ds/bundle.css. */
+.tll-btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--tap-min);padding:0 var(--space-5);border-radius:var(--radius-md);font:600 15px/20px var(--font-sans);text-decoration:none;cursor:pointer;border:1px solid transparent;transition:filter .15s}
+.tll-btn-primary{background:var(--action);color:var(--on-action)}
+.tll-btn-primary:hover{filter:brightness(1.12)}
+.tll-onblack .tll-btn-primary{background:var(--lime);color:var(--on-lime)}
+.tll-onblack .tll-btn:focus-visible{outline-color:var(--focus-on-dark)}
+.tll-capture{background:var(--lab-black);color:var(--on-lab-black);border-radius:var(--radius-lg);padding:var(--space-5);display:grid;gap:var(--space-3);font-family:var(--font-sans);max-width:520px}
+.tll-capture h3{margin:0;font:400 28px/30px var(--font-display);letter-spacing:.01em}
+.tll-capture p{margin:0;font:400 14px/20px var(--font-sans);color:#a9ac9f}
+.tll-capture form{display:flex;gap:var(--space-2);flex-wrap:wrap}
+.tll-capture input{flex:1 1 200px;min-height:var(--tap-min);border-radius:var(--radius-sm);border:1px solid #6c6f63;background:#151613;color:var(--on-lab-black);padding:0 var(--space-3);font:400 16px/20px var(--font-sans)}
+.tll-capture input:focus-visible{outline:2px solid var(--focus-on-dark);outline-offset:1px}
+.tll-capture .tll-ok{color:var(--lime-tint);font-weight:600}
+.tll-follow{background:var(--lab-black);color:var(--on-lab-black);border-radius:var(--radius-lg);padding:var(--space-5);display:grid;gap:var(--space-3);font-family:var(--font-sans);max-width:560px}
+.tll-follow h3{margin:0;font:400 28px/30px var(--font-display);letter-spacing:.01em}
+.tll-follow h3 span{color:var(--lime)}
+.tll-follow p{margin:0;font:400 14px/20px var(--font-sans);color:#a9ac9f}
+.tll-social{display:flex;flex-wrap:wrap;gap:var(--space-2);list-style:none;margin:0;padding:0}
+.tll-social a{display:grid;place-items:center;width:var(--tap-min);height:var(--tap-min);border-radius:var(--radius-pill);border:1px solid #6c6f63;color:var(--on-lab-black);transition:background .15s,color .15s,border-color .15s}
+.tll-social a:hover{background:var(--lime);color:var(--on-lime);border-color:var(--lime)}
+.tll-social a:focus-visible{outline:2px solid var(--focus-on-dark);outline-offset:2px}
+.tll-social svg{width:20px;height:20px;fill:currentColor}
+.tll-tags{display:flex;flex-wrap:wrap;gap:var(--space-2);list-style:none;margin:0;padding:0}
+.tll-tags li{font:600 12px/16px var(--font-sans);padding:4px 10px;border-radius:var(--radius-pill);background:#1b1d18;color:var(--lime-tint)}
+
+.tll-header, .tll-footer {
+  background: var(--lab-black);
+  color: var(--on-lab-black);
+  border-color: #2a2c26;
+  font-family: var(--font-sans);
+}
+.tll-header { border-bottom: 1px solid #2a2c26; }
+.tll-nav-item {
+  display: flex;
+  flex: none;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding: 0 10px;
+  border-bottom: 2px solid transparent;
+  color: var(--on-lab-black);
+  font: 500 14px/20px var(--font-sans);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.tll-nav-item.is-active { border-bottom-color: var(--lime); }
+.tll-lift-link { color: var(--lime); font-weight: 600; }
+.tll-basket { background: transparent; color: var(--on-lab-black); }
+.tll-basket:disabled { cursor: not-allowed; }
+.tll-stack-button { background: var(--lime); color: var(--on-lime); }
+.tll-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 32px;
+  display: grid;
+  gap: 32px;
+}
+.tll-footer-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 24px;
+}
+.tll-footer-columns nav, .tll-footer-columns ul { display: grid; gap: 4px; }
+.tll-footer-columns h2 { color: #a9ac9f; font: 600 12px/16px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; }
+.tll-footer nav a { min-width: var(--tap-min); display: inline-flex; align-items: center; min-height: var(--tap-min); color: var(--on-lab-black); font: 400 14px/20px var(--font-sans); }
+.tll-footer nav a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.tll-footer-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 24px; }
+.tll-footer-blocks > section { max-width: none; min-width: 0; align-content: start; }
+.tll-footer-legal { display: grid; gap: 16px; border-top: 1px solid #2a2c26; padding-top: 24px; color: #a9ac9f; font: 400 14px/20px var(--font-sans); }
+.tll-footer-legal p { max-width: 68ch; }
+.tll-footer-legal nav { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.tll-capture input { min-width: 0; width: 100%; }
+.tll-footer .tll-btn { min-height: 48px; }

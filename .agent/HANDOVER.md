@@ -1,3 +1,12 @@
+**15 October header/footer chrome — k-d-chrome, base cb600ee; local only:**
+- Rebuilt responsive sticky header/nav; exact query-aware lime underline, final LIFT link, outlined basket/lime stack with existing counts.
+- Ported EmailCapture/FollowUs from design DS; lockup-first footer, link columns, retailer/source disclaimer and 44px controls.
+- Filled theme invariants/size tokens; all 46 colour values match supplied tokens; existing next/font and PNGs already match.
+- PASS typecheck, lint (0 errors/20 warnings), 33 related Node tests, live boundaries and diff check.
+- PASS isolated Chrome fixture at 360/768/1280: shop/stack/sources, no overflow, active nav, cart updates, keyboard, email handoff, tap targets.
+- GAP no subscription backend: form opens an email request, explicitly does not claim subscription; full Next pages/hosted CI not tested.
+- Result ~/tll-migration/grok-runs/d-chrome-result.txt; screenshots/runner test-results/chrome/ (ignored); no push/merge/deploy/catalogue/SEO/Sentry changes.
+
 **14 October Job K2 SEO/agent discovery — k-seo-agentic; start a0eb93f, local only:**
 - Added approved Product/ProductGroup offers, site entities/breadcrumbs, canonical/social metadata and product-card images.
 - Extended existing robots/sitemap; preview/staging/nonproduction noindex; cached llms/full and public product feed.
