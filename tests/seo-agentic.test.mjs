@@ -151,3 +151,14 @@ test('Storefront public SKU/barcode reach the feed through the approved price pr
   assert.equal(seo.productsFeed([priced], now)[0].variants[0].sku, 'PUBLIC-SKU')
   assert.equal(seo.productsFeed([priced], now)[0].variants[0].gtin, '4006381333931')
 })
+
+test('image URLs in JSON-LD and the product feed are absolute', () => {
+  assert.equal(seo.absoluteUrl('/catalogue/a.png'), 'https://theliftinglab.co.uk/catalogue/a.png')
+  assert.equal(seo.absoluteUrl('catalogue/a.png'), 'https://theliftinglab.co.uk/catalogue/a.png')
+  assert.equal(seo.absoluteUrl('https://cdn.shopify.com/x.png'), 'https://cdn.shopify.com/x.png')
+  assert.equal(seo.absoluteUrl(null), null)
+  const src = readFileSync('lib/seo.ts', 'utf8')
+  assert.doesNotMatch(src, /image: product\.image_url\b/)
+  assert.doesNotMatch(src, /image: p\.image_url\b/)
+  assert.doesNotMatch(readFileSync('app/products/[id]/page.tsx', 'utf8'), /\{ image: product\.image_url \}/)
+})

@@ -6,6 +6,13 @@ import { productForSize } from './commerce/size-selection'
 import { CATEGORIES } from './categories'
 
 export const SITE_URL = 'https://theliftinglab.co.uk'
+/** Absolute URL for crawlers/agents: relative paths are resolved against SITE_URL; absolute http(s) URLs pass through. */
+export function absoluteUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (/^https?:\/\//i.test(path)) return path
+  if (path.startsWith('//')) return `https:${path}`
+  return `${SITE_URL}${path.startsWith('/') ? '' : '/'}${path}`
+}
 export { PRIVATE_PATHS, AGENT_CRAWLERS, noIndexDeployment } from './seo-crawlers'
 export function pageMetadata(path: string, title: string, description: string, image?: string | null): Metadata {
   const url = `${SITE_URL}${path}`
@@ -56,7 +63,7 @@ export function publicVariants(product: ScoredProduct, now = Date.now()) {
 }
 export function productJsonLd(product: ScoredProduct, now = Date.now()) {
   const variants = publicVariants(product, now)
-  const base = { name: product.name, brand: { '@type': 'Brand', name: product.brand }, url: `${SITE_URL}/products/${encodeURIComponent(product.id)}`, ...(product.image_url ? { image: product.image_url } : {}) }
+  const base = { name: product.name, brand: { '@type': 'Brand', name: product.brand }, url: `${SITE_URL}/products/${encodeURIComponent(product.id)}`, ...(product.image_url ? { image: absoluteUrl(product.image_url) } : {}) }
   const nodes = variants.map(v => ({ '@type': 'Product', ...base, name: variants.length > 1 ? `${product.name} · ${v.title}` : product.name, url: v.url,
     ...(v.sku ? { sku: v.sku } : {}), ...(v.gtin ? { gtin: v.gtin } : {}),
     ...(v.flavour ? { additionalProperty: { '@type': 'PropertyValue', name: 'flavour', value: v.flavour } } : {}), ...(v.size ? { size: v.size } : {}),
@@ -70,7 +77,7 @@ export function productJsonLd(product: ScoredProduct, now = Date.now()) {
     : { '@context': 'https://schema.org', ...nodes[0] }
 }
 export function productsFeed(products: ScoredProduct[], now = Date.now()) {
-  return products.map(p => ({ title: p.name, brand: p.brand, url: `${SITE_URL}/products/${encodeURIComponent(p.id)}`, image: p.image_url,
+  return products.map(p => ({ title: p.name, brand: p.brand, url: `${SITE_URL}/products/${encodeURIComponent(p.id)}`, image: absoluteUrl(p.image_url),
     variants: publicVariants(p, now), nutrition_per_serving: (p.nutrients ?? []).map(n => ({ nutrient_name: n.nutrient_name, amount: n.amount, unit: n.unit })),
     serving_size: p.serving_size, serving_unit: p.serving_unit }))
 }

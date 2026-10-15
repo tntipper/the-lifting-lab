@@ -1,4 +1,4 @@
-import { productJsonLd } from '@/lib/seo'
+import { productJsonLd, absoluteUrl } from '@/lib/seo'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -96,7 +96,7 @@ export default async function Page({ params }: Props) {
       brand: { '@type': 'Brand', name: product.brand },
       category: categoryLabel(product.category),
       url,
-      ...(product.image_url ? { image: product.image_url } : {}),
+      ...(product.image_url ? { image: absoluteUrl(product.image_url) } : {}),
       // The Lifting Lab's editorial Effectiveness Match score, expressed on its
       // native 0-100 scale. We are an independent reviewer of these products
       // (not the seller), so this is a legitimate editorial Review.
