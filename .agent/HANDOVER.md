@@ -1,3 +1,13 @@
+**15 October shop HOME rebuild — k-d-home, base cb600ee; local only:**
+- Matched dc.html home density: 1200px shell, 56px Anton hero, category tiles, five product rows and three method cards.
+- Extended CategoryGrid with home-only variant; reused ShopHero/TopProductsTable with isolated token-based CSS.
+- Preserved catalogue copy, metadata/JSON-LD, shared chrome, detail/stack pages, discovery routes and Sentry configuration.
+- Existing assessment gate remains: no approved scores; alphabetical fallback explicitly labelled with listed serving costs.
+- PASS typecheck, lint (0 errors/22 existing warnings), 63 focused assessment/SEO tests and git diff check.
+- PASS isolated full-home Chrome fixture at 360/1200px: no overflow, links >=44px, three method cards, no historical score leak.
+- Fixture uses catalogue preview data/font fallbacks; full Next build/hosted CI not run; PR lookup unavailable without gh auth.
+- Result: ~/tll-migration/grok-runs/d-home-result.txt; next review local commit with chrome worker; no push/merge/deploy.
+
 **14 October Job K2 SEO/agent discovery — k-seo-agentic; start a0eb93f, local only:**
 - Added approved Product/ProductGroup offers, site entities/breadcrumbs, canonical/social metadata and product-card images.
 - Extended existing robots/sitemap; preview/staging/nonproduction noindex; cached llms/full and public product feed.
