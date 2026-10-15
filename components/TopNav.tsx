@@ -8,6 +8,7 @@ import { isIsolatedEnvironment, isSyntheticPreview } from '@/lib/preview-mode'
 import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
 import { useLocalStack } from './LocalStackContext'
 import { useStagingCart } from './StagingCartContext'
+import { useShopPanels } from './ShopPanelsContext'
 
 const SHOP_LINKS = [
   { href: '/products', label: 'Shop all' },
@@ -31,17 +32,15 @@ const MORE_LINKS = [
 
 function BasketControl() {
   const cart = useStagingCart()
-  const quantity = cart?.view && ['empty', 'ready', 'held', 'pending'].includes(cart.view.state) ? cart.view.quantity : 0
+  const panels = useShopPanels()
+  const quantity = cart?.enabled && cart.view && ['empty', 'ready', 'held', 'pending'].includes(cart.view.state)
+    ? cart.view.quantity
+    : panels.basket.reduce((sum, line) => sum + line.quantity, 0)
   const classes = 'tll-basket inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#6c6f63] px-3 text-sm font-semibold'
-  if (cart?.enabled) {
-    return <button type="button" onClick={cart.open} className={classes} aria-label={`Basket, ${quantity} items`}>
-      <span className="max-[359px]:hidden">Basket</span><span className="font-mono">{quantity}</span>
-    </button>
-  }
-  // Keep the staging cart gated; live baskets stay on Shopify.
-  if (!isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled')
-    return <a href="https://shop.theliftinglab.co.uk/cart" className={classes} aria-label="Basket at TLL Store, 0 items"><span>Basket</span><span className="font-mono">0</span></a>
-  return <button type="button" className={classes} disabled aria-label="Basket, 0 items, currently unavailable" title="Basket is currently unavailable">Basket <span className="font-mono">0</span></button>
+  const open = () => { if (cart?.enabled) cart.open(); else panels.openBasket() }
+  return <button type="button" onClick={open} aria-haspopup="dialog" className={classes} aria-label={`Basket, ${quantity} items`}>
+    <span className="max-[359px]:hidden">Basket</span><span className="font-mono">{quantity}</span>
+  </button>
 }
 
 function ShopNavigation({ pathname, query }: { pathname: string; query?: URLSearchParams }) {
@@ -64,6 +63,7 @@ function FilteredShopNavigation({ pathname }: { pathname: string }) {
 export default function TopNav({ signedInInitial }: { signedInInitial?: boolean } = {}) {
   const pathname = usePathname()
   const { stack } = useLocalStack()
+  const { openStack } = useShopPanels()
   const menuButton = useRef<HTMLButtonElement>(null)
   const menuId = useId()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -90,16 +90,9 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
         </Link>
 
         {compactResearchHeader ? <nav aria-label="Main" className="hide-scroll flex min-w-0 items-center gap-1 overflow-x-auto max-[640px]:w-full">
-          <Link href="/stack" aria-current={pathname === '/stack' ? 'page' : undefined} className={`tll-nav-item ${pathname === '/stack' ? 'is-active' : ''}`}>Stack builder</Link>
-          <Link href="/sources" aria-current={pathname === '/sources' ? 'page' : undefined} className={`tll-nav-item ${pathname === '/sources' ? 'is-active' : ''}`}>Research sources</Link>
-          <Link href="/products" className="tll-nav-item">Shop</Link>
-          <a href="https://www.trylift.app" target="_blank" rel="noopener" className="tll-nav-item tll-lift-link">LIFT App ↗</a>
-        </nav> : <>
-          <div className="order-2 flex w-full items-center gap-2 sm:order-none sm:ml-auto sm:w-auto">
-            <BasketControl />
-            <Link href="/stack" aria-label={`My stack, ${stack.length} products`} className="tll-stack-button inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold">
+          <button type="button" onClick={openStack} aria-haspopup="dialog" aria-label={`My stack, ${stack.length} products`} className="tll-stack-button inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold">
               My stack <span className="font-mono">{stack.length}</span>
-            </Link>
+            </button>
           </div>
           <div className="ml-auto flex items-center gap-2 sm:ml-0">
             <Link href={accountHref} aria-label={accountLabel} title={accountLabel} className="grid h-11 w-11 place-items-center rounded-lg border border-[#6c6f63] xl:hidden">

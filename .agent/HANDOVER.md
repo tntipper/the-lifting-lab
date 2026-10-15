@@ -25,6 +25,16 @@
 - PASS Chrome 360/1200 layout, filter/sort, compare cap, stack and size URL update; smoke script tests/browser/shop-chrome.mjs.
 - LIMIT existing keyboard-only product-size fixture times out at line 46 in installed Chrome; browser layout used offline font fixture.
 - Next: review local commit/results at ~/tll-migration/grok-runs/d-shop-result.txt; hosted CI unrun; no push/merge/deploy/live writes.
+**15 October D panels — k-d-panels; start cb600ee; local only:**
+- Added shared ShopPanelsProvider/useShopPanels, right basket/stack drawers, CompareBar/Table and StackSummary using lab tokens.
+- Reused AccessibleDialog focus/inert/Escape handling, LocalStackContext sync and gated staging cart APIs; removed old FAB styling.
+- Browser basket is visit-local React state; existing retailer/Shopify routes remain available; no fabricated checkout or assessments.
+- PASS typecheck; lint 0 errors/22 existing warnings; 148 related Node tests + 14 SEO tests; both manifests/live boundaries/diff check.
+- PASS installed-Chrome panel integration at 360/1280: focus, quantities, 2.4s toast, shared stack/unit totals, max-three compare/overflow.
+- Broad accessibility passed 320px drawer checks then timed out at existing offers.mjs:26 native-select keyboard wait (historically recorded).
+- Fixed test-discovered circular provider import with lightweight context module; fixture process.env/animation timing corrected.
+- Screenshots test-results/shop-panels/; result ~/tll-migration/grok-runs/d-panels-result.txt; hosted CI/PR readback unverified (gh unsigned).
+- Next: review local commit and adopt exported hooks for other cards; no push/merge/deploy/live settings/catalogue/SEO/Sentry changes.
 
 **14 October Job K2 SEO/agent discovery — k-seo-agentic; start a0eb93f, local only:**
 - Added approved Product/ProductGroup offers, site entities/breadcrumbs, canonical/social metadata and product-card images.

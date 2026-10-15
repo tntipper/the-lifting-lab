@@ -13,6 +13,7 @@ import styles from './shop.module.css'
 import ProductImage from '@/components/ProductImage'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { useLocalStack } from '@/components/LocalStackContext'
+import { BasketAddButton, useShopPanels } from '@/components/ShopPanelsContext'
 import { assessmentDisplayFor } from '@/lib/assessment-display'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
@@ -82,7 +83,8 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
   const [sort, setSort] = useState<SortKey>('budget')
   const [query, setQuery] = useState('')
   const [groupParam, setGroupParam] = useState<string | null>(null)
-  const [selected, setSelected] = useState<string[]>([])
+  const { compared, toggleCompare } = useShopPanels()
+  const selected = compared.map(product => product.id)
   const [favourites, setFavourites] = useState<Set<string>>(new Set())
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const [isOnly, setIsOnly] = useState(false)
@@ -180,9 +182,8 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
   }
 
   function toggleSelect(id: string) {
-    setSelected((current) => current.includes(id)
-      ? current.filter((item) => item !== id)
-      : current.length < 3 ? [...current, id] : current)
+    const product = all.find(item => item.id === id)
+    if (product) toggleCompare(product)
   }
 
   function setFavourite(id: string, active: boolean) {

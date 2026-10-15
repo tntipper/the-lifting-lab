@@ -2,7 +2,7 @@ import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import TopNav from '../../components/TopNav'
 import StackBuilder from '../../app/stack/StackBuilder'
-import StackFAB from '../../components/StackFAB'
+import { ShopPanelsProvider } from '../../components/ShopPanels'
 import MethodologyModal from '../../components/MethodologyModal'
 import ShareModal from '../../components/ShareModal'
 import WizardPage from '../../app/wizard/page'
@@ -46,7 +46,7 @@ const rankingRows: ScoredProduct[] = [
   { ...rankingBase, id: 'legacy-value', name: 'Y historical value score', score: 60, cost_per_serving: 1 },
 ]
 function StackAssessmentControls() {
-  return <><main className="max-w-3xl mx-auto p-4 bg-lab-bg text-white"><h1>Isolated saved-stack assessment acceptance</h1><StackBuilder /></main><StackFAB /></>
+  return <><main className="max-w-3xl mx-auto p-4 bg-lab-bg text-white"><h1>Isolated saved-stack assessment acceptance</h1><StackBuilder /></main></>
 }
 function StackOutboxControls() {
   const { add, retry, state, stack } = useLocalStack()
@@ -122,10 +122,10 @@ function Controls() {
         productName={product.name} brand={product.brand} />
     </main>
     <footer><a href="#footer">Footer end</a></footer>
-    <StackFAB />
+
   </>
 }
 
 createRoot(document.getElementById('fixture')!).render(
-  <StrictMode><LocalStackProvider>{window.location.pathname === '/stack-outbox' ? <StackOutboxControls /> : window.location.pathname === '/stack-assessment' ? <StackAssessmentControls /> : ['/rankings', '/unassessed'].includes(window.location.pathname) ? <RankingControls /> : window.location.pathname === '/wizard' ? <WizardPage /> : window.location.pathname === '/offers' ? <OfferControls /> : <Controls />}</LocalStackProvider></StrictMode>,
+  <StrictMode><LocalStackProvider><ShopPanelsProvider>{window.location.pathname === '/stack-outbox' ? <StackOutboxControls /> : window.location.pathname === '/stack-assessment' ? <StackAssessmentControls /> : ['/rankings', '/unassessed'].includes(window.location.pathname) ? <RankingControls /> : window.location.pathname === '/wizard' ? <WizardPage /> : window.location.pathname === '/offers' ? <OfferControls /> : <Controls />}</ShopPanelsProvider></LocalStackProvider></StrictMode>,
 )
