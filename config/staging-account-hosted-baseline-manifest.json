@@ -88,11 +88,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "896772bdd01b4a7d6dcfb41d4f99134a241e43f9461986508a8ec7e6b875211d"
+      "sha256": "ef0b3bf8a05fcafc6e92e562f1ccaadd88718e651c3c1acf0d34e8f66a1dc035"
     },
     {
       "path": "package-lock.json",
-      "sha256": "df729b93c841f1fa0eebb0e6bfdfeb66fdc766493541dc91c3c803d60126f671"
+      "sha256": "a23596ea8c08cc6e8fa50d9a6eacc84c65982e0eecc461806ed939af6bbf4266"
     },
     {
       "path": "docs/ops/stage-plans/2026-09-22-fresh-readonly-hosted-baseline.md",

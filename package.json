@@ -22,6 +22,7 @@
     "test:historical-provenance": "node scripts/staging-readonly-historical-design-qualification.mjs && node --test tests/historical/staging-readonly-native-design.test.mjs"
   },
   "dependencies": {
+    "@sentry/nextjs": "11.8.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
     "csv-parse": "7.0.2",
