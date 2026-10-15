@@ -308,17 +308,17 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 rounded-lg bg-lab-panel-2 p-3">
                 <div className="min-w-0">
                   <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">True cost</span>
-                  <b className="mt-1 block font-mono text-lg text-white" title={trueCostReason(product) ?? undefined}>
+                  <b className="mt-1 block font-mono text-lg text-[var(--ink)]" title={trueCostReason(product) ?? undefined}>
                     {product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : 'Not listed'}
                   </b>
                 </div>
                 <div className="min-w-0">
                   <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Per serving</span>
-                  <b className="mt-1 block font-mono text-sm text-white">{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b>
+                  <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b>
                 </div>
                 <div className="min-w-0">
                   <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">{product.storePrice ? 'TLL Store price' : 'Listed price'}</span>
-                  <b className="mt-1 block font-mono text-sm text-white">{formatMoney(product.retail_price)}</b>
+                  <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{formatMoney(product.retail_price)}</b>
                 </div>
               </div>
 
@@ -330,7 +330,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   {product.serving_size != null ? `${product.serving_size}${product.serving_unit ? ` ${product.serving_unit}` : ''}` : 'Not listed'}
                 </dd>
                 <dt className="text-lab-muted">Assessment</dt>
-                <dd className="m-0 text-right font-medium text-white">{assessment.label}</dd>
+                <dd className="m-0 text-right font-medium text-[var(--ink)]">{assessment.label}</dd>
               </dl>
 
               <GuidanceNote nutrients={nutrients} />
@@ -342,7 +342,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <div className="space-y-1 border-t border-lab-border pt-3">
                   <div className="flex items-center gap-2">
                     <MiniStars value={Math.round(reviews.average)} />
-                    <span className="text-xs font-semibold text-white">{reviews.average.toFixed(1)} · {reviews.count} review{reviews.count === 1 ? '' : 's'}</span>
+                    <span className="text-xs font-semibold text-[var(--ink)]">{reviews.average.toFixed(1)} · {reviews.count} review{reviews.count === 1 ? '' : 's'}</span>
                   </div>
                   {reviews.latest && <p className="truncate text-xs italic text-lab-muted">“{reviewSnippet(reviews.latest)}”</p>}
                 </div>
@@ -352,7 +352,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 className="mt-auto w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
 
               <div className="grid grid-cols-2 gap-2">
-                <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-white'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>
+                <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-[var(--ink)]'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>
                   <input type="checkbox" checked={isSelected} disabled={!isSelected && selected.length >= 3}
                     onChange={() => toggleSelect(product.id)} className="h-[18px] w-[18px] accent-[var(--ink)]" />
                   {isSelected ? 'Compared' : 'Compare'}
@@ -360,7 +360,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <button type="button" aria-pressed={stacked} onClick={() => {
                   toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
                   track(stacked ? 'remove_from_stack' : 'add_to_stack', { item_brand: product.brand, item_name: product.name })
-                }} className={`min-h-11 rounded-md border px-3 text-sm font-semibold ${stacked ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-white'}`}>
+                }} className={`min-h-11 rounded-md border px-3 text-sm font-semibold ${stacked ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-[var(--ink)]'}`}>
                   {stacked ? 'In stack' : 'Add to stack'}
                 </button>
               </div>
