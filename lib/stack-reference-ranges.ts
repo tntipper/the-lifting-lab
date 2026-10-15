@@ -36,10 +36,10 @@ export function referenceRangeFor(name: string): StackReferenceRange | null {
 }
 
 export function convertAmount(value: number, fromUnit: string, toUnit: string): number | null {
-  const from = fromUnit.toLowerCase()
-  const to = toUnit.toLowerCase()
+  const from = fromUnit.toLowerCase().replace(/[µμ]g/, 'mcg')
+  const to = toUnit.toLowerCase().replace(/[µμ]g/, 'mcg')
   if (from === to) return value
-  if (from === 'mg' && to === 'g') return value / 1000
-  if (from === 'g' && to === 'mg') return value * 1000
+  const grams: Record<string, number> = { g: 1, mg: 0.001, mcg: 0.000001 }
+  if (grams[from] && grams[to]) return value * grams[from] / grams[to]
   return null
 }
