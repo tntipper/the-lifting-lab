@@ -69,7 +69,7 @@ export default async function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-lab-bg text-white">
+    <div data-theme="lab" className="min-h-screen bg-lab-bg text-white">
       <TopNav />
       {itemListJsonLd && (
         <script
@@ -81,7 +81,7 @@ export default async function ProductsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
-      <main id="shop-products" className="mx-auto max-w-7xl scroll-mt-36 px-5 py-5 sm:px-6 sm:py-7">
+      <main id="shop-products" className="scroll-mt-36">
         <ProductGrid initialProducts={products} />
       </main>
     </div>

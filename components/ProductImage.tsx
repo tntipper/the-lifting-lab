@@ -45,9 +45,9 @@ export default function ProductImage({
       aria-label={`${alt} — no product image available`}
       title="No product image available"
       className={`rounded-lg border border-lab-border flex items-center justify-center shrink-0 ${className}`}
-      style={{ width: fill ? '100%' : size, height: fill ? '100%' : size, fontSize: Math.max(12, Math.round(size * 0.38)), background: '#ecece4' }}
+      style={{ width: fill ? '100%' : size, height: fill ? '100%' : size, fontSize: 12, background: '#ecece4' }}
     >
-      <span aria-hidden="true">🧪</span>
+      <span aria-hidden="true" className="px-3 text-center font-mono text-lab-muted">No product image</span>
     </div>
   )
 }

@@ -15,6 +15,16 @@
 - PASS isolated full-home Chrome fixture at 360/1200px: no overflow, links >=44px, three method cards, no historical score leak.
 - Fixture uses catalogue preview data/font fallbacks; full Next build/hosted CI not run; PR lookup unavailable without gh auth.
 - Result: ~/tll-migration/grok-runs/d-home-result.txt; next review local commit with chrome worker; no push/merge/deploy.
+**15 October D shop chrome — k-d-shop, base cb600ee; local only:**
+- Rebuilt category heading/cards and detail layout from Shop.dc.html; reused exact lab tokens and existing Anton/Geist fonts.
+- Default listed true-cost sorting; fixed pack-price sort; compare max 3, stack actions and exact Buy mapping retained.
+- Added DS-style score badge respecting withheld legacy scores, per-serving/nutrition dl and sourced conditional caffeine note.
+- No verified competitor/evidence/pairing dataset: optional comparisons/pills/pair hints remain hidden; no invented catalogue data.
+- Brand catalogue sources/loaders, SEO/schema/discovery/redirect gates, global shell and Sentry config untouched; pickers preserved.
+- PASS typecheck, lint (0 errors/22 existing warnings), 163 affected Node tests, standalone SEO 14/14, token/diff checks.
+- PASS Chrome 360/1200 layout, filter/sort, compare cap, stack and size URL update; smoke script tests/browser/shop-chrome.mjs.
+- LIMIT existing keyboard-only product-size fixture times out at line 46 in installed Chrome; browser layout used offline font fixture.
+- Next: review local commit/results at ~/tll-migration/grok-runs/d-shop-result.txt; hosted CI unrun; no push/merge/deploy/live writes.
 
 **14 October Job K2 SEO/agent discovery — k-seo-agentic; start a0eb93f, local only:**
 - Added approved Product/ProductGroup offers, site entities/breadcrumbs, canonical/social metadata and product-card images.

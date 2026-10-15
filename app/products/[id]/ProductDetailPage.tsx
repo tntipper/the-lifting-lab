@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { scoreColor } from '@/components/ScoreBadge'
 import ProductWarnings from '@/components/ProductWarnings'
-import ProductAssessment from '@/components/ProductAssessment'
+import ShopScoreBadge from '@/components/ShopScoreBadge'
+import styles from '../shop.module.css'
 import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
@@ -121,11 +122,11 @@ export default function ProductDetailPage({
   const retailers = variants.length ? [] : getRetailerLinks(product.brand, product.name)
 
   return (
-    <div className="min-h-screen bg-lab-bg text-white pb-32">
+    <div data-theme="lab" className={`${styles.detail} min-h-screen pb-80 md:pb-52`}>
       <TopNav />
 
       {/* breadcrumb / back row */}
-      <div className="bg-lab-bg border-b border-lab-border px-4 py-3 flex items-center gap-3">
+      <div className="mx-auto flex max-w-[1200px] items-center gap-3 border-b border-lab-border px-4 py-3">
         <button
           onClick={() => router.back()}
           className="text-lab-muted hover:text-white text-sm font-bold uppercase tracking-widest"
@@ -138,29 +139,29 @@ export default function ProductDetailPage({
         </span>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 space-y-6">
+      <main className={styles.detailMain}>
         {/* hero */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:text-left items-center text-center gap-6 lg:gap-10">
-          <div className="flex flex-wrap items-center justify-center gap-4 max-w-full">
+        <div className={styles.detailHero}>
+          <div className={styles.detailPackshot}>
             <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} />
-            <ProductAssessment product={product} size="lg" />
+            <ShopScoreBadge product={product} />
           </div>
-          <div>
+          <div className={styles.detailIntro}>
             <Link
               href={`/brand/${brandSlug(product.brand)}`}
               className="text-lab-muted text-xs uppercase tracking-widest hover:text-lab-lime transition-colors"
             >
               {product.brand}
             </Link>
-            <h1 className="text-2xl font-black italic mt-1">{product.name}</h1>
+            <h1 className="tll-display">{product.name}</h1>
             <ClaimsReviewNotice category={product.category} />
-            <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                 {categoryLabel(product.category)}
               </span>
               {product.informed_sport && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
-                  🛡️ IS Certified
+                  IS Certified
                 </span>
               )}
               {product.protein_yield != null && (
@@ -170,16 +171,16 @@ export default function ProductDetailPage({
               )}
               {product.proprietary_blend && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-yellow-900/40 text-yellow-400 border border-yellow-700/50 px-2 py-0.5 rounded-full">
-                  ⚠️ Proprietary Blend
+                  Proprietary Blend
                 </span>
               )}
               {product.amino_spiked && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-red-900/40 text-red-400 border border-red-700/50 px-2 py-0.5 rounded-full">
-                  ⚠️ Amino Spiked
+                  Amino Spiked
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-400 mt-2">
+            <p className="font-mono text-sm text-lab-muted">
               {product.retail_price != null ? <span>£{product.retail_price.toFixed(2)} {product.storePrice ? 'at TLL Store' : 'retail'}</span> : <span>{product.storePrice ? 'TLL Store price unavailable' : 'Retail price —'}</span>}
               <span className="mx-2">·</span>
               {product.cost_per_serving != null ? (
@@ -188,7 +189,7 @@ export default function ProductDetailPage({
                 <span title={costReason ?? undefined}>True Cost — <span className="text-xs">({costReason})</span></span>
               )}
             </p>
-            <p className="text-xs text-lab-muted mt-1">
+            <p className="font-mono text-xs text-lab-muted">
               {product.serving_size != null
                 ? `${product.serving_size}${product.serving_unit ?? ''} per serving`
                 : 'Serving size not on file'}
@@ -197,13 +198,13 @@ export default function ProductDetailPage({
                 ? `${product.servings_per_container} servings per container`
                 : 'servings per container unknown'}
             </p>
-          </div>
           <button
             onClick={() => setShareOpen(true)}
             className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg border border-lab-border text-lab-muted hover:text-lab-lime hover:border-lab-lime/50 transition-colors"
           >
             ↗ Share & earn 25 pts
           </button>
+          </div>
         </div>
 
         <ProductWarnings product={product} />
@@ -221,9 +222,10 @@ export default function ProductDetailPage({
           </div>
         )}
 
+        <div className={styles.detailColumns}>
         {/* nutrient label */}
         {product.nutrients.length > 0 && (
-          <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
+          <div className={styles.detailPanel}>
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-4">Full Label</p>
             <div>
               {product.nutrients.map((n, i) => {
@@ -241,7 +243,7 @@ export default function ProductDetailPage({
                       )}
                       <span className="text-white/80">{n.nutrient_name}</span>
                     </div>
-                    <span className="font-bold text-white ml-2 shrink-0">{n.amount}{n.unit}</span>
+                    <span className="font-mono font-semibold text-white ml-2 shrink-0">{n.amount}{n.unit}</span>
                   </div>
                 )
               })}
@@ -258,7 +260,7 @@ export default function ProductDetailPage({
         )}
 
         {/* score explanation */}
-        <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
+        <div className={styles.detailPanel}>
           <div className="flex items-center justify-between gap-3 mb-2">
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Score Explained</p>
             <MethodologyModal category={product.category} />
@@ -278,6 +280,7 @@ export default function ProductDetailPage({
           </div>}
         </div>
 
+        </div>
         {/* better-rated alternatives in the same category */}
         {!review && <RelatedProducts items={related} productId={product.id} category={product.category} score={product.score} brand={product.brand} name={product.name} />}
 
@@ -285,7 +288,7 @@ export default function ProductDetailPage({
         <ReviewSection productId={product.id} productName={product.name} />
 
         {/* Explicit retailer searches, separate from a product offer. */}
-        {retailers.length > 0 && <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
+        {retailers.length > 0 && <div className={styles.detailPanel}>
           <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">Search other retailers</p>
           <p className="text-xs text-gray-500 mb-4">
             Search results do not confirm the exact product, pack, price or stock.
@@ -308,11 +311,11 @@ export default function ProductDetailPage({
             ))}
           </div>
         </div>}
-      </div>
+      </main>
 
       {/* sticky action bar */}
-      <div className="fixed bottom-0 inset-x-0 z-30 bg-lab-panel-2 border-t border-lab-border">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-3 grid grid-cols-3 gap-2">
+      <div className={`${styles.buyBar} tll-on-dark fixed bottom-0 inset-x-0 z-30`}>
+        <div className={styles.buyBarInner}>
           <button
             onClick={() => {
               toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
@@ -324,7 +327,7 @@ export default function ProductDetailPage({
                 : 'border-lab-border text-lab-muted hover:text-white'
             }`}
           >
-            {stacked ? '✓ In Stack' : '+ Stack'}
+            {stacked ? 'In stack' : 'Add to stack'}
           </button>
           <Link
             href="/compare"

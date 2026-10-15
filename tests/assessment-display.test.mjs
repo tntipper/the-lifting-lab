@@ -36,6 +36,7 @@ function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = fa
     const mod = { exports: {} }
     let stackHook = 0
     const localRequire = name => {
+      if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
       if (name === 'react' && loadedStack && relative === 'app/stack/StackBuilder.tsx') return { ...React,
         useState(initial) {
           const index = stackHook++
