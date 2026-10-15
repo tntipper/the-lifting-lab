@@ -436,7 +436,7 @@ body:has(.tll-stack-button) .shop-stack-trigger { display: none; }
 @media print { .shop-stack-trigger, .shop-compare-bar, .shop-toast { display: none; } }
 .shop-basket-offer { grid-column: 1 / -1; }
 
-.stack-builder { display:grid; gap:32px; min-width:0; color:var(--ink); padding-bottom:180px; }
+.stack-builder { display:grid; gap:32px; min-width:0; color:var(--ink); padding-bottom:calc(45vh + 16px); }
 .stack-builder :where(h1,h2,h3,p) { margin:0; }
 .stack-builder h1,.stack-builder h2,.dose-panel h2 { font:400 28px/32px var(--font-display); text-transform:uppercase; letter-spacing:.01em; text-wrap:balance; }
 .stack-builder h1 { font-size:clamp(36px,6vw,56px); line-height:1.05; }
@@ -502,8 +502,8 @@ body:has(.tll-stack-button) .shop-stack-trigger { display: none; }
 .stack-cost :where(button,a,input):focus-visible,.stack-share :where(button,a):focus-visible,.stack-buybar :where(button,a):focus-visible { outline-color:var(--focus-on-dark); }
 .stack-total { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; padding:12px 0; border-bottom:1px solid var(--line); font-size:12px; }
 .stack-buybar { position:fixed; inset:auto 0 0; z-index:50; padding:16px max(16px,calc((100vw - 1168px)/2)) max(16px,env(safe-area-inset-bottom)); background:var(--lab-black); color:var(--on-lab-black); border-top:1px solid #2a2c26; max-height:45vh; overflow:auto; }
-/* The fallback stack trigger must clear the buy bar when no header is mounted. */
-body:has(.stack-buybar) .shop-stack-trigger { bottom:calc(45vh + 16px); }
+/* On the stack page, keep fallback drawer access in flow, clear of content and the buy bar. */
+body:has(.stack-builder) .shop-stack-trigger { position:static; width:fit-content; margin:16px 16px calc(45vh + 16px) auto; }
 .stack-buybar p { font-size:12px; color:#a9ac9f; }
 .stack-buybar .stack-row { align-items:start; }
 .stack-buybar > .stack-row > div { min-width:0; }

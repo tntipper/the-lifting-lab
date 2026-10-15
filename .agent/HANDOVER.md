@@ -1,3 +1,12 @@
+**15 October stack share overlap fix — k-claude-design; start b982858; design base cb600ee; local only:**
+- Cause: fixed fallback My Stack trigger at 45vh + 16px covered share Close; Buy bar could also cover bottom content.
+- Keep fallback trigger in document flow whenever StackBuilder is present; reserve Buy bar's 45vh maximum plus 16px below content.
+- PASS unchanged tests/browser/stack-assessment.mjs via retained neutral-stack-browser.mjs in Chrome at 320/390/768/1024/1280/1440.
+- PASS npm run typecheck; npm run lint (0 errors/21 existing warnings); git diff --check.
+- Evidence: test-results/design-ci/stack-overlap-{browser,typecheck,lint}.log (ignored); tests/catalogue copy/card sizing untouched.
+- Hosted CI unrun; related PR lookup unavailable (gh unsigned). No push/main/deploy/live writes.
+- Next: review local fix(design) commit and rerun hosted CI; no local blockers.
+
 **15 October synthetic Preview footer fix — k-claude-design; start c96dc9f; design base cb600ee; local only:**
 - Cause: redesign EmailCapture unconditionally rendered a footer form on every page.
 - Reproduced unchanged preview-build-runtime.mjs:75 failure for `/` using application workflow env.
