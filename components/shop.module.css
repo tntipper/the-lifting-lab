@@ -29,8 +29,8 @@
 .label dl > div { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; padding:6px 0; border-bottom:1px solid var(--line); font:400 14px/20px var(--font-sans); }
 .label dt { color:var(--ink-muted); overflow-wrap:anywhere; }
 .label dd { margin:0; text-align:right; font:500 14px/20px var(--font-mono); font-variant-numeric:tabular-nums; }
-.guidance { background:var(--score-low-bg); border-radius:8px; padding:8px 12px; display:grid; gap:4px; font:400 14px/20px var(--font-sans); }
-.guidance b { color:var(--score-low); font-weight:600; }
+.guidance { background:var(--surface-sunk); color:var(--ink); border-radius:8px; padding:8px 12px; display:grid; gap:4px; font:400 14px/20px var(--font-sans); }
+.guidance b { color:var(--ink); font-weight:600; }
 .guidance p { color:var(--ink); margin:0; }
 .guidance a { color:var(--lime-ink); display:inline-flex; align-items:center; min-height:44px; text-decoration:underline; text-underline-offset:3px; }
 .detail { background:var(--paper); color:var(--ink); font-family:var(--font-sans); }

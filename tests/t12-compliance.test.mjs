@@ -121,7 +121,7 @@ test('category age notice, explicit label data and stricter ages work without pr
 test('real product page renders caffeine and age warnings even while claims are under review', () => {
   const product = { id: 'fixture', brand: 'Fixture', name: 'Example', category: 'hormone-support', score: null, nutrients: [{ nutrient_name: 'caffeine', amount: 10, unit: 'mg' }], retail_price: null }
   const html = htmlFor('app/products/[id]/ProductDetailPage.tsx', { product, related: [] })
-  assert.match(html, /aria-label="Product warnings"/); assert.match(html, /Contains caffeine/); assert.match(html, /16\+/)
+  assert.match(html, /aria-label="Label notes"/); assert.match(html, /Contains caffeine/); assert.match(html, /16\+/)
   assert.equal(htmlFor('components/ProductWarnings.tsx', { product: { ...product, category: 'creatine', nutrients: [] } }), '')
   const label = htmlFor('components/ProductWarnings.tsx', { product: { ...product, safety: { labelWarnings: ['<script>unsafe</script>'] } } })
   assert.match(label, /&lt;script&gt;/); assert.doesNotMatch(label, /<script>unsafe/)
