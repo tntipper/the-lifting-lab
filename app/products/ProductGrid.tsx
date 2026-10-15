@@ -9,6 +9,7 @@ import MethodologyModal from '@/components/MethodologyModal'
 import ProductAssessment from '@/components/ProductAssessment'
 import ProductImage from '@/components/ProductImage'
 import ProductOfferLink from '@/components/ProductOfferLink'
+import { BasketAddButton, useShopPanels } from '@/components/ShopPanelsContext'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { assessmentDisplayFor } from '@/lib/assessment-display'
 import { CATEGORIES, categoryLabel } from '@/lib/categories'
@@ -80,7 +81,8 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
   const [sort, setSort] = useState<SortKey>('score')
   const [query, setQuery] = useState('')
   const [groupParam, setGroupParam] = useState<string | null>(null)
-  const [selected, setSelected] = useState<string[]>([])
+  const { compared, toggleCompare } = useShopPanels()
+  const selected = compared.map(product => product.id)
   const [favourites, setFavourites] = useState<Set<string>>(new Set())
   const [signedIn, setSignedIn] = useState<boolean | null>(null)
   const [isOnly, setIsOnly] = useState(false)
@@ -161,10 +163,6 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
     return sortScored(products, sort)
   }, [all, brandFilter, category, groupCategories, isOnly, query, sort])
 
-  const selectedProducts = selected
-    .map((id) => all.find((product) => product.id === id))
-    .filter((product): product is ScoredProduct => Boolean(product))
-
   const heading = category !== 'all'
     ? categoryLabel(category)
     : groupParam
@@ -175,12 +173,6 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
     setQuery(value)
     if (searchTimer.current) clearTimeout(searchTimer.current)
     if (value.trim()) searchTimer.current = setTimeout(() => track('search_query', { search_term: value.trim() }), 600)
-  }
-
-  function toggleSelect(id: string) {
-    setSelected((current) => current.includes(id)
-      ? current.filter((item) => item !== id)
-      : current.length < 3 ? [...current, id] : current)
   }
 
   function setFavourite(id: string, active: boolean) {
@@ -363,10 +355,11 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               <ProductOfferLink product={product}
                 className="w-full rounded-md bg-[#14140f] py-3 text-sm font-semibold uppercase tracking-wide text-[#a6e22e]" />
 
+              <BasketAddButton product={product} />
               <div className="grid grid-cols-2 gap-2">
                 <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[#14140f] bg-[#eef5dc] text-[#4a6e0b]' : 'border-[#7c7e72] text-white'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>
                   <input type="checkbox" checked={isSelected} disabled={!isSelected && selected.length >= 3}
-                    onChange={() => toggleSelect(product.id)} className="h-[18px] w-[18px] accent-[#14140f]" />
+                    onChange={() => toggleCompare(product)} className="h-[18px] w-[18px] accent-[#14140f]" />
                   {isSelected ? 'Compared' : 'Compare'}
                 </label>
                 <button type="button" aria-pressed={stacked} onClick={() => {
@@ -384,37 +377,6 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           )
         })}
       </div>
-
-      {selected.length > 0 && (
-        <div className="fixed inset-x-3 bottom-3 z-30 mx-auto max-w-6xl rounded-xl border border-[#2a2c26] bg-[#0d0d0d] p-3 text-[#f2f2ee] shadow-2xl sm:inset-x-6 sm:p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="grid flex-1 grid-cols-3 gap-2">
-              {[0, 1, 2].map((index) => {
-                const product = selectedProducts[index]
-                return product ? (
-                  <div key={product.id} className="flex min-h-11 min-w-0 items-center gap-2 rounded-md border border-[#6c6f63] px-2 sm:px-3">
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium sm:text-sm">{product.name}</span>
-                    <button type="button" onClick={() => toggleSelect(product.id)} aria-label={`Remove ${product.name} from comparison`}
-                      className="min-h-9 min-w-9 shrink-0 rounded text-lg">×</button>
-                  </div>
-                ) : (
-                  <div key={index} className="grid min-h-11 place-items-center rounded-md border border-dashed border-[#6c6f63] px-2 text-xs text-[#a9ac9f]">
-                    Empty slot
-                  </div>
-                )
-              })}
-            </div>
-            <div className="flex items-center justify-between gap-3 lg:justify-end">
-              <span className="text-xs text-[#a9ac9f]">Choose up to three</span>
-              <button type="button" onClick={() => setSelected([])} className="min-h-11 px-2 text-sm font-semibold text-[#a9ac9f]">Clear</button>
-              <Link href={`/compare?ids=${selected.join(',')}`} onClick={() => track('compare_start', { count: selected.length })}
-                className="inline-flex min-h-11 items-center rounded-md bg-[#a6e22e] px-5 text-sm font-semibold text-[#14140f]">
-                Compare side by side
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

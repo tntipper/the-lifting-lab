@@ -129,7 +129,7 @@ try {
     await page.getByRole('button', { name: 'My Stack', exact: true }).click()
     await page.getByRole('button', { name: /Remove Synthetic product/ }).click()
     assert.equal(await page.getByRole('button', { name: 'Close My Stack' }).evaluate(element => element === document.activeElement), true)
-    assert.equal(await page.getByRole('dialog').getByText('No supplements in your stack yet.').count(), 1)
+    assert.equal(await page.getByRole('dialog').getByText(/No supplements in your stack yet/).count(), 1)
     await page.keyboard.press('Escape')
     await verifyShareResults(page)
     await verifyWizard(page, origin, width, resultDir)

@@ -4,10 +4,11 @@ import { useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { isIsolatedEnvironment, isSyntheticPreview } from '@/lib/preview-mode'
+import { isSyntheticPreview } from '@/lib/preview-mode'
 import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
 import { useLocalStack } from './LocalStackContext'
 import { useStagingCart } from './StagingCartContext'
+import { useShopPanels } from './ShopPanelsContext'
 
 const SHOP_LINKS = [
   { href: '/products', label: 'Shop all' },
@@ -31,22 +32,17 @@ const MORE_LINKS = [
 
 function BasketControl() {
   const cart = useStagingCart()
-  const quantity = cart?.view && ['empty', 'ready', 'held', 'pending'].includes(cart.view.state) ? cart.view.quantity : 0
-  const classes = 'inline-flex min-h-11 items-center gap-2 rounded-lg bg-lab-lime px-3 text-sm font-semibold text-black'
-  if (cart?.enabled) {
-    return <button type="button" onClick={cart.open} className={classes} aria-label={`Basket, ${quantity} items`}>
-      <span className="max-[359px]:hidden">Basket</span><span className="font-mono">{quantity}</span>
-    </button>
-  }
-  // /cart only exists for the staging test cart. With live store links the basket is Shopify's cart; otherwise hide it.
-  if (!isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled')
-    return <a href="https://shop.theliftinglab.co.uk/cart" className={classes} aria-label="Basket at TLL Store"><span className="max-[359px]:hidden">Basket</span></a>
-  return null
+  const { basket, openBasket } = useShopPanels()
+  const quantity = cart?.enabled ? cart.view && ['empty', 'ready', 'held', 'pending'].includes(cart.view.state) ? cart.view.quantity : '?'  : basket.reduce((sum, line) => sum + line.quantity, 0)
+  return <button type="button" onClick={openBasket} aria-haspopup="dialog" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#6c6f63] px-3 text-sm font-semibold text-white" aria-label={`Basket, ${quantity} items`}>
+    <span>Basket</span><span className="font-mono">{quantity}</span>
+  </button>
 }
 
 export default function TopNav({ signedInInitial }: { signedInInitial?: boolean } = {}) {
   const pathname = usePathname()
   const { stack } = useLocalStack()
+  const { openStack, panel } = useShopPanels()
   const menuButton = useRef<HTMLButtonElement>(null)
   const menuId = useId()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -78,9 +74,9 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
           <Link href="/products" className="flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-2.5 text-sm font-medium text-white">Shop</Link>
           <a href="https://www.trylift.app" target="_blank" rel="noopener" className="flex min-h-11 shrink-0 items-center border-b-2 border-transparent px-2.5 text-sm font-semibold text-lab-lime">LIFT App ↗</a>
         </nav> : <div className="ml-auto flex items-center gap-2">
-          <Link href="/stack" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#6c6f63] px-2.5 text-xs font-black text-white sm:min-h-14 sm:gap-3 sm:px-6 sm:text-base">
-            <span className="max-[359px]:hidden">My stack</span><span className="font-mono text-lab-lime">{stack.length}</span>
-          </Link>
+          <button type="button" onClick={openStack} aria-haspopup="dialog" aria-expanded={panel === 'stack'} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#6c6f63] px-2.5 text-xs font-black text-white sm:min-h-14 sm:gap-3 sm:px-6 sm:text-base">
+            <span>My stack</span><span className="font-mono text-lab-lime">{stack.length}</span>
+          </button>
           <BasketControl />
           <Link href={accountHref} aria-label={accountLabel} title={accountLabel}
             className="grid h-11 w-11 place-items-center rounded-lg border border-[#6c6f63] text-base text-white xl:hidden">

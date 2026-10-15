@@ -53,10 +53,10 @@ export function StagingCartContents() {
 
 export default function StagingCartPanel({ open, onClose, returnFocusRef }: { open: boolean; onClose(): void; returnFocusRef: RefObject<HTMLElement | null> }) {
   const title = useId()
-  return <AccessibleDialog open={open} onClose={onClose} returnFocusRef={returnFocusRef} labelledBy={title} className="w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-lab-border bg-lab-panel p-4 sm:p-6 text-white shadow-2xl">
+  return <AccessibleDialog open={open} onClose={onClose} returnFocusRef={returnFocusRef} labelledBy={title} className="shop-drawer">
     <div className="mb-4 flex items-center justify-between gap-3">
-      <h2 id={title} className="text-xl font-black">Test cart</h2>
-      <button type="button" data-dialog-initial-focus onClick={onClose} aria-label="Close test cart" className="min-h-11 min-w-11 rounded-lg border border-lab-border">✕</button>
+      <h2 id={title} className="tll-display text-[28px]">Test cart</h2>
+      <button type="button" data-dialog-initial-focus onClick={onClose} aria-label="Close test cart" className="min-h-11 min-w-11 rounded-lg border border-lab-border">Close</button>
     </div>
     <StagingCartContents />
     <Link href="/cart" onClick={onClose} className="mt-4 inline-flex min-h-11 items-center text-sm text-lab-lime underline">View cart page</Link>

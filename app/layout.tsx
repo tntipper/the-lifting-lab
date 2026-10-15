@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Anton } from "next/font/google";
 import AnalyticsPreferences from "@/components/AnalyticsPreferences";
 import { LocalStackProvider } from "@/components/LocalStackContext";
-import StackFAB from "@/components/StackFAB";
+import { ShopPanelsProvider } from "@/components/ShopPanels";
 import StagingCartProvider from "@/components/StagingCartProvider";
 import SiteFooter from "@/components/SiteFooter";
 import "./globals.css";
@@ -75,12 +75,11 @@ export default function RootLayout({
             Staging test site. Synthetic products and test accounts only.
           </aside>
         )}
-        <StagingCartProvider><LocalStackProvider>
+        <StagingCartProvider><LocalStackProvider><ShopPanelsProvider>
           {!isIsolatedEnvironment() && <AnalyticsPreferences />}
           {children}
           <SiteFooter />
-          <StackFAB />
-        </LocalStackProvider></StagingCartProvider>
+        </ShopPanelsProvider></LocalStackProvider></StagingCartProvider>
       </body>
 
     </html>
