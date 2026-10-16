@@ -35,7 +35,7 @@ test('an entirely held or unassessed stack has no numeric average or quality gra
   const summary = p.summariseStackAssessments(rows)
   assert.equal(summary.average, null); assert.equal(summary.included, 0)
   const text = p.stackResearchText(rows)
-  assert.match(text, /No approved product effectiveness assessment/); assert.match(text, /Under review; no benefit recommendation/)
+  assert.match(text, /No approved product benefit assessment/); assert.match(text, /Under review; no benefit recommendation/)
   assert.match(text, /Under review/); assert.doesNotMatch(text, /scored 99|Excellent|Good dosing|evidence-based UK/)
 })
 test('every held category has the same caption gate and duplicate rows cannot inflate the included count', () => {

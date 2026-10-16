@@ -265,10 +265,8 @@ export default function ProductDetailPage({
           </div>
           <p className="text-sm text-white/70 leading-relaxed">
             {!canRecommend ? assessment.explanation : <>
-            Existing formula score (scientific review incomplete):{' '}
-            <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our
-            evidence-based reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
-            dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
+            {assessment.valueLed ? 'Value-led score' : 'TLL Label Score'}:{' '}
+            <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> for {categoryLabel(product.category).toLowerCase()}. The score compares stated doses with amounts used in published research and checks label transparency.
             </>}
           </p>
           {canRecommend && <div className="flex gap-3 mt-3 flex-wrap">
@@ -289,7 +287,7 @@ export default function ProductDetailPage({
         {retailers.length > 0 && <div className={styles.detailPanel}>
           <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">Search other retailers</p>
           <p className="text-xs text-gray-500 mb-4">
-            Search results do not confirm the exact product, pack, price or stock.
+            Retailer searches do not confirm the exact product, pack, price or stock.
           </p>
           <div className="grid grid-cols-2 gap-2">
             {retailers.map((r) => (

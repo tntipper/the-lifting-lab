@@ -738,7 +738,7 @@ test('score ring keeps only an outline and review label for every unreviewed pro
 test('score ring displays only the reviewed score returned by assessment display', () => {
   const f = fixture([], {}, false, false, null, () => ({ state: 'reviewed', score: 72, label: 'Reviewed', explanation: 'Reviewed fixture assessment' }))
   const html = f.html('components/ShopScoreBadge.tsx', { product: make({ score: 99 }) })
-  assert.match(html, /aria-label="TLL score: 72 out of 100"/)
+  assert.match(html, /aria-label="TLL Label Score: 72 out of 100"/)
   assert.match(html, /scoreNumber[^>]*>72</)
   assert.match(html, /stroke-dasharray=/)
   assert.doesNotMatch(html, /99|Under review|Legacy score/)
@@ -770,7 +770,7 @@ test('both sign-offs publish the record score and make it rankable independently
     assert.equal(policy.assessmentDisplayFor(p).state, 'approved')
     for (const sort of ['score', 'value', 'budget']) assert.equal(policy.isRankingCandidate(p, sort), true)
     const html = f.html('components/ShopScoreBadge.tsx', { product: p })
-    assert.match(html, /TLL score: 73 out of 100/)
+    assert.match(html, /TLL Label Score: 73 out of 100/)
     assert.match(html, /stroke-dasharray/)
     assert.equal(f.load('lib/products.ts').withScore(p).score, 73)
   }
@@ -852,20 +852,42 @@ test('review register contains exactly the four authorised product IDs and score
 })
 
 test('rings have the exact dated tooltip, methodology link and optional value-led label', () => {
-  const copy = "TLL Score rates the label, not your results. It compares the stated doses against the evidence-based amounts in our method, how transparent the label is, and the price per serving. It isn't a health claim or medical advice. Source: brand label/retailer listing, checked 16 Oct 2026. How we score"
-  for (const value_led of [false, true]) {
-    const f = withReviews([signedAssessment({ value_led })])
+  const copy = "TLL Label Score rates what's on the label, not the results you'll get. It compares stated doses with amounts used in published research and checks how transparent the label is. It isn't a health claim or medical advice. Source: brand label, checked 16 Oct 2026. How we score"
+  for (const value_led of [false, true]) for (const source_url of [undefined, 'https://brand.example/label', 'javascript:alert(1)']) {
+    const f = withReviews([signedAssessment({ value_led, source_url })])
     const html = f.html('components/ShopScoreBadge.tsx', { product: make({ score: 100 }) })
     const tooltip = html.match(/role="tooltip"[^>]*>([\s\S]*?)<\/span>/)[1]
     const text = tooltip.replace(/<[^>]*>/g, '').replace(/&#x27;/g, "'")
     assert.equal(text, copy + (value_led ? 'This score is driven mainly by price per serving.' : ''))
     assert.match(tooltip, /href="\/methodology"/)
+    assert.match(html, /Dose &amp; label check/)
+    assert.equal(tooltip.includes('href="https://brand.example/label"'), source_url?.startsWith('https:') === true)
+    assert.doesNotMatch(tooltip, /javascript:|Rubric v/)
+    const surroundingCopy = html.replace(/role="tooltip"[^>]*>[\s\S]*?<\/span>/, '')
+    assert.doesNotMatch(surroundingCopy, /\b(effective|effectiveness|results|proven|best|healthy|evidence-based)\b/i)
     assert.match(html, /<button type="button"[^>]*aria-controls=/)
-    assert.match(html, value_led ? /aria-label="Value-led score: 73 out of 100"/ : /aria-label="TLL score: 73 out of 100"/)
+    assert.match(html, value_led ? /aria-label="Value-led score: 73 out of 100"/ : /aria-label="TLL Label Score: 73 out of 100"/)
   }
   const pending = fixture().html('components/ShopScoreBadge.tsx', { product: make() })
   assert.match(pending, /compliance check pending/)
   assert.doesNotMatch(pending, /checked 16 Oct 2026/)
+})
+
+test('score cards and comparison copy avoid outcome claims around approved and pending scores', () => {
+  for (const records of [[], [signedAssessment()], [signedAssessment({ value_led: true })]]) {
+    const p = make(), f = withReviews(records)
+    for (const [file, props] of [
+      ['app/products/ProductGrid.tsx', { initialProducts: [p] }],
+      ['app/products/[id]/ProductDetailPage.tsx', { product: p, related: [] }],
+      ['app/compare/CompareView.tsx', { products: [p] }],
+      ['components/FavouriteCard.tsx', { product: p }],
+      ['components/TopProductsTable.tsx', { products: [p] }],
+    ]) {
+      const text = f.html(file, props).replace(/<[^>]*>/g, '').replace(/&#x27;/g, "'")
+        .replaceAll("not the results you'll get", '')
+      assert.doesNotMatch(text, /\b(effective|effectiveness|results|proven|best|healthy|evidence-based)\b/i, file)
+    }
+  }
 })
 
 test('tooltip opens on hover, keyboard focus and tap; Escape and leaving close it', () => {

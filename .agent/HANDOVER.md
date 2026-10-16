@@ -1,3 +1,12 @@
+**16 October Oath score wording — grok/guides-footer-fix; base origin/main 90e0ff7:**
+- Renamed ring labels to TLL Label Score / Value-led score; added Dose & label check and exact Oath tooltip wording.
+- Optional reviewed-record source_url links as brand label; compliance date/pending fallback and value-led price line retained.
+- No rubric version constant exists; omitted Rubric sentence. Removed restricted wording around product cards, comparison and stack panels.
+- PASS lint (0 errors/20 existing warnings), tsc --noEmit, 411 focused score/comparison/stack/variant/catalogue tests; git diff --check.
+- Browser comparison bundle built; runtime blocked by sandbox listen EPERM on 127.0.0.1. Hosted CI unrun; gh PR lookup signed out.
+- Commit BLOCKED: Git index.lock is outside writable sandbox in night/repo/.git/worktrees/wt-guides; changes remain unstaged. No push/deploy; g-run*.sh preserved.
+- Next: commit locally as "fix: score ring wording per Oath compliance rules" with Git metadata write access; run browser comparison/CI before release.
+
 **16 October reviewed scores + tooltip + payload privacy — grok/guides-footer-fix; working tree only:**
 - Preserved incoming edits; no commit/push/deploy. Added four Assay/Oath records dated 2026-10-16: ON 79, Applied EAA 92, Per4m EAA 79, Isolate 75/value-led.
 - IDs confirmed in data/mapping-review.csv and docs/research/data/supabase-products-2026-09-25.csv; no JP EAA or creatine records.

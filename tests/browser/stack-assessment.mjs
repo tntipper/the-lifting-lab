@@ -28,7 +28,7 @@ export async function verifyStackAssessment(page, origin, width, resultDir) {
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ products: rows.filter(p => ids.includes(p.id)) }) })
   })
   await page.goto(origin + '/stack-assessment')
-  await page.getByText(/No approved product effectiveness assessment is available/).first().waitFor()
+  await page.getByText(/No approved product benefit assessment is available/).first().waitFor()
   const mainText = await page.locator('main').innerText()
   assert.match(mainText, /4 under review and 1 unassessed or unavailable excluded/)
   assert.match(mainText, /Serving amounts need review/)
@@ -50,7 +50,7 @@ export async function verifyStackAssessment(page, origin, width, resultDir) {
   const mail = page.locator('a[href^="mailto:"]')
   const email = new URL(await mail.getAttribute('href'))
   assert.match(email.searchParams.get('subject'), /Research Stack/)
-  assert.match(email.searchParams.get('body'), /No approved product effectiveness assessment is available/)
+  assert.match(email.searchParams.get('body'), /No approved product benefit assessment is available/)
   assert.match(email.searchParams.get('body'), /Under review; no benefit recommendation/)
   // Unreviewed products are now all reported as Under review.
   assert.doesNotMatch(email.searchParams.get('body'), /scored 99|Excellent|Stack Score/)

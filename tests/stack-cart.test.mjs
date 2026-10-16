@@ -210,7 +210,7 @@ test('S02: unsafe affiliate destinations have no link and retailer searches reta
   }
   const rendered = html(enabled, [{ ...affiliateItem, buy_url: 'https://www.amazon.co.uk/s?k=protein' }])
   assert.match(rendered, /Search Amazon/)
-  assert.match(rendered, /search results/)
+  assert.match(rendered, /retailer search/)
 })
 test('S02: Phase 2 setup notice and price mode still explain skipped items', () => {
   const rendered = html({ ...enabled, NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART: 'enabled' }, mixed)

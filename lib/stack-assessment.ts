@@ -15,10 +15,10 @@ export function summariseStackAssessments(products: CatalogueIdentity[], listedC
   const underReview = states.filter(state => state.state === 'under_review').length
   const unassessed = total - underReview
   const average = null
-  const text = `No approved product effectiveness assessment is available. 0 of ${total} products included.`
+  const text = `No approved product benefit assessment is available. 0 of ${total} products included.`
   return {
     average, included: 0, total, underReview, unassessed,
-    text: `${text} ${underReview} under review and ${unassessed} unassessed or unavailable excluded. This is not a combined-stack assessment. Scientific review is incomplete; no effectiveness recommendation is made.`,
+    text: `${text} ${underReview} under review and ${unassessed} unassessed or unavailable excluded. This is not a combined-stack assessment. Scientific review is incomplete; no benefit recommendation is made.`,
   }
 }
 

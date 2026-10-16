@@ -505,7 +505,7 @@ function SavedStackBuilder() {
             <div className="stack-row"><div><h2>Daily Intake Totals</h2><p className="stack-meta">Recorded label amounts across all products and servings per day.</p></div>
             <fieldset className="stack-chips"><legend>UK adult reference intake</legend>{(['male', 'female'] as Sex[]).map(option => <button key={option} type="button" aria-pressed={sex === option} onClick={() => changeSex(option)}>{option}</button>)}</fieldset></div>
             {dailyTotals.map(row => <div className="stack-total" key={`${row.name}-${row.unit}`}><b>{row.name}</b><span className="stack-mono">{Number(row.amount.toFixed(2))}{row.unit}</span><span>{row.rdaPercent == null ? '—' : `${row.rdaPercent}% UK adult reference intake`}</span><span>{row.ulPercent == null ? 'No upper level' : `${row.ulPercent}% ${row.limitLabel}`}</span></div>)}
-            <p className="stack-meta">UL is the EFSA upper limit; vitamin C uses UK EVM supplemental guidance and iron uses the EFSA total-intake guidance level, neither an established UL. UK adult reference intake percentages use the {sex} reference values. Recorded supplements exclude food and drink. These totals do not establish an effective or recommended dose.</p>
+            <p className="stack-meta">UL is the EFSA upper limit; vitamin C uses UK EVM supplemental guidance and iron uses the EFSA total-intake guidance level, neither an established UL. UK adult reference intake percentages use the {sex} reference values. Recorded supplements exclude food and drink. These totals do not establish a suitable or recommended dose.</p>
           </section>}
         </aside>
       </div>

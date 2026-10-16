@@ -66,7 +66,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
       </div>
 
       <p className="rounded-lg bg-[#fbf0d9] px-3 py-2 text-sm leading-5 text-[#8a5a00]">
-        No approved effectiveness assessment is available. Price and serving tags describe the recorded numbers only; they are not product recommendations.
+        No approved label assessment is available. Price and serving tags describe the recorded numbers only; they are not product recommendations.
       </p>
 
       <p id="comparison-scroll-hint" className="text-xs text-lab-muted md:hidden">

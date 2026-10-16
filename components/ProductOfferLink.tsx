@@ -73,7 +73,7 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
       {store ? (storeBuyLinkMode === 'cart' && product.storePrice?.availableForSale === true ? storeActionLabel ?? 'Buy at TLL Store' : 'Buy at TLL Store') : search ? 'Search retailer ↗' : 'View retailer ↗'}
     </a>
     <span className="text-center text-[9px] leading-tight text-lab-muted">
-      {store ? product.storePrice ? 'In stock · price and stock checked within 15 minutes' : 'Check pack, price and stock at TLL Store' : search ? 'Search results · affiliate link' : 'Unverified listing · check pack and price · affiliate link'}
+      {store ? product.storePrice ? 'In stock · price and stock checked within 15 minutes' : 'Check pack, price and stock at TLL Store' : search ? 'Retailer search · affiliate link' : 'Unverified listing · check pack and price · affiliate link'}
     </span>
   </span>
 }

@@ -40,7 +40,7 @@ export default function ShopHero({ products, shopHref = '/products?sort=price' }
             <span className={styles.bestUnit}>per serving</span>
           </Link>
         })}
-        <p className={styles.note}>Effective-serving assessments are under review. These are listed serving costs.</p>
+        <p className={styles.note}>Dose assessments are under review. These are listed serving costs.</p>
       </aside>
     </div>
   </section>
