@@ -75,7 +75,7 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
   useEffect(() => {
     if (signedInInitial !== undefined) return
     try {
-      createClient().auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session?.user))).catch(() => setSignedIn(false))
+      createClient().auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user))).catch(() => setSignedIn(false))
     } catch { setSignedIn(false) }
   }, [signedInInitial])
 
