@@ -1,4 +1,5 @@
 // Shared product types + score attachment for the browse/compare features.
+import { isUsablePrice } from './commerce/display-price'
 import { scoreFor } from '@/lib/scores'
 import { hasPositiveServingCost, isRankingCandidate } from './assessment-display'
 import type { ProductSafety } from './commerce/product-warnings'
@@ -55,7 +56,7 @@ export function withScore<T extends { brand: string; name: string; servings_per_
 ): T & { score: number | null; cost_per_serving: number | null } {
   const score = scoreFor(p.brand, p.name)
   const cost_per_serving =
-    typeof p.retail_price === 'number' && Number.isFinite(p.retail_price) && p.retail_price > 0
+    isUsablePrice(p.retail_price)
       && typeof p.servings_per_container === 'number' && Number.isFinite(p.servings_per_container) && p.servings_per_container > 0
       ? p.retail_price / p.servings_per_container
       : null
@@ -82,7 +83,7 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
       return vb - va
     }
     if (sort === 'price') {
-      const price = (p: ScoredProduct) => typeof p.retail_price === 'number' && Number.isFinite(p.retail_price) && p.retail_price > 0 ? p.retail_price : Infinity
+      const price = (p: ScoredProduct) => isUsablePrice(p.retail_price) ? p.retail_price : Infinity
       return price(a) - price(b) || a.name.localeCompare(b.name)
     }
     if (sort === 'budget') {
@@ -104,7 +105,7 @@ export function trueCostReason(p: {
   retail_price: number | null
   servings_per_container: number | null
 }): string | null {
-  if (typeof p.retail_price === 'number' && Number.isFinite(p.retail_price) && p.retail_price > 0
+  if (isUsablePrice(p.retail_price)
     && typeof p.servings_per_container === 'number' && Number.isFinite(p.servings_per_container) && p.servings_per_container > 0) return null
   if (p.storePrice && p.retail_price == null) return 'TLL Store price unavailable'
   if (p.retail_price == null && (p.servings_per_container == null || p.servings_per_container <= 0)) {

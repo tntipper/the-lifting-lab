@@ -461,3 +461,49 @@ test('stack renders vitamin C guidance and iron safe level in totals and caution
   assert.match(html, /neither an established UL/)
   assert.doesNotMatch(html, /GI disturbance above UL/)
 })
+
+
+for (const source of ['mapping', 'variants']) test(`links enabled / prices off: ${source} never displays retail pack price`, () => {
+  const mapping = mapped().storeLinkMapping
+  const p = make({ retail_price: 99, ...(source === 'mapping' ? { storeLinkMapping: mapping } : {
+    storeVariants: [{ variantId: mapping.shopifyVariantId, handle: mapping.shopifyProductHandle,
+      label: 'Fixture pack', flavour: null, packLabel: '500 g', mapping }],
+  }) })
+  const f = fixture([p], { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'off' })
+  const { displayPrice, isStoreOffer } = f.load('lib/commerce/display-price.ts')
+  assert.equal(p.storePrice, undefined)
+  assert.equal(isStoreOffer(p), true)
+  assert.equal(displayPrice(p), null)
+  for (const [file, props] of [
+    ['app/products/ProductGrid.tsx', { initialProducts: [p] }],
+    ['components/TopProductsTable.tsx', { products: [p] }],
+  ]) {
+    const html = f.html(file, props)
+    assert.match(html, /TLL Store price<\/(?:span|div)><(?:b|div)[^>]*>Not listed<\/(?:b|div)>/, file)
+    assert.doesNotMatch(html, /£99\.00/, file)
+  }
+})
+
+test('display price uses only finite positive numbers and preserves non-store retail prices', () => {
+  const { displayPrice, isUsablePrice, isStoreOffer } = fixture().load('lib/commerce/display-price.ts')
+  assert.equal(displayPrice(make({ retail_price: 19.5 })), 19.5)
+  assert.equal(isStoreOffer(make({ storeVariants: [] })), false)
+  assert.equal(displayPrice(make({ storePrice: { price: 12.5 } })), 12.5)
+  for (const price of [undefined, null, 0, -1, NaN, Infinity, -Infinity, '12.50']) {
+    assert.equal(isUsablePrice(price), false)
+    assert.equal(displayPrice(make({ retail_price: price })), null)
+    const p = make({ retail_price: 99, storePrice: { price } })
+    assert.equal(isStoreOffer(p), true)
+    assert.equal(displayPrice(p), null)
+  }
+  assert.equal(isUsablePrice(0.001), true)
+})
+
+test('pack-price sorting retains retail-price ordering and puts unusable prices last', () => {
+  const rows = [make({ id: 'missing', retail_price: null }), make({ id: 'high', retail_price: 40 }),
+    make({ id: 'low', retail_price: 10, storePrice: { price: 50 } }),
+    make({ id: 'invalid', name: 'Z invalid', retail_price: Infinity })]
+  const { sortScored } = fixture(rows).load('lib/products.ts')
+  assert.deepEqual(Array.from(sortScored(rows, 'price'), p => p.id), ['low', 'high', 'missing', 'invalid'])
+  assert.equal(rows[0].id, 'missing')
+})
