@@ -1,11 +1,19 @@
-**16 October PR #101 review fixes — grok/live-cart; starting HEAD 03f592b; uncommitted, no push:**
+**16 October PR #101 caption follow-up — grok/live-cart; working changes on 63f9ec4:**
+- Aligned full and grid captions with PR #99: Retailer search; updated routing/browser regexes. ProductGrid has no separate caption copy.
+- Live-cart caption assertion now strips markup before checking text, so title/aria-label attributes cannot satisfy it.
+- Corrected the previous note: 63f9ec4 is committed and pushed as PR #101; this follow-up remains uncommitted because Git metadata writes are denied; no push.
+- PASS: 121 focused tests (live-cart + offer-routing); git diff --check.
+- npm test: 4,107 pass / 28 fail / 8 skip; recorded sandbox limits recur (loopback/ps EPERM, Python temp warning, Chromium launch, Docker/process fixtures). Rerun outside sandbox; hosted CI unrun.
+- Browser verification results are recorded by Grok separately; no browser verification claimed here.
+
+**16 October PR #101 review fixes — grok/live-cart; committed as 63f9ec4 and pushed as PR #101:**
 - ProductOfferLink: grid affiliate disclosure has its own unclamped/non-shrinking line; description alone clamps to one line within the existing 44px + 20px slot.
 - ProductGrid: live-only reserved stock row below price, 11px text on the price panel (token contrast #55574c/#ecece4 = 6.20:1); grid-only fixedActionSlot and flag-off rendering preserved. New copy follows ../assay-rubric/OATH_WORDING.md.
 - Tests: live-cart unit assertions updated; browser covers 320/360/390/414/768/1280, disclosure geometry, stock visibility/contrast, equal cards and SSR/hydration; SSR checks stock and flag-off absence.
 - PASS: 56 focused tests; npx tsc --noEmit; lint 0 errors/21 existing warnings; git diff --check; browser SSR live/default fixtures.
 - npm test: 4,107 pass / 28 fail / 8 skip; matches previously recorded sandbox failures (loopback/ps EPERM, Python temp warning, Chromium launch, Docker access/process fixtures). Hosted CI unrun.
 - Browser attempted twice: Chromium fails before any width with MachPortRendezvousServer bootstrap_check_in permission denied (1100). Six-width geometry/contrast remains unverified; do not claim visibility confirmed.
-- Next: run npm test and node tests/browser/live-cart.mjs outside the restricted sandbox; commit only after required checks pass, per Toby. No commit created because required checks did not pass.
+- 63f9ec4 is committed and pushed as PR #101. Browser verification results are recorded by Grok separately.
 
 **16 October live-cart Round 9 — grok/live-cart; continued from b9657c5; local only:**
 - Files changed: components/ProductOfferLink.tsx, tests/live-cart.test.mjs, tests/browser/live-cart.mjs, .agent/HANDOVER.md.

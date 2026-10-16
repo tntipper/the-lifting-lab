@@ -276,7 +276,9 @@ test('grid affiliate disclosures have an unclamped line; normal and flag-off off
     assert.match(html, /class="block shrink-0 whitespace-nowrap leading-\[10px\]" data-affiliate-disclosure="true">affiliate link<\/span>/)
     const caption = 'Unverified listing · check pack and price · affiliate link'
     assert.ok(html.includes(`title="${caption}"`))
-    assert.ok(html.includes(caption))
+    // Strip markup so title/aria-label metadata cannot satisfy the visible-copy check.
+    const renderedText = html.replace(/<[^>]*>/g, '')
+    assert.ok(renderedText.includes(caption.replace(' · affiliate link', 'affiliate link')))
     const normal = renderToStaticMarkup(React.createElement(Component, { product }))
     const legacy = renderToStaticMarkup(React.createElement(load('components/ProductOfferLink.tsx').default, { product }))
     assert.equal(html.replace(/<[^>]*>/g, ''), legacy.replace(/<[^>]*>/g, '').replace(stock ? 'In stock at TLL Store' : '', '').replace(' · affiliate link', 'affiliate link'))

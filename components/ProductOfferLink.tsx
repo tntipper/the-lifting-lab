@@ -74,7 +74,7 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
     const search = listing.state === 'search_only'
     const store = listing.relationship === 'own_shop'
     const stockText = !pickerOwnsStatus && stock ? (stock === 'out_of_stock' ? 'Out of stock at TLL Store' : stock === 'unavailable' ? 'TLL Store price and stock unavailable' : 'In stock at TLL Store') : null
-    const caption = store ? product.storePrice ? 'In stock · price and stock checked within 15 minutes' : 'Check pack, price and stock at TLL Store' : search ? 'Search results · affiliate link' : 'Unverified listing · check pack and price · affiliate link'
+    const caption = store ? product.storePrice ? 'In stock · price and stock checked within 15 minutes' : 'Check pack, price and stock at TLL Store' : search ? 'Retailer search · affiliate link' : 'Unverified listing · check pack and price · affiliate link'
     return (<span className={`flex min-w-0 flex-col justify-center ${fixedSlot ? "gap-0" : "gap-1"}`} data-offer-state={listing.state}>
       {!fixedSlot && stockText && <span className="text-center text-[10px] text-lab-muted">{stockText}</span>}
       <a href={listing.url} target="_blank" rel={store ? 'noopener noreferrer' : 'noopener noreferrer nofollow sponsored'}
@@ -88,7 +88,7 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
       <span className={`text-center text-[9px] text-lab-muted ${fixedSlot ? 'flex h-5 shrink-0 flex-col items-center justify-center' : 'leading-tight'}`}
         data-offer-caption title={fixedSlot ? caption : undefined}>
         {fixedSlot && !store ? <>
-          <span className="w-full min-w-0 line-clamp-1 leading-[10px]">{search ? 'Search results' : 'Unverified listing · check pack and price'}</span>
+          <span className="w-full min-w-0 line-clamp-1 leading-[10px]">{search ? 'Retailer search' : 'Unverified listing · check pack and price'}</span>
           <span className="block shrink-0 whitespace-nowrap leading-[10px]" data-affiliate-disclosure>affiliate link</span>
         </> : fixedSlot ? <span className="line-clamp-2 leading-[10px]">{caption}</span> : caption}
       </span>

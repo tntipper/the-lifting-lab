@@ -86,7 +86,7 @@ export async function verifyOfferLinks(page, origin, width, resultDir) {
           assert.equal(await anchor.getAttribute('target'), '_blank')
           const rel = (await anchor.getAttribute('rel')).split(/\s+/)
           for (const attribute of ['noopener', 'noreferrer', 'nofollow', 'sponsored']) assert.ok(rel.includes(attribute))
-          assert.match(await result.innerText(), state === 'listing' ? /Unverified listing · check pack and price · affiliate link/ : /Search results · affiliate link/)
+          assert.match(await result.innerText(), state === 'listing' ? /Unverified listing · check pack and price · affiliate link/ : /Retailer search · affiliate link/)
           const target = new URL(await anchor.getAttribute('href'))
           if (state === 'listing') {
             assert.equal(target.hostname, 'www.amazon.co.uk')
