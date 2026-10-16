@@ -309,7 +309,7 @@ test('live detail withholds mapping until URL selection is applied', async () =>
 })
 
 for (const environment of ['production', 'staging', 'synthetic-preview']) {
-  test(`detail cannot add the default before applying variant query in ${environment}`, async () => {
+  test(`detail applies variant query before eligibility; basket action gated in ${environment}`, async () => {
     const env = { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled', NEXT_PUBLIC_TLL_ENVIRONMENT: environment }
     const harness = detailHarness(await priced(), env)
     const eligible = modules(env)('lib/commerce/live-basket.ts').liveBasketEligible
@@ -319,5 +319,9 @@ for (const environment of ['production', 'staging', 'synthetic-preview']) {
     const selected = harness.render().offer.props.product
     assert.equal(selected.storeLinkMapping.shopifyVariantId.split('/').at(-1), '3')
     assert.equal(eligible(selected, now), true)
+    const Component = modules(env, { react: { ...React, useState: () => [now, () => {}], useEffect: () => {} } })('components/ProductOfferLink.tsx').default
+    const html = renderToStaticMarkup(React.createElement(Component, { product: selected }))
+    if (environment === 'production') assert.match(html, /<button[^>]*>Add to basket/)
+    else assert.doesNotMatch(html, /<button[^>]*>Add to basket/)
   })
 }

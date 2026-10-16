@@ -69,7 +69,25 @@ try {
     const staticDimensions = () => staticPage.locator('article[data-product-id]').evaluateAll(cards => cards.map(card => ({ id: card.dataset.productId, width: card.getBoundingClientRect().width, height: card.getBoundingClientRect().height })))
     await staticPage.goto(origin)
     const slotsFit = target => target.locator('[data-live-action-slot]').evaluateAll(slots => slots.length > 0 && slots.every(slot => slot.clientHeight === 64 && slot.scrollHeight <= slot.clientHeight))
+    const disclosuresVisible = target => target.locator('[data-live-action-slot] [data-offer-caption]').evaluateAll(captions => {
+      const affiliate = captions.filter(el => el.textContent.includes('affiliate link'))
+      return affiliate.length === 3 && affiliate.every(el => {
+        const node = el.firstChild, start = node.textContent.indexOf('affiliate link')
+        const range = document.createRange()
+        range.setStart(node, start); range.setEnd(node, start + 'affiliate link'.length)
+        const slot = el.closest('[data-live-action-slot]').getBoundingClientRect()
+        const caption = el.getBoundingClientRect(), style = getComputedStyle(el)
+        // Ranges retain geometry for clamped text: require the entire disclosure
+        // to sit inside both the caption and slot, with no overflowing third line.
+        const inside = (rect, bounds) => rect.top >= bounds.top - 0.5 && rect.bottom <= bounds.bottom + 0.5
+          && rect.left >= bounds.left - 0.5 && rect.right <= bounds.right + 0.5
+        return Array.from(range.getClientRects()).every(rect => inside(rect, caption) && inside(rect, slot))
+          && range.getClientRects().length > 0 && el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth
+          && style.textOverflow !== 'ellipsis'
+      })
+    })
     assert.equal(await slotsFit(staticPage), true, `all server action slots fit at ${width}`)
+    assert.equal(await disclosuresVisible(staticPage), true, `server affiliate disclosure fully visible at ${width}`)
     const serverLive = await staticDimensions()
     const equalCards = cards => cards.every(card => Math.abs(card.width - cards[0].width) < 0.5 && Math.abs(card.height - cards[0].height) < 0.5)
     assert.equal(equalCards(serverLive), true, `all server live cards equal at ${width} ${JSON.stringify(serverLive)}`)
@@ -85,6 +103,7 @@ try {
     }
     for (const id of ['7', '8', '9']) await page.locator(`article[data-product-id="${id}"]`).getByRole('link', { name: /View listing at/ }).waitFor()
     assert.equal(await slotsFit(page), true, `all mounted action slots fit at ${width}`)
+    assert.equal(await disclosuresVisible(page), true, `mounted affiliate disclosure fully visible at ${width}`)
     const after = await dimensions()
     assert.equal(equalCards(after), true, `all mounted live cards equal at ${width}`)
     assert.deepEqual(after, serverLive, `live dimensions equal before/after hydration at ${width}`)
@@ -147,7 +166,7 @@ try {
     await page.evaluate(() => localStorage.setItem('tll.live-basket.v1', '{broken'))
     await page.reload(); await page.getByText('Your basket is empty.', { exact: true }).waitFor()
     assert.deepEqual(cartApi, []); assert.deepEqual(external, []); assert.deepEqual(errors, [])
-    results.push({ width, liveCardsEqual: true, minimumActionHeight: 44, preHydrationDimensionsUnchanged: true, compactLinksFit: true, actionSlotsFit: true, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
+    results.push({ width, liveCardsEqual: true, minimumActionHeight: 44, preHydrationDimensionsUnchanged: true, compactLinksFit: true, actionSlotsFit: true, affiliateDisclosuresVisible: true, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
     await context.close()
   }
   await writeFile(resolve(dir, 'results.json'), JSON.stringify(results, null, 2))

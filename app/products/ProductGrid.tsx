@@ -283,7 +283,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           const assessment = assessmentDisplayFor(product)
           const nutrients = product.nutrients ?? []
           const reviews = reviewSummary[product.id]
-          const offer = <ProductOfferLink product={product} storeActionLabel="Add to basket"
+          const offer = <ProductOfferLink fixedActionSlot product={product} storeActionLabel="Add to basket"
             className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
           return (
             <article key={product.id} data-product-id={product.id} className={`${styles.card} gap-3 p-6 ${isSelected ? 'border-[var(--line-strong)]' : ''}`}>

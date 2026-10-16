@@ -1,12 +1,22 @@
-**16 October live-cart Round 7 — grok/live-cart; base 547c12b; local only:**
+**16 October live-cart Round 8 — grok/live-cart; continued from 9b660c1; local only:**
+- Changed components/ProductOfferLink.tsx and app/products/ProductGrid.tsx: only the grid opts into fixedActionSlot; unchanged affiliate captions use 20px/two lines under a 44px link, stock inside the link; existing 64px slots/grid CSS unchanged.
+- Changed tests/live-cart.test.mjs, tests/variant-picker.test.mjs and tests/browser/live-cart.mjs: grid opt-in, stock/copy order, isolated-mode button absence, six-width SSR/mounted disclosure range/overflow assertions.
+- Corrected stale Round 7 commit and browser-run claims below; 9b660c1 and its six-width pass are confirmed by the operator.
+- PASS typecheck; lint 0 errors/21 existing warnings; 66 focused tests; live-boundary/both manifests; git diff --check. Hosted CI unrun.
+- Full npm test: 4,107 pass / 28 fail / 8 skip; existing sandbox loopback/ps/Chromium/Python-temp/Docker limitations; rerun these in an unrestricted local environment.
+- Browser SSR fixtures PASS; Chromium launch denied MachPort bootstrap permission, so new six-width disclosure geometry remains unverified. Next: run node tests/browser/live-cart.mjs and take actual /compare + /stack live-mode screenshots before enablement.
+- Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; mapping/price prerequisites remain in Round 4. No env/Vercel/Shopify changes, external network actions or push.
+- Round 8 committed by the operator (fix: preserve grid affiliate disclosures and scope fixed action slots); operator runs six-width browser checks outside the sandbox.
+
+**16 October live-cart Round 7 — grok/live-cart; committed as 9b660c1; local only:**
 - Changed components/ProductOfferLink.tsx: 44px affiliate action + truncated caption/title within the existing 64px slot, including legacy stock; copy and tile dimensions unchanged.
 - Changed app/products/ProductGrid.tsx (slot test marker), app/products/[id]/ProductDetailPage.tsx (withhold mapping until URL selection), lib/affiliate.ts (stale comment).
 - Changed tests/live-cart.test.mjs, tests/variant-picker.test.mjs, tests/browser/live-cart-fixture.tsx and tests/browser/live-cart.mjs; Amazon/Myprotein/Bulk fixtures and every-slot scrollHeight<=clientHeight checks at six widths, SSR + mounted.
 - PASS typecheck, lint (0 errors/21 existing warnings), 111 focused tests; live boundary and both manifest checks PASS; git diff --check PASS. Hosted CI unrun.
 - Final npm test: 4,106 pass / 28 fail / 8 skip; repeated existing EPERM loopback/ps/Chromium, Python temp-dir and Docker/Postgres limits. Rerun in an unrestricted local test environment; no unrelated fixes attempted.
-- Browser SSR fixtures PASS; Chromium MachPortRendezvousServer bootstrap_check_in permission denied before layout. New six-width run and actual /compare + /stack screenshots remain unverified before flag enablement.
+- Browser SSR fixtures PASS; operator confirmed the six-width run at 9b660c1 passed. Actual /compare + /stack screenshots remain outstanding before flag enablement.
 - Corrected Round 6 below: operator ran its six-width checks at 547c12b and they passed. Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; existing mapping/price requirements remain in Round 4.
-- No external network actions, env/Vercel/Shopify changes or push. git add/commit both blocked creating .git/worktrees/wt-cart/index.lock: Operation not permitted; changes remain unstaged. Next: commit outside sandbox with message "fix: contain live affiliate actions and await variant selection", then browser checks/screenshots.
+- Changes committed as 9b660c1; six-width checks passed per operator. No external network actions, env/Vercel/Shopify changes or push. Next: actual /compare + /stack screenshots before flag enablement.
 
 **16 October live-cart Round 6 — grok/live-cart; continued from 7319bd0; local only:**
 - Changed ProductOfferLink/LiveBasket/ProductGrid: fixed 64px live action space for every card, 44px controls, single stock/status row outside the button.
