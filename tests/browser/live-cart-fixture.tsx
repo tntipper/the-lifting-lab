@@ -30,6 +30,7 @@ function Fixture() {
         <ProductVariantPicker productId="family" variants={choices} selected={selected} onChange={setSelectedId} />
         <ProductOfferLink product={{ ...product('family'), storeLinkMapping: selected.mapping, storePrice: selected.storePrice }} variantLabel={selected.label} storeCampaign="compare" className="rounded-lg bg-black py-3 text-sm text-white" pickerOwnsStatus chooseAnother />
       </section>
+      <section aria-label="Store fallback"><ProductOfferLink product={{ id: 'fallback', name: 'Fixture', brand: 'Fixture', buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }} /></section>
       <section aria-label="Unmapped"><ProductOfferLink product={{ id: 'unmapped', name: 'Unmapped', brand: 'Fixture', buy_url: null }} /></section>
       <section aria-label="Stack checkout"><BuyMyStack items={[{ ...product('stack', '2001'), quantity: 2 }]} ready /></section>
       <ProductGrid initialProducts={[product('1', '3001'), product('2', '3002'), product('3', '3003', false)] as unknown as ScoredProduct[]} />

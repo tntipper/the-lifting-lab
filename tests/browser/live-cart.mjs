@@ -12,7 +12,7 @@ const bundles = {}
 for (const mode of ['live', 'default']) {
   const result = await build({ absWorkingDir: root, entryPoints: ['tests/browser/live-cart-fixture.tsx'], outdir: 'out', bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
     define: { 'process.env.NODE_ENV': '"development"', 'process.env.NEXT_PUBLIC_TLL_LIVE_CART': JSON.stringify(mode === 'live' ? 'enabled' : ''),
-      'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"production"', 'process.env.NEXT_PUBLIC_TLL_STORE_LINKS': '"enabled"', 'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '"enabled"', 'process.env.NEXT_PUBLIC_TLL_STACK_CART': '""',
+      'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"production"', 'process.env.NEXT_PUBLIC_TLL_STORE_LINKS': '""', 'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '"enabled"', 'process.env.NEXT_PUBLIC_TLL_STACK_CART': '""',
       'process.env.NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART': '""', 'process.env.NEXT_PUBLIC_TLL_STAGING_CUSTOMER': '""', 'process.env.NEXT_PUBLIC_AMAZON_TAG': '""' },
     plugins: [{ name: 'local-boundaries', setup(builder) {
       builder.onResolve({ filter: /^next\/(link|navigation)$|^@\/lib\/supabase$/ }, args => ({ path: args.path, namespace: 'fixture' }))
@@ -50,6 +50,9 @@ try {
     await page.goto(origin + '/?mode=default'); await page.locator('article').first().waitFor()
     const before = await dimensions()
     await page.goto(origin); await page.locator('[data-offer-state=live_basket]').first().waitFor()
+    const fallback = page.getByRole('region', { name: 'Store fallback' }).getByRole('link', { name: /Buy at/ })
+    assert.equal(new URL(await fallback.getAttribute('href')).pathname, '/products/fixture')
+    assert.equal(new URL(await fallback.getAttribute('href')).searchParams.get('ref'), 'theliftinglab')
     const after = await dimensions()
     assert.deepEqual(after, before, `grid dimensions unchanged at ${width}`)
     assert.equal(await page.getByRole('region', { name: 'Unmapped', exact: true }).getByRole('button').count(), 0)
@@ -59,6 +62,8 @@ try {
     await selected.getByRole('combobox', { name: /Pack quantity/ }).selectOption('3')
     await selected.getByRole('button', { name: 'Add to basket', exact: true }).click()
     await page.getByRole('link', { name: 'Basket, 3 items', exact: true }).waitFor()
+    assert.equal(await selected.getByRole('status').evaluate(el => el.scrollWidth > el.clientWidth && getComputedStyle(el).textOverflow !== 'ellipsis'), false)
+    assert.deepEqual(await dimensions(), after, `status preserves tile dimensions at ${width}`)
     await selected.getByLabel('Flavour / size', { exact: true }).selectOption('1003')
     assert.equal(await selected.getByRole('button').count(), 0)
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('tll.live-basket.v1')))

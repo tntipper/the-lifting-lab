@@ -1,3 +1,14 @@
+**16 October live-cart Round 3 — grok/live-cart; starting commit 72a2c61; local only:**
+- Operator made commits d20253c and 72a2c61; earlier commit-blocked notes below describe those runs, not current history.
+- Live opt-in now resolves approved fresh available mappings to exact variant product links without STORE_LINKS; adds strict attributed shop product fallback.
+- Exported isTllSoldProduct; non-sold and flag-off rendering unchanged; unavailable offers remain inert; no product copy/grid CSS changes.
+- LiveBasket retains stale-offer refresh guidance; status truncates within reserved space with full title; browser fixture covers fallback without STORE_LINKS.
+- Changed affiliate/live-cart-mode, ProductOfferLink/LiveBasket, live-cart unit/browser fixtures and activation manifest source hash only.
+- PASS typecheck, lint (0 errors/21 existing warnings), 152 focused tests, both manifest checks; hosted CI unrun.
+- Browser bundles; Chromium SIGTRAP: MachPortRendezvousServer bootstrap_check_in permission denied. Layout execution remains blocked.
+- Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled; no env/network/Shopify/Vercel writes or push. API cart and staging unchanged.
+- This pass cannot commit: git add denied shared .git/worktrees/wt-cart/index.lock (EPERM); changes unstaged. Next: operator commit and browser checks outside sandbox.
+
 **16 October production basket reviewer follow-up — grok/live-cart; on d20253c; local only:**
 - Saved lines now contain variant/product IDs, quantity, name/brand/label and shown price only; legacy baskets migrate without expiry checks.
 - Fresh approval/stock checks apply only at add time; saved checkout persists and shows an estimated total, with Shopify rechecking price/stock.

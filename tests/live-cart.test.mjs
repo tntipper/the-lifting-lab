@@ -7,12 +7,12 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 const require = createRequire(import.meta.url)
-function load(entry, env = {}, mounted = false) {
+function load(entry, env = {}, mounted = false, reactOverrides = {}) {
   const bundle = buildSync({ entryPoints: [entry], bundle: true, write: false, platform: 'node', format: 'cjs', jsx: 'automatic', packages: 'external',
     define: Object.fromEntries(['NEXT_PUBLIC_TLL_LIVE_CART', 'NEXT_PUBLIC_TLL_ENVIRONMENT', 'NEXT_PUBLIC_TLL_STACK_CART', 'NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART', 'NEXT_PUBLIC_TLL_STORE_PRICES', 'NEXT_PUBLIC_TLL_STORE_LINKS'].map(key => [`process.env.${key}`, JSON.stringify(env[key] ?? '')])),
   })
   const mod = { exports: {} }
-  vm.runInNewContext(bundle.outputFiles[0].text, { module: mod, exports: mod.exports, require: name => mounted && name === 'react' ? { ...React, useState: () => [now, () => {}], useEffect: () => {} } : require(name), URL, URLSearchParams, process: { env }, console, Response, fetch() { throw Error('Network forbidden') } })
+  vm.runInNewContext(bundle.outputFiles[0].text, { module: mod, exports: mod.exports, require: name => name === 'react' ? { ...React, ...(mounted ? { useState: () => [now, () => {}], useEffect: () => {} } : {}), ...reactOverrides } : require(name), URL, URLSearchParams, process: { env }, console, Response, fetch() { throw Error('Network forbidden') } })
   return mod.exports
 }
 const now = Date.now()
@@ -112,19 +112,57 @@ test('Buy my stack uses live permalink without the legacy stack flag or Storefro
   assert.doesNotMatch(html, /awaiting setup|cart\/2:/)
 })
 
-test('ineligible live offers exactly preserve existing retailer/store links and bordered unavailable markup', () => {
-  const render = (product, live, mounted = true) => renderToStaticMarkup(React.createElement(load('components/ProductOfferLink.tsx', {
-    NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_LIVE_CART: live ? 'enabled' : '',
-  }, mounted).default, { product }))
-  const affiliate = 'https://www.amazon.co.uk/dp/B000000001'
-  for (const product of [
-    { ...item(), buy_url: affiliate, storeLinkMapping: { ...item().storeLinkMapping, approved: false } },
-    { ...item(), buy_url: affiliate, storeLinkMapping: { ...item().storeLinkMapping, review: { ...item().storeLinkMapping.review, expiresAtMs: now - 1 } } },
-    { ...item(), storePrice: undefined },
-    { ...item(), storePrice: { ...item().storePrice, observedAtMs: now - 86400000 } },
-    { ...item(), storePrice: { ...item().storePrice, availableForSale: false } },
-  ]) assert.equal(render(product, true), render(product, false))
-  assert.equal(render(item(), true, false), render(item(), false, false), 'server and initial hydration retain the original offer')
+test('live store links use exact selected variants without STORE_LINKS and block known unavailable offers', () => {
+  const resolve = load('lib/affiliate.ts', { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }).resolveProductOffer
+  const mapped = { ...item('1', '90071992547409931234'), buy_url: null }
+  const url = new URL(resolve(mapped, 'cart', 'compare').url)
+  assert.equal(url.pathname, '/products/fixture')
+  assert.equal(url.searchParams.get('variant'), '90071992547409931234')
+  assert.equal(url.searchParams.get('utm_campaign'), 'compare')
+  for (const price of [{ ...mapped.storePrice, availableForSale: false }, { ...mapped.storePrice, observedAtMs: 0 }])
+    assert.equal(resolve({ ...mapped, buy_url: 'https://shop.theliftinglab.co.uk/products/fixture', storePrice: price }).url, null)
+  const fallback = { buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }
+  assert.equal(new URL(resolve(fallback).url).searchParams.get('ref'), 'theliftinglab')
+  const selected = resolve({ ...mapped, ...fallback, storePrice: undefined })
+  assert.equal(new URL(selected.url).searchParams.get('variant'), '90071992547409931234')
+  const Component = load('components/ProductOfferLink.tsx', { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }).default
+  const html = renderToStaticMarkup(React.createElement(Component, { product: { ...fallback, brand: 'Fixture', name: 'Fixture' } }))
+  assert.match(html, /Buy at TLL Store/)
+  assert.doesNotMatch(html, /sponsored|affiliate link|Add to basket/)
+})
+
+test('shop product fallback accepts only exact HTTPS public product references', () => {
+  const { liveStoreProductUrl, isTllSoldProduct } = load('lib/commerce/live-cart-mode.ts')
+  const good = 'https://shop.theliftinglab.co.uk/products/fixture-123'
+  assert.equal(liveStoreProductUrl(good), good)
+  assert.equal(isTllSoldProduct({ buy_url: good }), true)
+  assert.equal(isTllSoldProduct(item()), true)
+  for (const value of [null, {}, '', good + '\n', ' ' + good, good + '/', good + '?', good + '?variant=1', good + '#', good + '#details',
+    good.replace('https:', 'http:'), good.replace('shop.', 'www.'), good.replace('.uk/', '.uk.evil/'),
+    good.replace('shop.', 'user@shop.'), good.replace('shop.', 'user:password@shop.'), good.replace('.uk/', '.uk:443/'),
+    good.replace('/products/', '/collections/'), good.replace('/products/', '/products/../products/'), good.replace('fixture-123', 'Fixture'), good.replace('fixture-123', '%66ixture')]) {
+    assert.equal(liveStoreProductUrl(value), null, String(value))
+    assert.equal(isTllSoldProduct({ buy_url: value }), false, String(value))
+  }
+})
+
+test('flag off and isolated modes retain identical pre-live resolver and rendered behaviour', () => {
+  const products = [{ ...item(), buy_url: null }, { buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' },
+    { buy_url: 'https://www.amazon.co.uk/dp/B000000001' }, { buy_url: null }]
+  for (const legacy of ['', 'enabled']) {
+    const base = { NEXT_PUBLIC_TLL_STORE_LINKS: legacy }
+    const original = load('lib/affiliate.ts', base)
+    const render = (env, product) => renderToStaticMarkup(React.createElement(load('components/ProductOfferLink.tsx', env).default, { product: { brand: 'Fixture', name: 'Fixture', ...product } }))
+    for (const product of products) {
+      assert.equal(JSON.stringify(load('lib/affiliate.ts', { ...base, NEXT_PUBLIC_TLL_LIVE_CART: 'disabled' }).resolveProductOffer(product)), JSON.stringify(original.resolveProductOffer(product)))
+      assert.equal(render(base, product), render({ ...base, NEXT_PUBLIC_TLL_LIVE_CART: 'disabled' }, product))
+      if (!product.storeLinkMapping && !product.buy_url?.includes('shop.')) assert.equal(render(base, product), render({ ...base, NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }, product))
+      for (const isolated of ['staging', 'synthetic-preview']) {
+        const flags = { ...base, NEXT_PUBLIC_TLL_ENVIRONMENT: isolated }
+        assert.equal(render(flags, product), render({ ...flags, NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }, product))
+      }
+    }
+  }
 })
 
 test('saved baskets preserve compare attribution and only store public fields through later additions', () => {
@@ -145,4 +183,21 @@ test('live stacks clamp combined quantities and explain truncation instead of lo
   assert.doesNotMatch(html, /No store items can be added/)
   const result = basket.buildLiveStackCheckout(items, now)
   assert.equal(new URL(result.url).pathname.split(',').length, 20)
+})
+
+
+test('stale add keeps refresh guidance and status truncates inside the reserved area', () => {
+  let message = '', hook = 0
+  const { LiveBasketAdd } = load('components/LiveBasket.tsx', { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }, false, {
+    useState: initial => [initial, ++hook === 2 ? value => { message = value } : () => {}],
+  })
+  const element = LiveBasketAdd({ product: { ...item(), storePrice: { ...item().storePrice, observedAtMs: 0 } } })
+  element.props.children[1].props.children[1].props.onClick()
+  assert.equal(message, 'This offer is unavailable. Refresh the product page.')
+  hook = 0
+  const Status = load('components/LiveBasket.tsx', {}, false, {
+    useState: initial => [++hook === 2 ? message : initial, () => {}],
+  }).LiveBasketAdd
+  const html = renderToStaticMarkup(React.createElement(Status, { product: item() }))
+  assert.match(html, /role="status" title="This offer is unavailable. Refresh the product page." class="absolute inset-0 truncate"/)
 })

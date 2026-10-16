@@ -64,7 +64,7 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
     </span>
   }
   const search = listing.state === 'search_only'
-  const store = listing.reason === 'approved_store_mapping'
+  const store = listing.relationship === 'own_shop'
   return <span className="flex min-w-0 flex-col justify-center gap-1" data-offer-state={listing.state}>
     {!pickerOwnsStatus && stock && <span className="text-center text-[10px] text-lab-muted">{stock === 'out_of_stock' ? 'Out of stock at TLL Store' : stock === 'unavailable' ? 'TLL Store price and stock unavailable' : 'In stock at TLL Store'}</span>}
     <a href={listing.url} target="_blank" rel={store ? 'noopener noreferrer' : 'noopener noreferrer nofollow sponsored'}

@@ -1,3 +1,4 @@
+import { liveCartEnabled, liveStoreProductUrl, isTllSoldProduct } from './commerce/live-cart-mode'
 import { catalogueAvailabilityFor, type CataloguePresentation } from './commerce/catalogue-presentation'
 import type { StorePricePresentation } from './commerce/store-price-products'
 import { isIsolatedEnvironment } from './preview-mode'
@@ -20,7 +21,7 @@ export type ProductListing = {
   url: string | null
   retailer: string | null
   relationship: 'affiliate' | 'external' | 'own_shop' | 'none'
-  reason: 'preview' | 'missing_url' | 'invalid_url' | 'unreviewed_retailer' | 'own_shop_approval_required' | 'unverified_listing' | 'search_destination' | 'unreviewed_path' | 'approved_store_mapping'
+  reason: 'preview' | 'missing_url' | 'invalid_url' | 'unreviewed_retailer' | 'own_shop_approval_required' | 'unverified_listing' | 'search_destination' | 'unreviewed_path' | 'approved_store_mapping' | 'live_store_product'
 }
 
 /** Exact destination only; string IDs avoid losing precision on large Shopify IDs. */
@@ -39,8 +40,20 @@ export function buildStoreProductLink(productId: string | undefined, mapping?: S
   return withStoreAttribution(`https://shop.theliftinglab.co.uk/products/${mapping.shopifyProductHandle}?variant=${variant}`, options.campaign ?? 'product')
 }
 
-/** New behaviour is OFF unless explicitly enabled. Legacy own-shop URLs remain blocked. */
+/** Both store modes require explicit opt-in; plain shop references are live-mode navigation only. */
 export function resolveProductOffer(product: { id?: string; buy_url: string | null; storeLinkMapping?: StoreLinkMapping | null; cataloguePresentation?: CataloguePresentation | null; storePrice?: StorePricePresentation | null }, mode: StoreBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, campaign: StoreAttributionCampaign = 'product'): ProductListing {
+  if (liveCartEnabled() && isTllSoldProduct(product)) {
+    const now = Date.now()
+    const url = buildStoreProductLink(product.id, product.storeLinkMapping, now, { mode: 'product_page', campaign })
+    const availability = catalogueAvailabilityFor(product, now)
+    if (!product.cataloguePresentation && availability === 'available' && url)
+      return { state: 'listing', url, retailer: 'TLL Store', relationship: 'own_shop', reason: 'approved_store_mapping' }
+    const fallback = liveStoreProductUrl(product.buy_url)
+    // Missing data permits product navigation only; known unavailable offers stay inert.
+    if (!product.cataloguePresentation && !product.storePrice && fallback)
+      return { state: 'listing', url: url ?? withStoreAttribution(fallback, campaign), retailer: 'TLL Store', relationship: 'own_shop', reason: 'live_store_product' }
+    return unavailable('own_shop_approval_required', true)
+  }
   if (!isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled') {
     const now = Date.now()
     const availability = catalogueAvailabilityFor(product, now)

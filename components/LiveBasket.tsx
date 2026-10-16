@@ -53,12 +53,12 @@ export function LiveBasketAdd({ product, className, style, showStock = true, cam
         onClick={() => {
           if (!liveCartEnabled()) return
           try { writeBasket(addBasketLine(readBasket(), { ...product, quantity }), campaign); setNotice('Added to basket') }
-          catch (error) { setNotice(error instanceof Error && error.message.startsWith('Maximum') ? error.message : 'Basket unavailable. Refresh the product page and allow browser storage.') }
+          catch (error) { setNotice(error instanceof Error && (error.message.startsWith('Maximum') || error.message === 'This offer is unavailable. Refresh the product page.') ? error.message : 'Basket unavailable. Refresh the product page and allow browser storage.') }
         }}>Add to basket</button>
     </span>
-    <span className="relative text-center text-[9px] leading-tight text-lab-muted">
+    <span className="relative min-w-0 text-center text-[9px] leading-tight text-lab-muted">
       <span className={notice ? 'invisible' : undefined}>In stock · price and stock checked within 15 minutes</span>
-      <span role="status" className="absolute inset-0">{notice && <Link href="/cart">{notice}</Link>}</span>
+      <span role="status" title={notice || undefined} className="absolute inset-0 truncate">{notice && <Link href="/cart">{notice}</Link>}</span>
     </span>
   </span>
 }
