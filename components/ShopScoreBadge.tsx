@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { assessmentDisplayFor } from '@/lib/assessment-display'
 import styles from '@/components/shop.module.css'
 
@@ -12,16 +12,19 @@ export default function ShopScoreBadge({ product }: {
   const band = score == null ? 'unassessed' : score >= 70 ? 'high' : score >= 50 ? 'mid' : 'low'
   const circumference = 2 * Math.PI * 24
   const tooltipId = useId()
+  const triggerId = useId()
+  const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const checked = assessment.complianceDate
     ? new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${assessment.complianceDate}T00:00:00Z`))
     : null
   const label = assessment.valueLed ? 'Value-led score' : 'TLL Label Score'
-  return <span className={styles.scoreHelp} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}
-    onFocus={event => { if (event.target.matches(':focus-visible')) setOpen(true) }} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false) }}
-    onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); event.stopPropagation() } }}>
-    <button type="button" className={styles.scoreTrigger} aria-expanded={open} aria-controls={tooltipId}
-      aria-describedby={open ? tooltipId : undefined} onClick={() => setOpen(value => !value)}>
+  return <span className={styles.scoreHelp}
+    onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false) }}
+    onKeyDown={event => { if (event.key === 'Escape' && open) { setOpen(false); event.stopPropagation(); trigger.current?.focus() } }}>
+    <button ref={trigger} id={triggerId} type="button" className={styles.scoreTrigger} aria-expanded={open} aria-controls={tooltipId}
+      aria-label={`${label}: ${score == null ? 'Under review' : `${score} out of 100`} Dose & label check`}
+      onClick={() => setOpen(value => !value)}>
       <span role="img" className={`${styles.score} ${styles.scoreRing} ${score == null ? 'text-lab-muted' : ''}`} data-band={band} data-assessment={assessment.state}
         aria-label={score == null ? 'Under review' : `${label}: ${score} out of 100`}>
         <svg aria-hidden="true" width="64" height="64" viewBox="0 0 64 64">
@@ -33,10 +36,10 @@ export default function ShopScoreBadge({ product }: {
           ? <span aria-hidden="true" className={styles.scoreStatus}>Under review</span>
           : <span aria-hidden="true" className={styles.scoreNumber}>{score}<small>/ 100</small></span>}
       </span>
-      <span className={styles.valueLed}>{label}</span>
+      <span aria-hidden={score != null ? true : undefined} className={styles.valueLed}>{label}</span>
       <span className={styles.valueLed}>Dose &amp; label check</span>
     </button>
-    <span id={tooltipId} role="tooltip" hidden={!open} className={styles.scoreTooltip}>
+    <span id={tooltipId} role="region" aria-labelledby={triggerId} hidden={!open} className={styles.scoreTooltip}>
       TLL Label Score rates what&apos;s on the label, not the results you&apos;ll get. It compares stated doses with amounts used in published research and checks how transparent the label is. It isn&apos;t a health claim or medical advice. Source: {assessment.sourceUrl ? <a href={assessment.sourceUrl}>brand label</a> : 'brand label'}{checked ? `, checked ${checked}.` : '; compliance check pending.'} <a href="/methodology">How we score</a>
       {assessment.valueLed && <span className={styles.valueLed}>This score is driven mainly by price per serving.</span>}
     </span>

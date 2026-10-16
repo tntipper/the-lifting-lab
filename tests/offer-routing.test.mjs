@@ -90,7 +90,7 @@ test('only a single reviewed Bulk target can pass an Awin redirector', () => {
 for (const input of ['https://www.amazon.co.uk/s?k=fixture', 'https://www.bulk.com/uk/search?q=fixture', 'https://www.myprotein.com/referrals.list', 'https://www.myprotein.com/']) test(`explicit search is not an offer: ${input}`, () => {
   const result = resolve(input); assert.equal(result.state, 'search_only')
   const markup = render(input)
-  assert.match(markup, /Search retailer/); assert.match(markup, /Search results/)
+  assert.match(markup, /Search retailer/); assert.match(markup, /Retailer search · affiliate link/)
   assert.doesNotMatch(markup, /Buy|InStock|Add to cart/)
 })
 test('listing rendering never promises exact stock, price or a purchase', () => {

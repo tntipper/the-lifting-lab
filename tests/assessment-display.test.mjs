@@ -856,19 +856,21 @@ test('rings have the exact dated tooltip, methodology link and optional value-le
   for (const value_led of [false, true]) for (const source_url of [undefined, 'https://brand.example/label', 'javascript:alert(1)']) {
     const f = withReviews([signedAssessment({ value_led, source_url })])
     const html = f.html('components/ShopScoreBadge.tsx', { product: make({ score: 100 }) })
-    const tooltip = html.match(/role="tooltip"[^>]*>([\s\S]*?)<\/span>/)[1]
+    const tooltip = html.match(/role="region"[^>]*>([\s\S]*?)<\/span>/)[1]
     const text = tooltip.replace(/<[^>]*>/g, '').replace(/&#x27;/g, "'")
     assert.equal(text, copy + (value_led ? 'This score is driven mainly by price per serving.' : ''))
     assert.match(tooltip, /href="\/methodology"/)
     assert.match(html, /Dose &amp; label check/)
     assert.equal(tooltip.includes('href="https://brand.example/label"'), source_url?.startsWith('https:') === true)
     assert.doesNotMatch(tooltip, /javascript:|Rubric v/)
-    const surroundingCopy = html.replace(/role="tooltip"[^>]*>[\s\S]*?<\/span>/, '')
+    const surroundingCopy = html.replace(/role="region"[^>]*>[\s\S]*?<\/span>/, '')
     assert.doesNotMatch(surroundingCopy, /\b(effective|effectiveness|results|proven|best|healthy|evidence-based)\b/i)
-    assert.match(html, /<button type="button"[^>]*aria-controls=/)
+    assert.match(html, /<button[^>]*type="button"[^>]*aria-controls=/)
     assert.match(html, value_led ? /aria-label="Value-led score: 73 out of 100"/ : /aria-label="TLL Label Score: 73 out of 100"/)
+    assert.match(html, new RegExp(`<button[^>]*aria-label="${value_led ? 'Value-led score' : 'TLL Label Score'}: 73 out of 100 Dose &amp; label check"`))
   }
   const pending = fixture().html('components/ShopScoreBadge.tsx', { product: make() })
+  assert.match(pending, /<button[^>]*aria-label="TLL Label Score: Under review Dose &amp; label check"/)
   assert.match(pending, /compliance check pending/)
   assert.doesNotMatch(pending, /checked 16 Oct 2026/)
 })
@@ -890,26 +892,39 @@ test('score cards and comparison copy avoid outcome claims around approved and p
   }
 })
 
-test('tooltip opens on hover, keyboard focus and tap; Escape and leaving close it', () => {
-  let open = false
-  const hooks = { useId: () => 'tooltip-fixture', useState: () => [open, next => { open = typeof next === 'function' ? next(open) : next }] }
+test('score disclosure toggles on activation, retains focused links and restores focus on Escape', () => {
+  let open = false, focused = 0
+  const ref = { current: { focus() { focused++ } } }
+  const hooks = { useId: () => 'disclosure-fixture', useRef: () => ref,
+    useState: () => [open, next => { open = typeof next === 'function' ? next(open) : next }] }
   const f = fixture([], {}, false, false, null, null, [signedAssessment()], hooks)
   const badge = () => f.load('components/ShopScoreBadge.tsx').default({ product: make() })
-  const tooltip = () => badge().props.children[1]
+  const region = () => badge().props.children[1]
   const button = () => badge().props.children[0]
-  assert.equal(tooltip().props.hidden, true)
-  badge().props.onMouseEnter(); assert.equal(tooltip().props.hidden, false)
-  badge().props.onMouseLeave(); assert.equal(tooltip().props.hidden, true)
-  badge().props.onFocus({ target: { matches: () => true } }); assert.equal(open, true)
-  assert.equal(button().props['aria-describedby'], tooltip().props.id)
+  assert.equal(region().props.hidden, true)
+  assert.equal(button().type, 'button', 'Native button provides Enter/Space activation')
+  assert.equal(button().props.type, 'button')
+  assert.equal(button().props['aria-controls'], region().props.id)
+  assert.equal(region().props.role, 'region')
+  assert.equal(region().props['aria-labelledby'], button().props.id)
+  assert.equal(button().props['aria-describedby'], undefined)
+  assert.equal(badge().props.onFocus, undefined)
+  assert.equal(badge().props.onMouseLeave, undefined, 'Pointer exit must not close focused content')
+  button().props.onClick(); assert.equal(open, true)
+  assert.equal(button().props['aria-expanded'], true)
+  assert.equal(region().props.hidden, false)
+  badge().props.onBlur({ currentTarget: { contains: () => true }, relatedTarget: {} }); assert.equal(open, true)
   let stopped = false
   badge().props.onKeyDown({ key: 'Escape', stopPropagation() { stopped = true } })
-  assert.equal(open, false); assert.equal(stopped, true)
-  // Pointer focus must not open then immediately close again on its click.
-  badge().props.onFocus({ target: { matches: () => false } })
+  assert.equal(open, false); assert.equal(stopped, true); assert.equal(focused, 1)
   button().props.onClick(); assert.equal(open, true)
-  badge().props.onBlur({ currentTarget: { contains: () => true }, relatedTarget: {} }); assert.equal(open, true)
+  button().props.onClick(); assert.equal(open, false)
+  button().props.onClick()
   badge().props.onBlur({ currentTarget: { contains: () => false }, relatedTarget: null }); assert.equal(open, false)
+  const html = f.html('components/ShopScoreBadge.tsx', { product: make() })
+  assert.match(html, /aria-hidden="true"[^>]*>TLL Label Score<\/span>/)
+  assert.equal((html.match(/role="img"[^>]*aria-label="TLL Label Score:/g) || []).length, 1)
+  assert.equal(button().props['aria-label'], 'TLL Label Score: 73 out of 100 Dose & label check')
 })
 
 test('legacy scores never survive public catalogue fetchers or product-page client props', async () => {

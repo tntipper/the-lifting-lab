@@ -1,3 +1,24 @@
+**16 October PR #99 disclosure locator fix — grok/guides-footer-fix; parent d0c3c20:**
+- Real esbuild + react-dom/server renders approved 79 fixture; adjacent inline spans lack a literal name separator and fixture omitted CSS.
+- Added explicit button name (score/status + Dose & label check); region inherits it without duplicate spoken score labels.
+- Browser fixture loads real CSS, audits env/page errors and checks Enter/Space, natural Tab to methodology, tap/click, Escape focus return and blur.
+- PASS 198 focused Node tests, tsc, lint (0 errors/20 existing warnings), manifest check, JS syntax, real SSR/browser bundle audit and diff check.
+- Owner reports unrestricted full npm test: 4160 pass/1 fail; gen23 timing also fails on main 90e0ff7 and is accepted as pre-existing.
+- Owner reports offers browser PASS; guides-footer/accessibility also fail on unmodified d0c3c20 and are accepted as pre-existing.
+- Chromium unavailable in sandbox; corrected browser interaction run and hosted CI remain unverified. gh signed out; PR metadata unavailable.
+- Commit includes prior review fixes and OATH_WORDING.md; g-run*.sh excluded. No push. Next: unrestricted score-disclosure browser rerun.
+
+**16 October PR #99 review fixes — grok/guides-footer-fix; base main 90e0ff7:**
+- Kept Retailer search · affiliate link; updated Node/browser assertions, including affiliate disclosure.
+- Score badge is a native button disclosure with labelled region, click/tap toggle, Escape focus return and no duplicate reviewed label.
+- Added Node interaction/ARIA assertions and standalone browser Enter/Space/tap/focus checks; 198 focused Node tests pass.
+- Regenerated activation manifest with existing script: only comparison-reconciliation.mjs pin changed; its old hash matches main; all source-tree files unchanged.
+- Retained footer h-12: 6a38b6d explicitly says compact footer and contains that exact change.
+- Copied docs/compliance/OATH_WORDING.md byte-for-byte; existing effectiveness copy found in affiliate-disclosure/alternatives/layout. No broad rewrites or blanket failing grep test.
+- Full npm test: 4133 pass / 28 fail / 8 skipped; all 14 failing-test files unchanged from main; socket/ps/Docker/Chromium restrictions plus Python/offline fixture failures remain.
+- tsc passes; lint 0 errors/20 existing warnings; diff check passes. Browser blocked by Mach port permission; hosted CI unrun.
+- No commit: full suite is not green, per requested commit condition. No push; g-run*.sh untouched. Next: rerun in unrestricted environment, then commit.
+
 **16 October Oath score wording — grok/guides-footer-fix; base origin/main 90e0ff7:**
 - Renamed ring labels to TLL Label Score / Value-led score; added Dose & label check and exact Oath tooltip wording.
 - Optional reviewed-record source_url links as brand label; compliance date/pending fallback and value-led price line retained.
