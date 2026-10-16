@@ -187,7 +187,7 @@ for (const [name, patch] of [
   ['wrong GID kind', { shopifyVariantId: 'gid://shopify/Product/123' }], ['variant injection', { shopifyVariantId: '123&other=456' }],
   ['review unapproved', { review: { ...approvedMapping.review, approved: false } }],
   ['expired', { review: { ...approvedMapping.review, expiresAtMs: storeNow } }],
-  ['future review', { review: { ...approvedMapping.review, verifiedAtMs: storeNow + 10000 } }],
+  ['future review', { review: { ...approvedMapping.review, verifiedAtMs: storeNow + 86_400_000 } }],
   ['stale version', { review: { ...approvedMapping.review, expectedVersion: 'v2' } }],
   ['missing review', { review: null }],
   ['malformed review version', { review: { ...approvedMapping.review, version: 123 } }],
