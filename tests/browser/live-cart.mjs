@@ -31,7 +31,15 @@ for (const mode of ['live', 'default']) {
   bundles[mode] = { render: mod.exports.render, js: result.outputFiles.find(file => file.path.endsWith('.js')).contents, css: result.outputFiles.find(file => file.path.endsWith('.css')).contents }
 }
 for (const mode of ['live', 'default']) {
-  assert.match(bundles[mode].render('/'), /data-product-id="5"/)
+  const html = bundles[mode].render('/')
+  assert.match(html, /data-product-id="5"/)
+  if (mode === 'live') {
+    assert.match(html, /data-grid-stock="true"[^>]*>In stock at TLL Store/)
+    assert.match(html, /data-grid-stock="true"[^>]*>Out of stock at TLL Store/)
+    assert.equal((html.match(/data-affiliate-disclosure="true"/g) ?? []).length, 3)
+  } else {
+    assert.doesNotMatch(html, /data-grid-stock|data-affiliate-disclosure|data-live-action-slot/)
+  }
   assert.match(bundles[mode].render('/cart'), /Your basket is empty|data-live-offer-shell|<main/)
 }
 console.log('Server-rendered live/default fixtures: PASS')
@@ -48,7 +56,7 @@ let browser
 const results = []
 try {
   browser = await chromium.launch({ headless: true, ...(process.env.TEST_BROWSER_CHANNEL ? { channel: process.env.TEST_BROWSER_CHANNEL } : {}) })
-  for (const width of [320, 390, 768, 1024, 1280, 1440]) {
+  for (const width of [320, 360, 390, 414, 768, 1280]) {
     const context = await browser.newContext({ viewport: { width, height: 1000 } }), page = await context.newPage(), errors = [], external = [], cartApi = []
     page.on('pageerror', error => errors.push(error.message))
     await context.route('**/*', route => {
@@ -72,7 +80,7 @@ try {
     const disclosuresVisible = target => target.locator('[data-live-action-slot] [data-offer-caption]').evaluateAll(captions => {
       const affiliate = captions.filter(el => el.textContent.includes('affiliate link'))
       return affiliate.length === 3 && affiliate.every(el => {
-        const text = el.querySelector('span') ?? el
+        const text = el.querySelector('[data-affiliate-disclosure]')
         const node = text.firstChild, start = node.textContent.indexOf('affiliate link')
         const range = document.createRange()
         range.setStart(node, start); range.setEnd(node, start + 'affiliate link'.length)
@@ -84,11 +92,32 @@ try {
           && rect.left >= bounds.left - 0.5 && rect.right <= bounds.right + 0.5
         return Array.from(range.getClientRects()).every(rect => inside(rect, caption) && inside(rect, slot))
           && range.getClientRects().length > 0 && text.scrollHeight <= text.clientHeight && text.scrollWidth <= text.clientWidth
-          && style.textOverflow !== 'ellipsis'
+          && style.textOverflow !== 'ellipsis' && style.webkitLineClamp === 'none'
           && !el.closest('[data-offer-state]').querySelector('a .text-lab-muted')
           && !el.closest('[data-offer-state]').querySelector('a').textContent.includes('In stock')
       })
     })
+    const stockVisible = target => target.locator('article[data-product-id="7"] [data-grid-stock]').evaluate(el => {
+      const style = getComputedStyle(el), bounds = el.getBoundingClientRect()
+      const rgb = color => color.match(/[\d.]+/g).slice(0, 3).map(Number)
+      const luminance = color => rgb(color).map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
+        .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0)
+      let parent = el, background
+      do { background = getComputedStyle(parent).backgroundColor; parent = parent.parentElement } while (background === 'rgba(0, 0, 0, 0)' && parent)
+      const foreground = luminance(style.color), backdrop = luminance(background)
+      const contrast = (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05)
+      const range = document.createRange(); range.selectNodeContents(el)
+      return { text: el.textContent.trim(), contrast, visible: bounds.height > 0 && style.visibility === 'visible' && style.display !== 'none'
+        && Array.from(range.getClientRects()).every(rect => rect.top >= bounds.top && rect.bottom <= bounds.bottom && rect.left >= bounds.left && rect.right <= bounds.right) }
+    })
+    const assertStock = async target => {
+      const stock = await stockVisible(target)
+      assert.equal(stock.text, 'In stock at TLL Store')
+      assert.equal(stock.visible, true, `stock fully visible at ${width}`)
+      assert.ok(stock.contrast >= 4.5, `stock contrast ${stock.contrast} at ${width}`)
+      return stock.contrast
+    }
+    await assertStock(staticPage)
     assert.equal(await slotsFit(staticPage), true, `all server action slots fit at ${width}`)
     assert.equal(await disclosuresVisible(staticPage), true, `server affiliate disclosure fully visible at ${width}`)
     const serverLive = await staticDimensions()
@@ -107,6 +136,7 @@ try {
     for (const id of ['7', '8', '9']) await page.locator(`article[data-product-id="${id}"]`).getByRole('link', { name: /View listing at/ }).waitFor()
     assert.equal(await slotsFit(page), true, `all mounted action slots fit at ${width}`)
     assert.equal(await disclosuresVisible(page), true, `mounted affiliate disclosure fully visible at ${width}`)
+    const stockContrast = await assertStock(page)
     const after = await dimensions()
     assert.equal(equalCards(after), true, `all mounted live cards equal at ${width}`)
     assert.deepEqual(after, serverLive, `live dimensions equal before/after hydration at ${width}`)
@@ -169,7 +199,7 @@ try {
     await page.evaluate(() => localStorage.setItem('tll.live-basket.v1', '{broken'))
     await page.reload(); await page.getByText('Your basket is empty.', { exact: true }).waitFor()
     assert.deepEqual(cartApi, []); assert.deepEqual(external, []); assert.deepEqual(errors, [])
-    results.push({ width, liveCardsEqual: true, minimumActionHeight: 44, preHydrationDimensionsUnchanged: true, compactLinksFit: true, actionSlotsFit: true, affiliateDisclosuresVisible: true, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
+    results.push({ width, liveCardsEqual: true, minimumActionHeight: 44, preHydrationDimensionsUnchanged: true, compactLinksFit: true, actionSlotsFit: true, affiliateDisclosuresVisible: true, stockVisible: true, stockContrast, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
     await context.close()
   }
   await writeFile(resolve(dir, 'results.json'), JSON.stringify(results, null, 2))

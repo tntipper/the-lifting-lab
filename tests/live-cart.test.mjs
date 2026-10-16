@@ -264,21 +264,22 @@ test('compact offers navigate to the exact variant without a basket control; fla
   }
 })
 
-test('grid affiliate actions prioritise the unchanged disclosure and retain stock only in link metadata', () => {
+test('grid affiliate disclosures have an unclamped line; normal and flag-off offers retain their copy', () => {
   const urls = ['https://www.amazon.co.uk/dp/B000000001', 'https://www.myprotein.com/sports-nutrition/fixture/12345.html', 'https://www.bulk.com/uk/products/fixture/fixture']
   const Component = load('components/ProductOfferLink.tsx', { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }).default
   for (const buy_url of urls) for (const stock of [undefined, item().storePrice]) {
     const product = { id: '1', brand: 'Fixture', name: 'Item', buy_url, storePrice: stock }
     const html = renderToStaticMarkup(React.createElement(Component, { product, fixedActionSlot: true }))
     assert.match(html, /height:44px;min-height:44px;flex-shrink:0/)
-    assert.match(html, /flex h-5 shrink-0 items-center justify-center/)
-    assert.match(html, /line-clamp-2 leading-\[10px\]/)
+    assert.match(html, /flex h-5 shrink-0 flex-col items-center justify-center/)
+    assert.match(html, /line-clamp-1 leading-\[10px\]/)
+    assert.match(html, /class="block shrink-0 whitespace-nowrap leading-\[10px\]" data-affiliate-disclosure="true">affiliate link<\/span>/)
     const caption = 'Unverified listing · check pack and price · affiliate link'
     assert.ok(html.includes(`title="${caption}"`))
     assert.ok(html.includes(caption))
     const normal = renderToStaticMarkup(React.createElement(Component, { product }))
     const legacy = renderToStaticMarkup(React.createElement(load('components/ProductOfferLink.tsx').default, { product }))
-    assert.equal(html.replace(/<[^>]*>/g, ''), legacy.replace(/<[^>]*>/g, '').replace(stock ? 'In stock at TLL Store' : '', ''))
+    assert.equal(html.replace(/<[^>]*>/g, ''), legacy.replace(/<[^>]*>/g, '').replace(stock ? 'In stock at TLL Store' : '', '').replace(' · affiliate link', 'affiliate link'))
     assert.equal(normal.replace(/<[^>]*>/g, ''), legacy.replace(/<[^>]*>/g, ''))
     assert.doesNotMatch(html.match(/<a\b[^>]*>(.*?)<\/a>/s)?.[1] ?? '', /<span|In stock|text-lab-muted/)
     assert.doesNotMatch(normal, /line-clamp|truncate|height:44px|h-16|h-5/)

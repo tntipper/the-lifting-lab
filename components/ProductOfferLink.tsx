@@ -85,9 +85,12 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
         onClick={() => track('retailer_listing_click', { retailer: listing.retailer ?? undefined, destination_state: listing.state })}>
         {store ? (!liveCartEnabled() && storeBuyLinkMode === 'cart' && product.storePrice?.availableForSale === true ? storeActionLabel ?? 'Buy at TLL Store' : 'Buy at TLL Store') : search ? 'Search retailer ↗' : 'View retailer ↗'}
       </a>
-      <span className={`text-center text-[9px] text-lab-muted ${fixedSlot ? 'flex h-5 shrink-0 items-center justify-center' : 'leading-tight'}`}
+      <span className={`text-center text-[9px] text-lab-muted ${fixedSlot ? 'flex h-5 shrink-0 flex-col items-center justify-center' : 'leading-tight'}`}
         data-offer-caption title={fixedSlot ? caption : undefined}>
-        {fixedSlot ? <span className="line-clamp-2 leading-[10px]">{caption}</span> : caption}
+        {fixedSlot && !store ? <>
+          <span className="w-full min-w-0 line-clamp-1 leading-[10px]">{search ? 'Search results' : 'Unverified listing · check pack and price'}</span>
+          <span className="block shrink-0 whitespace-nowrap leading-[10px]" data-affiliate-disclosure>affiliate link</span>
+        </> : fixedSlot ? <span className="line-clamp-2 leading-[10px]">{caption}</span> : caption}
       </span>
     </span>)
   }

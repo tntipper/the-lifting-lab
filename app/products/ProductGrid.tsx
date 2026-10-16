@@ -12,6 +12,7 @@ import GuidanceNote from '@/components/GuidanceNote'
 import styles from '@/components/shop.module.css'
 import ProductImage from '@/components/ProductImage'
 import ProductOfferLink from '@/components/ProductOfferLink'
+import { catalogueAvailabilityFor } from '@/lib/commerce/catalogue-presentation'
 import { liveCartEnabled } from '@/lib/commerce/live-cart-mode'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { useShopPanels } from '@/components/ShopPanelsContext'
@@ -283,6 +284,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           const assessment = assessmentDisplayFor(product)
           const nutrients = product.nutrients ?? []
           const reviews = reviewSummary[product.id]
+          const stock = liveCartEnabled() ? catalogueAvailabilityFor(product) : null
           const offer = <ProductOfferLink fixedActionSlot product={product} storeActionLabel="Add to basket"
             className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
           return (
@@ -321,6 +323,9 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">{isStoreOffer(product) ? 'TLL Store price' : 'Listed price'}</span>
                   <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{formatMoney(displayPrice(product))}</b>
                 </div>
+                {liveCartEnabled() && <span data-grid-stock className="col-span-3 block h-8 text-[11px] leading-4 text-lab-muted">
+                  {stock === 'available' ? 'In stock at TLL Store' : stock === 'out_of_stock' ? 'Out of stock at TLL Store' : stock === 'unavailable' ? 'TLL Store price and stock unavailable' : null}
+                </span>}
               </div>
 
               <dl className="grid grid-cols-[1fr_auto] gap-x-3 text-sm">
