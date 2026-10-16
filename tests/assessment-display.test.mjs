@@ -696,3 +696,25 @@ test('home product rows display legacy rings but retain alphabetical fallback wi
   assert.match(html, /TLL legacy score: 100 out of 100/)
   assert.doesNotMatch(html, /Effectiveness match 100|>Strong</)
 })
+
+test('capped cards retain late caffeine and expose a named, 32px full-label link', () => {
+ const nutrients = ['Creatine', 'Citrulline', 'Beta alanine', 'Caffeine', 'Salt'].map(nutrient_name => ({ nutrient_name, amount: 250, unit: 'mg' }))
+ const p = make({ nutrients }), f = fixture([p])
+ const html = f.html('app/products/ProductGrid.tsx', { initialProducts: [p] })
+ assert.equal((html.match(/<dt>/g) || []).length, 3)
+ assert.match(html, /<dt>Caffeine<\/dt>/)
+ assert.match(html, /Above EFSA single-dose guidance/)
+ assert.doesNotMatch(html, /<dt>Beta alanine<\/dt>/)
+ assert.match(html, /min-h-8/)
+ assert.match(html, /aria-label="View 2 more label rows for Fixture Research formula"/)
+ const ring = f.html('components/ShopScoreBadge.tsx', { product: make({ score: 80 }) })
+ assert.match(ring, /role="img"[^>]*aria-label="TLL legacy score: 80 out of 100"/)
+})
+
+test('product metadata describes the displayed legacy score without approval claims', async () => {
+ const f = fixture([make({ score: 80 })])
+ const meta = await f.load('app/products/[id]/page.tsx').generateMetadata({ params: Promise.resolve({ id: 'research' }) })
+ assert.match(meta.description, /legacy score 80\/100/)
+ assert.match(meta.description, /not an approved effectiveness or dosing assessment/)
+ assert.doesNotMatch(meta.description, /not assessed/i)
+})

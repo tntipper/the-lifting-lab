@@ -135,10 +135,10 @@ test('mock Phase 2 rejects live checkout and provider errors without retry', asy
     await assert.rejects(sf.createMockStackCheckout([item('1')], { async execute() { calls++; return response } }, now)); assert.equal(calls, 1)
   }
 })
-test('actual stack page keeps full-stack purchase Coming soon until the live cart hook is available', () => {
+for (const flag of [undefined, 'enabled']) test(`actual stack page restores flag-gated purchase: ${flag}`, () => {
   const rows = ['1', '2', '3'].map(id => ({ ...item(id), name: `Fixture ${id}`, brand: 'Fixture', category: 'creatine', serving_size: 5, serving_unit: 'g', buy_url: null, product_nutrients: [] }))
   let hook = 0
-  const local = modules(enabled, {
+  const local = modules({ NEXT_PUBLIC_TLL_STACK_CART: flag }, {
     react: { ...React, useState(initial) {
       const index = hook++
       return React.useState(index === 0 ? rows.map(p => ({ id: p.id, products: p, servings_per_day: 3 })) : index === 4 ? false : index === 11 ? rows : initial)
@@ -147,8 +147,13 @@ test('actual stack page keeps full-stack purchase Coming soon until the live car
     '@/components/CombinedDosePanel': { __esModule: true, default: () => null },
   })
   const rendered = renderToStaticMarkup(React.createElement(local('app/stack/StackBuilder.tsx').default))
-  assert.match(rendered, /disabled="">Buy my stack · Coming soon/)
-  assert.doesNotMatch(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\//)
+  if (flag === 'enabled') {
+    assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1,3:1\?/)
+    assert.doesNotMatch(rendered, /Coming soon/)
+  } else {
+    assert.match(rendered, /disabled="">Buy my stack · Coming soon/)
+    assert.doesNotMatch(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\//)
+  }
   assert.doesNotMatch(rendered, /sign.in|login/i)
 })
 

@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase-public'
 import { categoryLabel } from '@/lib/categories'
-import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import { claimsReviewFor } from '@/lib/claims-review'
 import { getGuide } from '@/lib/guides'
 import { fetchProductDetail, fetchCategory } from '@/lib/product-data'
@@ -51,14 +51,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await fetchProductDetail(id)
   if (!product) return { title: 'Product Not Found | The Lifting Lab' }
 
-  const score = product.score
+  const assessment = assessmentDisplayFor(product)
   const cat = categoryLabel(product.category)
   const title = `${product.brand} ${product.name} Score & Review | The Lifting Lab`
   const review = claimsReviewFor(product.category)
   const description = review
     ? `${product.brand} ${product.name}. ${review.title}. Existing category scores are not validated health-benefit assessments.`
-    : hasApprovedAssessment(product)
-    ? `${product.brand} ${product.name} scores ${score}/100 on our Effectiveness Match ${cat.toLowerCase()} rating. Dose-for-dose analysis vs EFSA reference values.`
+    : assessment.score !== null
+    ? `${product.brand} ${product.name} — legacy score ${assessment.score}/100. Scientific review is incomplete; this is not an approved effectiveness or dosing assessment.`
     : `${product.brand} ${product.name} — not assessed. Browse ${cat.toLowerCase()} label information from The Lifting Lab.`
 
   return {

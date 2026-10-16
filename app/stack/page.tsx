@@ -1,4 +1,5 @@
 import { isSyntheticPreview } from '@/lib/preview-mode'
+import { StackAccountNavigation } from '@/components/AccountNavigation'
 import StackBuilder from './StackBuilder'
 import TopNav from '@/components/TopNav'
 
@@ -11,6 +12,7 @@ export default function StackPage() {
           Local design preview: your stack is stored only in this browser. Accounts and purchases remain disabled.
         </div>}
         <StackBuilder />
+        {!isSyntheticPreview() && <StackAccountNavigation />}
         <p className="mt-8 border-t border-lab-border pt-5 text-xs text-lab-muted">For informational purposes only. Not medical advice.</p>
       </main>
     </div>

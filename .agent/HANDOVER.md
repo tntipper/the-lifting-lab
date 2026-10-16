@@ -1,3 +1,16 @@
+**16 October review3 SHOULD-FIX 1–5 — grok/guides-footer-fix; HEAD 315622d; working tree only:**
+- First-visit consent uses a fixed bottom banner portalled outside footer; footer control opens only on click.
+- Score rings expose role=img and labels; capped cards retain caffeine/advisory; +N links have 32px minimum and product names.
+- Restored flag-enabled BuyMyStack cart permalinks; disabled Coming soon only with flag off; daily doses stay separate from pack quantities.
+- Restored signed-in account navigation below builder using resolved browser identity, preserving auth-independent /stack rendering.
+- Product metadata describes displayed legacy scores with review caveat; removed unused state.error effect dependency.
+- Clarified the three prior notes were committed in 315622d; their original historical evidence is preserved below.
+- PASS 328 focused tests, tsc --noEmit, lint (0 errors/20 warnings), diff check; updated browser fixture, Chrome launch exits in sandbox.
+- Hosted CI/browser QA remain unverified; related PR lookup unavailable (gh unsigned). SHOULD-FIX 6 and other nits outside requested scope.
+- No commit/push/deploy; existing g-run*.sh untouched. Next: review working diff and run hosted/browser checks.
+
+**History correction (16 October):** The three H/I, E/F/G and catalogue notes below describe pre-commit checks; their changes were subsequently committed in 315622d. Their “working tree only”, HEAD and “unchanged” statements are historical, not current status.
+
 **16 October H/I stack production fallback + shared header — grok/guides-footer-fix; working tree only:**
 - Preserved all incoming edits/run scripts; HEAD 5e4ec86/base origin/main 3b3c507 unchanged; no commit/push/deploy.
 - Removed TopNav route-specific compact header; /stack no longer requires server auth/env to render; browser nav tolerates absent config.

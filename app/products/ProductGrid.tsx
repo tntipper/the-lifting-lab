@@ -342,7 +342,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <dd className="m-0 text-right font-medium text-[var(--ink)]">{assessment.label}</dd>
               </dl>
 
-              <ServingLabel nutrients={nutrients} maxRows={3} productHref={`/products/${product.id}`} />
+              <ServingLabel nutrients={nutrients} maxRows={3} productName={`${product.brand} ${product.name}`} productHref={`/products/${product.id}`} />
 
               {reviews && reviews.count > 0 && (
                 <div className="space-y-1 border-t border-lab-border pt-3">

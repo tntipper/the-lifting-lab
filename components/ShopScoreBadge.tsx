@@ -10,7 +10,7 @@ export default function ShopScoreBadge({ product }: {
   const score = assessment.score
   const band = score == null ? 'unassessed' : score >= 70 ? 'high' : score >= 50 ? 'mid' : 'low'
   const circumference = 2 * Math.PI * 24
-  return <span className={`${styles.score} ${score == null ? 'text-lab-muted' : styles.scoreRing}`} data-band={band} data-assessment={assessment.state} title={assessment.explanation}
+  return <span role="img" className={`${styles.score} ${score == null ? 'text-lab-muted' : styles.scoreRing}`} data-band={band} data-assessment={assessment.state} title={assessment.explanation}
     aria-label={score == null ? assessment.label : `TLL legacy score: ${score} out of 100`}>
     {score == null ? assessment.label : <>
       <svg aria-hidden="true" width="64" height="64" viewBox="0 0 64 64">

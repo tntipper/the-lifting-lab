@@ -8,10 +8,10 @@ import { catalogueAssessment, summariseStackAssessments, assessmentText, stackRe
 import { scoreFor } from '@/lib/scores'
 import { DEFAULT_STORE_BUY_LINK_MODE, resolveProductOffer } from '@/lib/affiliate'
 import type { StoreLinkMapping } from '@/lib/commerce/product-mapping'
-import StackPurchaseButton from '@/components/StackPurchaseButton'
+import BuyMyStack from '@/components/BuyMyStack'
 import SharedStack from '@/components/SharedStack'
 import { shareStackPath } from '@/lib/commerce/stack-share'
-import { type StackCartItem } from '@/lib/commerce/stack-cart'
+import { stackCartEnabled, type StackCartItem } from '@/lib/commerce/stack-cart'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { StagingCartAdd } from '@/components/StagingCartActions'
 import { analysisServings, validStackServings } from '@/lib/stack-sync'
@@ -203,7 +203,7 @@ function SavedStackBuilder() {
     if (!pendingSwap || state.busy || !stack.some(product => product.id === pendingSwap.next)) return
     remove(pendingSwap.previous)
     setPendingSwap(null)
-  }, [pendingSwap, state.busy, state.error, stack, remove])
+  }, [pendingSwap, state.busy, stack, remove])
 
   // Restore only into an empty guest stack. The existing provider owns account
   // membership and serving amounts; this bookmark must never overwrite those.
@@ -517,9 +517,10 @@ function SavedStackBuilder() {
 
       <div className="stack-buybar tll-on-dark">
         <div className="stack-row"><div><b className="stack-mono">{stack.length} products · 30 days</b><p>Daily serving estimate: {loading ? '—' : money(stackDailyCost === null ? null : stackDailyCost * 30)} a month</p></div>
-          <StackPurchaseButton productIds={cartProducts.filter(product => stackProductIds.has(product.id)).map(product => product.id)} ready={!loading && !detailsError && cartProducts.length === stack.length && cartProducts.every(product => stackProductIds.has(product.id))} />
+          {!stackCartEnabled() && <button type="button" disabled>Buy my stack · Coming soon</button>}
+          <BuyMyStack items={cartProducts.filter(product => stackProductIds.has(product.id)).map(product => ({ ...product, quantity: 1 }))} ready={!loading && !detailsError && cartProducts.length === stack.length && cartProducts.every(product => stackProductIds.has(product.id))} />
         </div>
-        {(loading || !stack.length) && <p>{loading ? 'Loading store availability…' : 'Add products to check store availability.'}</p>}
+        {stackCartEnabled() && (loading || !stack.length) && <p>{loading ? 'Loading store availability…' : 'Add products to check store availability.'}</p>}
       </div>
 
       {showShare && <section id="stack-share" className="stack-share" aria-labelledby="stack-share-title">
