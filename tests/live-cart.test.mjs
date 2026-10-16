@@ -156,7 +156,12 @@ test('flag off and isolated modes retain identical pre-live resolver and rendere
     for (const product of products) {
       assert.equal(JSON.stringify(load('lib/affiliate.ts', { ...base, NEXT_PUBLIC_TLL_LIVE_CART: 'disabled' }).resolveProductOffer(product)), JSON.stringify(original.resolveProductOffer(product)))
       assert.equal(render(base, product), render({ ...base, NEXT_PUBLIC_TLL_LIVE_CART: 'disabled' }, product))
-      if (!product.storeLinkMapping && !product.buy_url?.includes('shop.')) assert.equal(render(base, product), render({ ...base, NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }, product))
+      if (!product.storeLinkMapping && !product.buy_url?.includes('shop.')) {
+        const live = render({ ...base, NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }, product)
+        // Live mode constrains the caption; destination and visible copy remain the same.
+        assert.equal(live.replace(/<[^>]*>/g, ''), render(base, product).replace(/<[^>]*>/g, ''))
+        assert.equal(live.match(/href="[^"]*"/)?.[0], render(base, product).match(/href="[^"]*"/)?.[0])
+      }
       for (const isolated of ['staging', 'synthetic-preview']) {
         const flags = { ...base, NEXT_PUBLIC_TLL_ENVIRONMENT: isolated }
         assert.equal(render(flags, product), render({ ...flags, NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }, product))
@@ -256,5 +261,20 @@ test('compact offers navigate to the exact variant without a basket control; fla
       assert.doesNotMatch(render(true), /<select|<button|data-live-offer-shell/)
       assert.match(render(true), />Buy at TLL Store<\/a>/)
     }
+  }
+})
+
+test('live affiliate actions reserve 44px and truncate the unchanged caption with its full title, including legacy stock', () => {
+  const urls = ['https://www.amazon.co.uk/dp/B000000001', 'https://www.myprotein.com/sports-nutrition/fixture/12345.html', 'https://www.bulk.com/uk/products/fixture/fixture']
+  const Component = load('components/ProductOfferLink.tsx', { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }).default
+  for (const buy_url of urls) for (const stock of [undefined, item().storePrice]) {
+    const product = { id: '1', brand: 'Fixture', name: 'Item', buy_url, storePrice: stock }
+    const html = renderToStaticMarkup(React.createElement(Component, { product }))
+    assert.match(html, /height:44px;min-height:44px;flex-shrink:0/)
+    assert.match(html, /h-4 truncate leading-4/)
+    const caption = 'Unverified listing · check pack and price · affiliate link'
+    assert.ok(html.includes(`title="${stock ? 'In stock at TLL Store · ' : ''}${caption}"`))
+    assert.ok(html.includes(caption))
+    assert.equal((html.match(/In stock at TLL Store/g) ?? []).length, stock ? 2 : 0, 'stock is present in the one visible caption and its title only')
   }
 })

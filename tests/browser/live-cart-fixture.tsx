@@ -21,6 +21,15 @@ const choices = [product('family', '1001'), product('family', '1002'), product('
   variantId: p.storeLinkMapping.shopifyVariantId, mapping: p.storeLinkMapping, storePrice: p.storePrice,
   handle: 'fixture', label: ['Vanilla · 300 g', 'Chocolate · 300 g', 'Strawberry · 300 g'][i], flavour: null, packLabel: '300 g',
 }))
+const affiliateProducts = [
+  'https://www.amazon.co.uk/dp/B000000001',
+  'https://www.myprotein.com/sports-nutrition/fixture/12345.html',
+  'https://www.bulk.com/uk/products/fixture/fixture',
+].map((buy_url, i) => ({
+  ...product(String(7 + i)), storeLinkMapping: undefined,
+  // Include legacy stock on one affiliate card as well as caption-only cards.
+  storePrice: i === 0 ? product('7').storePrice : undefined, buy_url,
+}))
 export function Fixture({ pathname = '/' }: { pathname?: string }) {
   const [selectedId, setSelectedId] = useState('1001')
   const selected = choices.find(choice => choice.variantId === selectedId)!
@@ -38,7 +47,7 @@ export function Fixture({ pathname = '/' }: { pathname?: string }) {
           <span>Fixture</span><ProductOfferLink compact product={product('compact', '4001')} className="rounded-lg bg-black text-sm text-white" />
         </div>)}
       </section>
-      <ProductGrid initialProducts={[product('1', '3001'), product('2', '3002'), product('3', '3003', false), { ...product('4', '3004'), storePrice: undefined }, { ...product('5'), storePrice: undefined, storeLinkMapping: undefined, buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }, { ...product('6'), storePrice: undefined, storeLinkMapping: undefined, buy_url: null }] as unknown as ScoredProduct[]} />
+      <ProductGrid initialProducts={[product('1', '3001'), product('2', '3002'), product('3', '3003', false), { ...product('4', '3004'), storePrice: undefined }, { ...product('5'), storePrice: undefined, storeLinkMapping: undefined, buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }, { ...product('6'), storePrice: undefined, storeLinkMapping: undefined, buy_url: null }, ...affiliateProducts] as unknown as ScoredProduct[]} />
     </>}
   </main></>
 }

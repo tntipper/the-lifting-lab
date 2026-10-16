@@ -350,7 +350,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               )}
 
               <div className={`${styles.cardActions} flex flex-col gap-3`}>
-                {liveCartEnabled() ? <div className="h-16 min-w-0">{offer}</div> : offer}
+                {liveCartEnabled() ? <div className="h-16 min-w-0" data-live-action-slot>{offer}</div> : offer}
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-[var(--ink)]'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>

@@ -68,6 +68,8 @@ try {
     const staticPage = await staticContext.newPage()
     const staticDimensions = () => staticPage.locator('article[data-product-id]').evaluateAll(cards => cards.map(card => ({ id: card.dataset.productId, width: card.getBoundingClientRect().width, height: card.getBoundingClientRect().height })))
     await staticPage.goto(origin)
+    const slotsFit = target => target.locator('[data-live-action-slot]').evaluateAll(slots => slots.length > 0 && slots.every(slot => slot.clientHeight === 64 && slot.scrollHeight <= slot.clientHeight))
+    assert.equal(await slotsFit(staticPage), true, `all server action slots fit at ${width}`)
     const serverLive = await staticDimensions()
     const equalCards = cards => cards.every(card => Math.abs(card.width - cards[0].width) < 0.5 && Math.abs(card.height - cards[0].height) < 0.5)
     assert.equal(equalCards(serverLive), true, `all server live cards equal at ${width} ${JSON.stringify(serverLive)}`)
@@ -81,6 +83,8 @@ try {
       assert.equal(await linkCard.getByRole('button', { name: 'Add to basket', exact: true }).count(), 0)
       await linkCard.getByRole('link', { name: /Buy at TLL Store for/ }).waitFor()
     }
+    for (const id of ['7', '8', '9']) await page.locator(`article[data-product-id="${id}"]`).getByRole('link', { name: /View listing at/ }).waitFor()
+    assert.equal(await slotsFit(page), true, `all mounted action slots fit at ${width}`)
     const after = await dimensions()
     assert.equal(equalCards(after), true, `all mounted live cards equal at ${width}`)
     assert.deepEqual(after, serverLive, `live dimensions equal before/after hydration at ${width}`)
@@ -143,7 +147,7 @@ try {
     await page.evaluate(() => localStorage.setItem('tll.live-basket.v1', '{broken'))
     await page.reload(); await page.getByText('Your basket is empty.', { exact: true }).waitFor()
     assert.deepEqual(cartApi, []); assert.deepEqual(external, []); assert.deepEqual(errors, [])
-    results.push({ width, liveCardsEqual: true, minimumActionHeight: 44, preHydrationDimensionsUnchanged: true, compactLinksFit: true, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
+    results.push({ width, liveCardsEqual: true, minimumActionHeight: 44, preHydrationDimensionsUnchanged: true, compactLinksFit: true, actionSlotsFit: true, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
     await context.close()
   }
   await writeFile(resolve(dir, 'results.json'), JSON.stringify(results, null, 2))

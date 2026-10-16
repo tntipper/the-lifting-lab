@@ -39,7 +39,7 @@ export function resolveProductOffer(product: { id?: string; buy_url: string | nu
   return resolveLegacyProductOffer(product, mode, campaign)
 }
 
-/** Existing flag-off routing, also used to preserve the original action area's dimensions. */
+/** Existing flag-off routing for legacy retailer and store links. */
 export function resolveLegacyProductOffer(product: Parameters<typeof resolveProductOffer>[0], mode: StoreBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, campaign: StoreAttributionCampaign = 'product'): ProductListing {
   if (!isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled') {
     const now = Date.now()

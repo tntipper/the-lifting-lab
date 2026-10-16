@@ -70,17 +70,21 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
     }
     const search = listing.state === 'search_only'
     const store = listing.relationship === 'own_shop'
+    const fixedSlot = liveMode && !compact
+    const stockText = !pickerOwnsStatus && stock ? (stock === 'out_of_stock' ? 'Out of stock at TLL Store' : stock === 'unavailable' ? 'TLL Store price and stock unavailable' : 'In stock at TLL Store') : null
+    const caption = store ? product.storePrice ? 'In stock · price and stock checked within 15 minutes' : 'Check pack, price and stock at TLL Store' : search ? 'Search results · affiliate link' : 'Unverified listing · check pack and price · affiliate link'
     return (<span className="flex min-w-0 flex-col justify-center gap-1" data-offer-state={listing.state}>
-      {!pickerOwnsStatus && stock && <span className="text-center text-[10px] text-lab-muted">{stock === 'out_of_stock' ? 'Out of stock at TLL Store' : stock === 'unavailable' ? 'TLL Store price and stock unavailable' : 'In stock at TLL Store'}</span>}
+      {!fixedSlot && stockText && <span className="text-center text-[10px] text-lab-muted">{stockText}</span>}
       <a href={listing.url} target="_blank" rel={store ? 'noopener noreferrer' : 'noopener noreferrer nofollow sponsored'}
         className={`${className ?? ''} flex min-h-11 items-center justify-center px-2 text-center break-words`}
-        style={style}
+        style={fixedSlot ? { ...style, height: 44, minHeight: 44, flexShrink: 0, paddingTop: 0, paddingBottom: 0 } : style}
         aria-label={`${store ? 'Buy at' : search ? 'Search' : 'View listing at'} ${listing.retailer} for ${product.brand} ${product.name} (opens in a new tab)`}
         onClick={() => track('retailer_listing_click', { retailer: listing.retailer ?? undefined, destination_state: listing.state })}>
         {store ? (!liveCartEnabled() && storeBuyLinkMode === 'cart' && product.storePrice?.availableForSale === true ? storeActionLabel ?? 'Buy at TLL Store' : 'Buy at TLL Store') : search ? 'Search retailer ↗' : 'View retailer ↗'}
       </a>
-      <span className="text-center text-[9px] leading-tight text-lab-muted">
-        {store ? product.storePrice ? 'In stock · price and stock checked within 15 minutes' : 'Check pack, price and stock at TLL Store' : search ? 'Search results · affiliate link' : 'Unverified listing · check pack and price · affiliate link'}
+      <span className={`text-center text-[9px] text-lab-muted ${fixedSlot ? 'h-4 truncate leading-4' : 'leading-tight'}`}
+        title={fixedSlot ? [stockText, caption].filter(Boolean).join(' · ') : undefined}>
+        {fixedSlot && stockText && <span>{stockText}{' · '}</span>}{caption}
       </span>
     </span>)
   }

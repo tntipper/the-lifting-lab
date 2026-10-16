@@ -293,16 +293,31 @@ test('Toby decision: per-flavour pages are deleted, not redirected; one product 
   assert.doesNotMatch(source('app/products/[id]/page.tsx'), /permanentRedirect|redirect\(/)
 })
 
-test('live detail projects selected mapping without price data before and after URL selection', async () => {
+test('live detail withholds mapping until URL selection is applied', async () => {
   const env = { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }
   const product = await choices(), harness = detailHarness(product, env)
   const resolve = modules(env)('lib/affiliate.ts').resolveProductOffer
   const first = harness.render().offer.props.product
   assert.equal(first.storePrice, undefined)
-  assert.match(resolve(first).url, /products\/fixture-vanilla\?variant=90071992547409931234&/)
+  assert.equal(first.storeLinkMapping, null)
+  assert.doesNotMatch(resolve(first).url ?? '', /variant=|\/cart\//)
   harness.browser.location.search = '?variant=3'
   harness.mount()
   const selected = harness.render().offer.props.product
   assert.equal(selected.storeLinkMapping.shopifyVariantId.split('/').at(-1), '3')
   assert.match(resolve(selected).url, /\?variant=3&/)
 })
+
+for (const environment of ['production', 'staging', 'synthetic-preview']) {
+  test(`detail cannot add the default before applying variant query in ${environment}`, async () => {
+    const env = { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled', NEXT_PUBLIC_TLL_ENVIRONMENT: environment }
+    const harness = detailHarness(await priced(), env)
+    const eligible = modules(env)('lib/commerce/live-basket.ts').liveBasketEligible
+    harness.browser.location.search = '?variant=3'
+    assert.equal(eligible(harness.render().offer.props.product, now), false)
+    harness.mount()
+    const selected = harness.render().offer.props.product
+    assert.equal(selected.storeLinkMapping.shopifyVariantId.split('/').at(-1), '3')
+    assert.equal(eligible(selected, now), true)
+  })
+}

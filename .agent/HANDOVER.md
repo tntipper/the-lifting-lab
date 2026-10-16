@@ -1,10 +1,20 @@
+**16 October live-cart Round 7 — grok/live-cart; base 547c12b; local only:**
+- Changed components/ProductOfferLink.tsx: 44px affiliate action + truncated caption/title within the existing 64px slot, including legacy stock; copy and tile dimensions unchanged.
+- Changed app/products/ProductGrid.tsx (slot test marker), app/products/[id]/ProductDetailPage.tsx (withhold mapping until URL selection), lib/affiliate.ts (stale comment).
+- Changed tests/live-cart.test.mjs, tests/variant-picker.test.mjs, tests/browser/live-cart-fixture.tsx and tests/browser/live-cart.mjs; Amazon/Myprotein/Bulk fixtures and every-slot scrollHeight<=clientHeight checks at six widths, SSR + mounted.
+- PASS typecheck, lint (0 errors/21 existing warnings), 111 focused tests; live boundary and both manifest checks PASS; git diff --check PASS. Hosted CI unrun.
+- Final npm test: 4,106 pass / 28 fail / 8 skip; repeated existing EPERM loopback/ps/Chromium, Python temp-dir and Docker/Postgres limits. Rerun in an unrestricted local test environment; no unrelated fixes attempted.
+- Browser SSR fixtures PASS; Chromium MachPortRendezvousServer bootstrap_check_in permission denied before layout. New six-width run and actual /compare + /stack screenshots remain unverified before flag enablement.
+- Corrected Round 6 below: operator ran its six-width checks at 547c12b and they passed. Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; existing mapping/price requirements remain in Round 4.
+- No external network actions, env/Vercel/Shopify changes or push. git add/commit both blocked creating .git/worktrees/wt-cart/index.lock: Operation not permitted; changes remain unstaged. Next: commit outside sandbox with message "fix: contain live affiliate actions and await variant selection", then browser checks/screenshots.
+
 **16 October live-cart Round 6 — grok/live-cart; continued from 7319bd0; local only:**
 - Changed ProductOfferLink/LiveBasket/ProductGrid: fixed 64px live action space for every card, 44px controls, single stock/status row outside the button.
 - Removed hidden sizing offers; one offer-state per card; restored product/new-tab aria-label on live store links; stale refresh guidance retained.
 - Cheapest, best, StackBuilder and CompareTable use compact live product/variant links without quantity selectors; flag-off and unsold offer paths retained.
 - Extended live-cart unit/browser fixtures: equal cards at six widths, 44px actions, server/mounted equality, link-only/unavailable/unsold cards and compact links.
 - PASS typecheck, lint (0 errors/21 existing warnings), 229 focused tests incl. preview-mode, mapping loader, routing, prices and variant picker; boundary/manifests PASS.
-- Browser SSR fixtures PASS; Chromium startup twice denied MachPort bootstrap permission, before layout/screenshots. Operator must rerun six-width checks; hosted CI unrun.
+- Browser SSR fixtures PASS; Chromium startup twice denied MachPort bootstrap permission, before layout/screenshots. Operator subsequently ran the six-width checks at 547c12b: PASS; hosted CI unrun.
 - Operator confirmed the previous 7319bd0 browser checks passed; commits dea270a through 7319bd0 were made by the operator; corrected Round 5 records below.
 - Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; mapping/live-price env requirements are in Round 4. No network/env/Shopify/Vercel changes or push.
 
