@@ -72,7 +72,7 @@ try {
     await selected.getByRole('combobox', { name: /Pack quantity/ }).selectOption('3')
     await selected.getByRole('button', { name: 'Add to basket', exact: true }).click()
     await page.getByRole('link', { name: 'Basket, 3 items', exact: true }).waitFor()
-    assert.equal(await selected.getByRole('status').evaluate(el => el.scrollWidth > el.clientWidth && getComputedStyle(el).textOverflow !== 'ellipsis'), false)
+    assert.equal(await selected.getByRole('status', { name: 'Added to basket' }).evaluate(el => el.scrollWidth > el.clientWidth && getComputedStyle(el).textOverflow !== 'ellipsis'), false)
     assert.deepEqual(await dimensions(), after, `status preserves tile dimensions at ${width}`)
     await selected.getByLabel('Flavour / size', { exact: true }).selectOption('1003')
     assert.equal(await selected.getByRole('button').count(), 0)
