@@ -92,7 +92,7 @@ test('?size selection defaults safely and URL changes preserve attribution and h
 })
 test('option price and servings follow selection, single-bar never inherits parent Buy', () => {
   const pack = sizes.productForSize(product, product.sizeOptions[0])
-  assert.equal(pack.retail_price, 23.99); assert.equal(pack.servings_per_container, 12)
+  assert.equal(pack.retail_price, null); assert.equal(pack.cost_per_serving, null); assert.equal(pack.servings_per_container, 12)
   assert.equal(pack.storeLinkMapping, mapping)
   const packHtml = renderToStaticMarkup(React.createElement(load('components/ProductOfferLink.tsx').default, { product: pack }))
   assert.match(packHtml, /Buy at TLL Store/)
@@ -112,7 +112,8 @@ test('matching variant price is used; a missing observation never borrows a diff
   const p = { ...product, storePrice: observed, storeVariants: [{ mapping, storePrice: { ...observed, price: 24 } }] }
   assert.equal(sizes.productForSize(p, p.sizeOptions[0]).retail_price, 24)
   p.storeVariants[0].storePrice = undefined
-  assert.equal(sizes.productForSize(p, p.sizeOptions[0]).retail_price, 23.99)
+  assert.equal(sizes.productForSize(p, p.sizeOptions[0]).retail_price, null)
+  assert.equal(sizes.productForSize(p, p.sizeOptions[0]).cost_per_serving, null)
 })
 function detailHarness(product) {
   let state = [], cursor = 0, effects = [], mounted = false
@@ -152,7 +153,8 @@ test('actual detail mount preselects ?size and native change updates price, serv
   view.select.props.onChange({ target: { value: '12-pack' } })
   view = harness.render()
   assert.equal(view.offer.props.product.servings_per_container, 12)
-  assert.equal(view.offer.props.product.retail_price, 23.99)
+  assert.equal(view.offer.props.product.retail_price, null)
+  assert.equal(view.offer.props.product.cost_per_serving, null)
   assert.equal(view.offer.props.product.storeLinkMapping, mapping)
   assert.equal(new URL(harness.browser.location.href).searchParams.get('size'), '12-pack')
 })

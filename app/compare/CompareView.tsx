@@ -1,5 +1,6 @@
 'use client'
 
+import { displayPrice } from '@/lib/commerce/display-price'
 import { useEffect } from 'react'
 import Link from 'next/link'
 import ProductAssessment from '@/components/ProductAssessment'
@@ -36,7 +37,7 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
   }
 
   const costs = products.map((product) => product.cost_per_serving).filter(finitePositive)
-  const prices = products.map((product) => product.retail_price).filter(finitePositive)
+  const prices = products.map(displayPrice).filter(finitePositive)
   const servings = products.map((product) => product.servings_per_container).filter(finitePositive)
   const lowestCost = costs.length ? Math.min(...costs) : null
   const lowestPrice = prices.length ? Math.min(...prices) : null
@@ -117,9 +118,10 @@ export default function CompareView({ products }: { products: ComparedProduct[] 
               product.cost_per_serving != null ? <Metric value={formatListedServingPrice(product.cost_per_serving)} tag={product.cost_per_serving === lowestCost ? 'Lowest' : undefined} />
                 : <span title={trueCostReason(product) ?? undefined}>Not listed</span>
             )} />
-            <CompareRow label="Pack price" products={products} render={(product) => (
-              product.retail_price != null ? <Metric value={`£${product.retail_price.toFixed(2)}`} tag={product.retail_price === lowestPrice ? 'Lowest' : undefined} /> : 'Not listed'
-            )} />
+            <CompareRow label="Pack price" products={products} render={(product) => {
+              const price = displayPrice(product)
+              return price !== null ? <Metric value={`£${price.toFixed(2)}`} tag={price === lowestPrice ? 'Lowest' : undefined} /> : 'Not listed'
+            }} />
             <CompareRow label="Servings" products={products} render={(product) => (
               product.servings_per_container != null ? <Metric value={String(product.servings_per_container)} tag={product.servings_per_container === highestServings ? 'Highest' : undefined} /> : 'Not listed'
             )} />

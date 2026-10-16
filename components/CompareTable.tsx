@@ -1,5 +1,6 @@
 'use client'
 
+import { displayPrice } from '@/lib/commerce/display-price'
 import type { ReactNode } from 'react'
 import type { ScoredProduct } from '@/lib/products'
 import ProductAssessment from './ProductAssessment'
@@ -19,7 +20,7 @@ export default function CompareTable({ products, onRemove }: { products: ScoredP
     <thead><tr><th scope="col">Product</th>{items.map(product => <th scope="col" key={product.id}><div className="shop-column-heading"><span className="shop-eyebrow">{product.brand}</span><span>{product.name}</span><ProductAssessment product={product} /><ProductOfferLink product={product} className="shop-primary" /><button type="button" onClick={() => onRemove(product.id)} aria-label={`Remove ${product.name} from comparison`}>Remove</button></div></th>)}</tr></thead>
     <tbody>
       <tr className="shop-table-group"><th colSpan={items.length + 1}>Price</th></tr>
-      {row('Recorded pack price', items.map(p => p.retail_price), true)}
+      {row('Recorded pack price', items.map(displayPrice), true)}
       {row('Servings', items.map(p => p.servings_per_container))}
       {row('Serving size', items.map(p => p.serving_size == null ? null : `${p.serving_size} ${p.serving_unit ?? ''}`))}
       {row('Listed price per serving', items.map(p => p.cost_per_serving), true)}

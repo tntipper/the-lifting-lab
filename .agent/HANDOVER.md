@@ -1,3 +1,32 @@
+**16 October vs reviewer build follow-up — grok/store-offer-price-fix; start 722e42e; local only:**
+- getMatchup now calls unstable_rethrow(error) before its null fallback, matching product-data.ts.
+- display-price uses @/lib/products; typecheck passes. Refreshed only the manifest source-tree hash.
+- PASS npm run lint (0 errors/21 existing warnings), npx tsc --noEmit; 79 requested + 8 manifest tests.
+- PASS NEXT_PUBLIC_TLL_STORE_LINKS=enabled npm run build; /vs and /vs/[matchup] included.
+- Supabase URL/anon key absent: no concrete matchup paths generated; data-dependent connection() path unverified.
+- PASS git diff --check; hosted CI unrun; PR lookup unavailable (gh unsigned).
+- Next: review commit; build with configured catalogue to verify real matchup rendering. No push/deploy/live writes.
+
+**16 October reviewer follow-up — grok/store-offer-price-fix; on top of 8c41ce5; local only:**
+- withScore and price sorting use displayPrice; unpriced mapped offers have null serving cost and sort last.
+- Both comparison tables, versus loader/table and detail size/variant projections prevent retail fallback.
+- Confirmed existing catalogue/API loaders attach storePrice before scoring; prices-on loader tests pass unchanged.
+- Added links-on/prices-off serving/table/sort/detail regressions; updated three size tests that expected fallback.
+- PASS 79 focused display/size tests + 35 Storefront tests; lint (0 errors/21 existing warnings), tsc, diff check.
+- Final npm test: 4104 pass / 8 skip / 1 known Gen23 offline PG-fixture failure (KILLED != EXITED); CI unrun.
+- Refreshed manifest hash only; no brand copy/grid CSS changes. First full run's stale size assertions fixed.
+- Next: review local commit; no push/PR/deploy/live writes. PR lookup unavailable (gh unsigned).
+
+**16 October store-offer price fallback fix — grok/store-offer-price-fix; base bec2c50; local only:**
+- Added shared displayPrice/isStoreOffer/isUsablePrice; mapping/variant store offers cannot use retail pack prices.
+- Catalogue grid and home rows show TLL Store price / Not listed when Shopify price is absent or unusable.
+- Reused price validation in formatting and product calculations/sorting without changing their behaviour.
+- Added helper and rendered links-on/prices-off regressions; 62 focused tests PASS; copy/names/descriptions/grid CSS unchanged.
+- PASS npm run lint (0 errors/21 existing warnings), npx tsc --noEmit, git diff --check.
+- npm test: 4101 pass / 8 skip / 1 known Gen23 offline PG-fixture failure (KILLED != EXITED); hosted CI unrun.
+- Refreshed manifest source-tree count/hash for new commerce helper; no staging controls changed. Optional server sort deferred.
+- Next: review local commit; no push/PR/deploy/live writes. PR lookup unavailable (gh unsigned).
+
 **16 October shop-by-price and card pack prices — k-claude-design; start 25bfde5; Toby-approved; local only:**
 - Hero now says Shop by price and opens /products?sort=price (existing lowest-pack-price sort).
 - Catalogue and home cards explicitly prefer storePrice.price; missing store prices never fall back to retail_price.

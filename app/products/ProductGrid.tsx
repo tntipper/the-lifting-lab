@@ -21,6 +21,7 @@ import { createClient } from '@/lib/supabase'
 import { isSyntheticPreview } from '@/lib/preview-mode'
 import { track } from '@/lib/gtag'
 import { formatListedServingPrice, sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
+import { displayPrice, isStoreOffer, isUsablePrice } from '@/lib/commerce/display-price'
 import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
 
 const SORTS: { key: SortKey; label: string }[] = [
@@ -53,7 +54,7 @@ function UrlParamSync({ onParams }: { onParams: (params: UrlParams) => void }) {
 }
 
 function formatMoney(value: number | null) {
-  if (value == null || !Number.isFinite(value) || value <= 0) return 'Not listed'
+  if (!isUsablePrice(value)) return 'Not listed'
   return `£${value.toFixed(2)}`
 }
 
@@ -314,8 +315,8 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b>
                 </div>
                 <div className="min-w-0">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">{product.storePrice ? 'TLL Store price' : 'Listed price'}</span>
-                  <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{formatMoney(product.storePrice ? product.storePrice.price : product.retail_price)}</b>
+                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">{isStoreOffer(product) ? 'TLL Store price' : 'Listed price'}</span>
+                  <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{formatMoney(displayPrice(product))}</b>
                 </div>
               </div>
 

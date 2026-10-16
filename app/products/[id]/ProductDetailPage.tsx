@@ -1,4 +1,5 @@
 'use client'
+import { displayPrice, isStoreOffer } from '@/lib/commerce/display-price'
 import { formatListedServingPrice } from '@/lib/products'
 
 import { useEffect, useState } from 'react'
@@ -94,10 +95,11 @@ export default function ProductDetailPage({
   const baseProduct = size ? productForSize(originalProduct, size, sizeReady) : originalProduct
   const variantProduct = selected ? { ...baseProduct, storeVariants: undefined,
     storeLinkMapping: selectionReady ? selected.mapping : null, storePrice: selected.storePrice, buy_url: null,
-    retail_price: selected.storePrice ? selected.storePrice.price : baseProduct.retail_price,
+    retail_price: selected.storePrice?.price ?? null,
     // Catalogue serving counts do not establish the selected variant's pack servings.
     cost_per_serving: variants.length === 1 ? baseProduct.cost_per_serving : null } : baseProduct
   const product = sizeOwnsOffer ? baseProduct : variantProduct
+  const price = displayPrice(product)
   function changeSize(slug: string) {
     if (!sizes.some(option => option.slug === slug)) return
     setSizeSlug(slug)
@@ -181,7 +183,7 @@ export default function ProductDetailPage({
               )}
             </div>
             <p className="font-mono text-sm text-lab-muted">
-              {product.retail_price != null ? <span>£{product.retail_price.toFixed(2)} {product.storePrice ? 'at TLL Store' : 'retail'}</span> : <span>{product.storePrice ? 'TLL Store price unavailable' : 'Retail price —'}</span>}
+              {price !== null ? <span>£{price.toFixed(2)} {isStoreOffer(product) ? 'at TLL Store' : 'retail'}</span> : <span>{isStoreOffer(product) ? 'TLL Store price unavailable' : 'Retail price —'}</span>}
               <span className="mx-2">·</span>
               {product.cost_per_serving != null ? (
                 <span className="text-white font-bold">{formatListedServingPrice(product.cost_per_serving)} listed price / serving</span>
