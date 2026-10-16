@@ -1,5 +1,5 @@
 // Shared product types + score attachment for the browse/compare features.
-import { isUsablePrice } from './commerce/display-price'
+import { displayPrice, isUsablePrice } from '@/lib/commerce/display-price'
 import { scoreFor } from '@/lib/scores'
 import { hasPositiveServingCost, isRankingCandidate } from './assessment-display'
 import type { ProductSafety } from './commerce/product-warnings'
@@ -51,14 +51,15 @@ export type ComparedProduct = ScoredProduct & { nutrients: Nutrient[] }
 export const PRODUCT_COLUMNS =
   'id, name, brand, category, serving_size, serving_unit, servings_per_container, image_url, informed_sport, retail_price, buy_url, proprietary_blend, amino_spiked, protein_yield'
 
-export function withScore<T extends { brand: string; name: string; servings_per_container: number | null; retail_price: number | null }>(
+export function withScore<T extends { brand: string; name: string; servings_per_container: number | null; retail_price: number | null } & Pick<Product, 'storePrice' | 'storeLinkMapping' | 'storeVariants'>>(
   p: T,
 ): T & { score: number | null; cost_per_serving: number | null } {
   const score = scoreFor(p.brand, p.name)
+  const price = displayPrice(p)
   const cost_per_serving =
-    isUsablePrice(p.retail_price)
+    price !== null
       && typeof p.servings_per_container === 'number' && Number.isFinite(p.servings_per_container) && p.servings_per_container > 0
-      ? p.retail_price / p.servings_per_container
+      ? price / p.servings_per_container
       : null
   return { ...p, score, cost_per_serving: cost_per_serving !== null && Number.isFinite(cost_per_serving) && cost_per_serving > 0 ? cost_per_serving : null }
 }
@@ -83,7 +84,7 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
       return vb - va
     }
     if (sort === 'price') {
-      const price = (p: ScoredProduct) => isUsablePrice(p.retail_price) ? p.retail_price : Infinity
+      const price = (p: ScoredProduct) => displayPrice(p) ?? Infinity
       return price(a) - price(b) || a.name.localeCompare(b.name)
     }
     if (sort === 'budget') {

@@ -1,3 +1,5 @@
+import { displayPrice } from '@/lib/commerce/display-price'
+import { withStorePrices } from '@/lib/commerce/store-price-server'
 import { formatListedServingPrice } from '@/lib/products'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
@@ -43,7 +45,7 @@ async function getMatchup(matchup: string): Promise<[ComparedProduct, ComparedPr
 
     const pair = resolveMatchup(matchup, data as Product[])
     if (!pair) return null
-    const [a, b] = pair
+    const [a, b] = await withStorePrices(pair)
 
     const { data: nutrients } = await sb
       .from('product_nutrients')
@@ -282,9 +284,10 @@ export default async function MatchupPage({
           ))}
 
           <Cell head>Retail</Cell>
-          {products.map((p) => (
-            <Cell key={p.id}>{p.retail_price != null ? `£${p.retail_price.toFixed(2)}` : '—'}</Cell>
-          ))}
+          {products.map((p) => {
+            const price = displayPrice(p)
+            return <Cell key={p.id}>{price !== null ? `£${price.toFixed(2)}` : '—'}</Cell>
+          })}
 
           <Cell head>listed price / serving</Cell>
           {products.map((p) => (

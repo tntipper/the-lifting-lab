@@ -1,3 +1,13 @@
+**16 October reviewer follow-up — grok/store-offer-price-fix; on top of 8c41ce5; local only:**
+- withScore and price sorting use displayPrice; unpriced mapped offers have null serving cost and sort last.
+- Both comparison tables, versus loader/table and detail size/variant projections prevent retail fallback.
+- Confirmed existing catalogue/API loaders attach storePrice before scoring; prices-on loader tests pass unchanged.
+- Added links-on/prices-off serving/table/sort/detail regressions; updated three size tests that expected fallback.
+- PASS 79 focused display/size tests + 35 Storefront tests; lint (0 errors/21 existing warnings), tsc, diff check.
+- Final npm test: 4104 pass / 8 skip / 1 known Gen23 offline PG-fixture failure (KILLED != EXITED); CI unrun.
+- Refreshed manifest hash only; no brand copy/grid CSS changes. First full run's stale size assertions fixed.
+- Next: review local commit; no push/PR/deploy/live writes. PR lookup unavailable (gh unsigned).
+
 **16 October store-offer price fallback fix — grok/store-offer-price-fix; base bec2c50; local only:**
 - Added shared displayPrice/isStoreOffer/isUsablePrice; mapping/variant store offers cannot use retail pack prices.
 - Catalogue grid and home rows show TLL Store price / Not listed when Shopify price is absent or unusable.

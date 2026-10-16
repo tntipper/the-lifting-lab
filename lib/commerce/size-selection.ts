@@ -1,3 +1,4 @@
+import { displayPrice } from '@/lib/commerce/display-price'
 import type { ComparedProduct, Nutrient } from '../products'
 import { canonicalShopifyId } from './product-mapping'
 
@@ -27,7 +28,7 @@ export function productForSize(product: ComparedProduct, option: ProductSizeOpti
   const variant = id ? product.storeVariants?.find(v => canonicalShopifyId(v.mapping.shopifyVariantId, 'ProductVariant') === id) : undefined
   const mapping = variant?.mapping ?? (id && canonicalShopifyId(product.storeLinkMapping?.shopifyVariantId, 'ProductVariant') === id ? product.storeLinkMapping : null)
   const price = variant ? variant.storePrice : mapping ? product.storePrice : undefined
-  const retail = price ? price.price : option.retail_price
+  const retail = displayPrice({ retail_price: option.retail_price, storeLinkMapping: mapping, storePrice: price })
   return { ...product,
     serving_size: option.serving_size, serving_unit: option.serving_unit,
     servings_per_container: option.servings_per_container, buy_url: option.buy_url,

@@ -463,13 +463,15 @@ test('stack renders vitamin C guidance and iron safe level in totals and caution
 })
 
 
-for (const source of ['mapping', 'variants']) test(`links enabled / prices off: ${source} never displays retail pack price`, () => {
+for (const source of ['mapping', 'variants']) test(`links enabled / prices off: ${source} never displays retail pack or serving price`, () => {
   const mapping = mapped().storeLinkMapping
-  const p = make({ retail_price: 99, ...(source === 'mapping' ? { storeLinkMapping: mapping } : {
+  const raw = make({ retail_price: 99, servings_per_container: 20, ...(source === 'mapping' ? { storeLinkMapping: mapping } : {
     storeVariants: [{ variantId: mapping.shopifyVariantId, handle: mapping.shopifyProductHandle,
       label: 'Fixture pack', flavour: null, packLabel: '500 g', mapping }],
   }) })
-  const f = fixture([p], { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'off' })
+  const f = fixture([raw], { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'off' })
+  const p = f.load('lib/products.ts').withScore(raw)
+  assert.equal(p.cost_per_serving, null)
   const { displayPrice, isStoreOffer } = f.load('lib/commerce/display-price.ts')
   assert.equal(p.storePrice, undefined)
   assert.equal(isStoreOffer(p), true)
@@ -480,7 +482,16 @@ for (const source of ['mapping', 'variants']) test(`links enabled / prices off: 
   ]) {
     const html = f.html(file, props)
     assert.match(html, /TLL Store price<\/(?:span|div)><(?:b|div)[^>]*>Not listed<\/(?:b|div)>/, file)
-    assert.doesNotMatch(html, /£99\.00/, file)
+    assert.doesNotMatch(html, /£99\.00|£4\.95/, file)
+  }
+  for (const [file, props] of [
+    ['components/CompareTable.tsx', { products: [p], onRemove() {} }],
+    ['app/compare/CompareView.tsx', { products: [p] }],
+    ['app/products/[id]/ProductDetailPage.tsx', { product: p, related: [] }],
+  ]) {
+    const html = f.html(file, props)
+    assert.match(html, /Not listed|TLL Store price unavailable/, file)
+    assert.doesNotMatch(html, /£99\.00|£4\.95/, file)
   }
 })
 
@@ -499,11 +510,76 @@ test('display price uses only finite positive numbers and preserves non-store re
   assert.equal(isUsablePrice(0.001), true)
 })
 
-test('pack-price sorting retains retail-price ordering and puts unusable prices last', () => {
+test('pack-price sorting uses displayed prices and puts unusable or unlisted store prices last', () => {
   const rows = [make({ id: 'missing', retail_price: null }), make({ id: 'high', retail_price: 40 }),
     make({ id: 'low', retail_price: 10, storePrice: { price: 50 } }),
+    make({ id: 'unlisted-store', name: 'Y unlisted store', retail_price: 1, storeLinkMapping: mapped().storeLinkMapping }),
     make({ id: 'invalid', name: 'Z invalid', retail_price: Infinity })]
   const { sortScored } = fixture(rows).load('lib/products.ts')
-  assert.deepEqual(Array.from(sortScored(rows, 'price'), p => p.id), ['low', 'high', 'missing', 'invalid'])
+  assert.deepEqual(Array.from(sortScored(rows, 'price'), p => p.id), ['high', 'low', 'missing', 'unlisted-store', 'invalid'])
   assert.equal(rows[0].id, 'missing')
+})
+
+
+test('store price attachment precedes scoring and comparison tables use the store price for Lowest', async () => {
+  const raw = { ...mapped(), retail_price: 99, servings_per_container: 20 }
+  const f = fixture([raw], { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'enabled' })
+  const { attachStorePrices } = f.load('lib/commerce/store-price-products.ts')
+  const now = Date.now()
+  const [priced] = await attachStorePrices([raw], { enabled: true, now,
+    read: async () => new Map([['gid://shopify/ProductVariant/1001', {
+      variantId: 'gid://shopify/ProductVariant/1001', price: 12.5, availableForSale: true, observedAtMs: now,
+    }]]) })
+  const { withScore } = f.load('lib/products.ts')
+  assert.equal(priced.storePrice.price, 12.5)
+  assert.equal(withScore(priced).cost_per_serving, 0.625)
+  // Deliberately different historical prices detect fallback in both display and Lowest tags.
+  const store = withScore({ ...priced, retail_price: 99 })
+  const other = withScore(make({ id: 'other', retail_price: 20 }))
+  for (const file of ['components/CompareTable.tsx', 'app/compare/CompareView.tsx']) {
+    const html = f.html(file, { products: [store, other], onRemove() {} })
+    const row = html.match(/<tr[^>]*><th[^>]*>(?:Recorded pack price|Pack price)<\/th>(.*?)<\/tr>/s)?.[1]
+    assert.ok(row, file)
+    assert.match(row, /£12\.50.*Lowest.*£20\.00/s, file)
+    assert.doesNotMatch(row, /£99\.00/, file)
+  }
+})
+
+test('links on / prices off: API sorting and versus page do not expose historical store prices', async () => {
+  const store = { ...mapped(), retail_price: 99, servings_per_container: 20 }
+  const other = make({ id: 'other', brand: 'Other', name: 'Other formula', retail_price: 100 })
+  const f = fixture([store, other], { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'off' })
+  const response = await f.load('app/api/products/route.ts').GET(new Request('https://fixture.invalid/api/products?sort=price'))
+  const products = await response.json()
+  assert.deepEqual(products.map(p => p.id), ['other', store.id])
+  assert.equal(products[1].cost_per_serving, null)
+  const { matchupSlug } = f.load('lib/matchups.ts')
+  const html = render(await f.load('app/vs/[matchup]/page.tsx').default({ params: Promise.resolve({
+    matchup: matchupSlug(store.brand, store.name, other.brand, other.name),
+  }) }))
+  assert.match(html, /£100\.00/)
+  assert.doesNotMatch(html, /£99\.00|£4\.95/)
+})
+
+test('links on / prices off: detail size and multi-variant projections never restore retail prices', () => {
+  const mapping = mapped().storeLinkMapping
+  const variant = { variantId: mapping.shopifyVariantId, handle: mapping.shopifyProductHandle,
+    label: 'Fixture pack', flavour: null, packLabel: '500 g', mapping }
+  const raw = make({ retail_price: 99, servings_per_container: 20, storeLinkMapping: mapping, storeVariants: [variant] })
+  const f = fixture([raw], { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'off' })
+  const p = f.load('lib/products.ts').withScore(raw)
+  const size = { slug: 'fixture', label: 'Fixture pack', serving_size: 5, serving_unit: 'g',
+    servings_per_container: 20, retail_price: 99, buy_url: null, shopify_variant_id: mapping.shopifyVariantId,
+    sort: 0, nutrients: null }
+  const sized = f.load('lib/commerce/size-selection.ts').productForSize(p, size)
+  assert.equal(sized.retail_price, null)
+  assert.equal(sized.cost_per_serving, null)
+  for (const product of [
+    { ...p, sizeOptions: [size] },
+    { ...p, storeVariants: [variant, { ...variant, variantId: 'gid://shopify/ProductVariant/1002',
+      mapping: { ...mapping, shopifyVariantId: 'gid://shopify/ProductVariant/1002' } }] },
+  ]) {
+    const html = f.html('app/products/[id]/ProductDetailPage.tsx', { product, related: [] })
+    assert.doesNotMatch(html, /£99\.00|£4\.95/)
+  }
 })
