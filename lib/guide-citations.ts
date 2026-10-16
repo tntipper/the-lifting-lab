@@ -1,3 +1,4 @@
+import { claimsReviewFor } from './claims-review'
 // Verified scientific references for each /guide/[category] page.
 // Every entry below was confirmed by fetching the source URL and reading enough
 // of it to verify it supports a claim made in the matching guide (research pass
@@ -347,6 +348,8 @@ export const GUIDE_CITATIONS: Record<string, Citation[]> = {
 }
 
 export function getCitations(slug: string): Citation[] {
+  const review = claimsReviewFor(slug)
+  if (review) return review.sources.map((source) => ({ authors: source.title.split(':')[0], year: '', title: source.title, source: 'Official health guidance', url: source.url }))
   return GUIDE_CITATIONS[slug] ?? []
 }
 

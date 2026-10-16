@@ -1,11 +1,16 @@
+import { pageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import PolicyDraftNotice from '@/components/PolicyDraftNotice'
 import TopNav from '@/components/TopNav'
 
 export const metadata: Metadata = {
+  openGraph: pageMetadata('/privacy', 'Privacy Policy — The Lifting Lab', 'How The Lifting Lab collects, uses, and protects your personal data.').openGraph,
+  twitter: pageMetadata('/privacy', 'Privacy Policy — The Lifting Lab', 'How The Lifting Lab collects, uses, and protects your personal data.').twitter,
+
   title: 'Privacy Policy — The Lifting Lab',
   description: 'How The Lifting Lab collects, uses, and protects your personal data.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk/privacy' },
+  alternates: { canonical: 'https://theliftinglab.co.uk/privacy' },
 }
 
 export default function PrivacyPage() {
@@ -15,8 +20,9 @@ export default function PrivacyPage() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-4">Legal</p>
         <h1 className="text-3xl font-black uppercase tracking-tight mb-2">Privacy Policy</h1>
-        <p className="text-lab-muted text-sm mb-10">Last updated: June 2026</p>
+        <p className="text-lab-muted text-sm mb-10">Draft updated: October 2026</p>
 
+        <PolicyDraftNotice />
         <div className="space-y-8 text-lab-muted text-sm leading-relaxed">
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Who we are</h2>
@@ -31,8 +37,10 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">What data we collect</h2>
             <ul className="list-disc list-inside space-y-2">
-              <li><strong className="text-white">Email address</strong> — collected when you sign in via magic link. Used solely to authenticate your account.</li>
-              <li><strong className="text-white">Usage data</strong> — pages visited, features used, collected via Google Analytics 4 (GA4). This data is anonymised and aggregated.</li>
+              <li><strong className="text-white">Email address</strong> — collected when you sign in via magic link. Used to authenticate your site account and communicate about it.</li>
+              <li><strong className="text-white">Contact enquiries</strong> — your name, email and message when you submit the contact form, held for staff review. Please do not include payment card details or health records.</li>
+              <li><strong className="text-white">Shop orders</strong> — Shopify handles checkout, payments, purchase accounts and order communications. Orders include your name, contact details, delivery address and purchased items.</li>
+              <li><strong className="text-white">Usage data</strong> — if you accept optional analytics, Google Analytics 4 (GA4) collects page visits and feature interactions, browser/device information and browser/session identifiers. Analytics is off before you accept and after you reject or withdraw.</li>
               <li><strong className="text-white">Stack and favourites data</strong> — products you save or add to your stack, stored in our database linked to your account.</li>
             </ul>
           </section>
@@ -43,31 +51,37 @@ export default function PrivacyPage() {
               <li>To provide and improve the service (account features, stack builder, favourites)</li>
               <li>To understand how the site is used and improve the product (analytics)</li>
               <li>We do not sell your data to third parties</li>
-              <li>We do not use your data for advertising profiling</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Legal basis</h2>
             <p>
-              We process your email address on the basis of <strong className="text-white">contract</strong> (to provide the service you signed up for). We process analytics data on the basis of <strong className="text-white">legitimate interests</strong> in understanding site usage. GA4 is configured without advertising features.
+              We process your email address on the basis of <strong className="text-white">contract</strong> (to provide the service you signed up for). Optional analytics runs on the basis of your <strong className="text-white">consent</strong>. Use Analytics preferences at the top of any page to accept, reject or withdraw. Withdrawing stops future collection; it does not undo information already sent to Google.
             </p>
           </section>
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">How long we keep it</h2>
             <p>
-              Your account and associated data is retained for as long as your account is active. If you request deletion, we will remove your account and associated data within 30 days. Analytics data is retained by Google for 14 months.
+              Your account and associated data is retained for as long as your account is active. If you request deletion, we will remove your account and associated data within 30 days. Your analytics choice is saved in this browser for up to 180 days. Google processes information already collected under its own service terms and privacy policy; this page does not specify a verified GA property retention period.
             </p>
           </section>
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Third-party services</h2>
             <ul className="list-disc list-inside space-y-2">
-              <li><strong className="text-white">Supabase</strong> — our authentication and database provider. Your email is stored on Supabase infrastructure. See <a href="https://supabase.com/privacy" className="text-lab-lime hover:underline" target="_blank" rel="noopener noreferrer">Supabase Privacy Policy</a>.</li>
-              <li><strong className="text-white">Google Analytics 4</strong> — anonymous usage analytics. See <a href="https://policies.google.com/privacy" className="text-lab-lime hover:underline" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.</li>
+              <li><strong className="text-white">Supabase</strong> — our authentication and database provider. It stores site account identifiers, saved stacks and favourites, and contact submissions. Where the planned shop integration is activated, private order records needed for fulfilment are also held there. See <a href="https://supabase.com/privacy" className="text-lab-lime hover:underline" target="_blank" rel="noopener noreferrer">Supabase Privacy Policy</a>.</li>
+              <li><strong className="text-white">Shopify</strong> — provides the shop at shop.theliftinglab.co.uk. TLL receives order information needed to fulfil purchases and handle support and refunds; Shopify processes payments through its payment providers. TLL does not require your full payment card details. See <a href="https://www.shopify.com/legal/privacy" className="text-lab-lime hover:underline">Shopify Privacy Policy</a>.</li>
+              <li><strong className="text-white">Suppliers and couriers</strong> — fulfilment requires sharing the delivery name, address, necessary contact details and ordered items with the supplier fulfilling that order and its courier. Suppliers do not need your saved stack or full payment card details. Sharing for the planned automated integration remains subject to activation and review.</li>
+              <li><strong className="text-white">Google Analytics 4</strong> — optional usage analytics, enabled only after you accept. See <a href="https://policies.google.com/privacy" className="text-lab-lime hover:underline" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.</li>
               <li><strong className="text-white">Amazon Associates</strong> — we may earn a commission from qualifying purchases via Amazon links. See our <Link href="/affiliate-disclosure" className="text-lab-lime hover:underline">Affiliate Disclosure</Link>.</li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-white font-bold uppercase tracking-wide mb-3">Shop data and review outstanding</h2>
+            <p>Purchase and delivery data is used to perform the sales contract; records required for tax and accounting are retained to meet legal obligations. Account deletion does not automatically erase records we must keep. Contact enquiries are used to respond to your request. TODO for Toby/Lifty: confirm the enquiry lawful basis, order and enquiry retention periods, supplier and courier recipients, Supabase hosting region, service agreements and any international transfer safeguards before publication. This draft does not claim that all data stays in the UK or that a unified site/shop account is active.</p>
           </section>
 
           <section>
@@ -91,7 +105,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Cookies</h2>
             <p>
-              We use a session cookie for authentication (essential, no consent required) and Google Analytics cookies for anonymous usage tracking. We do not use advertising or tracking cookies.
+              We use storage needed for account authentication and saved-stack features. Optional Google Analytics uses _ga and _ga_R3YMG6TYXF cookies to distinguish browsers and sessions after acceptance. New analytics cookies are limited to this website host. Rejecting or withdrawing removes these app-owned cookies, including legacy parent-domain variants, without removing authentication or cart cookies. Your choice is saved separately in local storage (tll.analytics-choice.v1); a necessary preference cookie may remember rejection if local storage cannot be updated. If your browser cannot save a choice, analytics stays off. The Shopify shop has its own storage and privacy controls; this website choice does not configure Shopify.
             </p>
           </section>
         </div>

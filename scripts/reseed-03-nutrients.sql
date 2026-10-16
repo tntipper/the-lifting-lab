@@ -1,3 +1,4 @@
+-- Duplicate child rows superseded by supabase/operator/2026-10-13-merge-duplicate-products.sql; omitted below.
 -- reseed-03-nutrients.sql  (idempotent — full per-product nutrient breakdown)
 -- For each confidently matched product: deletes its existing rows, reinserts the
 -- FULL Path A breakdown. Re-runnable. Run AFTER reseed-02-product-fields.sql.
@@ -191,8 +192,6 @@ DELETE FROM public.product_nutrients WHERE product_id = 'ca25a9aa-7a1c-4e48-ad97
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('ca25a9aa-7a1c-4e48-ad97-9774001df070', 'Protein', 21, 'g');
 DELETE FROM public.product_nutrients WHERE product_id = '836e9ca3-a02a-4513-b63a-546fd25ea518';
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('836e9ca3-a02a-4513-b63a-546fd25ea518', 'Protein', 23.5, 'g');
-DELETE FROM public.product_nutrients WHERE product_id = '60cbe489-96a8-416e-a11b-243e3277caf3';
-INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('60cbe489-96a8-416e-a11b-243e3277caf3', 'EAAs', 10, 'g');
 DELETE FROM public.product_nutrients WHERE product_id = '767210a6-f16f-48f1-bc45-dc7bc41dc302';
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('767210a6-f16f-48f1-bc45-dc7bc41dc302', 'Protein', 24, 'g');
 DELETE FROM public.product_nutrients WHERE product_id = '3e09c727-46cc-4a89-b554-8cfb4726141e';
@@ -231,12 +230,6 @@ DELETE FROM public.product_nutrients WHERE product_id = '411a19b8-1935-4c63-b957
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('411a19b8-1935-4c63-b957-07296fbdf447', 'Protein', 24, 'g');
 DELETE FROM public.product_nutrients WHERE product_id = '008f9a15-e961-4802-92fe-fbd7479442b6';
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('008f9a15-e961-4802-92fe-fbd7479442b6', 'Protein', 31, 'g');
-DELETE FROM public.product_nutrients WHERE product_id = '8ddfc493-0872-4235-ba25-5091ef172b49';
-INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('8ddfc493-0872-4235-ba25-5091ef172b49', 'Calories', 222, 'kcal');
-INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('8ddfc493-0872-4235-ba25-5091ef172b49', 'Protein', 20, 'g');
-INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('8ddfc493-0872-4235-ba25-5091ef172b49', 'Sugar', 2.1, 'g');
-INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('8ddfc493-0872-4235-ba25-5091ef172b49', 'Fat', 8.5, 'g');
-INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('8ddfc493-0872-4235-ba25-5091ef172b49', 'Saturated Fat', 4.5, 'g');
 DELETE FROM public.product_nutrients WHERE product_id = 'e4fd101e-4969-4054-92ab-f02d4cb3d494';
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('e4fd101e-4969-4054-92ab-f02d4cb3d494', 'Calories', 212, 'kcal');
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('e4fd101e-4969-4054-92ab-f02d4cb3d494', 'Protein', 20, 'g');
@@ -432,8 +425,6 @@ DELETE FROM public.product_nutrients WHERE product_id = 'bb1576f2-90e5-4801-b8ab
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('bb1576f2-90e5-4801-b8ab-33e7c9233d03', 'Protein', 27, 'g');
 DELETE FROM public.product_nutrients WHERE product_id = 'ed2dde3b-396f-4f7f-8545-b3afc660b4de';
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('ed2dde3b-396f-4f7f-8545-b3afc660b4de', 'Protein', 23.4, 'g');
-DELETE FROM public.product_nutrients WHERE product_id = 'b9058eef-f71a-49f7-9672-a264d1a09614';
-INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('b9058eef-f71a-49f7-9672-a264d1a09614', 'Protein', 17.5, 'g');
 DELETE FROM public.product_nutrients WHERE product_id = '9bd730b4-56ca-4545-bb05-69ed6d48ffb9';
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('9bd730b4-56ca-4545-bb05-69ed6d48ffb9', 'Calories', 201, 'kcal');
 INSERT INTO public.product_nutrients (product_id, nutrient_name, amount, unit) VALUES ('9bd730b4-56ca-4545-bb05-69ed6d48ffb9', 'Protein', 20, 'g');

@@ -1,0 +1,210 @@
+{
+  "schema": "tll-staging-generation-23-arming-policy/v1",
+  "branch": "codex/tll-integration",
+  "origin": "https://github.com/tntipper/the-lifting-lab.git",
+  "manifest": "config/staging-account-activation-manifest.json",
+  "expiry": {
+    "path": "scripts/staging-generation-23-credentials.mjs",
+    "name": "ACTIVE_WINDOW_EXPIRES_AT"
+  },
+  "gates": {
+    "scripts/staging-account-hosted-baseline-database.mjs": [
+      "STAGING_ACCOUNT_HOSTED_BASELINE_DATABASE_ENABLED"
+    ],
+    "scripts/staging-account-hosted-baseline-supabase.mjs": [
+      "HOSTED_BASELINE_SUPABASE_BINDING_ENABLED"
+    ],
+    "scripts/staging-account-hosted-baseline-surface.mjs": [
+      "HOSTED_BASELINE_SURFACE_BINDING_ENABLED",
+      "PREVIEW_SOURCE_READBACK_ENABLED"
+    ],
+    "scripts/staging-account-hosted-baseline-vercel.mjs": [
+      "HOSTED_BASELINE_VERCEL_BINDING_ENABLED"
+    ],
+    "scripts/staging-database-native-adapter.mjs": [
+      "NATIVE_STAGING_CONTROL_ADAPTER_ENABLED"
+    ],
+    "scripts/staging-generation-23-backend-state.mjs": [
+      "STAGING_GENERATION_23_BACKEND_STATE_ENABLED"
+    ],
+    "scripts/staging-generation-23-broker-gate-retire.mjs": [
+      "STAGING_GENERATION_23_BROKER_GATE_RETIRE_ENABLED"
+    ],
+    "scripts/staging-generation-23-checkout-observer.mjs": [
+      "STAGING_GENERATION_23_CHECKOUT_OBSERVER_ENABLED"
+    ],
+    "scripts/staging-generation-23-checkout-readiness-reader.mjs": [
+      "STAGING_GENERATION_23_CHECKOUT_READINESS_READER_ENABLED"
+    ],
+    "scripts/staging-generation-23-checkout-setting-journal.mjs": [
+      "STAGING_GENERATION_23_CHECKOUT_SETTING_JOURNAL_ENABLED"
+    ],
+    "scripts/staging-generation-23-checkout-setting-port.mjs": [
+      "STAGING_GENERATION_23_CHECKOUT_SETTING_PORT_ENABLED"
+    ],
+    "scripts/staging-generation-23-checkout-setting.mjs": [
+      "STAGING_GENERATION_23_CHECKOUT_SETTING_ENABLED"
+    ],
+    "scripts/staging-generation-23-cli-runner.mjs": [
+      "STAGING_GENERATION_23_CLI_RUNNER_ENABLED"
+    ],
+    "scripts/staging-generation-23-control-enable-host.mjs": [
+      "STAGING_GENERATION_23_CONTROL_ENABLE_HOST_ENABLED"
+    ],
+    "scripts/staging-generation-23-control-shutdown.mjs": [
+      "STAGING_GENERATION_23_CONTROL_SHUTDOWN_ENABLED"
+    ],
+    "scripts/staging-generation-23-consumer-diagnostic.mjs": [
+      "STAGING_GENERATION_23_CONSUMER_DIAGNOSTIC_ENABLED"
+    ],
+    "scripts/staging-generation-23-consumer-proof.mjs": [
+      "STAGING_GENERATION_23_CONSUMER_PROOF_ENABLED"
+    ],
+    "scripts/staging-generation-23-credential-reader.mjs": [
+      "STAGING_GENERATION_23_CREDENTIAL_READER_ENABLED"
+    ],
+    "scripts/staging-generation-23-credentials.mjs": [
+      "STAGING_GENERATION_23_CREDENTIALS_ENABLED"
+    ],
+    "scripts/staging-generation-23-database-host.mjs": [
+      "STAGING_GENERATION_23_DATABASE_HOST_ENABLED"
+    ],
+    "scripts/staging-generation-23-database-journal.mjs": [
+      "STAGING_GENERATION_23_DATABASE_JOURNAL_ENABLED"
+    ],
+    "scripts/staging-generation-23-edge-replacer.mjs": [
+      "STAGING_GENERATION_23_EDGE_REPLACER_ENABLED"
+    ],
+    "scripts/staging-generation-23-final-check.mjs": [
+      "STAGING_GENERATION_23_FINAL_CHECK_ENABLED"
+    ],
+    "scripts/staging-generation-23-final-observer.mjs": [
+      "STAGING_GENERATION_23_FINAL_OBSERVER_ENABLED"
+    ],
+    "scripts/staging-generation-23-final-query.mjs": [
+      "STAGING_GENERATION_23_FINAL_QUERY_ENABLED"
+    ],
+    "scripts/staging-generation-23-fixed-database-provider-components.mjs": [
+      "STAGING_GENERATION_23_FIXED_DATABASE_PROVIDER_COMPONENTS_ENABLED"
+    ],
+    "scripts/staging-generation-23-fixed-hosted-adapters.mjs": [
+      "STAGING_GENERATION_23_FIXED_HOSTED_ADAPTERS_ENABLED"
+    ],
+    "scripts/staging-generation-23-fixed-preflight.mjs": [
+      "STAGING_GENERATION_23_FIXED_PREFLIGHT_ENABLED"
+    ],
+    "scripts/staging-generation-23-fixed-worker-assembly.mjs": [
+      "STAGING_GENERATION_23_FIXED_WORKER_ASSEMBLY_ENABLED"
+    ],
+    "scripts/staging-generation-23-hosted-assembly.mjs": [
+      "STAGING_GENERATION_23_HOSTED_ASSEMBLY_ENABLED"
+    ],
+    "scripts/staging-generation-23-live-launcher.mjs": [
+      "STAGING_GENERATION_23_LIVE_LAUNCHER_ENABLED"
+    ],
+    "scripts/staging-generation-23-owner-journey.mjs": [
+      "STAGING_GENERATION_23_OWNER_JOURNEY_ENABLED"
+    ],
+    "scripts/staging-generation-23-predecessor-check.mjs": [
+      "STAGING_GENERATION_23_PREDECESSOR_CHECK_ENABLED"
+    ],
+    "scripts/staging-generation-23-predecessor-query.mjs": [
+      "STAGING_GENERATION_23_PREDECESSOR_QUERY_ENABLED"
+    ],
+    "scripts/staging-generation-23-preview-build-port.mjs": [
+      "STAGING_GENERATION_23_PREVIEW_BUILD_PORT_ENABLED"
+    ],
+    "scripts/staging-generation-23-process-binding.mjs": [
+      "STAGING_GENERATION_23_PROCESS_BINDING_ENABLED"
+    ],
+    "scripts/staging-generation-23-protected-fetch.mjs": [
+      "STAGING_GENERATION_23_PROTECTED_FETCH_ENABLED"
+    ],
+    "scripts/staging-generation-23-provider-control.mjs": [
+      "STAGING_GENERATION_23_PROVIDER_CONTROL_ENABLED"
+    ],
+    "scripts/staging-generation-23-provider-port.mjs": [
+      "STAGING_GENERATION_23_PROVIDER_PORT_ENABLED"
+    ],
+    "scripts/staging-generation-23-recovery.mjs": [
+      "STAGING_GENERATION_23_RECOVERY_ENABLED"
+    ],
+    "scripts/staging-generation-23-connection-diagnostic.mjs": [
+      "STAGING_GENERATION_23_CONNECTION_DIAGNOSTIC_ENABLED"
+    ],
+    "scripts/staging-generation-23-restricted-connections.mjs": [
+      "STAGING_GENERATION_23_RESTRICTED_CONNECTIONS_ENABLED"
+    ],
+    "scripts/staging-generation-23-settings-coordinator.mjs": [
+      "STAGING_GENERATION_23_SETTINGS_COORDINATOR_ENABLED"
+    ],
+    "scripts/staging-generation-23-settings-journal.mjs": [
+      "STAGING_GENERATION_23_SETTINGS_JOURNAL_ENABLED"
+    ],
+    "scripts/staging-generation-23-settings-readback.mjs": [
+      "STAGING_GENERATION_23_SETTINGS_READBACK_ENABLED"
+    ],
+    "scripts/staging-generation-23-supabase-query.mjs": [
+      "STAGING_GENERATION_23_SUPABASE_QUERY_ENABLED"
+    ],
+    "scripts/staging-generation-23-surface-factory.mjs": [
+      "STAGING_GENERATION_23_SURFACE_FACTORY_ENABLED"
+    ],
+    "scripts/staging-generation-23-variant-readiness-reader.mjs": [
+      "STAGING_GENERATION_23_VARIANT_READINESS_READER_ENABLED"
+    ],
+    "scripts/staging-generation-23-vercel-inventory-reader.mjs": [
+      "STAGING_GENERATION_23_VERCEL_INVENTORY_READER_ENABLED"
+    ],
+    "scripts/staging-generation-23-vercel-replacer.mjs": [
+      "STAGING_GENERATION_23_VERCEL_REPLACER_ENABLED"
+    ],
+    "scripts/staging-generation-23-vercel-targets.mjs": [
+      "STAGING_GENERATION_23_VERCEL_TARGETS_ENABLED"
+    ],
+    "scripts/staging-generation-23-whole-route-journal.mjs": [
+      "STAGING_GENERATION_23_WHOLE_ROUTE_JOURNAL_ENABLED"
+    ],
+    "scripts/staging-generation-23-whole-run.mjs": [
+      "STAGING_GENERATION_23_WHOLE_RUN_ENABLED"
+    ],
+    "scripts/staging-generation-23-worker-entry.mjs": [
+      "STAGING_GENERATION_23_WORKER_ENTRY_ENABLED",
+      "STAGING_GENERATION_23_HOSTED_WORKER_ASSEMBLY_ENABLED",
+      "STAGING_GENERATION_23_WORKER_CLI_ARMED"
+    ],
+    "scripts/staging-provider-broker-native-adapter.mjs": [
+      "NATIVE_STAGING_PROVIDER_BROKER_ADAPTER_ENABLED"
+    ],
+    "scripts/staging-provider-broker-native-binding.mjs": [
+      "NATIVE_STAGING_PROVIDER_BROKER_BINDING_ENABLED"
+    ],
+    "scripts/staging-surface-activation-native-adapter.mjs": [
+      "NATIVE_SURFACE_ACTIVATION_ADAPTER_ENABLED"
+    ],
+    "scripts/staging-surface-activation-native-binding.mjs": [
+      "NATIVE_SURFACE_ACTIVATION_BINDING_ENABLED"
+    ],
+    "scripts/staging-surface-activation-transport.mjs": [
+      "NATIVE_SURFACE_ACTIVATION_TRANSPORT_ENABLED"
+    ],
+    "scripts/staging-surface-preview-deployment-journal.mjs": [
+      "STAGING_PREVIEW_DEPLOYMENT_JOURNAL_ENABLED"
+    ],
+    "scripts/staging-surface-preview-deployment-post.mjs": [
+      "STAGING_PREVIEW_DEPLOYMENT_POST_ENABLED"
+    ],
+    "scripts/staging-surface-preview-deployment-request.mjs": [
+      "STAGING_PREVIEW_DEPLOYMENT_REQUEST_ENABLED"
+    ],
+    "scripts/staging-surface-preview-deployment-verifier.mjs": [
+      "STAGING_PREVIEW_DEPLOYMENT_VERIFIER_ENABLED"
+    ],
+    "scripts/staging-surface-preview-deployment-worker.mjs": [
+      "STAGING_PREVIEW_DEPLOYMENT_WORKER_ENABLED"
+    ],
+    "scripts/staging-surface-preview-protection-probe.mjs": [
+      "STAGING_PREVIEW_PROTECTION_PROBE_ENABLED"
+    ]
+  }
+}

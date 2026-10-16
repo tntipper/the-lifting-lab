@@ -1,10 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import PreviewUnavailableContent from '@/components/PreviewUnavailableContent'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { CATEGORIES } from '@/lib/categories'
+import { submissionSizeError } from '@/lib/submissions/body-size.mjs'
 
 export default function SubmitPage() {
+  return isSyntheticPreview() ? <PreviewUnavailableContent /> : <SubmitPageForm />
+}
+
+function SubmitPageForm() {
   const [category, setCategory] = useState('')
   const [brand, setBrand] = useState('')
   const [product, setProduct] = useState('')
@@ -13,17 +20,30 @@ export default function SubmitPage() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
 
+  const retry = useRef<{ body: string; key: string } | null>(null)
+  const [errorMessage, setErrorMessage] = useState('')
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setStatus('sending')
     try {
+      const body = JSON.stringify({ category, brand, product, url, notes, email })
+      const sizeError = submissionSizeError(body)
+      if (sizeError) { setErrorMessage(sizeError); setStatus('error'); return }
+      if (!retry.current || retry.current.body !== body) retry.current = { body, key: crypto.randomUUID() }
       const r = await fetch('/api/submit-supplement', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, brand, product, url, notes, email }),
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': retry.current.key },
+        body,
       })
+      if (!r.ok) {
+        const result = await r.json().catch(() => ({}))
+        setErrorMessage(typeof result.error === 'string' ? result.error : 'Your submission could not be received. Please try again.')
+        if (r.status === 409) retry.current = null
+      }
       setStatus(r.ok ? 'done' : 'error')
     } catch {
+      setErrorMessage('Your submission could not be confirmed. Please try again.')
       setStatus('error')
     }
   }
@@ -40,20 +60,21 @@ export default function SubmitPage() {
         <div>
           <p className="text-[11px] uppercase tracking-widest font-bold text-lab-lime mb-2">Missing Something?</p>
           <h1 className="text-2xl font-black uppercase">Submit a Supplement</h1>
-          <p className="text-lab-muted text-sm mt-2">We&apos;ll review and score it within a few days.</p>
+          <p className="text-lab-muted text-sm mt-2">Suggest a supplement for editorial review. Submission does not guarantee publication or a score.</p>
         </div>
 
         {status === 'done' ? (
           <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-6 text-center space-y-2">
             <p className="text-2xl">✓</p>
-            <p className="font-bold text-white">Submitted — we&apos;ll review and score it.</p>
-            {email && <p className="text-lab-muted text-sm">We&apos;ll ping you at {email} when it&apos;s live.</p>}
+            <p className="font-bold text-white">Suggestion received for review.</p>
+            <p className="text-lab-muted text-sm">Thank you for helping us identify products to assess.</p>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Category *</label>
+              <label htmlFor="supplement-category" className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Category *</label>
               <select
+                id="supplement-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 required
@@ -66,8 +87,10 @@ export default function SubmitPage() {
               </select>
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Brand *</label>
+              <label htmlFor="supplement-brand" className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Brand *</label>
               <input
+                id="supplement-brand"
+                maxLength={120}
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
                 required
@@ -76,8 +99,10 @@ export default function SubmitPage() {
               />
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Product name *</label>
+              <label htmlFor="supplement-product" className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Product name *</label>
               <input
+                id="supplement-product"
+                maxLength={200}
                 value={product}
                 onChange={(e) => setProduct(e.target.value)}
                 required
@@ -86,9 +111,11 @@ export default function SubmitPage() {
               />
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Product URL *</label>
+              <label htmlFor="supplement-url" className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Product URL *</label>
               <input
                 type="url"
+                id="supplement-url"
+                maxLength={2048}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 required
@@ -97,8 +124,10 @@ export default function SubmitPage() {
               />
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Notes (optional)</label>
+              <label htmlFor="supplement-notes" className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Notes (optional)</label>
               <textarea
+                id="supplement-notes"
+                maxLength={4000}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
@@ -107,17 +136,19 @@ export default function SubmitPage() {
               />
             </div>
             <div>
-              <label className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Your email (optional)</label>
+              <label htmlFor="supplement-email" className="text-[11px] uppercase tracking-widest font-bold text-lab-muted block mb-1">Your email (optional)</label>
               <input
                 type="email"
+                id="supplement-email"
+                maxLength={254}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="we'll ping you when it's live"
+                placeholder="optional contact email"
                 className="w-full bg-lab-panel text-white border border-lab-border rounded-xl px-4 py-3 focus:outline-none focus:border-lab-lime transition-colors placeholder:text-lab-muted/40"
               />
             </div>
             {status === 'error' && (
-              <p className="text-lab-red text-sm">Something went wrong — please try again.</p>
+              <p role="alert" className="text-lab-red text-sm">{errorMessage}</p>
             )}
             <button
               type="submit"

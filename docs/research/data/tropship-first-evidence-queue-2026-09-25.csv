@@ -1,0 +1,75 @@
+variant_sku,shopify_handle,shopify_status,shopify_option_1,shopify_option_2,feed_size_2026_09_14,feed_barcode_2026_09_14,feed_wholesale_gbp_2026_09_14_vat_basis_unknown,feed_tax_flag,retail_gbp_2026_09_25,supplier_multipack,manufacturer_source_url,pilot_finding,pilot_note,exact_label_approval,rrp_status,commercial_approval
+APP016,applied-nutrition-amino-fuel-eaa,active,390g Fruit Burst,,390g,5056555206393,13.59,VAT,23.95,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP028,applied-nutrition-mass,active,2.4kg Vanilla,,2.4kg,5056555205075,24.52,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP046,applied-nutrition-iso-xp,active,Banana,1.8kg,1.8kg,5056555204610,63.74,VAT,99.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP047,applied-nutrition-iso-xp,active,Cafe Latte,1.8kg,1.8kg,5056555204627,63.74,VAT,99.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP048,applied-nutrition-iso-xp,active,Chocolate,1.8kg,1.8kg,634158780691,63.74,VAT,99.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP050,applied-nutrition-iso-xp,active,Strawberry,1.8kg,1.8kg,5056555204658,63.74,VAT,99.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP051,applied-nutrition-iso-xp,active,Vanilla,1.8kg,1.8kg,5056555204665,63.74,VAT,99.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP068,applied-nutrition-iso-xp,active,Choco Caramel,850g,850g,5056555205952,29.67,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP071,applied-nutrition-iso-xp,active,Choco Honeycomb,850g,850g,5056555205976,29.67,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP072,applied-nutrition-iso-xp,active,Choco Peanut,850g,850g,5056555205983,29.67,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP286,applied-nutrition-endurance-recovery,active,1.5kg Vanilla,,1.5kg,5056555201565,13.19,VAT,29.95,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP292,applied-nutrition-digestive-enzyme-capsules,active,60 Caps,,60 Caps,5056555200094,9.26,VAT,12.95,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP385,applied-nutrition-100-casein,active,900g Chocolate,,900g,5056555203163,19.29,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP449,applied-nutrition-creatine-monohydrate,active,250g Unflavoured,,250g,5056555206218,7.45,VAT,24.95,NO,https://appliednutrition.uk/products/creatine-monohydrate,FAMILY_VARIANT_NO_GTIN,Manufacturer size and formula plausible; GTIN not bound,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP511,applied-nutrition-iso-xp,active,Strawberry,850g,850g,5056555207093,29.67,VAT,49.99,NO,https://appliednutrition.uk/products/iso-xp,FORMULA_CONFLICT,Supplier generic ingredients include cocoa for Strawberry,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP613,applied-nutrition-critical-whey,active,825g Chocolate,,825g,5056555211199,22.52,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP672,applied-nutrition-iso-xp,active,Cookies N Cream,850g,850g,5056555214268,29.67,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP673,applied-nutrition-iso-xp,active,White Choc Pistachio,850g,850g,5056555214275,29.67,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+APP675,applied-nutrition-iso-xp,active,Cafe Latte,850g,850g,5056555209615,29.67,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+BAR007,barebells-protein-bar,draft,12x55g Cookies and Cream,,12x55g,27340001800474,16.92,VAT,2.30,YES,https://barebells.com/product/cookies-cream/,FORMULA_CONFLICT,Manufacturer bar facts differ from supplier nutrition; case GTIN unproven,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+BLK012,bulk-creatine-monohydrate,active,200g Unflavoured,,200g,5055950627857,5.00,VAT,24.99,NO,https://www.bulk.com/uk/products/creatine-monohydrate/bpb-cmon-0000,FAMILY_ONLY,Current family page does not bind 200g GTIN,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+BLK020,bulk-pure-whey-protein,active,450g Vanilla,,450g,5055950627642,8.75,VAT,29.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+BLK030,bulk-pure-whey-isolate,active,450g Chocolate,,450g,5055950627796,15.00,VAT,34.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+BLK101,bulk-electrolyte-powder,active,500g Orange & Mango,,500g,5055950625426,12.50,VAT,12.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+BLK106,bulk-complete-multivitamin-complex,active,90 Tabs,,90 Tabs,5055950622241,6.25,VAT,17.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+CNP290,cnp-pro-recover,draft,5.04kg Chocolate,,5.04kg,,49.99,VAT,35.00,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+CNP300,cnp-whey,draft,2kg Strawberry,,2kg,,38.99,VAT,29.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+CNP318,cnp-loaded-eaa,active,300g Lemon Drop,,300g,,10.20,VAT,29.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+CNP332,cnp-pro-creatine,active,500g,,500g,,10.99,VAT,14.99,NO,,NO_PRIMARY_SOURCE,No manufacturer exact label located in pilot,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+DRK002,darkstims-creatine-monohydrate,active,500g Unflavoured,,500g,5065024878139,8.99,VAT,18.00,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+DRK021,darkstims-pre-v4,active,500g Red Apple,,500g,5070002220077,17.99,VAT,35.00,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+FOR001,the-formula-neuphoric,active,480g Arctic Frost,,480g,619091273363,19.95,VAT,35.95,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+GH0027,ghost-hydration,active,360g Kiwi Strawberry,,360g,810028299177,20.80,VAT,29.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+GH0055,ghost-whey,draft,2.17kg Cinnabon,,2.17kg,810128526357,55.51,VAT,39.99,NO,https://uk.ghostlifestyle.com/collections/recovery-1/products/ghost-whey-x-cinnabon-cinnabon,IMAGE_REVIEW_NEEDED,Official nutrition is image-only; UK size/GTIN unbound,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+GH0080,ghost-legend-v4,active,660g Bubblicious Strawberry Splash,,660g,,22.99,VAT,38.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+GRE091,grenade-carb-killa,active,12x60g Chocolate Chip Salted Caramel,,12x60g,5060221206877,17.64,VAT,22.99,YES,,WRONG_FLAVOUR_TEXT,"Supplier nutrition names Caramel Chaos, not listed flavour",HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+HIG052,high5-zero,draft,8x20 Tabs Orange & Cherry,,8x20 Tabs,5027492996029,30.21,VAT,7.99,YES,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+HUE006,huel-ready-to-drink,draft,8x500ml Vanilla,,8x500ml,15060929633477,20.97,Zero,3.50,YES,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+HUE020,huel-black-edition-ready-to-drink,draft,8x500ml Chocolate,,8x500ml,15060925291794,22.60,Zero,3.75,YES,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+HUE036,huel-lite-ready-to-drink,draft,8x500ml Chocolate,,8x500ml,15060925295419,19.92,Zero,3.50,YES,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+MUT124,mutant-geaar,active,378g Tropical Fruit Punch,,378g,627933222011,12.44,VAT,29.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+MYP076,myprotein-impact-whey-isolate,draft,2.5kg Chocolate,,2.5kg,5055534303016,86.88,VAT,74.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+NAU180,naughty-boy-menace,active,420g Sour Blue Razz,,420g,5061071620370,18.96,VAT,34.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+OPT005,optimum-nutrition-essential-amino-energy,active,270g Fruit Fusion,,270g,5060245607445,15.81,VAT,21.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+OPT034,optimum-nutrition-gold-standard-100-casein,active,896g Chocolate,,896g,5060469989877,35.27,VAT,39.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+OPT107,optimum-nutrition-micronised-creatine-powder,active,317g,,317g,5060245605397,13.60,VAT,20.00,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+OPT137,optimum-nutrition-serious-mass,active,2.73kg Chocolate,,2.73kg,5060469985206,30.28,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+OPT156,optimum-nutrition-gold-standard-100-isolate,active,930g Chocolate,,930g,5060469987538,39.31,VAT,39.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+OPT247,optimum-nutrition-platinum-pre-workout,active,420g Fruit Punch,,420g,5060751992578,16.42,VAT,29.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+OPT252,optimum-nutrition-platinum-creatine-plus,active,350g Pineapple,,350g,5060751997344,17.99,VAT,35.00,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+OPT267,optimum-nutrition-electrolyte-powder,active,264g Lemon,,264g,5060751998044,6.00,VAT,9.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+OPT296,optimum-nutrition-gold-standard-100-whey,active,775g Double Rich Chocolate,,775g,5060751998525,34.41,VAT,54.99,NO,https://www.optimumnutrition.com/en-us/products/gold-standard-100-whey-protein-powder,REGION_SIZE_UNBOUND,US family page does not bind UK 775g GTIN,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+PER012,per4m-isolate,active,900g Chocolate Creme,,900g,8030908005274,25.99,VAT,34.99,NO,,NO_PRIMARY_SOURCE,No manufacturer exact label located in pilot,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+PER042,per4m-eaa,active,420g Lemon Lime Splash,,420g,5060660085200,14.49,VAT,27.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+PER183,per4m-advanced-whey,active,900g Cherry Bakewell,,900g,5060660082704,24.99,VAT,34.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+PHD174,phd-nutrition-smart-bar,draft,12x64g Cookies & Cream,,12x64g,5025324012947,15.45,VAT,2.30,YES,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+QUE019,quest-nutrition-quest-bar,draft,12x60g Chocolate Brownie,,12x60g,888849000425,19.99,VAT,2.50,YES,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+REF130,reflex-nutrition-one-stop-xtreme,draft,4.35kg Blueberry,,4.35kg,5033579001883,45.75,VAT,45.00,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+REF152,reflex-nutrition-100-whey,active,720g Chocolate,,720g,5033579002637,14.70,VAT,44.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+REF170,reflex-nutrition-isolate-pro,active,1.8kg Chocolate,,1.8kg,5033579002675,47.68,VAT,64.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+SMX001,sci-mx-ultra-whey,active,800g Chocolate,,800g,5050028271215,15.00,VAT,39.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+STM008,strom-essentialmax-eaa,active,450g Strawberry Kiwi,,450g,5060549918520,19.28,VAT,34.95,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+STM043,strom-stimumax-pro,active,360g Unicorn Pi55,,360g,5060549918919,20.84,VAT,29.95,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+STM044,strom-sports-nutrition-supportmax,active,160 Caps,,160 Caps,5060549919404,29.16,VAT,34.95,NO,https://www.stromsports.com/products/supportmax-joint-capsules,FORMULA_CONFLICT,Supplier capsule row contains powder flavour ingredients,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+STM077,strom-sports-nutrition-zmax,active,90 Caps,,90 Caps,5013007077628,15.13,VAT,24.00,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+SYN031,bio-synergy-whey-better,active,750g Vanilla,,750g,5034839005115,26.25,VAT,49.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+SYN033,bio-synergy-whey-hey,active,908g Coconut,,908g,5034839007218,23.33,VAT,36.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+TBJ019,trainedbyjp-jp-eaa,active,300g Fizzy Blue Bottle,,300g,769577678998,10.63,VAT,29.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+TBJ133,trainedbyjp-jp-hydration,active,300g Apple Melon,,300g,643985588196,11.88,VAT,29.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+TRE003,trek-protein-flapjack,draft,16x50g Cocoa & Oat,,16x50g,05060088702314,13.33,VAT,1.20,YES,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+USN080,usn-muscle-fuel-anabolic,active,2kg Chocolate,,2kg,6009544953319,22.30,VAT,42.00,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+WAR014,warrior-eaa-powder,active,360g Sour Apple,,360g,5060424708444,10.56,VAT,11.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+WAR039,warrior-crunch-bar,active,12x64g White Chocolate,,12x64g,5060424705450,15.49,VAT,23.99,YES,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD
+WAR090,warrior-creatine-monohydrate,active,300g Unflavoured,,300g,5060424707577,8.21,VAT,11.99,NO,,UNREVIEWED,,HOLD,NO_LOCAL_RRP_SOURCE,HOLD

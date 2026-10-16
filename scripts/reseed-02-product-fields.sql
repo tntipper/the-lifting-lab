@@ -1,3 +1,4 @@
+-- Duplicate child rows superseded by supabase/operator/2026-10-13-merge-duplicate-products.sql; omitted below.
 -- reseed-02-product-fields.sql  (idempotent — keyed by product id)
 -- Populates retail_price, informed_sport, proprietary_blend, amino_spiked,
 -- protein_yield for active products confidently matched to Path A data.js.
@@ -60,7 +61,6 @@ UPDATE public.products SET retail_price = 34.99, informed_sport = false, proprie
 UPDATE public.products SET retail_price = 44.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 73.3 WHERE id = 'e0f73722-771a-4639-b44b-4eeff97ca9f8'; -- Strom Sports Nutrition Essential Max
 UPDATE public.products SET retail_price = 29.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 70 WHERE id = 'ca25a9aa-7a1c-4e48-ad97-9774001df070'; -- CNP Whey
 UPDATE public.products SET retail_price = 34.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 78.3 WHERE id = '836e9ca3-a02a-4513-b63a-546fd25ea518'; -- Supplement Needs Whey Protein Concentrate
-UPDATE public.products SET retail_price = 34.95, informed_sport = false, proprietary_blend = false WHERE id = '60cbe489-96a8-416e-a11b-243e3277caf3'; -- Strom Sports Nutrition EssentialMAX
 UPDATE public.products SET retail_price = 27.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 70.6 WHERE id = '767210a6-f16f-48f1-bc45-dc7bc41dc302'; -- USN BlueLab 100% Whey
 UPDATE public.products SET retail_price = 39.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 75 WHERE id = '3e09c727-46cc-4a89-b554-8cfb4726141e'; -- Grenade Protein Powder
 UPDATE public.products SET retail_price = 44.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 80 WHERE id = '4ea5c8df-7506-42e0-8e77-92775940ae78'; -- PhD Nutrition Pharma Whey
@@ -80,7 +80,6 @@ UPDATE public.products SET retail_price = 42.99, informed_sport = false, proprie
 UPDATE public.products SET retail_price = 29.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 80 WHERE id = '228c4ec5-6038-48fb-9329-c9dbbb53a3f9'; -- CNP Pro Night
 UPDATE public.products SET retail_price = 34.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 80 WHERE id = '411a19b8-1935-4c63-b957-07296fbdf447'; -- Warrior Warrior Protein Night
 UPDATE public.products SET retail_price = 28.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 77.5 WHERE id = '008f9a15-e961-4802-92fe-fbd7479442b6'; -- Scitec Nutrition Casein Complex
-UPDATE public.products SET retail_price = 2, informed_sport = false WHERE id = '8ddfc493-0872-4235-ba25-5091ef172b49'; -- Warrior Crunch Bar (White Chocolate Crisp)
 UPDATE public.products SET retail_price = 1.8, informed_sport = false WHERE id = 'e4fd101e-4969-4054-92ab-f02d4cb3d494'; -- Myprotein Layered Protein Bar (Salted Caramel)
 UPDATE public.products SET retail_price = 2.5, informed_sport = false WHERE id = '0aa95107-59ac-4c3c-bec9-afc1b10efcb8'; -- Quest Nutrition Quest Bar (Chocolate Chip Cookie Dough)
 UPDATE public.products SET retail_price = 3.5 WHERE id = 'f951cf02-9536-4e73-ac62-17bb7a8a33d0'; -- Yfood Classic (Choco)
@@ -161,7 +160,6 @@ UPDATE public.products SET retail_price = 49.99, informed_sport = false, proprie
 UPDATE public.products SET retail_price = 54.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 86.67 WHERE id = '444c84df-121b-4ca2-923b-12abfb876ba7'; -- CNP Professional CNP Isolate
 UPDATE public.products SET retail_price = 39.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 90 WHERE id = 'bb1576f2-90e5-4801-b8ab-33e7c9233d03'; -- Supplement Needs Whey Isolate
 UPDATE public.products SET retail_price = 59.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 93.6 WHERE id = 'ed2dde3b-396f-4f7f-8545-b3afc660b4de'; -- Applied Nutrition ISO-XP
-UPDATE public.products SET retail_price = 29.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 70 WHERE id = 'b9058eef-f71a-49f7-9672-a264d1a09614'; -- Warrior Whey Protein
 UPDATE public.products SET retail_price = 2.3, informed_sport = false WHERE id = '9bd730b4-56ca-4545-bb05-69ed6d48ffb9'; -- Barebells Protein Bar (Cookies & Cream)
 UPDATE public.products SET retail_price = 39.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 80 WHERE id = '57f5ba6e-6453-4276-a083-3823774ec779'; -- Strom Sports Nutrition VelosiWHEY Isolate
 UPDATE public.products SET retail_price = 64.99, informed_sport = false, proprietary_blend = false, amino_spiked = false, protein_yield = 83.3 WHERE id = 'd09943d3-3d37-4349-b34e-6f73a288e7c0'; -- Reflex Nutrition Isolate Pro

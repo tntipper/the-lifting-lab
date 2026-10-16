@@ -1,3 +1,4 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -12,7 +13,7 @@ import type { EvidenceLevel, Ingredient } from '@/lib/ingredients'
 // the matchup list is fixed and any unknown slug should 404.
 export const dynamicParams = false
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 const EVIDENCE_STYLE: Record<EvidenceLevel, string> = {
   Strong: 'text-lab-lime border-lab-lime/50',
@@ -93,8 +94,8 @@ export default async function IngredientMatchupPage({
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
 
       <article className="max-w-3xl mx-auto px-6 py-12">
         <nav aria-label="Breadcrumb" className="mb-4 text-xs text-lab-muted">

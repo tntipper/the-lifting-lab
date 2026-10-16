@@ -1,19 +1,24 @@
+import { pageMetadata } from '@/lib/seo'
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { GUIDES } from '@/lib/guides'
 
 export const metadata: Metadata = {
+  openGraph: pageMetadata('/guide', 'Supplement Guides — Evidence-Based UK Buyer’s Guides | The Lifting Lab', 'Supplement research guides and recorded label context. Product effectiveness recommendations remain unavailable pending assessment approval.').openGraph,
+  twitter: pageMetadata('/guide', 'Supplement Guides — Evidence-Based UK Buyer’s Guides | The Lifting Lab', 'Supplement research guides and recorded label context. Product effectiveness recommendations remain unavailable pending assessment approval.').twitter,
+
   title: 'Supplement Guides — Evidence-Based UK Buyer’s Guides | The Lifting Lab',
   description:
-    'Plain-English, evidence-based guides to creatine, whey, pre-workout, EAAs and more. Learn how to dose each supplement and which UK products are worth buying.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk/guide' },
+    'Supplement research guides and recorded label context. Product effectiveness recommendations remain unavailable pending assessment approval.',
+  alternates: { canonical: 'https://theliftinglab.co.uk/guide' },
 }
 
 export default function GuideIndex() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
-      <TopNav />
+      <TopNav /><BreadcrumbJsonLd path="/guide" name="Guide" />
       <div className="max-w-4xl mx-auto px-6 py-12">
         <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-4">
           Supplement Guides
@@ -22,8 +27,8 @@ export default function GuideIndex() {
           Know what you&apos;re <span className="text-lab-lime">buying</span>
         </h1>
         <p className="text-lab-muted max-w-2xl mb-6">
-          Short, honest, evidence-based guides to the supplements that matter. How to
-          dose them, what the marketing hides, and which UK products actually deliver.
+          Supplement research guides. Product effectiveness recommendations are unavailable. Research how to
+          understand ingredient and label context. The recorded products remain available for inspection.
         </p>
         <p className="text-sm text-lab-muted mb-10">
           Want to go deeper on a single active?{' '}

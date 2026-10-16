@@ -1,8 +1,10 @@
+import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { getIngredient, INGREDIENT_SLUGS, type EvidenceLevel } from '@/lib/ingredients'
 import { matchupsForIngredient } from '@/lib/ingredient-matchups'
 import { GUIDE_SLUGS } from '@/lib/guides'
@@ -30,7 +32,7 @@ export async function generateMetadata({
   const { slug } = await params
   const ing = getIngredient(slug)
   if (!ing) return { title: 'Ingredient not found — The Lifting Lab' }
-  const url = `https://www.theliftinglab.co.uk/ingredients/${ing.slug}`
+  const url = `https://theliftinglab.co.uk/ingredients/${ing.slug}`
   return {
     title: ing.metaTitle,
     description: ing.metaDescription,
@@ -60,7 +62,7 @@ async function topProducts(category: string | undefined, limit = 3): Promise<Sco
       .eq('status', 'active')
       .eq('category', category)
     if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore), 'score').slice(0, limit)
+    return sortScored((data as Product[]).map(withScore).filter(hasApprovedAssessment), 'score').slice(0, limit)
   } catch {
     return []
   }
@@ -76,7 +78,7 @@ export default async function IngredientPage({
   if (!ing) notFound()
 
   const products = await topProducts(ing.productCategory)
-  const url = `https://www.theliftinglab.co.uk/ingredients/${ing.slug}`
+  const url = `https://theliftinglab.co.uk/ingredients/${ing.slug}`
 
   // Only link guides that genuinely exist, so we never produce a dead link.
   const relatedGuides = ing.relatedGuides.filter((g) => GUIDE_SLUGS.includes(g))
@@ -115,7 +117,7 @@ export default async function IngredientPage({
     publisher: {
       '@type': 'Organization',
       name: 'The Lifting Lab',
-      url: 'https://www.theliftinglab.co.uk',
+      url: 'https://theliftinglab.co.uk',
     },
     mainEntity: {
       '@type': 'DefinedTerm',
@@ -125,7 +127,7 @@ export default async function IngredientPage({
       inDefinedTermSet: {
         '@type': 'DefinedTermSet',
         name: 'The Lifting Lab Supplement Ingredient Library',
-        url: 'https://www.theliftinglab.co.uk/ingredients',
+        url: 'https://theliftinglab.co.uk/ingredients',
       },
     },
   }
@@ -144,7 +146,7 @@ export default async function IngredientPage({
         name: p.name,
         brand: { '@type': 'Brand', name: p.brand },
         category: categoryLabel(p.category),
-        url: `https://www.theliftinglab.co.uk/products/${p.id}`,
+        url: `https://theliftinglab.co.uk/products/${p.id}`,
       },
     })),
   } : null
@@ -153,8 +155,8 @@ export default async function IngredientPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { name: 'Home', item: 'https://www.theliftinglab.co.uk' },
-      { name: 'Ingredients', item: 'https://www.theliftinglab.co.uk/ingredients' },
+      { name: 'Home', item: 'https://theliftinglab.co.uk' },
+      { name: 'Ingredients', item: 'https://theliftinglab.co.uk/ingredients' },
       { name: ing.name, item: url },
     ].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
   }
@@ -169,11 +171,11 @@ export default async function IngredientPage({
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(definedTermJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(definedTermJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
       {itemListJsonLd && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }} />
       )}
 
       <article className="max-w-3xl mx-auto px-6 py-12">
@@ -239,7 +241,7 @@ export default async function IngredientPage({
                   key={p.id}
                   className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
                 >
-                  <ScoreBadge score={p.score} />
+                  <ProductAssessment product={p} />
                   <div className="min-w-0 flex-1">
                     <p className="text-white text-sm font-bold truncate">{p.brand}</p>
                     <p className="text-lab-muted text-xs truncate">{p.name}</p>

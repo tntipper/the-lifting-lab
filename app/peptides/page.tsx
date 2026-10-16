@@ -1,10 +1,11 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import PeptidesBoard from './PeptidesBoard'
 import { PEP_ITEMS, itemCount, tierCount } from '@/lib/peptides'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/peptides`
 
 export const metadata: Metadata = {
@@ -54,8 +55,8 @@ export default function PeptidesPage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
         {/* breadcrumb */}
@@ -78,8 +79,7 @@ export default function PeptidesPage() {
           &ldquo;Peptides&rdquo; is one of the most hyped words in fitness right now, and most of what is being sold
           online is unlicensed injectables with the marketing miles ahead of the evidence. Here is the honest
           version: the few peptides that are actually proven and legal to buy, the powerful ones that are
-          prescription medicines, and the grey-market vials to steer clear of — scored in the same green, amber
-          and red we use on products.
+          prescription medicines, and the grey-market vials to steer clear of. Historical product scores are unverified and do not grant effectiveness recommendations.
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
           {itemCount()} of the most-searched peptides below, and only {worksN} are things you can genuinely buy
@@ -157,8 +157,8 @@ export default function PeptidesPage() {
             <h2 className="text-lg font-black uppercase tracking-wide mb-2">Where this page stops</h2>
             <p className="text-lab-muted text-sm leading-relaxed">
               This is general, evidence-based information, not medical advice, a prescription or a how-to. Any
-              decision involving a licensed medicine — GLP-1s, PT-141, growth-hormone therapy — is a matter for a
-              doctor or pharmacist who can assess you and monitor treatment. We deliberately give no dosing or
+              decision involving a licensed medicine (GLP-1s or growth-hormone therapy) is a matter for a
+              doctor or pharmacist who can assess you and monitor treatment. PT-141 is not UK-licensed. We deliberately give no dosing or
               sourcing guidance for unlicensed peptides, because the honest answer is not to self-source them.
             </p>
           </div>
@@ -174,7 +174,7 @@ export default function PeptidesPage() {
               <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">Related</p>
               <p className="text-sm font-black uppercase tracking-wide text-white">Natural Testosterone Support</p>
               <p className="text-xs text-lab-muted leading-snug mt-1">
-                The honest, evidence-based version of raising testosterone — the real levers, the weak bets, and the boosters to skip.
+                Testosterone supplement claims are under review. Read the evidence limitations and when to seek clinical assessment.
               </p>
             </div>
             <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
@@ -209,19 +209,14 @@ export default function PeptidesPage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Spend on what actually moves the needle</h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            The unglamorous truth is that the things that build muscle, aid recovery and support your hormones are
-            the boring, proven, legal ones — enough protein, creatine, sleep and a sensible base of supplements at
-            a proper dose. Every product we track is scored 0&ndash;100 on how closely it matches the evidence, with
-            the true cost per effective serving, or let the wizard build a clean, sensible stack in a minute.
-          </p>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Explore product research records</h2>
+          <p className="text-lab-muted text-sm leading-relaxed mb-5">No approved effectiveness assessment is available. Historical scores cannot choose products or validate a dose. Browse recorded labels and listed prices, or build a manual research stack.</p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best supplements 2026 →
+              Product research →
             </Link>
             <Link
               href="/wizard"

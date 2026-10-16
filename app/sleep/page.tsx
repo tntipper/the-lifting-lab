@@ -1,10 +1,11 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import SleepBoard from './SleepBoard'
 import { SLEEP_ITEMS, itemCount, tierCount } from '@/lib/sleep'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/sleep`
 
 export const metadata: Metadata = {
@@ -54,8 +55,8 @@ export default function SleepPage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
         {/* breadcrumb */}
@@ -77,8 +78,7 @@ export default function SleepPage() {
         <p className="text-lg text-white/90 leading-relaxed mb-4">
           The sleep aisle is full of &ldquo;PM&rdquo; tubs and knockout blends, and most of them lean on
           ingredients that barely move the needle. Here is the honest version: the handful of habits and
-          supplements with real evidence behind them, the weak bets, and the ones to skip — scored in the
-          same green, amber and red we use on products.
+          supplements with real evidence behind them, the weak bets, and the ones to skip. Historical product scores are unverified and do not grant effectiveness recommendations.
         </p>
         <p className="text-lab-muted leading-relaxed mb-8">
           {itemCount()} of the most-searched sleep levers below, and only {worksN} carry real evidence —
@@ -172,7 +172,7 @@ export default function SleepPage() {
               <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-lab-lime mb-1">Related</p>
               <p className="text-sm font-black uppercase tracking-wide text-white">Natural Testosterone Support</p>
               <p className="text-xs text-lab-muted leading-snug mt-1">
-                Sleep is the single biggest natural-testosterone lever — the same honest treatment applied to boosting testosterone.
+                Testosterone supplement claims are under review. Read the evidence limitations and when to seek clinical assessment.
               </p>
             </div>
             <span className="text-lab-lime text-lg font-black shrink-0 group-hover:translate-x-1 transition-transform">→</span>
@@ -207,13 +207,8 @@ export default function SleepPage() {
 
         {/* funnel */}
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
-          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Buy the few things that help, done right</h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            If a supplement earns its place — magnesium glycinate, a standardised ashwagandha, maybe glycine —
-            the job is buying it at a proper dose without overpaying. Every product we track is scored
-            0&ndash;100 on how closely it matches the evidence, with the true cost per effective serving, or
-            let the wizard build a clean, sensible stack in a minute.
-          </p>
+          <h2 className="text-lg font-black uppercase tracking-wide mb-3">Explore product research records</h2>
+          <p className="text-lab-muted text-sm leading-relaxed mb-5">No approved effectiveness assessment is available. Historical scores cannot choose products or validate a dose. Browse recorded labels and listed prices, or build a manual research stack.</p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/products?category=magnesium"

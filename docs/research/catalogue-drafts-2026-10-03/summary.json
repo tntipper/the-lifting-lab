@@ -1,0 +1,12 @@
+{
+  "products": 63,
+  "variants": 74,
+  "official_pages_http200": 62,
+  "structured_manufacturer_pages": 44,
+  "variants_with_one_barcode_candidate": 33,
+  "zero_stock_variants": 10,
+  "price_scenarios": 61,
+  "image_references": 187,
+  "approved_label_records": 0,
+  "approved_price_changes": 0
+}

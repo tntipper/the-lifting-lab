@@ -1,14 +1,13 @@
+import { isIsolatedEnvironment } from '@/lib/preview-mode'
+import { AGENT_CRAWLERS, PRIVATE_PATHS, noIndexDeployment } from '@/lib/seo-crawlers'
+
+const SITE_URL = 'https://theliftinglab.co.uk'
 import type { MetadataRoute } from 'next'
 
-const BASE = 'https://www.theliftinglab.co.uk'
-
 export default function robots(): MetadataRoute.Robots {
+  if (isIsolatedEnvironment() || noIndexDeployment()) return { rules: { userAgent: '*', disallow: '/' } }
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: ['/dashboard', '/auth', '/api/'],
-    },
-    sitemap: `${BASE}/sitemap.xml`,
+    rules: ['*', ...AGENT_CRAWLERS].map(userAgent => ({ userAgent, allow: '/', disallow: PRIVATE_PATHS })),
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

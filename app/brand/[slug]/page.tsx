@@ -1,13 +1,17 @@
+import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type ScoredProduct } from '@/lib/products'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
 import { brandSlug } from '@/lib/brands'
 
 // SSG for known brands at build time, with on-demand rendering for any brand
@@ -15,7 +19,7 @@ import { brandSlug } from '@/lib/brands'
 export const revalidate = 86400
 export const dynamicParams = true
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const YEAR = 2026
 
 type BrandData = {
@@ -30,8 +34,8 @@ type BrandData = {
 // over the live product set — no reverse-lookup table that could drift.
 async function getBrand(slug: string): Promise<BrandData | null> {
   try {
-    const sb = createPublicClient()
-    const { data, error } = await sb
+    // Synthetic preview has no database; use the same preview catalogue as the product pages.
+    const { data, error } = isSyntheticPreview() ? { data: PREVIEW_PRODUCTS as unknown as Product[], error: null } : await createPublicClient()
       .from('products')
       .select(PRODUCT_COLUMNS)
       .eq('status', 'active')
@@ -42,7 +46,7 @@ async function getBrand(slug: string): Promise<BrandData | null> {
     if (matches.length === 0) return null
 
     const products = sortScored(matches, 'score')
-    const scores = products.map((p) => p.score).filter((s): s is number => s != null)
+    const scores = products.filter(hasApprovedAssessment).map((p) => p.score)
     return {
       brand: products[0].brand,
       products,
@@ -57,8 +61,8 @@ async function getBrand(slug: string): Promise<BrandData | null> {
 
 export async function generateStaticParams() {
   try {
-    const sb = createPublicClient()
-    const { data, error } = await sb.from('products').select('brand').eq('status', 'active')
+    const { data, error } = isSyntheticPreview() ? { data: PREVIEW_PRODUCTS.map(p => ({ brand: p.brand })), error: null }
+      : await createPublicClient().from('products').select('brand').eq('status', 'active')
     if (error || !data) return []
     const slugs = new Set<string>()
     for (const row of data as { brand: string | null }[]) {
@@ -79,8 +83,8 @@ export async function generateMetadata({
   const data = await getBrand(slug)
   if (!data) return { title: 'Brand not found — The Lifting Lab' }
   const url = `${SITE}/brand/${slug}`
-  const title = `${data.brand} Supplements — Reviews & Scores UK ${YEAR} | The Lifting Lab`
-  const description = `${data.brand} supplements scored against evidence-based dosing. We track ${data.products.length} ${data.brand} ${data.products.length === 1 ? 'product' : 'products'}${data.avgScore != null ? `, averaging ${data.avgScore}/100` : ''}. See every product ranked by effectiveness.`
+  const title = `${data.brand} supplement catalogue | The Lifting Lab`
+  const description = `Browse ${data.brand} supplement records, labels and listed prices by category. Formulations and serving sizes differ; effectiveness assessments are unavailable.`
   return {
     title,
     description,
@@ -104,7 +108,7 @@ export default async function BrandPage({
   if (!data) notFound()
 
   const url = `${SITE}/brand/${slug}`
-  const top = data.products[0]
+  const top = data.products.find(hasApprovedAssessment)
 
   // Brand entity — the canonical node for "[brand] supplements" searches, with
   // its product range as a nested ItemList so Google can cluster the brand and
@@ -114,15 +118,15 @@ export default async function BrandPage({
     '@type': 'Brand',
     name: data.brand,
     url,
-    description: `${data.brand} sports nutrition and supplements, independently scored by The Lifting Lab against evidence-based clinical dosing.`,
+    description: `${data.brand} supplement research records. No approved effectiveness assessment is available.`,
   }
 
   const itemListJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: `${data.brand} products ranked`,
-    description: `${data.brand} supplements ranked by The Lifting Lab Effectiveness Match score.`,
-    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    name: `${data.brand} research catalogue`,
+    description: `${data.brand} research records, including unassessed and under-review products.`,
+    itemListOrder: 'https://schema.org/ItemListUnordered',
     numberOfItems: data.products.length,
     itemListElement: data.products.map((p, i) => ({
       '@type': 'ListItem',
@@ -150,9 +154,9 @@ export default async function BrandPage({
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(brandJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(brandJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         <nav aria-label="Breadcrumb" className="mb-4 text-xs text-lab-muted">
@@ -171,14 +175,7 @@ export default async function BrandPage({
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
           {data.brand} <span className="text-lab-lime">Supplements</span>
         </h1>
-        <p className="text-lg text-white/90 leading-relaxed mb-4">
-          We score {data.products.length} {data.brand}{' '}
-          {data.products.length === 1 ? 'product' : 'products'} across{' '}
-          {data.categories.length}{' '}
-          {data.categories.length === 1 ? 'category' : 'categories'}, rating each on how closely its
-          active doses match the evidence-based clinical reference for its category — never on brand
-          reputation or marketing.
-        </p>
+        <p className="text-lg text-white/90 leading-relaxed mb-4">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
         {top && (
           <p className="text-lab-muted leading-relaxed mb-8">
             Their strongest pick on our scoring is{' '}
@@ -210,7 +207,7 @@ export default async function BrandPage({
             All {data.brand} <span className="text-lab-lime">products</span>
           </h2>
           <p className="text-lab-muted text-sm mb-5">
-            Ranked by The Lifting Lab Effectiveness Match score.
+            Research records are shown alphabetically. All historical scores are unverified; no effectiveness ranking is available.
           </p>
           <div className="space-y-3">
             {data.products.map((p) => {
@@ -218,7 +215,7 @@ export default async function BrandPage({
               return (
                 <div key={p.id} className="bg-lab-panel border border-lab-border rounded-xl p-4">
                   <div className="flex items-center gap-4">
-                    <ScoreBadge score={p.score} />
+                    <ProductAssessment product={p} />
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] uppercase tracking-widest text-lab-lime mb-0.5">
                         {categoryLabel(p.category)}
@@ -253,19 +250,15 @@ export default async function BrandPage({
                         Category
                       </Link>
                     )}
-                    <a
-                      href={buyLink(p.brand, p.name, p.buy_url)}
-                      target="_blank"
-                      rel="noopener noreferrer nofollow"
+                    <ProductOfferLink
+                      product={p}
                       className="text-center text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl"
                       style={{
                         background: 'rgba(166,226,46,0.12)',
                         color: '#a6e22e',
                         border: '1px solid rgba(166,226,46,0.5)',
                       }}
-                    >
-                      Buy
-                    </a>
+                    />
                   </div>
                 </div>
               )
@@ -277,15 +270,9 @@ export default async function BrandPage({
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">
             How {data.brand} is scored
           </h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-3">
-            Each product earns an Effectiveness Match score (0–100) measuring how closely its active
-            ingredient doses match the evidence-based clinical reference for its category.
-            Proprietary blends and amino-spiked formulas are penalised because they hide the real
-            dose. We are independent — scores are never influenced by brands or affiliate deals.
-          </p>
+          <p className="text-lab-muted text-sm leading-relaxed mb-3">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
           <p className="text-lab-muted/70 text-xs leading-relaxed mb-5">
-            Informational only — not medical advice. Buy links are affiliate links; we may earn a
-            commission at no extra cost to you. This never affects scoring.
+            Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link

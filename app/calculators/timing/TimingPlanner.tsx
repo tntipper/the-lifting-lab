@@ -218,8 +218,8 @@ export default function TimingPlanner() {
               Watch your sleep
             </p>
             <p className="text-[12px] text-lab-muted leading-relaxed">
-              You train in the evening and take a stimulant. Caffeine has a half-life of roughly 5 to 6 hours,
-              so a pre-workout at 6pm still leaves about half of it in your system near midnight. If your sleep
+              You train in the evening and take a stimulant. Caffeine&apos;s half-life averages around 5 hours in healthy
+              adults but varies widely between people, so a pre-workout at 6pm can still leave about half of it in your system near 11pm. If your sleep
               suffers, cap caffeine at least 8 hours before bed or switch to a stim-free pre-workout on late days.
             </p>
           </div>
@@ -251,7 +251,7 @@ export default function TimingPlanner() {
             onClick={() => track('calculator_cta', { tab: 'timing', target: 'wizard' })}
             className="text-center text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-all"
           >
-            Build my stack
+            Explore my stack
           </Link>
           <Link
             href="/calculators"

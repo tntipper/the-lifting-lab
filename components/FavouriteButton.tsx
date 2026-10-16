@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { track } from '@/lib/gtag'
+import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
 
 // Heart toggle for favouriting a product. Favourites are auth-gated (hard gate):
-// a signed-out click redirects to /auth rather than saving.
+// a signed-out click redirects to sign-in rather than saving.
 //
 // `signedIn` is tri-state: null = auth not resolved yet. We must NOT bounce to
-// /auth while it's unknown (that was F10 — a race where clicking before auth
+// sign-in while it's unknown (that was F10 — a race where clicking before auth
 // resolved, or any non-ok favourites GET, sent a logged-in user to sign-in).
 export default function FavouriteButton({
   productId,
@@ -26,12 +27,13 @@ export default function FavouriteButton({
   const [busy, setBusy] = useState(false)
   const router = useRouter()
   const dim = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'
+  const signInHref = accountSignInHref()
 
   async function toggle() {
     // Auth state not known yet — do nothing rather than guess (no false bounce).
     if (signedIn === null) return
     if (!signedIn) {
-      router.push('/auth')
+      router.push(signInHref)
       return
     }
     if (busy) return
@@ -44,7 +46,7 @@ export default function FavouriteButton({
         body: JSON.stringify({ productId }),
       })
       if (!res.ok) {
-        if (res.status === 401) router.push('/auth')
+        if (res.status === 401) router.push(signInHref)
         return
       }
       if (next) track('favourite_add', { item_id: productId })

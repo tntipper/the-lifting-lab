@@ -1,4 +1,4 @@
-import { OG_SIZE, OG_CONTENT_TYPE, ogHook, renderOgCard } from '@/lib/og-card'
+import { OG_SIZE, OG_CONTENT_TYPE, renderOgCard } from '@/lib/og-card'
 import { getStackGuide } from '@/lib/stacks'
 
 export const runtime = 'edge'
@@ -13,8 +13,6 @@ export default async function Image({ params }: { params: Promise<{ goal: string
   const stack = getStackGuide(goal)
   const eyebrow = stack ? stack.eyebrow : 'Goal-Based Stacks'
   const title = stack ? stack.h1 : 'Supplement Stacks'
-  const subtitle = stack
-    ? ogHook(stack.metaDescription)
-    : 'Complete, evidence-based supplement stacks for every goal.'
+  const subtitle = 'Goal research records; no approved product or combined-stack recommendation.'
   return renderOgCard({ eyebrow, title, subtitle, tag: 'Stack 2026' })
 }

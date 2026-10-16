@@ -1,9 +1,10 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import Calculator1RM from './Calculator1RM'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/calculators/1rm`
 
 export const metadata: Metadata = {
@@ -75,8 +76,8 @@ export default function OneRepMaxPage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
         {/* breadcrumb */}
@@ -219,16 +220,15 @@ export default function OneRepMaxPage() {
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">Want to move the number?</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Training drives strength — but creatine and a solid pre-workout are the two supplements with
-            real evidence behind them. Every product we track is scored 0–100 on how closely its doses
-            match that evidence.
+            Training drives strength. Explore the available creatine product labels and research
+            while individual product assessments remain under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/creatine"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best creatine 2026 →
+              Creatine research →
             </Link>
             <Link
               href="/calculators"
@@ -239,8 +239,7 @@ export default function OneRepMaxPage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical or coaching advice. Warm up, use safety pins or a spotter
-            near your max, and stop if a lift feels unsafe. Buy links are affiliate links; we may earn a
-            commission at no extra cost to you.
+            near your max, and stop if a lift feels unsafe. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

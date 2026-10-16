@@ -1,8 +1,10 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
+import { hasApprovedAssessment } from '@/lib/assessment-display'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { getGuide, GUIDE_SLUGS } from '@/lib/guides'
 import { getCitations, formatCitation } from '@/lib/guide-citations'
 import { categoryLabel } from '@/lib/categories'
@@ -10,6 +12,8 @@ import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type ScoredProduct } from '@/lib/products'
 import { MIN_RANKED } from '@/lib/best-categories'
+import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
+import { claimsReviewFor } from '@/lib/claims-review'
 
 export const revalidate = 86400 // refresh top products daily
 
@@ -25,22 +29,22 @@ export async function generateMetadata({
   const { category } = await params
   const guide = getGuide(category)
   if (!guide) return { title: 'Guide not found — The Lifting Lab' }
-  const url = `https://www.theliftinglab.co.uk/guide/${guide.slug}`
+  const url = `https://theliftinglab.co.uk/guide/${guide.slug}`
   return {
-    title: guide.metaTitle,
-    description: guide.metaDescription,
+    title: `${categoryLabel(guide.slug)} research guide — product recommendations unavailable`,
+    description: 'Supplement research and label context. Product effectiveness assessments are unverified; no ranked product recommendations are available.',
     alternates: { canonical: url },
     openGraph: {
-      title: guide.metaTitle,
-      description: guide.metaDescription,
+      title: `${categoryLabel(guide.slug)} research guide — product recommendations unavailable`,
+      description: 'Supplement research and label context. Product effectiveness assessments are unverified; no ranked product recommendations are available.',
       url,
       type: 'article',
       siteName: 'The Lifting Lab',
     },
     twitter: {
       card: 'summary_large_image',
-      title: guide.metaTitle,
-      description: guide.metaDescription,
+      title: `${categoryLabel(guide.slug)} research guide — product recommendations unavailable`,
+      description: 'Supplement research and label context. Product effectiveness assessments are unverified; no ranked product recommendations are available.',
     },
   }
 }
@@ -57,7 +61,7 @@ async function categoryScored(category: string): Promise<ScoredProduct[]> {
       .eq('status', 'active')
       .eq('category', category)
     if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore), 'score')
+    return sortScored((data as Product[]).map(withScore).filter(hasApprovedAssessment), 'score')
   } catch {
     return []
   }
@@ -72,13 +76,14 @@ export default async function GuidePage({
   const guide = getGuide(category)
   if (!guide) notFound()
 
-  const allScored = await categoryScored(guide.slug)
+  const review = claimsReviewFor(guide.slug)
+  const allScored = review ? [] : await categoryScored(guide.slug)
   const products = allScored.slice(0, 3)
   // A full /best/[category] ranking page exists only when the category has
   // enough scored products (same gate as that page + the sitemap).
   const hasRanking = allScored.length >= MIN_RANKED
   const citations = getCitations(guide.slug)
-  const url = `https://www.theliftinglab.co.uk/guide/${guide.slug}`
+  const url = `https://theliftinglab.co.uk/guide/${guide.slug}`
 
   // Sibling guides from the same browse group — gives each guide topical
   // internal links instead of being an SEO island linking only back to /guide.
@@ -101,21 +106,21 @@ export default async function GuidePage({
   // for this YMYL (health) content in search.
   const articleJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'MedicalWebPage',
+    '@type': review ? 'WebPage' : 'MedicalWebPage',
     name: guide.h1,
-    headline: guide.metaTitle,
-    description: guide.metaDescription,
+    headline: `${categoryLabel(guide.slug)} research guide`,
+    description: 'Supplement research and label context. Product effectiveness assessments are unverified; no ranked product recommendations are available.',
     url,
     inLanguage: 'en-GB',
-    lastReviewed: '2026-06-15',
+    ...(!review && { lastReviewed: '2026-06-15' }),
     publisher: {
       '@type': 'Organization',
       name: 'The Lifting Lab',
-      url: 'https://www.theliftinglab.co.uk',
+      url: 'https://theliftinglab.co.uk',
     },
     ...(citations.length > 0 && {
       citation: citations.map((c) => ({
-        '@type': 'ScholarlyArticle',
+        '@type': review ? 'WebPage' : 'ScholarlyArticle',
         name: c.title,
         author: c.authors,
         ...(c.year && { datePublished: c.year }),
@@ -145,7 +150,7 @@ export default async function GuidePage({
         name: p.name,
         brand: { '@type': 'Brand', name: p.brand },
         category: categoryLabel(p.category),
-        url: `https://www.theliftinglab.co.uk/products/${p.id}`,
+        url: `https://theliftinglab.co.uk/products/${p.id}`,
       },
     })),
   } : null
@@ -156,8 +161,8 @@ export default async function GuidePage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { name: 'Home', item: 'https://www.theliftinglab.co.uk' },
-      { name: 'Guides', item: 'https://www.theliftinglab.co.uk/guide' },
+      { name: 'Home', item: 'https://theliftinglab.co.uk' },
+      { name: 'Guides', item: 'https://theliftinglab.co.uk/guide' },
       { name: `${categoryLabel(guide.slug)} Guide`, item: url },
     ].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
   }
@@ -167,20 +172,20 @@ export default async function GuidePage({
       <TopNav />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(articleJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
       {itemListJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }}
         />
       )}
 
@@ -208,6 +213,8 @@ export default async function GuidePage({
         </h1>
 
         <p className="text-lg text-white/90 leading-relaxed mb-6">{guide.intro}</p>
+        <ClaimsReviewNotice category={guide.slug} />
+        <p className="text-sm text-lab-muted my-6">No approved product effectiveness assessment is available. Historical scores do not grant recommendations. <Link href={`/products?category=${guide.slug}`} className="underline">Browse recorded labels and listed prices</Link> or <Link href="/stack" className="underline">manage your manual stack</Link>.</p>
 
         {guide.paras.map((p, i) => (
           <p key={i} className="text-lab-muted leading-relaxed mb-5">
@@ -230,7 +237,7 @@ export default async function GuidePage({
                   key={p.id}
                   className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
                 >
-                  <ScoreBadge score={p.score} />
+                  <ProductAssessment product={p} />
                   <div className="min-w-0 flex-1">
                     <p className="text-white text-sm font-bold truncate">{p.brand}</p>
                     <p className="text-lab-muted text-xs truncate">{p.name}</p>

@@ -1,4 +1,7 @@
-// EFSA Tolerable Upper Intake Levels
+import type { StoreLinkMapping } from './commerce/product-mapping'
+
+// EFSA upper limits and EFSA/UK EVM guidance or safe levels.
+// The legacy ul field stores the numeric comparison threshold; limitLabel identifies its basis.
 // Source: nutrient_limits.json (EFSA 2006-2024)
 
 export const NUTRIENT_LIMITS: Record<string, {
@@ -6,20 +9,21 @@ export const NUTRIENT_LIMITS: Record<string, {
   unit: string
   risk: 'low' | 'medium' | 'high'
   note: string
+  limitLabel?: string
 }> = {
   'Vitamin A': { ul: 3000, unit: 'mcg', risk: 'high', note: 'Fat-soluble; accumulates in liver' },
   'Vitamin D3': { ul: 100, unit: 'mcg', risk: 'high', note: 'Fat-soluble; UL = 100mcg (4,000 IU)' },
   'Vitamin E': { ul: 300, unit: 'mg', risk: 'medium', note: 'Anticoagulant effects at high doses' },
-  'Vitamin C': { ul: 1000, unit: 'mg', risk: 'low', note: 'GI disturbance above UL' },
+  'Vitamin C': { ul: 1000, unit: 'mg', risk: 'low', limitLabel: 'UK EVM guidance', note: 'UK EVM guidance: 1000mg/day supplemental vitamin C, not an EFSA UL; higher doses may cause GI disturbance' },
   'Vitamin B6': { ul: 12, unit: 'mg', risk: 'high', note: 'UL reduced from 25mg to 12mg (EFSA 2023); peripheral neuropathy risk' },
   'Vitamin B12': { ul: null, unit: 'mcg', risk: 'low', note: 'No established UL' },
   'Zinc': { ul: 25, unit: 'mg', risk: 'high', note: 'Common in multi+ZMA stacks; copper depletion' },
   'Magnesium': { ul: 250, unit: 'mg', risk: 'medium', note: 'UL applies to supplemental Mg only; GI effects' },
-  'Iron': { ul: 40, unit: 'mg', risk: 'high', note: 'TRT increases RBC; monitor serum ferritin' },
+  'Iron': { ul: 40, unit: 'mg', risk: 'high', limitLabel: 'EFSA intake guidance', note: 'EFSA intake guidance: 40 mg/day total iron for adults, not a UL. If you\'re on TRT, which can raise red blood cell count, speak to your clinician before adding iron and about blood tests.' },
   'Selenium': { ul: 255, unit: 'mcg', risk: 'high', note: 'UL lowered to 255mcg (EFSA 2023); narrow therapeutic window; selenosis risk' },
   'Iodine': { ul: 600, unit: 'mcg', risk: 'medium', note: 'Thyroid disruption at excess' },
   'Calcium': { ul: 2500, unit: 'mg', risk: 'low', note: 'Calcification risk at very high doses' },
-  'Caffeine': { ul: 400, unit: 'mg', risk: 'medium', note: 'EFSA safe habitual dose; CV effects above' },
+  'Caffeine': { ul: 400, unit: 'mg', risk: 'medium', limitLabel: 'EFSA intake guidance', note: 'EFSA intake guidance: 400 mg/day from all sources for healthy adults (200 mg/day if pregnant or breastfeeding), not a UL.' },
 }
 
 export function normaliseNutrientName(name: string): string {
@@ -50,6 +54,7 @@ export type SafetyFlag = {
   risk: 'low' | 'medium' | 'high'
   products: string[]
   note: string
+  limitLabel: string
 }
 
 export function analyseStack(stackItems: StackItem[]): SafetyFlag[] {
@@ -89,6 +94,7 @@ export function analyseStack(stackItems: StackItem[]): SafetyFlag[] {
         risk: limit.risk,
         products: total.products,
         note: limit.note,
+        limitLabel: limit.limitLabel ?? 'EFSA UL',
       })
     }
   }
@@ -107,6 +113,7 @@ export type StackItem = {
     serving_size: number
     serving_unit: string
     buy_url?: string | null
+    storeLinkMapping?: StoreLinkMapping | null
     product_nutrients: { nutrient_name: string; amount: number; unit: string }[]
   }
 }

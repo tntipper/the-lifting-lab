@@ -1,0 +1,27 @@
+{
+  "slice": "stage-3-slice-3-auth-mount",
+  "date": "2026-09-21",
+  "tipSha": "cursor/stage3-slice3-auth-mount-922b",
+  "baseSha": "3989c6c7e539caeece71841a18f90ee3bbd6382a",
+  "baseBranch": "codex/tll-integration",
+  "plan": "docs/ops/stage-plans/2026-09-21-stage-3-slice-3-auth-mount.md",
+  "evidence": "docs/ops/evidence/2026-09-21-stage-3-slice-3-auth-mount-acceptance.md",
+  "checks": {
+    "liveBoundaries": "PASS",
+    "focusedMountTests": "PASS",
+    "focusedRouteAndDeliveryTests": "PASS"
+  },
+  "results": [
+    { "id": "prepare-set-cookie-csrf", "result": "PASS", "via": "app-router-handler+real-delivery" },
+    { "id": "start-csrf", "result": "PASS", "via": "app-router-handler+real-delivery" },
+    { "id": "start-duplicate-transaction", "result": "PASS", "via": "app-router-handler+real-delivery" },
+    { "id": "prepare-cancelled-body", "result": "PASS", "via": "app-router-handler+real-delivery" },
+    { "id": "prepare-start-expiry", "result": "PASS", "via": "app-router-handler+real-delivery" },
+    { "id": "start-lost-acknowledgement-surface", "result": "PASS", "via": "app-router-handler+scripted-delivery", "note": "Durable SQL lost-ack remains in admission-bridge suites" },
+    { "id": "authorize-recover-replay-surface", "result": "PASS", "via": "app-router-handler+scripted-delivery", "note": "Durable one-use admit remains in delivery/admission-bridge suites" },
+    { "id": "fixture-seam-inert", "result": "PASS" },
+    { "id": "next-http-allowlisted-origin-drive-through", "result": "GAP", "reason": "Delivery origin allowlist blocks local Next HTTP without DNS/TLS override" },
+    { "id": "full-sql-start-admit-recover-mount", "result": "GAP", "reason": "Offline fixture only in this slice" },
+    { "id": "slice-4-shopify-callback-session", "result": "GAP", "reason": "Excluded from Slice 3" }
+  ]
+}

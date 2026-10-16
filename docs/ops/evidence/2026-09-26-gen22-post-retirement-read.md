@@ -1,0 +1,16 @@
+# Stage 3 post-retirement read — 26 September 2026, 19:39 UTC
+
+This is a read of staging administration pages and repository state. It did not read or reveal secret values, alter settings, deploy, activate customer/cart, or make a purchase. The consumed Generation 22 setup and retirement commands were not rerun.
+
+## Observed
+
+- The canonical checkout is `codex/tll-integration` at `12ac35363e05b0084a64814061764fdbf7a28ae9`, with tracked files clean and the same six preserved unrelated untracked paths. Remote `codex/tll-integration` is still `47b6ca7044e15d5adcde98b9a74b44801dc40a2e`.
+- The Vercel project settings page shows all sixteen Generation 22 staging entries as **Secret** and scoped to Preview branch `codex/tll-integration`. It shows four branch-scoped **Config** controls with exact values `TLL_STAGING_CUSTOMER_ENABLED=false`, `TLL_STAGING_CART_ENABLED=false`, `NEXT_PUBLIC_TLL_STAGING_CUSTOMER=disabled`, and `NEXT_PUBLIC_TLL_STAGING_CART=disabled`.
+- Vercel's existing `TLL_STAGING_CART_STOREFRONT_TOKEN` is branch-scoped **Config** and marked “Needs Attention” because it looks like a secret. Its edit form offers **Secret** as a type while retaining the selected branch. The edit was cancelled without saving; its value was not revealed. Changing it is a separate reviewed setting-write gate.
+- The staging Supabase project `qdmvngjwkcsilzmqksme` Edge Functions secret list includes `TLL_STAGING_BROKER_DATABASE_PASSWORD`, last updated during the Generation 22 setup at 19:11:30 UTC. The list proves presence and update time, not its value or a working database login.
+- Vercel's latest Ready Preview for `codex/tll-integration` remains deployment `4p7dNqwyvBT5cSYiuLkTexMykcNW`, source `47b6ca7044e15d5adcde98b9a74b44801dc40a2e`, created before the Generation 22 settings were added. Project Deployment Protection still shows **Require Log In** on; the exceptions section lists no excluded domain. This read did not test the protected Preview runtime response.
+- The independent staging SQL read recorded in the [retirement result](../stage-plans/2026-09-26-gen22-incident-retirement.md) established all five matching database accounts are `NOLOGIN` with no passwords and account/cart controls off. Therefore the five password entries remaining in Vercel and the matching Edge entry cannot currently authenticate those accounts. Their values were not compared or reused.
+
+## Consequence for the next gate
+
+Keep the four controls OFF. Preserve the staged vault/HMAC entries and existing client secrets; their presence does not itself require regeneration. Prepare a **new** generation and one-use recovery path for only the five database passwords, the matching broker Edge password and database role states, using the five retired Gen22 markers as the precondition. Prove the new passwords and restricted connections in the same bounded window before any activation. Separately correct the Storefront token's classification to Secret without exposing it. A new protected Preview from a reviewed source commit is required to prove what the finished build actually uses; the existing Preview predates these settings. Each hosted setting write and deployment remains a separate stage gate with action-time approval.

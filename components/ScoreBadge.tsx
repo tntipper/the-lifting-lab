@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useBrowserSnapshot } from '@/lib/browser-snapshot'
 
 export function scoreColor(score: number): string {
   if (score >= 70) return '#c8e86a'
@@ -31,26 +32,17 @@ export default function ScoreBadge({
   // back up to the target.
   const [dashFilled, setDashFilled] = useState(() => (score == null ? 0 : circ * (score / 100)))
   const [displayNum, setDisplayNum] = useState(() => score ?? 0)
+  const reduced = useBrowserSnapshot(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches, false)
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (score == null) return
 
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-    if (reduced) {
-      setDashFilled(circ * (score / 100))
-      setDisplayNum(score)
-      return
-    }
+    if (reduced) return
 
     const target = circ * (score / 100)
     const start = performance.now()
     const dur = 1100
-    setDashFilled(0)
-    setDisplayNum(0)
 
     function tick(now: number) {
       const p = Math.min((now - start) / dur, 1)
@@ -69,7 +61,7 @@ export default function ScoreBadge({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [score, circ])
+  }, [score, circ, reduced])
 
   if (score == null) {
     return (
@@ -83,6 +75,8 @@ export default function ScoreBadge({
   }
 
   const color = scoreColor(score)
+  const filled = reduced ? circ * (score / 100) : dashFilled
+  const number = reduced ? score : displayNum
 
   return (
     <div className="shrink-0 relative" style={{ width: px, height: px }}>
@@ -111,7 +105,7 @@ export default function ScoreBadge({
           stroke={color}
           strokeWidth={stroke}
           strokeLinecap="round"
-          strokeDasharray={`${dashFilled} ${circ - dashFilled}`}
+          strokeDasharray={`${filled} ${circ - filled}`}
           strokeDashoffset={0}
           
         />
@@ -127,7 +121,7 @@ export default function ScoreBadge({
           textShadow: '0 1px 2px rgba(0,0,0,0.85)',
         } as React.CSSProperties}
       >
-        {displayNum}
+        {number}
       </div>
     </div>
   )

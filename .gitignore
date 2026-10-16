@@ -36,6 +36,16 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Local Supabase CLI caches and project links are machine-specific.
+/supabase/.temp/
+/supabase/.branches/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/test-results/
+
+# local generated outputs and private staging evidence (kept in iCloud, not versioned)
+/outputs/
+/implementation-state/

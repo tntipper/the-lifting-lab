@@ -1,3 +1,4 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
@@ -9,22 +10,26 @@ import { curatedAlternativeTargets, type AltProduct } from '@/lib/alternatives'
 
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const YEAR = 2026
 
 export const metadata: Metadata = {
-  title: `Supplement Alternatives — Better-Rated & Cheaper Swaps UK ${YEAR} | The Lifting Lab`,
-  description:
-    'Looking for an alternative to your supplement? See better-rated and better-value swaps for the most-searched whey, creatine, pre-workout, EAA and more, scored against evidence-based dosing.',
-  alternates: { canonical: `${SITE}/alternatives` },
-  openGraph: {
-    title: `Supplement Alternatives — Better-Rated & Cheaper Swaps UK ${YEAR}`,
-    description:
-      'Better-rated and better-value swaps for the most-searched supplements, scored against evidence-based dosing.',
-    url: `${SITE}/alternatives`,
-    type: 'website',
-    siteName: 'The Lifting Lab',
+  "title": "Same-category supplement research",
+  "description": "Browse related research records and compare labels and listed prices. No approved replacement or effectiveness recommendation is available.",
+  "alternates": {
+    "canonical": "https://theliftinglab.co.uk/alternatives"
   },
+  "openGraph": {
+    "title": "Same-category supplement research",
+    "description": "Browse related research records and compare labels and listed prices. No approved replacement or effectiveness recommendation is available.",
+    "url": "https://theliftinglab.co.uk/alternatives",
+    "type": "website"
+  },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "Same-category supplement research",
+    "description": "Browse related research records and compare labels and listed prices. No approved replacement or effectiveness recommendation is available."
+  }
 }
 
 async function getTargets(): Promise<AltProduct[]> {
@@ -91,8 +96,8 @@ export default async function AlternativesHubPage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }} />
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         <nav aria-label="Breadcrumb" className="mb-4 text-xs text-lab-muted">
@@ -104,15 +109,12 @@ export default async function AlternativesHubPage() {
         </nav>
 
         <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-4">
-          Better Swaps · {YEAR}
+          Same-category research · {YEAR}
         </p>
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
           Supplement <span className="text-lab-lime">Alternatives</span>
         </h1>
-        <p className="text-lg text-white/90 leading-relaxed mb-4">
-          Not sold on your current tub? For each popular supplement we surface the better-rated and better-value swaps
-          in the same category — scored against the same evidence-based clinical reference, never brand reputation.
-        </p>
+        <p className="text-lg text-white/90 leading-relaxed mb-4">No approved effectiveness assessment is available. Products remain visible for label and listed-price research without a quality ranking or recommendation.</p>
         <p className="text-lab-muted text-sm mb-10">
           Prefer a straight two-product face-off?{' '}
           <Link href="/vs" className="text-lab-lime hover:underline underline-offset-2">
@@ -139,11 +141,7 @@ export default async function AlternativesHubPage() {
                       <p className="text-sm font-bold leading-snug text-white">
                         Alternatives to {t.brand} {t.name}
                       </p>
-                      {t.score != null && (
-                        <p className="text-[11px] text-lab-muted mt-1">
-                          Current Effectiveness Match {t.score}/100 — see better-rated &amp; cheaper picks
-                        </p>
-                      )}
+                      <p className="text-[11px] text-lab-muted mt-1">Not assessed — compare labels and listed prices</p>
                     </Link>
                   ))}
                 </div>

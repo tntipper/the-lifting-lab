@@ -8,7 +8,7 @@ type Unit = 'kg' | 'lb'
 
 const AR = '166,226,46'
 
-// Caffeine half-life in healthy adults averages ~5 hours (range ~4-6h). We use 5h.
+// Caffeine's half-life averages around 5 hours in healthy adults but varies widely. We use 5h for the maths.
 const HALF_LIFE_H = 5
 // A residual of ~100mg at lights-out is a commonly cited "won't wreck your sleep" ceiling.
 const SLEEP_SAFE_MG = 100
@@ -104,7 +104,7 @@ export default function CaffeineCalculator() {
     const hTo25 = hoursToDecay(doseMg, 25)
 
     const bedMins = parseTime(bedtime)
-    let residualAtBed: number | null = null
+    const residualAtBed: number | null = null
     let latestIntake: string | null = null
     if (bedMins !== null) {
       // Latest clock time to take this dose so residual at bedtime <= sleep-safe.
@@ -236,8 +236,7 @@ export default function CaffeineCalculator() {
 
                   <p className="text-xs text-lab-muted leading-snug mb-3">
                     Roughly <span className="text-white/80">{sleep.coffees.toFixed(1)} mugs of coffee</span> or{' '}
-                    <span className="text-white/80">{sleep.espressos.toFixed(1)} espresso shots</span>. Caffeine has a
-                    ~5 hour half-life, so half is still in you 5 hours later.
+                    <span className="text-white/80">{sleep.espressos.toFixed(1)} espresso shots</span>. Caffeine&apos;s half-life averages around 5 hours in healthy adults but varies widely between people. After about 10 hours roughly a quarter remains. This estimate uses 5 hours.
                     {sleep.overSingle && (
                       <span className="text-amber-400"> That is above the 200mg single-serving comfort mark.</span>
                     )}

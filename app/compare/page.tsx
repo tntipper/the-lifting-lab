@@ -1,3 +1,5 @@
+import { pageMetadata } from '@/lib/seo'
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import type { Metadata } from 'next'
 import TopNav from '@/components/TopNav'
 import CompareView from './CompareView'
@@ -7,27 +9,18 @@ import { fetchCompareProducts, parseCompareIds } from '@/lib/product-data'
 // on the server per request (Next.js treats searchParams as dynamic). The
 // trade-off is deliberate: the alternative — a static shell that fetches
 // client-side — is exactly the spinner that in-app browsers (LIFT / Safari
-// webviews) and crawlers get stuck on. Every product's name, brand, score,
-// true cost, serving info, nutrients, buy CTA and image are in the HTML.
+// webviews) and crawlers get stuck on. Product names, brands, listed costs,
+// serving info, nutrients, offer status and images are in the HTML.
 type Props = { searchParams: Promise<{ ids?: string | string[] }> }
 
-const SITE = 'https://www.theliftinglab.co.uk'
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const ids = parseCompareIds((await searchParams).ids)
   const products = await fetchCompareProducts(ids)
-  const base = {
-    description:
-      'Head-to-head supplement comparison. See dosing side by side and get an evidence-based verdict on which product wins.',
-    alternates: { canonical: `${SITE}/compare` },
-  }
-  if (!products.length) return { title: 'Compare Supplements — The Lifting Lab', ...base }
   const names = products.map((p) => `${p.brand} ${p.name}`).join(' vs ')
-  return {
-    title: `${names} — Compare | The Lifting Lab`,
-    ...base,
-    description: `${names}: side-by-side dosing, Effectiveness Match scores and True Cost per serving.`,
-  }
+  return pageMetadata('/compare', products.length ? `${names} — Compare | The Lifting Lab` : 'Compare Supplements — The Lifting Lab',
+    products.length ? `${names}: compare recorded label amounts and listed cost per serving. Effectiveness assessments are unavailable.` :
+      'Compare recorded supplement labels and listed prices side by side. No approved effectiveness winner is available.')
 }
 
 export default async function ComparePage({ searchParams }: Props) {
@@ -37,34 +30,21 @@ export default async function ComparePage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-lab-bg text-white">
-      <TopNav />
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-black uppercase tracking-wide">
-            {names.length > 0 ? (
-              <>
-                {names.map((n, i) => (
-                  <span key={i}>
-                    {i > 0 && <span className="text-lab-lime"> vs </span>}
-                    {n}
-                  </span>
-                ))}
-              </>
-            ) : (
-              <>
-                Head-to-<span className="text-lab-lime">Head</span>
-              </>
-            )}
+      <TopNav /><BreadcrumbJsonLd path="/compare" name="Compare" />
+      <section className="tll-on-dark tll-dark-section border-b border-[#2a2c26]">
+        <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10">
+          <p className="text-xs font-semibold uppercase tracking-[.08em] text-[#a9ac9f]">Compare up to three products</p>
+          <h1 className="tll-display mt-2 text-4xl leading-none text-white sm:text-5xl">
+            {names.length ? names.join(' vs ') : 'Product comparison'}
           </h1>
-          <p className="text-lab-muted text-sm mt-2">
-            Side-by-side dosing and Effectiveness Match scores. Pick up to 3 products from the browser.
-          </p>
-          <p className="text-lab-muted/50 text-xs mt-1">
-            Scores are for informational purposes only and do not constitute medical advice.
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#a9ac9f]">
+            Compare recorded pack prices, servings and label amounts in the same order across every product.
           </p>
         </div>
+      </section>
+      <main className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10">
         <CompareView products={products} />
-      </div>
+      </main>
     </div>
   )
 }

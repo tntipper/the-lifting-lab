@@ -1,11 +1,16 @@
+import { pageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import PolicyDraftNotice from '@/components/PolicyDraftNotice'
 import TopNav from '@/components/TopNav'
 
 export const metadata: Metadata = {
+  openGraph: pageMetadata('/terms', 'Terms of Use — The Lifting Lab', 'Terms governing your use of theliftinglab.co.uk.').openGraph,
+  twitter: pageMetadata('/terms', 'Terms of Use — The Lifting Lab', 'Terms governing your use of theliftinglab.co.uk.').twitter,
+
   title: 'Terms of Use — The Lifting Lab',
   description: 'Terms governing your use of theliftinglab.co.uk.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk/terms' },
+  alternates: { canonical: 'https://theliftinglab.co.uk/terms' },
 }
 
 export default function TermsPage() {
@@ -15,9 +20,15 @@ export default function TermsPage() {
       <div className="max-w-3xl mx-auto px-6 py-12">
         <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-lab-lime mb-4">Legal</p>
         <h1 className="text-3xl font-black uppercase tracking-tight mb-2">Terms of Use</h1>
-        <p className="text-lab-muted text-sm mb-10">Last updated: June 2026</p>
+        <p className="text-lab-muted text-sm mb-10">Draft updated: October 2026</p>
 
+        <PolicyDraftNotice />
         <div className="space-y-8 text-lab-muted text-sm leading-relaxed">
+          <section>
+            <h2 className="text-white font-bold uppercase tracking-wide mb-3">Purchases from the TLL Store</h2>
+            <p>The proposed seller is Tobias Tipper, trading as The Lifting Lab. Shopify provides checkout, payments, purchase accounts and order emails. TLL handles customer support and remains responsible for purchases from its store, including where a supplier dispatches the goods. See our <Link href="/delivery" className="text-lab-lime hover:underline">delivery</Link> and <Link href="/refunds" className="text-lab-lime hover:underline">refunds</Link> drafts. Purchases through external retailer links are with that retailer.</p>
+            <p className="mt-3">TODO for Toby/Lifty: confirm the seller identity, geographical business address, contact telephone number, service area, contract acceptance point and matching Shopify policies before publication. Nothing in these terms removes your statutory consumer rights, or excludes liability that cannot lawfully be excluded.</p>
+          </section>
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Using the site</h2>
             <p>
@@ -27,29 +38,25 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">What The Lifting Lab provides</h2>
-            <p>
-              The Lifting Lab provides supplement scoring, comparison, and stack-building tools for informational and educational purposes. Product scores are based on our published methodology and represent our independent assessment against evidence-based reference doses.
-            </p>
+            <p>No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
           </section>
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Not medical advice</h2>
-            <p>
-              Nothing on this site constitutes medical, nutritional, or health advice. Supplement scores and recommendations are for general informational purposes only. Always consult a qualified healthcare professional before starting any supplement regimen, especially if you have a medical condition, are pregnant, or are taking medication. EFSA upper limits displayed in the stack builder are reference values — they are not a substitute for individual medical assessment.
-            </p>
+            <p>Content is general information, not personal medical advice. Read the current product label and seek advice from a qualified health professional about suitability, medicines, pregnancy or existing conditions. Product warnings and age guidance do not establish that a supplement is suitable for you.</p>
           </section>
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Affiliate links</h2>
             <p>
-              Some links on this site are affiliate links. We may earn a commission if you purchase via these links, at no extra cost to you. Affiliate relationships have no influence on product scores or rankings. See our full <Link href="/affiliate-disclosure" className="text-lab-lime hover:underline">Affiliate Disclosure</Link>.
+              Some links on this site are affiliate links. We may earn a commission if you purchase via these links, at no extra cost to you. Affiliate links are identified separately from product information. See our full <Link href="/affiliate-disclosure" className="text-lab-lime hover:underline">Affiliate Disclosure</Link>.
             </p>
           </section>
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Accuracy of scores</h2>
             <p>
-              We make reasonable efforts to keep product data accurate, but formulations change. Scores are based on label data at the time of scoring. We accept no liability for decisions made on the basis of scores that may be outdated. If you spot an error, please contact us at{' '}
+              We make reasonable efforts to keep product data accurate, but formulations change. Recorded label data and historical scores may be incomplete or outdated. No approved product effectiveness assessment is currently available. If you spot an error, please contact us at{' '}
               <a href="mailto:hello@theliftinglab.co.uk" className="text-lab-lime hover:underline">
                 hello@theliftinglab.co.uk
               </a>.
@@ -59,14 +66,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Intellectual property</h2>
             <p>
-              The Lifting Lab scoring methodology, content, and brand are the property of Tobias Tipper / The Lifting Lab Ltd. You may not reproduce or republish our scoring data without permission. Product names and brand marks are the property of their respective owners and are used for identification purposes only.
+              The Lifting Lab scoring methodology, content, and brand are the property of Tobias Tipper, trading as The Lifting Lab. You may not reproduce or republish our scoring data without permission. Product names and brand marks are the property of their respective owners and are used for identification purposes only.
             </p>
           </section>
 
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Limitation of liability</h2>
             <p>
-              To the maximum extent permitted by law, The Lifting Lab accepts no liability for any loss or damage arising from use of this site, reliance on product scores, or purchases made via affiliate links. The site is provided &ldquo;as is&rdquo; without warranty of any kind.
+              We do not guarantee that research information is complete or up to date. This does not affect your statutory rights for goods bought from TLL. We do not exclude liability for fraud, death or personal injury caused by negligence, or any other liability that cannot lawfully be excluded.
             </p>
           </section>
 

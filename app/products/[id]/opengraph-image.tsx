@@ -1,46 +1,24 @@
 import { ImageResponse } from 'next/og'
-import { scoreFor } from '@/lib/scores'
+import { getShareProducts } from '@/lib/share-products-server'
+import { claimsReviewFor } from '@/lib/claims-review'
 
 export const runtime = 'edge'
-export const alt = 'The Lifting Lab — Product Score'
+export const alt = 'The Lifting Lab — Product research status'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-function scoreColor(score: number | null): string {
-  if (score == null) return '#6b7280'
-  if (score >= 70) return '#a6e22e'
-  if (score >= 50) return '#f5b342'
-  return '#ff5c5c'
-}
-
-async function fetchProduct(id: string) {
-  const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/products?id=eq.${id}&select=id,name,brand,category&status=eq.active`
-  try {
-    const res = await fetch(url, {
-      headers: {
-        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
-      },
-      next: { revalidate: 3600 },
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    return Array.isArray(data) && data.length > 0 ? data[0] : null
-  } catch {
-    return null
-  }
-}
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const product = await fetchProduct(id)
-
-  const brand = product?.brand ?? 'The Lifting Lab'
-  const name = product?.name ?? 'Supplement'
-  const category = (product?.category ?? '').replace(/-/g, ' ').toUpperCase()
-  const score = product ? scoreFor(brand, name) : null
-  const col = scoreColor(score)
-  const displayScore = score != null ? String(score) : '—'
+  const result = await getShareProducts([id])
+  if (!result.ok) {
+    return new Response(result.error, { status: result.status, headers: { 'Cache-Control': 'no-store' } })
+  }
+  const { brand, name, image_url, category: categorySlug } = result.products[0]
+  const category = categorySlug.replace(/-/g, ' ').toUpperCase()
+  const review = claimsReviewFor(categorySlug)
+  const col = '#9ca3af'
+  const displayScore = '—'
 
   return new ImageResponse(
     (
@@ -62,7 +40,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             THE LIFTING LAB
           </span>
           <span style={{ color: '#374151', fontSize: 14, letterSpacing: 3, textTransform: 'uppercase' }}>
-            Evidence-Based Scoring
+            {review ? 'Claims Under Review' : 'Not assessed'}
           </span>
         </div>
 
@@ -86,10 +64,14 @@ export default async function Image({ params }: { params: Promise<{ id: string }
           >
             <span style={{ color: col, fontSize: 72, fontWeight: 900, lineHeight: 1 }}>{displayScore}</span>
             <span style={{ color: '#6b7280', fontSize: 13, letterSpacing: 4, textTransform: 'uppercase', marginTop: 6 }}>
-              Score
+              Assessment
             </span>
           </div>
 
+          {image_url && (
+            // ImageResponse needs a native img for its server-rendered social card.
+            <img src={image_url} alt={name} width={140} height={200} style={{ objectFit: 'contain', flexShrink: 0 }} />
+          )}
           {/* product info */}
           <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
             <span style={{ color: '#6b7280', fontSize: 18, textTransform: 'uppercase', letterSpacing: 4 }}>
@@ -125,7 +107,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         {/* footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#374151', fontSize: 13, letterSpacing: 2 }}>
-            Effective-dose analysis · EFSA reference values · Not medical advice
+            No benefit recommendation · Research record · Not medical advice
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab
@@ -133,6 +115,6 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         </div>
       </div>
     ),
-    { width: 1200, height: 630 }
+    { width: 1200, height: 630, headers: { 'Cache-Control': 'no-store' } }
   )
 }

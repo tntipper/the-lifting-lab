@@ -22,7 +22,8 @@ function num(v: string): number {
   return Number.isFinite(n) && n > 0 ? n : 0
 }
 
-// Round to the nearest 0.5g — the granularity a kitchen scoop can realistically hit.
+// Round to the nearest 0.5g before clamping the daily total to 3.2–6.4g.
+// The clamped endpoints are exceptions to the 0.5g steps.
 function half(n: number): number {
   return Math.round(n * 2) / 2
 }
@@ -46,7 +47,7 @@ export default function BetaAlanineCalculator() {
     // ISSN position stand: effective dose 3.2–6.4 g/day, scaled roughly by bodyweight
     // (smaller people floor at 3.2g, larger cap at 6.4g — carnosine saturation, not size, is the ceiling).
     const raw = weightKg * 0.065
-    const daily = half(Math.min(6.4, Math.max(3.2, raw)))
+    const daily = Math.min(6.4, Math.max(3.2, half(raw)))
 
     // Split to keep each dose small: standard powder tingles above ~1.6g, sustained-release
     // formulas blunt that so you can take fewer, larger doses.
@@ -203,7 +204,7 @@ export default function BetaAlanineCalculator() {
                 onClick={() => track('calculator_cta', { tab: 'beta-alanine', target: 'best-pre-workout' })}
                 className="text-center text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-all"
               >
-                Best pre-workout 2026
+                Pre-workout research
               </Link>
               <Link
                 href="/ingredients/beta-alanine"

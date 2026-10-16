@@ -1,3 +1,6 @@
+import { PREVIEW_SIZE_OPTIONS, type ProductSizeOption } from '@/lib/commerce/size-selection'
+import { unstable_rethrow } from 'next/navigation'
+import { withStorePrices } from '@/lib/commerce/store-price-server'
 // Server-side product data fetchers shared by the /products, /products/[id]
 // and /compare pages (and reusable by the API routes).
 //
@@ -10,6 +13,8 @@
 // or null rather than a 500. Scores are attached via the existing withScore()
 // helper — the scoring formula itself is untouched here.
 import { createPublicClient } from '@/lib/supabase-public'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
 import {
   PRODUCT_COLUMNS,
   withScore,
@@ -24,6 +29,7 @@ type NutrientRow = Nutrient & { product_id: string }
 
 /** Full active catalogue, score-desc. Backs the /products grid + ItemList schema. */
 export async function fetchCatalogue(): Promise<ScoredProduct[]> {
+  if (isSyntheticPreview()) return sortScored(PREVIEW_PRODUCTS.map((product) => ({ ...withScore(product), nutrients: product.nutrients, sizeOptions: PREVIEW_SIZE_OPTIONS[product.id] ?? [] })), 'score')
   try {
     const sb = createPublicClient()
     const { data, error } = await sb
@@ -31,7 +37,7 @@ export async function fetchCatalogue(): Promise<ScoredProduct[]> {
       .select(PRODUCT_COLUMNS)
       .eq('status', 'active')
     if (error || !data) return []
-    const products = data as Product[]
+    const products = await withStorePrices(data as Product[])
     const ids = products.map((p) => p.id)
     const { data: nutrients } = ids.length
       ? await sb
@@ -39,6 +45,18 @@ export async function fetchCatalogue(): Promise<ScoredProduct[]> {
           .select('product_id, nutrient_name, amount, unit')
           .in('product_id', ids)
       : { data: [] as NutrientRow[] }
+    const sizesById = new Map<string, ProductSizeOption[]>()
+    try {
+      if (ids.length) {
+        const { data: sizes, error: sizesError } = await sb.from('product_size_options')
+          .select('product_id, slug, label, serving_size, serving_unit, servings_per_container, retail_price, buy_url, shopify_variant_id, sort, nutrients')
+          .in('product_id', ids).order('sort').order('slug')
+        if (!sizesError) for (const row of (sizes ?? []) as (ProductSizeOption & { product_id: string })[]) {
+          const { product_id, ...size } = row
+          sizesById.set(product_id, [...(sizesById.get(product_id) ?? []), size])
+        }
+      }
+    } catch (error) { unstable_rethrow(error) /* Optional sizes may be unavailable. */ }
     const rows = (nutrients as NutrientRow[] | null) ?? []
     const byId = new Map<string, Nutrient[]>()
     for (const n of rows) {
@@ -47,16 +65,18 @@ export async function fetchCatalogue(): Promise<ScoredProduct[]> {
       byId.set(n.product_id, list)
     }
     return sortScored(
-      products.map((p) => ({ ...withScore(p), nutrients: byId.get(p.id) ?? [] })),
+      products.map((p) => ({ ...withScore(p), nutrients: byId.get(p.id) ?? [], sizeOptions: sizesById.get(p.id) ?? [] })),
       'score',
     )
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error)
     return []
   }
 }
 
 /** Active products in one category, score-desc (RelatedProducts module). */
 export async function fetchCategory(category: string): Promise<ScoredProduct[]> {
+  if (isSyntheticPreview()) return sortScored(PREVIEW_PRODUCTS.filter((product) => product.category === category).map(withScore), 'score')
   try {
     const sb = createPublicClient()
     const { data, error } = await sb
@@ -65,14 +85,19 @@ export async function fetchCategory(category: string): Promise<ScoredProduct[]> 
       .eq('status', 'active')
       .eq('category', category)
     if (error || !data) return []
-    return sortScored((data as Product[]).map(withScore), 'score')
-  } catch {
+    return sortScored((await withStorePrices(data as Product[])).map(withScore), 'score')
+  } catch (error) {
+    unstable_rethrow(error)
     return []
   }
 }
 
 /** One active product with its full nutrient label, or null if not found. */
 export async function fetchProductDetail(id: string): Promise<ComparedProduct | null> {
+  if (isSyntheticPreview()) {
+    const product = PREVIEW_PRODUCTS.find((item) => item.id === id)
+    return product ? { ...withScore(product), nutrients: product.nutrients, sizeOptions: PREVIEW_SIZE_OPTIONS[id] ?? [] } : null
+  }
   try {
     const sb = createPublicClient()
     const { data: product, error } = await sb
@@ -89,8 +114,17 @@ export async function fetchProductDetail(id: string): Promise<ComparedProduct | 
       .eq('product_id', id)
       .order('nutrient_name')
 
-    return { ...withScore(product as Product), nutrients: (nutrients as Nutrient[] | null) ?? [] }
-  } catch {
+    let sizeOptions: ProductSizeOption[] = []
+    try {
+      const { data, error: sizesError } = await sb.from('product_size_options')
+        .select('slug, label, serving_size, serving_unit, servings_per_container, retail_price, buy_url, shopify_variant_id, sort, nutrients')
+        .eq('product_id', id).order('sort').order('slug')
+      if (!sizesError && data) sizeOptions = data as ProductSizeOption[]
+    } catch (error) { unstable_rethrow(error) /* Missing table/read failure keeps existing detail usable. */ }
+    const [pricedProduct] = await withStorePrices([product as Product])
+    return { ...withScore(pricedProduct), sizeOptions, nutrients: (nutrients as Nutrient[] | null) ?? [] }
+  } catch (error) {
+    unstable_rethrow(error)
     return null
   }
 }
@@ -108,6 +142,10 @@ export function parseCompareIds(raw: string | string[] | undefined): string[] {
 /** Up to 3 products with nutrients, in the requested order (the /compare page). */
 export async function fetchCompareProducts(ids: string[]): Promise<ComparedProduct[]> {
   if (!ids.length) return []
+  if (isSyntheticPreview()) return ids.flatMap((id) => {
+    const product = PREVIEW_PRODUCTS.find((item) => item.id === id)
+    return product ? [{ ...withScore(product), nutrients: product.nutrients }] : []
+  })
   try {
     const sb = createPublicClient()
     const { data: products, error } = await sb
@@ -123,7 +161,7 @@ export async function fetchCompareProducts(ids: string[]): Promise<ComparedProdu
       .in('product_id', ids)
     const nutrientRows = (nutrients as NutrientRow[] | null) ?? []
 
-    const result: ComparedProduct[] = (products as Product[]).map((p) => ({
+    const result: ComparedProduct[] = (await withStorePrices(products as Product[])).map((p) => ({
       ...withScore(p),
       nutrients: nutrientRows
         .filter((n) => n.product_id === p.id)
@@ -131,7 +169,8 @@ export async function fetchCompareProducts(ids: string[]): Promise<ComparedProdu
     }))
     result.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
     return result
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error)
     return []
   }
 }

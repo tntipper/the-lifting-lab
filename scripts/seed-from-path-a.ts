@@ -44,7 +44,6 @@ const DATA_JS = 'C:/Users/tobia/.openclaw/workspace/theliftinglab/webapp/data.js
 
 // ---- load window.DADB ----
 const dataSrc = readFileSync(DATA_JS, 'utf8')
-// eslint-disable-next-line @typescript-eslint/no-implied-eval
 const DADB: Record<string, { label: string; products: Record<string, unknown>[] }> =
   new Function('window', dataSrc + '\nreturn window.DADB;')({})
 

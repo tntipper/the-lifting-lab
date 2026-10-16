@@ -1,3 +1,7 @@
+import { CATEGORIES } from '@/lib/categories'
+import { isIsolatedEnvironment } from '@/lib/preview-mode'
+import { noIndexDeployment } from '@/lib/seo'
+import { isRedirectedProduct } from '@/lib/product-size-redirects'
 import type { MetadataRoute } from 'next'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import { INGREDIENT_SLUGS } from '@/lib/ingredients'
@@ -8,10 +12,10 @@ import { brandSlug } from '@/lib/brands'
 import { PRODUCT_COLUMNS, withScore, type Product } from '@/lib/products'
 import { curatedMatchups, productSlug } from '@/lib/matchups'
 import { buildBrandStats, curatedBrandMatchups } from '@/lib/brand-matchups'
-import { rankedCategorySlugs } from '@/lib/best-categories'
+import { researchCategorySlugs } from '@/lib/best-categories'
 import { curatedAlternativeTargets } from '@/lib/alternatives'
 
-const BASE = 'https://www.theliftinglab.co.uk'
+const BASE = 'https://theliftinglab.co.uk'
 
 // Refresh daily so newly added/removed products flow into the sitemap.
 export const revalidate = 86400
@@ -21,7 +25,7 @@ async function productEntries(now: Date): Promise<MetadataRoute.Sitemap> {
     const sb = createPublicClient()
     const { data, error } = await sb.from('products').select('id').eq('status', 'active')
     if (error || !data) return []
-    return (data as { id: string }[]).map((p) => ({
+    return (data as { id: string }[]).filter(p => !isRedirectedProduct(p.id)).map((p) => ({
       url: `${BASE}/products/${p.id}`,
       lastModified: now,
       changeFrequency: 'weekly' as const,
@@ -107,9 +111,11 @@ async function alternativeEntries(now: Date): Promise<MetadataRoute.Sitemap> {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (isIsolatedEnvironment() || noIndexDeployment()) return []
   const now = new Date()
 
   const staticPages: MetadataRoute.Sitemap = [
+    ...['privacy', 'terms', 'affiliate-disclosure', 'contact', 'stack'].map(path => ({ url: `${BASE}/${path}`, lastModified: now })),
     { url: `${BASE}/`, lastModified: now, changeFrequency: 'weekly', priority: 1 },
     { url: `${BASE}/products`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE}/best`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
@@ -185,7 +191,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }))
 
-  const bestCategorySlugs = await rankedCategorySlugs()
+  const bestCategorySlugs = [...new Set([...CATEGORIES.map(c => c.slug), ...await researchCategorySlugs()])]
   const bestCategoryPages: MetadataRoute.Sitemap = bestCategorySlugs.map((slug) => ({
     url: `${BASE}/best/${slug}`,
     lastModified: now,

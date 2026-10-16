@@ -1,9 +1,10 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import BmiCalculator from './BmiCalculator'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/calculators/bmi`
 
 export const metadata: Metadata = {
@@ -79,8 +80,8 @@ export default function BmiPage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
         {/* breadcrumb */}
@@ -211,14 +212,15 @@ export default function BmiPage() {
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
             BMI does not move a physique; training, protein and consistency do. The two supplements
             with real evidence behind them — whey to hit your protein target and creatine to support
-            the work — are each scored 0–100 on how closely they match that evidence.
+            the work — can be explored through their available label information. Product assessments
+            are still under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/whey"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best whey 2026 →
+              Whey research →
             </Link>
             <Link
               href="/calculators"
@@ -229,8 +231,7 @@ export default function BmiPage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. BMI bands are population averages and do not
-            account for muscle mass. Buy links are affiliate links; we may earn a commission at no
-            extra cost to you.
+            account for muscle mass. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

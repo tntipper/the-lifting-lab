@@ -1,9 +1,10 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import BetaAlanineCalculator from './BetaAlanineCalculator'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/calculators/beta-alanine`
 
 export const metadata: Metadata = {
@@ -75,8 +76,8 @@ export default function BetaAlaninePage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
         {/* breadcrumb */}
@@ -225,14 +226,14 @@ export default function BetaAlaninePage() {
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
             The beta-alanine tucked into most pre-workouts is underdosed and only taken on training days,
             so it never saturates. A cheap standalone tub, or a genuinely well-dosed pre-workout, is how you
-            actually reach an effective dose. Every product we track is scored 0–100 on exactly that.
+            actually reach an effective dose. Check the label details yourself while product assessments are under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/pre-workout"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best pre-workout 2026 →
+              Pre-workout research →
             </Link>
             <Link
               href="/calculators"
@@ -244,7 +245,7 @@ export default function BetaAlaninePage() {
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical advice. Doses are general, evidence-based starting points for
             healthy adults; if you have a health condition, are pregnant or take medication, speak to a
-            clinician first. Buy links are affiliate links; we may earn a commission at no extra cost to you.
+            clinician first. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

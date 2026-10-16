@@ -1,18 +1,22 @@
+import { pageMetadata } from '@/lib/seo'
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { INGREDIENTS, type EvidenceLevel } from '@/lib/ingredients'
 
 export const metadata: Metadata = {
+  twitter: pageMetadata('/ingredients', 'Supplement Ingredients A-Z — What Works and the Dose | The Lifting Lab', 'Plain-English, evidence-based guides to the ingredients inside your supplements: caffeine, creatine, citrulline, beta-alanine and more. What each does, the effective dose, and the intake guidance.').twitter,
+
   title: 'Supplement Ingredients A-Z — What Works and the Dose | The Lifting Lab',
   description:
-    'Plain-English, evidence-based guides to the ingredients inside your supplements: caffeine, creatine, citrulline, beta-alanine and more. What each does, the effective dose, and the safe limit.',
-  alternates: { canonical: 'https://www.theliftinglab.co.uk/ingredients' },
+    'Plain-English, evidence-based guides to the ingredients inside your supplements: caffeine, creatine, citrulline, beta-alanine and more. What each does, the effective dose, and the intake guidance.',
+  alternates: { canonical: 'https://theliftinglab.co.uk/ingredients' },
   openGraph: {
     title: 'Supplement Ingredients A-Z | The Lifting Lab',
     description:
-      'What each supplement ingredient actually does, the effective dose, and the safe limit. Evidence-based and UK-focused.',
-    url: 'https://www.theliftinglab.co.uk/ingredients',
+      'What each supplement ingredient actually does, the effective dose, and the intake guidance. Evidence-based and UK-focused.',
+    url: 'https://theliftinglab.co.uk/ingredients',
     type: 'website',
     siteName: 'The Lifting Lab',
   },
@@ -39,7 +43,7 @@ export default function IngredientIndex() {
       '@type': 'ListItem',
       position: i + 1,
       name: ing.name,
-      url: `https://www.theliftinglab.co.uk/ingredients/${ing.slug}`,
+      url: `https://theliftinglab.co.uk/ingredients/${ing.slug}`,
     })),
   }
 
@@ -47,8 +51,8 @@ export default function IngredientIndex() {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { name: 'Home', item: 'https://www.theliftinglab.co.uk' },
-      { name: 'Ingredients', item: 'https://www.theliftinglab.co.uk/ingredients' },
+      { name: 'Home', item: 'https://theliftinglab.co.uk' },
+      { name: 'Ingredients', item: 'https://theliftinglab.co.uk/ingredients' },
     ].map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
   }
 
@@ -57,11 +61,11 @@ export default function IngredientIndex() {
       <TopNav />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
       <div className="max-w-4xl mx-auto px-6 py-12">
         <nav aria-label="Breadcrumb" className="mb-4 text-xs text-lab-muted">
@@ -81,7 +85,7 @@ export default function IngredientIndex() {
         </h1>
         <p className="text-lab-muted max-w-2xl mb-6">
           The ingredients that fill supplement labels, decoded. What each one does, the dose
-          that actually works, the safe limit, and an honest read on the evidence behind it.
+          that actually works, the intake guidance, and an honest read on the evidence behind it.
         </p>
         <p className="text-sm text-lab-muted mb-10">
           Torn between two?{' '}

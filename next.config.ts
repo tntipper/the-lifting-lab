@@ -1,8 +1,21 @@
+import { draftProductRedirects } from './config/draft-product-redirects';
+import { PRODUCT_SIZE_REDIRECTS } from './lib/product-size-redirects';
 import type { NextConfig } from "next";
+import { assertPreviewIsolation } from "./config/preview-isolation.mjs";
+
+assertPreviewIsolation(process.env);
 
 const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
+  async redirects() {
+    return [
+      ...PRODUCT_SIZE_REDIRECTS,
+      ...draftProductRedirects(),
+      {
+        source: "/dashboard",
+        destination: "/account",
+        permanent: false,
+      },
+    ];
   },
   async headers() {
     // ARD: let registries/agent crawlers fetch the capability manifest cross-origin.

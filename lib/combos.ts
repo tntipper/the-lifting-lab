@@ -83,7 +83,7 @@ const RULES: Record<string, Rule> = {
   },
   [pairKey('citrulline', 'pre-workout')]: {
     level: 'watch',
-    note: 'Most pre-workouts already contain citrulline, frequently in a 2:1 malate blend that is under the effective 6 to 8g. Check the label before adding a standalone scoop so you know your real total.',
+    note: 'Most pre-workouts already contain citrulline, often below the target: 6–8 g L-citrulline, which is about 9–12 g citrulline malate (2:1) or 12–16 g (1:1). Check the label before adding a standalone scoop so you know your real total.',
   },
   [pairKey('beta-alanine', 'pre-workout')]: {
     level: 'watch',
@@ -168,7 +168,7 @@ export function evaluateCombo(selected: string[]): ComboResult {
     flags.push({
       level: 'caution',
       title: 'Watch your total caffeine',
-      note: 'You have selected more than one caffeine source. A strong pre-workout can be 200 to 350mg and a coffee another 80 to 120mg. Keep your daily caffeine under about 400mg, and no more than roughly 3mg per kg of bodyweight in a single pre-workout dose. If you train in the evening, mind the 5 to 6 hour half-life so it does not wreck your sleep.',
+      note: 'You have selected more than one caffeine source. A strong pre-workout can be 200 to 350mg and a coffee another 80 to 120mg. Keep your daily caffeine under about 400mg, and no more than roughly 3mg per kg of bodyweight in a single pre-workout dose. If you train in the evening, remember caffeine\'s half-life averages around 5 hours in healthy adults but varies widely between people, so late doses can disrupt your sleep.',
     })
   }
 

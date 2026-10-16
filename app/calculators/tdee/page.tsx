@@ -1,9 +1,10 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import TdeeCalculator from './TdeeCalculator'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/calculators/tdee`
 
 export const metadata: Metadata = {
@@ -75,8 +76,8 @@ export default function TdeePage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
         {/* breadcrumb */}
@@ -183,15 +184,15 @@ export default function TdeePage() {
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">Now hit those macros</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
             Whole food should do most of the work, but a whey shake is the easiest way to close a
-            protein gap. Every product we track is scored 0–100 on how closely its doses match the
-            evidence — or let the wizard build your whole stack.
+            protein gap. Explore whey products and their available label information while
+            product assessments remain under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/whey"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best whey 2026 →
+              Whey research →
             </Link>
             <Link
               href="/calculators"
@@ -202,8 +203,7 @@ export default function TdeePage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical or nutrition advice. Figures are general starting points
-            for healthy adults and will need adjusting to how your weight actually moves. Buy links are
-            affiliate links; we may earn a commission at no extra cost to you.
+            for healthy adults and will need adjusting to how your weight actually moves. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

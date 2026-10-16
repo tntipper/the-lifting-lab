@@ -1,0 +1,27 @@
+diff --git a/config/staging-account-hosted-baseline-manifest.json b/config/staging-account-hosted-baseline-manifest.json
+index 963e675..fb7ee40 100644
+--- a/config/staging-account-hosted-baseline-manifest.json
++++ b/config/staging-account-hosted-baseline-manifest.json
+@@ -7 +7 @@
+-  "nativeAccessApproved": false,
++  "nativeAccessApproved": true,
+@@ -67 +67 @@
+-      "sha256": "465f49a27a448dc5a8ca6fbea19c77ad6682708fb069113bada3be6e8318f9dd"
++      "sha256": "fbdcda467fdacc5c5f539892af1cf76bfe177032e367f176137dd387e0d192f7"
+@@ -71 +71 @@
+-      "sha256": "2cd3e7eb54f9a57b99db2a9da798592cfa33cdf3ddf31eb5cff0d14fb8f34a89"
++      "sha256": "064bb4e9ac01d68e717c3ed88fb357aeb744f4c05efef0416f877830a6008b6b"
+diff --git a/scripts/staging-account-hosted-baseline-keychain.py b/scripts/staging-account-hosted-baseline-keychain.py
+index 94ab616..54e12a1 100644
+--- a/scripts/staging-account-hosted-baseline-keychain.py
++++ b/scripts/staging-account-hosted-baseline-keychain.py
+@@ -6 +6 @@ import sys
+-APPROVED_NATIVE_READ = False
++APPROVED_NATIVE_READ = True
+diff --git a/scripts/staging-account-hosted-baseline-live-launcher.mjs b/scripts/staging-account-hosted-baseline-live-launcher.mjs
+index bb4bcc7..7a4f726 100644
+--- a/scripts/staging-account-hosted-baseline-live-launcher.mjs
++++ b/scripts/staging-account-hosted-baseline-live-launcher.mjs
+@@ -16 +16 @@ import {
+-export const HOSTED_BASELINE_LIVE_ENABLED = false
++export const HOSTED_BASELINE_LIVE_ENABLED = true

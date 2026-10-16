@@ -1,12 +1,17 @@
+import { productJsonLd, absoluteUrl } from '@/lib/seo'
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase-public'
 import { categoryLabel } from '@/lib/categories'
+import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { claimsReviewFor } from '@/lib/claims-review'
 import { getGuide } from '@/lib/guides'
 import { fetchProductDetail, fetchCategory } from '@/lib/product-data'
 import ProductDetailPage from './ProductDetailPage'
+import { selectStoreVariant } from '@/lib/commerce/variant-selection'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 // Product pages are rendered on the server (name, brand, score, true cost,
 // serving info, full nutrient label, buy CTA, image all in the initial HTML)
@@ -49,16 +54,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const score = product.score
   const cat = categoryLabel(product.category)
   const title = `${product.brand} ${product.name} Score & Review | The Lifting Lab`
-  const description = score != null
+  const review = claimsReviewFor(product.category)
+  const description = review
+    ? `${product.brand} ${product.name}. ${review.title}. Existing category scores are not validated health-benefit assessments.`
+    : hasApprovedAssessment(product)
     ? `${product.brand} ${product.name} scores ${score}/100 on our Effectiveness Match ${cat.toLowerCase()} rating. Dose-for-dose analysis vs EFSA reference values.`
-    : `${product.brand} ${product.name} — evidence-based ${cat.toLowerCase()} analysis from The Lifting Lab.`
+    : `${product.brand} ${product.name} — not assessed. Browse ${cat.toLowerCase()} label information from The Lifting Lab.`
 
   return {
     title,
     description,
     alternates: { canonical: `${SITE}/products/${id}` },
-    openGraph: { title, description, type: 'article', url: `${SITE}/products/${id}` },
-    twitter: { card: 'summary_large_image', title, description },
+    openGraph: { title, description, type: 'article', url: `${SITE}/products/${id}`, ...(product.image_url ? { images: [product.image_url] } : {}) },
+    twitter: { card: 'summary_large_image', title, description, ...(product.image_url ? { images: [product.image_url] } : {}) },
   }
 }
 
@@ -82,17 +90,17 @@ export default async function Page({ params }: Props) {
     const guide = getGuide(product.category)
 
     const productLd: Record<string, unknown> = {
+      ...productJsonLd(product),
       '@context': 'https://schema.org',
-      '@type': 'Product',
       name: fullName,
       brand: { '@type': 'Brand', name: product.brand },
       category: categoryLabel(product.category),
       url,
-      ...(product.image_url ? { image: product.image_url } : {}),
+      ...(product.image_url ? { image: absoluteUrl(product.image_url) } : {}),
       // The Lifting Lab's editorial Effectiveness Match score, expressed on its
       // native 0-100 scale. We are an independent reviewer of these products
       // (not the seller), so this is a legitimate editorial Review.
-      ...(score != null && {
+      ...(hasApprovedAssessment(product) && {
         review: {
           '@type': 'Review',
           name: `${fullName} Effectiveness Match analysis`,
@@ -115,16 +123,7 @@ export default async function Page({ params }: Props) {
           worstRating: 1,
         },
       }),
-      // Only advertise an offer when we have both a price and a real buy link.
-      ...(product.retail_price != null && product.buy_url && {
-        offers: {
-          '@type': 'Offer',
-          price: product.retail_price,
-          priceCurrency: 'GBP',
-          availability: 'https://schema.org/InStock',
-          url: product.buy_url,
-        },
-      }),
+      // Offers above come only from the approved current public store projection.
     }
 
     const crumbs: { name: string; item: string }[] = [
@@ -147,16 +146,18 @@ export default async function Page({ params }: Props) {
     jsonLd = [productLd, breadcrumbLd]
   }
 
+  const defaultVariantId = selectStoreVariant(product.id, product.storeVariants ?? [])?.variantId
   return (
     <>
       {jsonLd.map((ld, i) => (
         <script
           key={i}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(ld) }}
         />
       ))}
-      <ProductDetailPage product={product} related={related} />
+      <ProductDetailPage product={product} related={related}
+        key={product.id} defaultVariantId={defaultVariantId} />
     </>
   )
 }

@@ -1,3 +1,5 @@
+import { guardedSupabaseFetch, isSyntheticPreview } from '@/lib/preview-mode'
+import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -6,11 +8,22 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const q = (searchParams.get('q') || '').replace(/[%_,;'"\\]/g, ' ').trim().slice(0, 100)
 
+  if (isSyntheticPreview()) {
+    const needle = q.toLowerCase()
+    const products = PREVIEW_PRODUCTS
+      .filter((product) => `${product.brand} ${product.name}`.toLowerCase().includes(needle))
+      .sort((a, b) => a.brand.localeCompare(b.brand))
+      .slice(0, 20)
+      .map(({ id, name, brand, category, serving_size, serving_unit }) => ({ id, name, brand, category, serving_size, serving_unit }))
+    return NextResponse.json(products, { headers: { 'Cache-Control': 'no-store', 'X-TLL-Preview': 'synthetic' } })
+  }
+
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: guardedSupabaseFetch },
       cookies: {
         getAll() { return cookieStore.getAll() },
         setAll() {},

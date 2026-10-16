@@ -1,8 +1,12 @@
+import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { createPublicClient } from '@/lib/supabase-public'
 import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
 import { brandSlug, type BrandSummary } from '@/lib/brands'
 
 // SSG with a daily refresh so newly added brands/products flow in without a
@@ -10,33 +14,32 @@ import { brandSlug, type BrandSummary } from '@/lib/brands'
 // result renders the graceful empty state, never a 500).
 export const revalidate = 86400
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/brand`
 
 export const metadata: Metadata = {
-  title: 'Supplement Brands A–Z — Reviews & Scores UK 2026 | The Lifting Lab',
-  description:
-    'Every supplement brand we score, A to Z. See how each brand rates on average against evidence-based dosing, how many of their products we track, and their top performers.',
-  alternates: { canonical: URL },
-  openGraph: {
-    title: 'Supplement Brands A–Z — Reviews & Scores UK 2026',
-    description:
-      'Every supplement brand we score, ranked by average Effectiveness Match against evidence-based dosing.',
-    url: URL,
-    type: 'website',
-    siteName: 'The Lifting Lab',
+  "title": "Supplement brand research directory",
+  "description": "Explore brand catalogues and research records. Historical scores do not determine effectiveness or product recommendations.",
+  "alternates": {
+    "canonical": "https://theliftinglab.co.uk/brand"
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Supplement Brands A–Z — The Lifting Lab',
-    description: 'Every supplement brand we score, rated against evidence-based dosing.',
+  "openGraph": {
+    "title": "Supplement brand research directory",
+    "description": "Explore brand catalogues and research records. Historical scores do not determine effectiveness or product recommendations.",
+    "url": "https://theliftinglab.co.uk/brand",
+    "type": "website"
   },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "Supplement brand research directory",
+    "description": "Explore brand catalogues and research records. Historical scores do not determine effectiveness or product recommendations."
+  }
 }
 
 async function brandSummaries(): Promise<BrandSummary[]> {
   try {
-    const sb = createPublicClient()
-    const { data, error } = await sb
+    // Synthetic preview has no database; use the same preview catalogue as the product pages.
+    const { data, error } = isSyntheticPreview() ? { data: PREVIEW_PRODUCTS as unknown as Product[], error: null } : await createPublicClient()
       .from('products')
       .select(PRODUCT_COLUMNS)
       .eq('status', 'active')
@@ -55,7 +58,7 @@ async function brandSummaries(): Promise<BrandSummary[]> {
 
     const summaries: BrandSummary[] = []
     for (const [slug, items] of groups) {
-      const scores = items.map((p) => p.score).filter((s): s is number => s != null)
+      const scores = items.filter(hasApprovedAssessment).map((p) => p.score)
       const categories = Array.from(new Set(items.map((p) => p.category)))
       summaries.push({
         brand: items[0].brand,
@@ -88,7 +91,7 @@ export default async function BrandIndexPage() {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: 'Supplement Brands A–Z',
-    description: 'Supplement brands scored by The Lifting Lab against evidence-based dosing.',
+    description: 'Supplement brand catalogues for label and listed-price research; effectiveness assessments are unavailable.',
     numberOfItems: brands.length,
     itemListElement: brands.map((b, i) => ({
       '@type': 'ListItem',
@@ -112,12 +115,12 @@ export default async function BrandIndexPage() {
       {itemListJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }}
         />
       )}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
 
       <main className="max-w-3xl mx-auto px-6 py-12">
@@ -135,11 +138,7 @@ export default async function BrandIndexPage() {
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
           Supplement Brands <span className="text-lab-lime">A–Z</span>
         </h1>
-        <p className="text-lg text-white/90 leading-relaxed mb-4">
-          Every brand we score, in one place. Each brand is rated by how closely its products&apos;
-          active doses match the evidence-based clinical reference for their category — not by
-          marketing spend or reputation.
-        </p>
+        <p className="text-lg text-white/90 leading-relaxed mb-4">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
         {brands.length > 0 && (
           <p className="text-lab-muted leading-relaxed mb-4">
             Currently tracking {totalProducts} products across {brands.length} brands. Scores update
@@ -197,18 +196,13 @@ export default async function BrandIndexPage() {
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">
             How brands are rated
           </h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            A brand&apos;s average score is the mean Effectiveness Match (0–100) of all its products
-            we track. A high average means the brand consistently doses its actives to clinical
-            standards across its range. Individual products can score higher or lower — open a brand
-            to see every product ranked.
-          </p>
+          <p className="text-lab-muted text-sm leading-relaxed mb-5">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best of 2026 →
+              Product research →
             </Link>
             <Link
               href="/products"

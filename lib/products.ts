@@ -1,5 +1,11 @@
 // Shared product types + score attachment for the browse/compare features.
+import { displayPrice, isUsablePrice } from '@/lib/commerce/display-price'
 import { scoreFor } from '@/lib/scores'
+import { hasPositiveServingCost, isRankingCandidate } from './assessment-display'
+import type { ProductSafety } from './commerce/product-warnings'
+import type { CataloguePresentation } from './commerce/catalogue-presentation'
+import type { StorePricePresentation } from './commerce/store-price-products'
+import type { StoreLinkMapping, StoreVariantOption } from './commerce/product-mapping'
 
 export type Product = {
   id: string
@@ -16,6 +22,16 @@ export type Product = {
   proprietary_blend: boolean | null
   amino_spiked: boolean | null
   protein_yield: number | null
+  /** Optional public label projection; TODO: exact UK label review before populating. */
+  safety?: ProductSafety | null
+  /** Optional reviewed server projection; not a supplier field or database column. */
+  cataloguePresentation?: CataloguePresentation | null
+  /** Approved server projection; never a raw private mapping row. */
+  storeLinkMapping?: StoreLinkMapping | null
+  sizeOptions?: import('./commerce/size-selection').ProductSizeOption[]
+  storeVariants?: StoreVariantOption[]
+  /** Public Shopify price/stock observation; retail_price is replaced server-side when enabled. */
+  storePrice?: StorePricePresentation | null
 }
 
 export type ScoredProduct = Product & {
@@ -35,15 +51,17 @@ export type ComparedProduct = ScoredProduct & { nutrients: Nutrient[] }
 export const PRODUCT_COLUMNS =
   'id, name, brand, category, serving_size, serving_unit, servings_per_container, image_url, informed_sport, retail_price, buy_url, proprietary_blend, amino_spiked, protein_yield'
 
-export function withScore<T extends { brand: string; name: string; servings_per_container: number | null; retail_price: number | null }>(
+export function withScore<T extends { brand: string; name: string; servings_per_container: number | null; retail_price: number | null } & Pick<Product, 'storePrice' | 'storeLinkMapping' | 'storeVariants'>>(
   p: T,
 ): T & { score: number | null; cost_per_serving: number | null } {
   const score = scoreFor(p.brand, p.name)
+  const price = displayPrice(p)
   const cost_per_serving =
-    p.retail_price != null && p.servings_per_container != null && p.servings_per_container > 0
-      ? Math.round((p.retail_price / p.servings_per_container) * 100) / 100
+    price !== null
+      && typeof p.servings_per_container === 'number' && Number.isFinite(p.servings_per_container) && p.servings_per_container > 0
+      ? price / p.servings_per_container
       : null
-  return { ...p, score, cost_per_serving }
+  return { ...p, score, cost_per_serving: cost_per_serving !== null && Number.isFinite(cost_per_serving) && cost_per_serving > 0 ? cost_per_serving : null }
 }
 
 export type SortKey = 'score' | 'name' | 'brand' | 'value' | 'budget' | 'price'
@@ -53,16 +71,26 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
   out.sort((a, b) => {
     if (sort === 'name') return a.name.localeCompare(b.name)
     if (sort === 'brand') return a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)
+    if (sort !== 'price' && sort !== 'budget') {
+      const eligibility = Number(isRankingCandidate(b, sort)) - Number(isRankingCandidate(a, sort))
+      if (eligibility) return eligibility
+      // Research records stay visible, but are not ordered as recommendations.
+      if (!isRankingCandidate(a, sort)) return a.name.localeCompare(b.name)
+    }
     if (sort === 'value') {
       // Score per £ per serving — highest ratio first; unpriced last
-      const va = a.score != null && a.cost_per_serving != null ? a.score / a.cost_per_serving : -1
-      const vb = b.score != null && b.cost_per_serving != null ? b.score / b.cost_per_serving : -1
+      const va = a.score! / a.cost_per_serving!
+      const vb = b.score! / b.cost_per_serving!
       return vb - va
     }
-    if (sort === 'budget' || sort === 'price') {
-      // Cheapest per serving among scored products; unpriced last
-      const ca = a.cost_per_serving ?? Infinity
-      const cb = b.cost_per_serving ?? Infinity
+    if (sort === 'price') {
+      const price = (p: ScoredProduct) => displayPrice(p) ?? Infinity
+      return price(a) - price(b) || a.name.localeCompare(b.name)
+    }
+    if (sort === 'budget') {
+      // Listed price per known serving only; no scientific or offer approval.
+      const ca = hasPositiveServingCost(a) ? a.cost_per_serving : Infinity
+      const cb = hasPositiveServingCost(b) ? b.cost_per_serving : Infinity
       return ca - cb
     }
     // default: score highest first, unscored last
@@ -74,13 +102,22 @@ export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[
 // Why True Cost (£/serving) can't be computed for a product. Used to render an
 // honest "—" with a stated reason instead of a fabricated number.
 export function trueCostReason(p: {
+  storePrice?: StorePricePresentation | null
   retail_price: number | null
   servings_per_container: number | null
 }): string | null {
-  if (p.retail_price != null && p.servings_per_container != null && p.servings_per_container > 0) return null
+  if (isUsablePrice(p.retail_price)
+    && typeof p.servings_per_container === 'number' && Number.isFinite(p.servings_per_container) && p.servings_per_container > 0) return null
+  if (p.storePrice && p.retail_price == null) return 'TLL Store price unavailable'
   if (p.retail_price == null && (p.servings_per_container == null || p.servings_per_container <= 0)) {
     return 'no retail price or servings on file'
   }
   if (p.retail_price == null) return 'no retail price on file'
-  return 'servings per container unknown'
+  return 'usable positive price or serving count unavailable'
+}
+
+// Retain the unrounded ratio for ordering/API data. Only the presentation rounds.
+export function formatListedServingPrice(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return 'Unavailable'
+  return value < 0.01 ? '<£0.01' : `£${value.toFixed(2)}`
 }

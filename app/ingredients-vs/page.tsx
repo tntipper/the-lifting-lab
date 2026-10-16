@@ -1,12 +1,16 @@
+import { pageMetadata } from '@/lib/seo'
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { INGREDIENT_MATCHUPS, resolveIngredientMatchup } from '@/lib/ingredient-matchups'
 import type { EvidenceLevel } from '@/lib/ingredients'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 export const metadata: Metadata = {
+  twitter: pageMetadata('/ingredients-vs', 'Ingredient Comparisons: Creatine vs Beta-Alanine and More | The Lifting Lab', 'Head-to-head comparisons of the ingredients people confuse: creatine vs beta-alanine, caffeine vs theanine, magnesium vs zinc. What each does, when to pick which, and whether to take both.').twitter,
+
   title: 'Ingredient Comparisons: Creatine vs Beta-Alanine and More | The Lifting Lab',
   description:
     'Head-to-head comparisons of the ingredients people confuse: creatine vs beta-alanine, caffeine vs theanine, magnesium vs zinc. What each does, when to pick which, and whether to take both.',
@@ -60,8 +64,8 @@ export default function IngredientsVsIndex() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <div className="max-w-4xl mx-auto px-6 py-12">
         <nav aria-label="Breadcrumb" className="mb-4 text-xs text-lab-muted">

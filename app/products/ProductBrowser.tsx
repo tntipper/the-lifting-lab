@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
 import { scoreFor } from '@/lib/scores'
 
 type Product = {
@@ -81,9 +81,7 @@ export default function ProductBrowser() {
   }
 
   const sorted = [...results].sort((a, b) => {
-    const sa = scoreFor(a.brand, a.name) ?? -1
-    const sb = scoreFor(b.brand, b.name) ?? -1
-    return sb - sa
+    return a.name.localeCompare(b.name)
   })
 
   return (
@@ -113,7 +111,7 @@ export default function ProductBrowser() {
               key={p.id}
               className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4"
             >
-              <ScoreBadge score={score} />
+              <ProductAssessment product={{ ...p, score }} />
               <div className="min-w-0 flex-1">
                 <p className="text-white text-sm font-bold truncate">{p.brand}</p>
                 <p className="text-lab-muted text-xs truncate">{p.name}</p>

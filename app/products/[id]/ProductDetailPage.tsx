@@ -1,38 +1,54 @@
 'use client'
+import { displayPrice, isStoreOffer } from '@/lib/commerce/display-price'
+import { formatListedServingPrice } from '@/lib/products'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import ScoreBadge, { scoreColor } from '@/components/ScoreBadge'
+import { scoreColor } from '@/components/ScoreBadge'
+import ProductWarnings from '@/components/ProductWarnings'
+import ShopScoreBadge from '@/components/ShopScoreBadge'
+import styles from '@/components/shop.module.css'
+import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import ProductImage from '@/components/ProductImage'
 import { categoryLabel } from '@/lib/categories'
 import { brandSlug } from '@/lib/brands'
-import { buyLink } from '@/lib/affiliate'
-import { track, trackBuyClick } from '@/lib/gtag'
+import ProductSizePicker from '@/components/ProductSizePicker'
+import { productForSize, selectProductSize, sizeSelectionUrl } from '@/lib/commerce/size-selection'
+import ProductVariantPicker from '@/components/ProductVariantPicker'
+import { flavourSlug, variantSelectionUrl } from '@/lib/commerce/variant-selection'
+import ProductOfferLink from '@/components/ProductOfferLink'
+import { amazonSearch, bulkSearch } from '@/lib/affiliate'
+import { isSyntheticPreview } from '@/lib/preview-mode'
+import { track } from '@/lib/gtag'
 import { trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
 import MethodologyModal from '@/components/MethodologyModal'
+import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
+import { claimsReviewFor } from '@/lib/claims-review'
 import ReviewSection from '@/components/ReviewSection'
 import ShareModal from '@/components/ShareModal'
 import TopNav from '@/components/TopNav'
 import RelatedProducts from './RelatedProducts'
 
-function getRetailerLinks(brand: string, name: string): { label: string; url: string }[] {
+function getRetailerLinks(brand: string, name: string): { label: string; url: string; affiliate: boolean }[] {
+  if (isSyntheticPreview()) return []
   const q = encodeURIComponent(`${brand} ${name}`)
-  const links: { label: string; url: string }[] = []
+  const links: { label: string; url: string; affiliate: boolean }[] = []
 
   if (brand.toLowerCase() !== 'bulk') {
-    links.push({ label: 'Amazon UK', url: `https://www.amazon.co.uk/s?k=${q}&tag=theliftinglab-21` })
+    links.push({ label: 'Amazon UK', url: amazonSearch(brand, name), affiliate: true })
   }
   if (brand.toLowerCase() !== 'myprotein') {
-    links.push({ label: 'MyProtein', url: `https://www.myprotein.com/sport-nutrition/search.list?q=${q}` })
+    links.push({ label: 'MyProtein', url: `https://www.myprotein.com/sport-nutrition/search.list?q=${q}`, affiliate: false })
   }
-  links.push({ label: 'The Protein Works', url: `https://www.theproteinworks.com/search?query=${q}` })
+  links.push({ label: 'The Protein Works', url: `https://www.theproteinworks.com/search?query=${q}`, affiliate: false })
   if (brand.toLowerCase() !== 'bulk') {
     links.push({
       label: 'Bulk.com',
-      url: `https://www.awin1.com/cread.php?awinmid=4822&awinaffid=2919631&ued=${encodeURIComponent(`https://www.bulk.com/uk/search?q=${encodeURIComponent(name)}`)}`
+      url: bulkSearch(name),
+      affiliate: true,
     })
   }
   return links.slice(0, 4)
@@ -43,28 +59,76 @@ function getRetailerLinks(brand: string, name: string): { label: string; url: st
 // the server — no client fetch, no "Loading…" shell. Interactivity (stack,
 // share, tracking, reviews) hydrates on top.
 export default function ProductDetailPage({
-  product,
+  product: originalProduct,
   related,
+  defaultVariantId,
 }: {
   product: ComparedProduct
   related: ScoredProduct[]
+  defaultVariantId?: string
 }) {
   const router = useRouter()
+  const sizes = originalProduct.sizeOptions ?? []
+  const [sizeSlug, setSizeSlug] = useState<string | undefined>(sizes[0]?.slug)
+  const [sizeReady, setSizeReady] = useState(sizes.length <= 1)
+  const variants = originalProduct.storeVariants ?? []
+  const [selectedId, setSelectedId] = useState(defaultVariantId)
+  // Until the URL selection is applied, a multi-variant page must not link any variant's cart.
+  const [selectionReady, setSelectionReady] = useState(variants.length <= 1)
+  useEffect(() => {
+    setSizeSlug(selectProductSize(sizes, window.location.search)?.slug)
+    setSizeReady(true)
+    const query = new URLSearchParams(window.location.search)
+    const flavour = query.get('flavour')
+    const override = variants.find(v => v.variantId === query.get('variant'))
+      ?? (flavour ? variants.find(v => v.flavour && flavourSlug(v.flavour) === flavourSlug(flavour)) : undefined)
+    if (override) setSelectedId(override.variantId)
+    setSelectionReady(true)
+    // Read the URL once after hydration. Manual changes must never reset from props.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const selected = variants.find(v => v.variantId === selectedId) ?? variants[0]
+  const size = sizes.find(option => option.slug === sizeSlug) ?? sizes[0]
+  // Multiple sizes have exact variant identities, not a size × flavour cross-product.
+  // A sole size may still have several flavours, so keep their picker/projection.
+  const sizeOwnsOffer = !!size && (sizes.length > 1 || variants.length <= 1)
+  const baseProduct = size ? productForSize(originalProduct, size, sizeReady) : originalProduct
+  const variantProduct = selected ? { ...baseProduct, storeVariants: undefined,
+    storeLinkMapping: selectionReady ? selected.mapping : null, storePrice: selected.storePrice, buy_url: null,
+    retail_price: selected.storePrice?.price ?? null,
+    // Catalogue serving counts do not establish the selected variant's pack servings.
+    cost_per_serving: variants.length === 1 ? baseProduct.cost_per_serving : null } : baseProduct
+  const product = sizeOwnsOffer ? baseProduct : variantProduct
+  const price = displayPrice(product)
+  function changeSize(slug: string) {
+    if (!sizes.some(option => option.slug === slug)) return
+    setSizeSlug(slug)
+    window.history.replaceState(null, '', sizeSelectionUrl(window.location.href, slug))
+  }
+  function changeVariant(id: string) {
+    if (!variants.some(v => v.variantId === id)) return
+    setSelectedId(id)
+    window.history.replaceState(null, '', variantSelectionUrl(window.location.href, id))
+  }
   const { inStack, toggle } = useLocalStack()
   const [shareOpen, setShareOpen] = useState(false)
 
+  const review = claimsReviewFor(product.category)
+  const assessment = assessmentDisplayFor(product)
+  const canRecommend = hasApprovedAssessment(product)
   const costReason = trueCostReason(product)
   const flags = verdictFlags(product.nutrients, product.score, product.informed_sport)
-  const color = product.score != null ? scoreColor(product.score) : '#4b5563'
+    .filter(flag => canRecommend || flag.kind === 'safety')
+  const color = canRecommend && product.score != null ? scoreColor(product.score) : '#9ca3af'
   const stacked = inStack(product.id)
-  const retailers = getRetailerLinks(product.brand, product.name)
+  const retailers = variants.length ? [] : getRetailerLinks(product.brand, product.name)
 
   return (
-    <div className="min-h-screen bg-lab-bg text-white pb-32">
+    <div data-theme="lab" className={`${styles.detail} min-h-screen pb-80 md:pb-52`}>
       <TopNav />
 
       {/* breadcrumb / back row */}
-      <div className="bg-lab-bg border-b border-lab-border px-4 py-3 flex items-center gap-3">
+      <div className="mx-auto flex max-w-[1200px] items-center gap-3 border-b border-lab-border px-4 py-3">
         <button
           onClick={() => router.back()}
           className="text-lab-muted hover:text-white text-sm font-bold uppercase tracking-widest"
@@ -77,28 +141,29 @@ export default function ProductDetailPage({
         </span>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 space-y-6">
+      <main className={styles.detailMain}>
         {/* hero */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:text-left items-center text-center gap-6 lg:gap-10">
-          <div className="flex items-center gap-5">
+        <div className={styles.detailHero}>
+          <div className={styles.detailPackshot}>
             <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} />
-            <ScoreBadge score={product.score} size="lg" />
+            <ShopScoreBadge product={product} />
           </div>
-          <div>
+          <div className={styles.detailIntro}>
             <Link
               href={`/brand/${brandSlug(product.brand)}`}
               className="text-lab-muted text-xs uppercase tracking-widest hover:text-lab-lime transition-colors"
             >
               {product.brand}
             </Link>
-            <h1 className="text-2xl font-black italic mt-1">{product.name}</h1>
-            <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+            <h1 className="tll-display">{product.name}</h1>
+            <ClaimsReviewNotice category={product.category} />
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                 {categoryLabel(product.category)}
               </span>
               {product.informed_sport && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
-                  🛡️ IS Certified
+                  IS Certified
                 </span>
               )}
               {product.protein_yield != null && (
@@ -108,25 +173,25 @@ export default function ProductDetailPage({
               )}
               {product.proprietary_blend && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-yellow-900/40 text-yellow-400 border border-yellow-700/50 px-2 py-0.5 rounded-full">
-                  ⚠️ Proprietary Blend
+                  Proprietary Blend
                 </span>
               )}
               {product.amino_spiked && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-red-900/40 text-red-400 border border-red-700/50 px-2 py-0.5 rounded-full">
-                  ⚠️ Amino Spiked
+                  Amino Spiked
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-400 mt-2">
-              {product.retail_price != null ? <span>£{product.retail_price.toFixed(2)} retail</span> : <span>Retail price —</span>}
+            <p className="font-mono text-sm text-lab-muted">
+              {price !== null ? <span>£{price.toFixed(2)} {isStoreOffer(product) ? 'at TLL Store' : 'retail'}</span> : <span>{isStoreOffer(product) ? 'TLL Store price unavailable' : 'Retail price —'}</span>}
               <span className="mx-2">·</span>
               {product.cost_per_serving != null ? (
-                <span className="text-white font-bold">£{product.cost_per_serving.toFixed(2)} True Cost / serving</span>
+                <span className="text-white font-bold">{formatListedServingPrice(product.cost_per_serving)} listed price / serving</span>
               ) : (
                 <span title={costReason ?? undefined}>True Cost — <span className="text-xs">({costReason})</span></span>
               )}
             </p>
-            <p className="text-xs text-lab-muted mt-1">
+            <p className="font-mono text-xs text-lab-muted">
               {product.serving_size != null
                 ? `${product.serving_size}${product.serving_unit ?? ''} per serving`
                 : 'Serving size not on file'}
@@ -135,14 +200,16 @@ export default function ProductDetailPage({
                 ? `${product.servings_per_container} servings per container`
                 : 'servings per container unknown'}
             </p>
-          </div>
           <button
             onClick={() => setShareOpen(true)}
             className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg border border-lab-border text-lab-muted hover:text-lab-lime hover:border-lab-lime/50 transition-colors"
           >
             ↗ Share & earn 25 pts
           </button>
+          </div>
         </div>
+
+        <ProductWarnings product={product} />
 
         {/* verdict flags */}
         {flags.length > 0 && (
@@ -157,13 +224,14 @@ export default function ProductDetailPage({
           </div>
         )}
 
+        <div className={styles.detailColumns}>
         {/* nutrient label */}
         {product.nutrients.length > 0 && (
-          <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
+          <div className={styles.detailPanel}>
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-4">Full Label</p>
             <div>
               {product.nutrients.map((n, i) => {
-                const nColor = nutrientColor(n.nutrient_name, n.amount)
+                const nColor = canRecommend ? nutrientColor(n.nutrient_name, n.amount) : null
                 return (
                   <div
                     key={i}
@@ -177,7 +245,7 @@ export default function ProductDetailPage({
                       )}
                       <span className="text-white/80">{n.nutrient_name}</span>
                     </div>
-                    <span className="font-bold text-white ml-2 shrink-0">{n.amount}{n.unit}</span>
+                    <span className="font-mono font-semibold text-white ml-2 shrink-0">{n.amount}{n.unit}</span>
                   </div>
                 )
               })}
@@ -194,35 +262,38 @@ export default function ProductDetailPage({
         )}
 
         {/* score explanation */}
-        <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
+        <div className={styles.detailPanel}>
           <div className="flex items-center justify-between gap-3 mb-2">
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Score Explained</p>
             <MethodologyModal category={product.category} />
           </div>
           <p className="text-sm text-white/70 leading-relaxed">
-            This product scores{' '}
+            {!canRecommend ? assessment.explanation : <>
+            Existing formula score (scientific review incomplete):{' '}
             <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our
             evidence-based reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
             dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
+            </>}
           </p>
-          <div className="flex gap-3 mt-3 flex-wrap">
+          {canRecommend && <div className="flex gap-3 mt-3 flex-wrap">
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lab-lime/10 text-lab-lime border border-lab-lime/30">● Green = meets dose</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">● Amber = below optimal</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
-          </div>
+          </div>}
         </div>
 
+        </div>
         {/* better-rated alternatives in the same category */}
-        <RelatedProducts items={related} productId={product.id} category={product.category} score={product.score} brand={product.brand} name={product.name} />
+        {!review && <RelatedProducts items={related} productId={product.id} category={product.category} score={product.score} brand={product.brand} name={product.name} />}
 
         {/* reviews */}
         <ReviewSection productId={product.id} productName={product.name} />
 
-        {/* compare prices across retailers */}
-        <div className="bg-lab-panel border border-lab-border rounded-2xl p-5">
-          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">Compare Prices</p>
+        {/* Explicit retailer searches, separate from a product offer. */}
+        {retailers.length > 0 && <div className={styles.detailPanel}>
+          <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">Search other retailers</p>
           <p className="text-xs text-gray-500 mb-4">
-            Search for this product across UK retailers — prices vary.
+            Search results do not confirm the exact product, pack, price or stock.
           </p>
           <div className="grid grid-cols-2 gap-2">
             {retailers.map((r) => (
@@ -230,24 +301,23 @@ export default function ProductDetailPage({
                 key={r.label}
                 href={r.url}
                 target="_blank"
-                rel="noopener noreferrer nofollow"
-                onClick={() => track('retailer_click', { item_brand: product.brand, item_name: product.name, retailer: r.label })}
+                rel={r.affiliate ? 'noopener noreferrer nofollow sponsored' : 'noopener noreferrer nofollow'}
+                onClick={() => track('retailer_search_click', { retailer: r.label })}
                 className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-lab-border hover:border-lab-lime/50 hover:bg-lab-lime/5 transition-colors group"
               >
                 <span className="text-white text-xs font-medium">{r.label}</span>
-                <span className="text-lab-muted text-xs group-hover:text-lab-lime transition-colors">Search →</span>
+                <span className="text-lab-muted text-[10px] text-right group-hover:text-lab-lime transition-colors">
+                  Search ↗<br />{r.affiliate ? 'Affiliate link · we may earn a commission' : 'External link'}
+                </span>
               </a>
             ))}
           </div>
-          <p className="text-[10px] text-gray-600 mt-3">
-            We may earn a commission on purchases via affiliate links. Check retailer for current pricing.
-          </p>
-        </div>
-      </div>
+        </div>}
+      </main>
 
       {/* sticky action bar */}
-      <div className="fixed bottom-0 inset-x-0 z-30 bg-lab-panel-2 border-t border-lab-border">
-        <div className="max-w-6xl mx-auto px-4 md:px-8 py-3 grid grid-cols-3 gap-2">
+      <div className={`${styles.buyBar} tll-on-dark fixed bottom-0 inset-x-0 z-30`}>
+        <div className={styles.buyBarInner}>
           <button
             onClick={() => {
               toggle({ id: product.id, name: product.name, brand: product.brand, category: product.category, score: product.score })
@@ -259,7 +329,7 @@ export default function ProductDetailPage({
                 : 'border-lab-border text-lab-muted hover:text-white'
             }`}
           >
-            {stacked ? '✓ In Stack' : '+ Stack'}
+            {stacked ? 'In stack' : 'Add to stack'}
           </button>
           <Link
             href="/compare"
@@ -267,24 +337,15 @@ export default function ProductDetailPage({
           >
             Compare
           </Link>
-          <a
-            href={buyLink(product.brand, product.name, product.buy_url)}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            onClick={() => {
-              const href = buyLink(product.brand, product.name, product.buy_url)
-              trackBuyClick({
-                product_id: product.id,
-                product_name: product.name,
-                brand: product.brand,
-                category: product.category,
-                href,
-              })
-            }}
-            className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
-          >
-            Buy Now →
-          </a>
+          <div className="min-w-0 space-y-2">
+            {size && <ProductSizePicker options={sizes} selected={size} onChange={changeSize} price={product.retail_price} />}
+            {!sizeOwnsOffer && selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
+            <ProductOfferLink
+              product={product}
+              pickerOwnsStatus={!sizeOwnsOffer && !!selected} chooseAnother={sizeOwnsOffer ? sizes.length > 1 : variants.length > 1}
+              className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
+            />
+          </div>
         </div>
       </div>
 
@@ -294,7 +355,6 @@ export default function ProductDetailPage({
         productId={product.id}
         productName={product.name}
         brand={product.brand}
-        score={product.score}
       />
     </div>
   )

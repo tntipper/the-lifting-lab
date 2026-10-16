@@ -1,9 +1,10 @@
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import PlateCalculator from './PlateCalculator'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const URL = `${SITE}/calculators/plate`
 
 export const metadata: Metadata = {
@@ -75,8 +76,8 @@ export default function PlatePage() {
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
 
       <main className="max-w-2xl mx-auto px-6 py-12">
         {/* breadcrumb */}
@@ -200,16 +201,15 @@ export default function PlatePage() {
         <section className="mt-12 bg-lab-panel border border-lab-border rounded-2xl p-6">
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">Adding weight to the bar?</h2>
           <p className="text-lab-muted text-sm leading-relaxed mb-5">
-            Training does the work — but creatine and a solid pre-workout are the two supplements with
-            real evidence behind them. Every product we track is scored 0–100 on how closely its doses
-            match that evidence.
+            Training does the work. Explore the available creatine product labels and research
+            while individual product assessments remain under review.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               href="/best/creatine"
               className="text-xs uppercase tracking-widest font-bold bg-lab-lime text-black px-5 py-2.5 rounded-lg hover:opacity-90"
             >
-              Best creatine 2026 →
+              Creatine research →
             </Link>
             <Link
               href="/calculators"
@@ -220,8 +220,7 @@ export default function PlatePage() {
           </div>
           <p className="text-lab-muted/70 text-[11px] leading-relaxed mt-5">
             Informational only — not medical or coaching advice. Plate colours follow the common
-            competition convention; check your own gym&apos;s plates. Buy links are affiliate links; we
-            may earn a commission at no extra cost to you.
+            competition convention; check your own gym&apos;s plates. Retailer links carry their own disclosures.
           </p>
         </section>
       </main>

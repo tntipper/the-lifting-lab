@@ -182,7 +182,7 @@ export default function ProteinCalculator() {
                 onClick={() => track('calculator_cta', { tab: 'protein', target: 'whey' })}
                 className="text-center text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-all"
               >
-                Best whey 2026
+                Whey research
               </Link>
               <Link
                 href="/calculators/tdee"

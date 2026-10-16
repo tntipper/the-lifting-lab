@@ -1,0 +1,71 @@
+{
+  "schema": "tll-stage-3-slice-1-five-purpose-acceptance/v1",
+  "date": "2026-09-21",
+  "integrationTipSha": "78e4bce8415936e82eaf4a88d2c06d26abcdcc13",
+  "stagingProjectRef": "qdmvngjwkcsilzmqksme",
+  "productionProjectRefExcluded": "wrhgscovsgsudtedbljr",
+  "generation": 19,
+  "windowId": "51809dd4-bd4b-44c7-8609-7dd8ca063679",
+  "packageId": "tll-staging-generation-19-credentials/v1",
+  "liveStatus": "CREDENTIALS_VERIFIED_CONTROLS_DISABLED",
+  "tipStatus": "CREDENTIALS_VERIFIED_CONTROLS_DISABLED_NO_REPLAY",
+  "lifecycle": "RETIRED_NO_REPLAY",
+  "gates": {
+    "generation19Armed": false,
+    "generation19ReplayPermitted": false
+  },
+  "purposes": [
+    "customer",
+    "cart",
+    "broker",
+    "provisional",
+    "bridge"
+  ],
+  "checklist": [
+    {
+      "id": "five-login-identities",
+      "verdict": "PASS",
+      "pointer": "scripts/staging-generation-19-credentials.mjs#IDENTITIES"
+    },
+    {
+      "id": "gen19-live-credentials-verified-controls-disabled",
+      "verdict": "PASS",
+      "pointer": "docs/ops/stage-plans/2026-09-21-generation-19-credentials-verified.md"
+    },
+    {
+      "id": "connection-isolation-contract",
+      "verdict": "PASS",
+      "pointer": "scripts/staging-generation-19-transport.mjs"
+    },
+    {
+      "id": "native-gates-off-on-tip",
+      "verdict": "PASS",
+      "pointer": "config/project-stage-gate-policy.json#currentHold"
+    },
+    {
+      "id": "repeatable-application-runtime-accessor",
+      "verdict": "GAP",
+      "reason": "Gen 19 window retired; replay forbidden"
+    },
+    {
+      "id": "application-five-purpose-http-gateway",
+      "verdict": "GAP",
+      "reason": "Deferred to Stage 3 slices 3\u20136; tip customer composition is four admission purposes; cart composition separate"
+    },
+    {
+      "id": "controls-enabled-gated-access",
+      "verdict": "GAP",
+      "reason": "Gen 19 verified with controls disabled"
+    },
+    {
+      "id": "live-reprobe-on-tip",
+      "verdict": "GAP",
+      "reason": "Correct stop \u2014 no Gen 19 replay, no Gen 20"
+    }
+  ],
+  "slice1Verdict": {
+    "connectionProvenance": "PASS",
+    "integratedApplicationGateway": "GAP"
+  },
+  "secrets": false
+}

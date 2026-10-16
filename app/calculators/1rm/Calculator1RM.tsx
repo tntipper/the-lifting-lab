@@ -6,7 +6,6 @@ import { track } from '@/lib/gtag'
 
 type Unit = 'kg' | 'lb'
 
-const AR = '166,226,46'
 
 const inputCls =
   'w-full bg-lab-bg border border-lab-border rounded-lg px-3 py-2.5 text-white text-sm ' +

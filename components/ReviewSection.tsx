@@ -1,9 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useBrowserSnapshot } from '@/lib/browser-snapshot'
 import { createClient } from '@/lib/supabase'
 import { track } from '@/lib/gtag'
 import Avatar from '@/components/Avatar'
+import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
 
 type Review = {
   id: string
@@ -44,16 +47,12 @@ function timeAgo(iso: string) {
 
 function ShareReview({ productName, rating }: { productName?: string; rating?: number }) {
   const [copied, setCopied] = useState(false)
-  const [canNativeShare, setCanNativeShare] = useState(false)
-
-  useEffect(() => {
-    setCanNativeShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function')
-  }, [])
+  const canNativeShare = useBrowserSnapshot(() => typeof navigator.share === 'function', false)
 
   function shareText() {
     const stars = rating ? ` ${rating}★` : ''
     const name = productName || 'this supplement'
-    return `I reviewed ${name}${stars} on The Lifting Lab 💪 — evidence-based supplement scoring.`
+    return `I reviewed ${name}${stars} on The Lifting Lab 💪 — supplement research records; product assessments remain unverified.`
   }
 
   function open(url: string, network: string) {
@@ -134,6 +133,7 @@ function ShareReview({ productName, rating }: { productName?: string; rating?: n
 }
 
 export default function ReviewSection({ productId, productName }: { productId: string; productName?: string }) {
+  const router = useRouter()
   const [reviews, setReviews] = useState<Review[]>([])
   const [average, setAverage] = useState<number | null>(null)
   const [count, setCount] = useState(0)
@@ -176,7 +176,7 @@ export default function ReviewSection({ productId, productName }: { productId: s
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        if (res.status === 401) { window.location.href = '/auth'; return }
+        if (res.status === 401) { router.push('/auth'); return }
         if (res.status === 409) { setError('You already reviewed this product.'); await refresh(); return }
         setError(data.error || 'Could not submit review'); return
       }
@@ -257,7 +257,7 @@ export default function ReviewSection({ productId, productName }: { productId: s
       )}
 
       {!loading && signedIn === false && (
-        <a href="/auth" className="block mb-5 text-center bg-lab-bg/40 border border-lab-border rounded-xl p-4 text-sm text-lab-muted hover:border-lab-lime/50 transition-colors">
+        <a href={accountSignInHref()} className="block mb-5 text-center bg-lab-bg/40 border border-lab-border rounded-xl p-4 text-sm text-lab-muted hover:border-lab-lime/50 transition-colors">
           <span className="text-lab-lime font-bold">Sign in</span> to review this product and earn 75 points.
         </a>
       )}

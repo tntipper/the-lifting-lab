@@ -1,5 +1,8 @@
 'use client'
 
+// Legacy verdicts are withheld from /testosterone pending a claim-specific evidence review.
+
+
 import { useState } from 'react'
 import Link from 'next/link'
 import { track } from '@/lib/gtag'

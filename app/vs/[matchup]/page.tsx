@@ -1,11 +1,16 @@
+import { displayPrice } from '@/lib/commerce/display-price'
+import { withStorePrices } from '@/lib/commerce/store-price-server'
+import { formatListedServingPrice } from '@/lib/products'
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, unstable_rethrow } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
-import ScoreBadge from '@/components/ScoreBadge'
+import ProductAssessment from '@/components/ProductAssessment'
+import { hasApprovedAssessment, hasPositiveServingCost } from '@/lib/assessment-display'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
-import { buyLink } from '@/lib/affiliate'
+import ProductOfferLink from '@/components/ProductOfferLink'
 import { createPublicClient } from '@/lib/supabase-public'
 import {
   PRODUCT_COLUMNS,
@@ -24,7 +29,7 @@ import { curatedMatchups, resolveMatchup } from '@/lib/matchups'
 export const revalidate = 86400
 export const dynamicParams = true
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 const YEAR = 2026
 
 type NutrientRow = Nutrient & { product_id: string }
@@ -40,7 +45,7 @@ async function getMatchup(matchup: string): Promise<[ComparedProduct, ComparedPr
 
     const pair = resolveMatchup(matchup, data as Product[])
     if (!pair) return null
-    const [a, b] = pair
+    const [a, b] = await withStorePrices(pair)
 
     const { data: nutrients } = await sb
       .from('product_nutrients')
@@ -55,7 +60,8 @@ async function getMatchup(matchup: string): Promise<[ComparedProduct, ComparedPr
         .map(({ nutrient_name, amount, unit }) => ({ nutrient_name, amount, unit })),
     })
     return [build(a), build(b)]
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error)
     return null
   }
 }
@@ -92,10 +98,8 @@ export async function generateMetadata({
   if (!pair) return { title: 'Comparison not found — The Lifting Lab' }
   const [a, b] = pair
   const url = `${SITE}/vs/${matchup}`
-  const t = `${title(a, b)} — Which Is Better? (UK ${YEAR}) | The Lifting Lab`
-  const description = `${a.brand} ${a.name} vs ${b.brand} ${b.name}: side-by-side dosing, Effectiveness Match scores${
-    a.score != null && b.score != null ? ` (${a.score} vs ${b.score})` : ''
-  } and true cost per serving, scored against evidence-based standards.`
+  const t = `${title(a, b)} — Research Comparison (UK ${YEAR}) | The Lifting Lab`
+  const description = 'No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research. Listed prices are not confirmed offers; formulations and serving sizes differ.'
   return {
     title: t,
     description,
@@ -118,7 +122,7 @@ export default async function MatchupPage({
   const products: ComparedProduct[] = [a, b]
 
   // winner on Effectiveness Match score
-  const scored = products.filter((p): p is ComparedProduct & { score: number } => p.score != null)
+  const scored = products.filter(hasApprovedAssessment)
   const bestRated = scored.length
     ? scored.reduce((x, y) => (y.score > x.score ? y : x))
     : null
@@ -127,7 +131,7 @@ export default async function MatchupPage({
   // best value: highest score per £/serving
   const valued = products.filter(
     (p): p is ComparedProduct & { score: number; cost_per_serving: number } =>
-      p.score != null && p.cost_per_serving != null && p.cost_per_serving > 0,
+      hasApprovedAssessment(p) && hasPositiveServingCost(p),
   )
   const bestValue = valued.length
     ? valued.reduce((x, y) => (y.score / y.cost_per_serving > x.score / x.cost_per_serving ? y : x))
@@ -156,7 +160,7 @@ export default async function MatchupPage({
     ? `${a.brand} ${a.name} and ${b.brand} ${b.name} are level on Effectiveness Match (${a.score} each).`
     : bestRated
     ? `${bestRated.brand} ${bestRated.name} wins on Effectiveness Match with ${bestRated.score}/100.`
-    : `Neither product is scored yet on Effectiveness Match.`
+    : `No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.`
 
   // BreadcrumbList + ItemList + FAQPage — all backed 1:1 by visible content.
   const breadcrumbJsonLd = {
@@ -214,9 +218,9 @@ export default async function MatchupPage({
   return (
     <div className="min-h-screen bg-lab-bg text-white">
       <TopNav />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }} />
 
       <main className="max-w-3xl mx-auto px-6 py-12">
         <nav aria-label="Breadcrumb" className="mb-4 text-xs text-lab-muted">
@@ -235,11 +239,7 @@ export default async function MatchupPage({
         <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-tight mb-6">
           {a.brand} {a.name} <span className="text-lab-lime">vs</span> {b.brand} {b.name}
         </h1>
-        <p className="text-lg text-white/90 leading-relaxed mb-8">
-          We score both{sameCategory ? ` ${categoryLabel(a.category).toLowerCase()} products` : ' products'} against the
-          same evidence-based clinical reference, so you can see exactly how their active doses, true cost per serving
-          and Effectiveness Match scores stack up — never brand reputation or marketing.
-        </p>
+        <p className="text-lg text-white/90 leading-relaxed mb-8">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
 
         {/* verdict */}
         <div className="bg-lab-panel border border-lab-lime/40 rounded-2xl p-5 lab-glow mb-10">
@@ -249,7 +249,7 @@ export default async function MatchupPage({
             <p className="text-lab-muted text-xs mt-1">
               Best value per serving:{' '}
               <span className="text-white font-bold">{bestValue.brand} {bestValue.name}</span> at{' '}
-              <span className="text-lab-lime font-bold">£{bestValue.cost_per_serving.toFixed(2)}/serving</span>{' '}
+              <span className="text-lab-lime font-bold">{formatListedServingPrice(bestValue.cost_per_serving)}/serving</span>{' '}
               (score {bestValue.score}).
             </p>
           )}
@@ -264,7 +264,7 @@ export default async function MatchupPage({
           {products.map((p) => (
             <div key={p.id} className="bg-lab-panel border border-lab-border rounded-xl p-4 text-center">
               <div className="flex justify-center mb-2">
-                <ScoreBadge score={p.score} />
+                <ProductAssessment product={p} />
               </div>
               <Link href={`/products/${p.id}`} className="hover:text-lab-lime transition-colors">
                 <p className="text-white text-xs font-bold leading-tight">{p.brand}</p>
@@ -285,16 +285,17 @@ export default async function MatchupPage({
           ))}
 
           <Cell head>Retail</Cell>
-          {products.map((p) => (
-            <Cell key={p.id}>{p.retail_price != null ? `£${p.retail_price.toFixed(2)}` : '—'}</Cell>
-          ))}
+          {products.map((p) => {
+            const price = displayPrice(p)
+            return <Cell key={p.id}>{price !== null ? `£${price.toFixed(2)}` : '—'}</Cell>
+          })}
 
-          <Cell head>True Cost / serving</Cell>
+          <Cell head>listed price / serving</Cell>
           {products.map((p) => (
             <Cell key={p.id}>
               {p.cost_per_serving != null ? (
                 <span className={bestValue?.id === p.id ? 'text-lab-lime font-black' : ''}>
-                  £{p.cost_per_serving.toFixed(2)}
+                  {formatListedServingPrice(p.cost_per_serving)}
                 </span>
               ) : '—'}
             </Cell>
@@ -321,11 +322,11 @@ export default async function MatchupPage({
               ))}
               <Cell head>Proprietary Blend</Cell>
               {products.map((p) => (
-                <Cell key={p.id}>{p.proprietary_blend ? '⚠️ Yes' : 'No'}</Cell>
+                <Cell key={p.id}>{p.proprietary_blend ? 'Yes' : 'No'}</Cell>
               ))}
               <Cell head>Amino Spiked</Cell>
               {products.map((p) => (
-                <Cell key={p.id}>{p.amino_spiked ? '⚠️ Yes' : 'No'}</Cell>
+                <Cell key={p.id}>{p.amino_spiked ? 'Yes' : 'No'}</Cell>
               ))}
             </>
           )}
@@ -333,18 +334,14 @@ export default async function MatchupPage({
           <div />
           {products.map((p) => (
             <div key={p.id} className="px-2 py-3 border-b border-lab-border flex justify-center">
-              <a
-                href={buyLink(p.brand, p.name, p.buy_url)}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
+              <ProductOfferLink storeCampaign="compare"
+                product={p}
                 className="w-full text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-lab-lime text-black hover:opacity-90 transition-opacity"
-              >
-                Buy →
-              </a>
+              />
             </div>
           ))}
         </div>
-        <p className="text-[9px] text-lab-muted/40 text-right mt-1">affiliate links · open in a new tab</p>
+
 
         {/* cross-links */}
         <div className="mt-10 flex flex-wrap gap-2">
@@ -378,15 +375,9 @@ export default async function MatchupPage({
 
         <section className="mt-14 bg-lab-panel border border-lab-border rounded-2xl p-6">
           <h2 className="text-lg font-black uppercase tracking-wide mb-3">How we score</h2>
-          <p className="text-lab-muted text-sm leading-relaxed mb-3">
-            Each product earns an Effectiveness Match score (0–100) measuring how closely its active ingredient doses
-            match the evidence-based clinical reference for its category. Proprietary blends and amino-spiked formulas
-            are penalised because they hide the real dose. We are independent — scores are never influenced by brands or
-            affiliate deals.
-          </p>
+          <p className="text-lab-muted text-sm leading-relaxed mb-3">No approved effectiveness assessment is available. Historical percentages are unverified and do not establish dosing, product quality or a recommendation. Labels and listed prices remain available for research.</p>
           <p className="text-lab-muted/70 text-xs leading-relaxed">
-            Informational only — not medical advice. Buy links are affiliate links; we may earn a commission at no extra
-            cost to you. This never affects scoring.
+            Informational only — not medical advice. Retailer links carry their own disclosures. This never affects scoring.
           </p>
         </section>
       </main>

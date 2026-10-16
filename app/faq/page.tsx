@@ -1,11 +1,15 @@
+import { pageMetadata } from '@/lib/seo'
+import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import { buildFaqTopics, faqTotalCount } from '@/lib/faq'
 
-const SITE = 'https://www.theliftinglab.co.uk'
+const SITE = 'https://theliftinglab.co.uk'
 
 export const metadata: Metadata = {
+  twitter: pageMetadata('/faq', 'Supplement Questions Answered — Doses, Timing & Safety | The Lifting Lab', 'Straight, evidence-based answers to the most common UK supplement questions: how much creatine to take, when to have whey, whether pre-workout is safe, and more.').twitter,
+
   title: 'Supplement Questions Answered — Doses, Timing & Safety | The Lifting Lab',
   description:
     'Straight, evidence-based answers to the most common UK supplement questions: how much creatine to take, when to have whey, whether pre-workout is safe, and more.',
@@ -52,11 +56,11 @@ export default function FaqHub() {
       <TopNav />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(faqJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(breadcrumbJsonLd) }}
       />
 
       <div className="max-w-4xl mx-auto px-6 py-12">
@@ -150,8 +154,8 @@ export default function FaqHub() {
             Ready to pick a product?
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/best" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Best Supplements 2026 →</Link>
-            <Link href="/value" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Best Value →</Link>
+            <Link href="/best" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Product research →</Link>
+            <Link href="/value" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Value review pending →</Link>
             <Link href="/wizard" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Find My Stack →</Link>
             <Link href="/products" className="text-sm font-bold text-lab-lime hover:underline underline-offset-2">Browse all →</Link>
           </div>
