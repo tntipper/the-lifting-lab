@@ -1,3 +1,14 @@
+**16 October PR #99 rankings overflow — grok/guides-footer-fix; HEAD c980c61; base main 90e0ff7:**
+- Bounded ShopScoreBadge to w-28/max-w-full; button stacks/wraps labels using Tailwind utilities, including when fixtures omit CSS modules.
+- Oath wording, native disclosure/ARIA/keyboard/Escape handlers and all test assertions unchanged; g-run*.sh untouched.
+- PASS 95 assessment tests, tsc --noEmit, focused ESLint, compiled Tailwind utility check and git diff --check.
+- node tests/browser/rankings.mjs exits 0 but only exports verifyRankings; actual checks run through accessibility.mjs.
+- node tests/browser/accessibility.mjs exits 1 before assertions: sandbox listen EPERM on 127.0.0.1.
+- npm run test:accessibility and standalone score-disclosure.mjs exit 1: Chromium MachPortRendezvous bootstrap permission denied.
+- npm test exits 1: 4,133 pass / 28 fail / 8 skipped (4,169 total); same totals as prior handover, unrelated socket/process/Docker/Python failures.
+- Commit BLOCKED: git add cannot create night/repo/.git/worktrees/wt-guides/index.lock (Operation not permitted); no push or hosted CI.
+- Next: rerun browser checks unrestricted; commit as "fix(#99): prevent rankings overflow at 320px from score disclosure". No full build needed for fixture runners.
+
 **16 October PR #99 Oath follow-up — grok/guides-footer-fix; parent 89f7ff4:**
 - Tooltip adds Rubric v1. before How we score; app/methodology/page.tsx confirmed; button/ARIA region disclosure preserved.
 - Removed PER4M Isolate Zero reviewed record; suppress ring/status, grid assessment row, detail explanation and pending share teaser; EAA Xtra stays 79.

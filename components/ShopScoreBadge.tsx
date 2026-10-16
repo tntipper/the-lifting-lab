@@ -20,10 +20,10 @@ export default function ShopScoreBadge({ product }: {
     : null
   const label = 'TLL Label Score'
   if (assessment.suppressed) return null
-  return <span className={styles.scoreHelp}
+  return <span className={`${styles.scoreHelp} relative inline-flex min-w-0 w-28 max-w-full`}
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false) }}
     onKeyDown={event => { if (event.key === 'Escape' && open) { setOpen(false); event.stopPropagation(); trigger.current?.focus() } }}>
-    <button ref={trigger} id={triggerId} type="button" className={styles.scoreTrigger} aria-expanded={open} aria-controls={tooltipId}
+    <button ref={trigger} id={triggerId} type="button" className={`${styles.scoreTrigger} inline-flex min-w-0 w-full max-w-full flex-col items-center whitespace-normal break-words`} aria-expanded={open} aria-controls={tooltipId}
       aria-label={`${label}: ${score == null ? 'Under review' : `${score} out of 100`} Dose & label check`}
       onClick={() => setOpen(value => !value)}>
       <span role="img" className={`${styles.score} ${styles.scoreRing} ${score == null ? 'text-lab-muted' : ''}`} data-band={band} data-assessment={assessment.state}
