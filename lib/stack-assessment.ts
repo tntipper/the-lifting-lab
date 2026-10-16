@@ -1,12 +1,11 @@
 import { assessmentDisplayFor } from './assessment-display'
-import { scoreFor } from '@/lib/scores'
 
 type CatalogueIdentity = { id: string; brand: string; name: string; category: string }
 
 // Call only with identities loaded from the catalogue. An incidental stored or
 // caller-supplied `score` property never participates in this projection.
 export function catalogueAssessment(product: CatalogueIdentity) {
-  return { ...product, score: scoreFor(product.brand, product.name) }
+  return { ...product, score: assessmentDisplayFor(product).score }
 }
 
 export function summariseStackAssessments(products: CatalogueIdentity[], listedCount?: number) {
@@ -23,7 +22,7 @@ export function summariseStackAssessments(products: CatalogueIdentity[], listedC
   }
 }
 
-export function assessmentText(product: { category: string; score: number | null }) {
+export function assessmentText(product: { id: string; category: string; score: number | null }) {
   const assessment = assessmentDisplayFor(product)
   return assessment.state === 'under_review'
     ? 'Under review; no benefit recommendation'

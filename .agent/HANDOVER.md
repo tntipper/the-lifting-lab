@@ -1,3 +1,33 @@
+**16 October reviewed scores + tooltip + payload privacy — grok/guides-footer-fix; working tree only:**
+- Preserved incoming edits; no commit/push/deploy. Added four Assay/Oath records dated 2026-10-16: ON 79, Applied EAA 92, Per4m EAA 79, Isolate 75/value-led.
+- IDs confirmed in data/mapping-review.csv and docs/research/data/supabase-products-2026-09-25.csv; no JP EAA or creatine records.
+- Rings support hover/focus/tap, Escape and linked methodology; approved tooltip uses compliance date; value-led label/price explanation included.
+- Unreviewed tooltip says compliance check pending because no signed compliance date exists; no fabricated checked date.
+- Removed legacy fallback from withScore; safe projections cover product/brand/grid/compare/vs and assessments API, including product RSC/JSON-LD boundary.
+- PASS 167 focused Node tests (payload, API, tooltip events/copy, held categories, storefront and claims); tsc --noEmit; lint 0 errors/20 existing warnings; diff check.
+- Fixed API fixture JSON default-import handling after the new approved-record assertion exposed it; browser/hosted CI unrun; gh PR lookup unsigned.
+- Next: review working diff and run browser/hosted checks before any separately authorised release.
+
+**16 October reviewed-assessment register — grok/guides-footer-fix; HEAD 23377ea; working tree only:**
+- Added empty data/reviewed-assessments.json; module-load validation requires Assay/Oath, real ISO dates, key, notes and finite 1–100 score.
+- Public assessment defaults to Under review; only matching signed records show numbers; category claims holds still override approval.
+- Passed product ids through callers; reviewed scores drive shared sorting/awards and affected comparisons; updated ARD schema and process doc.
+- PASS 210 focused assessment/claims/commercial/storefront/stack/share/wizard tests; tsc --noEmit; lint 0 errors/20 existing warnings; diff check.
+- Diagnosed fixture failures: old Not assessed labels/counts conflicted with requested Under review; updated those assertions, retained static social-card checks.
+- Approval is a boolean, not a guarantee about caller score; fixed nullable-score consumers to read the authoritative reviewed projection.
+- Preserved incoming edits and run scripts; no commit/push/deploy. Hosted CI/browser QA unrun; register remains [] with no real sign-offs.
+- Next: review working diff; future Assay and Oath approvals follow docs/research/unassessed-ranking-containment.md.
+
+**16 October CI fixture crash + score containment reversal — grok/guides-footer-fix; HEAD 23377ea; working tree only:**
+- Restored lib/assessment-display.ts exactly to 3b3c507: no public legacy scores; restored gated product metadata.
+- Score rings retain outline + Under review with no number; numeric arc/label only uses assessment display's reviewed result.
+- Root: components/ProductImage.tsx:4 added next/image; next/dist/client/image-component.js:26 reads undefined browser process.env.__NEXT_IMAGE_OPTS.
+- Accessibility defines Next image settings + static storefront-cart flag (lib/commerce/stack-cart.ts:24); guides/footer defines missing public settings.
+- All three fixtures reject unresolved process.env reads; accessibility auth adapter now implements current getSession contract.
+- PASS 128 focused tests, tsc --noEmit, lint (0 errors/20 warnings), three exact fixture bundle audits, git diff --check.
+- Browser runs blocked: localhost listen EPERM (accessibility), Chromium sandbox launch failure (size/guides); hosted CI unrun.
+- No commit/push/deploy; run scripts preserved; gh PR lookup unavailable (unsigned). Next: browser/CI outside sandbox.
+
 **16 October review3 SHOULD-FIX 1–5 — grok/guides-footer-fix; HEAD 315622d; working tree only:**
 - First-visit consent uses a fixed bottom banner portalled outside footer; footer control opens only on click.
 - Score rings expose role=img and labels; capped cards retain caffeine/advisory; +N links have 32px minimum and product names.

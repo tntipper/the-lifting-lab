@@ -6,8 +6,8 @@ import { withStorePrices } from '@/lib/commerce/store-price-server'
 // /best hub (one winner per category), /guide/[category] (how-to-choose
 // education) and the interactive /products grid.
 import { createPublicClient } from '@/lib/supabase-public'
-import { PRODUCT_COLUMNS, withScore, type Product, type ScoredProduct } from '@/lib/products'
-import { hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
+import { PRODUCT_COLUMNS, withScore, sortScored, type Product, type ScoredProduct } from '@/lib/products'
+import { assessmentDisplayFor, hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
 import { CATEGORIES } from '@/lib/categories'
 
 // Minimum scored products in a category to publish a credible "Top N" ranking.
@@ -38,7 +38,7 @@ export async function categoryResearchProducts(category: string): Promise<Scored
 }
 
 export async function rankedProducts(category: string): Promise<ScoredProduct[]> {
-  return (await categoryResearchProducts(category)).filter(hasApprovedAssessment)
+  return sortScored((await categoryResearchProducts(category)).filter(hasApprovedAssessment), 'score')
 }
 
 // The former rankings now preserve every known category as a research route.
@@ -56,10 +56,10 @@ export type CategoryAwards = {
 // gated to score >= 50 and require real cost-per-serving data, so a cheap-but-
 // underdosed tub never wins "best value" or "best budget".
 export function deriveAwards(ranked: ScoredProduct[]): CategoryAwards {
-  const eligible = ranked.filter(hasApprovedAssessment)
+  const eligible = sortScored(ranked.filter(hasApprovedAssessment), 'score')
   const bestOverall = eligible[0] ?? null
   const priced = eligible.filter(
-    (p) => p.score >= 50 && hasPositiveServingCost(p),
+    (p) => assessmentDisplayFor(p).score! >= 50 && hasPositiveServingCost(p),
   )
   const bestValue = priced.length
     ? priced.reduce((a, b) =>

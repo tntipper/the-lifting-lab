@@ -3,7 +3,7 @@ import { assessmentDisplayFor } from '@/lib/assessment-display'
 // Text-only status for research and comparison surfaces. A legacy value
 // does not grant assessment approval. Shop cards use ShopScoreBadge.
 export default function ProductAssessment({ product, size = 'md' }: {
-  product: { category?: string | null; score?: number | null }
+  product: { id: string; category?: string | null; score?: number | null }
   size?: 'sm' | 'md' | 'lg'
 }) {
   const assessment = assessmentDisplayFor(product)

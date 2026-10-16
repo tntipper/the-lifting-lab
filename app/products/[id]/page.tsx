@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase-public'
 import { categoryLabel } from '@/lib/categories'
-import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
+import { hasApprovedAssessment, displaySafeProduct } from '@/lib/assessment-display'
 import { claimsReviewFor } from '@/lib/claims-review'
 import { getGuide } from '@/lib/guides'
 import { fetchProductDetail, fetchCategory } from '@/lib/product-data'
@@ -48,17 +48,18 @@ async function fetchReviewAggregate(id: string): Promise<{ average: number; coun
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
-  const product = await fetchProductDetail(id)
+  const fetchedProduct = await fetchProductDetail(id)
+  const product = fetchedProduct ? displaySafeProduct(fetchedProduct) : null
   if (!product) return { title: 'Product Not Found | The Lifting Lab' }
 
-  const assessment = assessmentDisplayFor(product)
+  const score = product.score
   const cat = categoryLabel(product.category)
   const title = `${product.brand} ${product.name} Score & Review | The Lifting Lab`
   const review = claimsReviewFor(product.category)
   const description = review
     ? `${product.brand} ${product.name}. ${review.title}. Existing category scores are not validated health-benefit assessments.`
-    : assessment.score !== null
-    ? `${product.brand} ${product.name} — legacy score ${assessment.score}/100. Scientific review is incomplete; this is not an approved effectiveness or dosing assessment.`
+    : hasApprovedAssessment(product)
+    ? `${product.brand} ${product.name} scores ${score}/100 on our Effectiveness Match ${cat.toLowerCase()} rating. Dose-for-dose analysis vs EFSA reference values.`
     : `${product.brand} ${product.name} — not assessed. Browse ${cat.toLowerCase()} label information from The Lifting Lab.`
 
   return {
@@ -72,13 +73,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
   const { id } = await params
-  const product = await fetchProductDetail(id)
+  const fetchedProduct = await fetchProductDetail(id)
+  const product = fetchedProduct ? displaySafeProduct(fetchedProduct) : null
   // Real 404 (status + not-found page) instead of a 200 "Product not found" shell.
   if (!product) notFound()
 
   // Same-category list for the RelatedProducts module — fetched here so the
   // cross-links are in the HTML too. Failure just renders no related block.
-  const related = (await fetchCategory(product.category)).filter((p) => p.id !== product.id)
+  const related = (await fetchCategory(product.category)).map(displaySafeProduct).filter((p) => p.id !== product.id)
 
   // Structured data — server-rendered so crawlers see it in the initial HTML.
   let jsonLd: object[] = []

@@ -21,12 +21,12 @@ const make = (overrides = {}) => ({ ...base, ...overrides })
 
 // Execute real shared selectors and public TSX with in-memory rows. Only
 // framework/provider boundaries are adapted; no credentials or network calls.
-function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = false, gridParams = null) {
+function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = false, gridParams = null, assessmentDisplay = null, reviewedRecords = null, tooltipHooks = null) {
   const cache = new Map()
   const sb = { from(table) {
     let data = table === 'reviews' ? [] : rows
     return { select() { return this }, eq(field, value) { if (field === 'category') data = data.filter(p => p.category === value); return this },
-      in() { return this }, order() { return this }, single() { return Promise.resolve({ data: data[0], error: null }) },
+      in() { return this }, order() { return this }, single() { return Promise.resolve({ data: data[0], error: null }) }, maybeSingle() { return this.single() },
       then(done) { return Promise.resolve({ data, error: null }).then(done) } }
   } }
   function load(relative) {
@@ -37,7 +37,10 @@ function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = fa
     let stackHook = 0
     let gridHook = 0
     const localRequire = name => {
+      if (name === '../data/reviewed-assessments.json') return reviewedRecords ?? JSON.parse(readFileSync(new URL('../data/reviewed-assessments.json', import.meta.url), 'utf8'))
+      if (name === '@/lib/assessment-display' && assessmentDisplay) return { assessmentDisplayFor: assessmentDisplay }
       if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
+      if (name === 'react' && tooltipHooks && relative === 'components/ShopScoreBadge.tsx') return { ...React, ...tooltipHooks }
       if (name === 'react' && gridParams && relative === 'app/products/ProductGrid.tsx') return { ...React,
         useState(initial) {
           const index = gridHook++
@@ -69,7 +72,10 @@ function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = fa
       if (name === 'next/og') return { ImageResponse: class { constructor(element) { this.element = element } } }
       if (name === '@/lib/supabase-public') return { createPublicClient: () => sb }
       if (name === '@/lib/supabase') return { createClient() { throw new Error('No auth in SSR fixture') } }
-      if (name === '@/lib/product-data') return { fetchProductDetail: async () => rows[0], fetchCategory: async () => rows.slice(1) }
+      if (name === '@/lib/product-data') return { fetchProductDetail: async () => rows[0], fetchCategory: async () => rows.slice(1),
+        fetchCatalogue: (...args) => load('lib/product-data.ts').fetchCatalogue(...args),
+        fetchCompareProducts: (...args) => load('lib/product-data.ts').fetchCompareProducts(...args),
+        parseCompareIds: (...args) => load('lib/product-data.ts').parseCompareIds(...args) }
       if (name === '@/lib/share-products-server') return { getShareProducts: async () => ({ ok: true, products: [rows[0]] }) }
       if (name === '@/lib/scores') return { scoreFor: (brand, productName) => rows.find(p => p.brand === brand && p.name === productName)?.score ?? null }
       if (name === '@/lib/gtag') return { track() { throw new Error('No tracking in SSR fixture') } }
@@ -124,7 +130,7 @@ for (const [label, overrides, expected] of [
 for (const score of invalid) test(`unknown score ${String(score)} has no public endorsement`, () => {
   const p = make({ score }), f = fixture([p])
   const policy = f.load('lib/assessment-display.ts')
-  assert.equal(policy.assessmentDisplayFor(p).state, 'unassessed')
+  assert.equal(policy.assessmentDisplayFor(p).state, 'under_review')
   for (const [file, props] of [
     ['app/products/ProductGrid.tsx', { initialProducts: [p] }],
     ['app/compare/CompareView.tsx', { products: [p] }],
@@ -132,7 +138,7 @@ for (const score of invalid) test(`unknown score ${String(score)} has no public 
     ['components/FavouriteCard.tsx', { product: p }],
   ]) {
     const html = f.html(file, props)
-    assert.match(html, /Not assessed/, file)
+    assert.match(html, /Under review/, file)
     assert.match(html, /Research formula/, file)
     assert.doesNotMatch(html, /🥇|🥈|🥉|Top Pick|Best rated|wins on|Excellent dosing|Good dosing|Below effective dose|full 5g effective|Green = meets dose|ATP resynthesis/, file)
     assert.match(html, /Shop offer under review/, 'Assessment changes must not release own-shop holds')
@@ -154,12 +160,11 @@ for (const category of holds) test(`${category} withholds historical values with
   assert.doesNotMatch(best, /Research formula|🏆|🥇/)
   assert.match(best, /No approved effectiveness/)
 })
-test('Toby-approved legacy display restores the catalogue ring without granting approval', () => {
+test('positive legacy value stays in research data but not the public catalogue card', () => {
   const p = make({ score: 80 }), f = fixture([p])
   const html = f.html('app/products/ProductGrid.tsx', { initialProducts: [p] })
-  assert.match(html, /TLL legacy score: 80 out of 100/); assert.match(html, /stroke-dasharray=/)
-  assert.doesNotMatch(html, /Top Pick|🥇|Excellent dosing|Good dosing|ATP resynthesis/)
-  assert.equal(f.load('lib/assessment-display.ts').assessmentDisplayFor(p).state, 'legacy')
+  assert.match(html, /Under review/); assert.doesNotMatch(html, /80\/100|80%|Legacy score|Top Pick|🥇|Excellent dosing|Good dosing|ATP resynthesis/)
+  assert.equal(f.load('lib/assessment-display.ts').assessmentDisplayFor(p).state, 'under_review')
   assert.doesNotMatch(html, /scientifically approved|verified assessment/i)
 })
 test('ranking sorts keep research records without giving them placement; name and brand never award', () => {
@@ -212,7 +217,7 @@ test('actual award, guide, alternatives, matchup, stack and brand selectors shar
 test('related research cards do not claim an unassessed product is an upgrade or top pick', () => {
   const p = make(), f = fixture([p])
   const html = f.html('app/products/[id]/RelatedProducts.tsx', { items: [p], productId: 'target', category: 'creatine', score: 0, brand: 'Fixture', name: 'Target' })
-  assert.match(html, /Other Creatine records/); assert.match(html, /Not assessed/)
+  assert.match(html, /Other Creatine records/); assert.match(html, /Under review/)
   assert.doesNotMatch(html, /Rated Higher|Top Creatine|strong .*picks|\+\d/)
 })
 test('unknown product metadata and social card do not publish an editorial assessment', async () => {
@@ -232,14 +237,14 @@ test('public API sends null ranks and explicit status for research records; Open
   const response = await api.GET(new Request('https://fixture.invalid/api/ard/compare?category=creatine&sort=score'))
   assert.equal(response.status, 200)
   const json = await response.json()
-  assert.deepEqual(json.results.map(p => [p.id, p.rank, p.assessment_state]), [['zero', null, 'unassessed'], ['unknown', null, 'unassessed'], ['legacy', null, 'legacy']])
+  assert.deepEqual(json.results.map(p => [p.id, p.rank, p.assessment_state]), [['zero', null, 'under_review'], ['unknown', null, 'under_review'], ['legacy', null, 'under_review']])
   assert.ok(json.results.every(p => p.buy_url === null && p.retailer_url === null))
   const held = fixture([make({ category: 'zma', score: 99 })])
   const heldJson = await (await held.load('app/api/ard/compare/route.ts').GET(new Request('https://fixture.invalid/api/ard/compare?category=zma&sort=score'))).json()
   assert.equal(heldJson.results[0].rank, null); assert.equal(heldJson.results[0].score, null)
   assert.equal(heldJson.results[0].assessment_state, 'under_review')
   const spec = await (await f.load('app/api/ard/openapi.json/route.ts').GET()).json()
-  assert.equal(spec.components.schemas.RankedProduct.properties.rank.type, 'null'); assert.ok(json.results.every(p => p.recommendation_status === 'unavailable'))
+  assert.deepEqual(spec.components.schemas.RankedProduct.properties.rank.type, ['integer', 'null']); assert.ok(json.results.every(p => p.recommendation_status === 'unavailable'))
 })
 test('effectiveness value is unavailable; price-only comparison retains known prices irrespective of historical score', async () => {
   const rows = [make({ id: 'held', category: 'zma', score: 100, name: 'Held bargain', retail_price: 1 }),
@@ -278,13 +283,14 @@ test('positive history stays neutral across actual public components and preserv
     ['components/FavouriteCard.tsx', { product: p }],
   ]) {
     const html = f.html(file, props)
-    assert.match(html, /Legacy score|TLL legacy score: 95 out of 100/)
+    assert.match(html, /Not assessed|Under review/); assert.doesNotMatch(html, /95\/100|95 out of 100|>95</)
     assert.doesNotMatch(html, /🥇|🥈|🥉|🏆|Top Pick|Best rated|wins on|Excellent dosing|Good dosing|full 5g effective|Green = meets dose|ATP resynthesis|Only available legacy scores/)
-    const assessment = html.match(/<[^>]*data-assessment="legacy"[^>]*>/)?.[0]
-    assert.ok(assessment, file)
+    const assessment = html.match(/<[^>]*data-assessment="under_review"[^>]*>/)?.[0]
+    assert.ok(assessment, file); assert.match(assessment, /text-lab-muted/)
     if (['app/products/ProductGrid.tsx', 'app/products/[id]/ProductDetailPage.tsx'].includes(file)) {
-      assert.match(html, /TLL legacy score: 95 out of 100/)
-      assert.match(html, /stroke-dasharray=/)
+      assert.match(html, /aria-label="Under review"/)
+      assert.match(html, /<circle/)
+      assert.doesNotMatch(html, /stroke-dasharray=/)
     }
   }
   const detail = f.html('app/products/[id]/ProductDetailPage.tsx', { product: p, related: [] })
@@ -354,20 +360,20 @@ test('product API retains its array contract and explicitly denies recommendatio
   const response = await f.load('app/api/products/route.ts').GET(new Request('https://fixture.invalid/api/products?sort=value'))
   assert.equal(response.status, 200)
   const products = await response.json()
-  assert.equal(products[0].score, 95); assert.equal(products[0].assessment_state, 'legacy')
-  assert.equal(products[0].recommendation_status, 'unavailable'); assert.match(products[0].assessment_note, /Scientific review is incomplete/i)
+  assert.equal(products[0].score, null); assert.equal(products[0].assessment_state, 'under_review')
+  assert.equal(products[0].recommendation_status, 'unavailable'); assert.match(products[0].assessment_note, /Under review/i)
 })
 
-test('detail and comparison APIs carry legacy display scores while preserving product identity', async () => {
+test('detail and comparison APIs withhold frozen scores while preserving product identity', async () => {
   const p = make({ score: 95 }), f = fixture([p])
   const detail = await f.load('app/api/products/[id]/route.ts').GET(new Request('https://fixture.invalid/api/products/research'),
     { params: Promise.resolve({ id: 'research' }) })
   assert.equal(detail.status, 200)
-  assert.equal((await detail.json()).score, 95)
+  assert.equal((await detail.json()).score, null)
   const compare = await f.load('app/api/products/compare/route.ts').GET(new Request('https://fixture.invalid/api/products/compare?ids=research'))
   assert.equal(compare.status, 200)
   const rows = await compare.json()
-  assert.equal(rows[0].id, 'research'); assert.equal(rows[0].score, 95)
+  assert.equal(rows[0].id, 'research'); assert.equal(rows[0].score, null)
 })
 
 test('listed price ordering retains subpenny precision instead of ranking rounded penny ties', async () => {
@@ -655,16 +661,16 @@ test('pack Price is first in card and detail, with secondary serving figures', (
 })
 
 
-test('legacy display accepts only scores from 1 to 100 and never grants ranking approval', () => {
+test('legacy values stay withheld and never grant ranking approval', () => {
   const policy = fixture().load('lib/assessment-display.ts')
-  for (const score of [1, 50, 100]) {
+  for (const score of [0.5, 1, 50, 100]) {
     const p = make({ score })
-    assert.equal(policy.assessmentDisplayFor(p).score, score)
-    assert.equal(policy.assessmentDisplayFor(p).state, 'legacy')
+    assert.equal(policy.assessmentDisplayFor(p).score, null)
+    assert.equal(policy.assessmentDisplayFor(p).state, 'under_review')
     assert.equal(policy.hasApprovedAssessment(p), false)
     for (const sort of ['score', 'value', 'budget']) assert.equal(policy.isRankingCandidate(p, sort), false)
   }
-  for (const score of [...invalid, 0.5]) assert.equal(policy.assessmentDisplayFor(make({ score })).score, null)
+  for (const score of invalid) assert.equal(policy.assessmentDisplayFor(make({ score })).score, null)
   for (const category of holds) assert.equal(policy.assessmentDisplayFor(make({ category, score: 95 })).score, null)
 })
 
@@ -688,12 +694,12 @@ test('catalogue and detail images use fill with responsive sizes inside ratio co
 })
 
 
-test('home product rows display legacy rings but retain alphabetical fallback without approved rankings', () => {
+test('home product rows display review rings but retain alphabetical fallback without approved rankings', () => {
   const rows = [make({ id: 'z', brand: 'Zulu', score: 100 }), make({ id: 'a', brand: 'Alpha', score: 1 })]
   const html = fixture(rows).html('components/TopProductsTable.tsx', { products: rows })
   assert.ok(html.indexOf('Alpha') < html.indexOf('Zulu'))
   assert.match(html, /Approved scores are currently unavailable/)
-  assert.match(html, /TLL legacy score: 100 out of 100/)
+  assert.match(html, /Under review/); assert.doesNotMatch(html, /100 out of 100|>100</)
   assert.doesNotMatch(html, /Effectiveness match 100|>Strong</)
 })
 
@@ -708,13 +714,215 @@ test('capped cards retain late caffeine and expose a named, 32px full-label link
  assert.match(html, /min-h-8/)
  assert.match(html, /aria-label="View 2 more label rows for Fixture Research formula"/)
  const ring = f.html('components/ShopScoreBadge.tsx', { product: make({ score: 80 }) })
- assert.match(ring, /role="img"[^>]*aria-label="TLL legacy score: 80 out of 100"/)
+ assert.match(ring, /role="img"[^>]*aria-label="Under review"/)
 })
 
-test('product metadata describes the displayed legacy score without approval claims', async () => {
+test('product metadata withholds legacy scores', async () => {
  const f = fixture([make({ score: 80 })])
  const meta = await f.load('app/products/[id]/page.tsx').generateMetadata({ params: Promise.resolve({ id: 'research' }) })
- assert.match(meta.description, /legacy score 80\/100/)
- assert.match(meta.description, /not an approved effectiveness or dosing assessment/)
- assert.doesNotMatch(meta.description, /not assessed/i)
+ assert.doesNotMatch(meta.description, /80|legacy score/)
+ assert.match(meta.description, /not assessed/i)
+})
+
+
+test('score ring keeps only an outline and review label for every unreviewed product', () => {
+  for (const category of ['creatine', ...holds]) for (const score of [...invalid, 0.5, 1, 80, 100]) {
+    const html = fixture().html('components/ShopScoreBadge.tsx', { product: make({ category, score }) })
+    assert.match(html, /role="img"[^>]*aria-label="Under review"/)
+    assert.equal((html.match(/<circle /g) || []).length, 1)
+    assert.match(html, />Under review<\/span>/)
+    assert.doesNotMatch(html, /stroke-dasharray|scoreNumber|out of 100|Legacy score|>\d+</)
+  }
+})
+
+test('score ring displays only the reviewed score returned by assessment display', () => {
+  const f = fixture([], {}, false, false, null, () => ({ state: 'reviewed', score: 72, label: 'Reviewed', explanation: 'Reviewed fixture assessment' }))
+  const html = f.html('components/ShopScoreBadge.tsx', { product: make({ score: 99 }) })
+  assert.match(html, /aria-label="TLL score: 72 out of 100"/)
+  assert.match(html, /scoreNumber[^>]*>72</)
+  assert.match(html, /stroke-dasharray=/)
+  assert.doesNotMatch(html, /99|Under review|Legacy score/)
+})
+
+const signedAssessment = (overrides = {}) => ({
+  key: 'research', score: 73, science_reviewer: 'Assay', science_date: '2026-10-15',
+  compliance_reviewer: 'Oath', compliance_date: '2026-10-16', notes: 'Synthetic test review', ...overrides,
+})
+const withReviews = records => fixture([make()], {}, false, false, null, null, records)
+
+test('empty reviewed dataset exposes only an outline and Under review, with no approval', () => {
+  const f = fixture(), p = make({ score: 99 }), policy = f.load('lib/assessment-display.ts')
+  assert.equal(policy.assessmentDisplayFor(p).state, 'under_review')
+  assert.equal(policy.assessmentDisplayFor(p).score, null)
+  assert.equal(policy.hasApprovedAssessment(p), false)
+  const html = f.html('components/ShopScoreBadge.tsx', { product: p })
+  assert.match(html, /Under review/)
+  assert.equal((html.match(/<circle/g) ?? []).length, 1)
+  assert.doesNotMatch(html, /scoreNumber|stroke-dasharray|>99</)
+})
+
+test('both sign-offs publish the record score and make it rankable independently of caller score', () => {
+  const f = withReviews([signedAssessment()]), policy = f.load('lib/assessment-display.ts')
+  for (const score of [null, 0, 99]) {
+    const p = make({ score })
+    assert.equal(policy.hasApprovedAssessment(p), true)
+    assert.equal(policy.assessmentDisplayFor(p).score, 73)
+    assert.equal(policy.assessmentDisplayFor(p).state, 'approved')
+    for (const sort of ['score', 'value', 'budget']) assert.equal(policy.isRankingCandidate(p, sort), true)
+    const html = f.html('components/ShopScoreBadge.tsx', { product: p })
+    assert.match(html, /TLL score: 73 out of 100/)
+    assert.match(html, /stroke-dasharray/)
+    assert.equal(f.load('lib/products.ts').withScore(p).score, 73)
+  }
+  const rows = [make({ id: 'unapproved', score: 100 }), make({ score: 1 })]
+  const sorted = f.load('lib/products.ts').sortScored(rows, 'score')
+  assert.equal(sorted[0].id, 'research'); assert.equal(sorted[0].score, 73)
+  assert.equal(rows[1].score, 1, 'Sorting must not mutate source rows')
+  assert.equal(policy.hasApprovedAssessment(make({ id: 'different' })), false)
+  for (const cost_per_serving of [null, 0, -1, NaN]) {
+    assert.equal(policy.isRankingCandidate(make({ cost_per_serving }), 'value'), false)
+  }
+})
+
+for (const [field, values] of Object.entries({
+  value_led: [null, 'true', 1],
+  science_reviewer: [undefined, null, '', 'Oath'], compliance_reviewer: [undefined, '', 'Assay'],
+  science_date: [undefined, '', '2026-02-30', '2025-02-29', '2026-1-01', '2026-10-16T00:00:00Z'],
+  compliance_date: [undefined, null, 'not-a-date', '2026-13-01', '2026-04-31'],
+  score: [undefined, null, 0, .5, 101, NaN, Infinity, '73'], key: [undefined, null, '', ' '], notes: [undefined, null, 42],
+})) test(`invalid review field ${field} is ignored at load`, () => {
+  for (const value of values) {
+    const policy = withReviews([signedAssessment({ [field]: value })]).load('lib/assessment-display.ts')
+    assert.equal(policy.hasApprovedAssessment(make()), false, `${field}: ${value}`)
+    assert.equal(policy.assessmentDisplayFor(make()).score, null)
+  }
+})
+
+test('invalid dataset shapes and rows are ignored; valid rows still work', () => {
+  for (const records of [{}, 'invalid', 42, [null, [], {}, 'invalid']]) {
+    assert.equal(withReviews(records).load('lib/assessment-display.ts').hasApprovedAssessment(make()), false)
+  }
+  for (const score of [1, 100]) {
+    const policy = withReviews([null, {}, signedAssessment({ score, science_date: '2024-02-29' })]).load('lib/assessment-display.ts')
+    assert.equal(policy.assessmentDisplayFor(make()).score, score)
+  }
+})
+
+test('claims-review category holds override fully signed records', () => {
+  const policy = withReviews([signedAssessment()]).load('lib/assessment-display.ts')
+  for (const category of holds) {
+    const p = make({ category })
+    assert.equal(policy.hasApprovedAssessment(p), false)
+    assert.equal(policy.assessmentDisplayFor(p).state, 'under_review')
+    assert.equal(policy.assessmentDisplayFor(p).score, null)
+    assert.equal(policy.isRankingCandidate(p, 'score'), false)
+  }
+})
+
+test('ranking, awards and public API use reviewed scores rather than conflicting legacy values', async () => {
+  const rows = [make({ id: 'research', score: 99 }), make({ id: 'second', score: 1, name: 'Second formula' })]
+  const records = [signedAssessment({ score: 40 }), signedAssessment({ key: 'second', score: 90 })]
+  const f = fixture(rows, {}, false, false, null, null, records)
+  const sorted = f.load('lib/products.ts').sortScored(rows, 'score')
+  assert.deepEqual(Array.from(sorted, p => [p.id, p.score]), [['second', 90], ['research', 40]])
+  const awards = f.load('lib/best-categories.ts').deriveAwards(rows)
+  assert.equal(awards.bestOverall.id, 'second')
+  assert.equal(awards.bestValue.id, 'second')
+  const api = f.load('app/api/ard/compare/route.ts')
+  const json = await (await api.GET(new Request('https://fixture.invalid/api/ard/compare?category=creatine&sort=score'))).json()
+  assert.deepEqual(json.results.map(p => [p.id, p.score, p.rank, p.assessment_state]), [
+    ['second', 90, 1, 'approved'], ['research', 40, 2, 'approved'],
+  ])
+})
+
+
+test('review register contains exactly the four authorised product IDs and scores', () => {
+  const records = JSON.parse(readFileSync(new URL('../data/reviewed-assessments.json', import.meta.url), 'utf8'))
+  assert.deepEqual(records.map(p => [p.key, p.score, p.value_led === true]), [
+    ['738af0c5-bdfd-46be-890e-bd2d6e7cb21b', 79, false],
+    ['6a8ebcdd-1505-4c9a-9adf-3682359bea61', 92, false],
+    ['6aa54c84-8f33-4566-aa28-0fdcd5f7c96f', 79, false],
+    ['a0fc6933-db03-4c34-a446-a9f89515a206', 75, true],
+  ])
+  for (const record of records) {
+    assert.equal(record.science_reviewer, 'Assay'); assert.equal(record.compliance_reviewer, 'Oath')
+    assert.equal(record.science_date, '2026-10-16'); assert.equal(record.compliance_date, '2026-10-16')
+    assert.equal(fixture().load('lib/assessment-display.ts').assessmentDisplayFor({ id: record.key }).score, record.score)
+  }
+})
+
+test('rings have the exact dated tooltip, methodology link and optional value-led label', () => {
+  const copy = "TLL Score rates the label, not your results. It compares the stated doses against the evidence-based amounts in our method, how transparent the label is, and the price per serving. It isn't a health claim or medical advice. Source: brand label/retailer listing, checked 16 Oct 2026. How we score"
+  for (const value_led of [false, true]) {
+    const f = withReviews([signedAssessment({ value_led })])
+    const html = f.html('components/ShopScoreBadge.tsx', { product: make({ score: 100 }) })
+    const tooltip = html.match(/role="tooltip"[^>]*>([\s\S]*?)<\/span>/)[1]
+    const text = tooltip.replace(/<[^>]*>/g, '').replace(/&#x27;/g, "'")
+    assert.equal(text, copy + (value_led ? 'This score is driven mainly by price per serving.' : ''))
+    assert.match(tooltip, /href="\/methodology"/)
+    assert.match(html, /<button type="button"[^>]*aria-controls=/)
+    assert.match(html, value_led ? /aria-label="Value-led score: 73 out of 100"/ : /aria-label="TLL score: 73 out of 100"/)
+  }
+  const pending = fixture().html('components/ShopScoreBadge.tsx', { product: make() })
+  assert.match(pending, /compliance check pending/)
+  assert.doesNotMatch(pending, /checked 16 Oct 2026/)
+})
+
+test('tooltip opens on hover, keyboard focus and tap; Escape and leaving close it', () => {
+  let open = false
+  const hooks = { useId: () => 'tooltip-fixture', useState: () => [open, next => { open = typeof next === 'function' ? next(open) : next }] }
+  const f = fixture([], {}, false, false, null, null, [signedAssessment()], hooks)
+  const badge = () => f.load('components/ShopScoreBadge.tsx').default({ product: make() })
+  const tooltip = () => badge().props.children[1]
+  const button = () => badge().props.children[0]
+  assert.equal(tooltip().props.hidden, true)
+  badge().props.onMouseEnter(); assert.equal(tooltip().props.hidden, false)
+  badge().props.onMouseLeave(); assert.equal(tooltip().props.hidden, true)
+  badge().props.onFocus({ target: { matches: () => true } }); assert.equal(open, true)
+  assert.equal(button().props['aria-describedby'], tooltip().props.id)
+  let stopped = false
+  badge().props.onKeyDown({ key: 'Escape', stopPropagation() { stopped = true } })
+  assert.equal(open, false); assert.equal(stopped, true)
+  // Pointer focus must not open then immediately close again on its click.
+  badge().props.onFocus({ target: { matches: () => false } })
+  button().props.onClick(); assert.equal(open, true)
+  badge().props.onBlur({ currentTarget: { contains: () => true }, relatedTarget: {} }); assert.equal(open, true)
+  badge().props.onBlur({ currentTarget: { contains: () => false }, relatedTarget: null }); assert.equal(open, false)
+})
+
+test('legacy scores never survive public catalogue fetchers or product-page client props', async () => {
+  const p = make({ score: 100 }), f = fixture([p, make({ id: 'related', score: 99 })])
+  const data = f.load('lib/product-data.ts')
+  for (const products of [await data.fetchCatalogue(), await data.fetchCategory(p.category), await data.fetchCompareProducts([p.id])]) {
+    assert.ok(products.length > 0)
+    assert.ok(products.every(row => row.score === null))
+    assert.doesNotMatch(JSON.stringify(products), /"score":(?:100|99)/)
+  }
+  assert.equal((await data.fetchProductDetail(p.id)).score, null)
+  // The page fixture deliberately returns raw rows, testing the actual RSC boundary too.
+  const page = await f.load('app/products/[id]/page.tsx').default({ params: Promise.resolve({ id: p.id }) })
+  const detail = page.props.children[1]
+  assert.equal(detail.props.product.score, null)
+  assert.ok(detail.props.related.every(row => row.score === null))
+  assert.doesNotMatch(JSON.stringify(page), /"score":(?:100|99)/)
+  assert.equal(p.score, 100, 'Projection must preserve the input object')
+})
+
+
+test('brand, grid, compare and versus server trees contain only display-safe product scores', async () => {
+  const rows = [make({ score: 100 }), make({ id: 'second', name: 'Second formula', score: 99 })]
+  const f = fixture(rows)
+  const routes = [
+    ['app/products/page.tsx', {}],
+    ['app/brand/[slug]/page.tsx', { params: Promise.resolve({ slug: 'fixture' }) }],
+    ['app/compare/page.tsx', { searchParams: Promise.resolve({ ids: 'research,second' }) }],
+    ['app/vs/[matchup]/page.tsx', { params: Promise.resolve({ matchup: 'fixture-research-formula-vs-fixture-second-formula' }) }],
+  ]
+  for (const [file, props] of routes) {
+    const tree = await f.load(file).default(props)
+    const json = JSON.stringify(tree)
+    assert.doesNotMatch(json, /"score":(?:100|99)/, file)
+    assert.match(json, /"score":null/, file)
+    assert.doesNotMatch(json, /ratingValue[^,}]*100/, file)
+  }
 })

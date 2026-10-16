@@ -9,7 +9,10 @@ import { chromium } from 'playwright'
 const root = process.cwd()
 const bundle = await build({ entryPoints: ['tests/browser/guides-footer-fixture.tsx'], bundle: true, write: false,
   outdir: '/tmp/tll-guides-browser', platform: 'browser', format: 'iife', jsx: 'automatic',
-  define: { 'process.env.NODE_ENV': '"development"', 'process.env.NEXT_PUBLIC_TLL_STORE_LINKS': '"enabled"', 'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '""' },
+  define: { 'process.env.NODE_ENV': '"development"',
+    'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"local-browser-fixture"',
+    'process.env.NEXT_PUBLIC_TLL_STAGING_CUSTOMER': '""',
+    'process.env.NEXT_PUBLIC_AMAZON_TAG': '"theliftinglab-21"', 'process.env.NEXT_PUBLIC_TLL_STORE_LINKS': '"enabled"', 'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '""' },
   plugins: [{ name: 'local-fixture', setup(builder) {
     builder.onResolve({ filter: /^next\/(link|navigation)$|(?:^|\/)(?:LocalStackContext|StagingCartContext|ShopPanelsContext|StagingCartActions)$|^@\/lib\/supabase$/ }, args => ({ path: args.path, namespace: 'fixture' }))
     builder.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({ loader: 'jsx', resolveDir: root, contents:
@@ -26,6 +29,7 @@ const bundle = await build({ entryPoints: ['tests/browser/guides-footer-fixture.
 const globals = (await postcss([tailwind()]).process(await readFile('app/globals.css', 'utf8'), { from: resolve(root, 'app/globals.css') })).css
 const css = globals + '\n' + bundle.outputFiles.find(file => file.path.endsWith('.css')).text
 const js = bundle.outputFiles.find(file => file.path.endsWith('.js')).text
+assert.doesNotMatch(js, /\bprocess\.env\b/, 'Browser fixture must inline every environment read')
 const origin = 'http://tll-fixture.test'
 const html = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"></head><body><div id="fixture"></div><script src="/fixture.js"></script></body></html>'
 const browser = await chromium.launch({ headless: true, ...(process.env.TEST_BROWSER_CHANNEL ? { channel: process.env.TEST_BROWSER_CHANNEL } : {}) })

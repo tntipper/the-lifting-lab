@@ -24,12 +24,13 @@ function modules() {
       module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
     } }).outputText
     const local = name => {
+      if (name === '../data/reviewed-assessments.json') return JSON.parse(readFileSync(new URL('../data/reviewed-assessments.json', import.meta.url), 'utf8'))
       if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
       if (name === 'next/navigation') return { usePathname: () => '/products', useRouter: () => ({ back() {} }) }
       if (name === '@/lib/preview-mode') return { isSyntheticPreview: () => false, isIsolatedEnvironment: () => false }
       if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ state: { error: null }, inStack: () => false, toggle() {} }) }
-      if (name.startsWith('@/components/') && !['@/components/ProductWarnings', '@/components/PolicyDraftNotice', '@/components/SiteFooter'].includes(name)) return { __esModule: true, default: () => null }
+      if (name.startsWith('@/components/') && !['@/components/ProductWarnings', '@/components/PolicyDraftNotice', '@/components/SiteFooter', '@/components/ShopScoreBadge'].includes(name)) return { __esModule: true, default: () => null }
       if (name === './RelatedProducts') return { __esModule: true, default: () => null }
       if (name.startsWith('@/') || name.startsWith('.')) {
         const base = name.startsWith('@/') ? resolve(root, name.slice(2)) : resolve(dirname(filename), name)
@@ -119,8 +120,9 @@ test('category age notice, explicit label data and stricter ages work without pr
 })
 
 test('real product page renders caffeine and age warnings even while claims are under review', () => {
-  const product = { id: 'fixture', brand: 'Fixture', name: 'Example', category: 'hormone-support', score: null, nutrients: [{ nutrient_name: 'caffeine', amount: 10, unit: 'mg' }], retail_price: null }
+  const product = { id: 'fixture', brand: 'Fixture', name: 'Example', category: 'hormone-support', score: 95, nutrients: [{ nutrient_name: 'caffeine', amount: 10, unit: 'mg' }], retail_price: null }
   const html = htmlFor('app/products/[id]/ProductDetailPage.tsx', { product, related: [] })
+  assert.match(html, /aria-label="Under review"/); assert.doesNotMatch(html, /95\/100|95 out of 100|>95</)
   assert.match(html, /aria-label="Label notes"/); assert.match(html, /Contains caffeine/); assert.match(html, /16\+/)
   assert.equal(htmlFor('components/ProductWarnings.tsx', { product: { ...product, category: 'creatine', nutrients: [] } }), '')
   const label = htmlFor('components/ProductWarnings.tsx', { product: { ...product, safety: { labelWarnings: ['<script>unsafe</script>'] } } })

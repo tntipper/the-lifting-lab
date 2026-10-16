@@ -2,7 +2,7 @@ import Link from 'next/link'
 import InformedSportIcon from '@/components/InformedSportIcon'
 import shopStyles from '@/components/shop.module.css'
 import { formatListedServingPrice, type ScoredProduct } from '@/lib/products'
-import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import ShopScoreBadge from './ShopScoreBadge'
 import { displayPrice, isStoreOffer, isUsablePrice } from '@/lib/commerce/display-price'
 import styles from './ShopHome.module.css'
@@ -10,7 +10,7 @@ import styles from './ShopHome.module.css'
 export default function TopProductsTable({ products }: { products: ScoredProduct[] }) {
   const assessed = products.filter(hasApprovedAssessment)
   const rows = (assessed.length ? [...assessed].sort((a, b) =>
-    b.score - a.score) : [...products].sort((a, b) =>
+    assessmentDisplayFor(b).score! - assessmentDisplayFor(a).score!) : [...products].sort((a, b) =>
     a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name))).slice(0, 5)
 
   return <section aria-labelledby="top-products-heading" className={styles.section}>

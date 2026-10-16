@@ -40,6 +40,7 @@ function fixture({ category = 'cycle-support', modalOpen = false, nutrients = []
     assert.deepEqual(compiled.diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error), [], relative)
     const loadedModule = { exports: {} }
     const localRequire = name => {
+      if (name === '../data/reviewed-assessments.json') return JSON.parse(readFileSync(new URL('../data/reviewed-assessments.json', import.meta.url), 'utf8'))
       if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
       if (name === 'react' && modalOpen) return { ...React, useState: () => [true, () => {}] }
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
@@ -163,8 +164,8 @@ test('ordinary positive historical value does not publish an approved editorial 
   const html = render(await page.default({ params: Promise.resolve({ id: product.id }) }))
   const productSchema = schemas(html).find(s => s['@type'] === 'Product')
   assert.equal(productSchema.review, undefined)
-  // Toby approved displaying historical scores; editorial approval stays withheld.
-  assert.doesNotMatch(html, /Excellent Effectiveness Match/); assert.match(html, /TLL legacy score: 95 out of 100/)
+  // Historical values remain withheld from both visible and structured data.
+  assert.doesNotMatch(html, /Excellent Effectiveness Match|95\/100|95 out of 100/); assert.match(html, /Under review/)
 })
 
 test('open methodology modal presents legacy weights and sources, without perfect-dose promises for review categories', () => {

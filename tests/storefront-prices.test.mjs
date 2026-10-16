@@ -19,6 +19,7 @@ function modules(env = {}, overrides = {}) {
       module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
     } }).outputText
     const local = name => {
+      if (name === '../data/reviewed-assessments.json') return JSON.parse(readFileSync(new URL('../data/reviewed-assessments.json', import.meta.url), 'utf8'))
       if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
       if (name in overrides) return overrides[name]
       if (name === 'next/server') return { connection: async () => {} }

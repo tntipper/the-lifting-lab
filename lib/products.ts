@@ -1,7 +1,6 @@
 // Shared product types + score attachment for the browse/compare features.
 import { displayPrice, isUsablePrice } from '@/lib/commerce/display-price'
-import { scoreFor } from '@/lib/scores'
-import { hasPositiveServingCost, isRankingCandidate } from './assessment-display'
+import { assessmentDisplayFor, displaySafeProduct, hasPositiveServingCost, isRankingCandidate } from './assessment-display'
 import type { ProductSafety } from './commerce/product-warnings'
 import type { CataloguePresentation } from './commerce/catalogue-presentation'
 import type { StorePricePresentation } from './commerce/store-price-products'
@@ -51,10 +50,10 @@ export type ComparedProduct = ScoredProduct & { nutrients: Nutrient[] }
 export const PRODUCT_COLUMNS =
   'id, name, brand, category, serving_size, serving_unit, servings_per_container, image_url, informed_sport, retail_price, buy_url, proprietary_blend, amino_spiked, protein_yield'
 
-export function withScore<T extends { brand: string; name: string; servings_per_container: number | null; retail_price: number | null } & Pick<Product, 'storePrice' | 'storeLinkMapping' | 'storeVariants'>>(
+export function withScore<T extends { id: string; category?: string | null; brand: string; name: string; servings_per_container: number | null; retail_price: number | null } & Pick<Product, 'storePrice' | 'storeLinkMapping' | 'storeVariants'>>(
   p: T,
 ): T & { score: number | null; cost_per_serving: number | null } {
-  const score = scoreFor(p.brand, p.name)
+  const score = assessmentDisplayFor(p).score
   const price = displayPrice(p)
   const cost_per_serving =
     price !== null
@@ -67,7 +66,7 @@ export function withScore<T extends { brand: string; name: string; servings_per_
 export type SortKey = 'score' | 'name' | 'brand' | 'value' | 'budget' | 'price'
 
 export function sortScored(list: ScoredProduct[], sort: SortKey): ScoredProduct[] {
-  const out = [...list]
+  const out = list.map(displaySafeProduct)
   out.sort((a, b) => {
     if (sort === 'name') return a.name.localeCompare(b.name)
     if (sort === 'brand') return a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name)

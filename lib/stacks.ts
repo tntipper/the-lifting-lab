@@ -1,4 +1,4 @@
-import { hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
 // Goal-based supplement "stack" guides — the SSG/SEO counterpart to the
 // interactive Find My Stack wizard. Each archetype targets a proven head-term
 // class ("best supplement stack for muscle building UK 2026") and resolves to a
@@ -257,7 +257,7 @@ export function selectStack<
     if (!best) {
       const scored = inCat.filter(hasApprovedAssessment)
       if (scored.length === 0) continue
-      best = scored.reduce((a, b) => ((a.score as number) >= (b.score as number) ? a : b))
+      best = scored.reduce((a, b) => (assessmentDisplayFor(a).score! >= assessmentDisplayFor(b).score! ? a : b))
     }
     picks.push(best)
   }
