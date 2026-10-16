@@ -6,7 +6,7 @@
 - PASS typecheck; lint 0 errors/21 existing warnings; 56 focused tests; live-boundary/both manifests; git diff --check. Full npm test: 4,107 pass / 28 fail / 8 skip, matching Round 8 sandbox loopback/ps/Chromium/Python-temp/Docker failures. Hosted CI unrun.
 - Browser SSR fixtures PASS; Chromium launch denied MachPort bootstrap permission. Operator's b9657c5 run failed disclosure geometry at 390px; this fix's six-width run remains unverified, not a claimed pass.
 - Before enablement: operator runs node tests/browser/live-cart.mjs and takes actual /compare + /stack live-mode screenshots. Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; existing mapping/price prerequisites remain in Round 4.
-- Commit blocked in this sandbox: git add cannot create night/repo/.git/worktrees/wt-cart/index.lock (Operation not permitted); HEAD remains b9657c5, four files unstaged. Proposed commit: fix: keep grid disclosure in caption and stock off button. No env/Vercel/Shopify changes, external network actions or push.
+- Round 9 committed by the operator as a6c89ee; operator ran six-width browser checks outside the sandbox: PASS.
 
 **16 October live-cart Round 8 — grok/live-cart; continued from 9b660c1; local only:**
 - Changed components/ProductOfferLink.tsx and app/products/ProductGrid.tsx: only the grid opts into fixedActionSlot; unchanged affiliate captions use 20px/two lines under a 44px link, stock inside the link; existing 64px slots/grid CSS unchanged.
