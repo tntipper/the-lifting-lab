@@ -24,8 +24,8 @@ export type ProductListing = {
 
 /** Both store modes require explicit opt-in; plain shop references are live-mode navigation only. */
 export function resolveProductOffer(product: { id?: string; buy_url: string | null; storeLinkMapping?: StoreLinkMapping | null; cataloguePresentation?: CataloguePresentation | null; storePrice?: StorePricePresentation | null }, mode: StoreBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, campaign: StoreAttributionCampaign = 'product'): ProductListing {
-  if (liveCartEnabled() && isTllSoldProduct(product)) {
-    const now = Date.now()
+  const now = Date.now()
+  if (liveCartEnabled() && isTllSoldProduct(product, now)) {
     const url = buildStoreProductLink(product.id, product.storeLinkMapping, now, { mode: 'product_page', campaign })
     const availability = catalogueAvailabilityFor(product, now)
     if (!product.cataloguePresentation && availability === 'available' && url)

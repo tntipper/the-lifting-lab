@@ -199,7 +199,7 @@ test('stale add keeps refresh guidance and status truncates inside the reserved 
     useState: initial => [++hook === 2 ? message : initial, () => {}],
   }).LiveBasketAdd
   const html = renderToStaticMarkup(React.createElement(Status, { product: item() }))
-  assert.match(html, /role="status" title="This offer is unavailable. Refresh the product page." class="absolute inset-0 truncate"/)
+  assert.match(html, /role="status" title="This offer is unavailable. Refresh the product page." class="pointer-events-none absolute inset-0 truncate"/)
 })
 
 test('approved mapping alone permits exact product navigation; invalid mappings preserve affiliate path', () => {
@@ -220,4 +220,27 @@ test('pre-hydration store navigation never uses an Add to basket link label', ()
   assert.match(html, /Buy at TLL Store/)
   assert.doesNotMatch(html, /Add to basket/)
   assert.match(html, /products\/fixture\?variant=1/)
+})
+
+
+test('sold classification honours the supplied clock at the approval expiry boundary', () => {
+  const { isTllSoldProduct } = load('lib/commerce/live-cart-mode.ts')
+  const product = item()
+  const expires = product.storeLinkMapping.review.expiresAtMs
+  assert.equal(isTllSoldProduct(product, expires - 1), true)
+  assert.equal(isTllSoldProduct(product, expires), false)
+})
+
+test('live server and mounted actions share the exact flag-off sizing shell including custom label', () => {
+  const flags = { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled', NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'enabled' }
+  for (const product of [{ ...item(), buy_url: null }, { ...item(), buy_url: null, storePrice: undefined }, { id: 'fallback', brand: 'Fixture', name: 'Fallback', buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }]) {
+    const props = { product, storeActionLabel: 'Add to basket' }
+    const render = (env, mounted = false) => renderToStaticMarkup(React.createElement(load('components/ProductOfferLink.tsx', env, mounted).default, props))
+    const legacy = render({ ...flags, NEXT_PUBLIC_TLL_LIVE_CART: '' })
+    for (const mounted of [false, true]) {
+      const html = render(flags, mounted)
+      assert.ok(html.includes(`aria-hidden="true" inert="">${legacy}</span>`))
+      assert.match(html, /data-live-offer-shell/)
+    }
+  }
 })

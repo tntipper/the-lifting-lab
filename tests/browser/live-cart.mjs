@@ -5,12 +5,14 @@ import { build } from 'esbuild'
 import postcss from 'postcss'
 import tailwind from '@tailwindcss/postcss'
 import { chromium } from 'playwright'
+import { createRequire } from 'node:module'
+import vm from 'node:vm'
 
 const root = resolve(import.meta.dirname, '../..'), dir = resolve(root, 'test-results/live-cart')
 await mkdir(dir, { recursive: true })
 const bundles = {}
 for (const mode of ['live', 'default']) {
-  const result = await build({ absWorkingDir: root, entryPoints: ['tests/browser/live-cart-fixture.tsx'], outdir: 'out', bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
+  const options = { absWorkingDir: root, entryPoints: ['tests/browser/live-cart-fixture.tsx'], outdir: 'out', bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
     define: { 'process.env.NODE_ENV': '"development"', 'process.env.NEXT_PUBLIC_TLL_LIVE_CART': JSON.stringify(mode === 'live' ? 'enabled' : ''),
       'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"production"', 'process.env.NEXT_PUBLIC_TLL_STORE_LINKS': '""', 'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '"enabled"', 'process.env.NEXT_PUBLIC_TLL_STACK_CART': '""',
       'process.env.NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART': '""', 'process.env.NEXT_PUBLIC_TLL_STAGING_CUSTOMER': '""', 'process.env.NEXT_PUBLIC_AMAZON_TAG': '""' },
@@ -18,12 +20,21 @@ for (const mode of ['live', 'default']) {
       builder.onResolve({ filter: /^next\/(link|navigation)$|^@\/lib\/supabase$/ }, args => ({ path: args.path, namespace: 'fixture' }))
       builder.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({ loader: 'jsx', resolveDir: root, contents: args.path === 'next/link'
         ? 'import React from "react";export default function Link(props){return <a {...props}/>}'
-        : args.path === 'next/navigation' ? 'const params=new URLSearchParams();export const useRouter=()=>({push:href=>{window.location.href=href}});export const useSearchParams=()=>params;export const usePathname=()=>window.location.pathname;'
+        : args.path === 'next/navigation' ? 'const params=new URLSearchParams();export const useRouter=()=>({push:href=>{window.location.href=href}});export const useSearchParams=()=>params;export const usePathname=()=>"/";'
           : 'export const createClient=()=>({auth:{getUser:async()=>({data:{user:null}})}});' }))
     } }],
-  })
-  bundles[mode] = { js: result.outputFiles.find(file => file.path.endsWith('.js')).contents, css: result.outputFiles.find(file => file.path.endsWith('.css')).contents }
+  }
+  const result = await build(options)
+  const server = await build({ ...options, entryPoints: undefined, stdin: { contents: `import React from 'react'; import { renderToString } from 'react-dom/server'; import { Fixture } from './tests/browser/live-cart-fixture'; export const render = pathname => renderToString(React.createElement(React.StrictMode, null, React.createElement(Fixture, { pathname })));`, resolveDir: root, loader: 'tsx' }, platform: 'node', format: 'cjs', packages: 'external' })
+  const mod = { exports: {} }
+  vm.runInNewContext(server.outputFiles.find(file => file.path.endsWith('.js')).text, { module: mod, exports: mod.exports, require: createRequire(resolve(root, 'package.json')), process, console, URL, URLSearchParams })
+  bundles[mode] = { render: mod.exports.render, js: result.outputFiles.find(file => file.path.endsWith('.js')).contents, css: result.outputFiles.find(file => file.path.endsWith('.css')).contents }
 }
+for (const mode of ['live', 'default']) {
+  assert.match(bundles[mode].render('/'), /data-product-id="5"/)
+  assert.match(bundles[mode].render('/cart'), /Your basket is empty|data-live-offer-shell|<main/)
+}
+console.log('Server-rendered live/default fixtures: PASS')
 const css = (await postcss([tailwind()]).process(await readFile(resolve(root, 'app/globals.css'), 'utf8'), { from: resolve(root, 'app/globals.css') })).css
 const origin = 'http://live-cart.test'
 function fixtureResponse(raw) {
@@ -31,7 +42,7 @@ function fixtureResponse(raw) {
   if (url.pathname === '/fixture.js') return { contentType: 'text/javascript', body: Buffer.from(bundles[mode].js) }
   if (url.pathname === '/fixture.css') return { contentType: 'text/css', body: css + '\n' + Buffer.from(bundles[mode].css) }
   if (url.pathname.startsWith('/api/')) return { contentType: 'application/json', body: '{}' }
-  return { contentType: 'text/html', body: `<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css?mode=${mode}"></head><body><div id="fixture"></div><script src="/fixture.js?mode=${mode}"></script></body></html>` }
+  return { contentType: 'text/html', body: `<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css?mode=${mode}"></head><body><div id="fixture">${bundles[mode].render(url.pathname)}</div><script src="/fixture.js?mode=${mode}"></script></body></html>` }
 }
 let browser
 const results = []
@@ -47,13 +58,35 @@ try {
       return route.fulfill(fixtureResponse(url.href))
     })
     const dimensions = () => page.locator('article[data-product-id]').evaluateAll(cards => cards.map(card => ({ id: card.dataset.productId, width: card.getBoundingClientRect().width, height: card.getBoundingClientRect().height })))
+    // A JS-disabled context measures the actual server/pre-hydration markup.
+    const staticContext = await browser.newContext({ javaScriptEnabled: false, viewport: { width, height: 1000 } })
+    await staticContext.route('**/*', route => {
+      const url = new URL(route.request().url())
+      if (url.origin !== origin) { external.push(url.href); return route.abort() }
+      return route.fulfill(fixtureResponse(url.href))
+    })
+    const staticPage = await staticContext.newPage()
+    const staticDimensions = () => staticPage.locator('article[data-product-id]').evaluateAll(cards => cards.map(card => ({ id: card.dataset.productId, width: card.getBoundingClientRect().width, height: card.getBoundingClientRect().height })))
+    await staticPage.goto(origin + '/?mode=default')
+    const serverDefault = await staticDimensions()
+    await staticPage.goto(origin)
+    const serverLive = await staticDimensions()
+    assert.deepEqual(serverLive, serverDefault, `pre-hydration grid dimensions unchanged at ${width}`)
+    await staticContext.close()
     await page.goto(origin + '/?mode=default'); await page.locator('article').first().waitFor()
     const before = await dimensions()
+    assert.deepEqual(before, serverDefault, `flag-off hydration preserves dimensions at ${width}`)
     await page.goto(origin); await page.locator('[data-offer-state=live_basket]').first().waitFor()
     const fallback = page.getByRole('region', { name: 'Store fallback' }).getByRole('link', { name: /Buy at/ })
     assert.equal(new URL(await fallback.getAttribute('href')).pathname, '/products/fixture')
     assert.equal(new URL(await fallback.getAttribute('href')).searchParams.get('ref'), 'theliftinglab')
+    for (const id of ['4', '5']) {
+      const linkCard = page.locator(`article[data-product-id="${id}"]`)
+      assert.equal(await linkCard.getByRole('button', { name: 'Add to basket', exact: true }).count(), 0)
+      await linkCard.getByRole('link', { name: 'Buy at TLL Store', exact: true }).waitFor()
+    }
     const after = await dimensions()
+    assert.deepEqual(after, serverLive, `live hydration preserves dimensions at ${width}`)
     assert.deepEqual(after, before, `grid dimensions unchanged at ${width}`)
     assert.equal(await page.getByRole('region', { name: 'Unmapped', exact: true }).getByRole('button').count(), 0)
     assert.equal(await page.locator('article[data-product-id="3"]').getByRole('button', { name: 'Add to basket', exact: true }).count(), 0)
@@ -61,6 +94,13 @@ try {
     await card.getByRole('button', { name: 'Add to basket', exact: true }).click()
     await card.getByRole('status').getByRole('link', { name: 'Added to basket', exact: true }).waitFor()
     assert.deepEqual(await dimensions(), after, `card notice preserves dimensions at ${width}`)
+    const contrast = await card.locator('[data-offer-state=live_basket]').evaluate(el => {
+      const button = el.querySelector('button').getBoundingClientRect()
+      const lines = [el.firstElementChild, el.lastElementChild].map(line => line.getBoundingClientRect())
+      return lines.every(line => line.bottom <= button.top + 0.5 || line.top >= button.bottom - 0.5)
+        && getComputedStyle(el.querySelector('[role=status]')).pointerEvents === 'none'
+    })
+    assert.equal(contrast, true, `stock/status remain outside dark button at ${width}`)
     const contained = await card.locator('[data-offer-state=live_basket]').evaluate(el => {
       const bounds = el.getBoundingClientRect(), button = el.querySelector('button').getBoundingClientRect()
       return button.top >= bounds.top && button.bottom <= bounds.bottom && button.right <= bounds.right
@@ -95,7 +135,7 @@ try {
     await page.evaluate(() => localStorage.setItem('tll.live-basket.v1', '{broken'))
     await page.reload(); await page.getByText('Your basket is empty.', { exact: true }).waitFor()
     assert.deepEqual(cartApi, []); assert.deepEqual(external, []); assert.deepEqual(errors, [])
-    results.push({ width, gridDimensionsUnchanged: true, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
+    results.push({ width, gridDimensionsUnchanged: true, preHydrationDimensionsUnchanged: true, linkOnlyDimensionsUnchanged: true, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
     await context.close()
   }
   await writeFile(resolve(dir, 'results.json'), JSON.stringify(results, null, 2))

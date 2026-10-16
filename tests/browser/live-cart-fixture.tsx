@@ -1,5 +1,5 @@
 import { StrictMode, useState } from 'react'
-import { createRoot } from 'react-dom/client'
+import { hydrateRoot } from 'react-dom/client'
 import ProductOfferLink from '../../components/ProductOfferLink'
 import ProductVariantPicker from '../../components/ProductVariantPicker'
 import ProductGrid from '../../app/products/ProductGrid'
@@ -21,11 +21,11 @@ const choices = [product('family', '1001'), product('family', '1002'), product('
   variantId: p.storeLinkMapping.shopifyVariantId, mapping: p.storeLinkMapping, storePrice: p.storePrice,
   handle: 'fixture', label: ['Vanilla · 300 g', 'Chocolate · 300 g', 'Strawberry · 300 g'][i], flavour: null, packLabel: '300 g',
 }))
-function Fixture() {
+export function Fixture({ pathname = '/' }: { pathname?: string }) {
   const [selectedId, setSelectedId] = useState('1001')
   const selected = choices.find(choice => choice.variantId === selectedId)!
   return <><TopNav signedInInitial={false} /><main className="mx-auto max-w-[1200px] p-4">
-    {window.location.pathname === '/cart' ? <LiveBasketContents /> : <>
+    {pathname === '/cart' ? <LiveBasketContents /> : <>
       <section aria-label="Selected product" className="max-w-sm">
         <ProductVariantPicker productId="family" variants={choices} selected={selected} onChange={setSelectedId} />
         <ProductOfferLink product={{ ...product('family'), storeLinkMapping: selected.mapping, storePrice: selected.storePrice }} variantLabel={selected.label} storeCampaign="compare" className="rounded-lg bg-black py-3 text-sm text-white" pickerOwnsStatus chooseAnother />
@@ -33,8 +33,8 @@ function Fixture() {
       <section aria-label="Store fallback"><ProductOfferLink product={{ id: 'fallback', name: 'Fixture', brand: 'Fixture', buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }} /></section>
       <section aria-label="Unmapped"><ProductOfferLink product={{ id: 'unmapped', name: 'Unmapped', brand: 'Fixture', buy_url: null }} /></section>
       <section aria-label="Stack checkout"><BuyMyStack items={[{ ...product('stack', '2001'), quantity: 2 }]} ready /></section>
-      <ProductGrid initialProducts={[product('1', '3001'), product('2', '3002'), product('3', '3003', false)] as unknown as ScoredProduct[]} />
+      <ProductGrid initialProducts={[product('1', '3001'), product('2', '3002'), product('3', '3003', false), { ...product('4', '3004'), storePrice: undefined }, { ...product('5'), storePrice: undefined, storeLinkMapping: undefined, buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }] as unknown as ScoredProduct[]} />
     </>}
   </main></>
 }
-createRoot(document.getElementById('fixture')!).render(<StrictMode><Fixture /></StrictMode>)
+if (typeof document !== 'undefined') hydrateRoot(document.getElementById('fixture')!, <StrictMode><Fixture pathname={window.location.pathname} /></StrictMode>)
