@@ -1,5 +1,8 @@
 'use client'
 
+import { liveCartEnabled } from '@/lib/commerce/live-cart-mode'
+import { liveBasketEligible } from '@/lib/commerce/live-basket'
+import { LiveBasketAdd } from './LiveBasket'
 import type { CSSProperties } from 'react'
 import { DEFAULT_STORE_BUY_LINK_MODE, resolveProductOffer, type StoreBuyLinkMode } from '@/lib/affiliate'
 import type { StorePricePresentation } from '@/lib/commerce/store-price-products'
@@ -11,10 +14,11 @@ import { useStagingCart } from './StagingCartContext'
 import { catalogueAvailabilityFor, type CataloguePresentation } from '@/lib/commerce/catalogue-presentation'
 
 /** Interim listing navigation, until a verified commerce projection supplies exact offers. */
-export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, storeCampaign = 'product', pickerOwnsStatus = false, chooseAnother = false, storeActionLabel }: {
+export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, storeCampaign = 'product', pickerOwnsStatus = false, chooseAnother = false, storeActionLabel, variantLabel }: {
   product: { id?: string; brand: string; name: string; buy_url: string | null; cataloguePresentation?: CataloguePresentation | null; storeLinkMapping?: StoreLinkMapping | null; storeVariants?: StoreVariantOption[]; storePrice?: StorePricePresentation | null }
   /** Label for the existing exact store cart action; never applied to searches or product-page offers. */
   storeActionLabel?: string
+  variantLabel?: string
   pickerOwnsStatus?: boolean
   /** True only when a multi-variant picker offers other choices. */
   chooseAnother?: boolean
@@ -43,6 +47,13 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
     className={`${className ?? ''} flex min-h-11 items-center justify-center px-2 text-center`} style={style}>
     Choose flavour on product page
   </a>
+  if (liveCartEnabled() && product.id && product.storeLinkMapping) {
+    const item = { ...product, id: product.id, quantity: 1, variantLabel }
+    if (liveBasketEligible(item)) return <LiveBasketAdd product={item} className={className} style={style} showStock={!pickerOwnsStatus} />
+    return <span data-offer-state="unavailable" className="text-xs text-lab-muted">
+      {catalogueAvailabilityFor(product) === 'out_of_stock' ? 'Currently unavailable to buy' : 'TLL Store price and stock unavailable'}
+    </span>
+  }
   const listing = resolveProductOffer(product, storeBuyLinkMode, storeCampaign)
   const stock = product.storePrice ? catalogueAvailabilityFor(product) : null
   if (!listing.url) {

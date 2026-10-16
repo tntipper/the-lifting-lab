@@ -1,3 +1,14 @@
+**16 October production basket — grok/live-cart; base 3b3c507; local only:**
+- Enable with NEXT_PUBLIC_TLL_LIVE_CART=enabled; unset preserves defaults; staging/synthetic preview stay off.
+- Added commerce live-cart-mode/live-basket/cart-permalink + LiveBasket UI: versioned storage, 20 lines, qty 1–10, fresh approved variants only.
+- Wired ProductOfferLink, detail variant label, TopNav, /cart and BuyMyStack; displayPrice only; strict attributed public-shop checkout permalink.
+- /api/cart and staging server unchanged; live dependency test excludes staging/Storefront/vault/DB; no secrets, env edits, network actions or push.
+- Added live-cart unit/browser fixtures; updated offer test loader + existing browser flag stubs; refreshed manifest source hash/count only.
+- PASS typecheck, lint (0 errors/21 existing warnings), 213 focused tests (9 live-cart), manifest checks and diff check.
+- Full npm test: 4085 pass / 28 fail / 8 skip; failures require sandbox-blocked sockets/Chrome/ps/Python or unavailable PostgreSQL fixtures; CI unrun.
+- Browser fixture bundles; Chrome SIGABRT prevents execution/layout proof. Grid CSS and brand/product copy unchanged; action slots retained.
+- BLOCKED local commit: sandbox denies shared .git/worktrees/wt-cart/index.lock (git add/commit EPERM); changes remain unstaged. Next: commit, then six-width browser proof outside sandbox.
+
 **16 October vs reviewer build follow-up — grok/store-offer-price-fix; start 722e42e; local only:**
 - getMatchup now calls unstable_rethrow(error) before its null fallback, matching product-data.ts.
 - display-price uses @/lib/products; typecheck passes. Refreshed only the manifest source-tree hash.

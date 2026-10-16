@@ -1,3 +1,5 @@
+import { liveCartEnabled } from '@/lib/commerce/live-cart-mode'
+import { buildLiveBasketCheckout, liveBasketEligible } from '@/lib/commerce/live-basket'
 import { buildStackCartUrl, splitStackCartItems, stackCartEnabled, stackStorefrontCartEnabled, type StackCartItem } from '@/lib/commerce/stack-cart'
 
 const itemName = (item: StackCartItem) => [item.brand, item.name || item.id].filter(Boolean).join(' ')
@@ -5,8 +7,11 @@ const itemName = (item: StackCartItem) => [item.brand, item.name || item.id].fil
 export default function BuyMyStack({ items, ready }: { items: readonly StackCartItem[]; ready: boolean }) {
   if (!stackCartEnabled() || !ready || !items.length) return null
   const now = Date.now()
+  const live = liveCartEnabled()
   const { storeItems, outOfStock, affiliateOnly, unavailable } = splitStackCartItems(items, now)
-  const url = buildStackCartUrl(storeItems, now)
+  const eligible = live ? storeItems.filter(item => liveBasketEligible(item, now)) : storeItems
+  if (live) unavailable.push(...storeItems.filter(item => !liveBasketEligible(item, now)))
+  const url = live ? buildLiveBasketCheckout(eligible, 'stack', now) : buildStackCartUrl(storeItems, now)
   // TODO(Toby/Lifty): approve a server-only Storefront binding before enabling Phase 2.
   const awaitingSetup = stackStorefrontCartEnabled()
   return <div className="stack-cart-root mt-4 space-y-4">

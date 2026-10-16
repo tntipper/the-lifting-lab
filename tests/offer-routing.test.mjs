@@ -1,8 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import vm from 'node:vm'
+import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -11,10 +12,21 @@ const require = createRequire(import.meta.url)
 const attribution = loadSource('../lib/commerce/store-attribution.ts')
 const catalogueAvailability = loadSource('../lib/commerce/catalogue-presentation.ts')
 function loadSource(path, overrides = {}, env = {}) {
-  const source = readFileSync(new URL(path, import.meta.url), 'utf8')
+  const source = readFileSync(path.startsWith('/') ? path : new URL(path, import.meta.url), 'utf8')
   const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
   const loaded = { exports: {} }
-  vm.runInNewContext(js, { require: name => overrides[name] ?? (name === './commerce/catalogue-presentation' ? catalogueAvailability : name === './commerce/store-attribution' ? attribution : require(name)), module: loaded, exports: loaded.exports, process: { env }, URL })
+  const localRequire = name => {
+    if (name in overrides) return overrides[name]
+    if (name === './commerce/catalogue-presentation') return catalogueAvailability
+    if (name === './commerce/store-attribution') return attribution
+    if (name.startsWith('@/') || name.startsWith('.')) {
+      const base = name.startsWith('@/') ? new URL('../' + name.slice(2), import.meta.url) : new URL(name, new URL(path, import.meta.url))
+      const filename = ['.ts', '.tsx'].map(extension => new URL(base.href + extension)).find(url => existsSync(url))
+      if (filename) return loadSource(fileURLToPath(filename), {}, env)
+    }
+    return require(name)
+  }
+  vm.runInNewContext(js, { require: localRequire, module: loaded, exports: loaded.exports, process: { env }, URL })
   return loaded.exports
 }
 const affiliate = loadSource('../lib/affiliate.ts', { './preview-mode': { isIsolatedEnvironment: () => false } })

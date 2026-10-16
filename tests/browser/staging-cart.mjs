@@ -12,7 +12,7 @@ import { chromium } from 'playwright'
 const root = fileURLToPath(new URL('../../', import.meta.url)), dir = resolve(root, 'test-results/staging-cart')
 await mkdir(dir, { recursive: true })
 const bundle = await build({ absWorkingDir: root, entryPoints: ['tests/browser/staging-cart-fixture.tsx'], bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
-  define: { 'process.env.NODE_ENV': '"development"', 'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"staging"', 'process.env.NEXT_PUBLIC_TLL_STAGING_CART': '"enabled"', 'process.env.NEXT_PUBLIC_TLL_STAGING_CUSTOMER': '"disabled"', 'process.env.NEXT_PUBLIC_AMAZON_TAG': '""', 'process.env.NEXT_PUBLIC_SUPABASE_URL': '"https://example.invalid"' },
+  define: { 'process.env.NEXT_PUBLIC_TLL_LIVE_CART': '""', 'process.env.NODE_ENV': '"development"', 'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"staging"', 'process.env.NEXT_PUBLIC_TLL_STAGING_CART': '"enabled"', 'process.env.NEXT_PUBLIC_TLL_STAGING_CUSTOMER': '"disabled"', 'process.env.NEXT_PUBLIC_AMAZON_TAG': '""', 'process.env.NEXT_PUBLIC_SUPABASE_URL': '"https://example.invalid"' },
   plugins: [{ name: 'isolated-adapters', setup(builder) {
     builder.onResolve({ filter: /^next\/(link|navigation)$|^@\/lib\/supabase$/ }, args => ({ path: args.path, namespace: 'fixture' }))
     builder.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({ loader: 'jsx', resolveDir: root, contents: args.path === 'next/link'

@@ -1,5 +1,7 @@
 'use client'
 
+import { liveCartEnabled } from '@/lib/commerce/live-cart-mode'
+import { useLiveBasket } from './LiveBasket'
 import { Suspense, useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
@@ -32,11 +34,16 @@ const MORE_LINKS = [
 
 function BasketControl() {
   const cart = useStagingCart()
+  const liveLines = useLiveBasket()
   const panels = useShopPanels()
   const quantity = cart?.enabled && cart.view && ['empty', 'ready', 'held', 'pending'].includes(cart.view.state)
     ? cart.view.quantity
     : panels.basket.reduce((sum, line) => sum + line.quantity, 0)
   const classes = 'tll-basket inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#6c6f63] px-3 text-sm font-semibold'
+  if (liveCartEnabled()) {
+    const count = liveLines.reduce((sum, line) => sum + line.quantity, 0)
+    return <Link href="/cart" className={classes} aria-label={`Basket, ${count} items`}><span className="max-[359px]:hidden">Basket</span><span className="font-mono">{count}</span></Link>
+  }
   const open = () => { if (cart?.enabled) cart.open(); else panels.openBasket() }
   return <button type="button" onClick={open} aria-haspopup="dialog" className={classes} aria-label={`Basket, ${quantity} items`}>
     <span className="max-[359px]:hidden">Basket</span><span className="font-mono">{quantity}</span>

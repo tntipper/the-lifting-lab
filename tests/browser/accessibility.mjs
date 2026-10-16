@@ -21,7 +21,7 @@ const bundle = await build({
   absWorkingDir: root, entryPoints: ['tests/browser/accessibility-fixture.tsx'],
   bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
   define: {
-    'process.env.NODE_ENV': '"development"',
+    'process.env.NEXT_PUBLIC_TLL_LIVE_CART': '""', 'process.env.NODE_ENV': '"development"',
     // Exercise ordinary component interactions with only the local adapters.
     'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"local-browser-fixture"',
     'process.env.NEXT_PUBLIC_AMAZON_TAG': '"theliftinglab-21"',
