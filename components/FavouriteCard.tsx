@@ -2,7 +2,7 @@
 
 import InformedSportIcon from '@/components/InformedSportIcon'
 import styles from '@/components/shop.module.css'
-import ProductAssessment from '@/components/ProductAssessment'
+import ShopScoreBadge from '@/components/ShopScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
 import { categoryLabel } from '@/lib/categories'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -11,7 +11,7 @@ import type { ScoredProduct } from '@/lib/products'
 // Shared favourited-product card. Used on the /favourites page and the
 // dashboard so both surfaces render saved products with identical structure
 // (assessment status, brand/name, category, heart, retailer reference).
-// ProductAssessment hides unapproved legacy numbers; customer reviews remain separate.
+// Legacy display does not grant assessment approval; customer reviews remain separate.
 export default function FavouriteCard({
   product: p,
   onRemove,
@@ -21,7 +21,7 @@ export default function FavouriteCard({
 }) {
   return (
     <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4">
-      <ProductAssessment product={p} />
+      <ShopScoreBadge product={p} />
       <div className="min-w-0 flex-1">
         <div className={styles.brandLine}><p className="text-white text-sm font-bold truncate">{p.brand}</p><InformedSportIcon certified={p.informed_sport} /></div>
         <p className="text-lab-muted text-xs truncate">{p.name}</p>

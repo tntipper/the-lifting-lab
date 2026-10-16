@@ -51,7 +51,7 @@ function fixture({ category = 'cycle-support', modalOpen = false, nutrients = []
       if (name === '@/lib/share-products-server') return { getShareProducts: async () => ({ ok: true, products: [item] }) }
       if (name === '@/lib/product-data') return { fetchProductDetail: async () => item, fetchCategory: async () => [] }
       if (name === '@/lib/products') return { PRODUCT_COLUMNS: '*', withScore: p => p, sortScored: a => a, trueCostReason: () => null }
-      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
+      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ state: { error: null }, inStack: () => false, toggle() {} }) }
       if (name === '@/components/ShopPanelsContext') return { useShopPanels: () => ({ panel: null, basket: [], compared: [], openBasket() {}, openStack() {}, closePanel() {}, addToBasket() {}, setBasketQuantity() {}, toggleCompare() {}, removeCompare() {}, clearCompare() {} }) }
       if (name === '@/components/ScoreBadge') return { __esModule: true, default: ({ score }) => React.createElement('span', {}, `Score ${score}`), scoreColor: () => '#fff' }
       if ((name.startsWith('@/components/') && !['@/components/ClaimsReviewNotice', '@/components/MethodologyModal', '@/components/AccessibleDialog', '@/components/ProductAssessment', '@/components/ShopScoreBadge'].includes(name)) || name === './RelatedProducts') return { __esModule: true, default: blank }
@@ -163,7 +163,8 @@ test('ordinary positive historical value does not publish an approved editorial 
   const html = render(await page.default({ params: Promise.resolve({ id: product.id }) }))
   const productSchema = schemas(html).find(s => s['@type'] === 'Product')
   assert.equal(productSchema.review, undefined)
-  assert.doesNotMatch(html, /Excellent Effectiveness Match|95\/100/); assert.match(html, /Not assessed/)
+  // Toby approved displaying historical scores; editorial approval stays withheld.
+  assert.doesNotMatch(html, /Excellent Effectiveness Match/); assert.match(html, /TLL legacy score: 95 out of 100/)
 })
 
 test('open methodology modal presents legacy weights and sources, without perfect-dose promises for review categories', () => {

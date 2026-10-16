@@ -1,3 +1,36 @@
+**16 October H/I stack production fallback + shared header — grok/guides-footer-fix; working tree only:**
+- Preserved all incoming edits/run scripts; HEAD 5e4ec86/base origin/main 3b3c507 unchanged; no commit/push/deploy.
+- Removed TopNav route-specific compact header; /stack no longer requires server auth/env to render; browser nav tolerates absent config.
+- Auth rejection/config failure/3s initial-session stall enters guest mode; failed account GET permits durable local adds/removes/clear, with confirmed retry merge.
+- StackBuilder.tsx:248 adds catalogue timeout; :253 clears loading before catalogue-length cleanup; manual goals/save/costs/doses work without account calls.
+- Goal starters were an assessment hold (:410), not an env switch; manual goal preferences remain available; recommendations remain under review.
+- StackPurchaseButton.tsx uses enabled cart hook only for its supported bound product; otherwise disabled Coming soon; full-stack buy depends on grok/live-cart.
+- Home globals.css:104 already solid paper; ShopHome.module.css:6 dark hero + white panels match ../tll-design. Explicit paper main/min-height added; reported scroll brightening unproved.
+- PASS 161 focused tests, lint (0 errors/20 warnings), tsc, diff check. Initial legacy-cart expectation/stale flag reference corrected; browser Chromium MachPort/SIGTRAP blocked.
+- Next: hosted/browser QA + CI (unrun); prod catalogue needs NEXT_PUBLIC_SUPABASE_URL/ANON_KEY and public RLS; account RPC migrations; production env must not be synthetic-preview/staging. Hosted env values/PRs unverified (gh unsigned).
+
+**16 October E/F/G score rings, image ratios and stack startup — grok/guides-footer-fix; working tree only:**
+- Preserved existing edits/run scripts; no commit/push/deploy. Base origin/main 3b3c507; HEAD 5e4ec86 unchanged.
+- Toby-approved legacy 1–100 display restored with historical SVG rings/Claude score colours; held/missing scores retain status.
+- Approval/ranking gates retained; home table now explicitly uses hasApprovedAssessment to preserve alphabetical fallback.
+- Grid 4:3 and detail square (432px cap) image containers use next/image fill/contain and sizes; retailer hosts stay unoptimised.
+- Stack startup uses local getSession instead of network getUser (LocalStackContext.tsx:53); unresolved identity rejects add at stack-sync.ts:167.
+- Grid/detail now expose stack errors; provider regressions cover immediate guest membership/count, remount persistence and auth races.
+- Compliance expectations changed only for approved legacy display/API values; provider mocks gained error state; claims/rating/held gates retained.
+- PASS 298 focused tests, lint (0 errors/21 existing warnings), tsc --noEmit, diff check. Browser blocked: Chromium MachPort permission/SIGTRAP.
+- Next: browser/live QA of add→header→/stack and image/card dimensions; live root-cause confirmation and hosted CI remain unverified.
+
+**16 October catalogue navigation/cards/prices — grok/guides-footer-fix; HEAD 5e4ec86; working tree only:**
+- Kept header group navigation; catalogue chips now show only the active group's sub-categories, absent for single-category links.
+- Chip selection writes category/group URLs and retains sort/search/other query parameters and the fragment.
+- Cards cap combined ingredient/nutrition rows at 3 with +N more; existing equal-height grid/flex and pinned actions retained.
+- Card/detail price boxes show Price first/largest, then smaller True cost and Per serving; pricing calculations unchanged.
+- Moved existing analytics controller into footer legal nav; preserved isolated-environment exclusion and updated privacy copy.
+- PASS 249 focused Node tests, tsc --noEmit, lint (0 errors/21 existing warnings), git diff --check.
+- Read ../g-review2.txt: no code blockers; browser SHOULD-FIX still blocked by Chrome launch SIGABRT in this sandbox.
+- Expanded browser fixture for row caps and footer consent/focus; run TEST_BROWSER_CHANNEL=chrome node tests/browser/guides-footer.mjs outside sandbox.
+- Hosted CI unrun; gh unsigned. No commit/push/deploy; existing run scripts preserved. Prior top note describes work now in 5e4ec86.
+
 **16 October reviewer fixes — grok/guides-footer-fix; HEAD a3d4ac0; working tree only:**
 - Restored View/Search retailer links and Shop offer under review; Coming soon only fills an otherwise absent offer.
 - Coming soon keeps action dimensions/classes, with opacity .55 and not-allowed cursor; corrected earlier handover claim below.

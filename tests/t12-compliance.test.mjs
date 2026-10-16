@@ -26,9 +26,9 @@ function modules() {
     const local = name => {
       if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
-      if (name === 'next/navigation') return { useRouter: () => ({ back() {} }) }
+      if (name === 'next/navigation') return { usePathname: () => '/products', useRouter: () => ({ back() {} }) }
       if (name === '@/lib/preview-mode') return { isSyntheticPreview: () => false, isIsolatedEnvironment: () => false }
-      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
+      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ state: { error: null }, inStack: () => false, toggle() {} }) }
       if (name.startsWith('@/components/') && !['@/components/ProductWarnings', '@/components/PolicyDraftNotice', '@/components/SiteFooter'].includes(name)) return { __esModule: true, default: () => null }
       if (name === './RelatedProducts') return { __esModule: true, default: () => null }
       if (name.startsWith('@/') || name.startsWith('.')) {
@@ -129,6 +129,8 @@ test('real product page renders caffeine and age warnings even while claims are 
 
 test('footer links resolve to all five policy/contact pages', () => {
   const html = htmlFor('components/SiteFooter.tsx')
+  assert.match(html, /<nav aria-label="Legal">[\s\S]*?<button[^>]*aria-controls="analytics-preferences"[\s\S]*?>Analytics preferences<\/button>/)
+  assert.doesNotMatch(readFileSync(resolve(root, 'app/layout.tsx'), 'utf8'), /<AnalyticsPreferences/)
   assert.match(html, /THE LIFTING LAB LTD · Company no. 17497631/)
   assert.match(html, /href="\/guide"/)
   assert.match(html, /https:\/\/www.instagram.com\/theliftinglabuk\//)

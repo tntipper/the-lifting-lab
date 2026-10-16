@@ -8,10 +8,10 @@ import { catalogueAssessment, summariseStackAssessments, assessmentText, stackRe
 import { scoreFor } from '@/lib/scores'
 import { DEFAULT_STORE_BUY_LINK_MODE, resolveProductOffer } from '@/lib/affiliate'
 import type { StoreLinkMapping } from '@/lib/commerce/product-mapping'
-import BuyMyStack from '@/components/BuyMyStack'
+import StackPurchaseButton from '@/components/StackPurchaseButton'
 import SharedStack from '@/components/SharedStack'
 import { shareStackPath } from '@/lib/commerce/stack-share'
-import { stackCartEnabled, type StackCartItem } from '@/lib/commerce/stack-cart'
+import { type StackCartItem } from '@/lib/commerce/stack-cart'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { StagingCartAdd } from '@/components/StagingCartActions'
 import { analysisServings, validStackServings } from '@/lib/stack-sync'
@@ -145,7 +145,7 @@ function timingFor(category: string): 'Any time' | 'Pre-training' | 'Post-traini
 function readStackQuery() { return window.location.search }
 export default function StackBuilder() {
   const query = useBrowserSnapshot(readStackQuery, '')
-  return <div className={stackCartEnabled() ? 'pb-24 md:pb-0' : undefined}>
+  return <div>
     {new URLSearchParams(query).has('items') ? <SharedStack query={query} /> : <SavedStackBuilder />}
   </div>
 }
@@ -200,7 +200,7 @@ function SavedStackBuilder() {
   // Keep the old product until the provider confirms the replacement. A failed
   // account addition must not remove an existing saved item.
   useEffect(() => {
-    if (!pendingSwap || state.busy || state.error || !stack.some(product => product.id === pendingSwap.next)) return
+    if (!pendingSwap || state.busy || !stack.some(product => product.id === pendingSwap.next)) return
     remove(pendingSwap.previous)
     setPendingSwap(null)
   }, [pendingSwap, state.busy, state.error, stack, remove])
@@ -245,11 +245,12 @@ function SavedStackBuilder() {
     const controller = new AbortController()
     setCatalogueLoading(true)
     setCatalogueError('')
-    fetch('/api/products?sort=name', { signal: controller.signal })
+    fetch('/api/products?sort=name', { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) })
       .then(async response => {
         if (!response.ok) throw new Error('Catalogue unavailable')
         const rows = await response.json()
         if (!Array.isArray(rows)) throw new Error('Catalogue unavailable')
+        setCatalogueLoading(false)
         setCatalogue(rows.map(row => ({ ...row, product_nutrients: row.nutrients || row.product_nutrients || [] })))
       })
       .catch(() => { if (!controller.signal.aborted) setCatalogueError('Catalogue options could not be loaded. Search below or try opening this list again.') })
@@ -406,7 +407,7 @@ function SavedStackBuilder() {
         <div className="stack-chips" role="group" aria-label="Training goal">
           {STACK_GOALS.map(option => <button key={option} type="button" aria-pressed={goal === option} onClick={() => changeGoal(option)}>{option}</button>)}
         </div>
-        <p className="stack-meta">Goal starters are unavailable pending assessment review. Changing your goal keeps your chosen products.</p>
+        <p className="stack-meta">Your goal organises your manual stack and is saved in this browser. Changing it keeps your chosen products. Goal-based recommendations await assessment review.</p>
       </section>
 
       <div role="status" aria-live="polite" className="stack-notices">
@@ -516,10 +517,9 @@ function SavedStackBuilder() {
 
       <div className="stack-buybar tll-on-dark">
         <div className="stack-row"><div><b className="stack-mono">{stack.length} products · 30 days</b><p>Daily serving estimate: {loading ? '—' : money(stackDailyCost === null ? null : stackDailyCost * 30)} a month</p></div>
-          {!stackCartEnabled() && <button type="button" disabled>Buy my stack · unavailable</button>}
-          <BuyMyStack items={cartProducts.filter(product => stackProductIds.has(product.id)).map(product => ({ ...product, quantity: 1 }))} ready={!loading && !detailsError && cartProducts.length === stack.length && cartProducts.every(product => stackProductIds.has(product.id))} />
+          <StackPurchaseButton productIds={cartProducts.filter(product => stackProductIds.has(product.id)).map(product => product.id)} ready={!loading && !detailsError && cartProducts.length === stack.length && cartProducts.every(product => stackProductIds.has(product.id))} />
         </div>
-        {stackCartEnabled() && (loading || !stack.length) && <p>{loading ? 'Loading store availability…' : 'Add products to check store availability.'}</p>}
+        {(loading || !stack.length) && <p>{loading ? 'Loading store availability…' : 'Add products to check store availability.'}</p>}
       </div>
 
       {showShare && <section id="stack-share" className="stack-share" aria-labelledby="stack-share-title">

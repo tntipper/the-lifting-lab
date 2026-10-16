@@ -21,7 +21,7 @@ const make = (overrides = {}) => ({ ...base, ...overrides })
 
 // Execute real shared selectors and public TSX with in-memory rows. Only
 // framework/provider boundaries are adapted; no credentials or network calls.
-function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = false) {
+function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = false, gridParams = null) {
   const cache = new Map()
   const sb = { from(table) {
     let data = table === 'reviews' ? [] : rows
@@ -35,8 +35,14 @@ function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = fa
     const js = ts.transpileModule(readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
     const mod = { exports: {} }
     let stackHook = 0
+    let gridHook = 0
     const localRequire = name => {
       if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
+      if (name === 'react' && gridParams && relative === 'app/products/ProductGrid.tsx') return { ...React,
+        useState(initial) {
+          const index = gridHook++
+          return React.useState(index === 2 ? gridParams.category ?? 'all' : index === 5 ? gridParams.group ?? null : initial)
+        } }
       if (name === 'react' && loadedStack && relative === 'app/stack/StackBuilder.tsx') return { ...React,
         useState(initial) {
           const index = stackHook++
@@ -108,9 +114,9 @@ for (const [label, overrides, expected] of [
     ['components/TopProductsTable.tsx', { products: [p] }],
   ]) {
     const html = f.html(file, props)
-    assert.match(html, p.storePrice ? /TLL Store price/ : /Listed price/)
+    assert.match(html, file.includes('ProductGrid') ? />Price</ : p.storePrice ? /TLL Store price/ : /Listed price/)
     if (expected) assert.ok(html.includes(expected), file)
-    else assert.match(html, /(?:Listed price|TLL Store price)<\/(?:span|div)><(?:b|div)[^>]*>(?:Price not listed|Not listed)<\/(?:b|div)>/)
+    else assert.match(html, /(?:Price|Listed price|TLL Store price)<\/(?:span|div)><(?:b|div)[^>]*>(?:Price not listed|Not listed)<\/(?:b|div)>/)
     assert.doesNotMatch(html, /£99\.00|£NaN|£Infinity|£0\.00|£-1\.00/)
   }
 })
@@ -148,10 +154,11 @@ for (const category of holds) test(`${category} withholds historical values with
   assert.doesNotMatch(best, /Research formula|🏆|🥇/)
   assert.match(best, /No approved effectiveness/)
 })
-test('positive legacy value stays in research data but not the public catalogue card', () => {
+test('Toby-approved legacy display restores the catalogue ring without granting approval', () => {
   const p = make({ score: 80 }), f = fixture([p])
   const html = f.html('app/products/ProductGrid.tsx', { initialProducts: [p] })
-  assert.match(html, /Not assessed/); assert.doesNotMatch(html, /80\/100|80%|Legacy score|Top Pick|🥇|Excellent dosing|Good dosing|ATP resynthesis/)
+  assert.match(html, /TLL legacy score: 80 out of 100/); assert.match(html, /stroke-dasharray=/)
+  assert.doesNotMatch(html, /Top Pick|🥇|Excellent dosing|Good dosing|ATP resynthesis/)
   assert.equal(f.load('lib/assessment-display.ts').assessmentDisplayFor(p).state, 'legacy')
   assert.doesNotMatch(html, /scientifically approved|verified assessment/i)
 })
@@ -271,10 +278,14 @@ test('positive history stays neutral across actual public components and preserv
     ['components/FavouriteCard.tsx', { product: p }],
   ]) {
     const html = f.html(file, props)
-    assert.match(html, /Not assessed/); assert.doesNotMatch(html, /95\/100|95%/)
+    assert.match(html, /Legacy score|TLL legacy score: 95 out of 100/)
     assert.doesNotMatch(html, /🥇|🥈|🥉|🏆|Top Pick|Best rated|wins on|Excellent dosing|Good dosing|full 5g effective|Green = meets dose|ATP resynthesis|Only available legacy scores/)
     const assessment = html.match(/<[^>]*data-assessment="legacy"[^>]*>/)?.[0]
-    assert.ok(assessment, file); assert.match(assessment, /text-lab-muted/)
+    assert.ok(assessment, file)
+    if (['app/products/ProductGrid.tsx', 'app/products/[id]/ProductDetailPage.tsx'].includes(file)) {
+      assert.match(html, /TLL legacy score: 95 out of 100/)
+      assert.match(html, /stroke-dasharray=/)
+    }
   }
   const detail = f.html('app/products/[id]/ProductDetailPage.tsx', { product: p, related: [] })
   assert.match(detail, /5000/); assert.match(detail, /My Stack|\+ Stack|Add to Stack/i)
@@ -343,20 +354,20 @@ test('product API retains its array contract and explicitly denies recommendatio
   const response = await f.load('app/api/products/route.ts').GET(new Request('https://fixture.invalid/api/products?sort=value'))
   assert.equal(response.status, 200)
   const products = await response.json()
-  assert.equal(products[0].score, null); assert.equal(products[0].assessment_state, 'legacy')
-  assert.equal(products[0].recommendation_status, 'unavailable'); assert.match(products[0].assessment_note, /withheld/i)
+  assert.equal(products[0].score, 95); assert.equal(products[0].assessment_state, 'legacy')
+  assert.equal(products[0].recommendation_status, 'unavailable'); assert.match(products[0].assessment_note, /Scientific review is incomplete/i)
 })
 
-test('detail and comparison APIs withhold frozen scores while preserving product identity', async () => {
+test('detail and comparison APIs carry legacy display scores while preserving product identity', async () => {
   const p = make({ score: 95 }), f = fixture([p])
   const detail = await f.load('app/api/products/[id]/route.ts').GET(new Request('https://fixture.invalid/api/products/research'),
     { params: Promise.resolve({ id: 'research' }) })
   assert.equal(detail.status, 200)
-  assert.equal((await detail.json()).score, null)
+  assert.equal((await detail.json()).score, 95)
   const compare = await f.load('app/api/products/compare/route.ts').GET(new Request('https://fixture.invalid/api/products/compare?ids=research'))
   assert.equal(compare.status, 200)
   const rows = await compare.json()
-  assert.equal(rows[0].id, 'research'); assert.equal(rows[0].score, null)
+  assert.equal(rows[0].id, 'research'); assert.equal(rows[0].score, 95)
 })
 
 test('listed price ordering retains subpenny precision instead of ranking rounded penny ties', async () => {
@@ -482,7 +493,7 @@ for (const source of ['mapping', 'variants']) test(`links enabled / prices off: 
     ['components/TopProductsTable.tsx', { products: [p] }],
   ]) {
     const html = f.html(file, props)
-    assert.match(html, /TLL Store price<\/(?:span|div)><(?:b|div)[^>]*>Not listed<\/(?:b|div)>/, file)
+    assert.match(html, /(?:Price|TLL Store price)<\/(?:span|div)><(?:b|div)[^>]*>Not listed<\/(?:b|div)>/, file)
     assert.doesNotMatch(html, /£99\.00|£4\.95/, file)
   }
   for (const [file, props] of [
@@ -601,4 +612,87 @@ test('certification appears beside the brand on cards and detail, without a full
     const uncertified = make({ informed_sport: false })
     assert.doesNotMatch(fixture([uncertified]).html(file, props(uncertified)), /aria-label="Informed Sport certified"/)
   }
+})
+
+
+test('catalogue only shows sub-categories for the selected group', () => {
+  for (const params of [{}, { category: 'pre-workout' }, { category: 'creatine' }, { category: 'hydration' }, { category: 'protein-bar' }]) {
+    const html = fixture([make()], {}, false, false, params).html('app/products/ProductGrid.tsx', { initialProducts: [make()] })
+    assert.doesNotMatch(html, /sub-categories/)
+  }
+  for (const params of [{ group: 'protein' }, { category: 'whey-isolate' }, { group: 'protein', category: 'casein' }]) {
+    const html = fixture([make()], {}, false, false, params).html('app/products/ProductGrid.tsx', { initialProducts: [make()] })
+    assert.match(html, /Protein sub-categories/)
+    for (const label of ['All Protein', 'Whey', 'Whey Isolate', 'Casein']) assert.ok(html.includes(label))
+    assert.doesNotMatch(html, />Creatine<\/button>|>Pre-Workout<\/button>/)
+  }
+  const health = fixture([make()], {}, false, false, { group: 'wellbeing' }).html('app/products/ProductGrid.tsx', { initialProducts: [make()] })
+  assert.match(health, /Wellbeing sub-categories/)
+  assert.match(health, />Vitamin D<\/button>/)
+  assert.doesNotMatch(health, />Whey<\/button>/)
+})
+
+test('cards cap combined label rows at three and link to the full product label', () => {
+  const nutrients = ['Creatine', 'Caffeine', 'Protein', 'Fat', 'Salt'].map(nutrient_name => ({ nutrient_name, amount: 1, unit: 'g' }))
+  const p = make({ nutrients }), f = fixture([p])
+  const card = f.html('app/products/ProductGrid.tsx', { initialProducts: [p] })
+  assert.match(card, /href="\/products\/research"[^>]*>\+2 more<\/a>/)
+  assert.match(card, /<dt>Creatine<\/dt>/)
+  assert.match(card, /<dt>Protein<\/dt>/)
+  assert.doesNotMatch(card, /<dt>Fat<\/dt>|<dt>Salt<\/dt>/)
+  const full = f.html('components/ServingLabel.tsx', { nutrients })
+  assert.match(full, /<dt>Salt<\/dt>/)
+  assert.doesNotMatch(full, /more<\/a>/)
+})
+
+test('pack Price is first in card and detail, with secondary serving figures', () => {
+  const p = make(), f = fixture([p])
+  for (const [file, props] of [['app/products/ProductGrid.tsx', { initialProducts: [p] }], ['app/products/[id]/ProductDetailPage.tsx', { product: p, related: [] }]]) {
+    const html = f.html(file, props)
+    assert.match(html, /class="priceBox"><div class="primaryPrice"><span>Price<\/span><b>£20.00<\/b><\/div><div><span>True cost<\/span>/)
+    assert.doesNotMatch(html, />Listed price<\/span>/)
+  }
+})
+
+
+test('legacy display accepts only scores from 1 to 100 and never grants ranking approval', () => {
+  const policy = fixture().load('lib/assessment-display.ts')
+  for (const score of [1, 50, 100]) {
+    const p = make({ score })
+    assert.equal(policy.assessmentDisplayFor(p).score, score)
+    assert.equal(policy.assessmentDisplayFor(p).state, 'legacy')
+    assert.equal(policy.hasApprovedAssessment(p), false)
+    for (const sort of ['score', 'value', 'budget']) assert.equal(policy.isRankingCandidate(p, sort), false)
+  }
+  for (const score of [...invalid, 0.5]) assert.equal(policy.assessmentDisplayFor(make({ score })).score, null)
+  for (const category of holds) assert.equal(policy.assessmentDisplayFor(make({ category, score: 95 })).score, null)
+})
+
+test('catalogue and detail images use fill with responsive sizes inside ratio containers', () => {
+  const p = make({ image_url: 'https://retailer.example/pack.jpg' }), f = fixture([p])
+  for (const [file, props] of [
+    ['app/products/ProductGrid.tsx', { initialProducts: [p] }],
+    ['app/products/[id]/ProductDetailPage.tsx', { product: p, related: [] }],
+  ]) {
+    const html = f.html(file, props)
+    assert.match(html, /data-nimg="fill"/)
+    // next/image omits sizes/srcset for unoptimised arbitrary retailer URLs.
+    // Verify the responsive hint at the call site and real fill markup above.
+    assert.match(readFileSync(path.join(root, file), 'utf8'), /sizes="\(max-width:/)
+    assert.match(html, /object-contain/)
+  }
+  const css = readFileSync(path.join(root, 'components/shop.module.css'), 'utf8')
+  assert.match(css, /\.packshot \{[^}]*aspect-ratio:4\/3/)
+  assert.match(css, /\.detailImage \{[^}]*aspect-ratio:1; max-height:432px/)
+  assert.match(css, /grid-auto-rows: 1fr/)
+})
+
+
+test('home product rows display legacy rings but retain alphabetical fallback without approved rankings', () => {
+  const rows = [make({ id: 'z', brand: 'Zulu', score: 100 }), make({ id: 'a', brand: 'Alpha', score: 1 })]
+  const html = fixture(rows).html('components/TopProductsTable.tsx', { products: rows })
+  assert.ok(html.indexOf('Alpha') < html.indexOf('Zulu'))
+  assert.match(html, /Approved scores are currently unavailable/)
+  assert.match(html, /TLL legacy score: 100 out of 100/)
+  assert.doesNotMatch(html, /Effectiveness match 100|>Strong</)
 })

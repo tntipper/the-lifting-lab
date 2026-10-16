@@ -22,7 +22,7 @@ import ProductOfferLink from '@/components/ProductOfferLink'
 import { amazonSearch, bulkSearch } from '@/lib/affiliate'
 import { isSyntheticPreview } from '@/lib/preview-mode'
 import { track } from '@/lib/gtag'
-import { displayPrice, isStoreOffer } from '@/lib/commerce/display-price'
+import { displayPrice } from '@/lib/commerce/display-price'
 import { formatListedServingPrice, trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
@@ -112,7 +112,7 @@ export default function ProductDetailPage({
     setSelectedId(id)
     window.history.replaceState(null, '', variantSelectionUrl(window.location.href, id))
   }
-  const { inStack, toggle } = useLocalStack()
+  const { inStack, toggle, state: stackState } = useLocalStack()
   const [shareOpen, setShareOpen] = useState(false)
 
   const review = claimsReviewFor(product.category)
@@ -147,7 +147,9 @@ export default function ProductDetailPage({
         {/* hero */}
         <div className={styles.detailHero}>
           <div className={styles.detailPackshot}>
-            <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} />
+            <div className={styles.detailImage}>
+              <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} fill sizes="(max-width: 759px) calc(100vw - 82px), (max-width: 1023px) 40vw, 432px" />
+            </div>
             <ShopScoreBadge product={product} />
           </div>
           <div className={styles.detailIntro}>
@@ -179,15 +181,11 @@ export default function ProductDetailPage({
                 </span>
               )}
             </div>
-            <p className="font-mono text-sm text-lab-muted">
-              {price !== null ? <span>£{price.toFixed(2)} {isStoreOffer(product) ? 'at TLL Store' : 'retail'}</span> : <span>{isStoreOffer(product) ? 'TLL Store price unavailable' : 'Retail price —'}</span>}
-              <span className="mx-2">·</span>
-              {product.cost_per_serving != null ? (
-                <span className="text-white font-bold">{formatListedServingPrice(product.cost_per_serving)} listed price / serving</span>
-              ) : (
-                <span title={costReason ?? undefined}>True Cost — <span className="text-xs">({costReason})</span></span>
-              )}
-            </p>
+            <div className={styles.priceBox}>
+              <div className={styles.primaryPrice}><span>Price</span><b>{price !== null ? `£${price.toFixed(2)}` : 'Not listed'}</b></div>
+              <div><span>True cost</span><b title={costReason ?? undefined}>{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : 'Not listed'}</b></div>
+              <div><span>Per serving</span><b>{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b></div>
+            </div>
             <p className="font-mono text-xs text-lab-muted">
               {product.serving_size != null
                 ? `${product.serving_size}${product.serving_unit ?? ''} per serving`
@@ -258,6 +256,7 @@ export default function ProductDetailPage({
           </div>
         )}
 
+        {stackState.error && <p role="alert" className="text-sm text-lab-muted">{stackState.error}</p>}
         {/* score explanation */}
         <div className={styles.detailPanel}>
           <div className="flex items-center justify-between gap-3 mb-2">

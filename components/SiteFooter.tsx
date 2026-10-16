@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import AnalyticsPreferences from './AnalyticsPreferences'
+import { isIsolatedEnvironment } from '@/lib/preview-mode'
 import EmailCapture from './EmailCapture'
 import FollowUs from './FollowUs'
 
@@ -29,6 +31,7 @@ export default function SiteFooter() {
         <p>THE LIFTING LAB LTD · Company no. 17497631</p>
         <nav aria-label="Legal">
           <Link href="/refunds">Refunds</Link><Link href="/delivery">Delivery</Link><Link href="/contact">Contact</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/affiliate-disclosure">Affiliate disclosure</Link>
+          {!isIsolatedEnvironment() && <AnalyticsPreferences />}
         </nav>
       </div>
     </div>

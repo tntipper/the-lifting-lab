@@ -1,7 +1,7 @@
 import { assessmentDisplayFor } from '@/lib/assessment-display'
 
-// Shared public status for product cards. Frozen numbers are not approved
-// assessments, so they stay out of the customer-facing card.
+// Text-only status for research and comparison surfaces. A legacy value
+// does not grant assessment approval. Shop cards use ShopScoreBadge.
 export default function ProductAssessment({ product, size = 'md' }: {
   product: { category?: string | null; score?: number | null }
   size?: 'sm' | 'md' | 'lg'

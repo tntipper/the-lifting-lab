@@ -2,15 +2,12 @@ import { claimsReviewFor } from './claims-review'
 
 type AssessmentInput = { category?: string | null; score?: number | null }
 
-// Interim containment of the frozen legacy scores, not an evidence approval.
-// There is no versioned assessment/provenance field yet. In particular, zero
-// cannot distinguish an intentional failed assessment from missing evidence.
-// Keep the source value intact internally, but withhold it from public display,
-// ranking and recommendation until a reviewed assessment record exists.
+// Toby-approved legacy display only. A historical number does not grant
+// evidence approval or eligibility for rankings and recommendations.
 export function assessmentDisplayFor(product: AssessmentInput) {
   const review = claimsReviewFor(product.category)
   const score = typeof product.score === 'number' && Number.isFinite(product.score)
-    && product.score > 0 && product.score <= 100 ? product.score : null
+    && product.score >= 1 && product.score <= 100 ? product.score : null
   if (review) return {
     state: 'under_review' as const, score: null, label: 'Under review',
     explanation: `${review.title}. Existing score is not a validated health-benefit assessment.`,
@@ -19,7 +16,7 @@ export function assessmentDisplayFor(product: AssessmentInput) {
     state: 'unassessed' as const, score: null, label: 'Not assessed',
     explanation: 'Not assessed — no usable assessment is available. Label information remains available for research; no dosing or benefit recommendation is made.',
   }
-  return { state: 'legacy' as const, score: null, label: 'Not assessed', explanation: 'A historical formula value exists but is withheld because no approved effectiveness or dosing assessment is available.' }
+  return { state: 'legacy' as const, score, label: 'Legacy score', explanation: 'Historical formula score. Scientific review is incomplete; this is not an approved effectiveness or dosing assessment.' }
 }
 
 export function hasApprovedAssessment<T extends AssessmentInput>(product: T): product is T & { score: number } {

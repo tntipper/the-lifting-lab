@@ -20,7 +20,10 @@ createRoot(document.getElementById('fixture')!).render(<>
       {[false, true].map(sellable => <article key={String(sellable)} className={`${styles.card} p-6 gap-3`}>
         <div className={styles.brandLine}><span>APPLIED NUTRITION</span>{sellable && <InformedSportIcon certified sourceUrl="https://example.com/certification" />}</div>
         <h1>{sellable ? 'Mapped product' : 'Unmapped product'}</h1>
-        <ServingLabel nutrients={[{ nutrient_name: 'Caffeine', amount: 250, unit: 'mg' }]} />
+        <ServingLabel maxRows={3} productHref="/products/fixture" nutrients={[
+          { nutrient_name: 'Caffeine', amount: 250, unit: 'mg' },
+          ...(sellable ? ['Creatine', 'Citrulline', 'Protein', 'Salt'].map(nutrient_name => ({ nutrient_name, amount: 1, unit: 'g' })) : []),
+        ]} />
         <div className={styles.cardActions}>
           <ProductOfferLink comingSoonWhenNotSold product={{ ...product, storeLinkMapping: sellable ? mapping : null }} className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
         </div>

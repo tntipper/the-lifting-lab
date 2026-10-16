@@ -65,7 +65,7 @@ export async function GET(request: Request) {
       name: p.name,
       brand: p.brand,
       category: p.category,
-      score: assessment.score, // Null until a versioned assessment is approved.
+      score: assessment.score, // Legacy display only; rank and recommendation gates stay separate.
       retail_price_gbp: p.retail_price,
       cost_per_serving_gbp: p.cost_per_serving,
       servings_per_container: p.servings_per_container,

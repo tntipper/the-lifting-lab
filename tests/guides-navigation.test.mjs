@@ -25,10 +25,10 @@ test('home has a guides entry without adding a differently sized method tile', (
   assert.equal((home.match(/<article/g) ?? []).length, 1)
 })
 
-test('desktop, mobile menu and compact research header render a Guides link', async () => {
+test('every route uses the global category menu, stack, basket, account and Guides navigation', async () => {
   const React = require('react'), { renderToStaticMarkup } = require('react-dom/server')
   const ts = require('typescript'), vm = await import('node:vm')
-  for (const pathname of ['/products', '/sources', '/guide/creatine']) {
+  for (const pathname of ['/products', '/stack', '/sources', '/guide/creatine']) {
     let state = 0
     const mod = { exports: {} }
     const overrides = {
@@ -48,8 +48,13 @@ test('desktop, mobile menu and compact research header render a Guides link', as
     if (pathname === '/products') {
       assert.match(html, /aria-label="Shop categories"[\s\S]*?href="\/guide"/)
       assert.match(html, /aria-label="Mobile navigation"[\s\S]*?href="\/guide"/)
-    } else if (pathname === '/sources') assert.match(html, /aria-label="Main"[\s\S]*?href="\/guide"/)
-    else assert.match(html, /href="\/guide" aria-current="page" class="tll-nav-item is-active"/)
+    }
+    assert.match(html, /aria-label="Shop categories"/)
+    assert.match(html, /My stack/)
+    assert.match(html, /Basket/)
+    assert.match(html, /Sign In/)
+    assert.doesNotMatch(html, /Research sources<|Stack builder</)
+    if (pathname.startsWith('/guide')) assert.match(html, /href="\/guide" aria-current="page" class="tll-nav-item is-active"/)
   }
 })
 

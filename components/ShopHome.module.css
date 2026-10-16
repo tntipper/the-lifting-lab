@@ -1,5 +1,5 @@
-.home { background: var(--paper); color: var(--ink); font-family: var(--font-sans); }
-.main { max-width: 1200px; margin: 0 auto; padding: 48px 24px; display: grid; gap: 48px; }
+.home { min-height: 100vh; background: var(--paper); color: var(--ink); font-family: var(--font-sans); }
+.main { background: var(--paper); max-width: 1200px; margin: 0 auto; padding: 48px 24px; display: grid; gap: 48px; }
 .section { display: grid; gap: 16px; }
 .section h2 { margin: 0; font: 600 22px/28px var(--font-sans); }
 .home a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

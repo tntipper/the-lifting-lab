@@ -1,22 +1,22 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 
-// Server-renderable product image. Uses the real `image_url` when the catalogue
-// has one; otherwise an honest placeholder (never an invented image URL).
-// Plain <img> rather than next/image: product images live on arbitrary retailer
-// hosts that aren't in the next.config remotePatterns allowlist.
+// Unoptimised preserves arbitrary catalogue retailer hosts without a proxy allowlist.
 export default function ProductImage({
   src,
   alt,
   size = 96,
   fill = false,
+  sizes,
   className = '',
 }: {
   src: string | null | undefined
   alt: string
   size?: number
   fill?: boolean
+  sizes?: string
   className?: string
 }) {
   const [failed, setFailed] = useState(false)
@@ -24,17 +24,16 @@ export default function ProductImage({
 
   if (show) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
+        unoptimized
+        {...(fill ? { fill: true, sizes: sizes ?? "100vw" } : { width: size, height: size })}
         src={src!}
         alt={alt}
-        width={size}
-        height={size}
         loading="lazy"
         decoding="async"
         referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
-        className={`rounded-lg object-contain shrink-0 ${className}`}
+        className={`rounded-lg object-contain object-center shrink-0 ${className}`}
         style={{ width: fill ? '100%' : size, height: fill ? '100%' : size, background: '#ecece4' }}
       />
     )
@@ -45,7 +44,7 @@ export default function ProductImage({
       aria-label={`${alt} — no product image available`}
       title="No product image available"
       className={`rounded-lg border border-lab-border flex items-center justify-center shrink-0 ${className}`}
-      style={{ width: fill ? '100%' : size, height: fill ? '100%' : size, fontSize: 12, background: '#ecece4' }}
+      style={{ width: fill ? '100%' : size, height: fill ? '100%' : size, position: fill ? 'absolute' : undefined, inset: fill ? 0 : undefined, fontSize: 12, background: '#ecece4' }}
     >
       <span aria-hidden="true" className="px-3 text-center font-mono text-lab-muted">No product image</span>
     </div>
