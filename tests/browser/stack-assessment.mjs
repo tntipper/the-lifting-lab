@@ -42,7 +42,7 @@ export async function verifyStackAssessment(page, origin, width, resultDir) {
   assert.match(await totals.innerText(), /20mg/)
   assert.match(await totals.innerText(), /\d+% UK adult reference intake/)
   assert.match(await totals.innerText(), /\d+% UL/)
-  assert.match(await totals.innerText(), /do not establish an effective or recommended dose/)
+  assert.match(await totals.innerText(), /do not establish a suitable or recommended dose/)
   assert.doesNotMatch(await totals.innerText(), /Hitting 100% RDA|RDA met|🎯/)
   const ul = totals.locator('span').filter({ hasText: /^\d+% UL$/ })
   assert.equal(await ul.evaluate(el => getComputedStyle(el).color),
