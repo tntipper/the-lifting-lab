@@ -1,3 +1,13 @@
+**16 October live-cart Round 9 — grok/live-cart; continued from b9657c5; local only:**
+- Files changed: components/ProductOfferLink.tsx, tests/live-cart.test.mjs, tests/browser/live-cart.mjs, .agent/HANDOVER.md.
+- Fixed grid slots omit visible legacy stock, retain it in link title/aria, and never put muted stock text on the dark button; non-grid layout and all caption wording/order unchanged.
+- Geometry: 44px non-shrinking link + 20px non-shrinking caption, zero gap = existing 64px slot; two 10px caption lines. Centre the text block within the caption so a single line's glyph rect cannot protrude above the slot (the likely 390px failure); wrapping still has the full 20px. No grid/tile dimensions changed.
+- Unit checks cover unchanged captions with/without stock, metadata-only grid stock, unchanged non-grid copy and grid-only opt-in; six-width SSR/mounted browser assertions follow the nested text range and reject muted stock inside links.
+- PASS typecheck; lint 0 errors/21 existing warnings; 56 focused tests; live-boundary/both manifests; git diff --check. Full npm test: 4,107 pass / 28 fail / 8 skip, matching Round 8 sandbox loopback/ps/Chromium/Python-temp/Docker failures. Hosted CI unrun.
+- Browser SSR fixtures PASS; Chromium launch denied MachPort bootstrap permission. Operator's b9657c5 run failed disclosure geometry at 390px; this fix's six-width run remains unverified, not a claimed pass.
+- Before enablement: operator runs node tests/browser/live-cart.mjs and takes actual /compare + /stack live-mode screenshots. Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; existing mapping/price prerequisites remain in Round 4.
+- Commit blocked in this sandbox: git add cannot create night/repo/.git/worktrees/wt-cart/index.lock (Operation not permitted); HEAD remains b9657c5, four files unstaged. Proposed commit: fix: keep grid disclosure in caption and stock off button. No env/Vercel/Shopify changes, external network actions or push.
+
 **16 October live-cart Round 8 — grok/live-cart; continued from 9b660c1; local only:**
 - Changed components/ProductOfferLink.tsx and app/products/ProductGrid.tsx: only the grid opts into fixedActionSlot; unchanged affiliate captions use 20px/two lines under a 44px link, stock inside the link; existing 64px slots/grid CSS unchanged.
 - Changed tests/live-cart.test.mjs, tests/variant-picker.test.mjs and tests/browser/live-cart.mjs: grid opt-in, stock/copy order, isolated-mode button absence, six-width SSR/mounted disclosure range/overflow assertions.

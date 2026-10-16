@@ -72,18 +72,21 @@ try {
     const disclosuresVisible = target => target.locator('[data-live-action-slot] [data-offer-caption]').evaluateAll(captions => {
       const affiliate = captions.filter(el => el.textContent.includes('affiliate link'))
       return affiliate.length === 3 && affiliate.every(el => {
-        const node = el.firstChild, start = node.textContent.indexOf('affiliate link')
+        const text = el.querySelector('span') ?? el
+        const node = text.firstChild, start = node.textContent.indexOf('affiliate link')
         const range = document.createRange()
         range.setStart(node, start); range.setEnd(node, start + 'affiliate link'.length)
         const slot = el.closest('[data-live-action-slot]').getBoundingClientRect()
-        const caption = el.getBoundingClientRect(), style = getComputedStyle(el)
+        const caption = el.getBoundingClientRect(), style = getComputedStyle(text)
         // Ranges retain geometry for clamped text: require the entire disclosure
         // to sit inside both the caption and slot, with no overflowing third line.
         const inside = (rect, bounds) => rect.top >= bounds.top - 0.5 && rect.bottom <= bounds.bottom + 0.5
           && rect.left >= bounds.left - 0.5 && rect.right <= bounds.right + 0.5
         return Array.from(range.getClientRects()).every(rect => inside(rect, caption) && inside(rect, slot))
-          && range.getClientRects().length > 0 && el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth
+          && range.getClientRects().length > 0 && text.scrollHeight <= text.clientHeight && text.scrollWidth <= text.clientWidth
           && style.textOverflow !== 'ellipsis'
+          && !el.closest('[data-offer-state]').querySelector('a .text-lab-muted')
+          && !el.closest('[data-offer-state]').querySelector('a').textContent.includes('In stock')
       })
     })
     assert.equal(await slotsFit(staticPage), true, `all server action slots fit at ${width}`)

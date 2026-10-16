@@ -264,23 +264,30 @@ test('compact offers navigate to the exact variant without a basket control; fla
   }
 })
 
-test('grid affiliate actions reserve 44px plus two caption lines, including legacy stock', () => {
+test('grid affiliate actions prioritise the unchanged disclosure and retain stock only in link metadata', () => {
   const urls = ['https://www.amazon.co.uk/dp/B000000001', 'https://www.myprotein.com/sports-nutrition/fixture/12345.html', 'https://www.bulk.com/uk/products/fixture/fixture']
   const Component = load('components/ProductOfferLink.tsx', { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }).default
   for (const buy_url of urls) for (const stock of [undefined, item().storePrice]) {
     const product = { id: '1', brand: 'Fixture', name: 'Item', buy_url, storePrice: stock }
     const html = renderToStaticMarkup(React.createElement(Component, { product, fixedActionSlot: true }))
     assert.match(html, /height:44px;min-height:44px;flex-shrink:0/)
-    assert.match(html, /h-5 line-clamp-2 leading-\[10px\]/)
+    assert.match(html, /flex h-5 shrink-0 items-center justify-center/)
+    assert.match(html, /line-clamp-2 leading-\[10px\]/)
     const caption = 'Unverified listing · check pack and price · affiliate link'
     assert.ok(html.includes(`title="${caption}"`))
     assert.ok(html.includes(caption))
     const normal = renderToStaticMarkup(React.createElement(Component, { product }))
     const legacy = renderToStaticMarkup(React.createElement(load('components/ProductOfferLink.tsx').default, { product }))
-    assert.equal(html.replace(/<[^>]*>/g, ''), legacy.replace(/<[^>]*>/g, ''))
+    assert.equal(html.replace(/<[^>]*>/g, ''), legacy.replace(/<[^>]*>/g, '').replace(stock ? 'In stock at TLL Store' : '', ''))
+    assert.equal(normal.replace(/<[^>]*>/g, ''), legacy.replace(/<[^>]*>/g, ''))
+    assert.doesNotMatch(html.match(/<a\b[^>]*>(.*?)<\/a>/s)?.[1] ?? '', /<span|In stock|text-lab-muted/)
     assert.doesNotMatch(normal, /line-clamp|truncate|height:44px|h-16|h-5/)
     assert.match(normal, /leading-tight/)
-    assert.equal((html.match(/In stock at TLL Store/g) ?? []).length, stock ? 1 : 0, 'stock appears once ahead of the action text')
+    if (stock) {
+      assert.match(html, /title="In stock at TLL Store"/)
+      assert.match(html, /aria-label="[^"]* · In stock at TLL Store"/)
+    }
+    assert.doesNotMatch(html.replace(/<[^>]*>/g, ''), /In stock at TLL Store/)
   }
 })
 

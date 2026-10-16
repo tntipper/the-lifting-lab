@@ -80,14 +80,14 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
       <a href={listing.url} target="_blank" rel={store ? 'noopener noreferrer' : 'noopener noreferrer nofollow sponsored'}
         className={`${className ?? ''} flex min-h-11 flex-col items-center justify-center px-2 text-center break-words`}
         style={fixedSlot ? { ...style, height: 44, minHeight: 44, flexShrink: 0, paddingTop: 0, paddingBottom: 0 } : style}
-        aria-label={`${store ? 'Buy at' : search ? 'Search' : 'View listing at'} ${listing.retailer} for ${product.brand} ${product.name} (opens in a new tab)`}
+        title={fixedSlot && stockText ? stockText : undefined}
+        aria-label={`${store ? 'Buy at' : search ? 'Search' : 'View listing at'} ${listing.retailer} for ${product.brand} ${product.name} (opens in a new tab)${fixedSlot && stockText ? ` · ${stockText}` : ''}`}
         onClick={() => track('retailer_listing_click', { retailer: listing.retailer ?? undefined, destination_state: listing.state })}>
-        {fixedSlot && stockText && <span className="text-[10px] font-normal normal-case leading-[10px] tracking-normal text-lab-muted">{stockText}</span>}
         {store ? (!liveCartEnabled() && storeBuyLinkMode === 'cart' && product.storePrice?.availableForSale === true ? storeActionLabel ?? 'Buy at TLL Store' : 'Buy at TLL Store') : search ? 'Search retailer ↗' : 'View retailer ↗'}
       </a>
-      <span className={`text-center text-[9px] text-lab-muted ${fixedSlot ? 'h-5 line-clamp-2 leading-[10px]' : 'leading-tight'}`}
+      <span className={`text-center text-[9px] text-lab-muted ${fixedSlot ? 'flex h-5 shrink-0 items-center justify-center' : 'leading-tight'}`}
         data-offer-caption title={fixedSlot ? caption : undefined}>
-        {caption}
+        {fixedSlot ? <span className="line-clamp-2 leading-[10px]">{caption}</span> : caption}
       </span>
     </span>)
   }
