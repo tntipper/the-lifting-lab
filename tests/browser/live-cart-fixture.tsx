@@ -28,7 +28,7 @@ function Fixture() {
     {window.location.pathname === '/cart' ? <LiveBasketContents /> : <>
       <section aria-label="Selected product" className="max-w-sm">
         <ProductVariantPicker productId="family" variants={choices} selected={selected} onChange={setSelectedId} />
-        <ProductOfferLink product={{ ...product('family'), storeLinkMapping: selected.mapping, storePrice: selected.storePrice }} variantLabel={selected.label} className="rounded-lg bg-black py-3 text-sm text-white" pickerOwnsStatus chooseAnother />
+        <ProductOfferLink product={{ ...product('family'), storeLinkMapping: selected.mapping, storePrice: selected.storePrice }} variantLabel={selected.label} storeCampaign="compare" className="rounded-lg bg-black py-3 text-sm text-white" pickerOwnsStatus chooseAnother />
       </section>
       <section aria-label="Unmapped"><ProductOfferLink product={{ id: 'unmapped', name: 'Unmapped', brand: 'Fixture', buy_url: null }} /></section>
       <section aria-label="Stack checkout"><BuyMyStack items={[{ ...product('stack', '2001'), quantity: 2 }]} ready /></section>

@@ -1,3 +1,14 @@
+**16 October production basket reviewer follow-up — grok/live-cart; on d20253c; local only:**
+- Saved lines now contain variant/product IDs, quantity, name/brand/label and shown price only; legacy baskets migrate without expiry checks.
+- Fresh approval/stock checks apply only at add time; saved checkout persists and shows an estimated total, with Shopify rechecking price/stock.
+- ProductOfferLink renders its existing link first, evaluates live eligibility after mount and preserves exact fallback/bordered unavailable states.
+- Basket checkout retains the last add's product/compare/stack campaign; live stack checkout clamps 10 packs/20 lines with an explanation.
+- Extended dependency checks to LiveBasket, /cart, ProductOfferLink and TopNav; browser fixture covers compare attribution/public storage shape.
+- PASS typecheck, lint (0 errors/21 existing warnings), 137 focused tests (12 live-cart), both manifest checks and diff check; CI unrun.
+- Browser bundles but Chromium startup fails: MachPortRendezvousServer bootstrap_check_in permission denied, SIGTRAP; layout proof remains blocked.
+- Full npm test: 4089 pass / 28 fail / 8 skip; same restricted socket/Chrome/process/Python/Docker-PG prerequisites as prior run. Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled.
+- d20253c exists; follow-up commit BLOCKED: git add cannot create shared .git/worktrees/wt-cart/index.lock (EPERM). Changes unstaged; no env/live writes/push. Next: commit and browser proof outside sandbox.
+
 **16 October production basket — grok/live-cart; base 3b3c507; local only:**
 - Enable with NEXT_PUBLIC_TLL_LIVE_CART=enabled; unset preserves defaults; staging/synthetic preview stay off.
 - Added commerce live-cart-mode/live-basket/cart-permalink + LiveBasket UI: versioned storage, 20 lines, qty 1–10, fresh approved variants only.

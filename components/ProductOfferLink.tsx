@@ -3,7 +3,7 @@
 import { liveCartEnabled } from '@/lib/commerce/live-cart-mode'
 import { liveBasketEligible } from '@/lib/commerce/live-basket'
 import { LiveBasketAdd } from './LiveBasket'
-import type { CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { DEFAULT_STORE_BUY_LINK_MODE, resolveProductOffer, type StoreBuyLinkMode } from '@/lib/affiliate'
 import type { StorePricePresentation } from '@/lib/commerce/store-price-products'
 import type { StoreLinkMapping, StoreVariantOption } from '@/lib/commerce/product-mapping'
@@ -28,6 +28,9 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
   storeCampaign?: StoreAttributionCampaign
 }) {
   const cart = useStagingCart()
+  // Match the server's existing link on hydration; fresh eligibility is checked after mount.
+  const [eligibilityTime, setEligibilityTime] = useState<number | null>(null)
+  useEffect(() => { if (liveCartEnabled()) setEligibilityTime(Date.now()) }, [product])
   const availability = catalogueAvailabilityFor({ id: product.id, cataloguePresentation: product.cataloguePresentation })
   if (pickerOwnsStatus && (availability || (product.storePrice && catalogueAvailabilityFor(product) !== 'available'))) {
     return <span data-offer-state="unavailable" className="text-xs text-lab-muted">
@@ -47,12 +50,9 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
     className={`${className ?? ''} flex min-h-11 items-center justify-center px-2 text-center`} style={style}>
     Choose flavour on product page
   </a>
-  if (liveCartEnabled() && product.id && product.storeLinkMapping) {
+  if (liveCartEnabled() && eligibilityTime !== null && product.id) {
     const item = { ...product, id: product.id, quantity: 1, variantLabel }
-    if (liveBasketEligible(item)) return <LiveBasketAdd product={item} className={className} style={style} showStock={!pickerOwnsStatus} />
-    return <span data-offer-state="unavailable" className="text-xs text-lab-muted">
-      {catalogueAvailabilityFor(product) === 'out_of_stock' ? 'Currently unavailable to buy' : 'TLL Store price and stock unavailable'}
-    </span>
+    if (liveBasketEligible(item, eligibilityTime)) return <LiveBasketAdd product={item} campaign={storeCampaign} className={className} style={style} showStock={!pickerOwnsStatus} />
   }
   const listing = resolveProductOffer(product, storeBuyLinkMode, storeCampaign)
   const stock = product.storePrice ? catalogueAvailabilityFor(product) : null
