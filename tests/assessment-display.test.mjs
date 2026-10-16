@@ -86,6 +86,35 @@ function fixture(rows = [make()], env = {}, loadedStack = false, showTotals = fa
 }
 const invalid = [null, undefined, 0, -1, 101, NaN, Infinity, -Infinity]
 const holds = ['cycle-support', 'liver-health', 'hormone-support', 'zma']
+
+test('shop hero opens the catalogue with ascending pack-price sorting', () => {
+  const f = fixture()
+  const html = f.html('components/ShopHero.tsx', { products: [make()] })
+  assert.match(html, /href="\/products\?sort=price"[^>]*>Shop by price<\/a>/)
+  assert.doesNotMatch(html, /Shop by score/)
+  const { sortScored } = f.load('lib/products.ts')
+  assert.deepEqual(Array.from(sortScored([make({ id: 'large', retail_price: 40 }), make({ id: 'small', retail_price: 10 })], 'price'), p => p.id), ['small', 'large'])
+})
+
+for (const [label, overrides, expected] of [
+  ['listed pack', { retail_price: 19.5 }, '£19.50'],
+  ['Shopify takes precedence', { retail_price: 99, storePrice: { price: 12.5 } }, '£12.50'],
+  ['missing Shopify never falls back', { retail_price: 99, storePrice: { price: null } }, null],
+  ...[null, 0, -1, NaN, Infinity].map(retail_price => [`unlisted ${retail_price}`, { retail_price }, null]),
+]) test(`catalogue and home cards show pack prices: ${label}`, () => {
+  const p = make(overrides), f = fixture([p])
+  for (const [file, props] of [
+    ['app/products/ProductGrid.tsx', { initialProducts: [p] }],
+    ['components/TopProductsTable.tsx', { products: [p] }],
+  ]) {
+    const html = f.html(file, props)
+    assert.match(html, p.storePrice ? /TLL Store price/ : /Listed price/)
+    if (expected) assert.ok(html.includes(expected), file)
+    else assert.match(html, /(?:Listed price|TLL Store price)<\/(?:span|div)><(?:b|div)[^>]*>(?:Price not listed|Not listed)<\/(?:b|div)>/)
+    assert.doesNotMatch(html, /£99\.00|£NaN|£Infinity|£0\.00|£-1\.00/)
+  }
+})
+
 for (const score of invalid) test(`unknown score ${String(score)} has no public endorsement`, () => {
   const p = make({ score }), f = fixture([p])
   const policy = f.load('lib/assessment-display.ts')

@@ -1,3 +1,13 @@
+**16 October shop-by-price and card pack prices — k-claude-design; start 25bfde5; Toby-approved; local only:**
+- Hero now says Shop by price and opens /products?sort=price (existing lowest-pack-price sort).
+- Catalogue and home cards explicitly prefer storePrice.price; missing store prices never fall back to retail_price.
+- Home rows show Listed price / TLL Store price in £x.xx or Price not listed; price slots are always rendered.
+- Catalogue copy, equal-height grid-auto-rows: 1fr and AGENTS.md T07 rule unchanged.
+- PASS lint (0 errors/21 existing warnings), typecheck, npm test (4100 pass/6 skip/0 fail), 58 final focused tests, diff check.
+- PASS offline Chrome mixed-price grid heights at 320/390/768/1024/1280/1440; evidence test-results/design-ci/price-* (ignored).
+- Full suite used owned network-none PostgreSQL prerequisites; disposable fixture removed. Hosted CI unrun; gh unsigned.
+- Next: review local commit; no push/merge/deploy/live writes; no blockers.
+
 **15 October overnight neutral labels + footer — k-claude-design; start 4b1baa6; local only:**
 - Neutralised caffeine heading, comparison Yes cells, combination badges/count and side-effects filter/badges.
 - Kept technical classification keys, medical guidance, catalogue copy, SEO metadata and structured data unchanged.

@@ -19,6 +19,7 @@ export default function TopProductsTable({ products }: { products: ScoredProduct
       {rows.length === 0 && <p className="p-6 text-sm">Product records are currently unavailable. Please check again later.</p>}
       {rows.map((product, index) => {
         const assessment = assessmentDisplayFor(product)
+        const packPrice = product.storePrice ? product.storePrice.price : product.retail_price
         const score = assessment.score
         const band = score !== null && score < 50 ? styles.low : score !== null && score < 70 ? styles.mid : ''
         return <article key={product.id} className={styles.row}>
@@ -34,6 +35,8 @@ export default function TopProductsTable({ products }: { products: ScoredProduct
               {score} / 100 <small>{score >= 70 ? 'Strong' : score >= 50 ? 'Moderate' : 'Weak'}</small>
             </span> : <span className={styles.note}>{assessment.label}</span>}
             <div className={styles.price}>
+              <div className={`${styles.priceLabel} whitespace-nowrap`}>{product.storePrice ? 'TLL Store price' : 'Listed price'}</div>
+              <div className={`${styles.priceValue} whitespace-nowrap`}>{typeof packPrice === 'number' && Number.isFinite(packPrice) && packPrice > 0 ? `£${packPrice.toFixed(2)}` : 'Price not listed'}</div>
               <div className={styles.priceLabel}>Listed / serving</div>
               <div className={styles.priceValue}>{product.cost_per_serving !== null ? formatListedServingPrice(product.cost_per_serving) : 'Unavailable'}</div>
             </div>

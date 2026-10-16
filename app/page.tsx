@@ -60,7 +60,7 @@ export default async function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonForHtml(websiteLd) }} />
       <TopNav />
 
-      <ShopHero products={products} shopHref="/products" />
+      <ShopHero products={products} />
 
       <main className={styles.main}>
         <section aria-labelledby="category-heading" className={styles.section}>

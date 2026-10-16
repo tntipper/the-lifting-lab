@@ -17,7 +17,7 @@ function lowestListed(products: ScoredProduct[], categories: string[]) {
     .sort((a, b) => (a.cost_per_serving ?? Infinity) - (b.cost_per_serving ?? Infinity))[0] ?? null
 }
 
-export default function ShopHero({ products, shopHref = '#shop-products' }: { products: ScoredProduct[]; shopHref?: string }) {
+export default function ShopHero({ products, shopHref = '/products?sort=price' }: { products: ScoredProduct[]; shopHref?: string }) {
   return <section className={styles.hero} aria-labelledby="home-heading">
     <div className={styles.heroInner}>
       <div className={styles.heroCopy}>
@@ -25,7 +25,7 @@ export default function ShopHero({ products, shopHref = '#shop-products' }: { pr
         <h1 id="home-heading">Compare the dose. Then buy it in the same basket.</h1>
         <p>Compare recorded serving amounts and listed UK prices in one place, then keep your chosen products together in one Lifting Lab account.</p>
         <div className={styles.actions}>
-          <Link href={shopHref} className={`${styles.button} ${styles.primary}`}>Shop by score</Link>
+          <Link href={shopHref} className={`${styles.button} ${styles.primary}`}>Shop by price</Link>
           <a href="#method" className={styles.button}>How we score</a>
         </div>
       </div>

@@ -315,7 +315,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 </div>
                 <div className="min-w-0">
                   <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">{product.storePrice ? 'TLL Store price' : 'Listed price'}</span>
-                  <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{formatMoney(product.retail_price)}</b>
+                  <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{formatMoney(product.storePrice ? product.storePrice.price : product.retail_price)}</b>
                 </div>
               </div>
 
