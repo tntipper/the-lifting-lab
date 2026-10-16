@@ -129,6 +129,10 @@ test('real product page renders caffeine and age warnings even while claims are 
 
 test('footer links resolve to all five policy/contact pages', () => {
   const html = htmlFor('components/SiteFooter.tsx')
+  assert.match(html, /THE LIFTING LAB LTD · Company no. 17497631/)
+  assert.match(html, /href="\/guide"/)
+  assert.match(html, /https:\/\/www.instagram.com\/theliftinglabuk\//)
+  assert.match(html, /https:\/\/www.tiktok.com\/@theliftinglab/)
   for (const route of ['refunds', 'delivery', 'privacy', 'terms', 'contact']) {
     assert.ok(existsSync(resolve(root, `app/${route}/page.tsx`)))
     assert.match(html, new RegExp(`href="/${route}"`))

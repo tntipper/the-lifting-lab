@@ -351,3 +351,20 @@ test('S05 comparison and stack pages pass their context to every store offer', (
   assert.equal(calls.length, 2)
   for (const call of calls) assert.ok(call.includes("DEFAULT_STORE_BUY_LINK_MODE, 'stack'"))
 })
+
+
+test('card/detail Coming soon is inert and uses the exact normal action classes and style', () => {
+  const Component = storeComponent(enabledAffiliate)
+  const props = { comingSoonWhenNotSold: true, className: 'fixture-buy w-full py-3', style: { borderRadius: 8 } }
+  const html = product => renderToStaticMarkup(React.createElement(Component, { ...props, product }))
+  const sellable = html(storeProduct)
+  for (const buy_url of [null, storeProduct.buy_url, 'https://shop.theliftinglab.co.uk/products/legacy']) {
+    const unavailable = html({ ...storeProduct, buy_url, storeLinkMapping: null })
+    assert.match(unavailable, /<button[^>]*disabled=""[^>]*aria-disabled="true"/)
+    assert.match(unavailable, />Coming soon<\/button>/)
+    assert.doesNotMatch(unavailable, /<a\b|href=/)
+    assert.equal(unavailable.match(/<button[^>]*class="([^"]+)"/)[1], sellable.match(/<a[^>]*class="([^"]+)"/)[1])
+    assert.equal(unavailable.match(/style="([^"]+)"/)[1], sellable.match(/style="([^"]+)"/)[1])
+  }
+  assert.equal(sellable, renderToStaticMarkup(React.createElement(Component, { ...props, comingSoonWhenNotSold: false, product: storeProduct })))
+})

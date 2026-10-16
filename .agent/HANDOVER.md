@@ -1,3 +1,24 @@
+**16 October Informed Sport inline icon + True Cost investigation — grok/guides-footer-fix; base main 3b3c507; local only:**
+- Preserved all prior uncommitted guides/footer/Coming soon/advisory changes and g-run scripts.
+- Replaced catalogue certification bar/detail badge with a small shield/check beside brand; also home/saved cards.
+- Focusable trigger supports hover/tap, native Enter/Space, Escape and focus-within; optional public source URL supported.
+- Current product data has only the flag, no certification URL/asset; no source link invented or DB columns requested.
+- Icon fits brand line; popup is absolute; existing equal-height grid rules retained. Browser fixture covers heights/interactions.
+- PASS 181 focused Node tests, tsc --noEmit, lint (0 errors/21 existing warnings), diff check; stale Coming soon assertions updated.
+- Browser verification blocked: Chrome launch SIGABRT in sandbox. Hosted CI unrun; gh unsigned; no commit/push/deploy.
+- True Cost unchanged: ProductGrid.tsx:311/316 both use cost_per_serving; products.ts:60–64 = displayPrice / labelled servings.
+- Correct listed-serving arithmetic, not effective-dose cost (home method explains review hold); shipping excluded. Next: visual QA.
+
+**16 October guides/footer and advisory UI — grok/guides-footer-fix; base main 3b3c507; local only:**
+- Added Guides to desktop/compact/mobile navigation, footer and home method links; legacy /guides routes use explicit 301s.
+- Compacted footer padding/logo/link groups; retained legal/social links; added company number 17497631.
+- Unmapped card/detail offers show inert Coming soon with shared buy classes/style; mapped/stock/held offer behaviour retained.
+- Caffeine advisory moved beside label values as a hover/tap/keyboard popup; wording/source and legal warnings unchanged.
+- PASS 211 focused Node tests; tsc --noEmit; lint (0 errors/21 existing warnings); git diff --check.
+- Browser fixture added: sandbox blocked local listen (EPERM) and Chrome launch (SIGABRT); visual dimensions remain unverified.
+- Next: run TEST_BROWSER_CHANNEL=chrome node tests/browser/guides-footer.mjs outside sandbox; hosted CI unrun; gh unsigned.
+- No commit/push/deploy; brand copy, equal-height grid CSS and lib/assessment-display.ts untouched; unrelated g-run*.sh left alone.
+
 **16 October vs reviewer build follow-up — grok/store-offer-price-fix; start 722e42e; local only:**
 - getMatchup now calls unstable_rethrow(error) before its null fallback, matching product-data.ts.
 - display-price uses @/lib/products; typecheck passes. Refreshed only the manifest source-tree hash.

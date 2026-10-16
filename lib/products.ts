@@ -17,6 +17,8 @@ export type Product = {
   servings_per_container: number | null
   image_url: string | null
   informed_sport: boolean | null
+  /** Optional public certification evidence URL; current catalogue rows have only the flag. */
+  informed_sport_source_url?: string | null
   retail_price: number | null
   buy_url: string | null
   proprietary_blend: boolean | null

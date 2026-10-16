@@ -1,5 +1,7 @@
 'use client'
 
+import InformedSportIcon from '@/components/InformedSportIcon'
+
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -8,7 +10,6 @@ import FavouriteButton from '@/components/FavouriteButton'
 import MethodologyModal from '@/components/MethodologyModal'
 import ShopScoreBadge from '@/components/ShopScoreBadge'
 import ServingLabel from '@/components/ServingLabel'
-import GuidanceNote from '@/components/GuidanceNote'
 import styles from '@/components/shop.module.css'
 import ProductImage from '@/components/ProductImage'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -290,7 +291,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
 
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">{product.brand}</p>
+                  <div className={styles.brandLine}><p className="truncate text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">{product.brand}</p><InformedSportIcon certified={product.informed_sport} sourceUrl={product.informed_sport_source_url} /></div>
                   <Link href={`/products/${product.id}`} className={`${styles.cardTitle} mt-0.5 flex min-h-11 items-center text-[17px] font-semibold leading-6 text-[var(--ink)] hover:underline`}>
                     {product.name}
                   </Link>
@@ -331,10 +332,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <dd className="m-0 text-right font-medium text-[var(--ink)]">{assessment.label}</dd>
               </dl>
 
-              <GuidanceNote nutrients={nutrients} />
               <ServingLabel nutrients={nutrients} />
-
-              {product.informed_sport && <p className="rounded bg-[var(--score-high-bg)] px-2 py-1 text-xs font-semibold text-[var(--score-high)]">Informed Sport certified</p>}
 
               {reviews && reviews.count > 0 && (
                 <div className="space-y-1 border-t border-lab-border pt-3">
@@ -347,7 +345,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               )}
 
               <div className={`${styles.cardActions} flex flex-col gap-3`}>
-                <ProductOfferLink product={product} storeActionLabel="Add to basket"
+                <ProductOfferLink comingSoonWhenNotSold product={product} storeActionLabel="Add to basket"
                   className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
 
                 <div className="grid grid-cols-2 gap-2">

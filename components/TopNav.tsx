@@ -21,6 +21,7 @@ const SHOP_LINKS = [
 ]
 
 const MORE_LINKS = [
+  { href: '/guide', label: 'Guides' },
   { href: '/best', label: 'Research' },
   { href: '/value', label: 'Value review' },
   { href: '/deals', label: 'Deals' },
@@ -51,6 +52,7 @@ function ShopNavigation({ pathname, query }: { pathname: string; query?: URLSear
       const active = pathname.startsWith('/products') && (index === 0 ? !selected : selected === (target.searchParams.get('category') || target.searchParams.get('group')))
       return <Link key={href} href={href} aria-label={index === 0 ? 'Browse' : undefined} aria-current={active ? 'page' : undefined} className={`tll-nav-item ${active ? 'is-active' : ''}`}>{label}</Link>
     })}
+    <Link href="/guide" aria-current={pathname.startsWith('/guide') ? 'page' : undefined} className="tll-nav-item">Guides</Link>
     <a href="https://www.trylift.app" target="_blank" rel="noopener" className="tll-nav-item tll-lift-link">LIFT App ↗</a>
   </nav>
 }
@@ -93,6 +95,7 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
           <Link href="/stack" aria-current={pathname === '/stack' ? 'page' : undefined} className={`tll-nav-item ${pathname === '/stack' ? 'is-active' : ''}`}>Stack builder</Link>
           <Link href="/sources" aria-current={pathname === '/sources' ? 'page' : undefined} className={`tll-nav-item ${pathname === '/sources' ? 'is-active' : ''}`}>Research sources</Link>
           <Link href="/products" className="tll-nav-item">Shop</Link>
+          <Link href="/guide" className="tll-nav-item">Guides</Link>
           <a href="https://www.trylift.app" target="_blank" rel="noopener" className="tll-nav-item tll-lift-link">LIFT App ↗</a>
         </nav> : <>
           <div className="order-2 flex w-full items-center gap-2 sm:order-none sm:ml-auto sm:w-auto">

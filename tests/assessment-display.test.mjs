@@ -129,7 +129,7 @@ for (const score of invalid) test(`unknown score ${String(score)} has no public 
     assert.match(html, /Not assessed/, file)
     assert.match(html, /Research formula/, file)
     assert.doesNotMatch(html, /🥇|🥈|🥉|Top Pick|Best rated|wins on|Excellent dosing|Good dosing|Below effective dose|full 5g effective|Green = meets dose|ATP resynthesis/, file)
-    assert.match(html, /Shop offer under review/, 'Assessment changes must not release own-shop holds')
+    assert.match(html, file === 'app/compare/CompareView.tsx' ? /Shop offer under review/ : /Coming soon/, 'Assessment changes must not release own-shop holds')
   }
 })
 for (const category of holds) test(`${category} withholds historical values without awards or dose flags`, async () => {
@@ -432,7 +432,7 @@ for (const surface of ['grid', 'detail', 'compare', 'best', 'stack']) {
   })
 }
 
-test('T06 grid renders ten mapped products with their exact variant destinations plus an affiliate fallback', () => {
+test('T06 grid renders ten mapped products with exact variant destinations and an inert unmapped offer', () => {
   const products = Array.from({ length: 10 }, (_, index) => {
     const id = `mapped-${index}`
     return make({ id, name: `Mapped fixture ${index}`, buy_url: null,
@@ -442,8 +442,8 @@ test('T06 grid renders ten mapped products with their exact variant destinations
   const html = fixture(products, { NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled' }).html('app/products/ProductGrid.tsx', { initialProducts: products })
   for (let index = 0; index < 10; index++) assert.ok(html.includes(`href="https://shop.theliftinglab.co.uk/products/fixture-${index}?variant=${1001 + index}&amp;utm_source=theliftinglab&amp;utm_medium=referral&amp;utm_campaign=product&amp;ref=theliftinglab"`))
   assert.equal((html.match(/>Buy at TLL Store<\/a>/g) || []).length, 10)
-  assert.match(html, /View retailer/)
-  assert.match(html, /href="https:\/\/www.amazon.co.uk\/dp\/B000000001\?tag=theliftinglab-21"/)
+  assert.match(html, /disabled=""[^>]*>Coming soon<\/button>/)
+  assert.doesNotMatch(html, /href="https:\/\/www.amazon.co.uk\/dp\/B000000001/)
 })
 
 test('stack renders vitamin C guidance and iron safe level in totals and caution flags', () => {
@@ -581,5 +581,23 @@ test('links on / prices off: detail size and multi-variant projections never res
   ]) {
     const html = f.html('app/products/[id]/ProductDetailPage.tsx', { product, related: [] })
     assert.doesNotMatch(html, /£99\.00|£4\.95/)
+  }
+})
+
+
+test('certification appears beside the brand on cards and detail, without a full-width badge', () => {
+  for (const [file, props] of [
+    ['app/products/ProductGrid.tsx', p => ({ initialProducts: [p] })],
+    ['app/products/[id]/ProductDetailPage.tsx', p => ({ product: p, related: [] })],
+    ['components/FavouriteCard.tsx', p => ({ product: p })],
+    ['components/TopProductsTable.tsx', p => ({ products: [p] })],
+  ]) {
+    const p = make({ informed_sport: true, informed_sport_source_url: 'https://example.com/certification' })
+    const html = fixture([p]).html(file, props(p))
+    assert.match(html, /brandLine[^]*?Fixture<\/[^>]+><span[^]*?aria-label="Informed Sport certified"/)
+    assert.match(html, /href="https:\/\/example.com\/certification"/)
+    assert.doesNotMatch(html, /IS Certified|<p[^>]*>Informed Sport certified<\/p>/)
+    const uncertified = make({ informed_sport: false })
+    assert.doesNotMatch(fixture([uncertified]).html(file, props(uncertified)), /aria-label="Informed Sport certified"/)
   }
 })

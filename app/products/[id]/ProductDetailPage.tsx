@@ -1,4 +1,6 @@
 'use client'
+
+import InformedSportIcon from '@/components/InformedSportIcon'
 import { displayPrice, isStoreOffer } from '@/lib/commerce/display-price'
 import { formatListedServingPrice } from '@/lib/products'
 
@@ -17,6 +19,8 @@ import ProductSizePicker from '@/components/ProductSizePicker'
 import { productForSize, selectProductSize, sizeSelectionUrl } from '@/lib/commerce/size-selection'
 import ProductVariantPicker from '@/components/ProductVariantPicker'
 import { flavourSlug, variantSelectionUrl } from '@/lib/commerce/variant-selection'
+import GuidanceNote from '@/components/GuidanceNote'
+import { SHOP_GUIDANCE } from '@/lib/shop-guidance'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { amazonSearch, bulkSearch } from '@/lib/affiliate'
 import { isSyntheticPreview } from '@/lib/preview-mode'
@@ -149,23 +153,18 @@ export default function ProductDetailPage({
             <ShopScoreBadge product={product} />
           </div>
           <div className={styles.detailIntro}>
-            <Link
+            <div className={styles.brandLine}><Link
               href={`/brand/${brandSlug(product.brand)}`}
               className="text-lab-muted text-xs uppercase tracking-widest hover:text-lab-lime transition-colors"
             >
               {product.brand}
-            </Link>
+            </Link><InformedSportIcon certified={product.informed_sport} sourceUrl={product.informed_sport_source_url} /></div>
             <h1 className="tll-display">{product.name}</h1>
             <ClaimsReviewNotice category={product.category} />
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                 {categoryLabel(product.category)}
               </span>
-              {product.informed_sport && (
-                <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
-                  IS Certified
-                </span>
-              )}
               {product.protein_yield != null && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                   {product.protein_yield}% protein yield
@@ -245,7 +244,7 @@ export default function ProductDetailPage({
                       )}
                       <span className="text-white/80">{n.nutrient_name}</span>
                     </div>
-                    <span className="font-mono font-semibold text-white ml-2 shrink-0">{n.amount}{n.unit}</span>
+                    <span className="font-mono font-semibold text-white ml-2 shrink-0">{n.amount}{n.unit}{i === product.nutrients.findIndex(row => SHOP_GUIDANCE.caffeine.match.test(row.nutrient_name)) && <GuidanceNote nutrients={product.nutrients} />}</span>
                   </div>
                 )
               })}
@@ -340,7 +339,7 @@ export default function ProductDetailPage({
           <div className="min-w-0 space-y-2">
             {size && <ProductSizePicker options={sizes} selected={size} onChange={changeSize} price={product.retail_price} />}
             {!sizeOwnsOffer && selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
-            <ProductOfferLink
+            <ProductOfferLink comingSoonWhenNotSold
               product={product}
               pickerOwnsStatus={!sizeOwnsOffer && !!selected} chooseAnother={sizeOwnsOffer ? sizes.length > 1 : variants.length > 1}
               className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"

@@ -1,3 +1,5 @@
+import InformedSportIcon from '@/components/InformedSportIcon'
+import shopStyles from '@/components/shop.module.css'
 import Link from 'next/link'
 import { formatListedServingPrice, type ScoredProduct } from '@/lib/products'
 import { assessmentDisplayFor } from '@/lib/assessment-display'
@@ -27,7 +29,7 @@ export default function TopProductsTable({ products }: { products: ScoredProduct
           <div className={styles.productName}>
             <span className={styles.rank}>{String(index + 1).padStart(2, '0')}</span>
             <div>
-              <div className={styles.brand}>{product.brand}</div>
+              <div className={shopStyles.brandLine}><div className={styles.brand}>{product.brand}</div><InformedSportIcon certified={product.informed_sport} sourceUrl={product.informed_sport_source_url} /></div>
               <h3>{product.name}</h3>
             </div>
           </div>

@@ -86,7 +86,10 @@ export default async function Home() {
             ))}
           </div>
           <p className={styles.note}>This describes the scoring method. Approved effectiveness assessments are currently unavailable; listed serving costs are shown until reviews are complete.</p>
-          <Link href="/methodology" className={styles.textLink}>Read the full method</Link>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <Link href="/methodology" className={styles.textLink}>Read the full method</Link>
+            <Link href="/guide" className={styles.textLink}>Explore supplement guides</Link>
+          </div>
         </section>
       </main>
 

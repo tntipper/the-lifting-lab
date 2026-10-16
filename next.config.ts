@@ -8,6 +8,8 @@ assertPreviewIsolation(process.env);
 const nextConfig: NextConfig = {
   async redirects() {
     return [
+      { source: "/guides", destination: "/guide", statusCode: 301 },
+      { source: "/guides/:slug", destination: "/guide/:slug", statusCode: 301 },
       ...PRODUCT_SIZE_REDIRECTS,
       ...draftProductRedirects(),
       {
