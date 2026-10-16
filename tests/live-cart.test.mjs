@@ -201,3 +201,23 @@ test('stale add keeps refresh guidance and status truncates inside the reserved 
   const html = renderToStaticMarkup(React.createElement(Status, { product: item() }))
   assert.match(html, /role="status" title="This offer is unavailable. Refresh the product page." class="absolute inset-0 truncate"/)
 })
+
+test('approved mapping alone permits exact product navigation; invalid mappings preserve affiliate path', () => {
+  const live = load('lib/affiliate.ts', { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' })
+  const { isTllSoldProduct } = load('lib/commerce/live-cart-mode.ts')
+  const mapped = { ...item(), storePrice: undefined, buy_url: null }
+  assert.match(live.resolveProductOffer(mapped).url, /products\/fixture\?variant=1&/)
+  for (const change of [{ approved: false }, { productId: 'other' }, { shopifyVariantId: 'bad' },
+    { review: { ...mapped.storeLinkMapping.review, expiresAtMs: now - 1 } }]) {
+    const product = { ...mapped, storeLinkMapping: { ...mapped.storeLinkMapping, ...change }, buy_url: 'https://www.amazon.co.uk/dp/B000000001' }
+    assert.equal(isTllSoldProduct(product), false)
+    assert.equal(JSON.stringify(live.resolveProductOffer(product)), JSON.stringify(live.resolveProductListing(product.buy_url)))
+  }
+})
+test('pre-hydration store navigation never uses an Add to basket link label', () => {
+  const Component = load('components/ProductOfferLink.tsx', { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }).default
+  const html = renderToStaticMarkup(React.createElement(Component, { product: { ...item(), buy_url: null }, storeActionLabel: 'Add to basket' }))
+  assert.match(html, /Buy at TLL Store/)
+  assert.doesNotMatch(html, /Add to basket/)
+  assert.match(html, /products\/fixture\?variant=1/)
+})

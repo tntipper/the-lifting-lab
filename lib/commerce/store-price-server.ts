@@ -1,3 +1,4 @@
+import { liveCartEnabled } from './live-cart-mode'
 import { connection } from 'next/server'
 import { isIsolatedEnvironment } from '../preview-mode'
 import { createStorefrontPriceReader } from './storefront-prices'
@@ -9,7 +10,7 @@ let configured: { shop: string; token: string; read: ReturnType<typeof createSto
 
 /** Server loaders only: no token or supplier fields enter browser product data. */
 export async function withStorePrices<T extends Product>(products: T[], options: { readMappings?: StoreMappingReader; now?: number } = {}): Promise<T[]> {
-  const enabled = !isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled'
+  const enabled = !isIsolatedEnvironment() && (process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled' || liveCartEnabled())
   if (!enabled) return products
   // Exclude the page cache too, including requests served by the in-memory cache.
   await connection()

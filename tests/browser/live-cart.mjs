@@ -57,6 +57,16 @@ try {
     assert.deepEqual(after, before, `grid dimensions unchanged at ${width}`)
     assert.equal(await page.getByRole('region', { name: 'Unmapped', exact: true }).getByRole('button').count(), 0)
     assert.equal(await page.locator('article[data-product-id="3"]').getByRole('button', { name: 'Add to basket', exact: true }).count(), 0)
+    const card = page.locator('article[data-product-id="1"]')
+    await card.getByRole('button', { name: 'Add to basket', exact: true }).click()
+    await card.getByRole('status').getByRole('link', { name: 'Added to basket', exact: true }).waitFor()
+    assert.deepEqual(await dimensions(), after, `card notice preserves dimensions at ${width}`)
+    const contained = await card.locator('[data-offer-state=live_basket]').evaluate(el => {
+      const bounds = el.getBoundingClientRect(), button = el.querySelector('button').getBoundingClientRect()
+      return button.top >= bounds.top && button.bottom <= bounds.bottom && button.right <= bounds.right
+    })
+    assert.equal(contained, true, `live action stays within original area at ${width}`)
+    await page.evaluate(() => { localStorage.removeItem('tll.live-basket.v1'); window.dispatchEvent(new Event('tll-live-basket-changed')) })
     const selected = page.getByRole('region', { name: 'Selected product' })
     await selected.getByLabel('Flavour / size', { exact: true }).selectOption('1002')
     await selected.getByRole('combobox', { name: /Pack quantity/ }).selectOption('3')

@@ -1,4 +1,6 @@
 'use client'
+
+import { liveCartEnabled } from '@/lib/commerce/live-cart-mode'
 import { displayPrice, isStoreOffer } from '@/lib/commerce/display-price'
 import { formatListedServingPrice } from '@/lib/products'
 
@@ -94,7 +96,7 @@ export default function ProductDetailPage({
   const sizeOwnsOffer = !!size && (sizes.length > 1 || variants.length <= 1)
   const baseProduct = size ? productForSize(originalProduct, size, sizeReady) : originalProduct
   const variantProduct = selected ? { ...baseProduct, storeVariants: undefined,
-    storeLinkMapping: selectionReady ? selected.mapping : null, storePrice: selected.storePrice, buy_url: null,
+    storeLinkMapping: selectionReady || liveCartEnabled() ? selected.mapping : null, storePrice: selected.storePrice, buy_url: null,
     retail_price: selected.storePrice?.price ?? null,
     // Catalogue serving counts do not establish the selected variant's pack servings.
     cost_per_serving: variants.length === 1 ? baseProduct.cost_per_serving : null } : baseProduct

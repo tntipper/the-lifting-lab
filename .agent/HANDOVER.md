@@ -1,3 +1,14 @@
+**16 October live-cart Round 4 — grok/live-cart; continued from dea270a; local only:**
+- Commit dea270a and subsequent commits are made by the operator; older commit-blocked notes below are historical, superseded by the existing commits.
+- Changed LiveBasket/ProductOfferLink action sizing, affiliate/shared store-product-link, live-cart-mode, store-price-server and detail variant projection.
+- Live controls/status occupy the original inert action footprint; fresh mappings without prices retain exact variant links; invalid mappings retain affiliate routing.
+- Production target only, not Preview: NEXT_PUBLIC_TLL_LIVE_CART=enabled; mapping reads need SUPABASE_SERVICE_ROLE_KEY and existing NEXT_PUBLIC_SUPABASE_URL.
+- Live price/stock for Add to basket: NEXT_PUBLIC_TLL_STORE_PRICES=enabled + TLL_STOREFRONT_SHOP + TLL_STOREFRONT_PRIVATE_TOKEN; STORE_LINKS is optional.
+- Extended live-cart, mapping-loader, variant-picker unit tests and six-width browser fixture; refreshed activation manifest source hash/count only.
+- PASS typecheck, lint (0 errors/21 existing warnings), 202 focused tests, live-boundary and both manifest checks; hosted CI unrun.
+- Browser bundles, but Chromium startup fails with MachPortRendezvousServer bootstrap_check_in permission denied; six-width layout verification needs operator rerun.
+- Git add cannot create shared .git/worktrees/wt-cart/index.lock (EPERM); operator must commit and rerun browser test. No env/network/Shopify/Vercel changes or push.
+
 **16 October live-cart Round 3 — grok/live-cart; starting commit 72a2c61; local only:**
 - Operator made commits d20253c and 72a2c61; earlier commit-blocked notes below describe those runs, not current history.
 - Live opt-in now resolves approved fresh available mappings to exact variant product links without STORE_LINKS; adds strict attributed shop product fallback.

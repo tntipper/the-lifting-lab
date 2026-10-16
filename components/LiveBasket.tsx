@@ -41,22 +41,22 @@ export function LiveBasketAdd({ product, className, style, showStock = true, cam
 }) {
   const [quantity, setQuantity] = useState(1)
   const [notice, setNotice] = useState('')
-  return <span className="flex min-w-0 flex-col justify-center gap-1" data-offer-state="live_basket">
-    {showStock && <span className="text-center text-[10px] text-lab-muted">In stock at TLL Store</span>}
-    <span className="flex min-w-0 items-stretch gap-1">
+  return <span className="relative flex h-full min-w-0 flex-col justify-center" data-offer-state="live_basket">
+    {showStock && <span className="pointer-events-none absolute left-11 right-0 top-0 z-10 truncate text-center text-[10px] leading-tight text-lab-muted">In stock at TLL Store</span>}
+    <span className="relative flex h-full min-w-0 items-stretch gap-1">
       <select aria-label={`Pack quantity for ${product.brand} ${product.name}`} value={quantity}
         onChange={event => { setQuantity(Number(event.target.value)); setNotice('') }}
-        className="min-h-11 w-12 shrink-0 rounded-lg border border-lab-border bg-white text-xs text-black">
+        className="absolute inset-y-0 left-0 h-full min-h-11 w-10 rounded-lg border border-lab-border bg-white text-xs text-black">
         {Array.from({ length: 10 }, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
       </select>
-      <button type="button" className={`${className ?? ''} flex min-h-11 min-w-0 flex-1 items-center justify-center px-2 text-center`} style={style}
+      <button type="button" className={`${className ?? ''} flex min-h-11 min-w-0 flex-1 items-center justify-center pl-11 pr-1 text-center whitespace-nowrap`} style={style}
         onClick={() => {
           if (!liveCartEnabled()) return
           try { writeBasket(addBasketLine(readBasket(), { ...product, quantity }), campaign); setNotice('Added to basket') }
           catch (error) { setNotice(error instanceof Error && (error.message.startsWith('Maximum') || error.message === 'This offer is unavailable. Refresh the product page.') ? error.message : 'Basket unavailable. Refresh the product page and allow browser storage.') }
         }}>Add to basket</button>
     </span>
-    <span className="relative min-w-0 text-center text-[9px] leading-tight text-lab-muted">
+    <span className="absolute left-11 right-0 bottom-0 min-w-0 truncate text-center text-[9px] leading-tight text-lab-muted">
       <span className={notice ? 'invisible' : undefined}>In stock · price and stock checked within 15 minutes</span>
       <span role="status" title={notice || undefined} className="absolute inset-0 truncate">{notice && <Link href="/cart">{notice}</Link>}</span>
     </span>

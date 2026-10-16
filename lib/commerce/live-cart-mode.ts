@@ -1,3 +1,5 @@
+import { buildStoreProductLink } from './store-product-link'
+import type { StoreLinkMapping } from './product-mapping'
 import { isIsolatedEnvironment } from '../preview-mode'
 
 /** Public build-time opt-in. Hosted staging always owns its separate cart. */
@@ -12,6 +14,6 @@ export function liveStoreProductUrl(value: unknown): string | null {
 }
 
 /** Shared sold-product classification; does not change the non-sold render path. */
-export function isTllSoldProduct(product: { buy_url?: string | null; storeLinkMapping?: unknown }): boolean {
-  return Boolean(product.storeLinkMapping) || liveStoreProductUrl(product.buy_url) !== null
+export function isTllSoldProduct(product: { id?: string; buy_url?: string | null; storeLinkMapping?: StoreLinkMapping | null }): boolean {
+  return Boolean(buildStoreProductLink(product.id, product.storeLinkMapping, Date.now(), { mode: 'product_page' })) || liveStoreProductUrl(product.buy_url) !== null
 }
