@@ -27,7 +27,7 @@ export async function verifyRankings(page, origin, width, resultDir) {
         for (const id of ['legacy-high', 'legacy-value']) {
           const legacy = page.locator(`[data-product-id="${id}"]`)
           assert.match(await legacy.innerText(), /Under review/); assert.doesNotMatch(await legacy.innerText(), /80\/100|60\/100|80%|60%/)
-          assert.equal(await legacy.locator('[data-assessment="legacy"]').count(), 1)
+          assert.equal(await legacy.locator('[data-assessment="under_review"]').count(), 1)
         }
       }
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Rankings overflow ${width}/${sort}`)
