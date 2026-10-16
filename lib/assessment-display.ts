@@ -10,7 +10,6 @@ type ReviewedAssessment = {
   compliance_reviewer: 'Oath'
   compliance_date: string
   source_url?: string
-  value_led?: boolean
   notes: string
 }
 
@@ -27,7 +26,6 @@ function validRecord(value: unknown): value is ReviewedAssessment {
     && typeof row.score === 'number' && Number.isFinite(row.score) && row.score >= 1 && row.score <= 100
     && row.science_reviewer === 'Assay' && validDate(row.science_date)
     && row.compliance_reviewer === 'Oath' && validDate(row.compliance_date)
-    && (row.value_led === undefined || typeof row.value_led === 'boolean')
     && typeof row.notes === 'string'
 }
 
@@ -45,7 +43,8 @@ export function assessmentDisplayFor(product: AssessmentInput) {
   const review = claimsReviewFor(product.category)
   const record = approvedAssessment(product)
   if (!record) return {
-    state: 'under_review' as const, score: null, label: 'Under review', complianceDate: null, sourceUrl: null, valueLed: false,
+    state: 'under_review' as const, score: null, label: 'Under review', complianceDate: null, sourceUrl: null,
+    suppressed: product.id === 'a0fc6933-db03-4c34-a446-a9f89515a206',
     explanation: review
       ? `${review.title}. Existing score is not a validated health-benefit assessment.`
       : 'Under review — no assessment signed off by both Assay and Oath is available.',
@@ -54,7 +53,7 @@ export function assessmentDisplayFor(product: AssessmentInput) {
     state: 'approved' as const, score: record.score, label: `${record.score}/100`,
     complianceDate: record.compliance_date,
     sourceUrl: typeof record.source_url === 'string' && /^https?:\/\//i.test(record.source_url) ? record.source_url : null,
-    valueLed: record.value_led === true,
+    suppressed: false,
     explanation: `Assessment reviewed by Assay (${record.science_date}) and Oath (${record.compliance_date}).`,
   }
 }

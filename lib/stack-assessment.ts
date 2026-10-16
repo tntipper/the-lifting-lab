@@ -24,6 +24,7 @@ export function summariseStackAssessments(products: CatalogueIdentity[], listedC
 
 export function assessmentText(product: { id: string; category: string; score: number | null }) {
   const assessment = assessmentDisplayFor(product)
+  if (assessment.suppressed) return 'Brand label information only'
   return assessment.state === 'under_review'
     ? 'Under review; no benefit recommendation'
     : 'Not assessed; no benefit recommendation'

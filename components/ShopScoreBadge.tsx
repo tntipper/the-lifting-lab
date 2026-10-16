@@ -18,7 +18,8 @@ export default function ShopScoreBadge({ product }: {
   const checked = assessment.complianceDate
     ? new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${assessment.complianceDate}T00:00:00Z`))
     : null
-  const label = assessment.valueLed ? 'Value-led score' : 'TLL Label Score'
+  const label = 'TLL Label Score'
+  if (assessment.suppressed) return null
   return <span className={styles.scoreHelp}
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false) }}
     onKeyDown={event => { if (event.key === 'Escape' && open) { setOpen(false); event.stopPropagation(); trigger.current?.focus() } }}>
@@ -36,12 +37,11 @@ export default function ShopScoreBadge({ product }: {
           ? <span aria-hidden="true" className={styles.scoreStatus}>Under review</span>
           : <span aria-hidden="true" className={styles.scoreNumber}>{score}<small>/ 100</small></span>}
       </span>
-      <span aria-hidden={score != null ? true : undefined} className={styles.valueLed}>{label}</span>
-      <span className={styles.valueLed}>Dose &amp; label check</span>
+      <span aria-hidden={score != null ? true : undefined} className={styles.scoreLabel}>{label}</span>
+      <span className={styles.scoreLabel}>Dose &amp; label check</span>
     </button>
     <span id={tooltipId} role="region" aria-labelledby={triggerId} hidden={!open} className={styles.scoreTooltip}>
-      TLL Label Score rates what&apos;s on the label, not the results you&apos;ll get. It compares stated doses with amounts used in published research and checks how transparent the label is. It isn&apos;t a health claim or medical advice. Source: {assessment.sourceUrl ? <a href={assessment.sourceUrl}>brand label</a> : 'brand label'}{checked ? `, checked ${checked}.` : '; compliance check pending.'} <a href="/methodology">How we score</a>
-      {assessment.valueLed && <span className={styles.valueLed}>This score is driven mainly by price per serving.</span>}
+      TLL Label Score rates what&apos;s on the label, not the results you&apos;ll get. It compares stated doses with amounts used in published research and checks how transparent the label is. It isn&apos;t a health claim or medical advice. Source: {assessment.sourceUrl ? <a href={assessment.sourceUrl}>brand label</a> : 'brand label'}{checked ? `, checked ${checked}.` : '; compliance check pending.'} Rubric v1. <a href="/methodology">How we score</a>
     </span>
   </span>
 }

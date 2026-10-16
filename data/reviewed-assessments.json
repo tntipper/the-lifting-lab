@@ -25,15 +25,5 @@
     "compliance_reviewer": "Oath",
     "compliance_date": "2026-10-16",
     "notes": "PER4M EAA Xtra (Per4m EAA)"
-  },
-  {
-    "key": "a0fc6933-db03-4c34-a446-a9f89515a206",
-    "score": 75,
-    "science_reviewer": "Assay",
-    "science_date": "2026-10-16",
-    "compliance_reviewer": "Oath",
-    "compliance_date": "2026-10-16",
-    "notes": "PER4M Isolate Zero (Per4m Isolate)",
-    "value_led": true
   }
 ]

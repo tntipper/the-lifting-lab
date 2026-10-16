@@ -785,7 +785,6 @@ test('both sign-offs publish the record score and make it rankable independently
 })
 
 for (const [field, values] of Object.entries({
-  value_led: [null, 'true', 1],
   science_reviewer: [undefined, null, '', 'Oath'], compliance_reviewer: [undefined, '', 'Assay'],
   science_date: [undefined, '', '2026-02-30', '2025-02-29', '2026-1-01', '2026-10-16T00:00:00Z'],
   compliance_date: [undefined, null, 'not-a-date', '2026-13-01', '2026-04-31'],
@@ -836,13 +835,12 @@ test('ranking, awards and public API use reviewed scores rather than conflicting
 })
 
 
-test('review register contains exactly the four authorised product IDs and scores', () => {
+test('review register contains exactly the three authorised product IDs and scores', () => {
   const records = JSON.parse(readFileSync(new URL('../data/reviewed-assessments.json', import.meta.url), 'utf8'))
-  assert.deepEqual(records.map(p => [p.key, p.score, p.value_led === true]), [
-    ['738af0c5-bdfd-46be-890e-bd2d6e7cb21b', 79, false],
-    ['6a8ebcdd-1505-4c9a-9adf-3682359bea61', 92, false],
-    ['6aa54c84-8f33-4566-aa28-0fdcd5f7c96f', 79, false],
-    ['a0fc6933-db03-4c34-a446-a9f89515a206', 75, true],
+  assert.deepEqual(records.map(p => [p.key, p.score]), [
+    ['738af0c5-bdfd-46be-890e-bd2d6e7cb21b', 79],
+    ['6a8ebcdd-1505-4c9a-9adf-3682359bea61', 92],
+    ['6aa54c84-8f33-4566-aa28-0fdcd5f7c96f', 79],
   ])
   for (const record of records) {
     assert.equal(record.science_reviewer, 'Assay'); assert.equal(record.compliance_reviewer, 'Oath')
@@ -851,23 +849,24 @@ test('review register contains exactly the four authorised product IDs and score
   }
 })
 
-test('rings have the exact dated tooltip, methodology link and optional value-led label', () => {
-  const copy = "TLL Label Score rates what's on the label, not the results you'll get. It compares stated doses with amounts used in published research and checks how transparent the label is. It isn't a health claim or medical advice. Source: brand label, checked 16 Oct 2026. How we score"
-  for (const value_led of [false, true]) for (const source_url of [undefined, 'https://brand.example/label', 'javascript:alert(1)']) {
-    const f = withReviews([signedAssessment({ value_led, source_url })])
+test('rings have the exact dated Rubric v1 tooltip and methodology link', () => {
+  const copy = "TLL Label Score rates what's on the label, not the results you'll get. It compares stated doses with amounts used in published research and checks how transparent the label is. It isn't a health claim or medical advice. Source: brand label, checked 16 Oct 2026. Rubric v1. How we score"
+  for (const source_url of [undefined, 'https://brand.example/label', 'javascript:alert(1)']) {
+    const f = withReviews([signedAssessment({ source_url })])
     const html = f.html('components/ShopScoreBadge.tsx', { product: make({ score: 100 }) })
     const tooltip = html.match(/role="region"[^>]*>([\s\S]*?)<\/span>/)[1]
     const text = tooltip.replace(/<[^>]*>/g, '').replace(/&#x27;/g, "'")
-    assert.equal(text, copy + (value_led ? 'This score is driven mainly by price per serving.' : ''))
+    assert.equal(text, copy)
+    assert.match(tooltip, /Rubric v1\./)
     assert.match(tooltip, /href="\/methodology"/)
     assert.match(html, /Dose &amp; label check/)
     assert.equal(tooltip.includes('href="https://brand.example/label"'), source_url?.startsWith('https:') === true)
-    assert.doesNotMatch(tooltip, /javascript:|Rubric v/)
+    assert.doesNotMatch(tooltip, /javascript:/)
     const surroundingCopy = html.replace(/role="region"[^>]*>[\s\S]*?<\/span>/, '')
     assert.doesNotMatch(surroundingCopy, /\b(effective|effectiveness|results|proven|best|healthy|evidence-based)\b/i)
     assert.match(html, /<button[^>]*type="button"[^>]*aria-controls=/)
-    assert.match(html, value_led ? /aria-label="Value-led score: 73 out of 100"/ : /aria-label="TLL Label Score: 73 out of 100"/)
-    assert.match(html, new RegExp(`<button[^>]*aria-label="${value_led ? 'Value-led score' : 'TLL Label Score'}: 73 out of 100 Dose &amp; label check"`))
+    assert.match(html, /aria-label="TLL Label Score: 73 out of 100"/)
+    assert.match(html, new RegExp(`<button[^>]*aria-label="TLL Label Score: 73 out of 100 Dose &amp; label check"`))
   }
   const pending = fixture().html('components/ShopScoreBadge.tsx', { product: make() })
   assert.match(pending, /<button[^>]*aria-label="TLL Label Score: Under review Dose &amp; label check"/)
@@ -876,7 +875,7 @@ test('rings have the exact dated tooltip, methodology link and optional value-le
 })
 
 test('score cards and comparison copy avoid outcome claims around approved and pending scores', () => {
-  for (const records of [[], [signedAssessment()], [signedAssessment({ value_led: true })]]) {
+  for (const records of [[], [signedAssessment()]]) {
     const p = make(), f = withReviews(records)
     for (const [file, props] of [
       ['app/products/ProductGrid.tsx', { initialProducts: [p] }],
@@ -962,4 +961,28 @@ test('brand, grid, compare and versus server trees contain only display-safe pro
     assert.match(json, /"score":null/, file)
     assert.doesNotMatch(json, /ratingValue[^,}]*100/, file)
   }
+})
+
+
+test('PER4M Isolate Zero has no score, ring or pending teaser; EAA Xtra keeps its score', () => {
+  const product = make({ id: 'a0fc6933-db03-4c34-a446-a9f89515a206', brand: 'Per4m', name: 'Isolate Zero', category: 'whey', score: 75 })
+  const f = fixture([product])
+  const policy = f.load('lib/assessment-display.ts')
+  assert.equal(policy.hasApprovedAssessment(product), false)
+  assert.equal(policy.displaySafeProduct(product).score, null)
+  for (const file of ['components/ShopScoreBadge.tsx', 'components/ProductAssessment.tsx']) {
+    assert.equal(f.html(file, { product }), '')
+  }
+  for (const [file, props] of [
+    ['app/products/[id]/ProductDetailPage.tsx', { product, related: [] }],
+    ['app/products/ProductGrid.tsx', { initialProducts: [product] }],
+    ['components/FavouriteCard.tsx', { product }],
+  ]) {
+    const html = f.html(file, props)
+    assert.match(html, /Isolate Zero/)
+    assert.doesNotMatch(html, /Score Explained|Under review|compliance check pending|Dose &amp; label check|75\/100/)
+  }
+  assert.equal(f.load('lib/stack-assessment.ts').assessmentText(product), 'Brand label information only')
+  const eaa = f.html('components/ShopScoreBadge.tsx', { product: make({ id: '6aa54c84-8f33-4566-aa28-0fdcd5f7c96f' }) })
+  assert.match(eaa, /TLL Label Score: 79 out of 100/)
 })

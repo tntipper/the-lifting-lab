@@ -338,8 +338,8 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <dd className="m-0 text-right font-mono text-white">
                   {product.serving_size != null ? `${product.serving_size}${product.serving_unit ? ` ${product.serving_unit}` : ''}` : 'Not listed'}
                 </dd>
-                <dt className="text-lab-muted">Assessment</dt>
-                <dd className="m-0 text-right font-medium text-[var(--ink)]">{assessment.label}</dd>
+                {!assessment.suppressed && <><dt className="text-lab-muted">Assessment</dt>
+                <dd className="m-0 text-right font-medium text-[var(--ink)]">{assessment.label}</dd></>}
               </dl>
 
               <ServingLabel nutrients={nutrients} maxRows={3} productName={`${product.brand} ${product.name}`} productHref={`/products/${product.id}`} />

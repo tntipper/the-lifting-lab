@@ -1,3 +1,13 @@
+**16 October PR #99 Oath follow-up — grok/guides-footer-fix; parent 89f7ff4:**
+- Tooltip adds Rubric v1. before How we score; app/methodology/page.tsx confirmed; button/ARIA region disclosure preserved.
+- Removed PER4M Isolate Zero reviewed record; suppress ring/status, grid assessment row, detail explanation and pending share teaser; EAA Xtra stays 79.
+- Retired price-led label/field/tooltip line and renamed CSS class; OATH_WORDING records retirement and separate True Cost.
+- PASS 95 assessment + 12 claims/stack tests, typecheck, lint (0 errors/20 existing warnings), diff check; manifest checks pass without pin changes.
+- Final npm test: 4133 pass / 28 fail / 8 skipped; failures in 14 test files unchanged from main 90e0ff7.
+- Failures: socket/ps/Docker sandbox restrictions, Python helper and Gen23 offline process; owner confirms Gen23 timing also fails on main.
+- BLOCKED: git add and commit denied creating night/repo/.git/worktrees/wt-guides/index.lock (Operation not permitted); edits remain unstaged.
+- No push/deploy; g-run*.sh untouched; hosted CI unrun. Next: commit the 11 changed tracked files with the requested message outside this sandbox.
+
 **16 October PR #99 disclosure locator fix — grok/guides-footer-fix; parent d0c3c20:**
 - Real esbuild + react-dom/server renders approved 79 fixture; adjacent inline spans lack a literal name separator and fixture omitted CSS.
 - Added explicit button name (score/status + Dose & label check); region inherits it without duplicate spoken score labels.

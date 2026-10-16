@@ -258,14 +258,14 @@ export default function ProductDetailPage({
 
         {stackState.error && <p role="alert" className="text-sm text-lab-muted">{stackState.error}</p>}
         {/* score explanation */}
-        <div className={styles.detailPanel}>
+        {!assessment.suppressed && <div className={styles.detailPanel}>
           <div className="flex items-center justify-between gap-3 mb-2">
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Score Explained</p>
             <MethodologyModal category={product.category} />
           </div>
           <p className="text-sm text-white/70 leading-relaxed">
             {!canRecommend ? assessment.explanation : <>
-            {assessment.valueLed ? 'Value-led score' : 'TLL Label Score'}:{' '}
+            TLL Label Score:{' '}
             <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> for {categoryLabel(product.category).toLowerCase()}. The score compares stated doses with amounts used in published research and checks label transparency.
             </>}
           </p>
@@ -274,7 +274,7 @@ export default function ProductDetailPage({
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">● Amber = below optimal</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
           </div>}
-        </div>
+        </div>}
 
         </div>
         {/* better-rated alternatives in the same category */}
