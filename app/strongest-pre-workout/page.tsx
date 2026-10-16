@@ -261,7 +261,7 @@ Historical values are unverified and do not establish formula quality or effecti
           style={{ background: 'rgba(224,90,43,0.08)', border: '1px solid rgba(224,90,43,0.3)' }}
         >
           <p className="text-sm font-black uppercase tracking-wide mb-2" style={{ color: '#e05a2b' }}>
-            ⚠️ Caffeine safety
+            Caffeine notes
           </p>
           <p className="text-white/80 text-sm leading-relaxed">
             The EFSA safe limit is {HIGH_STIM_MG} mg of caffeine a day for most healthy adults, with

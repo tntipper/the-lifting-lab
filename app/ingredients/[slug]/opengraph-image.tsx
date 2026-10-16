@@ -22,7 +22,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const label = ing ? ing.name : 'Supplement Ingredients'
   const hook = ing
     ? hookFrom(ing.oneLiner)
-    : 'What each supplement ingredient does, the effective dose, and the safe limit.'
+    : 'What each supplement ingredient does, the effective dose, and the intake guidance.'
   const evidence = ing ? `${ing.evidence} evidence` : 'Evidence-based'
 
   // Headline scales down for longer ingredient names so it always fits.
@@ -75,7 +75,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#374151', fontSize: 13, letterSpacing: 2 }}>
-            Effective dose · Safe limit · Not medical advice
+            Effective dose · Intake guidance · Not medical advice
           </span>
           <span style={{ color: '#a6e22e', fontSize: 16, fontWeight: 900, letterSpacing: 2 }}>
             @dadthletelab

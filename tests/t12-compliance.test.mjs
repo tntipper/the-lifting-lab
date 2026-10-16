@@ -24,9 +24,10 @@ function modules() {
       module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
     } }).outputText
     const local = name => {
+      if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
       if (name === 'next/navigation') return { useRouter: () => ({ back() {} }) }
-      if (name === '@/lib/preview-mode') return { isSyntheticPreview: () => false }
+      if (name === '@/lib/preview-mode') return { isSyntheticPreview: () => false, isIsolatedEnvironment: () => false }
       if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
       if (name.startsWith('@/components/') && !['@/components/ProductWarnings', '@/components/PolicyDraftNotice', '@/components/SiteFooter'].includes(name)) return { __esModule: true, default: () => null }
       if (name === './RelatedProducts') return { __esModule: true, default: () => null }
@@ -120,7 +121,7 @@ test('category age notice, explicit label data and stricter ages work without pr
 test('real product page renders caffeine and age warnings even while claims are under review', () => {
   const product = { id: 'fixture', brand: 'Fixture', name: 'Example', category: 'hormone-support', score: null, nutrients: [{ nutrient_name: 'caffeine', amount: 10, unit: 'mg' }], retail_price: null }
   const html = htmlFor('app/products/[id]/ProductDetailPage.tsx', { product, related: [] })
-  assert.match(html, /aria-label="Product warnings"/); assert.match(html, /Contains caffeine/); assert.match(html, /16\+/)
+  assert.match(html, /aria-label="Label notes"/); assert.match(html, /Contains caffeine/); assert.match(html, /16\+/)
   assert.equal(htmlFor('components/ProductWarnings.tsx', { product: { ...product, category: 'creatine', nutrients: [] } }), '')
   const label = htmlFor('components/ProductWarnings.tsx', { product: { ...product, safety: { labelWarnings: ['<script>unsafe</script>'] } } })
   assert.match(label, /&lt;script&gt;/); assert.doesNotMatch(label, /<script>unsafe/)

@@ -27,7 +27,7 @@ export const TIER_META: Record<
     blurb: 'Generally fine, but with a real dose ceiling or specific groups who should be careful. Read the caveats.',
   },
   caution: {
-    label: 'Real Caution',
+    label: 'Additional considerations',
     color: '#e05a2b',
     noun: 'need genuine caution',
     blurb: 'Meaningful side-effect or quality risk. Often more hype than benefit — weigh it carefully or skip it.',

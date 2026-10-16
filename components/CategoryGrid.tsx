@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import styles from './ShopHome.module.css'
 import { CATEGORY_GROUPS } from '@/lib/category-groups'
 import { formatListedServingPrice, type ScoredProduct } from '@/lib/products'
 
 type GroupStats = { count: number; lowestServingCost: number | null }
-type CategoryGridProps = { products?: ScoredProduct[]; variant?: 'full' | 'compact' }
+type CategoryGridProps = { products?: ScoredProduct[]; variant?: 'full' | 'compact' | 'home' }
 const EMPTY_PRODUCTS: ScoredProduct[] = []
 
 const COMPACT_CATEGORIES = [
@@ -97,9 +98,24 @@ export default function CategoryGrid({ products: suppliedProducts, variant = 'fu
     CATEGORY_GROUPS.map((group) => [group.slug, statsFor(products, group.categories)]),
   ) as Record<string, GroupStats>, [products])
 
+  if (variant === 'home') {
+    return <div className={styles.categories}>
+      {COMPACT_CATEGORIES.map((category) => {
+        const stats = statsFor(products, category.categories)
+        return <Link key={category.slug} href={category.href} className={styles.category}>
+          <span className={styles.categoryName}>{category.label}</span>
+          <span className={styles.categoryMeta}>
+            <span className={styles.number}>{stats.count}</span> listed
+            {stats.lowestServingCost !== null && <> · from <span className={styles.number}>{formatListedServingPrice(stats.lowestServingCost)}</span></>}
+          </span>
+        </Link>
+      })}
+    </div>
+  }
+
   if (variant === 'compact') {
     return (
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid auto-rows-[1fr] grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6 items-stretch">
         {COMPACT_CATEGORIES.map((category) => {
           const stats = statsFor(products, category.categories)
           const countLabel = `${stats.count} ${stats.count === 1 ? 'product' : 'products'}`
@@ -117,7 +133,7 @@ export default function CategoryGrid({ products: suppliedProducts, variant = 'fu
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid auto-rows-[1fr] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
       {CATEGORY_GROUPS.map((group) => <TileCard key={group.slug} group={group} stats={fullStats[group.slug]} />)}
       <GuideTile />
       <LiftAppTile />

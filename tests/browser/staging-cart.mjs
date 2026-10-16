@@ -17,7 +17,7 @@ const bundle = await build({ absWorkingDir: root, entryPoints: ['tests/browser/s
     builder.onResolve({ filter: /^next\/(link|navigation)$|^@\/lib\/supabase$/ }, args => ({ path: args.path, namespace: 'fixture' }))
     builder.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({ loader: 'jsx', resolveDir: root, contents: args.path === 'next/link'
       ? 'import React from "react"; export default function Link(props){return <a {...props}/>}'
-      : args.path === 'next/navigation' ? 'export const usePathname=()=>window.location.pathname;'
+      : args.path === 'next/navigation' ? 'const params=new URLSearchParams(window.location.search);export const usePathname=()=>window.location.pathname;export const useSearchParams=()=>params;'
         : `const listeners=new Set();let current=null;window.__cartUser=id=>{current=id?{id}:null;for(const fn of listeners)fn(id?'SIGNED_IN':'SIGNED_OUT',{user:current})};export const createClient=()=>({auth:{getUser:async()=>({data:{user:current}}),onAuthStateChange:fn=>{listeners.add(fn);return{data:{subscription:{unsubscribe(){listeners.delete(fn)}}}}}}});` }))
   } }],
 })

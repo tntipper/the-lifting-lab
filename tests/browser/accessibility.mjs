@@ -30,7 +30,16 @@ const bundle = await build({
     'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '"enabled"',
     'process.env.NEXT_PUBLIC_TLL_STACK_CART': '""',
   },
-  plugins: [{ name: 'isolated-provider-adapters', setup(builder) {
+  plugins: [
+    { name: 'css-modules-stub', setup(builder) {
+      // Browser fixtures serve globals.css separately; CSS modules are class-name stubs only.
+      builder.onLoad({ filter: /\.module\.css$/ }, () => ({
+        loader: 'js',
+        contents: 'export default new Proxy({}, { get: (_, key) => String(key) });',
+      }))
+      builder.onLoad({ filter: /\.css$/ }, () => ({ loader: 'js', contents: 'export default {};' }))
+    } },
+    { name: 'isolated-provider-adapters', setup(builder) {
     builder.onResolve({ filter: /^next\/(link|navigation)$|^@\/lib\/(supabase|scores)$/ }, args => ({ path: args.path, namespace: 'fixture' }))
     builder.onLoad({ filter: /.*/, namespace: 'fixture' }, args => ({
       loader: 'jsx', resolveDir: root,
@@ -91,10 +100,12 @@ try {
       assert.equal(await trigger.getAttribute('aria-expanded'), 'false')
       assert.equal(await trigger.evaluate(element => element === document.activeElement), true)
     }
-    // The original bug exposed the hidden drawer's Close button after the footer.
+    const stackTrigger = page.locator('header .tll-stack-button')
+    // The header owns stack access; neither the hidden floating trigger nor drawer is tabbable.
     await page.getByRole('link', { name: 'Footer end' }).focus()
     await page.keyboard.press('Tab')
-    assert.equal(await page.getByRole('button', { name: 'My Stack', exact: true }).evaluate(element => element === document.activeElement), true)
+    assert.equal(await page.locator('.shop-stack-trigger').isVisible(), false)
+    assert.equal(await page.evaluate(() => Boolean(document.activeElement?.closest('dialog, .shop-stack-trigger'))), false)
     assert.equal(await page.getByRole('dialog').count(), 0)
 
     await page.getByRole('button', { name: 'Add synthetic product' }).click()
@@ -103,7 +114,7 @@ try {
       ['ⓘ How we score', 'How We Score', 'Close scoring explanation'],
       ['Open share fixture', 'Share & earn 25 pts', 'Close share dialog'],
     ]) {
-      const trigger = page.getByRole('button', { name: triggerName, exact: true })
+      const trigger = triggerName === 'My Stack' ? stackTrigger : page.getByRole('button', { name: triggerName, exact: true })
       await trigger.focus(); await page.keyboard.press('Enter')
       const dialog = page.getByRole('dialog', { name: dialogName, exact: true })
       await dialog.waitFor()
@@ -126,10 +137,10 @@ try {
       await closer.click(); await dialog.waitFor({ state: 'hidden' })
       assert.equal(await trigger.evaluate(element => element === document.activeElement), true)
     }
-    await page.getByRole('button', { name: 'My Stack', exact: true }).click()
+    await stackTrigger.click()
     await page.getByRole('button', { name: /Remove Synthetic product/ }).click()
     assert.equal(await page.getByRole('button', { name: 'Close My Stack' }).evaluate(element => element === document.activeElement), true)
-    assert.equal(await page.getByRole('dialog').getByText('No supplements in your stack yet.').count(), 1)
+    assert.equal(await page.getByRole('dialog').getByText(/No supplements in your stack yet/).count(), 1)
     await page.keyboard.press('Escape')
     await verifyShareResults(page)
     await verifyWizard(page, origin, width, resultDir)

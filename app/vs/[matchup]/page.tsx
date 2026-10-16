@@ -318,11 +318,11 @@ export default async function MatchupPage({
               ))}
               <Cell head>Proprietary Blend</Cell>
               {products.map((p) => (
-                <Cell key={p.id}>{p.proprietary_blend ? '⚠️ Yes' : 'No'}</Cell>
+                <Cell key={p.id}>{p.proprietary_blend ? 'Yes' : 'No'}</Cell>
               ))}
               <Cell head>Amino Spiked</Cell>
               {products.map((p) => (
-                <Cell key={p.id}>{p.amino_spiked ? '⚠️ Yes' : 'No'}</Cell>
+                <Cell key={p.id}>{p.amino_spiked ? 'Yes' : 'No'}</Cell>
               ))}
             </>
           )}

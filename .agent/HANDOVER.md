@@ -1,3 +1,147 @@
+**16 October shop-by-price and card pack prices — k-claude-design; start 25bfde5; Toby-approved; local only:**
+- Hero now says Shop by price and opens /products?sort=price (existing lowest-pack-price sort).
+- Catalogue and home cards explicitly prefer storePrice.price; missing store prices never fall back to retail_price.
+- Home rows show Listed price / TLL Store price in £x.xx or Price not listed; price slots are always rendered.
+- Catalogue copy, equal-height grid-auto-rows: 1fr and AGENTS.md T07 rule unchanged.
+- PASS lint (0 errors/21 existing warnings), typecheck, npm test (4100 pass/6 skip/0 fail), 58 final focused tests, diff check.
+- PASS offline Chrome mixed-price grid heights at 320/390/768/1024/1280/1440; evidence test-results/design-ci/price-* (ignored).
+- Full suite used owned network-none PostgreSQL prerequisites; disposable fixture removed. Hosted CI unrun; gh unsigned.
+- Next: review local commit; no push/merge/deploy/live writes; no blockers.
+
+**15 October overnight neutral labels + footer — k-claude-design; start 4b1baa6; local only:**
+- Neutralised caffeine heading, comparison Yes cells, combination badges/count and side-effects filter/badges.
+- Kept technical classification keys, medical guidance, catalogue copy, SEO metadata and structured data unchanged.
+- Footer keeps confirmed Instagram theliftinglabuk + X TheLiftingLabUK, in design order with exact DS SVGs.
+- YouTube omitted (owner confirms absent); TikTok/Facebook omitted (no confirmed TLL account found in web searches).
+- PASS typecheck; lint (0 errors/21 existing warnings); 25 focused Node tests; rendered markup/DS paths/URL/order checks; diff check.
+- Hosted CI unrun; related PR lookup unavailable (gh unsigned); no push/merge/deploy/live writes.
+- Next: review local commit; no local blockers.
+
+**15 October CI preview-mode stub fix — k-claude-design; start 747a131; design base cb600ee; local only:**
+- Added missing isIsolatedEnvironment: () => false to T12 compliance preview-mode stub, matching existing fixtures.
+- Footer assertion unchanged; all 10 compliance tests pass; catalogue copy and equal card sizing untouched.
+- Full npm test PASS: 4091 pass / 6 skip / 0 fail with application workflow env and disposable account/cart prerequisites.
+- First full run: only Gen23 failed (KILLED); missing default PG prerequisites. Unchanged Gen23 passed (~16s) with owned network-none fixtures.
+- PASS npm run typecheck; npm run lint (0 errors / 21 existing warnings); node tests/preview-build-runtime.mjs (zero external connections).
+- Evidence: test-results/design-ci/e8-* (ignored); uniquely owned disposable PG removed; git diff --check PASS.
+- Hosted CI unrun; related PR lookup unavailable (gh unsigned). No push/main/deploy/live writes.
+- Next: review local fix(ci) commit and rerun hosted application CI; no local blockers.
+
+**15 October stack share overlap fix — k-claude-design; start b982858; design base cb600ee; local only:**
+- Cause: fixed fallback My Stack trigger at 45vh + 16px covered share Close; Buy bar could also cover bottom content.
+- Keep fallback trigger in document flow whenever StackBuilder is present; reserve Buy bar's 45vh maximum plus 16px below content.
+- PASS unchanged tests/browser/stack-assessment.mjs via retained neutral-stack-browser.mjs in Chrome at 320/390/768/1024/1280/1440.
+- PASS npm run typecheck; npm run lint (0 errors/21 existing warnings); git diff --check.
+- Evidence: test-results/design-ci/stack-overlap-{browser,typecheck,lint}.log (ignored); tests/catalogue copy/card sizing untouched.
+- Hosted CI unrun; related PR lookup unavailable (gh unsigned). No push/main/deploy/live writes.
+- Next: review local fix(design) commit and rerun hosted CI; no local blockers.
+
+**15 October synthetic Preview footer fix — k-claude-design; start c96dc9f; design base cb600ee; local only:**
+- Cause: redesign EmailCapture unconditionally rendered a footer form on every page.
+- Reproduced unchanged preview-build-runtime.mjs:75 failure for `/` using application workflow env.
+- Gate with isIsolatedEnvironment: disabled controls in a div; shared layout CSS preserves design; production email form retained.
+- PASS unchanged node tests/preview-build-runtime.mjs with workflow env: all routes inert, notice/no gtag/no forms, zero external connections.
+- PASS npm run typecheck; npm run lint (0 errors/21 existing warnings); SSR checks synthetic-preview/staging/production; git diff check.
+- Catalogue copy/equal card sizing/tests untouched; no push/main/deploy/live writes. Hosted CI unrun; gh unsigned.
+- Next: review local fix(design) commit and rerun hosted CI; no local blockers.
+
+**15 October neutral My Stack regression fix — k-claude-design; base 07b079f; local only:**
+- Restored name · Above/At/Approaching guidance nudges; daily upper-level percentages inherit ink; UK adult reference intake labels are consistent.
+- Share Stack focuses and scrolls to its heading on open; Close returns focus to its trigger; browser assertions cover both.
+- Updated stack-assessment browser expectations; retained stack-builder.test.mjs no Critical/Caution rule unchanged.
+- PASS typecheck, lint (0 errors/21 existing warnings), npm test (4091 pass/6 skip/0 fail), diff check.
+- PASS actual stack-assessment fixture in Chrome at 320/390/768/1024/1280/1440, including wording/colour/focus/scroll/no writes.
+- Initial full-suite Gen23 failure: missing local account/cart fixture; unchanged test passed with uniquely owned network-none PG prerequisites, then full suite passed.
+- Catalogue copy/equal card sizing untouched; evidence test-results/design-ci/neutral-* (ignored); hosted CI unrun, gh unsigned.
+- Next: review local fix(design) commit and run hosted CI; no push/main/deploy/live writes; own disposable fixture removed.
+
+**15 October stack accessibility regression — k-claude-design; start 05de4e4, passing base cb600ee; local only:**
+- Cause: 48d3bc6 removed the loaded/nonempty-products gate around the unchanged assessment summary, exposing transient 0/5 coverage.
+- Restored the gate, warning severity/provenance, daily-total labels/red UL/caveat and share labels; retained the new visual design.
+- Restored inline sharing so My Stack stays usable; fallback stack trigger clears the fixed Buy bar when no header exists.
+- PASS all remaining accessibility assertions at 320/390/768/1024/1280/1440, incl. assessment/email/share/drawers/outbox; committed tests unchanged.
+- LIMIT exact Chrome runner stops at existing offers.mjs:26 native-select timeout; ignored temporary runner uses selectOption for that step only.
+- PASS final typecheck, lint (0 errors/21 existing warnings), 121 focused stack tests, npm test (4091 pass/6 skip/0 fail), diff check.
+- Initial Gen23 prerequisite failure resolved with uniquely owned network-none PG/account/cart fixtures; unchanged Gen23 check PASS; own fixture removed.
+- Catalogue copy/card sizing rules untouched; logs test-results/design-ci/ (ignored); hosted CI unrun, gh unsigned; no push/main/deploy/live writes.
+- Next: review local fix(design) commit and rerun hosted CI; native-picker keyboard proof remains a local environment gap.
+
+**15 October design/CI regression fixes — k-claude-design; start 0b96b29, design base cb600ee; local only:**
+- Restored neutral `value` sort option; brand catalogue copy and equal card-per-row sizing untouched.
+- Gen23 cause: TopNav added useSearchParams but staging-cart's esbuild navigation stub omitted it; child build failure surfaced as KILLED, not a hang.
+- Same disposable PG prerequisites: original fixture FAIL (~21s), repaired fixture PASS (~21s); full npm test Gen23 PASS (~17s), unchanged deadline/test.
+- Hide duplicate floating stack whenever header stack exists at every width; mobile clearance is 0/240px (compare only), footer reserves it once; desktop retains body reserve.
+- Updated accessibility focus checks to use header stack; Chrome header/dialog/rankings checks PASS 320/390/768/1024/1280/1440; staging-cart PASS same six widths.
+- Synthetic-preview Chrome PASS equal row card geometry at 360/768/1200; mobile PDP 1–3 comparisons, no overflow/double body padding, clear controls.
+- PASS typecheck, lint (0 errors/21 existing warnings), npm test (4091 pass/6 skip/0 fail), both manifests/live boundaries/diff check; logs test-results/design-ci/ (ignored).
+- Broad accessibility remains locally blocked by existing native-picker keyboard timeouts (product-size:46; offers:26); targeted affected checks pass. Hosted CI unrun; PR lookup unavailable (gh unsigned).
+- Next: review local commits/re-run hosted CI; no push, main changes, deployment, live writes or test limit changes.
+**15 October layout review fixes — k-d-e1; base f8032e0; local only:**
+- Pinned product offer/compare/stack/research actions together; equal card heights per row with auto-sized rows and 4:3 images.
+- Removed duplicate fixed compare bar and unused StackFAB; retained shared ShopPanels CompareBar.
+- Corrected header stack/basket order and colours; restored four footer research links.
+- Hid floating stack at md+ where header stack exists; mobile buy bar/footer reserve floating-control space, including compare state.
+- PASS typecheck; lint (0 errors/21 existing warnings); 176 affected Node tests; git diff check.
+- PASS Chrome shop smoke and 360/768/1200 geometry, header/footer/trigger checks; mobile PDP clear with/without comparison.
+- Catalogue copy and other worker wording files untouched; no push/main/merge/deploy; hosted CI unrun, PR read unavailable (gh unsigned).
+- Next: review local fix(design) commit; no blockers to local delivery.
+**15 October neutral UI labels — k-d-e2, base k-claude-design f8032e0; local only:**
+- Replaced EFSA safe-level labels/context with intake guidance; shared labels cover dose panel, nudges and totals.
+- Product warnings section/accessible name now Label notes; GuidanceNote uses EFSA single-dose heading and sunk/ink tokens.
+- StackSummary says Add to stack; ServingLabel uses h3 with the existing eyebrow class; ingredient chrome uses intake guidance.
+- Scanned components/app: remaining matches are editorial/medical/legal content, code identifiers/comments or CSS safe-area values.
+- Catalogue names/descriptions/sizes/nutrition/claims and other worker's layout files unchanged; CSS edits only .guidance rules 32–33.
+- PASS typecheck, lint (0 errors/21 warnings in untouched files), 109 focused Node tests and 1 browser test at 360px/desktop.
+- Updated string assertions and browser selector; no hosted CI run; PR lookup unavailable because gh is unsigned.
+- Next: review local commit alongside layout worker; no push, main changes, merge, publishing or live writes.
+
+**15 October header/footer chrome — k-d-chrome, base cb600ee; local only:**
+- Rebuilt responsive sticky header/nav; exact query-aware lime underline, final LIFT link, outlined basket/lime stack with existing counts.
+- Ported EmailCapture/FollowUs from design DS; lockup-first footer, link columns, retailer/source disclaimer and 44px controls.
+- Filled theme invariants/size tokens; all 46 colour values match supplied tokens; existing next/font and PNGs already match.
+- PASS typecheck, lint (0 errors/20 warnings), 33 related Node tests, live boundaries and diff check.
+- PASS isolated Chrome fixture at 360/768/1280: shop/stack/sources, no overflow, active nav, cart updates, keyboard, email handoff, tap targets.
+- GAP no subscription backend: form opens an email request, explicitly does not claim subscription; full Next pages/hosted CI not tested.
+- Result ~/tll-migration/grok-runs/d-chrome-result.txt; screenshots/runner test-results/chrome/ (ignored); no push/merge/deploy/catalogue/SEO/Sentry changes.
+**15 October shop HOME rebuild — k-d-home, base cb600ee; local only:**
+- Matched dc.html home density: 1200px shell, 56px Anton hero, category tiles, five product rows and three method cards.
+- Extended CategoryGrid with home-only variant; reused ShopHero/TopProductsTable with isolated token-based CSS.
+- Preserved catalogue copy, metadata/JSON-LD, shared chrome, detail/stack pages, discovery routes and Sentry configuration.
+- Existing assessment gate remains: no approved scores; alphabetical fallback explicitly labelled with listed serving costs.
+- PASS typecheck, lint (0 errors/22 existing warnings), 63 focused assessment/SEO tests and git diff check.
+- PASS isolated full-home Chrome fixture at 360/1200px: no overflow, links >=44px, three method cards, no historical score leak.
+- Fixture uses catalogue preview data/font fallbacks; full Next build/hosted CI not run; PR lookup unavailable without gh auth.
+- Result: ~/tll-migration/grok-runs/d-home-result.txt; next review local commit with chrome worker; no push/merge/deploy.
+**15 October D shop chrome — k-d-shop, base cb600ee; local only:**
+- Rebuilt category heading/cards and detail layout from Shop.dc.html; reused exact lab tokens and existing Anton/Geist fonts.
+- Default listed true-cost sorting; fixed pack-price sort; compare max 3, stack actions and exact Buy mapping retained.
+- Added DS-style score badge respecting withheld legacy scores, per-serving/nutrition dl and sourced conditional caffeine note.
+- No verified competitor/evidence/pairing dataset: optional comparisons/pills/pair hints remain hidden; no invented catalogue data.
+- Brand catalogue sources/loaders, SEO/schema/discovery/redirect gates, global shell and Sentry config untouched; pickers preserved.
+- PASS typecheck, lint (0 errors/22 existing warnings), 163 affected Node tests, standalone SEO 14/14, token/diff checks.
+- PASS Chrome 360/1200 layout, filter/sort, compare cap, stack and size URL update; smoke script tests/browser/shop-chrome.mjs.
+- LIMIT existing keyboard-only product-size fixture times out at line 46 in installed Chrome; browser layout used offline font fixture.
+- Next: review local commit/results at ~/tll-migration/grok-runs/d-shop-result.txt; hosted CI unrun; no push/merge/deploy/live writes.
+**15 October D panels — k-d-panels; start cb600ee; local only:**
+- Added shared ShopPanelsProvider/useShopPanels, right basket/stack drawers, CompareBar/Table and StackSummary using lab tokens.
+- Reused AccessibleDialog focus/inert/Escape handling, LocalStackContext sync and gated staging cart APIs; removed old FAB styling.
+- Browser basket is visit-local React state; existing retailer/Shopify routes remain available; no fabricated checkout or assessments.
+- PASS typecheck; lint 0 errors/22 existing warnings; 148 related Node tests + 14 SEO tests; both manifests/live boundaries/diff check.
+- PASS installed-Chrome panel integration at 360/1280: focus, quantities, 2.4s toast, shared stack/unit totals, max-three compare/overflow.
+- Broad accessibility passed 320px drawer checks then timed out at existing offers.mjs:26 native-select keyboard wait (historically recorded).
+- Fixed test-discovered circular provider import with lightweight context module; fixture process.env/animation timing corrected.
+- Screenshots test-results/shop-panels/; result ~/tll-migration/grok-runs/d-panels-result.txt; hosted CI/PR readback unverified (gh unsigned).
+- Next: review local commit and adopt exported hooks for other cards; no push/merge/deploy/live settings/catalogue/SEO/Sentry changes.
+**15 October stack builder design rebuild — k-d-stack; base cb600ee, local only:**
+- Matched lab-token hero/chips, slot/add/swap drawers, neutral duplicate nudges, planning timeline, black cost/share/save and sticky Buy.
+- Extended dose panel with evidence tint, SVG guidance hatch/markers, A–Z totals and contribution breakdowns; convert g/mg/mcg before summing.
+- tll-stack-v1 bookmark restores empty guests only; existing provider owns account state; swaps wait for confirmed addition before removal.
+- No approved goal starters/medals/competitor data: manual goals retained; no invented picks, savings, alerts or subscription discounts.
+- PASS typecheck, lint (0 errors/22 existing warnings), focused 223/223 incl. 360/1280 Chromium, Pixel 7 exact-cart request, manifests/boundaries/diff.
+- Full npm test: 4086 pass/1 fail/8 skip; Gen23 process expected EXITED, got KILLED (unrelated offline fixture; no hosted CI claim).
+- Catalogue copy, SEO/discovery/redirect gates, Sentry and commerce flags preserved; no push/merge/deploy/live commerce.
+- Results ~/tll-migration/grok-runs/d-stack-result.txt; screenshots /tmp/d-stack-{360,1280}.png; next review local commit, investigate Gen23 separately.
+
 **14 October Job K2 SEO/agent discovery — k-seo-agentic; start a0eb93f, local only:**
 - Added approved Product/ProductGroup offers, site entities/breadcrumbs, canonical/social metadata and product-card images.
 - Extended existing robots/sitemap; preview/staging/nonproduction noindex; cached llms/full and public product feed.

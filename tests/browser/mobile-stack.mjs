@@ -68,6 +68,7 @@ for (const [profile, engine] of [['iPhone 13', webkit], ['Pixel 7', chromium]]) 
       browser = await engine.launch({ headless: true })
       const context = await browser.newContext({ ...devices[profile], serviceWorkers: 'block' })
       const page = await context.newPage(), errors = [], unexpected = [], cartRequests = []
+      page.setDefaultTimeout(5000)
       page.on('pageerror', error => errors.push(error.message))
       // Context routing catches navigation/new tabs too. Every unknown request
       // is aborted, so no live Shopify/Supabase/supplier request can escape.
@@ -78,6 +79,7 @@ for (const [profile, engine] of [['iPhone 13', webkit], ['Pixel 7', chromium]]) 
           return route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>Intercepted cart — no store contacted</h1>' })
         }
         if (url.origin === origin && request.method() === 'GET') {
+          if (url.pathname === '/api/products') return route.fulfill({ json: rows })
           if (url.pathname === '/api/products/search') return route.fulfill({ json: rows.filter(row => row.name.includes(url.searchParams.get('q'))) })
           if (url.pathname === '/api/products/batch') {
             const ids = url.searchParams.get('ids').split(',')
@@ -89,9 +91,10 @@ for (const [profile, engine] of [['iPhone 13', webkit], ['Pixel 7', chromium]]) 
         return route.abort()
       })
       await page.goto(origin + '/stack')
-      await page.getByText('Start with one product', { exact: true }).waitFor()
+      await page.getByText('Your stack is empty.', { exact: false }).waitFor()
       assert.equal(await page.getByRole('link', { name: 'Buy my stack', exact: true }).count(), 0)
       for (const row of rows) {
+        await page.getByRole('button', { name: '+ Add an ingredient', exact: true }).click()
         await page.getByRole('searchbox', { name: 'Add a product' }).fill(row.name)
         await page.getByRole('button').filter({ hasText: row.name }).filter({ hasText: '+ Add' }).click()
       }
@@ -106,7 +109,7 @@ for (const [profile, engine] of [['iPhone 13', webkit], ['Pixel 7', chromium]]) 
       assert.equal(await buy.getAttribute('href'), expected)
       const assertVisible = async () => {
         assert.equal(await buy.isVisible(), true)
-        assert.equal(await buy.locator('..').evaluate(el => getComputedStyle(el).position), 'fixed')
+        assert.equal(await page.locator('.stack-buybar').evaluate(el => getComputedStyle(el).position), 'fixed')
         assert.equal(await buy.evaluate(el => {
           const r = el.getBoundingClientRect()
           return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth
@@ -119,8 +122,9 @@ for (const [profile, engine] of [['iPhone 13', webkit], ['Pixel 7', chromium]]) 
       assert.ok(await page.evaluate(() => window.scrollY > 0), 'Exercise a genuinely scrollable stack page')
       await assertVisible()
       await page.evaluate(() => window.scrollTo(0, 0))
-      await buy.click()
-      await page.getByRole('heading', { name: 'Intercepted cart — no store contacted' }).waitFor()
+      // Assert the outgoing cart request directly: the purchase boundary under
+      // test does not depend on rendering the intercepted response document.
+      await Promise.all([page.waitForRequest(request => request.url() === expected), buy.click()])
       assert.deepEqual(cartRequests, [expected])
       assert.deepEqual(unexpected, [])
       assert.deepEqual(errors, [])

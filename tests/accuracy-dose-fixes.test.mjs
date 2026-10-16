@@ -85,7 +85,7 @@ test('nutrient flags distinguish vitamin C guidance and iron safe level from ULs
     products: { brand: 'Fixture', name, product_nutrients: [{ nutrient_name: name, amount: NUTRIENT_LIMITS[name].ul, unit: NUTRIENT_LIMITS[name].unit }] },
   }))
   const flags = analyseStack(items)
-  for (const [name, value, label] of [['Vitamin C', 1000, 'UK EVM guidance'], ['Iron', 40, 'EFSA safe level'], ['Vitamin D3', 100, 'EFSA UL']]) {
+  for (const [name, value, label] of [['Vitamin C', 1000, 'UK EVM guidance'], ['Iron', 40, 'EFSA intake guidance'], ['Vitamin D3', 100, 'EFSA UL']]) {
     const flag = flags.find(flag => flag.nutrientName === name)
     assert.equal(flag.ul, value)
     assert.equal(flag.percentage, 100)
@@ -93,7 +93,7 @@ test('nutrient flags distinguish vitamin C guidance and iron safe level from ULs
   }
   assert.match(NUTRIENT_LIMITS['Vitamin C'].note, /supplemental.*not an EFSA UL/)
   assert.match(NUTRIENT_LIMITS.Iron.note, /total iron.*not a UL/)
-  assert.equal(NUTRIENT_LIMITS.Iron.note, "EFSA safe level: 40 mg/day total iron for adults, not a UL. If you're on TRT, which can raise red blood cell count, speak to your clinician before adding iron and about blood tests.")
+  assert.equal(NUTRIENT_LIMITS.Iron.note, "EFSA intake guidance: 40 mg/day total iron for adults, not a UL. If you're on TRT, which can raise red blood cell count, speak to your clinician before adding iron and about blood tests.")
 })
 test('PT-141 is excluded from the licensed medicine list and explicitly not UK-licensed', () => {
   const text = source('app/peptides/page.tsx')
