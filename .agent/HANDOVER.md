@@ -1,3 +1,12 @@
+**16 October vs reviewer build follow-up — grok/store-offer-price-fix; start 722e42e; local only:**
+- getMatchup now calls unstable_rethrow(error) before its null fallback, matching product-data.ts.
+- display-price uses @/lib/products; typecheck passes. Refreshed only the manifest source-tree hash.
+- PASS npm run lint (0 errors/21 existing warnings), npx tsc --noEmit; 79 requested + 8 manifest tests.
+- PASS NEXT_PUBLIC_TLL_STORE_LINKS=enabled npm run build; /vs and /vs/[matchup] included.
+- Supabase URL/anon key absent: no concrete matchup paths generated; data-dependent connection() path unverified.
+- PASS git diff --check; hosted CI unrun; PR lookup unavailable (gh unsigned).
+- Next: review commit; build with configured catalogue to verify real matchup rendering. No push/deploy/live writes.
+
 **16 October reviewer follow-up — grok/store-offer-price-fix; on top of 8c41ce5; local only:**
 - withScore and price sorting use displayPrice; unpriced mapped offers have null serving cost and sort last.
 - Both comparison tables, versus loader/table and detail size/variant projections prevent retail fallback.

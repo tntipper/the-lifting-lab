@@ -1,4 +1,4 @@
-import type { Product } from '../products'
+import type { Product } from '@/lib/products'
 
 type PriceProduct = Pick<Product, 'retail_price' | 'storePrice' | 'storeLinkMapping' | 'storeVariants'>
 

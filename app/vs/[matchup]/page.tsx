@@ -3,7 +3,7 @@ import { withStorePrices } from '@/lib/commerce/store-price-server'
 import { formatListedServingPrice } from '@/lib/products'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, unstable_rethrow } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import ProductAssessment from '@/components/ProductAssessment'
@@ -60,7 +60,8 @@ async function getMatchup(matchup: string): Promise<[ComparedProduct, ComparedPr
         .map(({ nutrient_name, amount, unit }) => ({ nutrient_name, amount, unit })),
     })
     return [build(a), build(b)]
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error)
     return null
   }
 }
