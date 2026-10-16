@@ -33,7 +33,12 @@ export function Fixture({ pathname = '/' }: { pathname?: string }) {
       <section aria-label="Store fallback"><ProductOfferLink product={{ id: 'fallback', name: 'Fixture', brand: 'Fixture', buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }} /></section>
       <section aria-label="Unmapped"><ProductOfferLink product={{ id: 'unmapped', name: 'Unmapped', brand: 'Fixture', buy_url: null }} /></section>
       <section aria-label="Stack checkout"><BuyMyStack items={[{ ...product('stack', '2001'), quantity: 2 }]} ready /></section>
-      <ProductGrid initialProducts={[product('1', '3001'), product('2', '3002'), product('3', '3003', false), { ...product('4', '3004'), storePrice: undefined }, { ...product('5'), storePrice: undefined, storeLinkMapping: undefined, buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }] as unknown as ScoredProduct[]} />
+      <section aria-label="Compact placements" className="flex min-w-0 flex-col gap-2">
+        {['cheapest', 'best', 'stack', 'compare'].map(placement => <div key={placement} className="flex min-w-0 flex-wrap items-center gap-2" data-compact-placement={placement}>
+          <span>Fixture</span><ProductOfferLink compact product={product('compact', '4001')} className="rounded-lg bg-black text-sm text-white" />
+        </div>)}
+      </section>
+      <ProductGrid initialProducts={[product('1', '3001'), product('2', '3002'), product('3', '3003', false), { ...product('4', '3004'), storePrice: undefined }, { ...product('5'), storePrice: undefined, storeLinkMapping: undefined, buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }, { ...product('6'), storePrice: undefined, storeLinkMapping: undefined, buy_url: null }] as unknown as ScoredProduct[]} />
     </>}
   </main></>
 }

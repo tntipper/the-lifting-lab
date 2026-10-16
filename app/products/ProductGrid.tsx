@@ -12,6 +12,7 @@ import GuidanceNote from '@/components/GuidanceNote'
 import styles from '@/components/shop.module.css'
 import ProductImage from '@/components/ProductImage'
 import ProductOfferLink from '@/components/ProductOfferLink'
+import { liveCartEnabled } from '@/lib/commerce/live-cart-mode'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { useShopPanels } from '@/components/ShopPanelsContext'
 import { assessmentDisplayFor } from '@/lib/assessment-display'
@@ -282,6 +283,8 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           const assessment = assessmentDisplayFor(product)
           const nutrients = product.nutrients ?? []
           const reviews = reviewSummary[product.id]
+          const offer = <ProductOfferLink product={product} storeActionLabel="Add to basket"
+            className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
           return (
             <article key={product.id} data-product-id={product.id} className={`${styles.card} gap-3 p-6 ${isSelected ? 'border-[var(--line-strong)]' : ''}`}>
               <Link href={`/products/${product.id}`} className={styles.packshot}>
@@ -347,8 +350,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               )}
 
               <div className={`${styles.cardActions} flex flex-col gap-3`}>
-                <ProductOfferLink product={product} storeActionLabel="Add to basket"
-                  className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
+                {liveCartEnabled() ? <div className="h-16 min-w-0">{offer}</div> : offer}
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-[var(--ink)]'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>

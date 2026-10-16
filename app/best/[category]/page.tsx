@@ -42,7 +42,7 @@ export default async function BestCategoryPage({ params }: { params: Promise<{ c
       {products.length === 0 ? <p>No catalogue records are available here at present. The research browser remains available.</p> : <div className="grid auto-rows-[1fr] items-stretch gap-4 md:grid-cols-2">
         {products.map(p => <article key={p.id} className="rounded-xl border border-lab-border bg-lab-panel p-4 space-y-3">
           <div className="flex items-start gap-4"><ProductAssessment product={p} size="sm" /><div className="min-w-0"><h2 className="font-bold break-words"><Link href={`/products/${p.id}`}>{p.brand} {p.name}</Link></h2><p className="text-sm text-lab-muted">{p.cost_per_serving !== null && p.cost_per_serving > 0 ? `${formatListedServingPrice(p.cost_per_serving)} listed price per serving` : 'Listed price per serving unavailable'}</p></div></div>
-          <div className="flex flex-wrap gap-4"><Link className="underline" href={`/products/${p.id}`}>Label and research record</Link><ProductOfferLink product={p} /></div>
+          <div className="flex flex-wrap gap-4"><Link className="underline" href={`/products/${p.id}`}>Label and research record</Link><ProductOfferLink compact product={p} /></div>
         </article>)}
       </div>}
     </main></div>

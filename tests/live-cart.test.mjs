@@ -192,7 +192,7 @@ test('stale add keeps refresh guidance and status truncates inside the reserved 
     useState: initial => [initial, ++hook === 2 ? value => { message = value } : () => {}],
   })
   const element = LiveBasketAdd({ product: { ...item(), storePrice: { ...item().storePrice, observedAtMs: 0 } } })
-  element.props.children[1].props.children[1].props.onClick()
+  element.props.children[0].props.children[1].props.onClick()
   assert.equal(message, 'This offer is unavailable. Refresh the product page.')
   hook = 0
   const Status = load('components/LiveBasket.tsx', {}, false, {
@@ -231,16 +231,30 @@ test('sold classification honours the supplied clock at the approval expiry boun
   assert.equal(isTllSoldProduct(product, expires), false)
 })
 
-test('live server and mounted actions share the exact flag-off sizing shell including custom label', () => {
-  const flags = { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled', NEXT_PUBLIC_TLL_STORE_LINKS: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'enabled' }
-  for (const product of [{ ...item(), buy_url: null }, { ...item(), buy_url: null, storePrice: undefined }, { id: 'fallback', brand: 'Fixture', name: 'Fallback', buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }]) {
-    const props = { product, storeActionLabel: 'Add to basket' }
-    const render = (env, mounted = false) => renderToStaticMarkup(React.createElement(load('components/ProductOfferLink.tsx', env, mounted).default, props))
-    const legacy = render({ ...flags, NEXT_PUBLIC_TLL_LIVE_CART: '' })
+test('live server and mounted actions share a fixed action area without duplicated offers', () => {
+  const flags = { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled', NEXT_PUBLIC_TLL_STORE_PRICES: 'enabled' }
+  for (const product of [{ ...item(), buy_url: null }, { ...item(), buy_url: null, storePrice: undefined }, { ...item(), buy_url: null, storePrice: { ...item().storePrice, availableForSale: false } }, { id: 'fallback', brand: 'Fixture', name: 'Fallback', buy_url: 'https://shop.theliftinglab.co.uk/products/fixture' }]) {
     for (const mounted of [false, true]) {
-      const html = render(flags, mounted)
-      assert.ok(html.includes(`aria-hidden="true" inert="">${legacy}</span>`))
-      assert.match(html, /data-live-offer-shell/)
+      const Component = load('components/ProductOfferLink.tsx', flags, mounted).default
+      const html = renderToStaticMarkup(React.createElement(Component, { product, storeActionLabel: 'Add to basket' }))
+      assert.match(html, /h-16.*data-live-offer-shell/)
+      assert.equal((html.match(/data-offer-state=/g) ?? []).length, 1)
+      assert.doesNotMatch(html, /inert=|aria-hidden=/)
+      if (html.includes('target="_blank"')) assert.match(html, /aria-label="Buy at TLL Store for Fixture .+ \(opens in a new tab\)"/)
+    }
+  }
+})
+
+test('compact offers navigate to the exact variant without a basket control; flag-off ignores compact', () => {
+  const product = { ...item(), buy_url: null }
+  for (const enabled of ['', 'enabled']) {
+    const Component = load('components/ProductOfferLink.tsx', { NEXT_PUBLIC_TLL_LIVE_CART: enabled }, true).default
+    const render = compact => renderToStaticMarkup(React.createElement(Component, { product, compact }))
+    if (!enabled) assert.equal(render(true), render(false))
+    else {
+      assert.match(render(true), /products\/fixture\?variant=1&amp;/)
+      assert.doesNotMatch(render(true), /<select|<button|data-live-offer-shell/)
+      assert.match(render(true), />Buy at TLL Store<\/a>/)
     }
   }
 })

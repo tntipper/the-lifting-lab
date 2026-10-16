@@ -26,7 +26,7 @@ export default async function CheapestPage() {
       <Link href="/products" className="underline">Browse all research records, including products without a known price</Link>
       {rows.length === 0 ? <p>No usable listed-price comparisons are available.</p> : <div className="space-y-3">{rows.map((p, index) => <article key={p.id} className="rounded-xl border border-lab-border bg-lab-panel p-4 space-y-3">
         <div className="flex items-start gap-3"><span className="text-lab-muted text-sm">#{index + 1}</span><ProductAssessment product={p} size="sm" /><div className="min-w-0 flex-1"><h2 className="font-bold break-words"><Link href={`/products/${p.id}`}>{p.brand} {p.name}</Link></h2><p className="text-lab-muted text-xs">{categoryLabel(p.category)}</p><p className="font-bold">{formatListedServingPrice(p.cost_per_serving)} listed price per serving</p></div></div>
-        <div className="flex flex-wrap gap-4"><Link className="underline" href={`/products/${p.id}`}>Label and research record</Link><ProductOfferLink product={p} /></div>
+        <div className="flex flex-wrap gap-4"><Link className="underline" href={`/products/${p.id}`}>Label and research record</Link><ProductOfferLink compact product={p} /></div>
       </article>)}</div>}
     </main></div>
 }

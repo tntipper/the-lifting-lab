@@ -1,12 +1,22 @@
+**16 October live-cart Round 6 — grok/live-cart; continued from 7319bd0; local only:**
+- Changed ProductOfferLink/LiveBasket/ProductGrid: fixed 64px live action space for every card, 44px controls, single stock/status row outside the button.
+- Removed hidden sizing offers; one offer-state per card; restored product/new-tab aria-label on live store links; stale refresh guidance retained.
+- Cheapest, best, StackBuilder and CompareTable use compact live product/variant links without quantity selectors; flag-off and unsold offer paths retained.
+- Extended live-cart unit/browser fixtures: equal cards at six widths, 44px actions, server/mounted equality, link-only/unavailable/unsold cards and compact links.
+- PASS typecheck, lint (0 errors/21 existing warnings), 229 focused tests incl. preview-mode, mapping loader, routing, prices and variant picker; boundary/manifests PASS.
+- Browser SSR fixtures PASS; Chromium startup twice denied MachPort bootstrap permission, before layout/screenshots. Operator must rerun six-width checks; hosted CI unrun.
+- Operator confirmed the previous 7319bd0 browser checks passed; commits dea270a through 7319bd0 were made by the operator; corrected Round 5 records below.
+- Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; mapping/live-price env requirements are in Round 4. No network/env/Shopify/Vercel changes or push.
+
 **16 October live-cart Round 5 — grok/live-cart; continued from f105879; local only:**
 - Existing commits dea270a and later in this branch were made by the operator; historical branch commit-failure claims corrected below.
 - Changed ProductOfferLink/LiveBasket: identical legacy sizing shell on server and after mount, including storeActionLabel; link-only offers use it too.
 - Stock/status sit outside the button; status ignores pointer events and truncates with title; stale offers retain refresh guidance.
 - Changed preview-mode test loader, shared sold-product clock in affiliate/live-cart-mode, live-cart unit/browser fixtures; refreshed manifest hash only.
 - PASS typecheck, lint (0 errors/21 existing warnings), 274 focused tests including preview-mode, live-boundary and both manifest checks.
-- Server-rendered browser fixtures PASS; extended six-width pre-hydration/link-only/contrast checks await rerun: Chromium launch denied by sandbox.
+- Server-rendered browser fixtures PASS; operator subsequently confirmed all six widths PASS at 7319bd0.
 - Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; mapping and live-price requirements remain documented in Round 4 below.
-- Local commit unavailable: filesystem policy denies git index.lock creation; work retained in this worktree. No network/env/Shopify/Vercel actions or push; hosted CI unrun.
+- Commits 86f6697 and 7319bd0 were made by the operator. No network/env/Shopify/Vercel actions or push; hosted CI unrun.
 
 **16 October live-cart Round 4 — grok/live-cart; continued from dea270a; local only:**
 - Commits dea270a and subsequent existing commits were made by the operator.

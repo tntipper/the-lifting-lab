@@ -3,8 +3,8 @@
 import { liveCartEnabled, isTllSoldProduct } from '@/lib/commerce/live-cart-mode'
 import { liveBasketEligible } from '@/lib/commerce/live-basket'
 import { LiveBasketAdd } from './LiveBasket'
-import { useEffect, useState, type CSSProperties } from 'react'
-import { DEFAULT_STORE_BUY_LINK_MODE, resolveProductOffer, resolveLegacyProductOffer, type StoreBuyLinkMode } from '@/lib/affiliate'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { DEFAULT_STORE_BUY_LINK_MODE, resolveProductOffer, type StoreBuyLinkMode } from '@/lib/affiliate'
 import type { StorePricePresentation } from '@/lib/commerce/store-price-products'
 import type { StoreLinkMapping, StoreVariantOption } from '@/lib/commerce/product-mapping'
 import type { StoreAttributionCampaign } from '@/lib/commerce/store-attribution'
@@ -14,10 +14,11 @@ import { useStagingCart } from './StagingCartContext'
 import { catalogueAvailabilityFor, type CataloguePresentation } from '@/lib/commerce/catalogue-presentation'
 
 /** Interim listing navigation, until a verified commerce projection supplies exact offers. */
-export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, storeCampaign = 'product', pickerOwnsStatus = false, chooseAnother = false, storeActionLabel, variantLabel }: {
+export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, storeCampaign = 'product', compact = false, pickerOwnsStatus = false, chooseAnother = false, storeActionLabel, variantLabel }: {
   product: { id?: string; brand: string; name: string; buy_url: string | null; cataloguePresentation?: CataloguePresentation | null; storeLinkMapping?: StoreLinkMapping | null; storeVariants?: StoreVariantOption[]; storePrice?: StorePricePresentation | null }
   /** Label for the existing exact store cart action; never applied to searches or product-page offers. */
   storeActionLabel?: string
+  compact?: boolean
   variantLabel?: string
   pickerOwnsStatus?: boolean
   /** True only when a multi-variant picker offers other choices. */
@@ -31,32 +32,35 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
   // Server and hydration share a fixed shell; fresh add eligibility is checked after mount.
   const [eligibilityTime, setEligibilityTime] = useState<number | null>(null)
   useEffect(() => { if (liveCartEnabled()) setEligibilityTime(Date.now()) }, [product])
+  const liveMode = liveCartEnabled()
+  const frame = (content: ReactNode) => liveMode && !compact
+    ? <span className="flex h-16 min-w-0 flex-col justify-start" data-live-offer-shell>{content}</span>
+    : content
   const availability = catalogueAvailabilityFor({ id: product.id, cataloguePresentation: product.cataloguePresentation })
   if (pickerOwnsStatus && (availability || (product.storePrice && catalogueAvailabilityFor(product) !== 'available'))) {
-    return <span data-offer-state="unavailable" className="text-xs text-lab-muted">
+    return frame(<span data-offer-state="unavailable" className="text-xs text-lab-muted">
       {availability ? 'Purchasing not enabled' : catalogueAvailabilityFor(product) === 'out_of_stock' && chooseAnother ? 'Out of stock: choose another flavour/size' : null}
-    </span>
+    </span>)
   }
-  if (availability) return <span className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-lab-border px-2 py-2 text-center text-[10px] text-lab-muted"
-    data-offer-state={availability}>
+  if (availability) return frame(<span className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-lab-border px-2 py-2 text-center text-[10px] text-lab-muted"
+    style={liveMode && !compact ? { height: 44, minHeight: 44 } : undefined} data-offer-state={availability}>
     <span>{availability === 'out_of_stock' ? 'Out of stock' : availability === 'available' ? 'In stock' : 'Availability under review'}</span>
     <span className="text-[9px]">{availability === 'out_of_stock' ? 'Currently unavailable to buy' : 'Purchasing not enabled'}</span>
-  </span>
+  </span>)
   if (cart?.enabled && product.id && cart.view?.productId === product.id) return <span className="flex min-w-0 flex-col gap-1" data-offer-state="staging_test_cart">
     <StagingCartAdd productId={product.id} />
     <span className="text-center text-[9px] text-lab-muted">Synthetic test item · no checkout</span>
   </span>
-  if (product.id && (product.storeVariants?.length ?? 0) > 1) return <a href={`/products/${encodeURIComponent(product.id)}`}
+  if (!(liveMode && compact && isTllSoldProduct(product)) && product.id && (product.storeVariants?.length ?? 0) > 1) return frame(<a href={`/products/${encodeURIComponent(product.id)}`}
     className={`${className ?? ''} flex min-h-11 items-center justify-center px-2 text-center`} style={style}>
     Choose flavour on product page
-  </a>
+  </a>)
   const item = product.id ? { ...product, id: product.id, quantity: 1, variantLabel } : null
   const basketItem = liveCartEnabled() && eligibilityTime !== null && item && liveBasketEligible(item, eligibilityTime) ? item : null
   const live = liveCartEnabled() && isTllSoldProduct(product, eligibilityTime ?? Date.now())
-  const legacy = resolveLegacyProductOffer(product, storeBuyLinkMode, storeCampaign)
   const listing = resolveProductOffer(product, storeBuyLinkMode, storeCampaign)
   const stock = product.storePrice ? catalogueAvailabilityFor(product) : null
-  const renderOffer = (listing: ReturnType<typeof resolveProductOffer>, sizing = false) => {
+  const renderOffer = (listing: ReturnType<typeof resolveProductOffer>) => {
     if (!listing.url) {
       return (<span className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-lab-border px-2 py-2 text-center text-[10px] text-lab-muted"
         data-offer-state="unavailable">
@@ -73,7 +77,7 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
         style={style}
         aria-label={`${store ? 'Buy at' : search ? 'Search' : 'View listing at'} ${listing.retailer} for ${product.brand} ${product.name} (opens in a new tab)`}
         onClick={() => track('retailer_listing_click', { retailer: listing.retailer ?? undefined, destination_state: listing.state })}>
-        {store ? ((sizing || !liveCartEnabled()) && storeBuyLinkMode === 'cart' && product.storePrice?.availableForSale === true ? storeActionLabel ?? 'Buy at TLL Store' : 'Buy at TLL Store') : search ? 'Search retailer ↗' : 'View retailer ↗'}
+        {store ? (!liveCartEnabled() && storeBuyLinkMode === 'cart' && product.storePrice?.availableForSale === true ? storeActionLabel ?? 'Buy at TLL Store' : 'Buy at TLL Store') : search ? 'Search retailer ↗' : 'View retailer ↗'}
       </a>
       <span className="text-center text-[9px] leading-tight text-lab-muted">
         {store ? product.storePrice ? 'In stock · price and stock checked within 15 minutes' : 'Check pack, price and stock at TLL Store' : search ? 'Search results · affiliate link' : 'Unverified listing · check pack and price · affiliate link'}
@@ -81,16 +85,21 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
     </span>)
   }
   if (!live) return renderOffer(listing)
-  // Always reserve the exact flag-off markup, including its original action label.
-  // The same shell is rendered on the server, before hydration and after mounting.
-  return <span className="relative block min-w-0" data-live-offer-shell>
-    <span className="invisible block pointer-events-none" aria-hidden="true" inert>{renderOffer(legacy, true)}</span>
-    <span className="absolute inset-0 min-w-0">
-      {basketItem ? <LiveBasketAdd product={basketItem} campaign={storeCampaign} className={className} style={style} showStock={!pickerOwnsStatus} /> :
-        <span className="flex h-full min-w-0 flex-col justify-center" data-live-store-link>{listing.url ? <a href={listing.url} target="_blank" rel="noopener noreferrer"
-          className={`${className ?? ''} flex min-h-0 flex-1 items-center justify-center px-2 text-center`}
-          style={{ ...style, paddingTop: 0, paddingBottom: 0, minHeight: 0 }}
-          onClick={() => track('retailer_listing_click', { retailer: listing.retailer ?? undefined, destination_state: listing.state })}>Buy at TLL Store</a> : renderOffer(listing)}</span>}
-    </span>
-  </span>
+  // The server link and mounted basket share a 44px action plus one status row.
+  // Compact placements retain product navigation without a quantity selector.
+  const actionStyle = { ...style, height: 44, minHeight: 44, paddingTop: 0, paddingBottom: 0 }
+  return frame(basketItem && !compact ? <LiveBasketAdd product={basketItem} campaign={storeCampaign} className={className} style={style} showStock={!pickerOwnsStatus} /> :
+    <span className="flex min-w-0 flex-col gap-1" data-offer-state={listing.state} data-live-store-link>
+      {listing.url ? <a href={listing.url} target="_blank" rel="noopener noreferrer"
+        className={`${className ?? ''} flex min-h-11 min-w-0 items-center justify-center px-2 text-center`}
+        style={actionStyle}
+        aria-label={`Buy at TLL Store for ${product.brand} ${product.name} (opens in a new tab)`}
+        onClick={() => track('retailer_listing_click', { retailer: listing.retailer ?? undefined, destination_state: listing.state })}>Buy at TLL Store</a> :
+        <span className="flex min-h-11 items-center justify-center rounded-lg border border-lab-border px-2 text-center text-[10px] text-lab-muted" style={{ height: 44 }}>
+          {stock === 'out_of_stock' ? (chooseAnother ? 'Out of stock: choose another flavour/size' : 'Currently unavailable to buy') : listing.relationship === 'own_shop' ? 'Shop offer under review' : 'No verified offer'}
+        </span>}
+      {!compact && <span className="h-4 min-w-0 truncate text-center text-[9px] leading-4 text-lab-muted">
+        {product.storePrice && stock === 'available' ? 'In stock · price and stock checked within 15 minutes' : listing.url ? 'Check pack, price and stock at TLL Store' : stock === 'out_of_stock' ? 'Out of stock at TLL Store' : 'TLL Store price and stock unavailable'}
+      </span>}
+    </span>)
 }

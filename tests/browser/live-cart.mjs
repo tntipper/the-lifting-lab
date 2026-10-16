@@ -67,15 +67,11 @@ try {
     })
     const staticPage = await staticContext.newPage()
     const staticDimensions = () => staticPage.locator('article[data-product-id]').evaluateAll(cards => cards.map(card => ({ id: card.dataset.productId, width: card.getBoundingClientRect().width, height: card.getBoundingClientRect().height })))
-    await staticPage.goto(origin + '/?mode=default')
-    const serverDefault = await staticDimensions()
     await staticPage.goto(origin)
     const serverLive = await staticDimensions()
-    assert.deepEqual(serverLive, serverDefault, `pre-hydration grid dimensions unchanged at ${width}`)
+    const equalCards = cards => cards.every(card => card.width === cards[0].width && card.height === cards[0].height)
+    assert.equal(equalCards(serverLive), true, `all server live cards equal at ${width}`)
     await staticContext.close()
-    await page.goto(origin + '/?mode=default'); await page.locator('article').first().waitFor()
-    const before = await dimensions()
-    // Flag-off already changes height on hydration (pre-existing, out of scope); live is compared with flag-off at each stage.
     await page.goto(origin); await page.locator('[data-offer-state=live_basket]').first().waitFor()
     const fallback = page.getByRole('region', { name: 'Store fallback' }).getByRole('link', { name: /Buy at/ })
     assert.equal(new URL(await fallback.getAttribute('href')).pathname, '/products/fixture')
@@ -83,20 +79,32 @@ try {
     for (const id of ['4', '5']) {
       const linkCard = page.locator(`article[data-product-id="${id}"]`)
       assert.equal(await linkCard.getByRole('button', { name: 'Add to basket', exact: true }).count(), 0)
-      await linkCard.getByRole('link', { name: 'Buy at TLL Store', exact: true }).waitFor()
+      await linkCard.getByRole('link', { name: /Buy at TLL Store for/ }).waitFor()
     }
     const after = await dimensions()
-    // Same pre-existing hydration shift as flag-off; equality with flag-off is asserted below.
-    assert.deepEqual(after, before, `grid dimensions unchanged at ${width}`)
+    assert.equal(equalCards(after), true, `all mounted live cards equal at ${width}`)
+    assert.deepEqual(after, serverLive, `live dimensions equal before/after hydration at ${width}`)
+    for (const action of await page.locator('article[data-product-id] [data-live-offer-shell] a, article[data-product-id] [data-live-offer-shell] button').all()) {
+      assert.ok((await action.boundingBox()).height >= 44, `44px live action at ${width}`)
+    }
+    assert.equal(await page.locator('article[data-product-id] [data-offer-state]').count(), after.length)
+    for (const row of await page.locator('[data-compact-placement]').all()) {
+      assert.equal(await row.locator('select, button').count(), 0)
+      const link = row.getByRole('link', { name: /Buy at TLL Store for/ })
+      assert.match(await link.getAttribute('href'), /products\/fixture\?variant=4001&/)
+      const bounds = await link.boundingBox()
+      assert.ok(bounds.height >= 44 && bounds.x >= 0 && bounds.x + bounds.width <= width, `compact link fits at ${width}`)
+    }
+    await page.screenshot({ path: resolve(dir, `${width}-offers.png`), fullPage: true })
     assert.equal(await page.getByRole('region', { name: 'Unmapped', exact: true }).getByRole('button').count(), 0)
     assert.equal(await page.locator('article[data-product-id="3"]').getByRole('button', { name: 'Add to basket', exact: true }).count(), 0)
     const card = page.locator('article[data-product-id="1"]')
     await card.getByRole('button', { name: 'Add to basket', exact: true }).click()
-    await card.getByRole('status').getByRole('link', { name: 'Added to basket', exact: true }).waitFor()
+    await card.getByRole('status').filter({ hasText: 'Added to basket' }).waitFor()
     assert.deepEqual(await dimensions(), after, `card notice preserves dimensions at ${width}`)
     const contrast = await card.locator('[data-offer-state=live_basket]').evaluate(el => {
       const button = el.querySelector('button').getBoundingClientRect()
-      const lines = [el.firstElementChild, el.lastElementChild].map(line => line.getBoundingClientRect())
+      const lines = [el.lastElementChild].map(line => line.getBoundingClientRect())
       return lines.every(line => line.bottom <= button.top + 0.5 || line.top >= button.bottom - 0.5)
         && getComputedStyle(el.querySelector('[role=status]')).pointerEvents === 'none'
     })
@@ -135,7 +143,7 @@ try {
     await page.evaluate(() => localStorage.setItem('tll.live-basket.v1', '{broken'))
     await page.reload(); await page.getByText('Your basket is empty.', { exact: true }).waitFor()
     assert.deepEqual(cartApi, []); assert.deepEqual(external, []); assert.deepEqual(errors, [])
-    results.push({ width, gridDimensionsUnchanged: true, preHydrationDimensionsUnchanged: true, linkOnlyDimensionsUnchanged: true, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
+    results.push({ width, liveCardsEqual: true, minimumActionHeight: 44, preHydrationDimensionsUnchanged: true, compactLinksFit: true, flow: 'PASS', externalRequests: external.length, cartApiRequests: cartApi.length })
     await context.close()
   }
   await writeFile(resolve(dir, 'results.json'), JSON.stringify(results, null, 2))
