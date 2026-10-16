@@ -28,7 +28,7 @@ test('home has a guides entry without adding a differently sized method tile', (
 test('desktop, mobile menu and compact research header render a Guides link', async () => {
   const React = require('react'), { renderToStaticMarkup } = require('react-dom/server')
   const ts = require('typescript'), vm = await import('node:vm')
-  for (const pathname of ['/products', '/sources']) {
+  for (const pathname of ['/products', '/sources', '/guide/creatine']) {
     let state = 0
     const mod = { exports: {} }
     const overrides = {
@@ -48,6 +48,16 @@ test('desktop, mobile menu and compact research header render a Guides link', as
     if (pathname === '/products') {
       assert.match(html, /aria-label="Shop categories"[\s\S]*?href="\/guide"/)
       assert.match(html, /aria-label="Mobile navigation"[\s\S]*?href="\/guide"/)
-    } else assert.match(html, /aria-label="Main"[\s\S]*?href="\/guide"/)
+    } else if (pathname === '/sources') assert.match(html, /aria-label="Main"[\s\S]*?href="\/guide"/)
+    else assert.match(html, /href="\/guide" aria-current="page" class="tll-nav-item is-active"/)
   }
+})
+
+
+test('mobile footer uses two-column link groups and compact 32px targets after base rules', () => {
+  const css = readFileSync('app/globals.css', 'utf8')
+  const mobile = css.slice(css.indexOf('@media (max-width: 767px) {\n  .tll-footer-inner'))
+  assert.match(mobile, /\.tll-footer-columns ul \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/)
+  assert.match(mobile, /\.tll-footer nav a \{ min-height: 32px; \}/)
+  assert.ok(css.indexOf(mobile) > css.indexOf('.tll-footer nav a { min-width:'))
 })

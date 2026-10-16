@@ -1,7 +1,6 @@
 'use client'
 
 import InformedSportIcon from '@/components/InformedSportIcon'
-
 import styles from '@/components/shop.module.css'
 import ProductAssessment from '@/components/ProductAssessment'
 import FavouriteButton from '@/components/FavouriteButton'
@@ -24,7 +23,7 @@ export default function FavouriteCard({
     <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4">
       <ProductAssessment product={p} />
       <div className="min-w-0 flex-1">
-        <div className={styles.brandLine}><p className="text-white text-sm font-bold truncate">{p.brand}</p><InformedSportIcon certified={p.informed_sport} sourceUrl={p.informed_sport_source_url} /></div>
+        <div className={styles.brandLine}><p className="text-white text-sm font-bold truncate">{p.brand}</p><InformedSportIcon certified={p.informed_sport} /></div>
         <p className="text-lab-muted text-xs truncate">{p.name}</p>
         <span className="inline-block mt-1.5 text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
           {categoryLabel(p.category)}

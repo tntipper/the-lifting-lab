@@ -1,3 +1,14 @@
+**16 October reviewer fixes — grok/guides-footer-fix; HEAD a3d4ac0; working tree only:**
+- Restored View/Search retailer links and Shop offer under review; Coming soon only fills an otherwise absent offer.
+- Coming soon keeps action dimensions/classes, with opacity .55 and not-allowed cursor; corrected earlier handover claim below.
+- Both popups use document Escape/outside pointerdown while open; hover-click pins; focus/blur and listener cleanup retained.
+- Home rows allow popup overflow with rounded container; Informed Sport target is 32px with negative margin, unchanged line height.
+- Mobile footer link groups use two columns/32px rows and tighter spacing; Guides gets is-active; import ordering corrected.
+- Dropped product certification source field/callers: no matching migration column; optional icon source prop remains supported.
+- PASS 185 focused Node tests, tsc --noEmit, lint (0 errors/21 existing warnings), diff check; browser fixture expanded.
+- Browser blocked: Chrome launch SIGABRT in sandbox; next run guides-footer browser fixture outside sandbox. Hosted CI unrun.
+- No commit/push/deploy; existing g-run scripts untouched; related draft PR readback unavailable (gh unsigned).
+
 **16 October Informed Sport inline icon + True Cost investigation — grok/guides-footer-fix; base main 3b3c507; local only:**
 - Preserved all prior uncommitted guides/footer/Coming soon/advisory changes and g-run scripts.
 - Replaced catalogue certification bar/detail badge with a small shield/check beside brand; also home/saved cards.
@@ -12,7 +23,7 @@
 **16 October guides/footer and advisory UI — grok/guides-footer-fix; base main 3b3c507; local only:**
 - Added Guides to desktop/compact/mobile navigation, footer and home method links; legacy /guides routes use explicit 301s.
 - Compacted footer padding/logo/link groups; retained legal/social links; added company number 17497631.
-- Unmapped card/detail offers show inert Coming soon with shared buy classes/style; mapped/stock/held offer behaviour retained.
+- Initial Coming soon change also replaced retailer links and held-shop messages; corrected in the reviewer follow-up above.
 - Caffeine advisory moved beside label values as a hover/tap/keyboard popup; wording/source and legal warnings unchanged.
 - PASS 211 focused Node tests; tsc --noEmit; lint (0 errors/21 existing warnings); git diff --check.
 - Browser fixture added: sandbox blocked local listen (EPERM) and Chrome launch (SIGABRT); visual dimensions remain unverified.

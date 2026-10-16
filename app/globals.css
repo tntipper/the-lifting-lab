@@ -366,6 +366,14 @@ input, select, textarea { color: var(--ink); }
 .tll-footer-legal nav { display: flex; flex-wrap: wrap; gap: 0 16px; }
 .tll-capture input { min-width: 0; width: 100%; }
 .tll-footer .tll-btn { min-height: 48px; }
+@media (max-width: 767px) {
+  .tll-footer-inner { padding: 16px 16px 12px; gap: 12px; }
+  .tll-footer-columns { grid-template-columns: 1fr; gap: 12px; }
+  .tll-footer-columns ul { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; }
+  .tll-footer nav a { min-height: 32px; }
+  .tll-footer-blocks { gap: 12px; }
+  .tll-footer-legal { gap: 6px; padding-top: 8px; }
+}
 
 /* Shop.dc.html panels and ds CompareBar / CompareTable / StackSummary. */
 .tll-dialog.shop-drawer {

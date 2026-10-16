@@ -61,7 +61,7 @@
 /* Keep certification out of the card's vertical flow, including its popup. */
 .brandLine { position:relative; display:flex; align-items:center; gap:4px; min-width:0; }
 .certification { display:inline-flex; align-items:center; flex:0 0 24px; width:24px; height:1em; vertical-align:middle; }
-.brandLine .certification .certificationTrigger { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; min-width:24px; min-height:24px; padding:0; border:0; border-radius:4px; background:transparent; color:var(--ink); cursor:pointer; }
+.brandLine .certification .certificationTrigger { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:32px; height:32px; min-width:32px; min-height:32px; padding:4px; margin:-4px; border:0; border-radius:4px; background:transparent; color:var(--ink); cursor:pointer; }
 .certificationTrigger:focus-visible, .certificationPopup a:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
 .certificationPopup { position:absolute; z-index:35; left:0; top:100%; width:max-content; max-width:min(240px, calc(100vw - 64px)); padding:12px; border:1px solid var(--line-strong); border-radius:8px; background:var(--surface); color:var(--ink); font:400 14px/20px var(--font-sans); text-align:left; text-transform:none; letter-spacing:normal; white-space:normal; }
 .certificationPopup[hidden] { display:none; }

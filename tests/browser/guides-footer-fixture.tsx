@@ -1,5 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import InformedSportIcon from '../../components/InformedSportIcon'
+import TopProductsTable from '../../components/TopProductsTable'
+import type { ScoredProduct } from '../../lib/products'
 import TopNav from '../../components/TopNav'
 import SiteFooter from '../../components/SiteFooter'
 import ServingLabel from '../../components/ServingLabel'
@@ -24,6 +26,7 @@ createRoot(document.getElementById('fixture')!).render(<>
         </div>
       </article>)}
     </div>
+    <div data-table-fixture><TopProductsTable products={[{ ...product, informed_sport: true, category: 'creatine', score: null, cost_per_serving: null, nutrients: [] } as unknown as ScoredProduct]} /></div>
   </main>
   <SiteFooter />
 </>)

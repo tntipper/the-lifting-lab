@@ -1,12 +1,9 @@
 'use client'
 
-import InformedSportIcon from '@/components/InformedSportIcon'
-import { displayPrice, isStoreOffer } from '@/lib/commerce/display-price'
-import { formatListedServingPrice } from '@/lib/products'
-
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import InformedSportIcon from '@/components/InformedSportIcon'
 import { scoreColor } from '@/components/ScoreBadge'
 import ProductWarnings from '@/components/ProductWarnings'
 import ShopScoreBadge from '@/components/ShopScoreBadge'
@@ -25,7 +22,8 @@ import ProductOfferLink from '@/components/ProductOfferLink'
 import { amazonSearch, bulkSearch } from '@/lib/affiliate'
 import { isSyntheticPreview } from '@/lib/preview-mode'
 import { track } from '@/lib/gtag'
-import { trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
+import { displayPrice, isStoreOffer } from '@/lib/commerce/display-price'
+import { formatListedServingPrice, trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
 import MethodologyModal from '@/components/MethodologyModal'
@@ -158,7 +156,7 @@ export default function ProductDetailPage({
               className="text-lab-muted text-xs uppercase tracking-widest hover:text-lab-lime transition-colors"
             >
               {product.brand}
-            </Link><InformedSportIcon certified={product.informed_sport} sourceUrl={product.informed_sport_source_url} /></div>
+            </Link><InformedSportIcon certified={product.informed_sport} /></div>
             <h1 className="tll-display">{product.name}</h1>
             <ClaimsReviewNotice category={product.category} />
             <div className="flex items-center gap-2 flex-wrap">

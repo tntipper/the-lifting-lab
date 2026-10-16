@@ -1,10 +1,9 @@
 'use client'
 
-import InformedSportIcon from '@/components/InformedSportIcon'
-
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import InformedSportIcon from '@/components/InformedSportIcon'
 import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
 import FavouriteButton from '@/components/FavouriteButton'
 import MethodologyModal from '@/components/MethodologyModal'
@@ -291,7 +290,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
 
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className={styles.brandLine}><p className="truncate text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">{product.brand}</p><InformedSportIcon certified={product.informed_sport} sourceUrl={product.informed_sport_source_url} /></div>
+                  <div className={styles.brandLine}><p className="truncate text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">{product.brand}</p><InformedSportIcon certified={product.informed_sport} /></div>
                   <Link href={`/products/${product.id}`} className={`${styles.cardTitle} mt-0.5 flex min-h-11 items-center text-[17px] font-semibold leading-6 text-[var(--ink)] hover:underline`}>
                     {product.name}
                   </Link>

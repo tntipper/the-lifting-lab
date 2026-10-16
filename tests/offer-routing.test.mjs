@@ -353,18 +353,32 @@ test('S05 comparison and stack pages pass their context to every store offer', (
 })
 
 
-test('card/detail Coming soon is inert and uses the exact normal action classes and style', () => {
+test('card/detail Coming soon is inert and keeps normal dimensions and adds disabled styling', () => {
   const Component = storeComponent(enabledAffiliate)
   const props = { comingSoonWhenNotSold: true, className: 'fixture-buy w-full py-3', style: { borderRadius: 8 } }
   const html = product => renderToStaticMarkup(React.createElement(Component, { ...props, product }))
   const sellable = html(storeProduct)
-  for (const buy_url of [null, storeProduct.buy_url, 'https://shop.theliftinglab.co.uk/products/legacy']) {
+  for (const buy_url of [null, 'https://unknown.example/product']) {
     const unavailable = html({ ...storeProduct, buy_url, storeLinkMapping: null })
     assert.match(unavailable, /<button[^>]*disabled=""[^>]*aria-disabled="true"/)
     assert.match(unavailable, />Coming soon<\/button>/)
     assert.doesNotMatch(unavailable, /<a\b|href=/)
     assert.equal(unavailable.match(/<button[^>]*class="([^"]+)"/)[1], sellable.match(/<a[^>]*class="([^"]+)"/)[1])
-    assert.equal(unavailable.match(/style="([^"]+)"/)[1], sellable.match(/style="([^"]+)"/)[1])
+    assert.match(unavailable, /opacity:0.55;cursor:not-allowed/)
+    assert.match(unavailable, /border-radius:8px/)
   }
   assert.equal(sellable, renderToStaticMarkup(React.createElement(Component, { ...props, comingSoonWhenNotSold: false, product: storeProduct })))
+})
+
+for (const [buy_url, label] of [
+  ['https://www.amazon.co.uk/dp/B000000001', 'View retailer ↗'],
+  ['https://www.amazon.co.uk/s?k=creatine', 'Search retailer ↗'],
+  ['https://shop.theliftinglab.co.uk/products/legacy', 'Shop offer under review'],
+]) test(`Coming soon preserves ${label}`, () => {
+  const Component = storeComponent(enabledAffiliate)
+  const product = { ...storeProduct, storeLinkMapping: null, buy_url }
+  const html = flag => renderToStaticMarkup(React.createElement(Component, { product, comingSoonWhenNotSold: flag }))
+  assert.equal(html(true), html(false))
+  assert.ok(html(true).includes(label))
+  assert.doesNotMatch(html(true), /Coming soon/)
 })

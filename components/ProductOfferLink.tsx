@@ -13,7 +13,7 @@ import { catalogueAvailabilityFor, type CataloguePresentation } from '@/lib/comm
 /** Interim listing navigation, until a verified commerce projection supplies exact offers. */
 export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, storeCampaign = 'product', pickerOwnsStatus = false, chooseAnother = false, storeActionLabel, comingSoonWhenNotSold = false }: {
   product: { id?: string; brand: string; name: string; buy_url: string | null; cataloguePresentation?: CataloguePresentation | null; storeLinkMapping?: StoreLinkMapping | null; storeVariants?: StoreVariantOption[]; storePrice?: StorePricePresentation | null }
-  /** Reserve the buy action for products outside the mapped range on cards/detail pages. */
+  /** Show a disabled action when no store offer or retailer link is available. */
   comingSoonWhenNotSold?: boolean
   /** Label for the existing exact store cart action; never applied to searches or product-page offers. */
   storeActionLabel?: string
@@ -28,9 +28,9 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
   const cart = useStagingCart()
   const listing = resolveProductOffer(product, storeBuyLinkMode, storeCampaign)
   const actionClassName = `${className ?? ''} flex min-h-11 items-center justify-center px-2 text-center break-words`
-  if (comingSoonWhenNotSold && listing.reason !== 'approved_store_mapping' && !product.storeLinkMapping && !product.storeVariants?.length && !product.cataloguePresentation && !product.storePrice && !(cart?.enabled && product.id && cart.view?.productId === product.id)) {
+  if (comingSoonWhenNotSold && !listing.url && listing.relationship !== 'own_shop' && !product.storeLinkMapping && !product.storeVariants?.length && !product.cataloguePresentation && !product.storePrice && !(cart?.enabled && product.id && cart.view?.productId === product.id)) {
     return <span className="flex min-w-0 flex-col justify-center gap-1" data-offer-state="coming_soon">
-      <button type="button" disabled aria-disabled="true" className={actionClassName} style={style}>Coming soon</button>
+      <button type="button" disabled aria-disabled="true" className={actionClassName} style={{ ...style, opacity: .55, cursor: 'not-allowed' }}>Coming soon</button>
       <span aria-hidden="true" className="invisible text-center text-[9px] leading-tight text-lab-muted">Check pack, price and stock at TLL Store</span>
     </span>
   }
