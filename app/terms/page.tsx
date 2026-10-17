@@ -26,8 +26,8 @@ export default function TermsPage() {
         <div className="space-y-8 text-lab-muted text-sm leading-relaxed">
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Purchases from the TLL Store</h2>
-            <p>The proposed seller is Tobias Tipper, trading as The Lifting Lab. Shopify provides checkout, payments, purchase accounts and order emails. TLL handles customer support and remains responsible for purchases from its store, including where a supplier dispatches the goods. See our <Link href="/delivery" className="text-lab-lime hover:underline">delivery</Link> and <Link href="/refunds" className="text-lab-lime hover:underline">refunds</Link> drafts. Purchases through external retailer links are with that retailer.</p>
-            <p className="mt-3">TODO for Toby/Lifty: confirm the seller identity, geographical business address, contact telephone number, service area, contract acceptance point and matching Shopify policies before publication. Nothing in these terms removes your statutory consumer rights, or excludes liability that cannot lawfully be excluded.</p>
+            <p>The Lifting Lab is a trading name of THE LIFTING LAB LTD, registered in England and Wales, company number 17497631, registered office 82a James Carter Road, Mildenhall, IP28 7DE. Shopify provides checkout, payments, purchase accounts and order emails. TLL handles customer support and remains responsible for purchases from its store, including where a supplier dispatches the goods. See our <Link href="/delivery" className="text-lab-lime hover:underline">delivery</Link> and <Link href="/refunds" className="text-lab-lime hover:underline">refunds</Link> drafts. Purchases through external retailer links are with that retailer.</p>
+            <p className="mt-3">TODO for Toby/Lifty: confirm the contact telephone number, service area, contract acceptance point and matching Shopify policies before publication. Nothing in these terms removes your statutory consumer rights, or excludes liability that cannot lawfully be excluded.</p>
           </section>
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Using the site</h2>
@@ -57,8 +57,8 @@ export default function TermsPage() {
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Accuracy of scores</h2>
             <p>
               We make reasonable efforts to keep product data accurate, but formulations change. Recorded label data and historical scores may be incomplete or outdated. No approved product effectiveness assessment is currently available. If you spot an error, please contact us at{' '}
-              <a href="mailto:hello@theliftinglab.co.uk" className="text-lab-lime hover:underline">
-                hello@theliftinglab.co.uk
+              <a href="mailto:help@theliftinglab.co.uk" className="text-lab-lime hover:underline">
+                help@theliftinglab.co.uk
               </a>.
             </p>
           </section>
@@ -66,7 +66,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Intellectual property</h2>
             <p>
-              The Lifting Lab scoring methodology, content, and brand are the property of Tobias Tipper, trading as The Lifting Lab. You may not reproduce or republish our scoring data without permission. Product names and brand marks are the property of their respective owners and are used for identification purposes only.
+              The Lifting Lab scoring methodology, content, and brand are the property of THE LIFTING LAB LTD. You may not reproduce or republish our scoring data without permission. Product names and brand marks are the property of their respective owners and are used for identification purposes only.
             </p>
           </section>
 
@@ -88,8 +88,8 @@ export default function TermsPage() {
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Contact</h2>
             <p>
               Questions about these terms:{' '}
-              <a href="mailto:hello@theliftinglab.co.uk" className="text-lab-lime hover:underline">
-                hello@theliftinglab.co.uk
+              <a href="mailto:help@theliftinglab.co.uk" className="text-lab-lime hover:underline">
+                help@theliftinglab.co.uk
               </a>
             </p>
           </section>

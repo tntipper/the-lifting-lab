@@ -58,8 +58,8 @@ export default function AffiliateDisclosurePage() {
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Questions</h2>
             <p>
               If you have questions about our affiliate relationships, contact us at{' '}
-              <a href="mailto:hello@theliftinglab.co.uk" className="text-lab-lime hover:underline">
-                hello@theliftinglab.co.uk
+              <a href="mailto:info@theliftinglab.co.uk" className="text-lab-lime hover:underline">
+                info@theliftinglab.co.uk
               </a>.
             </p>
           </section>
