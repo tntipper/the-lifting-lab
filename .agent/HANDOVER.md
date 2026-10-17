@@ -1,3 +1,10 @@
+**17 October governing law — grok/governing-law; base 0cde39f:**
+- Replaced only the terms governing-law paragraph with the verbatim owner-approved clause; statutory-rights wording unchanged.
+- rg app/components/lib/public/data found no other laws-of-Scotland/Scottish-courts wording; final scan clear.
+- Added deterministic rendered-terms assertion via htmlFor for the exact clause and absence of both retired phrases.
+- PASS lint (0 errors/20 existing warnings), typecheck, focused T12 tests (13/13) and git diff --check.
+- No commit, push or remote changes; hosted CI unrun. Next: operator review and commit; no local blockers.
+
 **17 October trader identity — grok/contact-emails; parent a575d46 (PR #102):**
 - Privacy, terms seller and contact now use the owner-approved THE LIFTING LAB LTD identity, company 17497631 and registered office verbatim.
 - Terms IP ownership now names THE LIFTING LAB LTD; removed resolved seller/address TODOs, retaining outstanding contact/operational review.

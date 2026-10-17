@@ -80,7 +80,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Governing law</h2>
             <p>
-              These terms are governed by the laws of Scotland / England and Wales. Any disputes will be subject to the jurisdiction of the Scottish courts.
+              These terms are governed by the laws of the United Kingdom as they apply in England and Wales. If you live in Scotland or Northern Ireland, you can also bring proceedings in your local courts.
             </p>
           </section>
 
