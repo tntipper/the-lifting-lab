@@ -25,7 +25,7 @@ export async function GET() {
       version: '0.4.0',
       description:
         'Supplement research records and listed-price arithmetic. Only assessments signed off by Assay and Oath can show scores; historical scores are withheld.',
-      contact: { name: 'The Lifting Lab', url: SITE_URL, email: 'hello@theliftinglab.co.uk' },
+      contact: { name: 'The Lifting Lab', url: SITE_URL, email: 'info@theliftinglab.co.uk' },
     },
     servers: [{ url: SITE_URL }],
     paths: {

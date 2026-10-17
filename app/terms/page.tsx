@@ -57,8 +57,8 @@ export default function TermsPage() {
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Accuracy of scores</h2>
             <p>
               We make reasonable efforts to keep product data accurate, but formulations change. Recorded label data and historical scores may be incomplete or outdated. No approved product effectiveness assessment is currently available. If you spot an error, please contact us at{' '}
-              <a href="mailto:hello@theliftinglab.co.uk" className="text-lab-lime hover:underline">
-                hello@theliftinglab.co.uk
+              <a href="mailto:help@theliftinglab.co.uk" className="text-lab-lime hover:underline">
+                help@theliftinglab.co.uk
               </a>.
             </p>
           </section>
@@ -88,8 +88,8 @@ export default function TermsPage() {
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Contact</h2>
             <p>
               Questions about these terms:{' '}
-              <a href="mailto:hello@theliftinglab.co.uk" className="text-lab-lime hover:underline">
-                hello@theliftinglab.co.uk
+              <a href="mailto:help@theliftinglab.co.uk" className="text-lab-lime hover:underline">
+                help@theliftinglab.co.uk
               </a>
             </p>
           </section>

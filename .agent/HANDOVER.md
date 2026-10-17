@@ -1,3 +1,13 @@
+**17 October customer contact emails — grok/contact-emails; base 786b267:**
+- Contact lists labelled info/general+trade, orders/order enquiries and help/service+refunds+privacy mailto links.
+- Privacy/terms/EmailCapture use help; refunds use help for returns and orders for faults/delivery errors; affiliate/OpenAPI use info.
+- T12 asserts all three contact links and recursively rejects retired/owner emails in app/components; 11 focused tests PASS.
+- PASS lint (0 errors/20 existing warnings), typecheck and diff check; customer-facing rg scan clean (content/ absent).
+- npm test: 4,134 pass / 28 fail / 8 skipped; unchanged 786b267: 4,133 pass / same 28 failures / 8 skipped.
+- Baseline tested in this same worktree, then edits restored; failures concern socket/process restrictions, Python and PostgreSQL/offline fixtures.
+- Internal owner-email evidence in this handover, two docs/ops stage plans and staging-generation-23-owner-journey.mjs retained.
+- Commit BLOCKED: Git index.lock outside writable sandbox (Operation not permitted); changes unstaged. No push/merge/remotes/hosted CI. Next: commit locally outside sandbox.
+
 **16 October PR #99 rankings overflow — grok/guides-footer-fix; HEAD c980c61; base main 90e0ff7:**
 - Bounded ShopScoreBadge to w-28/max-w-full; button stacks/wraps labels using Tailwind utilities, including when fixtures omit CSS modules.
 - Oath wording, native disclosure/ARIA/keyboard/Escape handlers and all test assertions unchanged; g-run*.sh untouched.

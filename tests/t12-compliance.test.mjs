@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -153,8 +153,21 @@ test('policy pages render draft markers, operational TODOs and required policy c
   assert.match(refunds, /14 days/); assert.match(refunds, /statutory rights/)
   assert.match(privacy, /Supabase/); assert.match(privacy, /Shopify/); assert.match(privacy, /Suppliers and couriers/)
   assert.match(terms, /statutory consumer rights/)
-  assert.match(contact, /mailto:hello@theliftinglab.co.uk/)
+  for (const address of ['info', 'orders', 'help']) {
+    assert.ok(contact.includes(`href="mailto:${address}@theliftinglab.co.uk"`))
+  }
   assert.equal((contact.match(/Draft for Lifty and Toby review/g) ?? []).length, 1)
+})
+
+
+test('customer-facing files contain no retired or owner email addresses', () => {
+  for (const directory of ['app', 'components']) {
+    for (const entry of readdirSync(resolve(root, directory), { recursive: true, withFileTypes: true })) {
+      if (!entry.isFile()) continue
+      const path = resolve(entry.parentPath, entry.name)
+      assert.doesNotMatch(readFileSync(path, 'utf8'), /(?:hello|toby)@theliftinglab\.co\.uk/i, relative(root, path))
+    }
+  }
 })
 
 

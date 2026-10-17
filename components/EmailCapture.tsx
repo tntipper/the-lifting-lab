@@ -13,7 +13,7 @@ export default function EmailCapture() {
     event.preventDefault()
     const email = String(new FormData(event.currentTarget).get('email') ?? '')
     const body = `Please let me know when price-drop alerts are available.\nMy email address: ${email}`
-    window.location.href = `mailto:hello@theliftinglab.co.uk?subject=${encodeURIComponent('Price-drop alerts request')}&body=${encodeURIComponent(body)}`
+    window.location.href = `mailto:help@theliftinglab.co.uk?subject=${encodeURIComponent('Price-drop alerts request')}&body=${encodeURIComponent(body)}`
     setRequested(true)
   }
   const fields = <>

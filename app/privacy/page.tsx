@@ -28,8 +28,8 @@ export default function PrivacyPage() {
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Who we are</h2>
             <p>
               The Lifting Lab (<strong className="text-white">theliftinglab.co.uk</strong>) is operated by Tobias Tipper, trading as The Lifting Lab. We are based in Scotland, UK. You can contact us at{' '}
-              <a href="mailto:hello@theliftinglab.co.uk" className="text-lab-lime hover:underline">
-                hello@theliftinglab.co.uk
+              <a href="mailto:help@theliftinglab.co.uk" className="text-lab-lime hover:underline">
+                help@theliftinglab.co.uk
               </a>.
             </p>
           </section>
@@ -96,8 +96,8 @@ export default function PrivacyPage() {
             </ul>
             <p className="mt-3">
               To exercise any of these rights, email{' '}
-              <a href="mailto:hello@theliftinglab.co.uk" className="text-lab-lime hover:underline">
-                hello@theliftinglab.co.uk
+              <a href="mailto:help@theliftinglab.co.uk" className="text-lab-lime hover:underline">
+                help@theliftinglab.co.uk
               </a>.
             </p>
           </section>
