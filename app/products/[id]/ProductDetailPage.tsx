@@ -1,10 +1,9 @@
 'use client'
-import { displayPrice, isStoreOffer } from '@/lib/commerce/display-price'
-import { formatListedServingPrice } from '@/lib/products'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import InformedSportIcon from '@/components/InformedSportIcon'
 import { scoreColor } from '@/components/ScoreBadge'
 import ProductWarnings from '@/components/ProductWarnings'
 import ShopScoreBadge from '@/components/ShopScoreBadge'
@@ -17,11 +16,14 @@ import ProductSizePicker from '@/components/ProductSizePicker'
 import { productForSize, selectProductSize, sizeSelectionUrl } from '@/lib/commerce/size-selection'
 import ProductVariantPicker from '@/components/ProductVariantPicker'
 import { flavourSlug, variantSelectionUrl } from '@/lib/commerce/variant-selection'
+import GuidanceNote from '@/components/GuidanceNote'
+import { SHOP_GUIDANCE } from '@/lib/shop-guidance'
 import ProductOfferLink from '@/components/ProductOfferLink'
 import { amazonSearch, bulkSearch } from '@/lib/affiliate'
 import { isSyntheticPreview } from '@/lib/preview-mode'
 import { track } from '@/lib/gtag'
-import { trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
+import { displayPrice } from '@/lib/commerce/display-price'
+import { formatListedServingPrice, trueCostReason, type ComparedProduct, type ScoredProduct } from '@/lib/products'
 import { verdictFlags, nutrientColor } from '@/lib/scoring-utils'
 import { useLocalStack } from '@/components/LocalStackContext'
 import MethodologyModal from '@/components/MethodologyModal'
@@ -110,7 +112,7 @@ export default function ProductDetailPage({
     setSelectedId(id)
     window.history.replaceState(null, '', variantSelectionUrl(window.location.href, id))
   }
-  const { inStack, toggle } = useLocalStack()
+  const { inStack, toggle, state: stackState } = useLocalStack()
   const [shareOpen, setShareOpen] = useState(false)
 
   const review = claimsReviewFor(product.category)
@@ -145,27 +147,24 @@ export default function ProductDetailPage({
         {/* hero */}
         <div className={styles.detailHero}>
           <div className={styles.detailPackshot}>
-            <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} />
+            <div className={styles.detailImage}>
+              <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} fill sizes="(max-width: 759px) calc(100vw - 82px), (max-width: 1023px) 40vw, 432px" />
+            </div>
             <ShopScoreBadge product={product} />
           </div>
           <div className={styles.detailIntro}>
-            <Link
+            <div className={styles.brandLine}><Link
               href={`/brand/${brandSlug(product.brand)}`}
               className="text-lab-muted text-xs uppercase tracking-widest hover:text-lab-lime transition-colors"
             >
               {product.brand}
-            </Link>
+            </Link><InformedSportIcon certified={product.informed_sport} /></div>
             <h1 className="tll-display">{product.name}</h1>
             <ClaimsReviewNotice category={product.category} />
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                 {categoryLabel(product.category)}
               </span>
-              {product.informed_sport && (
-                <span className="text-[10px] uppercase tracking-widest font-bold bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">
-                  IS Certified
-                </span>
-              )}
               {product.protein_yield != null && (
                 <span className="text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
                   {product.protein_yield}% protein yield
@@ -182,15 +181,11 @@ export default function ProductDetailPage({
                 </span>
               )}
             </div>
-            <p className="font-mono text-sm text-lab-muted">
-              {price !== null ? <span>£{price.toFixed(2)} {isStoreOffer(product) ? 'at TLL Store' : 'retail'}</span> : <span>{isStoreOffer(product) ? 'TLL Store price unavailable' : 'Retail price —'}</span>}
-              <span className="mx-2">·</span>
-              {product.cost_per_serving != null ? (
-                <span className="text-white font-bold">{formatListedServingPrice(product.cost_per_serving)} listed price / serving</span>
-              ) : (
-                <span title={costReason ?? undefined}>True Cost — <span className="text-xs">({costReason})</span></span>
-              )}
-            </p>
+            <div className={styles.priceBox}>
+              <div className={styles.primaryPrice}><span>Price</span><b>{price !== null ? `£${price.toFixed(2)}` : 'Not listed'}</b></div>
+              <div><span>True cost</span><b title={costReason ?? undefined}>{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : 'Not listed'}</b></div>
+              <div><span>Per serving</span><b>{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b></div>
+            </div>
             <p className="font-mono text-xs text-lab-muted">
               {product.serving_size != null
                 ? `${product.serving_size}${product.serving_unit ?? ''} per serving`
@@ -245,7 +240,7 @@ export default function ProductDetailPage({
                       )}
                       <span className="text-white/80">{n.nutrient_name}</span>
                     </div>
-                    <span className="font-mono font-semibold text-white ml-2 shrink-0">{n.amount}{n.unit}</span>
+                    <span className="font-mono font-semibold text-white ml-2 shrink-0">{n.amount}{n.unit}{i === product.nutrients.findIndex(row => SHOP_GUIDANCE.caffeine.match.test(row.nutrient_name)) && <GuidanceNote nutrients={product.nutrients} />}</span>
                   </div>
                 )
               })}
@@ -261,18 +256,17 @@ export default function ProductDetailPage({
           </div>
         )}
 
+        {stackState.error && <p role="alert" className="text-sm text-lab-muted">{stackState.error}</p>}
         {/* score explanation */}
-        <div className={styles.detailPanel}>
+        {!assessment.suppressed && <div className={styles.detailPanel}>
           <div className="flex items-center justify-between gap-3 mb-2">
             <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted">Score Explained</p>
             <MethodologyModal category={product.category} />
           </div>
           <p className="text-sm text-white/70 leading-relaxed">
             {!canRecommend ? assessment.explanation : <>
-            Existing formula score (scientific review incomplete):{' '}
-            <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> against our
-            evidence-based reference spec for {categoryLabel(product.category).toLowerCase()}. Scores are based on
-            dose-for-dose comparison against evidence-based targets — not brand reputation or marketing claims.
+            TLL Label Score:{' '}
+            <span className="font-bold" style={{ color }}>{product.score ?? '–'}/100</span> for {categoryLabel(product.category).toLowerCase()}. The score compares stated doses with amounts used in published research and checks label transparency.
             </>}
           </p>
           {canRecommend && <div className="flex gap-3 mt-3 flex-wrap">
@@ -280,7 +274,7 @@ export default function ProductDetailPage({
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">● Amber = below optimal</span>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/30">● Red = significantly underdosed</span>
           </div>}
-        </div>
+        </div>}
 
         </div>
         {/* better-rated alternatives in the same category */}
@@ -293,7 +287,7 @@ export default function ProductDetailPage({
         {retailers.length > 0 && <div className={styles.detailPanel}>
           <p className="text-[11px] uppercase tracking-widest font-bold text-lab-muted mb-1">Search other retailers</p>
           <p className="text-xs text-gray-500 mb-4">
-            Search results do not confirm the exact product, pack, price or stock.
+            Retailer searches do not confirm the exact product, pack, price or stock.
           </p>
           <div className="grid grid-cols-2 gap-2">
             {retailers.map((r) => (
@@ -340,7 +334,7 @@ export default function ProductDetailPage({
           <div className="min-w-0 space-y-2">
             {size && <ProductSizePicker options={sizes} selected={size} onChange={changeSize} price={product.retail_price} />}
             {!sizeOwnsOffer && selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
-            <ProductOfferLink
+            <ProductOfferLink comingSoonWhenNotSold
               product={product}
               pickerOwnsStatus={!sizeOwnsOffer && !!selected} chooseAnother={sizeOwnsOffer ? sizes.length > 1 : variants.length > 1}
               className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"

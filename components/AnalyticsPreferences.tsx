@@ -1,5 +1,6 @@
 'use client'
 
+import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { GA_MEASUREMENT_ID } from '@/lib/gtag'
@@ -33,6 +34,7 @@ export default function AnalyticsPreferences() {
   const [choice, setChoice] = useState<AnalyticsChoice | null>(null)
   const [ready, setReady] = useState(false)
   const [open, setOpen] = useState(false)
+  const [prompt, setPrompt] = useState(false)
   const [error, setError] = useState(false)
   const busy = useRef(false)
   const active = useRef(false)
@@ -48,7 +50,7 @@ export default function AnalyticsPreferences() {
     active.current = stored === 'accepted'
     // Browser storage is read after hydration; the server always renders OFF.
     setChoice(stored)
-    setOpen(stored === null)
+    setPrompt(stored === null)
     setReady(true)
 
     const sync = () => {
@@ -112,6 +114,7 @@ export default function AnalyticsPreferences() {
     active.current = next === 'accepted'
     setChoice(next)
     setOpen(false)
+    setPrompt(false)
     setError(false)
     trigger.current?.focus()
     busy.current = false
@@ -120,14 +123,14 @@ export default function AnalyticsPreferences() {
   const buttonClass = 'rounded border border-lab-lime px-4 py-2 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-lab-lime'
   return (
     <>
-      <div className="bg-lab-bg text-white border-b border-lab-border px-4 py-3">
+      <div className="contents">
         <button ref={trigger} type="button" aria-expanded={open} aria-controls="analytics-preferences"
-          className="text-sm underline text-lab-lime focus-visible:outline-2 focus-visible:outline-offset-4"
-          onClick={() => { setOpen(true); requestAnimationFrame(() => heading.current?.focus()) }}>
+          className="inline-flex min-h-11 items-center text-sm underline text-lab-lime focus-visible:outline-2 focus-visible:outline-offset-4"
+          onClick={() => { setPrompt(false); setOpen(true); requestAnimationFrame(() => heading.current?.focus()) }}>
           Analytics preferences
         </button>
-        {ready && open && (
-          <section id="analytics-preferences" aria-labelledby="analytics-heading" className="max-w-3xl mx-auto py-4">
+        {ready && (open || prompt) && createPortal(
+          <section id="analytics-preferences" aria-labelledby="analytics-heading" className="tll-on-dark fixed inset-x-3 bottom-3 z-50 mx-auto max-h-[70vh] max-w-3xl overflow-y-auto rounded-lg border border-lab-lime bg-[#14140f] p-4 text-white shadow-lg">
             <h2 id="analytics-heading" ref={heading} tabIndex={-1} className="text-lg font-bold">Optional analytics</h2>
             <p className="text-sm my-3">We use Google Analytics to understand page visits and feature use, with cookies that identify your browser. Analytics stays off until you accept. You can reject or withdraw here at any time. Essential account and saved-stack features work either way. <a href="/privacy" className="underline text-lab-lime">Privacy policy</a>.</p>
             <p className="text-sm mb-3">Current choice: {choice === 'accepted' ? 'analytics on' : choice === 'rejected' ? 'analytics off (rejected)' : 'analytics off (no saved choice)'}.</p>
@@ -135,9 +138,9 @@ export default function AnalyticsPreferences() {
             <div className="flex flex-wrap gap-3">
               <button type="button" className={buttonClass} onClick={() => choose('rejected')}>{choice === 'accepted' ? 'Withdraw analytics consent' : 'Reject analytics'}</button>
               <button type="button" className={buttonClass} onClick={() => choose('accepted')}>Accept analytics</button>
-              <button type="button" className={buttonClass} onClick={() => { setOpen(false); trigger.current?.focus() }}>Close preferences</button>
+              <button type="button" className={buttonClass} onClick={() => { setOpen(false); setPrompt(false); trigger.current?.focus() }}>Close preferences</button>
             </div>
-          </section>
+          </section>, document.body
         )}
       </div>
       {ready && choice === 'accepted' && (

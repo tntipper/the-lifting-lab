@@ -47,7 +47,7 @@ function fixture({ rows = [product], fail = false, scoreFor = () => 61 } = {}) {
     if (cache.has(relativePath)) return cache.get(relativePath)
     const filename = fileURLToPath(new URL(`../${relativePath}`, import.meta.url))
     const output = ts.transpileModule(readFileSync(filename, 'utf8'), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX },
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
     }).outputText
     const loadedModule = { exports: {} }
     const localRequire = name => {
@@ -144,7 +144,7 @@ test('share reward route rejects malformed IDs and passes a canonical UUID to ex
 })
 
 test('stack image withholds quality grades for held, zero and missing assessments', async () => {
-  for (const [category, score, label] of [['zma', 99, 'Under review'], ['creatine', 0, 'Not assessed'], ['creatine', null, 'Not assessed'], ['creatine', 80, 'Not assessed']]) {
+  for (const [category, score, label] of [['zma', 99, 'Under review'], ['creatine', 0, 'Under review'], ['creatine', null, 'Under review'], ['creatine', 80, 'Under review']]) {
     const f = fixture({ rows: [{ ...product, category, score: 100 }], scoreFor: () => score })
     const response = await f.load('app/api/stack/sharecard/route.tsx').GET(new Request(`https://fixture.invalid/card?ids=${A}`))
     const text = visibleText(response.element)
@@ -175,4 +175,18 @@ test('reward claims accept no caller-authored score or caption payload', async (
     assert.equal(response.status, 400)
   }
   assert.equal(f.awards.length, 0)
+})
+
+
+test('assessment API replaces raw legacy scores with reviewed scores or null', async () => {
+  const rows = [
+    { ...product, id: '6aa54c84-8f33-4566-aa28-0fdcd5f7c96f', category: 'eaas', score: 100 },
+    { ...product, score: 99 },
+  ]
+  const f = fixture({ rows, scoreFor: () => 100 })
+  const response = await f.load('app/api/stack/assessments/route.ts').GET(new Request(`https://fixture.invalid/assessment?ids=${rows.map(p => p.id).join(',')}`))
+  assert.equal(response.status, 200)
+  const json = await response.json()
+  assert.deepEqual(json.products.map(p => [p.id, p.score]), [[rows[0].id, 79], [A, null]])
+  assert.doesNotMatch(JSON.stringify(json), /"score":(?:100|99)/)
 })

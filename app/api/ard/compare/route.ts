@@ -65,7 +65,7 @@ export async function GET(request: Request) {
       name: p.name,
       brand: p.brand,
       category: p.category,
-      score: assessment.score, // Null until a versioned assessment is approved.
+      score: assessment.score, // Authoritative reviewed score only.
       retail_price_gbp: p.retail_price,
       cost_per_serving_gbp: p.cost_per_serving,
       servings_per_container: p.servings_per_container,
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
       count: results.length,
       methodology: `${SITE_URL}/guide`,
       disclosure:
-        'No approved effectiveness assessments are available. All ranks are null; historical scores must not drive recommendations. Score/value ordering falls back to alphabetical research order. Budget ordering compares listed price per known serving only, without a health-benefit or approved-offer implication. Retailer references are unverified listings or searches, with individual relationship disclosures; they are not confirmed purchase offers.',
+        'Scores and score/value placement require both Assay and Oath sign-off, with category holds taking precedence. Unapproved records fall back to alphabetical research order. Budget ordering compares listed price per known serving only, without a health-benefit or approved-offer implication. Retailer references are unverified listings or searches, with individual relationship disclosures; they are not confirmed purchase offers.',
       results,
     }),
   )

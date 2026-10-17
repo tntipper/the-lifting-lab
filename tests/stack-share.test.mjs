@@ -22,7 +22,7 @@ function modules(env = {}, overrides = {}) {
       if (name in overrides) return overrides[name]
       if (name === 'next/server') return { connection: async () => {} }
       if (name === '@/lib/gtag') return { track() {} }
-      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
+      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ state: { error: null }, inStack: () => false, toggle() {} }) }
       if (name === './StagingCartContext') return { useStagingCart: () => null }
       if (name.startsWith('@/') || name.startsWith('.')) {
         const base = name.startsWith('@/') ? resolve(root, name.slice(2)) : resolve(dirname(filename), name)
@@ -105,7 +105,7 @@ test('lookup failure is honest and never leaks provider detail or loads a partia
 })
 test('guest stack page renders without redirecting or changing account authentication', async () => {
  const page=modules({}, {
-  '@/components/TopNav':()=>null, '@/components/AccountNavigation':()=>null,
+  '@/components/TopNav':()=>null, '@/components/AccountNavigation':{StackAccountNavigation:()=>null},
   './StackBuilder':()=>React.createElement('p',null,'Stack builder'),
   'next/headers':{cookies:async()=>({getAll:()=>[]})},
   '@supabase/ssr':{createServerClient:()=>({auth:{getUser:async()=>({data:{user:null}})}})}
@@ -135,4 +135,19 @@ test('invalid shared screen displays validation message and never looks up or bu
  })('components/SharedStack.tsx').default
  const result=renderToStaticMarkup(Shared({query:'?items=1:1&items=2:2'}))
  assert.match(result,/Invalid shared stack/);assert.doesNotMatch(result,/Buy my stack/);assert.equal(called,false)
+})
+
+test('stack account navigation follows resolved identity without server authentication', () => {
+ for (const identity of [undefined, null, 'signed-in-user']) {
+  const Navigation = modules({}, {
+   'next/navigation': { usePathname: () => '/stack' },
+   './LocalStackContext': { useLocalStack: () => ({ state: { identity } }) },
+   'next/link': ({ children, ...props }) => React.createElement('a', props, children),
+  })('components/AccountNavigation.tsx').StackAccountNavigation
+  const html = renderToStaticMarkup(React.createElement(Navigation))
+  if (identity) {
+   for (const href of ['/account', '/favourites', '/stack', '/account/settings']) assert.ok(html.includes(`href="${href}"`))
+   assert.match(html, /aria-label="My account"/)
+  } else assert.equal(html, '')
+ }
 })

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { stagingCartUiEnabled } from '@/lib/commerce/staging-cart-types'
 import { stagingCustomerUiEnabled } from '@/lib/identity/staging-customer-ui'
+import { useLocalStack } from './LocalStackContext'
 
 const LINKS = [
   { href: '/account', label: 'Overview' },
@@ -46,4 +47,10 @@ export default function AccountNavigation() {
       </div>
     </nav>
   )
+}
+
+// Reuse resolved browser identity so /stack stays available without server auth.
+export function StackAccountNavigation() {
+  const { state } = useLocalStack()
+  return state.identity ? <div className="mt-8 border-t border-lab-border pt-6"><AccountNavigation /></div> : null
 }

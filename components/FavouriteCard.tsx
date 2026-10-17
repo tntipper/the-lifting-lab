@@ -1,6 +1,8 @@
 'use client'
 
-import ProductAssessment from '@/components/ProductAssessment'
+import InformedSportIcon from '@/components/InformedSportIcon'
+import styles from '@/components/shop.module.css'
+import ShopScoreBadge from '@/components/ShopScoreBadge'
 import FavouriteButton from '@/components/FavouriteButton'
 import { categoryLabel } from '@/lib/categories'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -9,7 +11,7 @@ import type { ScoredProduct } from '@/lib/products'
 // Shared favourited-product card. Used on the /favourites page and the
 // dashboard so both surfaces render saved products with identical structure
 // (assessment status, brand/name, category, heart, retailer reference).
-// ProductAssessment hides unapproved legacy numbers; customer reviews remain separate.
+// Legacy display does not grant assessment approval; customer reviews remain separate.
 export default function FavouriteCard({
   product: p,
   onRemove,
@@ -19,9 +21,9 @@ export default function FavouriteCard({
 }) {
   return (
     <div className="flex items-center gap-4 bg-lab-panel border border-lab-border rounded-xl p-4">
-      <ProductAssessment product={p} />
+      <ShopScoreBadge product={p} />
       <div className="min-w-0 flex-1">
-        <p className="text-white text-sm font-bold truncate">{p.brand}</p>
+        <div className={styles.brandLine}><p className="text-white text-sm font-bold truncate">{p.brand}</p><InformedSportIcon certified={p.informed_sport} /></div>
         <p className="text-lab-muted text-xs truncate">{p.name}</p>
         <span className="inline-block mt-1.5 text-[10px] uppercase tracking-widest font-bold bg-lab-panel-2 text-lab-muted px-2 py-0.5 rounded-full">
           {categoryLabel(p.category)}
@@ -36,7 +38,7 @@ export default function FavouriteCard({
         }}
       />
       <div className="flex flex-col items-end gap-0.5 shrink-0">
-        <ProductOfferLink
+        <ProductOfferLink comingSoonWhenNotSold
           product={p}
           className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black px-3 py-1.5 rounded-lg hover:opacity-90"
         />

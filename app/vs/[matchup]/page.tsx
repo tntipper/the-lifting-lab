@@ -7,7 +7,7 @@ import { notFound, unstable_rethrow } from 'next/navigation'
 import Link from 'next/link'
 import TopNav from '@/components/TopNav'
 import ProductAssessment from '@/components/ProductAssessment'
-import { hasApprovedAssessment, hasPositiveServingCost } from '@/lib/assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment, hasPositiveServingCost } from '@/lib/assessment-display'
 import { categoryLabel } from '@/lib/categories'
 import { GUIDE_SLUGS } from '@/lib/guides'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -124,7 +124,7 @@ export default async function MatchupPage({
   // winner on Effectiveness Match score
   const scored = products.filter(hasApprovedAssessment)
   const bestRated = scored.length
-    ? scored.reduce((x, y) => (y.score > x.score ? y : x))
+    ? scored.reduce((x, y) => (assessmentDisplayFor(y).score! > assessmentDisplayFor(x).score! ? y : x))
     : null
   const tie = scored.length === 2 && scored[0].score === scored[1].score
 

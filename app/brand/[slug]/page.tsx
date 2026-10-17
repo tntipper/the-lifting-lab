@@ -1,4 +1,4 @@
-import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -46,7 +46,7 @@ async function getBrand(slug: string): Promise<BrandData | null> {
     if (matches.length === 0) return null
 
     const products = sortScored(matches, 'score')
-    const scores = products.filter(hasApprovedAssessment).map((p) => p.score)
+    const scores = products.filter(hasApprovedAssessment).map((p) => assessmentDisplayFor(p).score!)
     return {
       brand: products[0].brand,
       products,

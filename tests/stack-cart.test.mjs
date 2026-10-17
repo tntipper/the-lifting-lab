@@ -22,8 +22,9 @@ function modules(env = {}, overrides = {}) {
       if (name in overrides) return overrides[name]
       if (name === 'next/server') return { connection: async () => {} }
       if (name === '@/lib/gtag') return { track() {} }
-      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
+      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ state: { error: null }, inStack: () => false, toggle() {} }) }
       if (name === './StagingCartContext') return { useStagingCart: () => null }
+      if (name.endsWith('.json')) return JSON.parse(readFileSync(name.startsWith('@/') ? resolve(root, name.slice(2)) : resolve(dirname(filename), name), 'utf8'))
       if (name.startsWith('@/') || name.startsWith('.')) {
         const base = name.startsWith('@/') ? resolve(root, name.slice(2)) : resolve(dirname(filename), name)
         const hit = [base + '.ts', base + '.tsx'].find(existsSync)
@@ -135,10 +136,10 @@ test('mock Phase 2 rejects live checkout and provider errors without retry', asy
     await assert.rejects(sf.createMockStackCheckout([item('1')], { async execute() { calls++; return response } }, now)); assert.equal(calls, 1)
   }
 })
-test('actual stack page renders the guest cart from hydrated products with one pack each', () => {
+for (const flag of [undefined, 'enabled']) test(`actual stack page restores flag-gated purchase: ${flag}`, () => {
   const rows = ['1', '2', '3'].map(id => ({ ...item(id), name: `Fixture ${id}`, brand: 'Fixture', category: 'creatine', serving_size: 5, serving_unit: 'g', buy_url: null, product_nutrients: [] }))
   let hook = 0
-  const local = modules(enabled, {
+  const local = modules({ NEXT_PUBLIC_TLL_STACK_CART: flag }, {
     react: { ...React, useState(initial) {
       const index = hook++
       return React.useState(index === 0 ? rows.map(p => ({ id: p.id, products: p, servings_per_day: 3 })) : index === 4 ? false : index === 11 ? rows : initial)
@@ -147,8 +148,13 @@ test('actual stack page renders the guest cart from hydrated products with one p
     '@/components/CombinedDosePanel': { __esModule: true, default: () => null },
   })
   const rendered = renderToStaticMarkup(React.createElement(local('app/stack/StackBuilder.tsx').default))
-  assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1,3:1\?utm_source=theliftinglab&amp;utm_medium=referral&amp;utm_campaign=stack&amp;ref=theliftinglab"/)
-  assert.match(rendered, /Buy my stack/)
+  if (flag === 'enabled') {
+    assert.match(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\/1:1,2:1,3:1\?/)
+    assert.doesNotMatch(rendered, /Coming soon/)
+  } else {
+    assert.match(rendered, /disabled="">Buy my stack · Coming soon/)
+    assert.doesNotMatch(rendered, /href="https:\/\/shop.theliftinglab.co.uk\/cart\//)
+  }
   assert.doesNotMatch(rendered, /sign.in|login/i)
 })
 
@@ -204,7 +210,7 @@ test('S02: unsafe affiliate destinations have no link and retailer searches reta
   }
   const rendered = html(enabled, [{ ...affiliateItem, buy_url: 'https://www.amazon.co.uk/s?k=protein' }])
   assert.match(rendered, /Search Amazon/)
-  assert.match(rendered, /search results/)
+  assert.match(rendered, /retailer search/)
 })
 test('S02: Phase 2 setup notice and price mode still explain skipped items', () => {
   const rendered = html({ ...enabled, NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART: 'enabled' }, mixed)

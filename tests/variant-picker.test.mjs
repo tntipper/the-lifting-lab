@@ -23,8 +23,9 @@ function modules(env = {}, overrides = {}) {
       if (name in overrides) return overrides[name]
       if (name === 'next/server') return { connection: async () => {} }
       if (name === '@/lib/gtag') return { track() {} }
-      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
+      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ state: { error: null }, inStack: () => false, toggle() {} }) }
       if (name === './StagingCartContext') return { useStagingCart: () => null }
+      if (name.endsWith('.json')) return JSON.parse(readFileSync(name.startsWith('@/') ? resolve(root, name.slice(2)) : resolve(dirname(filename), name), 'utf8'))
       if (name.startsWith('@/') || name.startsWith('.')) {
         const base = name.startsWith('@/') ? resolve(root, name.slice(2)) : resolve(dirname(filename), name)
         const hit = [base + '.ts', base + '.tsx'].find(existsSync)

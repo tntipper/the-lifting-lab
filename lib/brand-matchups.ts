@@ -1,4 +1,4 @@
-import { hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
 // Brand-tier head-to-head helpers for the /brands-vs comparison pages.
 //
 // "[Brand A] vs [Brand B]" (e.g. "Bulk vs Myprotein", "Optimum Nutrition vs
@@ -50,7 +50,7 @@ export function buildBrandStats(products: ScoredProduct[]): BrandStat[] {
     const sorted = [...arr].sort(
       (x, y) => x.name.localeCompare(y.name) || x.id.localeCompare(y.id),
     )
-    const scores = sorted.filter(hasApprovedAssessment).map((p) => p.score).filter((s): s is number => s != null)
+    const scores = sorted.filter(hasApprovedAssessment).map((p) => assessmentDisplayFor(p).score!).filter((s): s is number => s != null)
     const costs = sorted.filter(hasPositiveServingCost)
       .map((p) => p.cost_per_serving)
       .filter((c): c is number => c != null && c > 0)

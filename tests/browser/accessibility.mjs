@@ -22,6 +22,10 @@ const bundle = await build({
   bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
   define: {
     'process.env.NODE_ENV': '"development"',
+    // Next normally inlines these internal next/image settings at build time.
+    'process.env.__NEXT_IMAGE_OPTS': 'undefined',
+    'process.env.NEXT_RUNTIME': '""',
+    'process.env.NEXT_DEPLOYMENT_ID': '""',
     // Exercise ordinary component interactions with only the local adapters.
     'process.env.NEXT_PUBLIC_TLL_ENVIRONMENT': '"local-browser-fixture"',
     'process.env.NEXT_PUBLIC_AMAZON_TAG': '"theliftinglab-21"',
@@ -29,6 +33,7 @@ const bundle = await build({
     'process.env.NEXT_PUBLIC_TLL_STORE_LINKS': '"enabled"',
     'process.env.NEXT_PUBLIC_TLL_STORE_PRICES': '"enabled"',
     'process.env.NEXT_PUBLIC_TLL_STACK_CART': '""',
+    'process.env.NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART': '""',
   },
   plugins: [
     { name: 'css-modules-stub', setup(builder) {
@@ -55,10 +60,11 @@ const bundle = await build({
               ? {id:sessionStorage.getItem('tll_test_owner') || '70000000-0000-4000-8000-000000000001'}
               : window.location.pathname === '/stack-assessment' ? {id:'70000000-0000-4000-8000-000000000001'} : null;
             window.__setFixtureUser = id => { sessionStorage.setItem('tll_test_owner',id); for(const fn of listeners) fn('SIGNED_IN',{user:user()}) };
-            export const createClient = () => ({auth:{getUser:async()=>({data:{user:user()}}),onAuthStateChange:fn=>{listeners.add(fn);return{data:{subscription:{unsubscribe(){listeners.delete(fn)}}}}}}});`,
+            export const createClient = () => ({auth:{getSession:async()=>({data:{session:user()?{user:user()}:null},error:null}),getUser:async()=>({data:{user:user()}}),onAuthStateChange:fn=>{listeners.add(fn);return{data:{subscription:{unsubscribe(){listeners.delete(fn)}}}}}}});`,
     }))
   } }],
 })
+assert.doesNotMatch(bundle.outputFiles[0].text, /\bprocess\.env\b/, 'Browser fixture must inline every environment read')
 const css = (await postcss([tailwind()]).process(await readFile(resolve(root, 'app/globals.css'), 'utf8'), { from: resolve(root, 'app/globals.css') })).css
 const html = '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/fixture.css"></head><body><div id="fixture"></div><script src="/fixture.js"></script></body></html>'
 const server = createServer((req, res) => {

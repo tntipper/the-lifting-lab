@@ -71,7 +71,7 @@ try {
     const cells = await region.locator('thead th').evaluateAll(elements => elements.slice(1).map(element => element.getBoundingClientRect().width))
     assert.equal(cells.length, 3)
     assert.ok(cells.every(value => value >= 180), `Product columns below PR58 width at ${width}`)
-    assert.equal(await region.getByText('Not assessed', { exact: false }).count(), 3)
+    assert.equal(await region.getByText('Under review', { exact: false }).count(), 3)
     assert.equal(await region.getByText('No verified offer', { exact: true }).count(), 3)
     assert.equal(await region.getByRole('link', { name: 'Remove', exact: true }).count(), 3)
     assert.deepEqual(errors, [])

@@ -36,23 +36,31 @@ export function LocalStackProvider({ children }: { children: ReactNode }) {
     sync.current = service
     let cancelled = false, authEvent = 0
     let unsubscribe = () => {}
+    let authTimeout: ReturnType<typeof setTimeout> | undefined
     if (isSyntheticPreview()) {
       // The preview has no account transport. Start immediately as a local,
       // browser-only stack instead of waiting for a deliberately blocked auth call.
       void service.setIdentity(null)
     } else {
-      const client = createClient()
-      const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-        authEvent++
-        void service.setIdentity(session?.user.id ?? null)
-      })
-      unsubscribe = () => subscription.unsubscribe()
-      const observedEvent = authEvent
-      void client.auth.getUser().then(({ data, error }) => {
-        if (cancelled || authEvent !== observedEvent) return
-        if (error && error.name !== 'AuthSessionMissingError') service.authFailed()
-        else void service.setIdentity(data.user?.id ?? null)
-      }).catch(() => { if (!cancelled) service.authFailed() })
+      try {
+        const client = createClient()
+        const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+          authEvent++
+          void service.setIdentity(session?.user.id ?? null)
+        })
+        unsubscribe = () => subscription.unsubscribe()
+        const observedEvent = authEvent
+        authTimeout = setTimeout(() => {
+          if (!cancelled && authEvent === observedEvent && service.getState().identity === undefined) void service.setIdentity(null)
+        }, 3000)
+        // Resolve the browser session locally. getUser() validates over the network
+        // and can leave guest additions blocked when that request fails or stalls.
+        void client.auth.getSession().then(({ data, error }) => {
+          if (cancelled || authEvent !== observedEvent) return
+          if (error) void service.setIdentity(null)
+          else void service.setIdentity(data.session?.user.id ?? null)
+        }).catch(() => { if (!cancelled && authEvent === observedEvent) void service.setIdentity(null) })
+      } catch { void service.setIdentity(null) }
     }
     const refresh = () => { void service.refresh() }
     let storageRefresh: ReturnType<typeof setTimeout> | undefined
@@ -66,7 +74,7 @@ export function LocalStackProvider({ children }: { children: ReactNode }) {
     window.addEventListener('online', refresh)
     window.addEventListener('storage', onStorage)
     return () => {
-      cancelled = true; clearTimeout(storageRefresh); service.dispose(); unsubscribe(); sync.current = null
+      cancelled = true; clearTimeout(authTimeout); clearTimeout(storageRefresh); service.dispose(); unsubscribe(); sync.current = null
       window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); window.removeEventListener('storage', onStorage)
     }
   }, [])

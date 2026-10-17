@@ -3,12 +3,12 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import InformedSportIcon from '@/components/InformedSportIcon'
 import ClaimsReviewNotice from '@/components/ClaimsReviewNotice'
 import FavouriteButton from '@/components/FavouriteButton'
 import MethodologyModal from '@/components/MethodologyModal'
 import ShopScoreBadge from '@/components/ShopScoreBadge'
 import ServingLabel from '@/components/ServingLabel'
-import GuidanceNote from '@/components/GuidanceNote'
 import styles from '@/components/shop.module.css'
 import ProductImage from '@/components/ProductImage'
 import ProductOfferLink from '@/components/ProductOfferLink'
@@ -21,13 +21,13 @@ import { createClient } from '@/lib/supabase'
 import { isSyntheticPreview } from '@/lib/preview-mode'
 import { track } from '@/lib/gtag'
 import { formatListedServingPrice, sortScored, trueCostReason, type ScoredProduct, type SortKey } from '@/lib/products'
-import { displayPrice, isStoreOffer, isUsablePrice } from '@/lib/commerce/display-price'
+import { displayPrice, isUsablePrice } from '@/lib/commerce/display-price'
 import type { ReviewSummary } from '@/app/api/products/reviews-summary/route'
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: 'budget', label: 'Lowest true cost (listed £/serving)' },
   { key: 'score', label: 'Score (pending review · A–Z)' },
-  { key: 'value', label: 'Effectiveness value unavailable (A–Z)' },
+  { key: 'value', label: 'Label value unavailable (A–Z)' },
   { key: 'price', label: 'Lowest pack price' },
   { key: 'name', label: 'Product name (A–Z)' },
   { key: 'brand', label: 'Brand (A–Z)' },
@@ -78,7 +78,7 @@ function MiniStars({ value }: { value: number }) {
 }
 
 export default function ProductGrid({ initialProducts }: { initialProducts: ScoredProduct[] }) {
-  const { inStack, toggle } = useLocalStack()
+  const { inStack, toggle, state: stackState } = useLocalStack()
   const [all, setAll] = useState(initialProducts)
   const [loading, setLoading] = useState(initialProducts.length === 0)
   const [category, setCategory] = useState('all')
@@ -149,10 +149,22 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
     return CATEGORY_GROUPS.find((group) => group.slug === groupParam)?.categories ?? null
   }, [groupParam])
 
-  const activeCategories = useMemo(() => {
-    const present = new Set(all.map((product) => product.category))
-    return CATEGORIES.filter((item) => present.has(item.slug))
-  }, [all])
+  // Direct single-category header links stay single-category. Protein and
+  // Health share their group navigation when arriving via a sub-category URL.
+  const activeGroup = CATEGORY_GROUPS.find((group) => group.slug === groupParam)
+    ?? CATEGORY_GROUPS.find((group) => ['protein', 'wellbeing'].includes(group.slug) && group.categories.includes(category))
+  const subCategories = CATEGORIES.filter((item) => activeGroup?.categories.includes(item.slug))
+
+  function selectCategory(next: string) {
+    const params = new URLSearchParams(window.location.search)
+    if (next === 'all') params.delete('category'); else params.set('category', next)
+    if (activeGroup) params.set('group', activeGroup.slug)
+    params.set('sort', sort)
+    if (query) params.set('q', query); else params.delete('q')
+    window.history.pushState(null, '', `${window.location.pathname}?${params}${window.location.hash}`)
+    setCategory(next)
+    setGroupParam(activeGroup?.slug ?? null)
+  }
 
   const availableBrands = useMemo(() => Array.from(new Set(all.map((product) => product.brand))).sort(), [all])
 
@@ -223,18 +235,18 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           className="min-h-12 w-full rounded-md border border-[var(--line-strong)] bg-lab-panel px-4 text-base text-white" />
       </label>
 
-      <div className="hide-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter by category">
-        <button type="button" onClick={() => setCategory('all')} aria-pressed={category === 'all'}
+      {subCategories.length > 1 && <div className="hide-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label={`${activeGroup?.label} sub-categories`}>
+        <button type="button" onClick={() => selectCategory('all')} aria-pressed={category === 'all'}
           className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold ${category === 'all' ? 'border-[var(--ink)] bg-[var(--ink)] text-[var(--lime)]' : 'border-[var(--line-strong)] bg-lab-panel text-white'}`}>
-          All
+          All {activeGroup?.label}
         </button>
-        {activeCategories.map((item) => (
-          <button type="button" key={item.slug} onClick={() => setCategory(item.slug)} aria-pressed={category === item.slug}
+        {subCategories.map((item) => (
+          <button type="button" key={item.slug} onClick={() => selectCategory(item.slug)} aria-pressed={category === item.slug}
             className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold ${category === item.slug ? 'border-[var(--ink)] bg-[var(--ink)] text-[var(--lime)]' : 'border-[var(--line-strong)] bg-lab-panel text-white'}`}>
             {item.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
@@ -275,6 +287,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
         </div>
       )}
 
+      {stackState.error && <p role="alert" className="mb-4 text-sm text-lab-muted">{stackState.error}</p>}
       <div className={styles.productGrid}>
         {visible.map((product) => {
           const isSelected = selected.includes(product.id)
@@ -285,12 +298,12 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           return (
             <article key={product.id} data-product-id={product.id} className={`${styles.card} gap-3 p-6 ${isSelected ? 'border-[var(--line-strong)]' : ''}`}>
               <Link href={`/products/${product.id}`} className={styles.packshot}>
-                <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} fill className="max-h-full max-w-full" />
+                <ProductImage src={product.image_url} alt={`${product.brand} ${product.name}`} size={240} fill sizes="(max-width: 647px) calc(100vw - 80px), (max-width: 987px) calc(50vw - 84px), 320px" className="max-h-full max-w-full" />
               </Link>
 
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">{product.brand}</p>
+                  <div className={styles.brandLine}><p className="truncate text-xs font-semibold uppercase tracking-[.08em] text-lab-muted">{product.brand}</p><InformedSportIcon certified={product.informed_sport} /></div>
                   <Link href={`/products/${product.id}`} className={`${styles.cardTitle} mt-0.5 flex min-h-11 items-center text-[17px] font-semibold leading-6 text-[var(--ink)] hover:underline`}>
                     {product.name}
                   </Link>
@@ -303,20 +316,18 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 </div>
               </div>
 
-              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-2 rounded-lg bg-lab-panel-2 p-3">
-                <div className="min-w-0">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">True cost</span>
-                  <b className="mt-1 block font-mono text-lg text-[var(--ink)]" title={trueCostReason(product) ?? undefined}>
-                    {product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : 'Not listed'}
-                  </b>
+              <div className={styles.priceBox}>
+                <div className={styles.primaryPrice}>
+                  <span>Price</span>
+                  <b>{formatMoney(displayPrice(product))}</b>
                 </div>
-                <div className="min-w-0">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">Per serving</span>
-                  <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b>
+                <div>
+                  <span>True cost</span>
+                  <b title={trueCostReason(product) ?? undefined}>{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : 'Not listed'}</b>
                 </div>
-                <div className="min-w-0">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-lab-muted">{isStoreOffer(product) ? 'TLL Store price' : 'Listed price'}</span>
-                  <b className="mt-1 block font-mono text-sm text-[var(--ink)]">{formatMoney(displayPrice(product))}</b>
+                <div>
+                  <span>Per serving</span>
+                  <b>{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b>
                 </div>
               </div>
 
@@ -327,14 +338,11 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                 <dd className="m-0 text-right font-mono text-white">
                   {product.serving_size != null ? `${product.serving_size}${product.serving_unit ? ` ${product.serving_unit}` : ''}` : 'Not listed'}
                 </dd>
-                <dt className="text-lab-muted">Assessment</dt>
-                <dd className="m-0 text-right font-medium text-[var(--ink)]">{assessment.label}</dd>
+                {!assessment.suppressed && <><dt className="text-lab-muted">Assessment</dt>
+                <dd className="m-0 text-right font-medium text-[var(--ink)]">{assessment.label}</dd></>}
               </dl>
 
-              <GuidanceNote nutrients={nutrients} />
-              <ServingLabel nutrients={nutrients} />
-
-              {product.informed_sport && <p className="rounded bg-[var(--score-high-bg)] px-2 py-1 text-xs font-semibold text-[var(--score-high)]">Informed Sport certified</p>}
+              <ServingLabel nutrients={nutrients} maxRows={3} productName={`${product.brand} ${product.name}`} productHref={`/products/${product.id}`} />
 
               {reviews && reviews.count > 0 && (
                 <div className="space-y-1 border-t border-lab-border pt-3">
@@ -347,7 +355,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               )}
 
               <div className={`${styles.cardActions} flex flex-col gap-3`}>
-                <ProductOfferLink product={product} storeActionLabel="Add to basket"
+                <ProductOfferLink comingSoonWhenNotSold product={product} storeActionLabel="Add to basket"
                   className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
 
                 <div className="grid grid-cols-2 gap-2">

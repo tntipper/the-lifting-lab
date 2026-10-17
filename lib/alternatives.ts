@@ -1,4 +1,4 @@
-import { hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment, hasPositiveServingCost } from './assessment-display'
 // "[Product] alternatives" is one of the highest-intent affiliate search
 // classes ("Myprotein Impact Whey alternatives", "cheaper alternative to
 // Optimum Nutrition"), but the site had no crawlable landing page for it — only
@@ -31,12 +31,13 @@ export type AltProduct = {
 
 /** Value ratio: Effectiveness Match per £ per serving. null when uncomputable. */
 export function valueRatio(p: {
+  id: string
   category?: string
   score: number | null
   cost_per_serving: number | null
 }): number | null {
   if (!hasApprovedAssessment(p) || !hasPositiveServingCost(p)) return null
-  return p.score / p.cost_per_serving
+  return assessmentDisplayFor(p).score! / p.cost_per_serving
 }
 
 /**

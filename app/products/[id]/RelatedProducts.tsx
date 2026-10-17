@@ -3,7 +3,7 @@ import { formatListedServingPrice } from '@/lib/products'
 
 import Link from 'next/link'
 import ProductAssessment from '@/components/ProductAssessment'
-import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import { categoryLabel } from '@/lib/categories'
 import { productSlug } from '@/lib/matchups'
 import { track } from '@/lib/gtag'
@@ -32,8 +32,8 @@ export default function RelatedProducts({
 
   // Prefer genuinely higher-scoring options; if this product already tops the
   // category, fall back to the next-best picks so the slot is never empty.
-  const better = hasApprovedAssessment({ category, score }) && score != null
-    ? items.filter((p) => hasApprovedAssessment(p) && p.score > score) : []
+  const better = hasApprovedAssessment({ id: productId, category, score }) && score != null
+    ? items.filter((p) => hasApprovedAssessment(p) && assessmentDisplayFor(p).score! > score) : []
   const isUpgrade = better.length > 0
   // List arrives score-desc, so the slice is the top of the list.
   const picks = (isUpgrade ? better : items).slice(0, 3)

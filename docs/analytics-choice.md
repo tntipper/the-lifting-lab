@@ -4,7 +4,7 @@ Scope: `www.theliftinglab.co.uk` application only. Optional analytics stays OFF 
 
 ## UI and preference
 
-The root layout renders an **Analytics preferences** button on public pages. Isolated synthetic preview and staging retain analytics OFF without loading the preference controller. Its inline, non-modal region offers **Reject analytics**, **Accept analytics**, and **Close preferences**. When accepted, rejection is named **Withdraw analytics consent**. Closing, navigation and elapsed time do not grant acceptance. Reopening focuses the heading; closing/saving returns focus to the button. No modal focus trap applies. Controls wrap at narrow widths and have focus outlines.
+The footer legal navigation renders an **Analytics preferences** button on public pages. Isolated synthetic preview and staging retain analytics OFF without loading the preference controller. Its inline, non-modal region offers **Reject analytics**, **Accept analytics**, and **Close preferences**. When accepted, rejection is named **Withdraw analytics consent**. Closing, navigation and elapsed time do not grant acceptance. Reopening focuses the heading; closing/saving returns focus to the button. No modal focus trap applies. Controls wrap at narrow widths and have focus outlines.
 
 The essential host-only rejection fallback cookie `tll_analytics_rejected_v1=1` (Path `/`, SameSite Lax, Secure on HTTPS, maximum 180 days) overrides an older acceptance if localStorage writes fail during withdrawal. It never grants acceptance. Successful reacceptance must remove it.
 

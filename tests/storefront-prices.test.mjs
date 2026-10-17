@@ -19,11 +19,12 @@ function modules(env = {}, overrides = {}) {
       module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
     } }).outputText
     const local = name => {
+      if (name === '../data/reviewed-assessments.json') return JSON.parse(readFileSync(new URL('../data/reviewed-assessments.json', import.meta.url), 'utf8'))
       if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
       if (name in overrides) return overrides[name]
       if (name === 'next/server') return { connection: async () => {} }
       if (name === '@/lib/gtag') return { track() {} }
-      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
+      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ state: { error: null }, inStack: () => false, toggle() {} }) }
       if (name === './StagingCartContext') return { useStagingCart: () => null }
       if (name.startsWith('@/') || name.startsWith('.')) {
         const base = name.startsWith('@/') ? resolve(root, name.slice(2)) : resolve(dirname(filename), name)
@@ -229,7 +230,7 @@ for (const stock of [true, false, null]) test(`rendered grid and detail use stor
   const detail = renderToStaticMarkup(React.createElement(local('app/products/[id]/ProductDetailPage.tsx').default, { product: scored, related: [] }))
   for (const html of [grid, detail]) {
     assert.doesNotMatch(html, /£99\.00/)
-    if (stock === null) assert.match(html, /TLL Store price unavailable/)
+    if (stock === null) assert.match(html, />Price<\/span><b>Not listed<\/b>/)
     else { assert.match(html, /£12\.50/); assert.match(html, /£0\.50/) }
     assert.match(html, stock === true ? /Buy at TLL Store/ : /View retailer/)
     if (stock === false) assert.match(html, /Out of stock at TLL Store/)

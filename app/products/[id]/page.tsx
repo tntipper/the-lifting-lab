@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase-public'
 import { categoryLabel } from '@/lib/categories'
-import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { hasApprovedAssessment, displaySafeProduct } from '@/lib/assessment-display'
 import { claimsReviewFor } from '@/lib/claims-review'
 import { getGuide } from '@/lib/guides'
 import { fetchProductDetail, fetchCategory } from '@/lib/product-data'
@@ -48,7 +48,8 @@ async function fetchReviewAggregate(id: string): Promise<{ average: number; coun
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
-  const product = await fetchProductDetail(id)
+  const fetchedProduct = await fetchProductDetail(id)
+  const product = fetchedProduct ? displaySafeProduct(fetchedProduct) : null
   if (!product) return { title: 'Product Not Found | The Lifting Lab' }
 
   const score = product.score
@@ -72,13 +73,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
   const { id } = await params
-  const product = await fetchProductDetail(id)
+  const fetchedProduct = await fetchProductDetail(id)
+  const product = fetchedProduct ? displaySafeProduct(fetchedProduct) : null
   // Real 404 (status + not-found page) instead of a 200 "Product not found" shell.
   if (!product) notFound()
 
   // Same-category list for the RelatedProducts module — fetched here so the
   // cross-links are in the HTML too. Failure just renders no related block.
-  const related = (await fetchCategory(product.category)).filter((p) => p.id !== product.id)
+  const related = (await fetchCategory(product.category)).map(displaySafeProduct).filter((p) => p.id !== product.id)
 
   // Structured data — server-rendered so crawlers see it in the initial HTML.
   let jsonLd: object[] = []

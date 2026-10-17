@@ -57,7 +57,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Legal basis</h2>
             <p>
-              We process your email address on the basis of <strong className="text-white">contract</strong> (to provide the service you signed up for). Optional analytics runs on the basis of your <strong className="text-white">consent</strong>. Use Analytics preferences at the top of any page to accept, reject or withdraw. Withdrawing stops future collection; it does not undo information already sent to Google.
+              We process your email address on the basis of <strong className="text-white">contract</strong> (to provide the service you signed up for). Optional analytics runs on the basis of your <strong className="text-white">consent</strong>. Use Analytics preferences in the footer of any page to accept, reject or withdraw. Withdrawing stops future collection; it does not undo information already sent to Google.
             </p>
           </section>
 

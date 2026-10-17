@@ -1,3 +1,162 @@
+**16 October PR #99 rankings overflow — grok/guides-footer-fix; HEAD c980c61; base main 90e0ff7:**
+- Bounded ShopScoreBadge to w-28/max-w-full; button stacks/wraps labels using Tailwind utilities, including when fixtures omit CSS modules.
+- Oath wording, native disclosure/ARIA/keyboard/Escape handlers and all test assertions unchanged; g-run*.sh untouched.
+- PASS 95 assessment tests, tsc --noEmit, focused ESLint, compiled Tailwind utility check and git diff --check.
+- node tests/browser/rankings.mjs exits 0 but only exports verifyRankings; actual checks run through accessibility.mjs.
+- node tests/browser/accessibility.mjs exits 1 before assertions: sandbox listen EPERM on 127.0.0.1.
+- npm run test:accessibility and standalone score-disclosure.mjs exit 1: Chromium MachPortRendezvous bootstrap permission denied.
+- npm test exits 1: 4,133 pass / 28 fail / 8 skipped (4,169 total); same totals as prior handover, unrelated socket/process/Docker/Python failures.
+- Commit BLOCKED: git add cannot create night/repo/.git/worktrees/wt-guides/index.lock (Operation not permitted); no push or hosted CI.
+- Next: rerun browser checks unrestricted; commit as "fix(#99): prevent rankings overflow at 320px from score disclosure". No full build needed for fixture runners.
+
+**16 October PR #99 Oath follow-up — grok/guides-footer-fix; parent 89f7ff4:**
+- Tooltip adds Rubric v1. before How we score; app/methodology/page.tsx confirmed; button/ARIA region disclosure preserved.
+- Removed PER4M Isolate Zero reviewed record; suppress ring/status, grid assessment row, detail explanation and pending share teaser; EAA Xtra stays 79.
+- Retired price-led label/field/tooltip line and renamed CSS class; OATH_WORDING records retirement and separate True Cost.
+- PASS 95 assessment + 12 claims/stack tests, typecheck, lint (0 errors/20 existing warnings), diff check; manifest checks pass without pin changes.
+- Final npm test: 4133 pass / 28 fail / 8 skipped; failures in 14 test files unchanged from main 90e0ff7.
+- Failures: socket/ps/Docker sandbox restrictions, Python helper and Gen23 offline process; owner confirms Gen23 timing also fails on main.
+- BLOCKED: git add and commit denied creating night/repo/.git/worktrees/wt-guides/index.lock (Operation not permitted); edits remain unstaged.
+- No push/deploy; g-run*.sh untouched; hosted CI unrun. Next: commit the 11 changed tracked files with the requested message outside this sandbox.
+
+**16 October PR #99 disclosure locator fix — grok/guides-footer-fix; parent d0c3c20:**
+- Real esbuild + react-dom/server renders approved 79 fixture; adjacent inline spans lack a literal name separator and fixture omitted CSS.
+- Added explicit button name (score/status + Dose & label check); region inherits it without duplicate spoken score labels.
+- Browser fixture loads real CSS, audits env/page errors and checks Enter/Space, natural Tab to methodology, tap/click, Escape focus return and blur.
+- PASS 198 focused Node tests, tsc, lint (0 errors/20 existing warnings), manifest check, JS syntax, real SSR/browser bundle audit and diff check.
+- Owner reports unrestricted full npm test: 4160 pass/1 fail; gen23 timing also fails on main 90e0ff7 and is accepted as pre-existing.
+- Owner reports offers browser PASS; guides-footer/accessibility also fail on unmodified d0c3c20 and are accepted as pre-existing.
+- Chromium unavailable in sandbox; corrected browser interaction run and hosted CI remain unverified. gh signed out; PR metadata unavailable.
+- Commit includes prior review fixes and OATH_WORDING.md; g-run*.sh excluded. No push. Next: unrestricted score-disclosure browser rerun.
+
+**16 October PR #99 review fixes — grok/guides-footer-fix; base main 90e0ff7:**
+- Kept Retailer search · affiliate link; updated Node/browser assertions, including affiliate disclosure.
+- Score badge is a native button disclosure with labelled region, click/tap toggle, Escape focus return and no duplicate reviewed label.
+- Added Node interaction/ARIA assertions and standalone browser Enter/Space/tap/focus checks; 198 focused Node tests pass.
+- Regenerated activation manifest with existing script: only comparison-reconciliation.mjs pin changed; its old hash matches main; all source-tree files unchanged.
+- Retained footer h-12: 6a38b6d explicitly says compact footer and contains that exact change.
+- Copied docs/compliance/OATH_WORDING.md byte-for-byte; existing effectiveness copy found in affiliate-disclosure/alternatives/layout. No broad rewrites or blanket failing grep test.
+- Full npm test: 4133 pass / 28 fail / 8 skipped; all 14 failing-test files unchanged from main; socket/ps/Docker/Chromium restrictions plus Python/offline fixture failures remain.
+- tsc passes; lint 0 errors/20 existing warnings; diff check passes. Browser blocked by Mach port permission; hosted CI unrun.
+- No commit: full suite is not green, per requested commit condition. No push; g-run*.sh untouched. Next: rerun in unrestricted environment, then commit.
+
+**16 October Oath score wording — grok/guides-footer-fix; base origin/main 90e0ff7:**
+- Renamed ring labels to TLL Label Score / Value-led score; added Dose & label check and exact Oath tooltip wording.
+- Optional reviewed-record source_url links as brand label; compliance date/pending fallback and value-led price line retained.
+- No rubric version constant exists; omitted Rubric sentence. Removed restricted wording around product cards, comparison and stack panels.
+- PASS lint (0 errors/20 existing warnings), tsc --noEmit, 411 focused score/comparison/stack/variant/catalogue tests; git diff --check.
+- Browser comparison bundle built; runtime blocked by sandbox listen EPERM on 127.0.0.1. Hosted CI unrun; gh PR lookup signed out.
+- Commit BLOCKED: Git index.lock is outside writable sandbox in night/repo/.git/worktrees/wt-guides; changes remain unstaged. No push/deploy; g-run*.sh preserved.
+- Next: commit locally as "fix: score ring wording per Oath compliance rules" with Git metadata write access; run browser comparison/CI before release.
+
+**16 October reviewed scores + tooltip + payload privacy — grok/guides-footer-fix; working tree only:**
+- Preserved incoming edits; no commit/push/deploy. Added four Assay/Oath records dated 2026-10-16: ON 79, Applied EAA 92, Per4m EAA 79, Isolate 75/value-led.
+- IDs confirmed in data/mapping-review.csv and docs/research/data/supabase-products-2026-09-25.csv; no JP EAA or creatine records.
+- Rings support hover/focus/tap, Escape and linked methodology; approved tooltip uses compliance date; value-led label/price explanation included.
+- Unreviewed tooltip says compliance check pending because no signed compliance date exists; no fabricated checked date.
+- Removed legacy fallback from withScore; safe projections cover product/brand/grid/compare/vs and assessments API, including product RSC/JSON-LD boundary.
+- PASS 167 focused Node tests (payload, API, tooltip events/copy, held categories, storefront and claims); tsc --noEmit; lint 0 errors/20 existing warnings; diff check.
+- Fixed API fixture JSON default-import handling after the new approved-record assertion exposed it; browser/hosted CI unrun; gh PR lookup unsigned.
+- Next: review working diff and run browser/hosted checks before any separately authorised release.
+
+**16 October reviewed-assessment register — grok/guides-footer-fix; HEAD 23377ea; working tree only:**
+- Added empty data/reviewed-assessments.json; module-load validation requires Assay/Oath, real ISO dates, key, notes and finite 1–100 score.
+- Public assessment defaults to Under review; only matching signed records show numbers; category claims holds still override approval.
+- Passed product ids through callers; reviewed scores drive shared sorting/awards and affected comparisons; updated ARD schema and process doc.
+- PASS 210 focused assessment/claims/commercial/storefront/stack/share/wizard tests; tsc --noEmit; lint 0 errors/20 existing warnings; diff check.
+- Diagnosed fixture failures: old Not assessed labels/counts conflicted with requested Under review; updated those assertions, retained static social-card checks.
+- Approval is a boolean, not a guarantee about caller score; fixed nullable-score consumers to read the authoritative reviewed projection.
+- Preserved incoming edits and run scripts; no commit/push/deploy. Hosted CI/browser QA unrun; register remains [] with no real sign-offs.
+- Next: review working diff; future Assay and Oath approvals follow docs/research/unassessed-ranking-containment.md.
+
+**16 October CI fixture crash + score containment reversal — grok/guides-footer-fix; HEAD 23377ea; working tree only:**
+- Restored lib/assessment-display.ts exactly to 3b3c507: no public legacy scores; restored gated product metadata.
+- Score rings retain outline + Under review with no number; numeric arc/label only uses assessment display's reviewed result.
+- Root: components/ProductImage.tsx:4 added next/image; next/dist/client/image-component.js:26 reads undefined browser process.env.__NEXT_IMAGE_OPTS.
+- Accessibility defines Next image settings + static storefront-cart flag (lib/commerce/stack-cart.ts:24); guides/footer defines missing public settings.
+- All three fixtures reject unresolved process.env reads; accessibility auth adapter now implements current getSession contract.
+- PASS 128 focused tests, tsc --noEmit, lint (0 errors/20 warnings), three exact fixture bundle audits, git diff --check.
+- Browser runs blocked: localhost listen EPERM (accessibility), Chromium sandbox launch failure (size/guides); hosted CI unrun.
+- No commit/push/deploy; run scripts preserved; gh PR lookup unavailable (unsigned). Next: browser/CI outside sandbox.
+
+**16 October review3 SHOULD-FIX 1–5 — grok/guides-footer-fix; HEAD 315622d; working tree only:**
+- First-visit consent uses a fixed bottom banner portalled outside footer; footer control opens only on click.
+- Score rings expose role=img and labels; capped cards retain caffeine/advisory; +N links have 32px minimum and product names.
+- Restored flag-enabled BuyMyStack cart permalinks; disabled Coming soon only with flag off; daily doses stay separate from pack quantities.
+- Restored signed-in account navigation below builder using resolved browser identity, preserving auth-independent /stack rendering.
+- Product metadata describes displayed legacy scores with review caveat; removed unused state.error effect dependency.
+- Clarified the three prior notes were committed in 315622d; their original historical evidence is preserved below.
+- PASS 328 focused tests, tsc --noEmit, lint (0 errors/20 warnings), diff check; updated browser fixture, Chrome launch exits in sandbox.
+- Hosted CI/browser QA remain unverified; related PR lookup unavailable (gh unsigned). SHOULD-FIX 6 and other nits outside requested scope.
+- No commit/push/deploy; existing g-run*.sh untouched. Next: review working diff and run hosted/browser checks.
+
+**History correction (16 October):** The three H/I, E/F/G and catalogue notes below describe pre-commit checks; their changes were subsequently committed in 315622d. Their “working tree only”, HEAD and “unchanged” statements are historical, not current status.
+
+**16 October H/I stack production fallback + shared header — grok/guides-footer-fix; working tree only:**
+- Preserved all incoming edits/run scripts; HEAD 5e4ec86/base origin/main 3b3c507 unchanged; no commit/push/deploy.
+- Removed TopNav route-specific compact header; /stack no longer requires server auth/env to render; browser nav tolerates absent config.
+- Auth rejection/config failure/3s initial-session stall enters guest mode; failed account GET permits durable local adds/removes/clear, with confirmed retry merge.
+- StackBuilder.tsx:248 adds catalogue timeout; :253 clears loading before catalogue-length cleanup; manual goals/save/costs/doses work without account calls.
+- Goal starters were an assessment hold (:410), not an env switch; manual goal preferences remain available; recommendations remain under review.
+- StackPurchaseButton.tsx uses enabled cart hook only for its supported bound product; otherwise disabled Coming soon; full-stack buy depends on grok/live-cart.
+- Home globals.css:104 already solid paper; ShopHome.module.css:6 dark hero + white panels match ../tll-design. Explicit paper main/min-height added; reported scroll brightening unproved.
+- PASS 161 focused tests, lint (0 errors/20 warnings), tsc, diff check. Initial legacy-cart expectation/stale flag reference corrected; browser Chromium MachPort/SIGTRAP blocked.
+- Next: hosted/browser QA + CI (unrun); prod catalogue needs NEXT_PUBLIC_SUPABASE_URL/ANON_KEY and public RLS; account RPC migrations; production env must not be synthetic-preview/staging. Hosted env values/PRs unverified (gh unsigned).
+
+**16 October E/F/G score rings, image ratios and stack startup — grok/guides-footer-fix; working tree only:**
+- Preserved existing edits/run scripts; no commit/push/deploy. Base origin/main 3b3c507; HEAD 5e4ec86 unchanged.
+- Toby-approved legacy 1–100 display restored with historical SVG rings/Claude score colours; held/missing scores retain status.
+- Approval/ranking gates retained; home table now explicitly uses hasApprovedAssessment to preserve alphabetical fallback.
+- Grid 4:3 and detail square (432px cap) image containers use next/image fill/contain and sizes; retailer hosts stay unoptimised.
+- Stack startup uses local getSession instead of network getUser (LocalStackContext.tsx:53); unresolved identity rejects add at stack-sync.ts:167.
+- Grid/detail now expose stack errors; provider regressions cover immediate guest membership/count, remount persistence and auth races.
+- Compliance expectations changed only for approved legacy display/API values; provider mocks gained error state; claims/rating/held gates retained.
+- PASS 298 focused tests, lint (0 errors/21 existing warnings), tsc --noEmit, diff check. Browser blocked: Chromium MachPort permission/SIGTRAP.
+- Next: browser/live QA of add→header→/stack and image/card dimensions; live root-cause confirmation and hosted CI remain unverified.
+
+**16 October catalogue navigation/cards/prices — grok/guides-footer-fix; HEAD 5e4ec86; working tree only:**
+- Kept header group navigation; catalogue chips now show only the active group's sub-categories, absent for single-category links.
+- Chip selection writes category/group URLs and retains sort/search/other query parameters and the fragment.
+- Cards cap combined ingredient/nutrition rows at 3 with +N more; existing equal-height grid/flex and pinned actions retained.
+- Card/detail price boxes show Price first/largest, then smaller True cost and Per serving; pricing calculations unchanged.
+- Moved existing analytics controller into footer legal nav; preserved isolated-environment exclusion and updated privacy copy.
+- PASS 249 focused Node tests, tsc --noEmit, lint (0 errors/21 existing warnings), git diff --check.
+- Read ../g-review2.txt: no code blockers; browser SHOULD-FIX still blocked by Chrome launch SIGABRT in this sandbox.
+- Expanded browser fixture for row caps and footer consent/focus; run TEST_BROWSER_CHANNEL=chrome node tests/browser/guides-footer.mjs outside sandbox.
+- Hosted CI unrun; gh unsigned. No commit/push/deploy; existing run scripts preserved. Prior top note describes work now in 5e4ec86.
+
+**16 October reviewer fixes — grok/guides-footer-fix; HEAD a3d4ac0; working tree only:**
+- Restored View/Search retailer links and Shop offer under review; Coming soon only fills an otherwise absent offer.
+- Coming soon keeps action dimensions/classes, with opacity .55 and not-allowed cursor; corrected earlier handover claim below.
+- Both popups use document Escape/outside pointerdown while open; hover-click pins; focus/blur and listener cleanup retained.
+- Home rows allow popup overflow with rounded container; Informed Sport target is 32px with negative margin, unchanged line height.
+- Mobile footer link groups use two columns/32px rows and tighter spacing; Guides gets is-active; import ordering corrected.
+- Dropped product certification source field/callers: no matching migration column; optional icon source prop remains supported.
+- PASS 185 focused Node tests, tsc --noEmit, lint (0 errors/21 existing warnings), diff check; browser fixture expanded.
+- Browser blocked: Chrome launch SIGABRT in sandbox; next run guides-footer browser fixture outside sandbox. Hosted CI unrun.
+- No commit/push/deploy; existing g-run scripts untouched; related draft PR readback unavailable (gh unsigned).
+
+**16 October Informed Sport inline icon + True Cost investigation — grok/guides-footer-fix; base main 3b3c507; local only:**
+- Preserved all prior uncommitted guides/footer/Coming soon/advisory changes and g-run scripts.
+- Replaced catalogue certification bar/detail badge with a small shield/check beside brand; also home/saved cards.
+- Focusable trigger supports hover/tap, native Enter/Space, Escape and focus-within; optional public source URL supported.
+- Current product data has only the flag, no certification URL/asset; no source link invented or DB columns requested.
+- Icon fits brand line; popup is absolute; existing equal-height grid rules retained. Browser fixture covers heights/interactions.
+- PASS 181 focused Node tests, tsc --noEmit, lint (0 errors/21 existing warnings), diff check; stale Coming soon assertions updated.
+- Browser verification blocked: Chrome launch SIGABRT in sandbox. Hosted CI unrun; gh unsigned; no commit/push/deploy.
+- True Cost unchanged: ProductGrid.tsx:311/316 both use cost_per_serving; products.ts:60–64 = displayPrice / labelled servings.
+- Correct listed-serving arithmetic, not effective-dose cost (home method explains review hold); shipping excluded. Next: visual QA.
+
+**16 October guides/footer and advisory UI — grok/guides-footer-fix; base main 3b3c507; local only:**
+- Added Guides to desktop/compact/mobile navigation, footer and home method links; legacy /guides routes use explicit 301s.
+- Compacted footer padding/logo/link groups; retained legal/social links; added company number 17497631.
+- Initial Coming soon change also replaced retailer links and held-shop messages; corrected in the reviewer follow-up above.
+- Caffeine advisory moved beside label values as a hover/tap/keyboard popup; wording/source and legal warnings unchanged.
+- PASS 211 focused Node tests; tsc --noEmit; lint (0 errors/21 existing warnings); git diff --check.
+- Browser fixture added: sandbox blocked local listen (EPERM) and Chrome launch (SIGABRT); visual dimensions remain unverified.
+- Next: run TEST_BROWSER_CHANNEL=chrome node tests/browser/guides-footer.mjs outside sandbox; hosted CI unrun; gh unsigned.
+- No commit/push/deploy; brand copy, equal-height grid CSS and lib/assessment-display.ts untouched; unrelated g-run*.sh left alone.
+
 **16 October vs reviewer build follow-up — grok/store-offer-price-fix; start 722e42e; local only:**
 - getMatchup now calls unstable_rethrow(error) before its null fallback, matching product-data.ts.
 - display-price uses @/lib/products; typecheck passes. Refreshed only the manifest source-tree hash.

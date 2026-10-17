@@ -1,43 +1,53 @@
 # Assessment approval and recommendation containment
 
-This is an implementation hold, not scientific approval. It supersedes the earlier interim rule that allowed positive frozen scores into rankings. **No approved product assessment dataset exists, so no historical score may drive an effectiveness recommendation.** The original score and methodology source records remain intact.
+`data/reviewed-assessments.json` is the reviewed-assessment register. It starts empty (`[]`), so no product currently has an approved score or qualifies for effectiveness rankings. Historical formula scores remain research inputs and cannot grant approval. Commercial eligibility, supplier mappings and caller-provided approval flags cannot grant scientific approval either.
 
-## Separate history from approval
+## Assay and Oath sign-off
 
-`assessmentDisplayFor` classifies whether a historical value exists but withholds its number from the public projection; it does not grant recommendation eligibility. `hasApprovedAssessment` currently returns false for every input. Positive scores, categories and caller-provided `approved` or status/version properties cannot bypass it. A future reviewed projection must replace this gate with authoritative formulation, label, methodology, evidence, uncertainty and review approval bindings; it must not add a legacy fallback.
+1. Assay reviews the exact catalogue product, formulation and label against the evidence and scoring methodology. Assay determines the score and records the scientific review date. Use the catalogue product **id** as `key`, never its name, brand, SKU or Shopify variant id.
+2. Oath reviews the proposed score and public claims, warnings and limitations against the same product and evidence. Oath records the compliance review date only after signing off. A science review alone cannot release a score.
+3. After both reviews, add one record for that product id. In `notes`, reference the reviewed label/formulation, methodology, evidence and any limitations so the decision can be checked. These records are bundled with public code: include no secrets, private costs or personal data.
+4. Review the change and run the assessment tests, lint and TypeScript checks before release. A register edit takes effect when the application is rebuilt and deployed through the normal release process; editing it is not a live publication action. No real approvals are seeded by this implementation.
+5. Reassess after material formulation, label, evidence or methodology changes. Remove the record while a previous sign-off is no longer applicable. Removing a record withholds its public score and ranking eligibility again.
 
-| Input | Public assessment state | Effectiveness recommendation |
+Record format (illustration only; do not copy this into the empty register as an approval):
+
+```json
+[
+  {
+    "key": "catalogue-product-id",
+    "score": 73,
+    "science_reviewer": "Assay",
+    "science_date": "2026-10-15",
+    "compliance_reviewer": "Oath",
+    "compliance_date": "2026-10-16",
+    "notes": "References to the label/formulation, methodology and evidence reviewed, with limitations."
+  }
+]
+```
+
+The module validates the parsed JSON shape once at load. The top level must be an array. Each usable record needs a nonblank string key, finite numeric score from 1 to 100 inclusive, exactly `Assay` and `Oath` as reviewers, both real calendar dates in `YYYY-MM-DD` format, and string notes. Invalid records are ignored; an invalid top-level shape provides no approvals. JSON syntax must be valid for the build. Keep one record per product key; if valid duplicates are accidentally supplied, the last valid record is used.
+
+## Display and ranking rules
+
+| Condition | Public assessment | Ranking eligibility |
 | --- | --- | --- |
-| Missing, null, zero, negative, nonfinite or greater-than-100 value | Not assessed | Unavailable |
-| Cycle-support, liver-health, hormone-support or ZMA | Under review; frozen number withheld | Unavailable |
-| Positive finite value up to 100 outside those holds | Not assessed; frozen number withheld | Unavailable |
-| Caller-provided approval/status/version | Does not change authority | Unavailable |
+| No matching valid record, including incomplete sign-off | Under review; outline ring with no number | Unavailable |
+| Valid record with both sign-offs | The record's score, regardless of any historical or caller-provided score | Available for score ranking; value/budget awards also require positive serving cost |
+| Cycle-support, liver-health, hormone-support or ZMA category hold | Under review; no score, even with a signed record | Unavailable |
 
-Historical values remain in the frozen source, but the reviewed public displays and named JSON projections do not present them as customer-facing numbers, coloured quality rings or grades. Some server-rendered page data and bundled client code still contain frozen values; they are not a secret-data boundary and must not be described as such. Account stacks report that no approved average exists; no combined-stack assessment is claimed and no product is selected or endorsed. Share, export and email-to-self text retain the same display restrictions and canonical server lookup.
+`assessmentDisplayFor` and `hasApprovedAssessment` resolve by product id from this register. Category claims-review holds take precedence. Product ids travel through badge, comparison, stack and related-product callers. Shared score attachment and sorting use the reviewed value for approved records. API scores are the same reviewed projection; rank is nullable, and OpenAPI describes approved and under-review states. Existing purchase/offer gates and the separate unavailable recommendation status remain unchanged.
 
-## Public behavior
-
-- Catalogue score/value sorts use alphabetical research order. No medals, top-pick badges, effectiveness value awards, dose flags or category-benefit pitches are issued for historical values. Name and brand sorting stay available.
-- `/best` and known `/best/[category]` routes remain research pages with an honest ranking-unavailable notice. All known categories remain discoverable in the sitemap; missing assessments do not become a 404. Product records remain available even where listed price or assessment data is missing.
-- Product/brand comparison and alternatives routes preserve records independently of assessment eligibility. Alternative discovery is alphabetical, not a scientific replacement ranking. Brand score aggregates and winner claims are unavailable. Product-detail editorial rating schema is withheld; ordinary customer-review data remains separate.
-- Guide and ingredient pages preserve underlying research, labels, citations and cautions while withholding product picks. Goal research pages remain available; wizard and static goal-stack selection return no automatic products, including for unlimited budgets. The manual stack, favourite and compare controls, F09 retry/outbox behavior, serving resolution, accessible dialogs and existing offer holds remain intact.
-- Generated metadata, structured data, social images, methodology explanations and affected scoring-related links state the same limitations. The methodology still exposes historical formula rows/weights for inspection, without “perfect dose”, traffic-light quality or winner claims. This does not re-audit unrelated ingredient articles or create replacement scientific ratings.
-- `/api/ard/compare` returns `rank: null`, `score: null` and `recommendation_status: "unavailable"` for every result. `assessment_state` describes legacy availability or review, not approval. Score/value orders are alphabetical; budget order is price-only. OpenAPI documents these exact semantics. `/api/products` retains its array response, now with `score: null`, and adds the explicit historical state/note and unavailable recommendation status. Detail, compare, favourites and stack assessment API projections also withhold frozen numbers.
+With the register empty, score/value ordering falls back to alphabetical research order. Product records, labels, citations, cautions, manual stack editing, favourites and comparison remain available. No historic score can issue medals, effectiveness awards or automatic product selections. Existing stack summary and social-card containment remains conservative; this change does not create a combined-stack assessment.
 
 ## Retained numerical comparisons
 
-Price-only ordering uses a finite positive recorded retail price and known positive serving count, independently of historical score. The unrounded ratio is retained for ordering and API data; presentation rounds only at the display boundary, with subpenny amounts shown as `<£0.01`. Missing, zero, negative, nonfinite or malformed inputs are excluded from this calculation. Protein price-per-gram additionally requires an explicit gram serving unit, valid recorded protein yield, and usable pack data.
+Price-only ordering uses finite positive listed prices and known positive serving counts independently of assessment approval. Ratios remain unrounded until presentation, including `<£0.01` for subpenny costs. Protein price per gram requires an explicit gram serving unit and usable protein yield and pack data. These are listed-price calculations, excluding delivery, discounts and checkout adjustments; they do not establish effective doses or approve an offer.
 
-These are **listed-price calculations**, not prices for an established effective dose. Formulas, category serving sizes and catalogue mixes may differ. Delivery, discounts and checkout adjustments are excluded; no retailer offer is approved by the calculation. The shop's margin/delivery policy is separate.
+Caffeine comparison remains recorded mass ordering, not a recommendation to take more. Explicit supported units and finite nonnegative amounts are required; unknown units are not silently converted. Existing caffeine and stack cautions remain in place.
 
-Caffeine comparison is recorded mass ordering, not a recommendation to take more. Ties use names, never historical scores. Only finite nonnegative amounts in explicit mg, g, µg, μg or mcg units are converted; unknown units and invalid amounts cannot silently become milligrams or grams. Raw catalogue rows remain elsewhere. Existing explicit caffeine and stack nutrient cautions are preserved. This is dimensional validation, not a new safety-reference or label-provenance approval.
+## Verification and release limits
 
-## Acceptance and release limits
+Network-free TS/TSX fixtures cover the empty register, complete sign-offs, record score precedence, ranking eligibility, missing/wrong reviewers and dates, impossible calendar dates, malformed shapes, invalid scores and category holds. They also cover existing research displays, selectors and API containment. Synthetic signed records are injected only in memory; the real register stays empty.
 
-The actual TS/TSX unit fixture covers positive historical, held, unknown and forged-approval inputs across shared cards/detail/compare, awards/selectors, known category/alternative/vs/brand routes, every goal route, API/OpenAPI, methodology/glossary, metadata/JSON-LD and social cards. It also proves neutral price ordering for rounded ties and subpenny costs, malformed price/serving/protein inputs and explicit caffeine-unit conversion. No outbound requests are allowed in the fixture.
-
-The actual React/Tailwind browser harness runs at 320, 390, 768, 1024, 1280 and 1440 pixels in a fresh headless browser. It checks all catalogue sorts, legacy/held/unknown states without badges, own-shop holds and overflow. Wizard tests preserve keyboard step focus and budget control behavior but now assert no unapproved products or automatic add action at either finite or unlimited budgets. Existing manual-stack outbox, share/focus/status and offer fixtures remain included. The former wizard product-recommendation acceptance is deliberately replaced by unavailable-state acceptance; it cannot be claimed as a valid recommended pack journey.
-
-Full type, lint and unit checks plus the real Next build/runtime fixture run locally with synthetic inputs. The build fixture blocks all external connections and verifies synthetic-preview containment after conflicting runtime settings. It does not prove hosted deployment acceptance. Public consumers must support null ranks before release. Production cache invalidation, hosted user journeys, Safari/iOS and assistive-technology certification remain separate release work.
-
-The installed Next 15.5.25 package lacks `node_modules/next/dist/docs`; the existing documented official Next 15 fallback applies. No production environment, customer, email, shop order or hosted schema is changed by this patch.
+Local test, type and lint results are recorded in `.agent/HANDOVER.md`. Local checks do not establish hosted CI, deployment acceptance, production cache invalidation, browser journeys or assistive-technology certification. No production environment, shop order, customer data or hosted schema is changed by this mechanism.

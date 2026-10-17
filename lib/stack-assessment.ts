@@ -1,12 +1,11 @@
 import { assessmentDisplayFor } from './assessment-display'
-import { scoreFor } from '@/lib/scores'
 
 type CatalogueIdentity = { id: string; brand: string; name: string; category: string }
 
 // Call only with identities loaded from the catalogue. An incidental stored or
 // caller-supplied `score` property never participates in this projection.
 export function catalogueAssessment(product: CatalogueIdentity) {
-  return { ...product, score: scoreFor(product.brand, product.name) }
+  return { ...product, score: assessmentDisplayFor(product).score }
 }
 
 export function summariseStackAssessments(products: CatalogueIdentity[], listedCount?: number) {
@@ -16,15 +15,16 @@ export function summariseStackAssessments(products: CatalogueIdentity[], listedC
   const underReview = states.filter(state => state.state === 'under_review').length
   const unassessed = total - underReview
   const average = null
-  const text = `No approved product effectiveness assessment is available. 0 of ${total} products included.`
+  const text = `No approved product benefit assessment is available. 0 of ${total} products included.`
   return {
     average, included: 0, total, underReview, unassessed,
-    text: `${text} ${underReview} under review and ${unassessed} unassessed or unavailable excluded. This is not a combined-stack assessment. Scientific review is incomplete; no effectiveness recommendation is made.`,
+    text: `${text} ${underReview} under review and ${unassessed} unassessed or unavailable excluded. This is not a combined-stack assessment. Scientific review is incomplete; no benefit recommendation is made.`,
   }
 }
 
-export function assessmentText(product: { category: string; score: number | null }) {
+export function assessmentText(product: { id: string; category: string; score: number | null }) {
   const assessment = assessmentDisplayFor(product)
+  if (assessment.suppressed) return 'Brand label information only'
   return assessment.state === 'under_review'
     ? 'Under review; no benefit recommendation'
     : 'Not assessed; no benefit recommendation'

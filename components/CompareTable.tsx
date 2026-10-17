@@ -24,7 +24,7 @@ export default function CompareTable({ products, onRemove }: { products: ScoredP
       {row('Servings', items.map(p => p.servings_per_container))}
       {row('Serving size', items.map(p => p.serving_size == null ? null : `${p.serving_size} ${p.serving_unit ?? ''}`))}
       {row('Listed price per serving', items.map(p => p.cost_per_serving), true)}
-      {row('True cost per effective serving', items.map(() => 'Unavailable pending review'))}
+      {row('Dose-adjusted serving cost', items.map(() => 'Unavailable pending review'))}
       <tr className="shop-table-group"><th colSpan={items.length + 1}>Ingredients and nutrition per serving</th></tr>
       {nutrients.map(name => row(name, items.map(p => { const n = p.nutrients?.find(n => n.nutrient_name === name); return n ? `${n.amount} ${n.unit}` : null })))}
       {!nutrients.length && <tr><td colSpan={items.length + 1}>Per-serving label data is not listed for these products.</td></tr>}
