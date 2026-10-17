@@ -1,8 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync, existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { resolve, dirname, relative } from 'node:path'
+import { resolve, dirname, relative, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import vm from 'node:vm'
@@ -160,8 +160,42 @@ test('policy pages render approved delivery copy and remaining policy drafts', (
   assert.match(refunds, /14 days/); assert.match(refunds, /statutory rights/)
   assert.match(privacy, /Supabase/); assert.match(privacy, /Shopify/); assert.match(privacy, /Suppliers and couriers/)
   assert.match(terms, /statutory consumer rights/)
-  assert.match(contact, /mailto:hello@theliftinglab.co.uk/)
+  for (const address of ['info', 'orders', 'help']) {
+    assert.ok(contact.includes(`href="mailto:${address}@theliftinglab.co.uk"`))
+  }
   assert.equal((contact.match(/Draft for Lifty and Toby review/g) ?? []).length, 1)
+})
+
+
+function customerFacingTextFiles(directories) {
+  const binaryExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.ico', '.bmp', '.tif', '.tiff', '.woff', '.woff2', '.ttf', '.otf', '.eot', '.pdf', '.mp3', '.mp4', '.webm', '.wav', '.zip', '.gz'])
+  const paths = []
+  for (const directory of directories) {
+    if (!existsSync(resolve(root, directory))) continue
+    for (const entry of readdirSync(resolve(root, directory), { recursive: true, withFileTypes: true })) {
+      if (!entry.isFile() || binaryExtensions.has(extname(entry.name).toLowerCase())) continue
+      paths.push(resolve(entry.parentPath, entry.name))
+    }
+  }
+  return paths.sort()
+}
+
+test('customer-facing files contain no retired or owner email addresses', () => {
+  for (const path of customerFacingTextFiles(['app', 'components', 'lib', 'public', 'data'])) {
+    assert.doesNotMatch(readFileSync(path, 'utf8'), /(?:hello|toby)@theliftinglab\.co\.uk/i, relative(root, path))
+  }
+})
+
+test('customer-facing identity uses the registered company instead of the former trader', () => {
+  for (const path of customerFacingTextFiles(['app', 'components'])) {
+    assert.doesNotMatch(readFileSync(path, 'utf8'), /Tobias Tipper,\s+trading as/i, relative(root, path))
+  }
+  const privacy = htmlFor('app/privacy/page.tsx')
+  assert.match(privacy, /THE LIFTING LAB LTD/)
+  assert.match(privacy, /17497631/)
+  for (const route of ['privacy', 'terms', 'contact']) {
+    assert.ok(htmlFor(`app/${route}/page.tsx`).includes('The Lifting Lab is a trading name of THE LIFTING LAB LTD, registered in England and Wales, company number 17497631, registered office 82a James Carter Road, Mildenhall, IP28 7DE.'))
+  }
 })
 
 
