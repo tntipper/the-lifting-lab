@@ -136,3 +136,22 @@ test('an incoming cached mapping is replaced with null when the reader returns n
     assert.notEqual(offer.relationship, 'own_shop')
   }
 })
+
+for (const pricesOn of [false, true]) test(`live loader attaches mappings without STORE_LINKS; prices flag ${pricesOn}`, async () => {
+  const { result, offer, html, reads, prices, connections } = await run([row], {
+    ...enabled, NEXT_PUBLIC_TLL_STORE_LINKS: undefined, NEXT_PUBLIC_TLL_LIVE_CART: 'enabled',
+    NEXT_PUBLIC_TLL_STORE_PRICES: pricesOn ? 'enabled' : undefined,
+  })
+  assert.ok(result.storeLinkMapping)
+  assert.equal(reads, 1); assert.equal(connections, 1); assert.equal(prices, pricesOn ? 1 : 0)
+  assert.equal(result.storePrice?.price, pricesOn ? 12.5 : undefined)
+  assert.match(offer.url, /products\/fixture-vanilla\?variant=90071992547409931234&/)
+  assert.match(html, /Buy at TLL Store/)
+  assert.doesNotMatch(html, />Add to basket<\/a>/)
+})
+for (const isolated of ['staging', 'synthetic-preview']) test(`live loader remains inert in ${isolated}`, async () => {
+  const { result, reads, prices, connections } = await run([row], {
+    ...enabled, NEXT_PUBLIC_TLL_LIVE_CART: 'enabled', NEXT_PUBLIC_TLL_ENVIRONMENT: isolated,
+  })
+  assert.equal(result, product); assert.equal(reads + prices + connections, 0)
+})

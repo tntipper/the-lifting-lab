@@ -24,6 +24,128 @@
 - Internal owner-email evidence in this handover, two docs/ops stage plans and staging-generation-23-owner-journey.mjs retained.
 - Committed as a575d46 and pushed as PR #102; CI 9/9 green and Claude Code PASS WITH NOTES (owner-reported).
 
+**17 October PR #101/main merge repair — grok/live-cart; HEAD d40f209; merging fefe235; uncommitted:**
+- Resolved all six conflicted files; preserved main Coming soon/cart exception, action classes, retailer copy/rel and store labels alongside live-cart hooks/slots/variant labels.
+- Grid retains main action props/classes and live-only wrapping; detail imports deduplicated; accessibility defines and stricter offer assertion combined.
+- Preserved every handover paragraph from both parents, newest first; no duplicate branch entries or rewritten historical content.
+- Fixed merge regression in Guides navigation fixture: added live-mode/basket mocks required by #101 imports; all four Guides tests pass.
+- PASS lint (0 errors/20 warnings), typecheck, 221 focused tests; 224 exact SSR markup comparisons against fefe235 with live flag unset.
+- Full npm test: 4,164 pass / 28 fail / 8 skip; recorded socket/process/Chromium/Python-temp/Docker restrictions; Guides merge failure fixed. Hosted CI/browser geometry unrun.
+- PASS diff check/no conflict markers. Git staging blocked: index.lock outside writable sandbox; operator must git add resolved files and rerun restricted checks unrestricted. No commit/push/abort/remote operations.
+
+- 17 Oct 2026 PR #101 delivery wording commit (grok/live-cart): approved £4.99 Standard DPD Next Day/free £100+ basket, delivery page and SEO copy; no internal delivery notes exposed; 25 focused tests, lint (21 existing warnings), tsc and diff check PASS; npm test 4,108 pass/28 sandbox failures/8 skip (loopback, ps, Chromium, Python temp, Docker); hosted CI unrun; local only, no push/merge; next: unrestricted full-suite check.
+
+**16 October PR #101 caption follow-up — grok/live-cart; working changes on 63f9ec4:**
+- Aligned full and grid captions with PR #99: Retailer search; updated routing/browser regexes. ProductGrid has no separate caption copy.
+- Live-cart caption assertion now strips markup before checking text, so title/aria-label attributes cannot satisfy it.
+- Corrected the previous note: 63f9ec4 is committed and pushed as PR #101; this follow-up remains uncommitted because Git metadata writes are denied; no push.
+- PASS: 121 focused tests (live-cart + offer-routing); git diff --check.
+- npm test: 4,107 pass / 28 fail / 8 skip; recorded sandbox limits recur (loopback/ps EPERM, Python temp warning, Chromium launch, Docker/process fixtures). Rerun outside sandbox; hosted CI unrun.
+- Browser verification results are recorded by Grok separately; no browser verification claimed here.
+
+**16 October PR #101 review fixes — grok/live-cart; committed as 63f9ec4 and pushed as PR #101:**
+- ProductOfferLink: grid affiliate disclosure has its own unclamped/non-shrinking line; description alone clamps to one line within the existing 44px + 20px slot.
+- ProductGrid: live-only reserved stock row below price, 11px text on the price panel (token contrast #55574c/#ecece4 = 6.20:1); grid-only fixedActionSlot and flag-off rendering preserved. New copy follows ../assay-rubric/OATH_WORDING.md.
+- Tests: live-cart unit assertions updated; browser covers 320/360/390/414/768/1280, disclosure geometry, stock visibility/contrast, equal cards and SSR/hydration; SSR checks stock and flag-off absence.
+- PASS: 56 focused tests; npx tsc --noEmit; lint 0 errors/21 existing warnings; git diff --check; browser SSR live/default fixtures.
+- npm test: 4,107 pass / 28 fail / 8 skip; matches previously recorded sandbox failures (loopback/ps EPERM, Python temp warning, Chromium launch, Docker access/process fixtures). Hosted CI unrun.
+- Browser attempted twice: Chromium fails before any width with MachPortRendezvousServer bootstrap_check_in permission denied (1100). Six-width geometry/contrast remains unverified; do not claim visibility confirmed.
+- 63f9ec4 is committed and pushed as PR #101. Browser verification results are recorded by Grok separately.
+
+**16 October live-cart Round 9 — grok/live-cart; continued from b9657c5; local only:**
+- Files changed: components/ProductOfferLink.tsx, tests/live-cart.test.mjs, tests/browser/live-cart.mjs, .agent/HANDOVER.md.
+- Fixed grid slots omit visible legacy stock, retain it in link title/aria, and never put muted stock text on the dark button; non-grid layout and all caption wording/order unchanged.
+- Geometry: 44px non-shrinking link + 20px non-shrinking caption, zero gap = existing 64px slot; two 10px caption lines. Centre the text block within the caption so a single line's glyph rect cannot protrude above the slot (the likely 390px failure); wrapping still has the full 20px. No grid/tile dimensions changed.
+- Unit checks cover unchanged captions with/without stock, metadata-only grid stock, unchanged non-grid copy and grid-only opt-in; six-width SSR/mounted browser assertions follow the nested text range and reject muted stock inside links.
+- PASS typecheck; lint 0 errors/21 existing warnings; 56 focused tests; live-boundary/both manifests; git diff --check. Full npm test: 4,107 pass / 28 fail / 8 skip, matching Round 8 sandbox loopback/ps/Chromium/Python-temp/Docker failures. Hosted CI unrun.
+- Browser SSR fixtures PASS; Chromium launch denied MachPort bootstrap permission. Operator's b9657c5 run failed disclosure geometry at 390px; this fix's six-width run remains unverified, not a claimed pass.
+- Before enablement: operator runs node tests/browser/live-cart.mjs and takes actual /compare + /stack live-mode screenshots. Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; existing mapping/price prerequisites remain in Round 4.
+- Round 9 committed by the operator as a6c89ee; operator ran six-width browser checks outside the sandbox: PASS.
+
+**16 October live-cart Round 8 — grok/live-cart; continued from 9b660c1; local only:**
+- Changed components/ProductOfferLink.tsx and app/products/ProductGrid.tsx: only the grid opts into fixedActionSlot; unchanged affiliate captions use 20px/two lines under a 44px link, stock inside the link; existing 64px slots/grid CSS unchanged.
+- Changed tests/live-cart.test.mjs, tests/variant-picker.test.mjs and tests/browser/live-cart.mjs: grid opt-in, stock/copy order, isolated-mode button absence, six-width SSR/mounted disclosure range/overflow assertions.
+- Corrected stale Round 7 commit and browser-run claims below; 9b660c1 and its six-width pass are confirmed by the operator.
+- PASS typecheck; lint 0 errors/21 existing warnings; 66 focused tests; live-boundary/both manifests; git diff --check. Hosted CI unrun.
+- Full npm test: 4,107 pass / 28 fail / 8 skip; existing sandbox loopback/ps/Chromium/Python-temp/Docker limitations; rerun these in an unrestricted local environment.
+- Browser SSR fixtures PASS; Chromium launch denied MachPort bootstrap permission, so new six-width disclosure geometry remains unverified. Next: run node tests/browser/live-cart.mjs and take actual /compare + /stack live-mode screenshots before enablement.
+- Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; mapping/price prerequisites remain in Round 4. No env/Vercel/Shopify changes, external network actions or push.
+- Round 8 committed by the operator (fix: preserve grid affiliate disclosures and scope fixed action slots); operator runs six-width browser checks outside the sandbox.
+
+**16 October live-cart Round 7 — grok/live-cart; committed as 9b660c1; local only:**
+- Changed components/ProductOfferLink.tsx: 44px affiliate action + truncated caption/title within the existing 64px slot, including legacy stock; copy and tile dimensions unchanged.
+- Changed app/products/ProductGrid.tsx (slot test marker), app/products/[id]/ProductDetailPage.tsx (withhold mapping until URL selection), lib/affiliate.ts (stale comment).
+- Changed tests/live-cart.test.mjs, tests/variant-picker.test.mjs, tests/browser/live-cart-fixture.tsx and tests/browser/live-cart.mjs; Amazon/Myprotein/Bulk fixtures and every-slot scrollHeight<=clientHeight checks at six widths, SSR + mounted.
+- PASS typecheck, lint (0 errors/21 existing warnings), 111 focused tests; live boundary and both manifest checks PASS; git diff --check PASS. Hosted CI unrun.
+- Final npm test: 4,106 pass / 28 fail / 8 skip; repeated existing EPERM loopback/ps/Chromium, Python temp-dir and Docker/Postgres limits. Rerun in an unrestricted local test environment; no unrelated fixes attempted.
+- Browser SSR fixtures PASS; operator confirmed the six-width run at 9b660c1 passed. Actual /compare + /stack screenshots remain outstanding before flag enablement.
+- Corrected Round 6 below: operator ran its six-width checks at 547c12b and they passed. Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; existing mapping/price requirements remain in Round 4.
+- Changes committed as 9b660c1; six-width checks passed per operator. No external network actions, env/Vercel/Shopify changes or push. Next: actual /compare + /stack screenshots before flag enablement.
+
+**16 October live-cart Round 6 — grok/live-cart; continued from 7319bd0; local only:**
+- Changed ProductOfferLink/LiveBasket/ProductGrid: fixed 64px live action space for every card, 44px controls, single stock/status row outside the button.
+- Removed hidden sizing offers; one offer-state per card; restored product/new-tab aria-label on live store links; stale refresh guidance retained.
+- Cheapest, best, StackBuilder and CompareTable use compact live product/variant links without quantity selectors; flag-off and unsold offer paths retained.
+- Extended live-cart unit/browser fixtures: equal cards at six widths, 44px actions, server/mounted equality, link-only/unavailable/unsold cards and compact links.
+- PASS typecheck, lint (0 errors/21 existing warnings), 229 focused tests incl. preview-mode, mapping loader, routing, prices and variant picker; boundary/manifests PASS.
+- Browser SSR fixtures PASS; Chromium startup twice denied MachPort bootstrap permission, before layout/screenshots. Operator subsequently ran the six-width checks at 547c12b: PASS; hosted CI unrun.
+- Operator confirmed the previous 7319bd0 browser checks passed; commits dea270a through 7319bd0 were made by the operator; corrected Round 5 records below.
+- Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; mapping/live-price env requirements are in Round 4. No network/env/Shopify/Vercel changes or push.
+
+**16 October live-cart Round 5 — grok/live-cart; continued from f105879; local only:**
+- Existing commits dea270a and later in this branch were made by the operator; historical branch commit-failure claims corrected below.
+- Changed ProductOfferLink/LiveBasket: identical legacy sizing shell on server and after mount, including storeActionLabel; link-only offers use it too.
+- Stock/status sit outside the button; status ignores pointer events and truncates with title; stale offers retain refresh guidance.
+- Changed preview-mode test loader, shared sold-product clock in affiliate/live-cart-mode, live-cart unit/browser fixtures; refreshed manifest hash only.
+- PASS typecheck, lint (0 errors/21 existing warnings), 274 focused tests including preview-mode, live-boundary and both manifest checks.
+- Server-rendered browser fixtures PASS; operator subsequently confirmed all six widths PASS at 7319bd0.
+- Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled on Production only; mapping and live-price requirements remain documented in Round 4 below.
+- Commits 86f6697 and 7319bd0 were made by the operator. No network/env/Shopify/Vercel actions or push; hosted CI unrun.
+
+**16 October live-cart Round 4 — grok/live-cart; continued from dea270a; local only:**
+- Commits dea270a and subsequent existing commits were made by the operator.
+- Changed LiveBasket/ProductOfferLink action sizing, affiliate/shared store-product-link, live-cart-mode, store-price-server and detail variant projection.
+- Live controls/status occupy the original inert action footprint; fresh mappings without prices retain exact variant links; invalid mappings retain affiliate routing.
+- Production target only, not Preview: NEXT_PUBLIC_TLL_LIVE_CART=enabled; mapping reads need SUPABASE_SERVICE_ROLE_KEY and existing NEXT_PUBLIC_SUPABASE_URL.
+- Live price/stock for Add to basket: NEXT_PUBLIC_TLL_STORE_PRICES=enabled + TLL_STOREFRONT_SHOP + TLL_STOREFRONT_PRIVATE_TOKEN; STORE_LINKS is optional.
+- Extended live-cart, mapping-loader, variant-picker unit tests and six-width browser fixture; refreshed activation manifest source hash/count only.
+- PASS typecheck, lint (0 errors/21 existing warnings), 202 focused tests, live-boundary and both manifest checks; hosted CI unrun.
+- Browser bundles, but Chromium startup fails with MachPortRendezvousServer bootstrap_check_in permission denied; six-width layout verification needs operator rerun.
+- Work is recorded in the existing branch commits made by the operator; no env/network/Shopify/Vercel writes or push.
+
+**16 October live-cart Round 3 — grok/live-cart; starting commit 72a2c61; local only:**
+- Operator made commits d20253c and 72a2c61.
+- Live opt-in now resolves approved fresh available mappings to exact variant product links without STORE_LINKS; adds strict attributed shop product fallback.
+- Exported isTllSoldProduct; non-sold and flag-off rendering unchanged; unavailable offers remain inert; no product copy/grid CSS changes.
+- LiveBasket retains stale-offer refresh guidance; status truncates within reserved space with full title; browser fixture covers fallback without STORE_LINKS.
+- Changed affiliate/live-cart-mode, ProductOfferLink/LiveBasket, live-cart unit/browser fixtures and activation manifest source hash only.
+- PASS typecheck, lint (0 errors/21 existing warnings), 152 focused tests, both manifest checks; hosted CI unrun.
+- Browser bundles; Chromium SIGTRAP: MachPortRendezvousServer bootstrap_check_in permission denied. Layout execution remains blocked.
+- Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled; no env/network/Shopify/Vercel writes or push. API cart and staging unchanged.
+- Work is recorded in the existing branch commits made by the operator; no env/network/Shopify/Vercel writes or push.
+
+**16 October production basket reviewer follow-up — grok/live-cart; on d20253c; local only:**
+- Saved lines now contain variant/product IDs, quantity, name/brand/label and shown price only; legacy baskets migrate without expiry checks.
+- Fresh approval/stock checks apply only at add time; saved checkout persists and shows an estimated total, with Shopify rechecking price/stock.
+- ProductOfferLink renders its existing link first, evaluates live eligibility after mount and preserves exact fallback/bordered unavailable states.
+- Basket checkout retains the last add's product/compare/stack campaign; live stack checkout clamps 10 packs/20 lines with an explanation.
+- Extended dependency checks to LiveBasket, /cart, ProductOfferLink and TopNav; browser fixture covers compare attribution/public storage shape.
+- PASS typecheck, lint (0 errors/21 existing warnings), 137 focused tests (12 live-cart), both manifest checks and diff check; CI unrun.
+- Browser bundles but Chromium startup fails: MachPortRendezvousServer bootstrap_check_in permission denied, SIGTRAP; layout proof remains blocked.
+- Full npm test: 4089 pass / 28 fail / 8 skip; same restricted socket/Chrome/process/Python/Docker-PG prerequisites as prior run. Enable NEXT_PUBLIC_TLL_LIVE_CART=enabled.
+- Work is recorded in the existing branch commits made by the operator; no env/network/Shopify/Vercel writes or push.
+
+**16 October production basket — grok/live-cart; base 3b3c507; local only:**
+- Enable with NEXT_PUBLIC_TLL_LIVE_CART=enabled; unset preserves defaults; staging/synthetic preview stay off.
+- Added commerce live-cart-mode/live-basket/cart-permalink + LiveBasket UI: versioned storage, 20 lines, qty 1–10, fresh approved variants only.
+- Wired ProductOfferLink, detail variant label, TopNav, /cart and BuyMyStack; displayPrice only; strict attributed public-shop checkout permalink.
+- /api/cart and staging server unchanged; live dependency test excludes staging/Storefront/vault/DB; no secrets, env edits, network actions or push.
+- Added live-cart unit/browser fixtures; updated offer test loader + existing browser flag stubs; refreshed manifest source hash/count only.
+- PASS typecheck, lint (0 errors/21 existing warnings), 213 focused tests (9 live-cart), manifest checks and diff check.
+- Full npm test: 4085 pass / 28 fail / 8 skip; failures require sandbox-blocked sockets/Chrome/ps/Python or unavailable PostgreSQL fixtures; CI unrun.
+- Browser fixture bundles; Chrome SIGABRT prevents execution/layout proof. Grid CSS and brand/product copy unchanged; action slots retained.
+- Work is recorded in the existing branch commits made by the operator; no env/network/Shopify/Vercel writes or push.
+
 **16 October PR #99 rankings overflow — grok/guides-footer-fix; HEAD c980c61; base main 90e0ff7:**
 - Bounded ShopScoreBadge to w-28/max-w-full; button stacks/wraps labels using Tailwind utilities, including when fixtures omit CSS modules.
 - Oath wording, native disclosure/ARIA/keyboard/Escape handlers and all test assertions unchanged; g-run*.sh untouched.

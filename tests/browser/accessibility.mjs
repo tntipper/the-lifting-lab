@@ -21,6 +21,7 @@ const bundle = await build({
   absWorkingDir: root, entryPoints: ['tests/browser/accessibility-fixture.tsx'],
   bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic',
   define: {
+    'process.env.NEXT_PUBLIC_TLL_LIVE_CART': '""',
     'process.env.NODE_ENV': '"development"',
     // Next normally inlines these internal next/image settings at build time.
     'process.env.__NEXT_IMAGE_OPTS': 'undefined',

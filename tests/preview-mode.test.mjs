@@ -18,7 +18,19 @@ function loadSource(path, customRequire = require, extra = {}) {
 const catalogueAvailability = loadSource('../lib/commerce/catalogue-presentation.ts')
 const attribution = loadSource('../lib/commerce/store-attribution.ts', require)
 const crawlers = loadSource('../lib/seo-crawlers.ts')
-const resolve = name => name === '@/lib/seo-crawlers' ? crawlers : name === './commerce/store-attribution' ? attribution : name === './commerce/catalogue-presentation' ? catalogueAvailability : ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
+const commerce = new Map()
+const resolve = name => {
+  if (['./commerce/store-product-link', './commerce/live-cart-mode'].includes(name)) {
+    if (!commerce.has(name)) commerce.set(name, loadSource(`../lib/${name.slice(2)}.ts`, dependency => {
+      if (dependency === './store-product-link') return resolve('./commerce/store-product-link')
+      if (dependency === './store-attribution') return attribution
+      if (dependency === '../preview-mode') return preview
+      return require(dependency)
+    }))
+    return commerce.get(name)
+  }
+  return name === '@/lib/seo-crawlers' ? crawlers : name === './commerce/store-attribution' ? attribution : name === './commerce/catalogue-presentation' ? catalogueAvailability : ['@/lib/preview-mode', './preview-mode', './lib/preview-mode'].includes(name) ? preview : require(name)
+}
 function loadAnalytics() {
   const storage = new Map(), calls = []
   const browser = {

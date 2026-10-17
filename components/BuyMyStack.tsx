@@ -1,3 +1,5 @@
+import { liveCartEnabled } from '@/lib/commerce/live-cart-mode'
+import { buildLiveStackCheckout, liveBasketEligible } from '@/lib/commerce/live-basket'
 import { buildStackCartUrl, splitStackCartItems, stackCartEnabled, stackStorefrontCartEnabled, type StackCartItem } from '@/lib/commerce/stack-cart'
 
 const itemName = (item: StackCartItem) => [item.brand, item.name || item.id].filter(Boolean).join(' ')
@@ -5,8 +7,12 @@ const itemName = (item: StackCartItem) => [item.brand, item.name || item.id].fil
 export default function BuyMyStack({ items, ready }: { items: readonly StackCartItem[]; ready: boolean }) {
   if (!stackCartEnabled() || !ready || !items.length) return null
   const now = Date.now()
+  const live = liveCartEnabled()
   const { storeItems, outOfStock, affiliateOnly, unavailable } = splitStackCartItems(items, now)
-  const url = buildStackCartUrl(storeItems, now)
+  const eligible = live ? storeItems.filter(item => liveBasketEligible(item, now)) : storeItems
+  if (live) unavailable.push(...storeItems.filter(item => !liveBasketEligible(item, now)))
+  const bounded = live ? buildLiveStackCheckout(eligible, now) : null
+  const url = live ? bounded!.url : buildStackCartUrl(storeItems, now)
   // TODO(Toby/Lifty): approve a server-only Storefront binding before enabling Phase 2.
   const awaitingSetup = stackStorefrontCartEnabled()
   return <div className="stack-cart-root mt-4 space-y-4">
@@ -16,6 +22,7 @@ export default function BuyMyStack({ items, ready }: { items: readonly StackCart
       </div>
       <p className="mt-2 text-xs text-[#62645c]">Adds the listed pack quantities of approved store items. Items listed below are skipped. Check quantities, price and availability in the store cart.</p>
     </div> : <p role="status" className="text-sm">No store items can be added to your cart right now.</p>}
+    {bounded?.limited && <p role="status" className="text-sm">Checkout includes up to 20 store items and 10 packs per item. Review quantities in the store cart.</p>}
     {outOfStock.length > 0 && <section aria-label="Out of stock" className="rounded-lg border border-[#a8aaa0] p-4 text-sm">
       <h2 className="font-bold">Out of stock</h2>
       <ul className="mt-2 space-y-2">{outOfStock.map((item, index) => <li key={`${item.id}-${index}`}>

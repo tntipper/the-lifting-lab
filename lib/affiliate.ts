@@ -1,3 +1,6 @@
+import { buildStoreProductLink, DEFAULT_STORE_BUY_LINK_MODE, type StoreBuyLinkMode } from './commerce/store-product-link'
+export { buildStoreProductLink, DEFAULT_STORE_BUY_LINK_MODE, type StoreBuyLinkMode } from './commerce/store-product-link'
+import { liveCartEnabled, liveStoreProductUrl, isTllSoldProduct } from './commerce/live-cart-mode'
 import { catalogueAvailabilityFor, type CataloguePresentation } from './commerce/catalogue-presentation'
 import type { StorePricePresentation } from './commerce/store-price-products'
 import { isIsolatedEnvironment } from './preview-mode'
@@ -11,36 +14,33 @@ const AWIN_AFFID = '2919631'
 const BULK_MID = '4822'
 export const MYPROTEIN_REF_CODE = 'TOBIAS-R1I5'
 
-export type StoreBuyLinkMode = 'product_page' | 'cart'
-// Toby's Buy default: exact in-stock variants go to cart. STORE_LINKS remains OFF by default.
-export const DEFAULT_STORE_BUY_LINK_MODE: StoreBuyLinkMode = 'cart'
-
 export type ProductListing = {
   state: 'listing' | 'search_only' | 'unavailable'
   url: string | null
   retailer: string | null
   relationship: 'affiliate' | 'external' | 'own_shop' | 'none'
-  reason: 'preview' | 'missing_url' | 'invalid_url' | 'unreviewed_retailer' | 'own_shop_approval_required' | 'unverified_listing' | 'search_destination' | 'unreviewed_path' | 'approved_store_mapping'
+  reason: 'preview' | 'missing_url' | 'invalid_url' | 'unreviewed_retailer' | 'own_shop_approval_required' | 'unverified_listing' | 'search_destination' | 'unreviewed_path' | 'approved_store_mapping' | 'live_store_product'
 }
 
-/** Exact destination only; string IDs avoid losing precision on large Shopify IDs. */
-export function buildStoreProductLink(productId: string | undefined, mapping?: StoreLinkMapping | null, now = Date.now(), options: { mode?: StoreBuyLinkMode; inStock?: boolean; campaign?: StoreAttributionCampaign } = {}): string | null {
-  const review = mapping?.review
-  if (!productId || mapping?.productId !== productId || mapping.active !== true || mapping.approved !== true ||
-      !review || review.approved !== true || typeof review.version !== 'string' || !review.version.trim() || review.version !== review.expectedVersion ||
-      !Number.isSafeInteger(now) || !Number.isSafeInteger(review.verifiedAtMs) || review.verifiedAtMs < 0 ||
-      review.verifiedAtMs > now || !Number.isSafeInteger(review.expiresAtMs) || review.expiresAtMs <= now ||
-      typeof mapping.shopifyProductHandle !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(mapping.shopifyProductHandle) ||
-      typeof mapping.shopifyVariantId !== 'string') return null
-  const variant = /^(?:gid:\/\/shopify\/ProductVariant\/)?([1-9][0-9]*)$/.exec(mapping.shopifyVariantId)?.[1]
-  if (!variant) return null
-  if ((options.mode ?? DEFAULT_STORE_BUY_LINK_MODE) === 'cart' && options.inStock === true)
-    return withStoreAttribution(`https://shop.theliftinglab.co.uk/cart/${variant}:1`, options.campaign ?? 'product')
-  return withStoreAttribution(`https://shop.theliftinglab.co.uk/products/${mapping.shopifyProductHandle}?variant=${variant}`, options.campaign ?? 'product')
-}
-
-/** New behaviour is OFF unless explicitly enabled. Legacy own-shop URLs remain blocked. */
+/** Both store modes require explicit opt-in; plain shop references are live-mode navigation only. */
 export function resolveProductOffer(product: { id?: string; buy_url: string | null; storeLinkMapping?: StoreLinkMapping | null; cataloguePresentation?: CataloguePresentation | null; storePrice?: StorePricePresentation | null }, mode: StoreBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, campaign: StoreAttributionCampaign = 'product'): ProductListing {
+  const now = Date.now()
+  if (liveCartEnabled() && isTllSoldProduct(product, now)) {
+    const url = buildStoreProductLink(product.id, product.storeLinkMapping, now, { mode: 'product_page', campaign })
+    const availability = catalogueAvailabilityFor(product, now)
+    if (!product.cataloguePresentation && availability === 'available' && url)
+      return { state: 'listing', url, retailer: 'TLL Store', relationship: 'own_shop', reason: 'approved_store_mapping' }
+    const fallback = liveStoreProductUrl(product.buy_url)
+    // Missing data permits product navigation only; known unavailable offers stay inert.
+    if (!product.cataloguePresentation && !product.storePrice && (url || fallback))
+      return { state: 'listing', url: url ?? withStoreAttribution(fallback!, campaign), retailer: 'TLL Store', relationship: 'own_shop', reason: 'live_store_product' }
+    return unavailable('own_shop_approval_required', true)
+  }
+  return resolveLegacyProductOffer(product, mode, campaign)
+}
+
+/** Existing flag-off routing for legacy retailer and store links. */
+export function resolveLegacyProductOffer(product: Parameters<typeof resolveProductOffer>[0], mode: StoreBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, campaign: StoreAttributionCampaign = 'product'): ProductListing {
   if (!isIsolatedEnvironment() && process.env.NEXT_PUBLIC_TLL_STORE_LINKS === 'enabled') {
     const now = Date.now()
     const availability = catalogueAvailabilityFor(product, now)

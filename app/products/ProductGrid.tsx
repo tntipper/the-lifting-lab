@@ -12,6 +12,8 @@ import ServingLabel from '@/components/ServingLabel'
 import styles from '@/components/shop.module.css'
 import ProductImage from '@/components/ProductImage'
 import ProductOfferLink from '@/components/ProductOfferLink'
+import { catalogueAvailabilityFor } from '@/lib/commerce/catalogue-presentation'
+import { liveCartEnabled } from '@/lib/commerce/live-cart-mode'
 import { useLocalStack } from '@/components/LocalStackContext'
 import { useShopPanels } from '@/components/ShopPanelsContext'
 import { assessmentDisplayFor } from '@/lib/assessment-display'
@@ -295,6 +297,9 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
           const assessment = assessmentDisplayFor(product)
           const nutrients = product.nutrients ?? []
           const reviews = reviewSummary[product.id]
+          const stock = liveCartEnabled() ? catalogueAvailabilityFor(product) : null
+          const offer = <ProductOfferLink comingSoonWhenNotSold fixedActionSlot={liveCartEnabled()} product={product} storeActionLabel="Add to basket"
+            className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
           return (
             <article key={product.id} data-product-id={product.id} className={`${styles.card} gap-3 p-6 ${isSelected ? 'border-[var(--line-strong)]' : ''}`}>
               <Link href={`/products/${product.id}`} className={styles.packshot}>
@@ -329,6 +334,9 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
                   <span>Per serving</span>
                   <b>{product.cost_per_serving != null ? formatListedServingPrice(product.cost_per_serving) : '—'}</b>
                 </div>
+                {liveCartEnabled() && <span data-grid-stock className="col-span-3 block h-8 text-[11px] leading-4 text-lab-muted">
+                  {stock === 'available' ? 'In stock at TLL Store' : stock === 'out_of_stock' ? 'Out of stock at TLL Store' : stock === 'unavailable' ? 'TLL Store price and stock unavailable' : null}
+                </span>}
               </div>
 
               <dl className="grid grid-cols-[1fr_auto] gap-x-3 text-sm">
@@ -355,8 +363,7 @@ export default function ProductGrid({ initialProducts }: { initialProducts: Scor
               )}
 
               <div className={`${styles.cardActions} flex flex-col gap-3`}>
-                <ProductOfferLink comingSoonWhenNotSold product={product} storeActionLabel="Add to basket"
-                  className="w-full rounded-md bg-[var(--ink)] py-3 text-sm font-semibold uppercase tracking-wide text-[var(--lime)]" />
+                {liveCartEnabled() ? <div className="h-16 min-w-0" data-live-action-slot>{offer}</div> : offer}
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold ${isSelected ? 'border-[var(--ink)] bg-[var(--lime-wash)] text-[var(--lime-ink)]' : 'border-[var(--line-strong)] text-[var(--ink)]'} ${!isSelected && selected.length >= 3 ? 'cursor-not-allowed opacity-50' : ''}`}>

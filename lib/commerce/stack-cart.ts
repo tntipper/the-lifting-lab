@@ -3,7 +3,8 @@ import { isIsolatedEnvironment } from '../preview-mode'
 import { catalogueAvailabilityFor, type CataloguePresentation } from './catalogue-presentation'
 import type { StoreLinkMapping, StoreVariantOption } from './product-mapping'
 import type { StorePricePresentation } from './store-price-products'
-import { withStoreAttribution } from './store-attribution'
+import { buildCartPermalink } from './cart-permalink'
+import { liveCartEnabled } from './live-cart-mode'
 
 export type StackCartItem = {
   id: string
@@ -18,10 +19,10 @@ export type StackCartItem = {
 }
 export type StackCartLine = { merchandiseId: string; quantity: number }
 export function stackCartEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_TLL_STACK_CART === 'enabled' && !isIsolatedEnvironment()
+  return liveCartEnabled() || (process.env.NEXT_PUBLIC_TLL_STACK_CART === 'enabled' && !isIsolatedEnvironment())
 }
 export function stackStorefrontCartEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART === 'enabled' && stackCartEnabled()
+  return !liveCartEnabled() && process.env.NEXT_PUBLIC_TLL_STACK_STOREFRONT_CART === 'enabled' && stackCartEnabled()
 }
 
 /** One classification for both the cart and the explanation of skipped items. */
@@ -61,5 +62,5 @@ export function buildStackCartLines(items: readonly StackCartItem[], now = Date.
 }
 export function buildStackCartUrl(items: readonly StackCartItem[], now = Date.now()): string | null {
   const lines = buildStackCartLines(items, now)
-  return lines.length ? withStoreAttribution(`https://shop.theliftinglab.co.uk/cart/${lines.map(line => `${line.merchandiseId.replace('gid://shopify/ProductVariant/', '')}:${line.quantity}`).join(',')}`, 'stack') : null
+  return buildCartPermalink(lines, 'stack')
 }

@@ -191,12 +191,12 @@ test('isolated selected variant is inert even with both flags enabled', async ()
   assert.doesNotMatch(html, /href=|Buy at TLL Store/)
 })
 
-function detailHarness(product) {
+function detailHarness(product, env = enabled) {
   let state = [], cursor = 0, effects = [], mounted = false
   const noop = { __esModule: true, default: () => null }
   const browser = { location: { href: 'https://example.test/products/fixture?ref=abc#buy', search: '?ref=abc' },
     history: { replaceState(data, title, url) { assert.equal(data, null); assert.equal(title, ''); browser.location.href = new URL(url, browser.location.href).href } } }
-  const load = modules(enabled, {
+  const load = modules(env, {
     react: { ...React, useId: () => 'fixture-picker', useState(initial) { const i = cursor++; if (!(i in state)) state[i] = initial; return [state[i], value => { state[i] = value }] },
       useEffect(fn) { if (!mounted) effects.push(fn) } },
     'next/navigation': { useRouter: () => ({ back() {}, replace() { throw Error('server navigation forbidden') } }) },
@@ -293,3 +293,36 @@ test('Toby decision: per-flavour pages are deleted, not redirected; one product 
   assert.doesNotMatch(source('middleware.ts'), /product-variant-redirects|\/products\//)
   assert.doesNotMatch(source('app/products/[id]/page.tsx'), /permanentRedirect|redirect\(/)
 })
+
+test('live detail withholds mapping until URL selection is applied', async () => {
+  const env = { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled' }
+  const product = await choices(), harness = detailHarness(product, env)
+  const resolve = modules(env)('lib/affiliate.ts').resolveProductOffer
+  const first = harness.render().offer.props.product
+  assert.equal(first.storePrice, undefined)
+  assert.equal(first.storeLinkMapping, null)
+  assert.doesNotMatch(resolve(first).url ?? '', /variant=|\/cart\//)
+  harness.browser.location.search = '?variant=3'
+  harness.mount()
+  const selected = harness.render().offer.props.product
+  assert.equal(selected.storeLinkMapping.shopifyVariantId.split('/').at(-1), '3')
+  assert.match(resolve(selected).url, /\?variant=3&/)
+})
+
+for (const environment of ['production', 'staging', 'synthetic-preview']) {
+  test(`detail applies variant query before eligibility; basket action gated in ${environment}`, async () => {
+    const env = { NEXT_PUBLIC_TLL_LIVE_CART: 'enabled', NEXT_PUBLIC_TLL_ENVIRONMENT: environment }
+    const harness = detailHarness(await priced(), env)
+    const eligible = modules(env)('lib/commerce/live-basket.ts').liveBasketEligible
+    harness.browser.location.search = '?variant=3'
+    assert.equal(eligible(harness.render().offer.props.product, now), false)
+    harness.mount()
+    const selected = harness.render().offer.props.product
+    assert.equal(selected.storeLinkMapping.shopifyVariantId.split('/').at(-1), '3')
+    assert.equal(eligible(selected, now), true)
+    const Component = modules(env, { react: { ...React, useState: () => [now, () => {}], useEffect: () => {} } })('components/ProductOfferLink.tsx').default
+    const html = renderToStaticMarkup(React.createElement(Component, { product: selected }))
+    if (environment === 'production') assert.match(html, /<button[^>]*>Add to basket/)
+    else assert.doesNotMatch(html, /<button[^>]*>Add to basket/)
+  })
+}

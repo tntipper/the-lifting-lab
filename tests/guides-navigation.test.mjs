@@ -38,6 +38,8 @@ test('every route uses the global category menu, stack, basket, account and Guid
       '@/lib/supabase': { createClient: () => { throw new Error('SSR cannot use auth') } },
       '@/lib/preview-mode': { isSyntheticPreview: () => false },
       '@/lib/identity/staging-customer-ui': { accountSignInHref: () => '/account' },
+      '@/lib/commerce/live-cart-mode': { liveCartEnabled: () => false },
+      './LiveBasket': { useLiveBasket: () => [] },
       './LocalStackContext': { useLocalStack: () => ({ stack: [] }) },
       './StagingCartContext': { useStagingCart: () => null },
       './ShopPanelsContext': { useShopPanels: () => ({ basket: [] }) },

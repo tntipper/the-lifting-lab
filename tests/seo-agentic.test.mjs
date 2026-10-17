@@ -75,6 +75,7 @@ test('Feed preserves stored nutrition and allowlists public fields only', () => 
 })
 test('llms files describe comparisons, categories, delivery, policy links and full variant observations', () => {
   const text = seo.llmsText([product], false, now), full = seo.llmsText([product], true, now)
+  for (const copy of [text, full]) assert.ok(copy.includes('The Lifting Lab store charges £4.99 Standard DPD Next Day delivery per UK order, free on orders of £100+. Seller: The Lifting Lab.'))
   for (const path of ['feed/products.json', 'refunds', 'privacy', 'terms', 'affiliate-disclosure', 'compare', 'products/fixture']) assert.ok(text.includes(`${seo.SITE_URL}/${path}`))
   assert.ok(text.includes('£4.99')); assert.ok(text.includes('/best/creatine'))
   assert.ok(full.includes('GBP 24.99')); assert.ok(full.includes('OutOfStock')); assert.ok(!full.includes('PRIVATE'))

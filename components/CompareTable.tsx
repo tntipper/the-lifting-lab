@@ -17,7 +17,7 @@ export default function CompareTable({ products, onRemove }: { products: ScoredP
   }
   return <div className="shop-table-scroll" role="region" aria-label="Product comparison table, scroll horizontally" tabIndex={0}><table className="shop-compare-table">
     <caption className="sr-only">Comparison of {items.length} products</caption>
-    <thead><tr><th scope="col">Product</th>{items.map(product => <th scope="col" key={product.id}><div className="shop-column-heading"><span className="shop-eyebrow">{product.brand}</span><span>{product.name}</span><ProductAssessment product={product} /><ProductOfferLink product={product} className="shop-primary" /><button type="button" onClick={() => onRemove(product.id)} aria-label={`Remove ${product.name} from comparison`}>Remove</button></div></th>)}</tr></thead>
+    <thead><tr><th scope="col">Product</th>{items.map(product => <th scope="col" key={product.id}><div className="shop-column-heading"><span className="shop-eyebrow">{product.brand}</span><span>{product.name}</span><ProductAssessment product={product} /><ProductOfferLink compact product={product} className="shop-primary" /><button type="button" onClick={() => onRemove(product.id)} aria-label={`Remove ${product.name} from comparison`}>Remove</button></div></th>)}</tr></thead>
     <tbody>
       <tr className="shop-table-group"><th colSpan={items.length + 1}>Price</th></tr>
       {row('Recorded pack price', items.map(displayPrice), true)}

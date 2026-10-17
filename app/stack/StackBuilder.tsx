@@ -512,7 +512,7 @@ function SavedStackBuilder() {
 
       {!loading && retailerGroups.length > 0 && <section className="stack-card">
         <h2>Retailer listings</h2><p className="stack-muted">Check the exact product, pack, price and stock at each retailer.</p>
-        {retailerGroups.map(group => <div key={group.label}><h3>{group.label}</h3>{group.products.map(product => <div key={product.id} className="stack-row"><span>{product.brand} {product.name}</span><ProductOfferLink storeCampaign="stack" product={{ ...product, buy_url: product.buy_url ?? null }} className="stack-button" /></div>)}</div>)}
+        {retailerGroups.map(group => <div key={group.label}><h3>{group.label}</h3>{group.products.map(product => <div key={product.id} className="stack-row"><span>{product.brand} {product.name}</span><ProductOfferLink compact storeCampaign="stack" product={{ ...product, buy_url: product.buy_url ?? null }} className="stack-button" /></div>)}</div>)}
       </section>}
 
       <div className="stack-buybar tll-on-dark">

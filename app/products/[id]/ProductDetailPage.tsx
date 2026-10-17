@@ -336,6 +336,7 @@ export default function ProductDetailPage({
             {!sizeOwnsOffer && selected && <ProductVariantPicker productId={product.id} cataloguePresentation={product.cataloguePresentation} variants={variants} selected={selected} onChange={changeVariant} />}
             <ProductOfferLink comingSoonWhenNotSold
               product={product}
+              variantLabel={sizeOwnsOffer ? size?.label : selected?.label}
               pickerOwnsStatus={!sizeOwnsOffer && !!selected} chooseAnother={sizeOwnsOffer ? sizes.length > 1 : variants.length > 1}
               className="text-[10px] uppercase tracking-widest font-bold bg-lab-lime text-black rounded-lg hover:opacity-90 text-center py-2.5"
             />
