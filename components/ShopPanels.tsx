@@ -75,7 +75,7 @@ export function ShopPanelsProvider({ children }: { children: ReactNode }) {
             <div className="shop-basket-offer"><ProductOfferLink product={product} className="shop-secondary" /></div>
           </div>)}
           <div className="shop-total"><span>Recorded subtotal</span><b className="shop-mono">{panelMoney(subtotal)}</b></div>
-          <p className="shop-muted">Delivery is £4.99 per store order. This browser basket has not been sent to Shopify.</p>
+          <p className="shop-muted">£4.99 Standard DPD Next Day, free on orders of £100+. This browser basket has not been sent to Shopify.</p>
           <Link className="shop-primary" href="/products" onClick={closePanel}>Continue browsing</Link>
         </section>}
       </>}

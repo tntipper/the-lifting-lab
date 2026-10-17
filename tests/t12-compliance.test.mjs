@@ -135,13 +135,20 @@ test('footer links resolve to all five policy/contact pages', () => {
   }
 })
 
-test('policy pages render draft markers, operational TODOs and required policy copy', () => {
+test('policy pages render approved delivery copy and remaining policy drafts', () => {
   const delivery = htmlFor('app/delivery/page.tsx'), refunds = htmlFor('app/refunds/page.tsx')
   const privacy = htmlFor('app/privacy/page.tsx'), terms = htmlFor('app/terms/page.tsx'), contact = htmlFor('app/contact/page.tsx')
-  for (const html of [delivery, refunds, privacy, terms, contact]) {
+  for (const html of [refunds, privacy, terms, contact]) {
     assert.match(html, /Draft for Lifty and Toby review/); assert.match(html, /TODO/)
   }
-  assert.match(delivery, /£4.99 per customer order/); assert.match(delivery, /TLL absorbs supplier dispatch/); assert.doesNotMatch(delivery, /£6|TropShip|cost_ex_vat/)
+  assert.match(delivery, /£4.99 Standard DPD Next Day, free on orders of £100\+/)
+  assert.match(delivery, /4pm/); assert.match(delivery, /mainland UK/)
+  assert.match(delivery, /tracked and insured/); assert.match(delivery, /Monday to Friday/)
+  assert.match(delivery, /UK bank holidays/); assert.match(delivery, /after 4pm on Friday, at weekends/)
+  assert.match(delivery, /usually Monday/); assert.match(delivery, /Scottish Highlands postcodes takes 2–3 working days/)
+  assert.match(delivery, /email your tracking details/); assert.match(delivery, /courier disruption/)
+  assert.match(delivery, /mailto:help@theliftinglab.co.uk/); assert.match(delivery, /mailto:orders@theliftinglab.co.uk/)
+  assert.doesNotMatch(delivery, /TropShip|Tropicana|supplier|absorb|TODO|£6|Draft|proposed/i)
   assert.match(refunds, /14 days/); assert.match(refunds, /statutory rights/)
   assert.match(privacy, /Supabase/); assert.match(privacy, /Shopify/); assert.match(privacy, /Suppliers and couriers/)
   assert.match(terms, /statutory consumer rights/)
@@ -168,4 +175,12 @@ test('checklist regeneration refuses to erase human review or signatures', () =>
     assert.match(failed.stderr, /preserve manual review/)
     assert.equal(readFileSync(output, 'utf8'), reviewed)
   } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+
+test('browser basket delivery text matches the approved charge without internal notes', () => {
+  const source = readFileSync(resolve(root, 'components/ShopPanels.tsx'), 'utf8')
+  const copy = source.match(/<p className="shop-muted">([^<]*This browser basket[^<]*)<\/p>/)?.[1]
+  assert.ok(copy, 'browser basket delivery paragraph exists')
+  assert.equal(copy, '£4.99 Standard DPD Next Day, free on orders of £100+. This browser basket has not been sent to Shopify.')
+  assert.doesNotMatch(copy, /TropShip|Tropicana|supplier|absorb|TODO|£6/i)
 })

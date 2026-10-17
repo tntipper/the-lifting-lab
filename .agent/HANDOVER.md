@@ -1,3 +1,5 @@
+- 17 Oct 2026 PR #101 delivery wording commit (grok/live-cart): approved £4.99 Standard DPD Next Day/free £100+ basket, delivery page and SEO copy; no internal delivery notes exposed; 25 focused tests, lint (21 existing warnings), tsc and diff check PASS; npm test 4,108 pass/28 sandbox failures/8 skip (loopback, ps, Chromium, Python temp, Docker); hosted CI unrun; local only, no push/merge; next: unrestricted full-suite check.
+
 **16 October PR #101 caption follow-up — grok/live-cart; working changes on 63f9ec4:**
 - Aligned full and grid captions with PR #99: Retailer search; updated routing/browser regexes. ProductGrid has no separate caption copy.
 - Live-cart caption assertion now strips markup before checking text, so title/aria-label attributes cannot satisfy it.

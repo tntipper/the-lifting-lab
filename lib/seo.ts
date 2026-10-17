@@ -88,7 +88,7 @@ export function llmsText(products: ScoredProduct[], full = false, now = Date.now
     '## Categories', ...CATEGORIES.map(c => `- [${c.label}](${SITE_URL}/best/${c.slug})`), '', '## Key pages',
     ...['products', 'brand', 'compare', 'vs', 'brands-vs', 'ingredients-vs', 'best', 'cheapest', 'methodology', 'stack'].map(p => `- [${p}](${SITE_URL}/${p})`),
     `- [Machine-readable product feed](${SITE_URL}/feed/products.json)`, `- [Full catalogue](${SITE_URL}/llms-full.txt)`, '',
-    '## Policies', 'The Lifting Lab store charges £4.99 flat delivery per UK order. Seller: The Lifting Lab.',
+    '## Policies', 'The Lifting Lab store charges £4.99 Standard DPD Next Day delivery per UK order, free on orders of £100+. Seller: The Lifting Lab.',
     ...['delivery', 'refunds', 'privacy', 'terms', 'affiliate-disclosure'].map(p => `- [${p}](${SITE_URL}/${p})`), '- [Store](https://shop.theliftinglab.co.uk)', '', '## Products']
   for (const p of productsFeed(products, now)) {
     lines.push(`- ${p.brand}: ${p.title} — ${p.url}`)
