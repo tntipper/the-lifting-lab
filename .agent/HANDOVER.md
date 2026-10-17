@@ -5,7 +5,7 @@
 - T12 retired-email scan now covers all five directories, skips missing directories/binary extensions and sorts paths; identity assertions added.
 - PASS npm run lint (0 errors/20 existing warnings), npm run typecheck, focused T12 tests (12/12), git diff --check.
 - Corrected prior contact-emails note: a575d46 pushed as PR #102, CI 9/9 green, Claude Code PASS WITH NOTES (owner-reported).
-- Commit BLOCKED: Git index.lock outside writable sandbox (Operation not permitted); changes unstaged. No push/merge/remotes; new CI unrun. Next: commit outside sandbox and review.
+- Committed as 26e7caf by the operator; Claude Code review PASS WITH NOTES (governing-law sentence in terms still says Scotland: owner decision). Hosted CI pending.
 
 **17 October customer contact emails — grok/contact-emails; base 786b267:**
 - Contact lists labelled info/general+trade, orders/order enquiries and help/service+refunds+privacy mailto links.
