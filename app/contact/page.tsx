@@ -66,7 +66,7 @@ function ContactPageForm() {
           <p>Orders: <a href="mailto:orders@theliftinglab.co.uk" className="text-lab-lime hover:underline">orders@theliftinglab.co.uk</a></p>
           <p>Customer service, refunds and privacy requests: <a href="mailto:help@theliftinglab.co.uk" className="text-lab-lime hover:underline">help@theliftinglab.co.uk</a></p>
           <p>Include your order reference for shop enquiries; do not send payment card details or health records.</p>
-          <p>The seller listed in this draft is Tobias Tipper, trading as The Lifting Lab, Scotland, UK. TODO for Toby: confirm the geographical business address, telephone number and monitored support arrangements before publication.</p>
+          <p>The Lifting Lab is a trading name of THE LIFTING LAB LTD, registered in England and Wales, company number 17497631, registered office 82a James Carter Road, Mildenhall, IP28 7DE. TODO for Toby: confirm the telephone number and monitored support arrangements before publication.</p>
           <p><Link href="/refunds" className="text-lab-lime">Refunds</Link> · <Link href="/delivery" className="text-lab-lime">Delivery</Link> · <Link href="/privacy" className="text-lab-lime">Privacy</Link></p>
         </section>
 

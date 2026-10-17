@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-white font-bold uppercase tracking-wide mb-3">Who we are</h2>
             <p>
-              The Lifting Lab (<strong className="text-white">theliftinglab.co.uk</strong>) is operated by Tobias Tipper, trading as The Lifting Lab. We are based in Scotland, UK. You can contact us at{' '}
+              The Lifting Lab is a trading name of THE LIFTING LAB LTD, registered in England and Wales, company number 17497631, registered office 82a James Carter Road, Mildenhall, IP28 7DE. You can contact us at{' '}
               <a href="mailto:help@theliftinglab.co.uk" className="text-lab-lime hover:underline">
                 help@theliftinglab.co.uk
               </a>.

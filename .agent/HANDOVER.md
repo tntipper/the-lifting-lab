@@ -1,3 +1,12 @@
+**17 October trader identity — grok/contact-emails; parent a575d46 (PR #102):**
+- Privacy, terms seller and contact now use the owner-approved THE LIFTING LAB LTD identity, company 17497631 and registered office verbatim.
+- Terms IP ownership now names THE LIFTING LAB LTD; removed resolved seller/address TODOs, retaining outstanding contact/operational review.
+- Governing law/jurisdiction and MyProtein TOBIAS-R1I5 unchanged; app/components/lib/public/data scan found no other former identity.
+- T12 retired-email scan now covers all five directories, skips missing directories/binary extensions and sorts paths; identity assertions added.
+- PASS npm run lint (0 errors/20 existing warnings), npm run typecheck, focused T12 tests (12/12), git diff --check.
+- Corrected prior contact-emails note: a575d46 pushed as PR #102, CI 9/9 green, Claude Code PASS WITH NOTES (owner-reported).
+- Commit BLOCKED: Git index.lock outside writable sandbox (Operation not permitted); changes unstaged. No push/merge/remotes; new CI unrun. Next: commit outside sandbox and review.
+
 **17 October customer contact emails — grok/contact-emails; base 786b267:**
 - Contact lists labelled info/general+trade, orders/order enquiries and help/service+refunds+privacy mailto links.
 - Privacy/terms/EmailCapture use help; refunds use help for returns and orders for faults/delivery errors; affiliate/OpenAPI use info.
@@ -6,7 +15,7 @@
 - npm test: 4,134 pass / 28 fail / 8 skipped; unchanged 786b267: 4,133 pass / same 28 failures / 8 skipped.
 - Baseline tested in this same worktree, then edits restored; failures concern socket/process restrictions, Python and PostgreSQL/offline fixtures.
 - Internal owner-email evidence in this handover, two docs/ops stage plans and staging-generation-23-owner-journey.mjs retained.
-- Commit BLOCKED: Git index.lock outside writable sandbox (Operation not permitted); changes unstaged. No push/merge/remotes/hosted CI. Next: commit locally outside sandbox.
+- Committed as a575d46 and pushed as PR #102; CI 9/9 green and Claude Code PASS WITH NOTES (owner-reported).
 
 **16 October PR #99 rankings overflow — grok/guides-footer-fix; HEAD c980c61; base main 90e0ff7:**
 - Bounded ShopScoreBadge to w-28/max-w-full; button stacks/wraps labels using Tailwind utilities, including when fixtures omit CSS modules.
