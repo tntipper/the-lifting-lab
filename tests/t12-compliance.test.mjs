@@ -160,6 +160,12 @@ test('policy pages render draft markers, operational TODOs and required policy c
 })
 
 
+test('terms render the exact owner-approved governing-law clause', () => {
+  const terms = htmlFor('app/terms/page.tsx')
+  assert.ok(terms.includes('These terms are governed by the laws of the United Kingdom as they apply in England and Wales. If you live in Scotland or Northern Ireland, you can also bring proceedings in your local courts.'))
+  assert.doesNotMatch(terms, /Scottish courts|laws of Scotland/i)
+})
+
 function customerFacingTextFiles(directories) {
   const binaryExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.ico', '.bmp', '.tif', '.tiff', '.woff', '.woff2', '.ttf', '.otf', '.eot', '.pdf', '.mp3', '.mp4', '.webm', '.wav', '.zip', '.gz'])
   const paths = []
