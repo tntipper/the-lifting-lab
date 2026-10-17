@@ -1,3 +1,4 @@
+import { displaySafeProduct } from '@/lib/assessment-display'
 import { parseShareProductIds } from '@/lib/share-products'
 import { getShareProducts } from '@/lib/share-products-server'
 import { PREVIEW_PRODUCTS } from '@/lib/preview-products'
@@ -13,11 +14,11 @@ export async function GET(request: Request) {
     const products = ids.map(id => PREVIEW_PRODUCTS.find(product => product.id === id))
     if (products.some(product => !product)) return Response.json({ error: 'One or more products are unavailable' }, { status: 404, headers })
     return Response.json({
-      products: products.map(product => ({ id: product!.id, brand: product!.brand, name: product!.name, category: product!.category, score: null })),
+      products: products.map(product => displaySafeProduct({ id: product!.id, brand: product!.brand, name: product!.name, category: product!.category })),
     }, { headers: { ...headers, 'X-TLL-Preview': 'synthetic' } })
   }
   const result = await getShareProducts(ids)
   return result.ok
-    ? Response.json({ products: result.products.map(product => ({ ...product, score: null })) }, { headers })
+    ? Response.json({ products: result.products.map(displaySafeProduct) }, { headers })
     : Response.json({ error: result.error }, { status: result.status, headers })
 }

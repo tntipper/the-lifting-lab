@@ -50,6 +50,6 @@ export default function CombinedDosePanel({ totals }: { totals: DoseTotal[] }) {
       })}
     </div>}
     <div className="dose-legend"><span><i className="dose-key-range" />Evidence range</span><span><i className="dose-key-limit" />Guidance / upper level</span><span><svg aria-hidden="true" width="20" height="12"><path d="M0 6L6 0M0 12L12 0M6 12L18 0M12 12L20 4M18 12L20 10" stroke="currentColor" /></svg>Above guidance / upper level</span><span><i className="dose-key-total" />Your daily total</span></div>
-    <p className="dose-context">Published ranges are general context, not a personal prescription or an effectiveness score. UK EVM and EFSA guidance are labelled separately. Recorded supplements exclude food and drink. For information only.</p>
+    <p className="dose-context">Published ranges are general context, not a personal prescription or a product benefit score. UK EVM and EFSA guidance are labelled separately. Recorded supplements exclude food and drink. For information only.</p>
   </section>
 }

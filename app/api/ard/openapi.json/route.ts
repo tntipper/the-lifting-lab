@@ -24,7 +24,7 @@ export async function GET() {
       title: 'The Lifting Lab — Supplement Value Comparison',
       version: '0.4.0',
       description:
-        'Supplement research records and listed-price arithmetic. No approved effectiveness assessment exists; historical scores are withheld.',
+        'Supplement research records and listed-price arithmetic. Only assessments signed off by Assay and Oath can show scores; historical scores are withheld.',
       contact: { name: 'The Lifting Lab', url: SITE_URL, email: 'hello@theliftinglab.co.uk' },
     },
     servers: [{ url: SITE_URL }],
@@ -34,7 +34,7 @@ export async function GET() {
           operationId: 'compareSupplements',
           summary: 'Compare research records and listed prices in a category.',
           description:
-            'Returns active research records. All ranks are null and recommendation_status is unavailable. Legacy sort=score and sort=value use alphabetical order; sort=budget uses positive listed price per known serving, excluding delivery and checkout costs. No clinical or approved-offer endorsement is implied.',
+            'Returns active research records. Ranks require approved assessments. recommendation_status remains unavailable. Unapproved records in sort=score and sort=value use alphabetical order; sort=budget uses positive listed price per known serving, excluding delivery and checkout costs. No clinical or approved-offer endorsement is implied.',
           parameters: [
             {
               name: 'category',
@@ -88,17 +88,17 @@ export async function GET() {
         RankedProduct: {
           type: 'object',
           properties: {
-            rank: { type: 'null', description: 'Always null: no approved effectiveness assessments are available.' },
+            rank: { type: ['integer', 'null'], description: 'Placement only for approved assessments in ranking sorts; otherwise null.' },
             recommendation_status: { type: 'string', enum: ['unavailable'] },
-            assessment_state: { type: 'string', enum: ['legacy', 'unassessed', 'under_review'] },
+            assessment_state: { type: 'string', enum: ['approved', 'under_review'] },
             assessment_note: { type: 'string' },
             id: { type: 'string' },
             name: { type: 'string' },
             brand: { type: 'string' },
             category: { type: 'string' },
             score: {
-              type: 'null',
-              description: 'Always null until a reviewed, versioned product assessment is approved. Historical source values are withheld.',
+              type: ['number', 'null'], minimum: 1, maximum: 100,
+              description: 'The Assay and Oath reviewed record score; null without both sign-offs or while a category hold applies.',
             },
             retail_price_gbp: { type: ['number', 'null'] },
             cost_per_serving_gbp: { type: ['number', 'null'] },

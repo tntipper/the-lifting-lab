@@ -2241,7 +2241,7 @@
       },
       {
         "path": "tests/browser/comparison-reconciliation.mjs",
-        "sha256": "67fb14fcdf2ec3f21ba8c921f1a249cf482122d9dc321f94bfbbc57ad75718ce"
+        "sha256": "c7e240849087f43e2796bcb9249618dddecd74876ad92afb8bf1211333f8c264"
       },
       {
         "path": "tests/staging-owner-successor-sql-family.test.mjs",

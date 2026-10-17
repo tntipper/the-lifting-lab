@@ -35,6 +35,7 @@ function load(relative) {
   }).outputText
   const mod = { exports: {} }
   const localRequire = (name) => {
+    if (name === '../data/reviewed-assessments.json') return JSON.parse(readFileSync(new URL('../data/reviewed-assessments.json', import.meta.url), 'utf8'))
     if (name === '@/lib/supabase-public') {
       return {
         createPublicClient: () => ({
@@ -327,7 +328,7 @@ test('catalogue research-endorsed + commercially eligible still leaves public as
     assessmentLabel: result.display.assessmentLabel,
   })
   assertNoScientificApproval(product, 'catalogue-endorsed sellable')
-  assert.equal(assessmentDisplayFor(product).state, 'legacy')
+  assert.equal(assessmentDisplayFor(product).state, 'under_review')
 })
 
 test('commercially sellable unassessed shop products stay unapproved for recommendations', () => {
@@ -382,7 +383,7 @@ test('source containment: eligibility paths must not redefine the public approva
 
   assert.match(
     assessmentSrc,
-    /export function hasApprovedAssessment[\s\S]*?\breturn false\b/,
+    /export function hasApprovedAssessment[\s\S]*?approvedAssessment\(product\) !== undefined/,
   )
   assert.doesNotMatch(
     assessmentSrc,
@@ -391,7 +392,7 @@ test('source containment: eligibility paths must not redefine the public approva
   assert.doesNotMatch(assessmentSrc, /sellable|evidenceRankingEligible/)
   assert.doesNotMatch(eligibilitySrc, /hasApprovedAssessment|assessment-display|publishable:\s*true/)
   assert.match(bestSrc, /filter\(hasApprovedAssessment\)/)
-  assert.match(bestSrc, /score\s*>=\s*50/)
+  assert.match(bestSrc, /score!?\s*>=\s*50/)
   assert.doesNotMatch(scoringUtilsSrc, /hasApprovedAssessment|publishable:\s*true/)
   assert.match(policySrc, /Effectiveness Match score ≥ 50\/100/)
   assert.match(policySrc, /Do \*\*not\*\* invent Effectiveness Match scores/)

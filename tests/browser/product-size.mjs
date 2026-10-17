@@ -23,6 +23,7 @@ const result = await build({ stdin: { contents: `
   createRoot(document.getElementById('root')).render(<Fixture/>);
 `, resolveDir: process.cwd(), loader: 'tsx' }, bundle: true, write: false, format: 'iife', jsx: 'automatic',
   define: { 'process.env.NODE_ENV': '"production"' } })
+assert.doesNotMatch(result.outputFiles[0].text, /\bprocess\.env\b/, 'Browser fixture must inline every environment read')
 const browser = await chromium.launch({ headless: true, ...(process.env.TEST_BROWSER_CHANNEL ? { channel: process.env.TEST_BROWSER_CHANNEL } : {}) })
 try {
   const page = await browser.newPage()

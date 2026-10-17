@@ -341,26 +341,39 @@ input, select, textarea { color: var(--ink); }
 .tll-footer-inner {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 48px 24px 32px;
+  padding: 24px 24px 16px;
   display: grid;
-  gap: 32px;
+  gap: 16px;
 }
 .tll-footer-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
-.tll-footer-columns nav, .tll-footer-columns ul { display: grid; gap: 4px; }
+.tll-footer-columns nav { display: grid; align-content: start; gap: 4px; }
+.tll-footer-columns ul { display: grid; gap: 0; }
+@media (min-width: 768px) {
+  .tll-footer-columns { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+  .tll-footer-columns ul { display: flex; flex-wrap: wrap; column-gap: 16px; }
+}
 .tll-footer-columns h2 { color: #a9ac9f; font: 600 12px/16px var(--font-sans); letter-spacing: .08em; text-transform: uppercase; }
 .tll-footer nav a { min-width: var(--tap-min); display: inline-flex; align-items: center; min-height: var(--tap-min); color: var(--on-lab-black); font: 400 14px/20px var(--font-sans); }
 .tll-footer nav a:hover { text-decoration: underline; text-underline-offset: 3px; }
-.tll-footer-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 24px; }
-.tll-footer-blocks > section { max-width: none; min-width: 0; align-content: start; }
-.tll-footer-legal { display: grid; gap: 16px; border-top: 1px solid #2a2c26; padding-top: 24px; color: #a9ac9f; font: 400 14px/20px var(--font-sans); }
+.tll-footer-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+.tll-footer-blocks > section { max-width: none; min-width: 0; align-content: start; padding: 12px; gap: 8px; }
+.tll-footer-legal { display: grid; gap: 8px; border-top: 1px solid #2a2c26; padding-top: 12px; color: #a9ac9f; font: 400 14px/20px var(--font-sans); }
 .tll-footer-legal p { max-width: 68ch; }
-.tll-footer-legal nav { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.tll-footer-legal nav { display: flex; flex-wrap: wrap; gap: 0 16px; }
 .tll-capture input { min-width: 0; width: 100%; }
 .tll-footer .tll-btn { min-height: 48px; }
+@media (max-width: 767px) {
+  .tll-footer-inner { padding: 16px 16px 12px; gap: 12px; }
+  .tll-footer-columns { grid-template-columns: 1fr; gap: 12px; }
+  .tll-footer-columns ul { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; }
+  .tll-footer nav a { min-height: 32px; }
+  .tll-footer-blocks { gap: 12px; }
+  .tll-footer-legal { gap: 6px; padding-top: 8px; }
+}
 
 /* Shop.dc.html panels and ds CompareBar / CompareTable / StackSummary. */
 .tll-dialog.shop-drawer {

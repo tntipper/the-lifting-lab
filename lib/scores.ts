@@ -48,7 +48,6 @@ export const PRODUCT_SCORES: Record<string, number> = {
   "Supplement Needs|Intra EAA+": 56,
   "MyProtein|Impact EAA": 80,
   "CNP Professional|CNP EAA": 75,
-  "Per4m|Per4m EAA": 100,
   "Ghost Lifestyle|Ghost Amino": 73,
   "Naughty Boy|Amino": 91,
   "Mutant|GEAAR": 96,

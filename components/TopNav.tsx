@@ -6,7 +6,7 @@ import { Suspense, useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { isIsolatedEnvironment, isSyntheticPreview } from '@/lib/preview-mode'
+import { isSyntheticPreview } from '@/lib/preview-mode'
 import { accountSignInHref } from '@/lib/identity/staging-customer-ui'
 import { useLocalStack } from './LocalStackContext'
 import { useStagingCart } from './StagingCartContext'
@@ -23,6 +23,7 @@ const SHOP_LINKS = [
 ]
 
 const MORE_LINKS = [
+  { href: '/guide', label: 'Guides' },
   { href: '/best', label: 'Research' },
   { href: '/value', label: 'Value review' },
   { href: '/deals', label: 'Deals' },
@@ -51,13 +52,15 @@ function BasketControl() {
 }
 
 function ShopNavigation({ pathname, query }: { pathname: string; query?: URLSearchParams }) {
-  const selected = query?.get('category') || query?.get('group')
+  const category = query?.get('category')
+  const selected = query?.get('group') || (category && ['whey', 'whey-isolate', 'casein'].includes(category) ? 'protein' : category)
   return <nav aria-label="Shop categories" className="hide-scroll flex min-w-0 items-center gap-1 overflow-x-auto">
     {SHOP_LINKS.map(({ href, label }, index) => {
       const target = new URL(href, 'https://theliftinglab.co.uk')
       const active = pathname.startsWith('/products') && (index === 0 ? !selected : selected === (target.searchParams.get('category') || target.searchParams.get('group')))
       return <Link key={href} href={href} aria-label={index === 0 ? 'Browse' : undefined} aria-current={active ? 'page' : undefined} className={`tll-nav-item ${active ? 'is-active' : ''}`}>{label}</Link>
     })}
+    <Link href="/guide" aria-current={pathname.startsWith('/guide') ? 'page' : undefined} className={`tll-nav-item ${pathname.startsWith('/guide') ? 'is-active' : ''}`}>Guides</Link>
     <a href="https://www.trylift.app" target="_blank" rel="noopener" className="tll-nav-item tll-lift-link">LIFT App ↗</a>
   </nav>
 }
@@ -78,14 +81,15 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
 
   useEffect(() => {
     if (signedInInitial !== undefined) return
-    createClient().auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user))).catch(() => setSignedIn(false))
+    try {
+      createClient().auth.getUser().then(({ data }) => setSignedIn(Boolean(data.user))).catch(() => setSignedIn(false))
+    } catch { setSignedIn(false) }
   }, [signedInInitial])
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
   const accountHref = isSyntheticPreview() ? '/preview' : signedIn === false ? accountSignInHref() : '/account'
   const accountLabel = isSyntheticPreview() ? 'Preview information' : signedIn === false ? 'Sign In' : 'My Account'
-  const compactResearchHeader = pathname === '/stack' || pathname === '/sources'
 
   return <header onKeyDown={(event) => {
     if (event.key === 'Escape' && menuOpen) { setMenuOpen(false); menuButton.current?.focus() }
@@ -96,12 +100,7 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
           <img src="/brand/tll-wordmark.png" alt="The Lifting Lab" width="1030" height="215" className="block h-[26px] w-auto" />
         </Link>
 
-        {compactResearchHeader ? <nav aria-label="Main" className="hide-scroll flex min-w-0 items-center gap-1 overflow-x-auto max-[640px]:w-full">
-          <Link href="/stack" aria-current={pathname === '/stack' ? 'page' : undefined} className={`tll-nav-item ${pathname === '/stack' ? 'is-active' : ''}`}>Stack builder</Link>
-          <Link href="/sources" aria-current={pathname === '/sources' ? 'page' : undefined} className={`tll-nav-item ${pathname === '/sources' ? 'is-active' : ''}`}>Research sources</Link>
-          <Link href="/products" className="tll-nav-item">Shop</Link>
-          <a href="https://www.trylift.app" target="_blank" rel="noopener" className="tll-nav-item tll-lift-link">LIFT App ↗</a>
-        </nav> : <>
+        <>
           <div className="order-2 flex w-full items-center gap-2 sm:order-none sm:ml-auto sm:w-auto">
             <button type="button" onClick={openStack} aria-haspopup="dialog" aria-label={`My stack, ${stack.length} products`} className="tll-stack-button inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold">
               My stack <span className="font-mono">{stack.length}</span>
@@ -117,15 +116,15 @@ export default function TopNav({ signedInInitial }: { signedInInitial?: boolean 
               <span aria-hidden="true" className="text-xl">{menuOpen ? '×' : '≡'}</span>
             </button>
           </div>
-        </>}
+        </>
       </div>
 
-      {!compactResearchHeader && <div className="flex min-h-11 items-center justify-between gap-3 border-t border-[#2a2c26]">
+      <div className="flex min-h-11 items-center justify-between gap-3 border-t border-[#2a2c26]">
         <Suspense fallback={<ShopNavigation pathname={pathname} />}><FilteredShopNavigation pathname={pathname} /></Suspense>
         <Link href={accountHref} className="hidden min-h-11 shrink-0 items-center text-sm font-medium text-[#a9ac9f] hover:text-white xl:inline-flex">{accountLabel}</Link>
-      </div>}
+      </div>
 
-      {!compactResearchHeader && menuOpen && <div id={menuId} className="border-t border-[#2a2c26] py-4 xl:hidden">
+      {menuOpen && <div id={menuId} className="border-t border-[#2a2c26] py-4 xl:hidden">
         <nav aria-label="Mobile navigation" className="grid gap-1 sm:grid-cols-2">
           {MORE_LINKS.map(({ href, label }) => <Link key={`${href}-${label}`} href={href}
             className="flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-white hover:bg-[#151613] hover:text-lab-lime">{label}</Link>)}

@@ -71,7 +71,7 @@ export default function StackSummary({ onClose }: { onClose(): void }) {
       })}</ul>
       <div className="shop-total"><span>Recorded cost per day</span><b className="shop-mono">{panelMoney(cost)}</b></div>
       <div className="shop-total"><span>Monthly cost (30 days)</span><b className="shop-mono">{panelMoney(cost === null ? null : cost * 30)}</b></div>
-      <p className="shop-muted">Based on recorded prices and servings. These totals do not establish an effective dose. Missing prices or serving amounts keep totals unavailable.</p>
+      <p className="shop-muted">Based on recorded prices and servings. These totals do not establish a suitable dose. Missing prices or serving amounts keep totals unavailable.</p>
       <h4 className="shop-eyebrow">Full stack, per day</h4>
       {totals.size ? <dl className="shop-dose-list">{[...totals.entries()].map(([key, total]) => <div key={key}><dt>{total.name}{total.count > 1 && <small className="shop-muted">From {total.count} label entries</small>}</dt><dd className="shop-mono">{Math.round(total.amount * 100) / 100} {total.unit}</dd></div>)}</dl> : <p className="shop-muted">Ingredient totals are loading or unavailable.</p>}
       {(details.length !== stack.length || stack.some(p => servingsFor(p.id) == null)) && <p className="shop-muted">Some label data or daily serving amounts are unavailable; displayed ingredient totals are partial.</p>}

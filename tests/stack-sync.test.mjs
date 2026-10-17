@@ -137,3 +137,35 @@ test('S04 failed sign-in merge retries exact captured request and then acknowled
  assert.equal(attempts.length,2);assert.equal(attempts[0].body,attempts[1].body)
  assert.equal(attempts[0].headers['Idempotency-Key'],attempts[1].headers['Idempotency-Key'])
 })
+
+for (const failure of ['network', 'http503', 'invalid-body']) test(`account ${failure} read falls back to editable durable browser items`, async () => {
+ const f=fixture(async()=>{
+  if(failure==='network') throw new Error('offline')
+  return failure==='http503'?response({error:'unavailable'},503):response({invalid:true})
+ })
+ await f.service.setIdentity(U)
+ assert.equal(f.service.getState().loading,false)
+ assert.equal(f.service.getState().identity,U)
+ await f.service.add(product())
+ assert.equal(f.service.getState().guest[0].product.id,P)
+ assert.equal(f.service.getState().retryable,true)
+ assert.match(f.service.getState().error,/sync is unavailable/)
+ assert.equal(createGuestStore(f.data,randomUUID).read()[0].product.id,P)
+ await f.service.remove(P)
+ assert.equal(f.service.getState().guest.length,0)
+ await f.service.add(product(Q));await f.service.clear()
+ assert.equal(f.service.getState().guest.length,0)
+ assert.equal(f.calls.length,1)
+})
+test('retry after a failed account read acknowledges browser fallback only after confirmed merge',async()=>{
+ let online=false
+ const f=fixture(async(_url,options)=>{
+  if(!online)throw new Error('offline')
+  return options.method?applied(snap([item()],1),[P]):response(snap())
+ })
+ await f.service.setIdentity(U);await f.service.add(product())
+ online=true;await f.service.retry()
+ assert.equal(f.service.getState().snapshot.items[0].product_id,P)
+ assert.equal(f.service.getState().guest.length,0)
+ assert.equal(f.service.getState().error,null)
+})

@@ -24,12 +24,13 @@ function modules() {
       module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
     } }).outputText
     const local = name => {
+      if (name === '../data/reviewed-assessments.json') return JSON.parse(readFileSync(new URL('../data/reviewed-assessments.json', import.meta.url), 'utf8'))
       if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) }
       if (name === 'next/link') return { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) }
-      if (name === 'next/navigation') return { useRouter: () => ({ back() {} }) }
+      if (name === 'next/navigation') return { usePathname: () => '/products', useRouter: () => ({ back() {} }) }
       if (name === '@/lib/preview-mode') return { isSyntheticPreview: () => false, isIsolatedEnvironment: () => false }
-      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ inStack: () => false, toggle() {} }) }
-      if (name.startsWith('@/components/') && !['@/components/ProductWarnings', '@/components/PolicyDraftNotice', '@/components/SiteFooter'].includes(name)) return { __esModule: true, default: () => null }
+      if (name === '@/components/LocalStackContext') return { useLocalStack: () => ({ state: { error: null }, inStack: () => false, toggle() {} }) }
+      if (name.startsWith('@/components/') && !['@/components/ProductWarnings', '@/components/PolicyDraftNotice', '@/components/SiteFooter', '@/components/ShopScoreBadge'].includes(name)) return { __esModule: true, default: () => null }
       if (name === './RelatedProducts') return { __esModule: true, default: () => null }
       if (name.startsWith('@/') || name.startsWith('.')) {
         const base = name.startsWith('@/') ? resolve(root, name.slice(2)) : resolve(dirname(filename), name)
@@ -119,8 +120,9 @@ test('category age notice, explicit label data and stricter ages work without pr
 })
 
 test('real product page renders caffeine and age warnings even while claims are under review', () => {
-  const product = { id: 'fixture', brand: 'Fixture', name: 'Example', category: 'hormone-support', score: null, nutrients: [{ nutrient_name: 'caffeine', amount: 10, unit: 'mg' }], retail_price: null }
+  const product = { id: 'fixture', brand: 'Fixture', name: 'Example', category: 'hormone-support', score: 95, nutrients: [{ nutrient_name: 'caffeine', amount: 10, unit: 'mg' }], retail_price: null }
   const html = htmlFor('app/products/[id]/ProductDetailPage.tsx', { product, related: [] })
+  assert.match(html, /aria-label="Under review"/); assert.doesNotMatch(html, /95\/100|95 out of 100|>95</)
   assert.match(html, /aria-label="Label notes"/); assert.match(html, /Contains caffeine/); assert.match(html, /16\+/)
   assert.equal(htmlFor('components/ProductWarnings.tsx', { product: { ...product, category: 'creatine', nutrients: [] } }), '')
   const label = htmlFor('components/ProductWarnings.tsx', { product: { ...product, safety: { labelWarnings: ['<script>unsafe</script>'] } } })
@@ -129,6 +131,12 @@ test('real product page renders caffeine and age warnings even while claims are 
 
 test('footer links resolve to all five policy/contact pages', () => {
   const html = htmlFor('components/SiteFooter.tsx')
+  assert.match(html, /<nav aria-label="Legal">[\s\S]*?<button[^>]*aria-controls="analytics-preferences"[\s\S]*?>Analytics preferences<\/button>/)
+  assert.doesNotMatch(readFileSync(resolve(root, 'app/layout.tsx'), 'utf8'), /<AnalyticsPreferences/)
+  assert.match(html, /THE LIFTING LAB LTD · Company no. 17497631/)
+  assert.match(html, /href="\/guide"/)
+  assert.match(html, /https:\/\/www.instagram.com\/theliftinglabuk\//)
+  assert.match(html, /https:\/\/www.tiktok.com\/@theliftinglab/)
   for (const route of ['refunds', 'delivery', 'privacy', 'terms', 'contact']) {
     assert.ok(existsSync(resolve(root, `app/${route}/page.tsx`)))
     assert.match(html, new RegExp(`href="/${route}"`))

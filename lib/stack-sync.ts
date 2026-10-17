@@ -131,7 +131,7 @@ export function createStackSync(deps: { guest: GuestStore; additions: AdditionOu
       readGuest()
       if (!await resumeAdditions(generation)) return
       if (merge && !pending && state.guest.length) await send({ method: 'POST', body: { productIds: state.guest.slice(0, 100).map(r => r.product.id) }, requestId: deps.nonce(), guest: state.guest.slice(0, 100), identity, epoch: generation })
-    } catch { if (active(generation)) publish({ loading: false, error: 'Your saved stack could not be loaded. Your browser items are kept. Retry to reconnect.', retryable: true }) }
+    } catch { if (active(generation)) publish({ loading: false, error: 'Account sync is unavailable. You can keep adding products and saving in this browser. Retry to reconnect.', retryable: true }) }
   }
   function write(method: string, body: object) {
     if (!state.identity || !state.snapshot || state.busy || pending) {
@@ -165,8 +165,8 @@ export function createStackSync(deps: { guest: GuestStore; additions: AdditionOu
     retry() { const generation = epoch; return enqueue(() => pending && !pending.addition ? send(pending) : refresh(generation, true)) },
     add(p: LocalStackProduct) {
       if (state.identity === undefined) { api.authFailed(); return Promise.resolve() }
-      if (state.identity === null) {
-        try { deps.guest.add(p); readGuest(); publish({ error: null }) } catch (error) { publish({ error: error instanceof Error ? error.message : unavailable }) }
+      if (state.identity === null || (!state.snapshot && !state.loading && !state.busy && !pending)) {
+        try { deps.guest.add(p); readGuest(); if (state.identity === null) publish({ error: null }) } catch (error) { publish({ error: error instanceof Error ? error.message : unavailable }) }
         return Promise.resolve()
       }
       if (!state.snapshot || state.busy || pending) {
@@ -198,7 +198,7 @@ export function createStackSync(deps: { guest: GuestStore; additions: AdditionOu
     clear() {
       if (state.identity === undefined) return Promise.resolve()
       if (state.busy || pending) { publish({ error: 'Wait for or retry the unconfirmed change before clearing your stack.' }); return Promise.resolve() }
-      if (state.identity === null) {
+      if (state.identity === null || (!state.snapshot && !state.loading)) {
         try { deps.guest.clear(); readGuest() } catch { publish({ error: 'Browser items could not be cleared. Please retry.' }) }
         return Promise.resolve()
       }

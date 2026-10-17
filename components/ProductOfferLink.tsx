@@ -14,8 +14,10 @@ import { useStagingCart } from './StagingCartContext'
 import { catalogueAvailabilityFor, type CataloguePresentation } from '@/lib/commerce/catalogue-presentation'
 
 /** Interim listing navigation, until a verified commerce projection supplies exact offers. */
-export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, storeCampaign = 'product', compact = false, fixedActionSlot = false, pickerOwnsStatus = false, chooseAnother = false, storeActionLabel, variantLabel }: {
+export default function ProductOfferLink({ product, className, style, storeBuyLinkMode = DEFAULT_STORE_BUY_LINK_MODE, storeCampaign = 'product', compact = false, fixedActionSlot = false, pickerOwnsStatus = false, chooseAnother = false, storeActionLabel, variantLabel, comingSoonWhenNotSold = false }: {
   product: { id?: string; brand: string; name: string; buy_url: string | null; cataloguePresentation?: CataloguePresentation | null; storeLinkMapping?: StoreLinkMapping | null; storeVariants?: StoreVariantOption[]; storePrice?: StorePricePresentation | null }
+  /** Show a disabled action when no store offer or retailer link is available. */
+  comingSoonWhenNotSold?: boolean
   /** Label for the existing exact store cart action; never applied to searches or product-page offers. */
   storeActionLabel?: string
   compact?: boolean
@@ -39,6 +41,14 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
   const frame = (content: ReactNode) => fixedSlot
     ? <span className="flex h-16 min-w-0 flex-col justify-start" data-live-offer-shell>{content}</span>
     : content
+  const listing = resolveProductOffer(product, storeBuyLinkMode, storeCampaign)
+  const actionClassName = `${className ?? ''} flex min-h-11 items-center justify-center px-2 text-center break-words`
+  if (comingSoonWhenNotSold && !listing.url && listing.relationship !== 'own_shop' && !product.storeLinkMapping && !product.storeVariants?.length && !product.cataloguePresentation && !product.storePrice && !(cart?.enabled && product.id && cart.view?.productId === product.id)) {
+    return <span className="flex min-w-0 flex-col justify-center gap-1" data-offer-state="coming_soon">
+      <button type="button" disabled aria-disabled="true" className={actionClassName} style={{ ...style, opacity: .55, cursor: 'not-allowed' }}>Coming soon</button>
+      <span aria-hidden="true" className="invisible text-center text-[9px] leading-tight text-lab-muted">Check pack, price and stock at TLL Store</span>
+    </span>
+  }
   const availability = catalogueAvailabilityFor({ id: product.id, cataloguePresentation: product.cataloguePresentation })
   if (pickerOwnsStatus && (availability || (product.storePrice && catalogueAvailabilityFor(product) !== 'available'))) {
     return frame(<span data-offer-state="unavailable" className="text-xs text-lab-muted">
@@ -61,7 +71,6 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
   const item = product.id ? { ...product, id: product.id, quantity: 1, variantLabel } : null
   const basketItem = liveCartEnabled() && eligibilityTime !== null && item && liveBasketEligible(item, eligibilityTime) ? item : null
   const live = liveCartEnabled() && isTllSoldProduct(product, eligibilityTime ?? Date.now())
-  const listing = resolveProductOffer(product, storeBuyLinkMode, storeCampaign)
   const stock = product.storePrice ? catalogueAvailabilityFor(product) : null
   const renderOffer = (listing: ReturnType<typeof resolveProductOffer>) => {
     if (!listing.url) {
@@ -72,21 +81,21 @@ export default function ProductOfferLink({ product, className, style, storeBuyLi
       </span>)
     }
     const search = listing.state === 'search_only'
-    const store = listing.relationship === 'own_shop'
+    const store = listing.reason === 'approved_store_mapping'
     const stockText = !pickerOwnsStatus && stock ? (stock === 'out_of_stock' ? 'Out of stock at TLL Store' : stock === 'unavailable' ? 'TLL Store price and stock unavailable' : 'In stock at TLL Store') : null
     const caption = store ? product.storePrice ? 'In stock · price and stock checked within 15 minutes' : 'Check pack, price and stock at TLL Store' : search ? 'Retailer search · affiliate link' : 'Unverified listing · check pack and price · affiliate link'
     return (<span className={`flex min-w-0 flex-col justify-center ${fixedSlot ? "gap-0" : "gap-1"}`} data-offer-state={listing.state}>
       {!fixedSlot && stockText && <span className="text-center text-[10px] text-lab-muted">{stockText}</span>}
       <a href={listing.url} target="_blank" rel={store ? 'noopener noreferrer' : 'noopener noreferrer nofollow sponsored'}
-        className={`${className ?? ''} flex min-h-11 flex-col items-center justify-center px-2 text-center break-words`}
+        className={actionClassName}
         style={fixedSlot ? { ...style, height: 44, minHeight: 44, flexShrink: 0, paddingTop: 0, paddingBottom: 0 } : style}
         title={fixedSlot && stockText ? stockText : undefined}
         aria-label={`${store ? 'Buy at' : search ? 'Search' : 'View listing at'} ${listing.retailer} for ${product.brand} ${product.name} (opens in a new tab)${fixedSlot && stockText ? ` · ${stockText}` : ''}`}
         onClick={() => track('retailer_listing_click', { retailer: listing.retailer ?? undefined, destination_state: listing.state })}>
         {store ? (!liveCartEnabled() && storeBuyLinkMode === 'cart' && product.storePrice?.availableForSale === true ? storeActionLabel ?? 'Buy at TLL Store' : 'Buy at TLL Store') : search ? 'Search retailer ↗' : 'View retailer ↗'}
       </a>
-      <span className={`text-center text-[9px] text-lab-muted ${fixedSlot ? 'flex h-5 shrink-0 flex-col items-center justify-center' : 'leading-tight'}`}
-        data-offer-caption title={fixedSlot ? caption : undefined}>
+      <span className={fixedSlot ? 'text-center text-[9px] text-lab-muted flex h-5 shrink-0 flex-col items-center justify-center' : 'text-center text-[9px] leading-tight text-lab-muted'}
+        data-offer-caption={liveMode ? true : undefined} title={fixedSlot ? caption : undefined}>
         {fixedSlot && !store ? <>
           <span className="w-full min-w-0 line-clamp-1 leading-[10px]">{search ? 'Retailer search' : 'Unverified listing · check pack and price'}</span>
           <span className="block shrink-0 whitespace-nowrap leading-[10px]" data-affiliate-disclosure>affiliate link</span>

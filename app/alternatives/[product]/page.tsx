@@ -1,5 +1,5 @@
 import { formatListedServingPrice } from '@/lib/products'
-import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -99,7 +99,7 @@ function AltCard({
   tag?: string
 }) {
   const delta =
-    hasApprovedAssessment(target) && hasApprovedAssessment(p) ? p.score - target.score : null
+    hasApprovedAssessment(target) && hasApprovedAssessment(p) ? assessmentDisplayFor(p).score! - assessmentDisplayFor(target).score! : null
   return (
     <div className="flex items-center gap-3 bg-lab-panel border border-lab-border rounded-xl px-4 py-3.5">
       <ProductAssessment product={p} size="sm" />

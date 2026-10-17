@@ -14,7 +14,7 @@ export async function verifyRankings(page, origin, width, resultDir) {
       for (const id of ['unknown', 'zero', 'held']) {
         const card = page.locator(`[data-product-id="${id}"]`)
         const text = await card.innerText()
-        assert.match(text, id === 'held' ? /Under review/ : /Not assessed/)
+        assert.match(text, /Under review/)
         assert.doesNotMatch(text, /🥇|🥈|🥉|Top Pick|Best Value Pick|Best Budget Pick|Good dosing|Excellent dosing|ATP resynthesis/)
         assert.equal(await card.getByText('Shop offer under review', { exact: false }).count(), 1)
         assert.equal(await card.locator('a[href*="shop.theliftinglab"]').count(), 0)
@@ -26,8 +26,8 @@ export async function verifyRankings(page, origin, width, resultDir) {
       if (pathname === '/rankings') {
         for (const id of ['legacy-high', 'legacy-value']) {
           const legacy = page.locator(`[data-product-id="${id}"]`)
-          assert.match(await legacy.innerText(), /Not assessed/); assert.doesNotMatch(await legacy.innerText(), /80\/100|60\/100|80%|60%/)
-          assert.equal(await legacy.locator('[data-assessment="legacy"]').count(), 1)
+          assert.match(await legacy.innerText(), /Under review/); assert.doesNotMatch(await legacy.innerText(), /80\/100|60\/100|80%|60%/)
+          assert.equal(await legacy.locator('[data-assessment="under_review"]').count(), 1)
         }
       }
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Rankings overflow ${width}/${sort}`)

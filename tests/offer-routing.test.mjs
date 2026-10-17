@@ -102,7 +102,7 @@ test('only a single reviewed Bulk target can pass an Awin redirector', () => {
 for (const input of ['https://www.amazon.co.uk/s?k=fixture', 'https://www.bulk.com/uk/search?q=fixture', 'https://www.myprotein.com/referrals.list', 'https://www.myprotein.com/']) test(`explicit search is not an offer: ${input}`, () => {
   const result = resolve(input); assert.equal(result.state, 'search_only')
   const markup = render(input)
-  assert.match(markup, /Search retailer/); assert.match(markup, /Retailer search/)
+  assert.match(markup, /Search retailer/); assert.match(markup, /Retailer search · affiliate link/)
   assert.doesNotMatch(markup, /Buy|InStock|Add to cart/)
 })
 test('listing rendering never promises exact stock, price or a purchase', () => {
@@ -362,4 +362,35 @@ test('S05 comparison and stack pages pass their context to every store offer', (
   const calls = stackSource.match(/resolveProductOffer\([^\n]+/g)
   assert.equal(calls.length, 2)
   for (const call of calls) assert.ok(call.includes("DEFAULT_STORE_BUY_LINK_MODE, 'stack'"))
+})
+
+
+test('card/detail Coming soon is inert and keeps normal dimensions and adds disabled styling', () => {
+  const Component = storeComponent(enabledAffiliate)
+  const props = { comingSoonWhenNotSold: true, className: 'fixture-buy w-full py-3', style: { borderRadius: 8 } }
+  const html = product => renderToStaticMarkup(React.createElement(Component, { ...props, product }))
+  const sellable = html(storeProduct)
+  for (const buy_url of [null, 'https://unknown.example/product']) {
+    const unavailable = html({ ...storeProduct, buy_url, storeLinkMapping: null })
+    assert.match(unavailable, /<button[^>]*disabled=""[^>]*aria-disabled="true"/)
+    assert.match(unavailable, />Coming soon<\/button>/)
+    assert.doesNotMatch(unavailable, /<a\b|href=/)
+    assert.equal(unavailable.match(/<button[^>]*class="([^"]+)"/)[1], sellable.match(/<a[^>]*class="([^"]+)"/)[1])
+    assert.match(unavailable, /opacity:0.55;cursor:not-allowed/)
+    assert.match(unavailable, /border-radius:8px/)
+  }
+  assert.equal(sellable, renderToStaticMarkup(React.createElement(Component, { ...props, comingSoonWhenNotSold: false, product: storeProduct })))
+})
+
+for (const [buy_url, label] of [
+  ['https://www.amazon.co.uk/dp/B000000001', 'View retailer ↗'],
+  ['https://www.amazon.co.uk/s?k=creatine', 'Search retailer ↗'],
+  ['https://shop.theliftinglab.co.uk/products/legacy', 'Shop offer under review'],
+]) test(`Coming soon preserves ${label}`, () => {
+  const Component = storeComponent(enabledAffiliate)
+  const product = { ...storeProduct, storeLinkMapping: null, buy_url }
+  const html = flag => renderToStaticMarkup(React.createElement(Component, { product, comingSoonWhenNotSold: flag }))
+  assert.equal(html(true), html(false))
+  assert.ok(html(true).includes(label))
+  assert.doesNotMatch(html(true), /Coming soon/)
 })

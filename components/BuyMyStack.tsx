@@ -38,7 +38,7 @@ export default function BuyMyStack({ items, ready }: { items: readonly StackCart
           aria-label={`${listing.state === 'search_only' ? 'Search' : 'View listing at'} ${listing.retailer} for ${itemName(item)} (opens in a new tab)`}>
           {listing.state === 'search_only' ? 'Search' : 'View listing at'} {listing.retailer} ↗
         </a>
-        <p className="text-xs text-[#62645c]">Affiliate link · {listing.state === 'search_only' ? 'search results' : 'unverified listing'} · check pack, price and stock.</p>
+        <p className="text-xs text-[#62645c]">Affiliate link · {listing.state === 'search_only' ? 'retailer search' : 'unverified listing'} · check pack, price and stock.</p>
       </li>)}</ul>
     </section>}
     {unavailable.length > 0 && <section aria-label="Store availability under review" className="rounded-lg border border-[#a8aaa0] p-4 text-sm">

@@ -1,5 +1,5 @@
 import { formatListedServingPrice } from '@/lib/products'
-import { hasApprovedAssessment } from '@/lib/assessment-display'
+import { assessmentDisplayFor, hasApprovedAssessment } from '@/lib/assessment-display'
 import { serializeJsonForHtml } from '@/lib/json-for-html'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -315,8 +315,8 @@ export default async function BrandMatchupPage({
                 const pa = topIn(a, cat)
                 const pb = topIn(b, cat)
                 if (!pa || !pb) return null
-                const aWins = hasApprovedAssessment(pa) && hasApprovedAssessment(pb) && pa.score > pb.score
-                const bWins = hasApprovedAssessment(pa) && hasApprovedAssessment(pb) && pb.score > pa.score
+                const aWins = hasApprovedAssessment(pa) && hasApprovedAssessment(pb) && assessmentDisplayFor(pa).score! > assessmentDisplayFor(pb).score!
+                const bWins = hasApprovedAssessment(pa) && hasApprovedAssessment(pb) && assessmentDisplayFor(pb).score! > assessmentDisplayFor(pa).score!
                 return (
                   <div key={cat} className="bg-lab-panel border border-lab-border rounded-2xl p-4">
                     <p className="text-[10px] uppercase tracking-widest text-lab-lime mb-3">

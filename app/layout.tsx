@@ -3,7 +3,6 @@ import { serializeJsonForHtml } from '@/lib/json-for-html'
 import { isSyntheticPreview, isHostedStaging, isIsolatedEnvironment, PREVIEW_UNAVAILABLE_MESSAGE } from '@/lib/preview-mode'
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Anton } from "next/font/google";
-import AnalyticsPreferences from "@/components/AnalyticsPreferences";
 import { LocalStackProvider } from "@/components/LocalStackContext";
 import { ShopPanelsProvider } from "@/components/ShopPanels";
 import StagingCartProvider from "@/components/StagingCartProvider";
@@ -76,7 +75,6 @@ export default function RootLayout({
           </aside>
         )}
         <StagingCartProvider><LocalStackProvider><ShopPanelsProvider>
-          {!isIsolatedEnvironment() && <AnalyticsPreferences />}
           {children}
           <SiteFooter />
         </ShopPanelsProvider></LocalStackProvider></StagingCartProvider>

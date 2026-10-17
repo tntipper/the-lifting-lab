@@ -1,0 +1,12 @@
+# Oath wording rules (16 Oct 2026) - must apply
+- Score name: "TLL Label Score", sub-label "Dose & label check". Never "Effectiveness Match".
+- Banned near ring/cards/meta: effective, effectiveness, results, proven, clinically dosed, top-tier dosing, best, healthy, supports [body function]. Use "Doses meet our reference range"; "Doses compared with amounts used in published research". "Evidence-based method" only on method page with citations.
+- Tooltip: "TLL Label Score rates what's on the label, not the results you'll get. It compares stated doses with amounts used in published research and checks how transparent the label is. It isn't a health claim or medical advice. Source: [URL], checked [DD Mon YYYY]. Rubric v1. How we score"  (NOTE Grok: price clause removed because Assay's rubric excludes price from quality; price shown separately as True Cost.)
+- Method page: per-category components+weights; reference doses with citations; provenance rules and 60 cap for proprietary blends; no score if insufficient data; safety caps as policy choices; review cadence (12 months or on label change) + reviewer (Assay science, Oath compliance); corrections contact; line: "Scores compare labels with each other. They don't predict how any product will work for you. Speak to your GP or clinician if you have a medical condition, take medication, or are pregnant or breastfeeding."
+- Authorised claims only verbatim with conditions, only where product qualifies (creatine 3 g/day; caffeine 3 mg/kg / 4 mg/kg ~1h before, not for children/pregnant/breastfeeding). Score number never stands in for a claim.
+- Hold categories (cycle-support, liver, hormone, ZMA): no ring, no number, no teaser; brand copy + warnings only.
+- Banned stimulants: never "[Brand] is banned"; only verified wording "Not scored or listed: contains [ingredient], which is on the WADA Prohibited List / is not authorised as a food ingredient in Great Britain." Hordenine, eria jarensis: "not scored", no reason.
+- Bars: component named "Nutrition profile"; no "healthy/low sugar/high protein" unless NHC conditions met.
+- No live scores depend on provisional leucine/DIAAS tables until cited.
+- Value-led score retired (Oath, 16 Oct 2026); price shown separately as True Cost.
+- PER4M Isolate Zero: no ring, no number, no pending score teaser; brand copy + warnings only. PER4M EAA Xtra remains assessed.
